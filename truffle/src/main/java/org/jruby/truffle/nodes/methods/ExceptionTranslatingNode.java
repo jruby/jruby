@@ -18,6 +18,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -26,7 +27,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
@@ -86,7 +86,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    private RubyException translate(ArithmeticException exception) {
+    private RubyBasicObject translate(ArithmeticException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -94,7 +94,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         return getContext().getCoreLibrary().zeroDivisionError(this);
     }
 
-    private RubyException translate(UnsupportedSpecializationException exception) {
+    private RubyBasicObject translate(UnsupportedSpecializationException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -110,7 +110,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof RubyBasicObject) {
-                builder.append(((RubyBasicObject) value).getLogicalClass().getName());
+                builder.append(ModuleNodes.getModel(((RubyBasicObject) value).getLogicalClass()).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");
@@ -159,7 +159,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    public RubyException translate(Throwable throwable) {
+    public RubyBasicObject translate(Throwable throwable) {
         if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
         }

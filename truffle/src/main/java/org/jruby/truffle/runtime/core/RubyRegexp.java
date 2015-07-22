@@ -26,7 +26,7 @@ public class RubyRegexp extends RubyBasicObject {
     @CompilationFinal public RegexpOptions options = RegexpOptions.NULL_OPTIONS;
     public Object cachedNames;
 
-    public RubyRegexp(RubyClass regexpClass) {
+    public RubyRegexp(RubyBasicObject regexpClass) {
         super(regexpClass);
     }
 

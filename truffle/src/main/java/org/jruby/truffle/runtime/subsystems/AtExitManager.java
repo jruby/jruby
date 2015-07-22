@@ -10,12 +10,12 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
 
 import java.util.Deque;
 import java.util.NoSuchElementException;
@@ -64,9 +64,9 @@ public class AtExitManager {
             try {
                 ProcNodes.rootCall(block);
             } catch (RaiseException e) {
-                final RubyException rubyException = e.getRubyException();
+                final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, rubyException, rubyException.getBacktrace())) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
                     System.err.println(line);
                 }
             } catch (Exception e) {

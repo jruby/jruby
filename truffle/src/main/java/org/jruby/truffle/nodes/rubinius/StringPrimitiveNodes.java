@@ -76,9 +76,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
@@ -285,8 +282,8 @@ public abstract class StringPrimitiveNodes {
             return stringByteSubstring(string, (int) index, length);
         }
 
-        @Specialization
-        public Object stringByteSubstring(RubyBasicObject string, RubyRange range, NotProvided length) {
+        @Specialization(guards = "isRubyRange(range)")
+        public Object stringByteSubstring(RubyBasicObject string, RubyBasicObject range, NotProvided length) {
             return null;
         }
 
@@ -1067,19 +1064,19 @@ public abstract class StringPrimitiveNodes {
 
 
         @Specialization(guards = "value == 0")
-        public RubyBasicObject stringPatternZero(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPatternZero(RubyBasicObject stringClass, int size, int value) {
             return StringNodes.createString(stringClass, new ByteList(new byte[size]));
         }
 
         @Specialization(guards = "value != 0")
-        public RubyBasicObject stringPattern(RubyClass stringClass, int size, int value) {
+        public RubyBasicObject stringPattern(RubyBasicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
             return StringNodes.createString(stringClass, new ByteList(bytes));
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject stringPattern(RubyClass stringClass, int size, RubyBasicObject string) {
+        public RubyBasicObject stringPattern(RubyBasicObject stringClass, int size, RubyBasicObject string) {
             final byte[] bytes = new byte[size];
             final ByteList byteList = StringNodes.getByteList(string);
 

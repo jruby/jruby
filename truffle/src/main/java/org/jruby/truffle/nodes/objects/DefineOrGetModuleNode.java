@@ -12,17 +12,17 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
@@ -46,16 +46,16 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         // Look for a current definition of the module, or create a new one
 
-        RubyModule lexicalParent = getLexicalParentModule(frame);
+        RubyBasicObject lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
-        RubyModule definingModule;
+        RubyBasicObject definingModule;
 
         if (constant == null) {
             definingModule = new RubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(module instanceof RubyModule) || !((RubyModule) module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((RubyBasicObject) module).isOnlyAModule()) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
             definingModule = (RubyModule) module;
@@ -64,27 +64,26 @@ public class DefineOrGetModuleNode extends RubyNode {
         return definingModule;
     }
 
-    protected RubyModule getLexicalParentModule(VirtualFrame frame) {
-        RubyModule lexicalParent;
+    protected RubyBasicObject getLexicalParentModule(VirtualFrame frame) {
+        final Object lexicalParent = lexicalParentModule.execute(frame);;
 
-        try {
-            lexicalParent = lexicalParentModule.executeRubyModule(frame);
-        } catch (UnexpectedResultException e) {
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
+        if (!RubyGuards.isRubyModule(lexicalParent)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
         }
 
-        return lexicalParent;
+        return (RubyBasicObject) lexicalParent;
     }
 
     @TruffleBoundary
-    protected RubyConstant lookupForExistingModule(RubyModule lexicalParent) {
-        RubyConstant constant = lexicalParent.getConstants().get(name);
+    protected RubyConstant lookupForExistingModule(RubyBasicObject lexicalParent) {
+        RubyConstant constant = ModuleNodes.getModel(lexicalParent).getConstants().get(name);
 
-        final RubyClass objectClass = getContext().getCoreLibrary().getObjectClass();
+        final RubyBasicObject objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
-            for (RubyModule included : objectClass.prependedAndIncludedModules()) {
-                constant = included.getConstants().get(name);
+            for (RubyBasicObject included : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
+                constant = ModuleNodes.getModel(included).getConstants().get(name);
                 if (constant != null) {
                     break;
                 }
@@ -106,7 +105,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
-            lexicalParent.removeConstant(this, name);
+            ModuleNodes.getModel(lexicalParent).removeConstant(this, name);
 
             requireNode.require((RubyBasicObject) constant.getValue());
 

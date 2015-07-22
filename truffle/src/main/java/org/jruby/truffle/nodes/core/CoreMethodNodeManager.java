@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.*;
@@ -27,8 +28,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -40,10 +40,11 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private final RubyClass objectClass;
+    private final RubyBasicObject objectClass;
     private final SingletonClassNode singletonClassNode;
 
-    public CoreMethodNodeManager(RubyClass objectClass, SingletonClassNode singletonClassNode) {
+    public CoreMethodNodeManager(RubyBasicObject objectClass, SingletonClassNode singletonClassNode) {
+        assert RubyGuards.isRubyClass(objectClass);
         this.objectClass = objectClass;
         this.singletonClassNode = singletonClassNode;
     }
@@ -61,14 +62,14 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private RubyClass getSingletonClass(Object object) {
+    private RubyBasicObject getSingletonClass(Object object) {
         return singletonClassNode.executeSingletonClass(null, object);
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
         final RubyContext context = objectClass.getContext();
 
-        RubyModule module;
+        RubyBasicObject module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
@@ -83,7 +84,7 @@ public class CoreMethodNodeManager {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
                 }
 
-                module = (RubyModule) constant.getValue();
+                module = (RubyBasicObject) constant.getValue();
             }
         }
 
@@ -106,7 +107,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!module.isOnlyAModule()) {
+            if (!ModuleNodes.getModel(module).isOnlyAModule()) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
@@ -126,7 +127,9 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+    private static void addMethod(RubyBasicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+        assert RubyGuards.isRubyModule(module);
+
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
@@ -138,7 +141,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            module.addMethod(null, method.withVisibility(visibility).withName(name));
+            ModuleNodes.getModel(module).addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 

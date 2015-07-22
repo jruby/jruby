@@ -17,7 +17,7 @@ public class RubyTime extends RubyBasicObject {
     public DateTime dateTime;
     public Object offset;
 
-    public RubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
+    public RubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
         super(timeClass);
         this.dateTime = dateTime;
         assert offset != null;

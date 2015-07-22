@@ -22,7 +22,7 @@ public class RubyEncoding extends RubyBasicObject {
     public final ByteList name;
     public final boolean dummy;
 
-    public RubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean dummy) {
+    public RubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
         super(encodingClass);
         this.encoding = encoding;
         this.name = name;

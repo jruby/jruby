@@ -15,7 +15,6 @@ import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 
 import java.util.*;
 
@@ -31,14 +30,14 @@ public abstract class BucketsStrategy {
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
 
-    public static RubyBasicObject create(RubyClass hashClass, int capacity) {
+    public static RubyBasicObject create(RubyBasicObject hashClass, int capacity) {
         final int bucketsCount = capacityGreaterThan(capacity) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
         return HashNodes.createHash(hashClass, null, null, newEntries, 0, null, null);
     }
 
-    public static RubyBasicObject create(RubyClass hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+    public static RubyBasicObject create(RubyBasicObject hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;

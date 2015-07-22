@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.util.EnumSet;
@@ -43,12 +42,12 @@ public abstract class PointerNodes {
 
     public static class PointerAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createPointer(rubyClass, NULL_POINTER);
         }
     }
 
-    public static RubyBasicObject createPointer(RubyClass rubyClass, Pointer pointer) {
+    public static RubyBasicObject createPointer(RubyBasicObject rubyClass, Pointer pointer) {
         if (pointer == null) {
             pointer = NULL_POINTER;
         }

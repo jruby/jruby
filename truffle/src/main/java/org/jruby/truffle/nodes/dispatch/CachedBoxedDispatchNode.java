@@ -15,15 +15,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final RubyClass expectedClass;
+    private final RubyBasicObject expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final InternalMethod method;
@@ -34,14 +35,16 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
+            RubyBasicObject expectedClass,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
+        assert RubyGuards.isRubyClass(expectedClass);
+
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        this.unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -53,7 +56,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                        && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
+                        && ModuleNodes.getModel(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -134,7 +137,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                expectedClass.getName(), expectedClass.hashCode(),
+                ModuleNodes.getModel(expectedClass).getName(), expectedClass.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

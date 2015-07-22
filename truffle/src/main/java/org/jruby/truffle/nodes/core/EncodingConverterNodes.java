@@ -29,7 +29,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyEncodingConverter;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
@@ -45,7 +44,7 @@ public abstract class EncodingConverterNodes {
         ((RubyEncodingConverter) encodingConverter).econv = econv;
     }
 
-    public static RubyBasicObject createEncodingConverter(RubyClass rubyClass, EConv econv) {
+    public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
         return new RubyEncodingConverter(rubyClass, econv);
     }
 
@@ -172,7 +171,7 @@ public abstract class EncodingConverterNodes {
     public static class EncodingConverterAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createEncodingConverter(rubyClass, null);
         }
 

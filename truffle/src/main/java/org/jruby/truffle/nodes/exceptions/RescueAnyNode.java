@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Rescues any exception.
@@ -25,7 +25,7 @@ public class RescueAnyNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyException exception) {
+    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
         return true;
     }
 

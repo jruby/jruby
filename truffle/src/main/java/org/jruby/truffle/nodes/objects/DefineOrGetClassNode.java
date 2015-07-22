@@ -12,14 +12,16 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -34,7 +36,10 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         this.superClass = superClass;
     }
 
-    private void callInherited(VirtualFrame frame, RubyClass superClass, RubyClass subClass) {
+    private void callInherited(VirtualFrame frame, RubyBasicObject superClass, RubyBasicObject subClass) {
+        assert RubyGuards.isRubyClass(superClass);
+        assert RubyGuards.isRubyClass(subClass);
+
         if (inheritedNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
@@ -50,18 +55,18 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
         // Look for a current definition of the class, or create a new one
 
-        RubyModule lexicalParent = getLexicalParentModule(frame);
+        RubyBasicObject lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
-        RubyClass definingClass;
-        RubyClass superClassObject = getRubySuperClass(frame, context);
+        RubyBasicObject definingClass;
+        RubyBasicObject superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, superClassObject.getAllocator());
+            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, ((RubyClass) superClassObject).getAllocator());
             callInherited(frame, superClassObject, definingClass);
         } else {
-            if (constant.getValue() instanceof RubyClass) {
-                definingClass = (RubyClass) constant.getValue();
+            if (RubyGuards.isRubyClass(constant.getValue())) {
+                definingClass = (RubyBasicObject) constant.getValue();
                 checkSuperClassCompatibility(context, superClassObject, definingClass);
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue().toString(), "class", this));
@@ -71,11 +76,11 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         return definingClass;
     }
 
-    private RubyClass getRubySuperClass(VirtualFrame frame, RubyContext context) {
+    private RubyBasicObject getRubySuperClass(VirtualFrame frame, RubyContext context) {
         final Object superClassObj = superClass.execute(frame);
 
-        if (superClassObj instanceof RubyClass){
-            if (((RubyClass) superClassObj).isSingleton()) {
+        if (RubyGuards.isRubyClass(superClassObj)){
+            if (ModuleNodes.getModel(((RubyClass) superClassObj)).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
@@ -84,13 +89,17 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
     }
 
-    private boolean isBlankOrRootClass(RubyClass rubyClass) {
+    private boolean isBlankOrRootClass(RubyBasicObject rubyClass) {
+        assert RubyGuards.isRubyClass(rubyClass);
         return rubyClass == getContext().getCoreLibrary().getBasicObjectClass() || rubyClass == getContext().getCoreLibrary().getObjectClass();
     }
 
-    private void checkSuperClassCompatibility(RubyContext context, RubyClass superClassObject, RubyClass definingClass) {
-        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && definingClass.getSuperClass() != superClassObject) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + definingClass.getName(), this));
+    private void checkSuperClassCompatibility(RubyContext context, RubyBasicObject superClassObject, RubyBasicObject definingClass) {
+        assert RubyGuards.isRubyClass(superClassObject);
+        assert RubyGuards.isRubyClass(definingClass);
+
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ModuleNodes.getModel(definingClass).getSuperClass() != superClassObject) {
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getModel(definingClass).getName(), this));
         }
     }
 }

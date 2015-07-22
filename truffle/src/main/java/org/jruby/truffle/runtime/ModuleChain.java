@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Either an IncludedModule, a RubyClass or a RubyModule.
@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public interface ModuleChain {
     ModuleChain getParentModule();
 
-    RubyModule getActualModule();
+    RubyBasicObject getActualModule();
 
-    void insertAfter(RubyModule module);
+    void insertAfter(RubyBasicObject module);
 }

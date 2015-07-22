@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
@@ -50,7 +49,7 @@ public abstract class TimeNodes {
         ((RubyTime) time).offset = offset;
     }
 
-    public static RubyBasicObject createRubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
+    public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
         return new RubyTime(timeClass, dateTime, offset);
     }
 
@@ -145,7 +144,7 @@ public abstract class TimeNodes {
     public static class TimeAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return createRubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
         }
 

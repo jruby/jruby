@@ -20,6 +20,7 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
@@ -28,7 +29,6 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
@@ -65,13 +65,13 @@ public abstract class UnboundMethodNodes {
         UNBOUND_METHOD_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createUnboundMethod(RubyClass rubyClass, RubyModule origin, InternalMethod method) {
+    public static RubyBasicObject createUnboundMethod(RubyBasicObject rubyClass, RubyBasicObject origin, InternalMethod method) {
         return new RubyBasicObject(rubyClass, UNBOUND_METHOD_FACTORY.newInstance(origin, method));
     }
 
-    public static RubyModule getOrigin(RubyBasicObject method) {
+    public static RubyBasicObject getOrigin(RubyBasicObject method) {
         assert method.getDynamicObject().getShape().hasProperty(ORIGIN_IDENTIFIER);
-        return (RubyModule) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
+        return (RubyBasicObject) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
@@ -126,24 +126,24 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
-            final RubyClass objectMetaClass = metaClass(frame, object);
+            final RubyBasicObject objectMetaClass = metaClass(frame, object);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                final RubyModule declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (declaringModule instanceof RubyClass && ((RubyClass) declaringModule).isSingleton()) {
+                final RubyBasicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + declaringModule.getName(), this));
+                            "bind argument must be an instance of " + ModuleNodes.getModel(declaringModule).getName(), this));
                 }
             }
 
             return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
         }
 
-        protected RubyClass metaClass(VirtualFrame frame, Object object) {
+        protected RubyBasicObject metaClass(VirtualFrame frame, Object object) {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
@@ -172,7 +172,7 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule origin(RubyBasicObject unboundMethod) {
+        public RubyBasicObject origin(RubyBasicObject unboundMethod) {
             return getOrigin(unboundMethod);
         }
 
@@ -186,7 +186,7 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule owner(RubyBasicObject unboundMethod) {
+        public RubyBasicObject owner(RubyBasicObject unboundMethod) {
             return getMethod(unboundMethod).getDeclaringModule();
         }
 

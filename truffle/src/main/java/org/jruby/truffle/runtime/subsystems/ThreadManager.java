@@ -12,11 +12,14 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Collections;
 import java.util.Set;
@@ -32,24 +35,24 @@ public class ThreadManager {
 
     private final ReentrantLock globalLock = new ReentrantLock();
 
-    private final RubyThread rootThread;
-    private RubyThread currentThread;
+    private final RubyBasicObject rootThread;
+    private RubyBasicObject currentThread;
 
-    private final Set<RubyThread> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
+    private final Set<RubyBasicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
-        rootThread.setName("main");
+        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass(), this);
+        ThreadNodes.setName(rootThread, "main");
     }
 
     public void initialize() {
         registerThread(rootThread);
-        rootThread.start();
-        rootThread.getRootFiber().start();
+        ThreadNodes.start(rootThread);
+        FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
     }
 
-    public RubyThread getRootThread() {
+    public RubyBasicObject getRootThread() {
         return rootThread;
     }
 
@@ -60,7 +63,8 @@ public class ThreadManager {
      * blocking.
      */
     @TruffleBoundary
-    public void enterGlobalLock(RubyThread thread) {
+    public void enterGlobalLock(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         globalLock.lock();
         currentThread = thread;
     }
@@ -72,15 +76,17 @@ public class ThreadManager {
      * make sure that happens
      */
     @TruffleBoundary
-    public RubyThread leaveGlobalLock() {
+    public RubyBasicObject leaveGlobalLock() {
         if (!globalLock.isHeldByCurrentThread()) {
             throw new RuntimeException("You don't own this lock!");
         }
 
-        final RubyThread result = currentThread;
+        final RubyBasicObject result = currentThread;
         globalLock.unlock();
         return result;
     }
+
+
 
     public static interface BlockingActionWithoutGlobalLock<T> {
         public static boolean SUCCESS = true;
@@ -101,14 +107,14 @@ public class ThreadManager {
         T result = null;
 
         do {
-            final RubyThread runningThread = leaveGlobalLock();
-            runningThread.setStatus(Status.SLEEP);
+            final RubyBasicObject runningThread = leaveGlobalLock();
+            ThreadNodes.setStatus(runningThread, Status.SLEEP);
 
             try {
                 try {
                     result = action.block();
                 } finally {
-                    runningThread.setStatus(Status.RUN);
+                    ThreadNodes.setStatus(runningThread, Status.RUN);
                     // We need to enter the global lock before anything else!
                     enterGlobalLock(runningThread);
                 }
@@ -121,16 +127,18 @@ public class ThreadManager {
         return result;
     }
 
-    public RubyThread getCurrentThread() {
+    public RubyBasicObject getCurrentThread() {
         assert globalLock.isHeldByCurrentThread() : "getCurrentThread() is only correct if holding the global lock";
         return currentThread;
     }
 
-    public synchronized void registerThread(RubyThread thread) {
+    public synchronized void registerThread(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.add(thread);
     }
 
-    public synchronized void unregisterThread(RubyThread thread) {
+    public synchronized void unregisterThread(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.remove(thread);
     }
 
@@ -138,9 +146,9 @@ public class ThreadManager {
         try {
             killOtherThreads();
         } finally {
-            rootThread.getFiberManager().shutdown();
-            rootThread.getRootFiber().cleanup();
-            rootThread.cleanup();
+            ThreadNodes.getFiberManager(rootThread).shutdown();
+            FiberNodes.cleanup(ThreadNodes.getRootFiber(rootThread));
+            ThreadNodes.cleanup(rootThread);
         }
     }
 
@@ -149,17 +157,17 @@ public class ThreadManager {
             try {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized void run(RubyThread thread, Node currentNode) {
-                        if (thread != rootThread && Thread.currentThread() == thread.getRootFiberJavaThread()) {
-                            thread.shutdown();
+                    public synchronized void run(RubyBasicObject thread, Node currentNode) {
+                        if (thread != rootThread && Thread.currentThread() == ThreadNodes.getRootFiberJavaThread(thread)) {
+                            ThreadNodes.shutdown(thread);
                         }
                     }
                 });
                 break; // Successfully executed the safepoint and sent the exceptions.
             } catch (RaiseException e) {
-                final RubyException rubyException = e.getRubyException();
+                final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(((RubyBasicObject) e.getRubyException()).getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
                     System.err.println(line);
                 }
             }

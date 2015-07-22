@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.RubyDateFormatter;
 
 /**
@@ -43,7 +42,7 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject timeSNow(VirtualFrame frame, RubyClass timeClass) {
+        public RubyBasicObject timeSNow(VirtualFrame frame, RubyBasicObject timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
             return TimeNodes.createRubyTime(timeClass, now((RubyBasicObject) readTimeZoneNode.execute(frame)), nil());
         }
@@ -219,18 +218,18 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyBasicObject timeSFromArray(VirtualFrame frame, RubyBasicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
                 int nsec, int isdst, boolean fromutc, Object utcoffset) {
             return buildTime(frame, timeClass, sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization(guards = "!isInteger(sec) || !isInteger(nsec)")
-        public RubyBasicObject timeSFromArrayFallback(VirtualFrame frame, RubyClass timeClass, Object sec, int min, int hour, int mday, int month, int year,
+        public RubyBasicObject timeSFromArrayFallback(VirtualFrame frame, RubyBasicObject timeClass, Object sec, int min, int hour, int mday, int month, int year,
                                        Object nsec, int isdst, boolean fromutc, Object utcoffset) {
             return null; // Primitive failure
         }
 
-        private RubyBasicObject buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        private RubyBasicObject buildTime(VirtualFrame frame, RubyBasicObject timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             CompilerDirectives.transferToInterpreter();
 

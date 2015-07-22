@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -42,7 +41,7 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
-    public RubyBasicObject finishAndCreate(RubyClass arrayClass, Object store, int length) {
+    public RubyBasicObject finishAndCreate(RubyBasicObject arrayClass, Object store, int length) {
         return ArrayNodes.createGeneralArray(arrayClass, finish(store, length), length);
     }
 

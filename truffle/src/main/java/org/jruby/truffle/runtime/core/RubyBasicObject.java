@@ -18,18 +18,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ProcNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.SymbolNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,46 +48,51 @@ public class RubyBasicObject implements TruffleObject {
     private final DynamicObject dynamicObject;
 
     /** The class of the object, not a singleton class. */
-    @CompilationFinal private RubyClass logicalClass;
+    @CompilationFinal private RubyBasicObject logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
-    @CompilationFinal private RubyClass metaClass;
+    @CompilationFinal private RubyBasicObject metaClass;
 
-    public RubyBasicObject(RubyClass rubyClass) {
+    public RubyBasicObject(RubyBasicObject rubyClass) {
         this(rubyClass.getContext(), rubyClass);
     }
 
-    public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
+    public RubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
         this(rubyClass.getContext(), rubyClass, dynamicObject);
     }
 
-    protected RubyBasicObject(RubyContext context, RubyClass rubyClass) {
+    protected RubyBasicObject(RubyContext context, RubyBasicObject rubyClass) {
         this(context, rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
     }
 
-    private RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+    private RubyBasicObject(RubyContext context, RubyBasicObject rubyClass, DynamicObject dynamicObject) {
+        assert rubyClass == null || RubyGuards.isRubyClass(rubyClass);
+
         this.dynamicObject = dynamicObject;
 
-        if (rubyClass == null && this instanceof RubyClass) { // For class Class
-            rubyClass = (RubyClass) this;
+        if (rubyClass == null && RubyGuards.isRubyClass(this)) { // For class Class
+            rubyClass = this;
         }
         unsafeSetLogicalClass(rubyClass);
     }
 
-    protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
+    protected void unsafeSetLogicalClass(RubyBasicObject newLogicalClass) {
+        assert RubyGuards.isRubyClass(newLogicalClass);
         assert logicalClass == null;
         unsafeChangeLogicalClass(newLogicalClass);
     }
 
-    public void unsafeChangeLogicalClass(RubyClass newLogicalClass) {
+    public void unsafeChangeLogicalClass(RubyBasicObject newLogicalClass) {
+        assert RubyGuards.isRubyClass(newLogicalClass);
         logicalClass = newLogicalClass;
         metaClass = newLogicalClass;
     }
 
-    public RubyClass getMetaClass() {
+    public RubyBasicObject getMetaClass() {
         return metaClass;
     }
 
-    public void setMetaClass(RubyClass metaClass) {
+    public void setMetaClass(RubyBasicObject metaClass) {
+        assert RubyGuards.isRubyClass(metaClass);
         this.metaClass = metaClass;
     }
 
@@ -168,6 +172,20 @@ public class RubyBasicObject implements TruffleObject {
             getContext().getObjectSpaceManager().visitFrame(BindingNodes.getFrame(this), visitor);
         } else if (RubyGuards.isRubyProc(this)) {
             getContext().getObjectSpaceManager().visitFrame(ProcNodes.getDeclarationFrame(this), visitor);
+        } else if (RubyGuards.isRubyMatchData(this)) {
+            for (Object object : ((RubyMatchData) this).fields.values) {
+                if (object instanceof RubyBasicObject) {
+                    ((RubyBasicObject) object).visitObjectGraph(visitor);
+                }
+            }
+        } else if (RubyGuards.isObjectRange(this)) {
+            if (((RubyObjectRange) this).begin instanceof RubyBasicObject) {
+                ((RubyBasicObject) ((RubyObjectRange) this).begin).visitObjectGraph(visitor);
+            }
+
+            if (((RubyObjectRange) this).end instanceof RubyBasicObject) {
+                ((RubyBasicObject) ((RubyObjectRange) this).end).visitObjectGraph(visitor);
+            }
         }
     }
 
@@ -187,7 +205,7 @@ public class RubyBasicObject implements TruffleObject {
         return (BasicObjectType) dynamicObject.getShape().getObjectType();
     }
 
-    public RubyClass getLogicalClass() {
+    public RubyBasicObject getLogicalClass() {
         return logicalClass;
     }
 
@@ -200,7 +218,7 @@ public class RubyBasicObject implements TruffleObject {
         // TODO(CS): why on earth is this a boundary? Seems like a really bad thing.
         @TruffleBoundary
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass);
         }
 
@@ -214,8 +232,11 @@ public class RubyBasicObject implements TruffleObject {
             return Helpers.decodeByteList(getContext().getRuntime(), StringNodes.getByteList((this)));
         } else if (RubyGuards.isRubySymbol(this)) {
             return SymbolNodes.getString(this);
+        } else if (RubyGuards.isRubyException(this)) {
+            return ExceptionNodes.getMessage(this) + " : " + super.toString() + "\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, ExceptionNodes.getBacktrace(this)));
         } else {
-            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), logicalClass.getName());
+            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), ModuleNodes.getModel(logicalClass).getName());
         }
     }
 

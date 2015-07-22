@@ -13,8 +13,10 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.MatchDataNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -34,16 +36,16 @@ public class ReadMatchReferenceNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final Object match = getContext().getThreadManager().getCurrentThread().getThreadLocals().getInstanceVariable("$~");
+        final Object match = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()).getInstanceVariable("$~");
 
         if (match == null || match == nil()) {
             return nil();
         }
 
-        final RubyMatchData matchData = (RubyMatchData) match;
+        final RubyBasicObject matchData = (RubyBasicObject) match;
 
         if (index > 0) {
-            final Object[] values = matchData.getValues();
+            final Object[] values = MatchDataNodes.getValues(matchData);
 
             if (index >= values.length) {
                 return nil();
@@ -51,13 +53,13 @@ public class ReadMatchReferenceNode extends RubyNode {
                 return values[index];
             }
         } else if (index == PRE) {
-            return matchData.getPre();
+            return MatchDataNodes.getPre(matchData);
         } else if (index == POST) {
-            return matchData.getPost();
+            return MatchDataNodes.getPost(matchData);
         } else if (index == GLOBAL) {
-            return matchData.getGlobal();
+            return MatchDataNodes.getGlobal(matchData);
         } else if (index == HIGHEST) {
-            final Object[] values = matchData.getValues();
+            final Object[] values = MatchDataNodes.getValues(matchData);
 
             for (int n = values.length - 1; n >= 0; n--)
                 if (values[n] != nil()) {

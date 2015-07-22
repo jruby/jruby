@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Read the rest of arguments after a certain point into an array.
@@ -41,7 +41,7 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
+        final RubyBasicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
 
         int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
 

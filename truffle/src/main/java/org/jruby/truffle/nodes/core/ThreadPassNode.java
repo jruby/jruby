@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class ThreadPassNode extends RubyNode {
 
@@ -23,7 +23,7 @@ public class ThreadPassNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+        final RubyBasicObject runningThread = getContext().getThreadManager().leaveGlobalLock();
 
         try {
             Thread.yield();

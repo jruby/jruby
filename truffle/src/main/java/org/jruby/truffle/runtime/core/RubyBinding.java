@@ -22,7 +22,7 @@ public class RubyBinding extends RubyBasicObject {
     @CompilationFinal public Object self;
     @CompilationFinal public MaterializedFrame frame;
 
-    public RubyBinding(RubyClass bindingClass, Object self, MaterializedFrame frame) {
+    public RubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
         super(bindingClass);
         this.self = self;
         this.frame = frame;
@@ -30,7 +30,7 @@ public class RubyBinding extends RubyBasicObject {
 
     public static class BindingAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return BindingNodes.createRubyBinding(rubyClass);
         }
     }

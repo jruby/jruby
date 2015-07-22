@@ -20,10 +20,10 @@ import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
@@ -104,7 +104,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject propagateLastMatch(RubyClass regexpClass) {
+        public RubyBasicObject propagateLastMatch(RubyBasicObject regexpClass) {
             // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
             return nil();
         }
@@ -162,9 +162,9 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public Object setLastMatch(RubyClass regexpClass, Object matchData) {
+        public Object setLastMatch(RubyBasicObject regexpClass, Object matchData) {
             RubyBasicObject.setInstanceVariable(
-                    getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
+                    ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
 
             return matchData;
         }
@@ -179,7 +179,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject setBlockLastMatch(RubyClass regexpClass) {
+        public RubyBasicObject setBlockLastMatch(RubyBasicObject regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
             return nil();
         }

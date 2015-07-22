@@ -36,7 +36,10 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
@@ -173,7 +176,7 @@ public abstract class RegexpNodes {
         final RubyBasicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
         final RubyBasicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
+        final RubyBasicObject matchObject = MatchDataNodes.createRubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
 
         if (operator) {
             if (values.length > 0) {
@@ -223,7 +226,7 @@ public abstract class RegexpNodes {
     public static void setThread(RubyBasicObject regexp, String name, Object value) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert value != null;
-        RubyBasicObject.setInstanceVariable(regexp.getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
+        RubyBasicObject.setInstanceVariable(ThreadNodes.getThreadLocals(regexp.getContext().getThreadManager().getCurrentThread()), name, value);
     }
 
     @TruffleBoundary
@@ -463,28 +466,28 @@ public abstract class RegexpNodes {
         setSource(regexp, setSource);
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, RegexpOptions options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, options), regex);
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
+    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, int options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, RegexpNodes.getOptions(regexp)), regex);
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
+    public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
+    public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source) {
         final RubyBasicObject regexp = new RubyRegexp(regexpClass);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
@@ -573,8 +576,8 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(RubyBasicObject regexp, RubyBasicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (matchResult instanceof RubyMatchData && ((RubyMatchData) matchResult).getNumberOfRegions() > 0
-                && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
+            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions(((RubyMatchData) matchResult)) > 0
+                && MatchDataNodes.getRegion(((RubyMatchData) matchResult)).beg[0] == startPos) {
                 return matchResult;
             }
             return nil();
@@ -701,7 +704,7 @@ public abstract class RegexpNodes {
     public static class RegexpAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
             return new RubyRegexp(rubyClass);
         }
 

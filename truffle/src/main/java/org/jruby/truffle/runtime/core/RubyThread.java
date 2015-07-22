@@ -9,23 +9,14 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.ProcNodes;
-import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ReturnException;
-import org.jruby.truffle.runtime.control.ThreadExitException;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
@@ -34,241 +25,49 @@ import java.util.concurrent.locks.Lock;
  * not a one-to-one mapping between Ruby threads and Java threads - specifically in combination with
  * fibers as they are currently implemented as their own Java threads.
  */
+@Deprecated
 public class RubyThread extends RubyBasicObject {
 
-    private final ThreadManager manager;
+    public static class ThreadFields {
+        public final ThreadManager manager;
 
-    private final FiberManager fiberManager;
+        public final FiberManager fiberManager;
 
-    private String name;
+        public String name;
 
-    /** We use this instead of {@link Thread#join()} since we don't always have a reference
-     * to the {@link Thread} and we want to handle cases where the Thread did not start yet. */
-    private final CountDownLatch finished = new CountDownLatch(1);
+        /**
+         * We use this instead of {@link Thread#join()} since we don't always have a reference
+         * to the {@link Thread} and we want to handle cases where the Thread did not start yet.
+         */
+        public final CountDownLatch finished = new CountDownLatch(1);
 
-    private volatile Thread thread;
-    private volatile Status status = Status.RUN;
-    private volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
+        public volatile Thread thread;
+        public volatile Status status = Status.RUN;
+        public volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
 
-    private volatile RubyException exception;
-    private volatile Object value;
+        public volatile Object exception;
+        public volatile Object value;
 
-    private final RubyBasicObject threadLocals;
+        public final RubyBasicObject threadLocals;
 
-    private final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
+        public final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
-    private boolean abortOnException = false;
+        public boolean abortOnException = false;
 
-    public enum InterruptMode {
-        IMMEDIATE, ON_BLOCKING, NEVER
+        public ThreadNodes.InterruptMode interruptMode = ThreadNodes.InterruptMode.IMMEDIATE;
+
+        public ThreadFields(ThreadManager manager, FiberManager fiberManager, RubyBasicObject threadLocals) {
+            this.manager = manager;
+            this.fiberManager = fiberManager;
+            this.threadLocals = threadLocals;
+        }
     }
 
-    private InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+    public ThreadFields fields;
 
-    public RubyThread(RubyClass rubyClass, ThreadManager manager) {
+    public RubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         super(rubyClass);
-        this.manager = manager;
-        threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
-        fiberManager = new FiberManager(this, manager);
-    }
-
-    public void initialize(RubyContext context, Node currentNode, final Object[] arguments, final RubyBasicObject block) {
-        assert RubyGuards.isRubyProc(block);
-        String info = ProcNodes.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        initialize(context, currentNode, info, new Runnable() {
-            @Override
-            public void run() {
-                value = ProcNodes.rootCall(block, arguments);
-            }
-        });
-    }
-
-    public void initialize(final RubyContext context, final Node currentNode, final String info, final Runnable task) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                RubyThread.this.run(context, currentNode, info, task);
-            }
-        }).start();
-    }
-
-    public void run(final RubyContext context, Node currentNode, String info, Runnable task) {
-        name = "Ruby Thread@" + info;
-        Thread.currentThread().setName(name);
-
-        start();
-        try {
-            RubyFiber fiber = getRootFiber();
-            fiber.run(task);
-        } catch (ThreadExitException e) {
-            value = context.getCoreLibrary().getNilObject();
-            return;
-        } catch (RaiseException e) {
-            exception = e.getRubyException();
-        } catch (ReturnException e) {
-            exception = context.getCoreLibrary().unexpectedReturn(currentNode);
-        } finally {
-            cleanup();
-        }
-    }
-
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public void start() {
-        thread = Thread.currentThread();
-        manager.registerThread(this);
-    }
-
-    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public void cleanup() {
-        status = Status.ABORTING;
-        manager.unregisterThread(this);
-
-        status = Status.DEAD;
-        thread = null;
-        releaseOwnedLocks();
-        finished.countDown();
-    }
-
-    public void shutdown() {
-        fiberManager.shutdown();
-        throw new ThreadExitException();
-    }
-
-    public Thread getRootFiberJavaThread() {
-        return thread;
-    }
-
-    public Thread getCurrentFiberJavaThread() {
-        return fiberManager.getCurrentFiber().getJavaThread();
-    }
-
-    public void join() {
-        manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-            @Override
-            public Boolean block() throws InterruptedException {
-                finished.await();
-                return SUCCESS;
-            }
-        });
-
-        if (exception != null) {
-            throw new RaiseException(exception);
-        }
-    }
-
-    public boolean join(final int timeoutInMillis) {
-        final long start = System.currentTimeMillis();
-        final boolean joined = manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-            @Override
-            public Boolean block() throws InterruptedException {
-                long now = System.currentTimeMillis();
-                long waited = now - start;
-                if (waited >= timeoutInMillis) {
-                    // We need to know whether countDown() was called and we do not want to block.
-                    return finished.getCount() == 0;
-                }
-                return finished.await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
-            }
-        });
-
-        if (joined && exception != null) {
-            throw new RaiseException(exception);
-        }
-
-        return joined;
-    }
-
-    public void wakeup() {
-        wakeUp.set(true);
-        Thread t = thread;
-        if (t != null) {
-            t.interrupt();
-        }
-    }
-
-    public void acquiredLock(Lock lock) {
-        ownedLocks.add(lock);
-    }
-
-    public void releasedLock(Lock lock) {
-        // TODO: this is O(ownedLocks.length).
-        ownedLocks.remove(lock);
-    }
-
-    protected void releaseOwnedLocks() {
-        for (Lock lock : ownedLocks) {
-            lock.unlock();
-        }
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public RubyBasicObject getThreadLocals() {
-        return threadLocals;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public RubyException getException() {
-        return exception;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public ThreadManager getThreadManager() {
-        return manager;
-    }
-
-    public FiberManager getFiberManager() {
-        return fiberManager;
-    }
-
-    public RubyFiber getRootFiber() {
-        return fiberManager.getRootFiber();
-    }
-
-    public boolean isAbortOnException() {
-        return abortOnException;
-    }
-
-    public void setAbortOnException(boolean abortOnException) {
-        this.abortOnException = abortOnException;
-    }
-
-    public InterruptMode getInterruptMode() {
-        return interruptMode;
-    }
-
-    public void setInterruptMode(InterruptMode interruptMode) {
-        this.interruptMode = interruptMode;
-    }
-
-    /** Return whether Thread#{run,wakeup} was called and clears the wakeup flag. */
-    public boolean shouldWakeUp() {
-        return wakeUp.getAndSet(false);
-    }
-
-    public static class ThreadAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyThread(rubyClass, context.getThreadManager());
-        }
-
+        fields = new ThreadFields(manager, new FiberManager(this, manager), new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass()));
     }
 
 }

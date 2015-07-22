@@ -10,7 +10,11 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -22,6 +26,50 @@ import org.jruby.truffle.runtime.core.RubyException;
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
 
+    // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
+    public static Object getMessage(RubyBasicObject exception) {
+        assert RubyGuards.isRubyException(exception);
+        return ((RubyException) exception).message;
+    }
+
+    public static Backtrace getBacktrace(RubyBasicObject exception) {
+        assert RubyGuards.isRubyException(exception);
+        return ((RubyException) exception).backtrace;
+    }
+
+    public static void setBacktrace(RubyBasicObject exception, Backtrace backtrace) {
+        assert RubyGuards.isRubyException(exception);
+        ((RubyException) exception).backtrace = backtrace;
+    }
+
+    public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
+        assert RubyGuards.isRubyException(exception);
+
+        assert getBacktrace(exception) != null;
+        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(exception.getContext(), exception, getBacktrace(exception));
+
+        final Object[] array = new Object[lines.length];
+
+        for (int n = 0;n < lines.length; n++) {
+            array[n] = StringNodes.createString(exception.getContext().getCoreLibrary().getStringClass(), lines[n]);
+        }
+
+        return ArrayNodes.fromObjects(exception.getContext().getCoreLibrary().getArrayClass(), array);
+    }
+
+    public static void setMessage(RubyBasicObject exception, Object message) {
+        assert RubyGuards.isRubyException(exception);
+        ((RubyException) exception).message = message;
+    }
+
+    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
+        return new RubyException(rubyClass);
+    }
+
+    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
+        return new RubyException(rubyClass, message, backtrace);
+    }
+
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
@@ -30,14 +78,14 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyException exception, NotProvided message) {
-            exception.initialize(nil());
+        public RubyBasicObject initialize(RubyBasicObject exception, NotProvided message) {
+            setMessage(exception, nil());
             return exception;
         }
 
         @Specialization(guards = "wasProvided(message)")
-        public RubyBasicObject initialize(RubyException exception, Object message) {
-            exception.initialize(message);
+        public RubyBasicObject initialize(RubyBasicObject exception, Object message) {
+            setMessage(exception, message);
             return exception;
         }
 
@@ -54,11 +102,11 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object backtrace(RubyException exception) {
+        public Object backtrace(RubyBasicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {
                 return readCustomBacktrace.execute(exception);
-            } else if (exception.getBacktrace() != null) {
-                return exception.asRubyStringArray();
+            } else if (getBacktrace(exception) != null) {
+                return asRubyStringArray(exception);
             } else {
                 return nil();
             }
@@ -75,14 +123,14 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyException exception, NotProvided offset) {
+        public RubyBasicObject captureBacktrace(RubyBasicObject exception, NotProvided offset) {
             return captureBacktrace(exception, 1);
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyException exception, int offset) {
+        public RubyBasicObject captureBacktrace(RubyBasicObject exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
-            exception.setBacktrace(backtrace);
+            setBacktrace(exception, backtrace);
             return nil();
         }
 
@@ -96,10 +144,18 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object message(RubyException exception) {
-            return exception.getMessage();
+        public Object message(RubyBasicObject exception) {
+            return getMessage(exception);
         }
 
     }
 
+    public static class ExceptionAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+            return createRubyException(rubyClass);
+        }
+
+    }
 }

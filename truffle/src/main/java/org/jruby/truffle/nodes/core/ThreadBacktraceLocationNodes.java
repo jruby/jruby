@@ -17,7 +17,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 
 import java.util.EnumSet;
 
@@ -35,7 +34,7 @@ public class ThreadBacktraceLocationNodes {
         THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
     }
 
-    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyClass rubyClass, Activation activation) {
+    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
         return new RubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_FACTORY.newInstance(activation));
     }
 
