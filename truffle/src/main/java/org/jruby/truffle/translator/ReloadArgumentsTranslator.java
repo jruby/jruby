@@ -67,6 +67,14 @@ public class ReloadArgumentsTranslator extends Translator {
             sequence.add(node.getRestArgNode().accept(this));
         }
 
+        if (node.getPostCount() > 0) {
+            System.err.println("WARNING: post args in zsuper not yet implemented at " + sourceSection.getShortDescription());
+        }
+
+        if (node.hasKwargs()) {
+            System.err.println("WARNING: kwargs in zsuper not yet implemented at " + sourceSection.getShortDescription());
+        }
+
         return SequenceNode.sequenceNoFlatten(context, sourceSection, sequence);
     }
 
