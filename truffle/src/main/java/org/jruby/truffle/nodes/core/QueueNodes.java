@@ -77,14 +77,7 @@ public abstract class QueueNodes {
         public RubyBasicObject push(RubyBasicObject self, final Object value) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
-                    queue.put(value);
-                    return SUCCESS;
-                }
-            });
-
+            queue.add(value);
             return self;
         }
 
