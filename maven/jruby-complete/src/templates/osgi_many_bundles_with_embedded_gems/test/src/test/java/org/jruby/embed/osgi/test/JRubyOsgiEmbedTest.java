@@ -26,8 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.embed.osgi.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
@@ -37,11 +36,6 @@ import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 import java.io.File;
 import java.net.URL;
 
-import javax.inject.Inject;
-
-import org.jruby.embed.LocalContextScope;
-import org.jruby.embed.LocalVariableBehavior;
-import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.osgi.OSGiIsolatedScriptingContainer;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -64,11 +58,13 @@ public class JRubyOsgiEmbedTest {
 
     @Configuration
     public Option[] config() {
-	return options(junitBundles(),
-		       systemProperty("org.ops4j.pax.url.mvn.localRepository").value(System.getProperty( "maven.repo.local" )),
-		       mavenBundle("org.jruby", "jruby-complete", System.getProperty("project.version")),
-		       mavenBundle("org.jruby.osgi", "gems-bundle", "1.0"),
-		       mavenBundle("org.jruby.osgi", "scripts-bundle", "1.0"));
+        return options(
+            junitBundles(),
+            systemProperty("org.ops4j.pax.url.mvn.localRepository").value(System.getProperty( "maven.repo.local" )),
+            mavenBundle("org.jruby", "jruby-complete", System.getProperty("project.version")),
+            mavenBundle("org.jruby.osgi", "gems-bundle", "1.0"),
+            mavenBundle("org.jruby.osgi", "scripts-bundle", "1.0")
+        );
     }
 
     @Test
@@ -80,27 +76,27 @@ public class JRubyOsgiEmbedTest {
         //System.setProperty( "jruby.debug.loadService", "true" );
         //System.setProperty( "jruby.native.enabled", "true" );
 
-	OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
+        OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
         jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
         jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
 
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
-        assertEquals( hello, "world" );
+        assertEquals( "world", hello );
 
         System.err.println();
         System.err.println();
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:classloader:/specifications\"]" );
+        assertEquals( "[\"uri:bundle://specifications\", \"uri:classloader:/specifications\"]", gemPath );
 
         // ensure we can load rake from the default gems
         boolean loaded = (Boolean) jruby.runScriptlet( "require 'rake'" );
         assertEquals(true, loaded);
 
         String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
-        assertEquals(list, "[\"rake\"]");
+        assertEquals( "[\"rake\"]", list );
 
         // ensure we have native working
         loaded = (Boolean) jruby.runScriptlet( "JRuby.runtime.posix.is_native" );
@@ -112,13 +108,13 @@ public class JRubyOsgiEmbedTest {
 
         jruby.runScriptlet( "require 'jar-dependencies'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
-        assertEquals(list, "[\"jar-dependencies\", \"jruby-openssl\", \"rake\"]");
+        assertEquals( "[\"jar-dependencies\", \"jruby-openssl\", \"rake\"]", list );
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
-        assertEquals(list, "[\"axiom-types\", \"coercible\", \"descendants_tracker\", \"equalizer\", \"ice_nine\", \"jar-dependencies\", \"jruby-openssl\", \"rake\", \"thread_safe\", \"virtus\"]");
+        assertEquals( "[\"axiom-types\", \"coercible\", \"descendants_tracker\", \"equalizer\", \"ice_nine\", \"jar-dependencies\", \"jruby-openssl\", \"rake\", \"thread_safe\", \"virtus\"]", list );
     }
 }
