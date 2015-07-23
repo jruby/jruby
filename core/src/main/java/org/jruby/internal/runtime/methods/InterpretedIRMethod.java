@@ -1,6 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
@@ -41,9 +42,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.signature = getStaticScope().getSignature();
 
-        if (!method.getManager().getInstanceConfig().getCompileMode().shouldJIT()) {
-            callCount = -1;
-        }
+        // -1 jit.threshold is way of having interpreter not promote full builds.
+        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
     }
 
     public IRScope getIRScope() {
