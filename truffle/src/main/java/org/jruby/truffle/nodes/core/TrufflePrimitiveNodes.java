@@ -15,8 +15,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -518,6 +520,22 @@ public abstract class TrufflePrimitiveNodes {
             return CoreLibrary.fitsIntoInteger(value);
         }
 
+    }
+
+    @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
+    public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
+
+        public SynchronizedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        // We must not allow to synchronize on boxed primitives.
+        @Specialization(guards = "isRubyProc(block)")
+        public Object synchronize(VirtualFrame frame, RubyBasicObject self, RubyBasicObject block) {
+            synchronized (self) {
+                return yield(frame, block);
+            }
+        }
     }
 
 }

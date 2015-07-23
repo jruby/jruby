@@ -24,7 +24,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Manages Ruby {@code Thread} objects.
@@ -33,10 +32,8 @@ public class ThreadManager {
 
     private final RubyContext context;
 
-    private final ReentrantLock globalLock = new ReentrantLock();
-
     private final RubyBasicObject rootThread;
-    private RubyBasicObject currentThread;
+    private final ThreadLocal<RubyBasicObject> currentThread = new ThreadLocal<RubyBasicObject>();
 
     private final Set<RubyBasicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
 
@@ -65,8 +62,7 @@ public class ThreadManager {
     @TruffleBoundary
     public void enterGlobalLock(RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        globalLock.lock();
-        currentThread = thread;
+        currentThread.set(thread);
     }
 
     /**
@@ -77,13 +73,7 @@ public class ThreadManager {
      */
     @TruffleBoundary
     public RubyBasicObject leaveGlobalLock() {
-        if (!globalLock.isHeldByCurrentThread()) {
-            throw new RuntimeException("You don't own this lock!");
-        }
-
-        final RubyBasicObject result = currentThread;
-        globalLock.unlock();
-        return result;
+        return currentThread.get();
     }
 
 
@@ -128,8 +118,7 @@ public class ThreadManager {
     }
 
     public RubyBasicObject getCurrentThread() {
-        assert globalLock.isHeldByCurrentThread() : "getCurrentThread() is only correct if holding the global lock";
-        return currentThread;
+        return currentThread.get();
     }
 
     public synchronized void registerThread(RubyBasicObject thread) {

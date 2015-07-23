@@ -152,12 +152,10 @@ class Rubinius::ByteArray
 
 end
 
-# Don't apply any synchronization at the moment
-
 module Rubinius
 
-  def self.synchronize(object)
-    yield
+  def self.synchronize(object, &block)
+    Truffle::Primitive.synchronized(object, &block)
   end
 
 end
