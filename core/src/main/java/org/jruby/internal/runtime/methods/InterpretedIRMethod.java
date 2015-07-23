@@ -41,7 +41,9 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.signature = getStaticScope().getSignature();
 
-        // FIXME: Enable no full build promotion option (perhaps piggy back JIT threshold)
+        if (!method.getManager().getInstanceConfig().getCompileMode().shouldJIT()) {
+            callCount = -1;
+        }
     }
 
     public IRScope getIRScope() {
