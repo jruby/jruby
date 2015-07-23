@@ -1773,7 +1773,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public long sleep(NotProvided duration) {
-            // TODO: this should actually be "forever".
             return doSleepMillis(Long.MAX_VALUE);
         }
 

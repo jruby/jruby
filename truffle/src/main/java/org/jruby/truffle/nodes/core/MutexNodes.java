@@ -198,8 +198,7 @@ public abstract class MutexNodes {
 
         @Specialization
         public long sleep(RubyBasicObject mutex, NotProvided duration) {
-            // TODO: this should actually be "forever".
-            return doSleepMillis(mutex, Integer.MAX_VALUE);
+            return doSleepMillis(mutex, Long.MAX_VALUE);
         }
 
         @Specialization(guards = "isNil(duration)")
