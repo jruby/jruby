@@ -16,7 +16,6 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -83,7 +82,7 @@ public class SafepointManager {
                 return; // interrupt me later
             }
 
-            SafepointAction deferredAction = assumptionInvalidated(currentNode, true, false);
+            SafepointAction deferredAction = assumptionInvalidated(currentNode, false);
 
             // We're now running again normally and can run deferred actions
             if (deferredAction != null) {
@@ -92,22 +91,17 @@ public class SafepointManager {
         }
     }
 
-    private SafepointAction assumptionInvalidated(Node currentNode, boolean isRubyThread, boolean isDrivingThread) {
+    private SafepointAction assumptionInvalidated(Node currentNode, boolean isDrivingThread) {
         // Read these while in the safepoint.
         SafepointAction deferredAction = deferred ? action : null;
 
-        RubyBasicObject thread = null;
-        if (isRubyThread) {
-            thread = context.getThreadManager().getCurrentThread();
-        }
-
-        step(currentNode, thread, isDrivingThread);
+        step(currentNode, isDrivingThread);
 
         return deferredAction;
     }
 
-    private void step(Node currentNode, RubyBasicObject thread, boolean isDrivingThread) {
-        assert RubyGuards.isRubyThread(thread);
+    private void step(Node currentNode, boolean isDrivingThread) {
+        final RubyBasicObject thread = context.getThreadManager().getCurrentThread();
 
         // wait other threads to reach their safepoint
         phaser.arriveAndAwaitAdvance();
@@ -183,7 +177,7 @@ public class SafepointManager {
         assumption.invalidate();
         interruptOtherThreads();
 
-        assumptionInvalidated(currentNode, isRubyThread, true);
+        assumptionInvalidated(currentNode, true);
     }
 
     public void pauseThreadAndExecuteLater(final Thread thread, RubyNode currentNode, final SafepointAction action) {
