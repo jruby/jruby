@@ -258,8 +258,8 @@ public abstract class TruffleInteropNodes {
         }
 
     }
-    // TODO: remove maxArgs - hits an assertion if maxArgs is removed - trying argumentsAsArray = true (CS)
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, argumentsAsArray = true)
+
+    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, argumentsAsArray = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -269,12 +269,17 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] arguments) {
+        public Object executeForeign(VirtualFrame frame, Object[] arguments) {
+            TruffleObject receiver = (TruffleObject) arguments[0];
+            Object[] args = new Object[arguments.length - 1];
+            for (int i = 1; i < arguments.length; i++) {
+                args[i - 1] = arguments[i];
+            }
             if (node == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.node = Message.createExecute(arguments.length).createNode();
+                this.node = Message.createExecute(args.length).createNode();
             }
-            return ForeignAccess.execute(node, frame, receiver, arguments);
+            return ForeignAccess.execute(node, frame, receiver, args);
         }
 
     }
@@ -309,7 +314,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public Object export(VirtualFrame frame, RubyBasicObject name,  TruffleObject object) {
+        public Object export(VirtualFrame frame, RubyBasicObject name, TruffleObject object) {
             getContext().exportObject(name, object);
             return object;
         }
