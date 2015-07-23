@@ -81,6 +81,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject begin;
     private IRubyObject end;
     private boolean isExclusive;
+    private boolean isInited = false;
 
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
@@ -230,11 +231,12 @@ public class RubyRange extends RubyObject {
         this.begin = begin;
         this.end = end;
         this.isExclusive = isExclusive;
+        this.isInited = true;
     }
     
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
-        if (!begin.isNil() || !end.isNil()) {
+        if (this.isInited) {
             throw getRuntime().newNameError("`initialize' called twice", "initialize");
         }
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
@@ -243,7 +245,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(required = 1, visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        if (!begin.isNil() || !end.isNil()) {
+        if (this.isInited) {
             throw context.runtime.newNameError("`initialize' called twice", "initialize");
         }
 
