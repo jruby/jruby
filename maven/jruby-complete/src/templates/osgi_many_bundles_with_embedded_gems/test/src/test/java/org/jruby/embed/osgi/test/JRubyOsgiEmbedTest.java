@@ -77,13 +77,13 @@ public class JRubyOsgiEmbedTest {
         System.err.println();
         System.err.println();
 
-	// System.setProperty( "jruby.debug.loadService", "true" );
-	//System.setProperty( "jruby.native.enabled", "true" );
+        //System.setProperty( "jruby.debug.loadService", "true" );
+        //System.setProperty( "jruby.native.enabled", "true" );
 
 	OSGiIsolatedScriptingContainer jruby = new OSGiIsolatedScriptingContainer();
-	jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
-	jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
-	
+        jruby.addBundleToLoadPath( "org.jruby.osgi.scripts-bundle" );
+        jruby.addBundleToGemPath( FrameworkUtil.getBundle( Gems.class ) );
+
         // run a script from LOAD_PATH
         String hello = (String) jruby.runScriptlet( "require 'hello'; Hello.say" );
         assertEquals( hello, "world" );
@@ -93,7 +93,7 @@ public class JRubyOsgiEmbedTest {
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\", \"uri:classloader:/specifications\", \"uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications\"]" );
+        assertEquals( gemPath, "[\"uri:bundle://specifications\"]" );
 
         // ensure we can load rake from the default gems
         boolean loaded = (Boolean) jruby.runScriptlet( "require 'rake'" );
@@ -110,7 +110,7 @@ public class JRubyOsgiEmbedTest {
         loaded = (Boolean) jruby.runScriptlet( "require 'openssl'" );
         assertEquals(true, loaded);
 
-	jruby.runScriptlet( "require 'jar-dependencies'" );
+        jruby.runScriptlet( "require 'jar-dependencies'" );
         list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\"]");
 
@@ -118,7 +118,7 @@ public class JRubyOsgiEmbedTest {
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
-	list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
+        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.inspect" );
         assertEquals(list, "[\"rake\", \"jruby-openssl\", \"jar-dependencies\", \"thread_safe\", \"descendants_tracker\", \"equalizer\", \"coercible\", \"ice_nine\", \"axiom-types\", \"virtus\"]");
     }
 }

@@ -34,6 +34,7 @@ import java.util.Map;
  */
 public class IsolatedScriptingContainer extends ScriptingContainer {
 
+    private static final String URI_CLASSLOADER = "uri:classloader:/";
     private static final String JRUBYDIR = "/.jrubydir";
     private static final String JRUBY_HOME = "/META-INF/jruby.home";
     
@@ -69,16 +70,18 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         if (cl == null) cl = Thread.currentThread().getContextClassLoader();
         setClassLoader( cl );
 
-        setLoadPaths( Arrays.asList( "uri:classloader:" ) );
+        setLoadPaths( Arrays.asList( URI_CLASSLOADER ) );
 
         // set the right jruby home
-        setHomeDirectory( "uri:classloader:" + JRUBY_HOME );
+        URL url = getResource(cl, JRUBY_HOME + JRUBYDIR);
+        if (url != null){
+            setHomeDirectory( URI_CLASSLOADER + JRUBY_HOME );
+        }
 
-        // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
-        runScriptlet("require 'rubygems/defaults/jruby';"
-                + "Gem::Specification.reset;"
-                + "Gem::Specification.add_dir 'uri:classloader:" + JRUBY_HOME + "/lib/ruby/gems/shared';"
-                + "Gem::Specification.add_dir 'uri:classloader:';");
+        url = getResource(cl, JRUBYDIR);
+        if (url != null){
+            setCurrentDirectory( URI_CLASSLOADER );
+        }
 
         // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
         setEnvironment(null);
@@ -87,11 +90,11 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     @Override
     public void setEnvironment(Map environment) {
         if (environment == null || !environment.containsKey("GEM_PATH")
-                || !environment.containsKey("GEM_HOME")|| !environment.containsKey("JARS_HOME")) {
+                || !environment.containsKey("GEM_HOME") || !environment.containsKey("JARS_HOME")) {
             Map<String,String> env = environment == null ? new HashMap<String,String>() : new HashMap<String,String>(environment);
-            if (!env.containsKey("GEM_PATH")) env.put("GEM_PATH", "uri:classloader://");
-            if (!env.containsKey("GEM_HOME")) env.put("GEM_HOME", "uri:classloader://");
-            if (!env.containsKey("JARS_HOME")) env.put("JARS_HOME", "uri:classloader://jars");
+            if (!env.containsKey("GEM_PATH")) env.put("GEM_PATH", URI_CLASSLOADER);
+            if (!env.containsKey("GEM_HOME")) env.put("GEM_HOME", URI_CLASSLOADER);
+            if (!env.containsKey("JARS_HOME")) env.put("JARS_HOME", URI_CLASSLOADER + "jars");
             super.setEnvironment(env);
         }
         else {
@@ -128,6 +131,14 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
             throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
         }
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
+    }
+
+    private URL getResource(ClassLoader cl, String ref) {
+        URL url = cl.getResource( ref );
+        if ( url == null && ref.startsWith( "/" ) ) {
+            url = cl.getResource( ref.substring( 1 ) );
+        }
+        return url;
     }
 
     protected void addGemPath(String uri) {
