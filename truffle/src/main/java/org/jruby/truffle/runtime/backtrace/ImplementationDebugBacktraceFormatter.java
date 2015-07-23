@@ -27,14 +27,14 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
 
     @Override
     public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
-        assert RubyGuards.isRubyException(exception);
-
         try {
             final List<Activation> activations = backtrace.getActivations();
 
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
+                assert RubyGuards.isRubyException(exception);
+
                 lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(exception.getLogicalClass()).getName()));
             }
 
