@@ -582,7 +582,7 @@ public class CoreLibrary {
 
     private RubyBasicObject defineModule(RubyBasicObject lexicalParent, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
-        return new RubyModule(context, moduleClass, lexicalParent, name, node);
+        return ModuleNodes.createRubyModule(context, moduleClass, lexicalParent, name, node);
     }
 
     public void initializeAfterMethodsAdded() {

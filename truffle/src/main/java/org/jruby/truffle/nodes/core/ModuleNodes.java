@@ -82,6 +82,10 @@ public abstract class ModuleNodes {
         return ((RubyModule) module).model;
     }
 
+    public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
+        return new RubyModule(context, selfClass, lexicalParent, name, currentNode);
+    }
+
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
@@ -1997,7 +2001,7 @@ public abstract class ModuleNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyModule(context, rubyClass, null, null, currentNode);
+            return createRubyModule(context, rubyClass, null, null, currentNode);
         }
 
     }

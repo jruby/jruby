@@ -52,7 +52,7 @@ public class DefineOrGetModuleNode extends RubyNode {
         RubyBasicObject definingModule;
 
         if (constant == null) {
-            definingModule = new RubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
+            definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
             if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((RubyBasicObject) module).isOnlyAModule()) {
