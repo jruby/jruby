@@ -63,7 +63,7 @@ public class RubyThread extends RubyBasicObject {
         }
     }
 
-    public ThreadFields fields;
+    public final ThreadFields fields;
 
     public RubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         super(rubyClass);

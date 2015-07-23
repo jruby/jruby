@@ -96,16 +96,15 @@ public abstract class FiberNodes {
     public static void start(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).thread = Thread.currentThread();
+        fiber.getContext().getThreadManager().initializeCurrentThread(getFields(fiber).rubyThread);
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).registerFiber(fiber);
         fiber.getContext().getSafepointManager().enterThread();
-        fiber.getContext().getThreadManager().enterGlobalLock(getFields(fiber).rubyThread);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).alive = false;
-        fiber.getContext().getThreadManager().leaveGlobalLock();
         fiber.getContext().getSafepointManager().leaveThread();
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).unregisterFiber(fiber);
         getFields(fiber).thread = null;

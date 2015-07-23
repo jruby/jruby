@@ -44,7 +44,6 @@ public class ThreadManager {
     }
 
     public void initialize() {
-        registerThread(rootThread);
         ThreadNodes.start(rootThread);
         FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
     }
@@ -52,30 +51,6 @@ public class ThreadManager {
     public RubyBasicObject getRootThread() {
         return rootThread;
     }
-
-    /**
-     * Enters the global lock. Reentrant, but be aware that Ruby threads are not one-to-one with
-     * Java threads. Needs to be told which Ruby thread is becoming active as it can't work this out
-     * from the current Java thread. Remember to call {@link #leaveGlobalLock} again before
-     * blocking.
-     */
-    @TruffleBoundary
-    public void enterGlobalLock(RubyBasicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        currentThread.set(thread);
-    }
-
-    /**
-     * Leaves the global lock, returning the Ruby thread which has just stopped being the current
-     * thread. Remember to call {@link #enterGlobalLock} again with that returned thread before
-     * executing any Ruby code. You probably want to use this with a {@code finally} statement to
-     * make sure that happens
-     */
-    @TruffleBoundary
-    public RubyBasicObject leaveGlobalLock() {
-        return currentThread.get();
-    }
-
 
 
     public static interface BlockingActionWithoutGlobalLock<T> {
@@ -97,7 +72,7 @@ public class ThreadManager {
         T result = null;
 
         do {
-            final RubyBasicObject runningThread = leaveGlobalLock();
+            final RubyBasicObject runningThread = getCurrentThread();
             ThreadNodes.setStatus(runningThread, Status.SLEEP);
 
             try {
@@ -105,8 +80,6 @@ public class ThreadManager {
                     result = action.block();
                 } finally {
                     ThreadNodes.setStatus(runningThread, Status.RUN);
-                    // We need to enter the global lock before anything else!
-                    enterGlobalLock(runningThread);
                 }
             } catch (InterruptedException e) {
                 // We were interrupted, possibly by the SafepointManager.
@@ -117,18 +90,25 @@ public class ThreadManager {
         return result;
     }
 
+    public void initializeCurrentThread(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
+        currentThread.set(thread);
+    }
+
     public RubyBasicObject getCurrentThread() {
         return currentThread.get();
     }
 
     public synchronized void registerThread(RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
+        initializeCurrentThread(thread);
         runningRubyThreads.add(thread);
     }
 
     public synchronized void unregisterThread(RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.remove(thread);
+        currentThread.set(null);
     }
 
     public void shutdown() {

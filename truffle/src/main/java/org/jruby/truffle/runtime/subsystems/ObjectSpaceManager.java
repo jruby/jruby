@@ -105,8 +105,7 @@ public class ObjectSpaceManager {
         // Run in a loop
 
         while (true) {
-            // Leave the global lock and wait on the finalizer queue
-
+            // Wait on the finalizer queue
             FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {

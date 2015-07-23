@@ -143,14 +143,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject vmGCStart() {
-            final RubyBasicObject runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-            try {
-                System.gc();
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
-
+            System.gc();
             return nil();
         }
 
