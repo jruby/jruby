@@ -53,7 +53,7 @@ public class ThreadManager {
     }
 
 
-    public static interface BlockingActionWithoutGlobalLock<T> {
+    public static interface BlockingAction<T> {
         public static boolean SUCCESS = true;
 
         T block() throws InterruptedException;
@@ -68,7 +68,7 @@ public class ThreadManager {
      * @return the first non-null return value from {@code action}
      */
     @TruffleBoundary
-    public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runUntilResult(BlockingAction<T> action) {
         T result = null;
 
         do {

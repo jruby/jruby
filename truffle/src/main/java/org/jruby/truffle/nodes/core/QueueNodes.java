@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.object.BasicObjectType;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.util.EnumSet;
@@ -77,7 +77,7 @@ public abstract class QueueNodes {
         public RubyBasicObject push(RubyBasicObject self, final Object value) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     queue.put(value);
@@ -110,7 +110,7 @@ public abstract class QueueNodes {
         public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Object>() {
+            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -213,7 +213,7 @@ public abstract class QueueNodes {
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

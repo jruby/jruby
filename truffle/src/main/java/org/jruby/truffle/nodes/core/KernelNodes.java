@@ -63,7 +63,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
@@ -685,7 +685,7 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
+            int exitCode = context.getThreadManager().runUntilResult(new BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return process.waitFor();
@@ -826,7 +826,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
-            final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(new BlockingAction<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1828,7 +1828,7 @@ public abstract class KernelNodes {
 
             final long start = System.currentTimeMillis();
 
-            long slept = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
+            long slept = context.getThreadManager().runUntilResult(new BlockingAction<Long>() {
                 @Override
                 public Long block() throws InterruptedException {
                     long now = System.currentTimeMillis();

@@ -123,7 +123,7 @@ public abstract class FiberNodes {
     private static Object[] waitForResume(final RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final FiberMessage message = fiber.getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<FiberMessage>() {
+        final FiberMessage message = fiber.getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 return getFields(fiber).messageQueue.take();

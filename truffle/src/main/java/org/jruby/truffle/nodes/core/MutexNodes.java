@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.object.BasicObjectType;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
@@ -86,7 +86,7 @@ public abstract class MutexNodes {
                 throw new RaiseException(context.getCoreLibrary().threadError("deadlock; recursive locking", currentNode));
             }
 
-            context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            context.getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

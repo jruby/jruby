@@ -125,7 +125,7 @@ public abstract class ThreadNodes {
 
     public static void join(final RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        getFields(((RubyThread) thread)).manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+        getFields(((RubyThread) thread)).manager.runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 getFields(((RubyThread) thread)).finished.await();
@@ -141,7 +141,7 @@ public abstract class ThreadNodes {
     public static boolean join(final RubyBasicObject thread, final int timeoutInMillis) {
         assert RubyGuards.isRubyThread(thread);
         final long start = System.currentTimeMillis();
-        final boolean joined = getFields(((RubyThread) thread)).manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+        final boolean joined = getFields(((RubyThread) thread)).manager.runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 long now = System.currentTimeMillis();
