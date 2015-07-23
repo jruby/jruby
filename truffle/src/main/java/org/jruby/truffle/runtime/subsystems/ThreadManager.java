@@ -113,7 +113,9 @@ public class ThreadManager {
 
     public void shutdown() {
         try {
-            killOtherThreads();
+            if (runningRubyThreads.size() > 1) {
+                killOtherThreads();
+            }
         } finally {
             ThreadNodes.getFiberManager(rootThread).shutdown();
             FiberNodes.cleanup(ThreadNodes.getRootFiber(rootThread));
