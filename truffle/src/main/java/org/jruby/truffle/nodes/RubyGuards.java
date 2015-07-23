@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
@@ -74,8 +75,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyArray(RubyBasicObject value) {
-        //return value.getDynamicObject().getShape().getObjectType() == ArrayNodes.ARRAY_TYPE;
-        return value instanceof RubyArray;
+        return ArrayNodes.ARRAY_LAYOUT.isArray(value.getDynamicObject());
     }
 
     public static boolean isRubyBinding(Object value) {
