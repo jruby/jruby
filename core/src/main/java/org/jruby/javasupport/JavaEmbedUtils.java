@@ -28,6 +28,7 @@ package org.jruby.javasupport;
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -40,10 +41,11 @@ import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
+import org.jruby.util.UriLikePathHelper;
 
 /**
  * Utility functions to help embedders out.   These function consolidate logic that is
@@ -93,7 +95,6 @@ public class JavaEmbedUtils {
     public static Ruby initialize(List<String> loadPaths, RubyInstanceConfig config) {
         Ruby runtime = Ruby.newInstance(config);
         runtime.getLoadService().addPaths(loadPaths);
-        runtime.getLoadService().require("java");
 
         return runtime;
     }
@@ -229,6 +230,15 @@ public class JavaEmbedUtils {
         }
     }
 
+    public static void addLoadPath(Ruby runtime, ClassLoader cl) {
+        runtime.getLoadService().addPaths(new UriLikePathHelper(cl).getUriLikePath());
+    }
+
+    public static void addGemPath(Ruby runtime, ClassLoader cl) {
+        String uri = new UriLikePathHelper(cl).getUriLikePath();
+        runtime.evalScriptlet("Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+    }
+
     /**
      * Dispose of the runtime you initialized.
      *
@@ -236,6 +246,10 @@ public class JavaEmbedUtils {
      */
     public static void terminate(Ruby runtime) {
         runtime.tearDown();
+        try {
+            runtime.getJRubyClassLoader().close();
+        } catch (IOException weTriedToCloseIt) {
+        }
     }
 
     /**

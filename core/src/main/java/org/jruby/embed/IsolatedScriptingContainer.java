@@ -3,7 +3,11 @@ package org.jruby.embed;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import org.jruby.util.UriLikePathHelper;
 
 /**
  * the IsolatedScriptingContainer detects the whether it is used with
@@ -70,15 +74,18 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         if (cl == null) cl = Thread.currentThread().getContextClassLoader();
         setClassLoader( cl );
 
-        setLoadPaths( Arrays.asList( URI_CLASSLOADER ) );
+        List<String> loadPaths = new LinkedList<String>();
+        loadPaths.add(URI_CLASSLOADER);
+        setLoadPaths(loadPaths);
 
         // set the right jruby home
-        URL url = getResource(cl, JRUBY_HOME + JRUBYDIR);
+        UriLikePathHelper uriPath = new UriLikePathHelper(cl);
+        URL url = uriPath.getResource(JRUBY_HOME + JRUBYDIR);
         if (url != null){
             setHomeDirectory( URI_CLASSLOADER + JRUBY_HOME );
         }
 
-        url = getResource(cl, JRUBYDIR);
+        url = uriPath.getResource(JRUBYDIR);
         if (url != null){
             setCurrentDirectory( URI_CLASSLOADER );
         }
@@ -102,43 +109,26 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
         }
     }
 
-    public void addLoadPath( ClassLoader cl ) {
-        addLoadPath( cl, JRUBYDIR );
+    public void addLoadPath(ClassLoader cl) {
+        addLoadPath(new UriLikePathHelper(cl).getUriLikePath());
     }
 
     public void addLoadPath( ClassLoader cl, String ref ) {
-        addLoadPath(createUri(cl, ref));
+        addLoadPath(new UriLikePathHelper(cl).getUriLikePath(ref));
     }
 
     protected void addLoadPath(String uri) {
-        runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
+        if (!getLoadPaths().contains(uri)) {
+            getLoadPaths().add(uri);
+        }
     }
 
     public void addGemPath( ClassLoader cl ) {
-        addGemPath( cl, "/specifications" + JRUBYDIR );
+        addGemPath(new UriLikePathHelper(cl).getUriLikePath());
     }
 
     public void addGemPath( ClassLoader cl, String ref ) {
-        addGemPath(createUri(cl, ref));
-    }
-
-    private String createUri(ClassLoader cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-
-    private URL getResource(ClassLoader cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        return url;
+        addGemPath(new UriLikePathHelper(cl).getUriLikePath(ref));
     }
 
     protected void addGemPath(String uri) {
