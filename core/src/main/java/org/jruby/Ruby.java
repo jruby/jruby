@@ -177,6 +177,7 @@ import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -5105,7 +5106,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private WeakHashMap<RubyString, WeakReference<RubyString>> dedupMap = new WeakHashMap<RubyString, WeakReference<RubyString>>();
+    private Map<RubyString, WeakReference<RubyString>> dedupMap = Collections.synchronizedMap(new WeakHashMap<RubyString, WeakReference<RubyString>>());
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
