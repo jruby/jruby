@@ -32,7 +32,7 @@ public class RubyFiber extends RubyBasicObject {
         public final RubyBasicObject rubyThread;
         @CompilationFinal public String name;
         public final boolean isRootFiber;
-        // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
+        // we need 2 slots when the FiberManager sends the kill message and there is another message unprocessed
         public final BlockingQueue<FiberNodes.FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
         public volatile RubyBasicObject lastResumedByFiber = null;
         public volatile boolean alive = true;

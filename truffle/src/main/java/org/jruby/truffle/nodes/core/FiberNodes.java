@@ -67,7 +67,13 @@ public abstract class FiberNodes {
             public void run() {
                 try {
                     final Object[] args = waitForResume(fiber);
-                    final Object result = ProcNodes.rootCall(block, args);
+                    final Object result;
+                    try {
+                        result = ProcNodes.rootCall(block, args);
+                    } finally {
+                        // Make sure that other fibers notice we are dead before they gain control back
+                        getFields(fiber).alive = false;
+                    }
                     resume(fiber, getFields(fiber).lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     assert !getFields(fiber).isRootFiber;
