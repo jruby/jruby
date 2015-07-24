@@ -13,44 +13,58 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
+    @Layout
+    public interface TimeLayout {
+
+        DynamicObject createTime(DateTime dateTime, Object offset);
+
+        boolean isTime(DynamicObject object);
+
+        DateTime getDateTime(DynamicObject object);
+
+        void setDateTime(DynamicObject object, DateTime value);
+
+        Object getOffset(DynamicObject object);
+
+        void setOffset(DynamicObject object, Object value);
+
+    }
+
+    public static final TimeLayout TIME_LAYOUT = TimeLayoutImpl.INSTANCE;
+
     private static final DateTime ZERO = new DateTime(0);
 
     public static DateTime getDateTime(RubyBasicObject time) {
-        assert RubyGuards.isRubyTime(time);
-        return ((RubyTime) time).dateTime;
+        return TIME_LAYOUT.getDateTime(time.getDynamicObject());
     }
 
     public static void setDateTime(RubyBasicObject time, DateTime dateTime) {
-        assert RubyGuards.isRubyTime(time);
-        ((RubyTime) time).dateTime = dateTime;
+        TIME_LAYOUT.setDateTime(time.getDynamicObject(), dateTime);
     }
 
     public static Object getOffset(RubyBasicObject time) {
-        assert RubyGuards.isRubyTime(time);
-        return ((RubyTime) time).offset;
+        return TIME_LAYOUT.getOffset(time.getDynamicObject());
     }
 
     public static void setOffset(RubyBasicObject time, Object offset) {
-        assert RubyGuards.isRubyTime(time);
-        assert offset != null;
-        ((RubyTime) time).offset = offset;
+        TIME_LAYOUT.setOffset(time.getDynamicObject(), offset);
     }
 
     public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
-        return new RubyTime(timeClass, dateTime, offset);
+        return new RubyBasicObject(timeClass, TIME_LAYOUT.createTime(dateTime, offset));
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

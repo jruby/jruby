@@ -28,6 +28,7 @@ public class PropertyBuilder {
     }
 
     public PropertyModel build() {
+        assert type != null;
         return new PropertyModel(name, hasGetter, hasSetter, type, nullable == NullableState.NULLABLE);
     }
 

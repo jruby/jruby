@@ -169,8 +169,8 @@ public abstract class RubyGuards {
         return encodingConverter instanceof RubyEncodingConverter;
     }
 
-    public static boolean isRubyTime(RubyBasicObject time) {
-        return time instanceof RubyTime;
+    public static boolean isRubyTime(RubyBasicObject object) {
+        return TimeNodes.TIME_LAYOUT.isTime(object.getDynamicObject());
     }
 
     public static boolean isRubyException(Object object) {

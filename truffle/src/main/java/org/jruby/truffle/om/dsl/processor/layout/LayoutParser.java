@@ -118,7 +118,7 @@ public class LayoutParser {
         assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.toString());
         assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
 
-        final String name = methodElement.getSimpleName().toString().substring("get".length()).toLowerCase();
+        final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
         property.setHasGetter(true);
         setPropertyType(property, methodElement.getReturnType());
@@ -132,11 +132,15 @@ public class LayoutParser {
         assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
         assert methodElement.getParameters().get(1).getSimpleName().toString().equals("value");
 
-        final String name = methodElement.getSimpleName().toString().substring("get".length()).toLowerCase();
+        final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
         property.setHasSetter(true);
         setPropertyType(property, methodElement.getParameters().get(1).asType());
         parseNullable(property, methodElement);
+    }
+
+    private String titleToCamel(String name) {
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
     private void parseNullable(PropertyBuilder property, Element element) {

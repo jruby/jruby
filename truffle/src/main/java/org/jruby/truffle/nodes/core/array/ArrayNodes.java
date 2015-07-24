@@ -73,11 +73,11 @@ public abstract class ArrayNodes {
         Object getStore(DynamicObject object);
 
         @Nullable
-        void setStore(DynamicObject object, Object store);
+        void setStore(DynamicObject object, Object value);
 
         int getSize(DynamicObject object);
 
-        void setSize(DynamicObject object, int size);
+        void setSize(DynamicObject object, int value);
 
     }
 
