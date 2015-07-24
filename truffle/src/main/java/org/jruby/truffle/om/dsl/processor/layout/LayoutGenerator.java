@@ -25,16 +25,16 @@ public class LayoutGenerator {
     public void generate(PrintStream stream) {
         stream.printf("package %s;\n", layout.getPackageName());
         stream.println();
+        stream.println("import java.util.EnumSet;");
         stream.println("import com.oracle.truffle.api.object.*;");
         stream.println("import org.jruby.truffle.om.dsl.api.UnexpectedLayoutRefusalException;");
-        stream.println("import java.util.EnumSet;");
         stream.printf("import %s;\n", layout.getInterfaceFullName());
         stream.println();
         stream.printf("public class %sLayoutImpl implements %sLayout {\n", layout.getName(), layout.getName());
         stream.println("    ");
         stream.printf("    public static final %sLayout INSTANCE = new %sLayoutImpl();\n", layout.getName(), layout.getName());
         stream.println("    ");
-        stream.printf("    public static class %sType extends ObjectType {\n", layout.getName());
+        stream.printf("    private static class %sType extends ObjectType {\n", layout.getName());
         stream.println("        ");
         stream.println("    }");
         stream.println("    ");

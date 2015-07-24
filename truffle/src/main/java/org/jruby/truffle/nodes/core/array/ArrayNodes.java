@@ -62,7 +62,7 @@ import java.util.Random;
 public abstract class ArrayNodes {
 
     @Layout
-    public static interface ArrayLayout {
+    public interface ArrayLayout {
 
         DynamicObject createArray(Object store, int size);
 
