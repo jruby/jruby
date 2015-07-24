@@ -1654,8 +1654,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // argument is relative.
         if (args.length == 2 && !args[1].isNil()) {
             // TODO maybe combine this with get_path method
-            if ((args[1] instanceof RubyString) && args[1].asJavaString().startsWith("uri:")) {
-                cwd = args[1].asJavaString();
+            String path = args[1].toString();
+            if (path.startsWith("uri:")) {
+                cwd = path;
             } else {
                 cwd = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getUnicodeValue();
     
