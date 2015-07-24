@@ -111,8 +111,7 @@ class Gem::Specification
       stuff = [ 'uri:classloader://specifications' ] + JRuby::Util.classloader_resources("specifications")
       # some classloader return directory info. use only the "protocols"
       # which jruby understands
-      stuff.select! { |s| File.directory?( s ) }
-      stuff
+      stuff.select { |s| File.directory?( s ) }
     end
   end
 end
