@@ -122,8 +122,12 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == StringNodes.STRING_TYPE;
     }
 
-    public static boolean isRubyEncoding(Object value) {
-        return value instanceof RubyEncoding;
+    public static boolean isRubyEncoding(Object object) {
+        return (object instanceof RubyBasicObject) && isRubyEncoding((RubyBasicObject) object);
+    }
+
+    public static boolean isRubyEncoding(RubyBasicObject object) {
+        return EncodingNodes.ENCODING_LAYOUT.isEncoding(object.getDynamicObject());
     }
 
     public static boolean isRubySymbol(Object value) {

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -24,10 +25,10 @@ import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -37,6 +38,23 @@ import java.util.Map;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
+
+    @Layout
+    public interface EncodingLayout {
+
+        DynamicObject createEncoding(Encoding encoding, ByteList name, boolean dummy);
+
+        boolean isEncoding(DynamicObject object);
+
+        Encoding getEncoding(DynamicObject object);
+
+        ByteList getName(DynamicObject object);
+
+        boolean getDummy(DynamicObject object);
+
+    }
+
+    public static final EncodingLayout ENCODING_LAYOUT = EncodingLayoutImpl.INSTANCE;
 
     // Both are mutated only in CoreLibrary.initializeEncodingConstants().
     private static RubyBasicObject[] encodingList = new RubyBasicObject[EncodingDB.getEncodings().size()];
@@ -74,18 +92,15 @@ public abstract class EncodingNodes {
     }
 
     public static Encoding getEncoding(RubyBasicObject encoding) {
-        assert RubyGuards.isRubyEncoding(encoding);
-        return ((RubyEncoding) encoding).encoding;
+        return ENCODING_LAYOUT.getEncoding(encoding.getDynamicObject());
     }
 
     public static ByteList getName(RubyBasicObject encoding) {
-        assert RubyGuards.isRubyEncoding(encoding);
-        return ((RubyEncoding) encoding).name;
+        return ENCODING_LAYOUT.getName(encoding.getDynamicObject());
     }
 
     public static boolean isDummy(RubyBasicObject encoding) {
-        assert RubyGuards.isRubyEncoding(encoding);
-        return ((RubyEncoding) encoding).dummy;
+        return ENCODING_LAYOUT.getDummy(encoding.getDynamicObject());
     }
 
     public static RubyBasicObject[] cloneEncodingList() {
@@ -97,7 +112,7 @@ public abstract class EncodingNodes {
     }
 
     public static RubyBasicObject createRubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return new RubyEncoding(encodingClass, encoding, name, dummy);
+        return new RubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encoding, name, dummy));
     }
 
     @CoreMethod(names = "ascii_compatible?")
