@@ -65,7 +65,7 @@ module Rubinius::FFI::Library
     suffixes.each do |suffix|
       if caller[-suffix.length, suffix.length] == suffix
         if Rubinius::FFI::Platform::POSIX.respond_to? mname
-          define_method mname, Rubinius::FFI::Platform::POSIX.method(mname)
+          define_method mname, &Rubinius::FFI::Platform::POSIX.method(mname)
           module_function mname
           return
         end

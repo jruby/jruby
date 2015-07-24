@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -23,6 +24,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -43,10 +45,13 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
+import org.jruby.truffle.nodes.core.UnboundMethodNodes.BindNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -1065,9 +1070,24 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyMethod(method)")
-        public RubyBasicObject defineMethodMethod(RubyBasicObject module, String name, RubyBasicObject method, NotProvided block) {
-            getModel(module).addMethod(this, MethodNodes.getMethod(method).withName(name));
+        @Specialization(guards = "isRubyMethod(methodObject)")
+        public RubyBasicObject defineMethodMethod(RubyBasicObject module, String name, RubyBasicObject methodObject, NotProvided block,
+                @Cached("createCanBindMethodToModuleNode()") CanBindMethodToModuleNode canBindMethodToModuleNode) {
+            final InternalMethod method = MethodNodes.getMethod(methodObject);
+
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
+                CompilerDirectives.transferToInterpreter();
+                final RubyBasicObject declaringModule = method.getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "can't bind singleton method to a different class", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "class must be a subclass of " + ModuleNodes.getModel(declaringModule).getName(), this));
+                }
+            }
+
+            getModel(module).addMethod(this, method.withName(name));
             return getSymbol(name);
         }
 
@@ -1107,6 +1127,10 @@ public abstract class ModuleNodes {
 
             getModel(module).addMethod(this, method);
             return getSymbol(name);
+        }
+
+        protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
+            return CanBindMethodToModuleNodeGen.create(getContext(), getSourceSection(), null, null);
         }
 
     }
