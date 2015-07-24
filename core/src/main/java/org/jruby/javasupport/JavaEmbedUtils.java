@@ -28,7 +28,6 @@ package org.jruby.javasupport;
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 

@@ -45,7 +45,7 @@ public class UriLikePathHelper {
     }
     
     public String getUriLikePath() {
-        return createUri(".jrubydir");
+        return createUri("/.jrubydir");
     }
 
     public String getUriLikePath(String ref) {

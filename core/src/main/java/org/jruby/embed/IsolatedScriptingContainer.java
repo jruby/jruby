@@ -124,7 +124,7 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     }
 
     public void addGemPath( ClassLoader cl ) {
-        addGemPath(new UriLikePathHelper(cl).getUriLikePath());
+        addGemPath(new UriLikePathHelper(cl).getUriLikePath("/specifications" + JRUBYDIR));
     }
 
     public void addGemPath( ClassLoader cl, String ref ) {
