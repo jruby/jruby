@@ -4,8 +4,8 @@ module TimeSpecs
 
   class MethodHolder
     class << self
-      define_method(:now, &::Time.method(:now))
-      define_method(:new, &::Time.method(:new))
+      define_method(:now, &Time.method(:now))
+      define_method(:new, &Time.method(:new))
     end
   end
 
