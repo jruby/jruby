@@ -246,10 +246,6 @@ public class JavaEmbedUtils {
      */
     public static void terminate(Ruby runtime) {
         runtime.tearDown();
-        try {
-            runtime.getJRubyClassLoader().close();
-        } catch (IOException weTriedToCloseIt) {
-        }
     }
 
     /**
