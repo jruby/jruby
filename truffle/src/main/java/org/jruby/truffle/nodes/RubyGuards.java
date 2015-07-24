@@ -182,7 +182,7 @@ public abstract class RubyGuards {
         return value instanceof RubyProc;
     }
     public static boolean isRubyEncodingConverter(RubyBasicObject encodingConverter) {
-        return encodingConverter instanceof RubyEncodingConverter;
+        return EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.isEncodingConverter(encodingConverter.getDynamicObject());
     }
 
     public static boolean isRubyTime(RubyBasicObject object) {

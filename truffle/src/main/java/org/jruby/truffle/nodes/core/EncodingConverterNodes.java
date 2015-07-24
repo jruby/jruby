@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -27,29 +28,43 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
 
+    @Layout
+    public interface EncodingConverterLayout {
+
+        DynamicObject createEncodingConverter(@Nullable EConv econv);
+
+        boolean isEncodingConverter(DynamicObject object);
+
+        @Nullable
+        EConv getEconv(DynamicObject object);
+
+        @Nullable
+        void setEconv(DynamicObject object, EConv econv);
+
+    }
+
+    public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
+
     public static EConv getEConv(RubyBasicObject encodingConverter) {
-        return getEconv(((RubyEncodingConverter) encodingConverter));
+        return ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter.getDynamicObject());
     }
 
     public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
-        ((RubyEncodingConverter) encodingConverter).econv = econv;
+        ENCODING_CONVERTER_LAYOUT.setEconv(encodingConverter.getDynamicObject(), econv);
     }
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
-        return new RubyEncodingConverter(rubyClass, econv);
-    }
-
-    public static EConv getEconv(RubyEncodingConverter encodingConverter) {
-        return encodingConverter.econv;
+        return new RubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(econv));
     }
 
     @RubiniusOnly
