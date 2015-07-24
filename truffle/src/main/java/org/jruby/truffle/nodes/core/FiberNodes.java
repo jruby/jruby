@@ -176,10 +176,8 @@ public abstract class FiberNodes {
     }
 
     public static boolean isAlive(RubyBasicObject fiber) {
-        // TODO CS 2-Feb-15 race conditions (but everything in JRuby+Truffle is currently a race condition)
-        // TODO CS 2-Feb-15 should just be alive?
         assert RubyGuards.isRubyFiber(fiber);
-        return getFields(fiber).alive || !getFields(fiber).messageQueue.isEmpty();
+        return getFields(fiber).alive;
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
