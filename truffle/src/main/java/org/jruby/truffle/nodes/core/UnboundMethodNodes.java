@@ -128,7 +128,7 @@ public abstract class UnboundMethodNodes {
         public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
             final RubyBasicObject objectMetaClass = metaClass(frame, object);
 
-            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
                 final RubyBasicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
                 if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {

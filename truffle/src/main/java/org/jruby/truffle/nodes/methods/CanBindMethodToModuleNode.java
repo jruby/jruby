@@ -31,12 +31,12 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract boolean executeCanBindMethodToModule(VirtualFrame frame, InternalMethod method, RubyBasicObject module);
+    public abstract boolean executeCanBindMethodToModule(InternalMethod method, RubyBasicObject module);
 
     @Specialization(
             guards = { "isRubyModule(module)", "method.getDeclaringModule() == declaringModule", "module == cachedModule" },
             limit = "getCacheLimit()")
-    protected boolean canBindMethodToCached(VirtualFrame frame, InternalMethod method, RubyBasicObject module,
+    protected boolean canBindMethodToCached(InternalMethod method, RubyBasicObject module,
             @Cached("method.getDeclaringModule()") RubyBasicObject declaringModule,
             @Cached("module") RubyBasicObject cachedModule,
             @Cached("canBindMethodTo(declaringModule, cachedModule)") boolean canBindMethodTo) {
@@ -44,7 +44,7 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyModule(module)")
-    protected boolean canBindMethodToUncached(VirtualFrame frame, InternalMethod method, RubyBasicObject module) {
+    protected boolean canBindMethodToUncached(InternalMethod method, RubyBasicObject module) {
         final RubyBasicObject declaringModule = method.getDeclaringModule();
         return canBindMethodTo(declaringModule, module);
     }
