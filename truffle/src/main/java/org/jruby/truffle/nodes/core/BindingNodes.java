@@ -17,6 +17,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -24,36 +26,61 @@ import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
+import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
+
+    @Layout
+    public interface BindingLayout {
+
+        DynamicObject createBinding(@Nullable Object self, @Nullable MaterializedFrame frame);
+
+        boolean isBinding(DynamicObject object);
+
+        @Nullable
+        Object getSelf(DynamicObject object);
+
+        @Nullable
+        void setSelf(DynamicObject object, Object self);
+
+        @Nullable
+        MaterializedFrame getFrame(DynamicObject object);
+
+        @Nullable
+        void setFrame(DynamicObject object, MaterializedFrame frame);
+
+    }
+
+    public static final BindingLayout BINDING_LAYOUT = BindingLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass) {
         return createRubyBinding(bindingClass, null, null);
     }
 
     public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
-        return new RubyBinding(bindingClass, self, frame);
+        return new RubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(self, frame));
     }
 
     public static void setSelfAndFrame(RubyBasicObject binding, Object self, MaterializedFrame frame) {
-        ((RubyBinding) binding).self = self;
-        ((RubyBinding) binding).frame = frame;
+        BINDING_LAYOUT.setSelf(binding.getDynamicObject(), self);
+        BINDING_LAYOUT.setFrame(binding.getDynamicObject(), frame);
     }
 
     public static Object getSelf(RubyBasicObject binding) {
-        return ((RubyBinding) binding).self;
+        return BINDING_LAYOUT.getSelf(binding.getDynamicObject());
     }
 
     public static MaterializedFrame getFrame(RubyBasicObject binding) {
-        return ((RubyBinding) binding).frame;
+        return BINDING_LAYOUT.getFrame(binding.getDynamicObject());
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)
@@ -289,5 +316,13 @@ public abstract class BindingNodes {
             return array;
         }
     }
+
+    public static class BindingAllocator implements Allocator {
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+            return BindingNodes.createRubyBinding(rubyClass);
+        }
+    }
+
 
 }

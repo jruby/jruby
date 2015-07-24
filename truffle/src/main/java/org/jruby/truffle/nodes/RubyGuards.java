@@ -78,8 +78,8 @@ public abstract class RubyGuards {
         return ArrayNodes.ARRAY_LAYOUT.isArray(value.getDynamicObject());
     }
 
-    public static boolean isRubyBinding(Object value) {
-        return value instanceof RubyBinding;
+    public static boolean isRubyBinding(RubyBasicObject object) {
+        return BindingNodes.BINDING_LAYOUT.isBinding(object.getDynamicObject());
     }
 
     public static boolean isRubyClass(Object value) {

@@ -298,7 +298,7 @@ public class CoreLibrary {
         // Classes defined in Object
 
         arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
-        bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
+        bindingClass = defineClass("Binding", new BindingNodes.BindingAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
