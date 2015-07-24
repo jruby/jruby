@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  * {@link DynamicObject}.
  *
  * <pre>
- * @@Layout
+ * {@literal@}Layout
  * public interface RectLayout {
  *    ...
  * }
@@ -61,6 +61,21 @@ import java.lang.annotation.Target;
  *
  * <pre>
  * RectLayout rectLayout = RectLayoutImpl.INSTANCE;
+ * </pre>
+ *
+ * Properties can are non-nullable by default - they cannot contain null values
+ * and attempting to set them to null in the constructor method or a setter
+ * is an assertion failure.
+ *
+ * Properties can be marked as nullable by annotating them with
+ * {@link Nullable}. All references to the property - constructor parameter,
+ * getter and setter, must all have the {@link Nullable} annotation or none of
+ * them. Properties with primitive types cannot be nullable.
+ *
+ * <pre>
+ * DynamicObject createWidget({@literal@}Nullable Object foo);
+ * {@literal@}Nullable Object getFoo(DynamicObject object);
+ * {@literal@}Nullable void setFoo(DynamicObject object, Object value);
  * </pre>
  *
  * {@link Layout} annotations are processed by {@link OMProcessor}.

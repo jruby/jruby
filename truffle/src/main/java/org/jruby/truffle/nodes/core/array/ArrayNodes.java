@@ -40,6 +40,7 @@ import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
@@ -64,12 +65,14 @@ public abstract class ArrayNodes {
     @Layout
     public interface ArrayLayout {
 
-        DynamicObject createArray(Object store, int size);
+        DynamicObject createArray(@Nullable Object store, int size);
 
         boolean isArray(DynamicObject object);
 
+        @Nullable
         Object getStore(DynamicObject object);
 
+        @Nullable
         void setStore(DynamicObject object, Object store);
 
         int getSize(DynamicObject object);

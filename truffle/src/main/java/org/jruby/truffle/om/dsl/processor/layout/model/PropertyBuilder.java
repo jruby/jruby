@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.om.dsl.processor.layout.model;
 
-import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
-
 import javax.lang.model.type.TypeMirror;
 
 public class PropertyBuilder {
@@ -19,6 +17,7 @@ public class PropertyBuilder {
     private boolean hasGetter;
     private boolean hasSetter;
     private TypeMirror type;
+    private NullableState nullable = NullableState.DEFAULT;
 
     public PropertyBuilder(String name) {
         this.name = name;
@@ -29,7 +28,7 @@ public class PropertyBuilder {
     }
 
     public PropertyModel build() {
-        return new PropertyModel(name, hasGetter, hasSetter, type);
+        return new PropertyModel(name, hasGetter, hasSetter, type, nullable == NullableState.NULLABLE);
     }
 
     public void setHasGetter(boolean hasGetter) {
@@ -46,5 +45,13 @@ public class PropertyBuilder {
 
     public void setType(TypeMirror type) {
         this.type = type;
+    }
+
+    public NullableState isNullable() {
+        return nullable;
+    }
+
+    public void setNullable(NullableState nullable) {
+        this.nullable = nullable;
     }
 }

@@ -13,6 +13,8 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LayoutGenerator {
 
@@ -56,9 +58,36 @@ public class LayoutGenerator {
         stream.println("        ");
 
         for (PropertyModel property : layout.getProperties()) {
-            stream.printf("        %S_PROPERTY = Property.create(%s_IDENTIFIER, allocator.locationForType(%s.class, EnumSet.of(LocationModifier.NonNull)), %s);\n",
+            final List<String> modifiers = new ArrayList<>();
+
+            if (!property.isNullable()) {
+                modifiers.add("LocationModifier.NonNull");
+            }
+
+            final String modifiersExpression;
+
+            if (modifiers.isEmpty()) {
+                modifiersExpression = "";
+            } else {
+                final StringBuilder modifiersExpressionBuilder = new StringBuilder();
+                modifiersExpressionBuilder.append(", EnumSet.of(");
+
+                for (String modifier : modifiers) {
+                    if (modifier != modifiers.get(0)) {
+                        modifiersExpressionBuilder.append(", ");
+                    }
+
+                    modifiersExpressionBuilder.append(modifier);
+                }
+
+                modifiersExpressionBuilder.append(")");
+                modifiersExpression  = modifiersExpressionBuilder.toString();
+            }
+
+            stream.printf("        %S_PROPERTY = Property.create(%s_IDENTIFIER, allocator.locationForType(%s.class%s), %s);\n",
                     property.getNameAsConstant(), property.getNameAsConstant(),
                     property.getType(),
+                    modifiersExpression,
                     "0");
         }
 
@@ -95,6 +124,12 @@ public class LayoutGenerator {
                 stream.println(") {");
             } else {
                 stream.println(",");
+            }
+        }
+
+        for (PropertyModel property : layout.getProperties()) {
+            if (!property.getType().getKind().isPrimitive() && !property.isNullable()) {
+                stream.printf("        assert %s != null;\n", property.getName());
             }
         }
 
@@ -154,6 +189,11 @@ public class LayoutGenerator {
                 stream.printf("    public void %s(DynamicObject object, %s value) {\n", property.getNameAsSetter(), property.getType());
                 stream.printf("        assert is%s(object);\n", layout.getName());
                 stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);\n", property.getNameAsConstant());
+
+                if (!property.getType().getKind().isPrimitive() && !property.isNullable()) {
+                    stream.println("        assert value != null;");
+                }
+
                 stream.println("        ");
                 stream.printf("        try {\n");
                 stream.printf("            %s_PROPERTY.set(object, value, object.getShape());\n", property.getNameAsConstant());

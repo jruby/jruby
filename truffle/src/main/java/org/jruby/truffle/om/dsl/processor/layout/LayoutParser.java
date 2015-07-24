@@ -10,14 +10,14 @@
 package org.jruby.truffle.om.dsl.processor.layout;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
+import org.jruby.truffle.om.dsl.processor.layout.model.NullableState;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyBuilder;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.*;
 
 public class LayoutParser {
@@ -57,7 +57,11 @@ public class LayoutParser {
 
     private void parseConstructor(ExecutableElement methodElement) {
         for (VariableElement element : methodElement.getParameters()) {
-            constructorProperties.add(element.getSimpleName().toString());
+            final String name = element.getSimpleName().toString();
+
+            constructorProperties.add(name);
+            final PropertyBuilder property = getProperty(name);
+            parseNullable(property, element);
         }
     }
 
@@ -115,9 +119,10 @@ public class LayoutParser {
         assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
 
         final String name = methodElement.getSimpleName().toString().substring("get".length()).toLowerCase();
-        final PropertyBuilder builder = getProperty(name);
-        builder.setHasGetter(true);
-        setPropertyType(builder, methodElement.getReturnType());
+        final PropertyBuilder property = getProperty(name);
+        property.setHasGetter(true);
+        setPropertyType(property, methodElement.getReturnType());
+        parseNullable(property, methodElement);
     }
 
     private void parseSetter(ExecutableElement methodElement) {
@@ -128,9 +133,26 @@ public class LayoutParser {
         assert methodElement.getParameters().get(1).getSimpleName().toString().equals("value");
 
         final String name = methodElement.getSimpleName().toString().substring("get".length()).toLowerCase();
-        final PropertyBuilder builder = getProperty(name);
-        builder.setHasSetter(true);
-        setPropertyType(builder, methodElement.getParameters().get(1).asType());
+        final PropertyBuilder property = getProperty(name);
+        property.setHasSetter(true);
+        setPropertyType(property, methodElement.getParameters().get(1).asType());
+        parseNullable(property, methodElement);
+    }
+
+    private void parseNullable(PropertyBuilder property, Element element) {
+        if (element.getAnnotation(Nullable.class) != null) {
+            if (property.isNullable() == NullableState.DEFAULT) {
+                property.setNullable(NullableState.NULLABLE);
+            } else {
+                assert property.isNullable() == NullableState.NULLABLE;
+            }
+        } else {
+            if (property.isNullable() == NullableState.DEFAULT) {
+                property.setNullable(NullableState.NOT_NULLABLE);
+            } else {
+                assert property.isNullable() == NullableState.NOT_NULLABLE;
+            }
+        }
     }
 
     private void setPropertyType(PropertyBuilder builder, TypeMirror type) {

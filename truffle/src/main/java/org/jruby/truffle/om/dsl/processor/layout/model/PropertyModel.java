@@ -17,12 +17,14 @@ public class PropertyModel {
     private final boolean hasGetter;
     private final boolean hasSetter;
     private final TypeMirror type;
+    private final boolean nullable;
 
-    public PropertyModel(String name, boolean hasGetter, boolean hasSetter, TypeMirror type) {
+    public PropertyModel(String name, boolean hasGetter, boolean hasSetter, TypeMirror type, boolean nullable) {
         this.name = name;
         this.hasGetter = hasGetter;
         this.hasSetter = hasSetter;
         this.type = type;
+        this.nullable = nullable;
     }
 
     public String getName() {
@@ -55,5 +57,9 @@ public class PropertyModel {
 
     public TypeMirror getType() {
         return type;
+    }
+
+    public boolean isNullable() {
+        return nullable;
     }
 }
