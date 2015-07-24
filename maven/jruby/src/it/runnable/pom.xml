@@ -9,7 +9,7 @@
   <properties>
     <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <jruby.version>@project.version@</jruby.version>
-    <jruby.plugins.version>1.0.8</jruby.plugins.version>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
@@ -29,7 +29,7 @@
     <dependency>
       <groupId>de.saumya.mojo</groupId>
       <artifactId>jruby-mains</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.1</version>
     </dependency>
   </dependencies>
   <repositories>
@@ -92,6 +92,7 @@
               <includeBinStubs>true</includeBinStubs>
               <includeRubyResources>
                 <includeRubyResource>.rspec</includeRubyResource>
+                <includeRubyResource>*.rb</includeRubyResource>
                 <includeRubyResource>config.ru</includeRubyResource>
                 <includeRubyResource>*file</includeRubyResource>
                 <includeRubyResource>*file.lock</includeRubyResource>
@@ -127,7 +128,7 @@
                   <type>jar</type>
                   <version>1.49</version>
                   <classifier />
-                  <outputDirectory>${project.build.outputDirectory}/org/bouncycastle/bcpkix-jdk15on/1.49</outputDirectory>
+                  <outputDirectory>${project.build.outputDirectory}/jars/org/bouncycastle/bcpkix-jdk15on/1.49</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.slf4j</groupId>
@@ -135,7 +136,7 @@
                   <type>jar</type>
                   <version>1.6.4</version>
                   <classifier />
-                  <outputDirectory>${project.build.outputDirectory}/org/slf4j/slf4j-simple/1.6.4</outputDirectory>
+                  <outputDirectory>${project.build.outputDirectory}/jars/org/slf4j/slf4j-simple/1.6.4</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.bouncycastle</groupId>
@@ -143,7 +144,7 @@
                   <type>jar</type>
                   <version>1.49</version>
                   <classifier />
-                  <outputDirectory>${project.build.outputDirectory}/org/bouncycastle/bcprov-jdk15on/1.49</outputDirectory>
+                  <outputDirectory>${project.build.outputDirectory}/jars/org/bouncycastle/bcprov-jdk15on/1.49</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.slf4j</groupId>
@@ -151,7 +152,7 @@
                   <type>jar</type>
                   <version>1.6.4</version>
                   <classifier />
-                  <outputDirectory>${project.build.outputDirectory}/org/slf4j/slf4j-api/1.6.4</outputDirectory>
+                  <outputDirectory>${project.build.outputDirectory}/jars/org/slf4j/slf4j-api/1.6.4</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -230,6 +231,20 @@
                 <argument>runnable.jar</argument>
                 <argument>-S</argument>
                 <argument>rspec</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>nested IsolatedScriptingContainer</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-jar</argument>
+                <argument>runnable.jar</argument>
+                <argument>nested.rb</argument>
               </arguments>
             </configuration>
           </execution>

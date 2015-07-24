@@ -3,7 +3,7 @@
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readOnly' => true,
             'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.8' )
+            'jruby.plugins.version' => '1.0.10' )
 
 gemfile
 
@@ -11,13 +11,13 @@ gem 'bundler', '1.7.7'
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-jar 'de.saumya.mojo:jruby-mains', '0.2.0'
+jar 'de.saumya.mojo:jruby-mains', '0.3.1'
 
 build do
   directory 'pkg'
 end
 
-files = [ '.rspec', 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+files = [ '.rspec', '*.rb', 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
           'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
 jruby_plugin!( :gem,
                # need a jruby-complete from maven central here
@@ -40,7 +40,7 @@ if File.file?('Jarfile.lock')
         data = l.sub(/-\ /, '').strip.split(':')
         if data.size > 3
           data = Hash[ [:groupId, :artifactId, :type, :version, :classifier].zip( data ) ]
-          data[ :outputDirectory ] = File.join( '${project.build.outputDirectory}',
+          data[ :outputDirectory ] = File.join( '${project.build.outputDirectory}/jars',
                                                 data[:groupId].gsub(/[.]/, '/'),
                                                 data[:artifactId],
                                                 data[:version] )
@@ -81,6 +81,9 @@ phase :package do
 
     execute_goal( :exec, :id => 'rspec',
                   :arguments => [ '-jar', 'runnable.jar', '-S', 'rspec' ] )
+    
+    execute_goal( :exec, :id => 'nested IsolatedScriptingContainer',
+                  :arguments => [ '-jar', 'runnable.jar', 'nested.rb' ] )
 
   end
 end

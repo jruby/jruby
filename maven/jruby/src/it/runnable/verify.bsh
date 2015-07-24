@@ -11,3 +11,15 @@ if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not 
 
 expected = "uri:classloader:/Rakefile [\"spec\"]";
 if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
+
+expected = "5 tests, 5 assertions, 0 failures, 0 errors, 0 skips";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+
+expected = "6 tests, 6 assertions, 0 failures, 0 errors, 0 skips";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}

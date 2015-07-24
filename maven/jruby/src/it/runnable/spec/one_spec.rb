@@ -4,7 +4,7 @@ describe "something" do
   it "does something" do
     expect(__FILE__).to eq 'uri:classloader:/spec/one_spec.rb'
     expect($CLASSPATH.size).to eq 4
-    expect(Jars.home).to eq 'uri:classloader://'
+    expect(Jars.home).to eq 'uri:classloader://jars'
     expect(Dir.pwd).to eq 'uri:classloader://'
     $LOAD_PATH.each do |lp|
       # bundler or someone else messes up the $LOAD_PATH
