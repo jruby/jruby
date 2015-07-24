@@ -27,6 +27,7 @@
 package org.jruby.embed.osgi.test;
 
 import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
@@ -35,6 +36,8 @@ import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.jruby.embed.osgi.OSGiIsolatedScriptingContainer;
 import org.junit.Test;
@@ -107,14 +110,37 @@ public class JRubyOsgiEmbedTest {
         assertEquals(true, loaded);
 
         jruby.runScriptlet( "require 'jar-dependencies'" );
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
-        assertEquals( "[\"jar-dependencies\", \"jruby-openssl\", \"rake\"]", list );
+
+        assertGemListEquals(jruby, "jar-dependencies", "jruby-openssl", "rake");
 
         // ensure we can load can load embedded gems
         loaded = (Boolean) jruby.runScriptlet( "require 'virtus'" );
         assertEquals(true, loaded);
 
-        list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.inspect" );
-        assertEquals( "[\"axiom-types\", \"coercible\", \"descendants_tracker\", \"equalizer\", \"ice_nine\", \"jar-dependencies\", \"jruby-openssl\", \"rake\", \"thread_safe\", \"virtus\"]", list );
+        assertGemListEquals(jruby, "axiom-types", "coercible", "descendants_tracker", "equalizer", "ice_nine", "jar-dependencies", "jruby-openssl", "rake", "thread_safe", "virtus");
     }
+
+    private static void assertGemListEquals(final OSGiIsolatedScriptingContainer jruby, final String... expected) {
+        String list = (String) jruby.runScriptlet( "Gem.loaded_specs.keys.sort.join(', ')" );
+
+        Arrays.sort(expected);
+
+        if ( gemJOpenSSLPreRelease(jruby) ) {
+            ArrayList<String> tmp = new ArrayList<String>(Arrays.asList(expected));
+            tmp.remove("jruby-openssl"); // pre-release gem not reported in loaded_keys
+
+            for ( String name : tmp.toArray(new String[0]) ) {
+                assertThat(list, containsString(name));
+            }
+        }
+        else {
+            assertEquals( Arrays.toString(expected), list );
+        }
+    }
+
+    private static boolean gemJOpenSSLPreRelease(final OSGiIsolatedScriptingContainer jruby) {
+        String josslVersion = (String) jruby.runScriptlet( "require 'jopenssl/version'; Jopenssl::Version::VERSION" );
+        return josslVersion.matches(".*?[a-zA-Z]");
+    }
+
 }
