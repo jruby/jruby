@@ -618,22 +618,22 @@ public abstract class StringNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
-            return sliceRange(frame, string, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)), RangeNodes.getEnd(((RubyIntegerFixnumRange) range)), RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)));
+            return sliceRange(frame, string, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
         }
 
         @Specialization(guards = {"isLongFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
-            return sliceRange(frame, string, (int) RangeNodes.getBegin(((RubyLongFixnumRange) range)), (int) RangeNodes.getEnd(((RubyLongFixnumRange) range)), RangeNodes.isExcludeEnd(((RubyLongFixnumRange) range)));
+            return sliceRange(frame, string, (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()), (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
         }
 
         @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.getBegin(((RubyObjectRange) range)));
-            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.getEnd(((RubyObjectRange) range)));
+            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(range.getDynamicObject()));
+            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(range.getDynamicObject()));
 
-            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.isExcludeEnd(((RubyObjectRange) range)));
+            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.OBJECT_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
         }
 
         private Object sliceRange(VirtualFrame frame, RubyBasicObject string, int begin, int end, boolean doesExcludeEnd) {

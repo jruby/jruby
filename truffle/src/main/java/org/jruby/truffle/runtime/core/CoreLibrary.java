@@ -1149,9 +1149,9 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isIntegerFixnumRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                RangeNodes.getBegin(((RubyIntegerFixnumRange) range)),
-                RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? "." : "",
-                RangeNodes.getEnd(((RubyIntegerFixnumRange) range))), currentNode);
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()),
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()) ? "." : "",
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject())), currentNode);
     }
 
     public RubyBasicObject rangeError(String message, Node currentNode) {

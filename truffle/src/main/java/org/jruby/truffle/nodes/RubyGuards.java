@@ -54,16 +54,28 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
     }
 
-    public static boolean isIntegerFixnumRange(Object value) {
-        return value instanceof RubyIntegerFixnumRange;
+    public static boolean isIntegerFixnumRange(Object object) {
+        return (object instanceof RubyBasicObject) && isIntegerFixnumRange((RubyBasicObject) object);
     }
 
-    public static boolean isLongFixnumRange(Object value) {
-        return value instanceof RubyLongFixnumRange;
+    public static boolean isIntegerFixnumRange(RubyBasicObject object) {
+        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.isIntegerFixnumRange(object.getDynamicObject());
     }
 
-    public static boolean isObjectRange(Object value) {
-        return value instanceof RubyObjectRange;
+    public static boolean isLongFixnumRange(Object object) {
+        return (object instanceof RubyBasicObject) && isLongFixnumRange((RubyBasicObject) object);
+    }
+
+    public static boolean isLongFixnumRange(RubyBasicObject object) {
+        return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.isLongFixnumRange(object.getDynamicObject());
+    }
+
+    public static boolean isObjectRange(Object object) {
+        return (object instanceof RubyBasicObject) && isObjectRange((RubyBasicObject) object);
+    }
+
+    public static boolean isObjectRange(RubyBasicObject object) {
+        return RangeNodes.OBJECT_RANGE_LAYOUT.isObjectRange(object.getDynamicObject());
     }
 
     public static boolean isRubyRange(Object value) {

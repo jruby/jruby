@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
@@ -349,9 +348,9 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(RubyBasicObject matchData, RubyBasicObject range, NotProvided len) {
             final Object[] values = getValues(matchData);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
-            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
-            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? end : end + 1);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()));
+            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()));
+            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()) ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);

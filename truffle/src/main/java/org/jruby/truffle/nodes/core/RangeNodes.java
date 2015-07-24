@@ -16,57 +16,80 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyIntegerFixnumRange;
-import org.jruby.truffle.runtime.core.RubyLongFixnumRange;
-import org.jruby.truffle.runtime.core.RubyObjectRange;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    public static boolean isExcludeEnd(RubyIntegerFixnumRange range) {
-        return range.excludeEnd;
+    @Layout
+    public interface IntegerFixnumRangeLayout {
+
+        DynamicObject createIntegerFixnumRange(boolean excludedEnd, int begin, int end);
+
+        boolean isIntegerFixnumRange(DynamicObject object);
+
+        boolean getExcludedEnd(DynamicObject object);
+
+        int getBegin(DynamicObject object);
+
+        int getEnd(DynamicObject object);
+
     }
 
-    public static int getBegin(RubyIntegerFixnumRange range) {
-        return range.begin;
+    public static final IntegerFixnumRangeLayout INTEGER_FIXNUM_RANGE_LAYOUT = IntegerFixnumRangeLayoutImpl.INSTANCE;
+
+    @Layout
+    public interface LongFixnumRangeLayout {
+
+        DynamicObject createLongFixnumRange(boolean excludedEnd, long begin, long end);
+
+        boolean isLongFixnumRange(DynamicObject object);
+
+        boolean getExcludedEnd(DynamicObject object);
+
+        long getBegin(DynamicObject object);
+
+        long getEnd(DynamicObject object);
+
     }
 
-    public static int getEnd(RubyIntegerFixnumRange range) {
-        return range.end;
+    public static final LongFixnumRangeLayout LONG_FIXNUM_RANGE_LAYOUT = LongFixnumRangeLayoutImpl.INSTANCE;
+
+    @Layout
+    public interface ObjectRangeLayout {
+
+        DynamicObject createObjectRange(boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
+
+        boolean isObjectRange(DynamicObject object);
+
+        boolean getExcludedEnd(DynamicObject object);
+
+        void setExcludedEnd(DynamicObject object, boolean value);
+
+        @Nullable
+        Object getBegin(DynamicObject object);
+
+        void setBegin(DynamicObject object, Object value);
+
+        @Nullable
+        Object getEnd(DynamicObject object);
+
+        void setEnd(DynamicObject object, Object value);
+
     }
 
-    public static boolean isExcludeEnd(RubyLongFixnumRange range) {
-        return range.excludeEnd;
-    }
-
-    public static long getBegin(RubyLongFixnumRange range) {
-        return range.begin;
-    }
-
-    public static long getEnd(RubyLongFixnumRange range) {
-        return range.end;
-    }
-
-    public static boolean isExcludeEnd(RubyObjectRange range) {
-        return range.excludeEnd;
-    }
-
-    public static Object getBegin(RubyObjectRange range) {
-        return range.begin;
-    }
-
-    public static Object getEnd(RubyObjectRange range) {
-        return range.end;
-    }
+    public static final ObjectRangeLayout OBJECT_RANGE_LAYOUT = ObjectRangeLayoutImpl.INSTANCE;
 
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
@@ -80,12 +103,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public RubyBasicObject collect(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
-            final int begin = getBegin(((RubyIntegerFixnumRange) range));
+            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject());
             int result;
-            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
-                result = getEnd(((RubyIntegerFixnumRange) range));
+            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
             } else {
-                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
             }
             final int exclusiveEnd = result;
             final int length = exclusiveEnd - begin;
@@ -123,17 +146,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public Object eachInt(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
             int result;
-            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
-                result = getEnd(((RubyIntegerFixnumRange) range));
+            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
             } else {
-                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
             }
             final int exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (int n = getBegin(((RubyIntegerFixnumRange) range)); n < exclusiveEnd; n++) {
+                for (int n = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -152,17 +175,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isLongFixnumRange(range)", "isRubyProc(block)"})
         public Object eachLong(VirtualFrame frame, RubyBasicObject range, RubyBasicObject block) {
             long result;
-            if (isExcludeEnd(((RubyLongFixnumRange) range))) {
-                result = getEnd(((RubyLongFixnumRange) range));
+            if (LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
             } else {
-                result = getEnd(((RubyLongFixnumRange) range)) + 1;
+                result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
             }
             final long exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (long n = getBegin(((RubyLongFixnumRange) range)); n < exclusiveEnd; n++) {
+                for (long n = LONG_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -204,17 +227,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(RubyBasicObject range) {
-            return isExcludeEnd(((RubyIntegerFixnumRange) range));
+            return INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public boolean excludeEndLong(RubyBasicObject range) {
-            return isExcludeEnd(((RubyLongFixnumRange) range));
+            return LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean excludeEndObject(RubyBasicObject range) {
-            return isExcludeEnd(((RubyObjectRange) range));
+            return OBJECT_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
     }
@@ -228,17 +251,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(RubyBasicObject range) {
-            return getBegin(((RubyIntegerFixnumRange) range));
+            return INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long eachLong(RubyBasicObject range) {
-            return getBegin(((RubyLongFixnumRange) range));
+            return LONG_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object eachObject(RubyBasicObject range) {
-            return getBegin(((RubyObjectRange) range));
+            return OBJECT_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject());
         }
 
     }
@@ -257,9 +280,9 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public RubyBasicObject initialize(RubyBasicObject range, Object begin, Object end, boolean excludeEnd) {
-            ((RubyObjectRange) range).begin = begin;
-            ((RubyObjectRange) range).end = end;
-            ((RubyObjectRange) range).excludeEnd = excludeEnd;
+            OBJECT_RANGE_LAYOUT.setExcludedEnd(range.getDynamicObject(), excludeEnd);
+            OBJECT_RANGE_LAYOUT.setBegin(range.getDynamicObject(), begin);
+            OBJECT_RANGE_LAYOUT.setEnd(range.getDynamicObject(), end);
             return range;
         }
 
@@ -274,17 +297,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(RubyBasicObject range) {
-            return getEnd(((RubyIntegerFixnumRange) range));
+            return INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long lastLong(RubyBasicObject range) {
-            return getEnd(((RubyLongFixnumRange) range));
+            return LONG_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object lastObject(RubyBasicObject range) {
-            return getEnd(((RubyObjectRange) range));
+            return OBJECT_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
         }
 
     }
@@ -302,12 +325,12 @@ public abstract class RangeNodes {
 
             try {
                 int result;
-                if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
-                    result = getEnd(((RubyIntegerFixnumRange) range));
+                if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                    result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
                 } else {
-                    result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
+                    result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
                 }
-                for (int n = getBegin(((RubyIntegerFixnumRange) range)); n < result; n += step) {
+                for (int n = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -329,12 +352,12 @@ public abstract class RangeNodes {
 
             try {
                 long result;
-                if (isExcludeEnd(((RubyLongFixnumRange) range))) {
-                    result = getEnd(((RubyLongFixnumRange) range));
+                if (LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                    result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
                 } else {
-                    result = getEnd(((RubyLongFixnumRange) range)) + 1;
+                    result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
                 }
-                for (long n = getBegin(((RubyLongFixnumRange) range)); n < result; n += step) {
+                for (long n = LONG_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -421,12 +444,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public RubyBasicObject toA(RubyBasicObject range) {
-            final int begin = getBegin(((RubyIntegerFixnumRange) range));
+            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject());
             int result;
-            if (isExcludeEnd(((RubyIntegerFixnumRange) range))) {
-                result = getEnd(((RubyIntegerFixnumRange) range));
+            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject());
             } else {
-                result = getEnd(((RubyIntegerFixnumRange) range)) + 1;
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()) + 1;
             }
             final int length = result - begin;
 
@@ -463,7 +486,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setBegin(RubyBasicObject range, Object begin) {
-            ((RubyObjectRange) range).begin = begin;
+            OBJECT_RANGE_LAYOUT.setBegin(range.getDynamicObject(), begin);
             return begin;
         }
     }
@@ -481,7 +504,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setEnd(RubyBasicObject range, Object end) {
-            ((RubyObjectRange) range).end = end;
+            OBJECT_RANGE_LAYOUT.setEnd(range.getDynamicObject(), end);
             return end;
         }
     }
@@ -503,7 +526,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean setExcludeEnd(RubyBasicObject range, boolean excludeEnd) {
-            ((RubyObjectRange) range).excludeEnd = excludeEnd;
+            OBJECT_RANGE_LAYOUT.setExcludedEnd(range.getDynamicObject(), excludeEnd);
             return excludeEnd;
         }
 
@@ -513,7 +536,7 @@ public abstract class RangeNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyObjectRange(rubyClass, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject(), false);
+            return new RubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
         }
 
     }

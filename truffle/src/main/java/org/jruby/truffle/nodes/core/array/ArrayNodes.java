@@ -636,13 +636,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object slice(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
+            final int normalizedIndex = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
-                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? end : end + 1);
+                final int end = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
+                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return ArrayNodes.createEmptyArray(array.getLogicalClass());
@@ -920,8 +920,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
-            int normalizedEnd = RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range))) - 1 : normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject())) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -935,13 +935,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range)) ? normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range))) - 1 : normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject())) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -952,12 +952,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
-            if (RangeNodes.isExcludeEnd(((RubyIntegerFixnumRange) range))) {
+            if (RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(array, RangeNodes.getBegin(((RubyIntegerFixnumRange) range)));
-                int normalizedEnd = normalizeIndex(array, RangeNodes.getEnd(((RubyIntegerFixnumRange) range)));
+                int normalizedBegin = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
+                int normalizedEnd = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }

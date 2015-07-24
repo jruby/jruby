@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.RangeNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,17 +38,17 @@ public abstract class RangeLiteralNode extends RubyNode {
 
     @Specialization
     public RubyBasicObject intRange(int begin, int end) {
-        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        return new RubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(excludeEnd, begin, end));
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
     public RubyBasicObject longFittingIntRange(long begin, long end) {
-        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
+        return new RubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(excludeEnd, (int) begin, (int) end));
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
     public RubyBasicObject longRange(long begin, long end) {
-        return new RubyLongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        return new RubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRange(excludeEnd, begin, end));
     }
 
     @Specialization(guards = { "!isIntOrLong(begin) || !isIntOrLong(end)" })
@@ -68,7 +69,7 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        return new RubyObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        return new RubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(excludeEnd, begin, end));
     }
 
     protected boolean fitsIntoInteger(long value) {
