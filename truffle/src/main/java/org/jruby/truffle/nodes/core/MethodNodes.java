@@ -323,7 +323,7 @@ public abstract class MethodNodes {
     private static class SetReceiverNode extends RubyNode {
 
         private final Object receiver;
-        private final DirectCallNode methodCallNode;
+        @Child private DirectCallNode methodCallNode;
 
         public SetReceiverNode(RubyContext context, SourceSection sourceSection, Object receiver, CallTarget methodCallTarget) {
             super(context, sourceSection);
