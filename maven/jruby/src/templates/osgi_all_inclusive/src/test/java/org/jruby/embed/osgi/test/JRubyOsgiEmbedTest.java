@@ -120,7 +120,7 @@ public class JRubyOsgiEmbedTest {
             }
         }
         else {
-            assertEquals( Arrays.toString(expected), list );
+            assertEquals( Arrays.toString(expected), '[' + list + ']' );
         }
     }
 
