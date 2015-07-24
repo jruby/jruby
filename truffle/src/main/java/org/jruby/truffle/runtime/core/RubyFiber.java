@@ -15,6 +15,8 @@ import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -28,12 +30,12 @@ public class RubyFiber extends RubyBasicObject {
 
     public static class FiberFields {
         public final RubyBasicObject rubyThread;
-        public String name;
+        @CompilationFinal public String name;
         public final boolean isRootFiber;
         // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
         public final BlockingQueue<FiberNodes.FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
-        public RubyBasicObject lastResumedByFiber = null;
-        public boolean alive = true;
+        public volatile RubyBasicObject lastResumedByFiber = null;
+        public volatile boolean alive = true;
         public volatile Thread thread;
 
         public FiberFields(RubyBasicObject rubyThread, boolean isRootFiber) {
