@@ -15,14 +15,12 @@ import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -37,29 +35,18 @@ public abstract class TimePrimitiveNodes {
     public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
-        private final ConditionProfile timeClassDescendantProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile timeClassProfile = ConditionProfile.createBinaryProfile();
-
+        
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyClass(receiverClass)")
-        public RubyBasicObject timeSNow(VirtualFrame frame, RubyBasicObject receiverClass) {
+        @Specialization
+        public RubyBasicObject timeSNow(VirtualFrame frame, RubyBasicObject timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-
-            final RubyBasicObject timeClass = getContext().getCoreLibrary().getTimeClass();
-            final boolean useReceiverClass = timeClassProfile.profile(receiverClass == timeClass) ||
-                            timeClassDescendantProfile.profile(ModuleOperations.includesModule(receiverClass, timeClass));
-            final RubyBasicObject creationClass = useReceiverClass ? receiverClass : timeClass;
-
-            return TimeNodes.createRubyTime(
-                    creationClass,
-                    now((RubyBasicObject) readTimeZoneNode.execute(frame)),
-                    nil());
+            return TimeNodes.createRubyTime(timeClass, now((RubyBasicObject) readTimeZoneNode.execute(frame)), nil());
         }
-
+        
         @TruffleBoundary
         private DateTime now(RubyBasicObject timeZone) {
             assert RubyGuards.isRubyString(timeZone);
@@ -220,7 +207,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 6 /*nsec*/, 7 /*isdst*/ })
+    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 6 /*nsec*/, 7 /*isdst*/})
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child ReadTimeZoneNode readTimeZoneNode;
