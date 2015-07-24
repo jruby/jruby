@@ -8,18 +8,7 @@ module Kernel
     file = $` # just the filename
     raise LoadError, "cannot infer basepath" if /\A\((.*)\)/ =~ file # eval etc.
 
-    # FIXME: Classpath-path can be removed if we make expand_path+dirname
-    # know about classpath: paths.
-    if file =~ /^classpath:(.*)/
-      dir = File.dirname($1)
-      dir = dir == '.' ? "" : dir + "/"
-      absolute_feature = "classpath:#{dir}#{relative_arg}"
-    elsif file =~ /^uri:(.*)/
-      dir = File.dirname($1)
-      absolute_feature = "uri:#{dir}/#{relative_arg}"
-    else
-      absolute_feature = File.expand_path(relative_arg, File.dirname(file))
-    end
+    absolute_feature = File.expand_path(relative_arg, File.dirname(file))
     
     require absolute_feature
   end

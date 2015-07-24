@@ -1664,7 +1664,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (expandUser) {
                     cwd = expandUserPath(context, cwd, true);
                 }
-    
+
+                // TODO try to treat all uri-like paths alike
                 String[] cwdURIParts = splitURI(cwd);
                 if (uriParts == null && cwdURIParts != null) {
                     uriParts = cwdURIParts;
@@ -1681,7 +1682,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // If the path isn't absolute, then prepend the current working
                 // directory to the path.
                 if (!startsWithSlashNotOnWindows && !startsWithDriveLetterOnWindows(cwd)) {
-                    cwd = new File(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
+                    if ("".equals(cwd)) cwd = ".";
+                    cwd = JRubyFile.create(runtime.getCurrentDirectory(), cwd).getAbsolutePath();
                 }
             }
         } else {
