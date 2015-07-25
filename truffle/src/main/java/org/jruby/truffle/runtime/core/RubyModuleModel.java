@@ -79,13 +79,13 @@ public class RubyModuleModel implements ModuleChain {
     public final boolean isSingleton;
     public final RubyBasicObject attached;
 
-    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyBasicObject attached) {
+    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, boolean isSingleton, RubyBasicObject attached) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         assert attached == null || RubyGuards.isRubyModule(attached);
         this.context = context;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
-        this.unmodifiedAssumption = unmodifiedAssumption;
+        this.unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
         start = new PrependMarker(this);
         this.isSingleton = isSingleton;
         this.attached = attached;
