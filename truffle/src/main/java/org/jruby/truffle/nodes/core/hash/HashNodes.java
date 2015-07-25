@@ -19,8 +19,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -33,19 +32,19 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,6 +53,66 @@ import java.util.Map;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
+
+    @Layout
+    public interface HashLayout {
+
+        DynamicObject createHash(
+                @Nullable RubyBasicObject defaultBlock,
+                @Nullable Object defaultValue,
+                @Nullable Object store,
+                @Nullable int size,
+                @Nullable Entry firstInSequence,
+                @Nullable Entry lastInSequence,
+                @Nullable boolean compareByIdentity);
+
+        boolean isHash(DynamicObject object);
+
+        @Nullable
+        RubyBasicObject getDefaultBlock(DynamicObject object);
+
+        @Nullable
+        void setDefaultBlock(DynamicObject object, RubyBasicObject value);
+
+        @Nullable
+        Object getDefaultValue(DynamicObject object);
+
+        @Nullable
+        void setDefaultValue(DynamicObject object, Object value);
+
+        @Nullable
+        Object getStore(DynamicObject object);
+
+        @Nullable
+        void setStore(DynamicObject object, Object value);
+
+        @Nullable
+        int getSize(DynamicObject object);
+
+        @Nullable
+        void setSize(DynamicObject object, int value);
+
+        @Nullable
+        Entry getFirstInSequence(DynamicObject object);
+
+        @Nullable
+        void setFirstInSequence(DynamicObject object, Entry value);
+
+        @Nullable
+        Entry getLastInSequence(DynamicObject object);
+
+        @Nullable
+        void setLastInSequence(DynamicObject object, Entry value);
+
+        @Nullable
+        boolean getCompareByIdentity(DynamicObject object);
+
+        @Nullable
+        void setCompareByIdentity(DynamicObject object, boolean value);
+
+    }
+
+    public static final HashLayout HASH_LAYOUT = HashLayoutImpl.INSTANCE;
 
     public static int slowHashKey(RubyContext context, Object key) {
         final Object hashValue = DebugOperations.send(context, key, "hash", null);
@@ -168,91 +227,66 @@ public abstract class HashNodes {
         return true;
     }
 
-    public static class HashType extends BasicObjectType {
-
-    }
-
-    public static final HashType HASH_TYPE = new HashType();
-
-    private static final DynamicObjectFactory HASH_FACTORY;
-
-    static {
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(HASH_TYPE);
-        HASH_FACTORY = shape.createFactory();
-    }
-
     public static RubyBasicObject getDefaultBlock(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).defaultBlock;
+        return HASH_LAYOUT.getDefaultBlock(hash.getDynamicObject());
     }
 
     public static void setDefaultBlock(RubyBasicObject hash, RubyBasicObject defaultBlock) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).defaultBlock = defaultBlock;
+        HASH_LAYOUT.setDefaultBlock(hash.getDynamicObject(), defaultBlock);
     }
 
     public static Object getDefaultValue(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).defaultValue;
+        return HASH_LAYOUT.getDefaultValue(hash.getDynamicObject());
     }
 
     public static void setDefaultValue(RubyBasicObject hash, Object defaultValue) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).defaultValue = defaultValue;
+        HASH_LAYOUT.setDefaultValue(hash.getDynamicObject(), defaultValue);
     }
 
     public static boolean isCompareByIdentity(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).compareByIdentity;
+        return HASH_LAYOUT.getCompareByIdentity(hash.getDynamicObject());
     }
 
     public static void setCompareByIdentity(RubyBasicObject hash, boolean compareByIdentity) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).compareByIdentity = compareByIdentity;
+        HASH_LAYOUT.setCompareByIdentity(hash.getDynamicObject(), compareByIdentity);
     }
 
     public static Object getStore(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).store;
+        return HASH_LAYOUT.getStore(hash.getDynamicObject());
     }
 
     public static void setStore(RubyBasicObject hash, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         assert RubyGuards.isRubyHash(hash);
         assert verifyStore(store, size, firstInSequence, lastInSequence);
-        ((RubyHash) hash).store = store;
-        ((RubyHash) hash).size = size;
-        ((RubyHash) hash).firstInSequence = firstInSequence;
-        ((RubyHash) hash).lastInSequence = lastInSequence;
+        HASH_LAYOUT.setStore(hash.getDynamicObject(), store);
+        HASH_LAYOUT.setSize(hash.getDynamicObject(), size);
+        HASH_LAYOUT.setFirstInSequence(hash.getDynamicObject(), firstInSequence);
+        HASH_LAYOUT.setLastInSequence(hash.getDynamicObject(), lastInSequence);
+
     }
 
     public static int getSize(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).size;
+        return HASH_LAYOUT.getSize(hash.getDynamicObject());
     }
 
     public static void setSize(RubyBasicObject hash, int storeSize) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).size = storeSize;
+        HASH_LAYOUT.setSize(hash.getDynamicObject(), storeSize);
     }
 
     public static Entry getFirstInSequence(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).firstInSequence;
+        return HASH_LAYOUT.getFirstInSequence(hash.getDynamicObject());
     }
 
     public static void setFirstInSequence(RubyBasicObject hash, Entry firstInSequence) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).firstInSequence = firstInSequence;
+        HASH_LAYOUT.setFirstInSequence(hash.getDynamicObject(), firstInSequence);
     }
 
     public static Entry getLastInSequence(RubyBasicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-        return ((RubyHash) hash).lastInSequence;
+        return HASH_LAYOUT.getLastInSequence(hash.getDynamicObject());
     }
 
     public static void setLastInSequence(RubyBasicObject hash, Entry lastInSequence) {
-        assert RubyGuards.isRubyHash(hash);
-        ((RubyHash) hash).lastInSequence = lastInSequence;
+        HASH_LAYOUT.setLastInSequence(hash.getDynamicObject(), lastInSequence);
     }
 
     public static RubyBasicObject createEmptyHash(RubyBasicObject hashClass) {
@@ -264,7 +298,7 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createHash(RubyBasicObject hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return new RubyHash(hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, HASH_FACTORY.newInstance());
+        return new RubyBasicObject(hashClass, HASH_LAYOUT.createHash(defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
     }
 
     @TruffleBoundary

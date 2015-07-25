@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
@@ -117,18 +116,6 @@ public abstract class RubyNode extends Node {
 
         if (value instanceof Double) {
             return (double) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    // If you try to make this RubyBasicObject things break in the DSL
-
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (RubyGuards.isRubyHash(value)) {
-            return (RubyHash) value;
         } else {
             throw new UnexpectedResultException(value);
         }

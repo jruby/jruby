@@ -103,7 +103,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyHash(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == HashNodes.HASH_TYPE;
+        return HashNodes.HASH_LAYOUT.isHash(value.getDynamicObject());
     }
 
     public static boolean isRubyModule(Object value) {
