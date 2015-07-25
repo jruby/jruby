@@ -24,19 +24,10 @@ public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;
 
-    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode, boolean isSingleton, RubyBasicObject attached) {
+    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, boolean isSingleton, RubyBasicObject attached) {
         super(context, selfClass);
-
-        assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
-
         model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
         model.rubyModuleObject = this;
-
-        if (lexicalParent == null) { // bootstrap or anonymous module
-            ModuleNodes.getModel(this).name = ModuleNodes.getModel(this).givenBaseName;
-        } else {
-            ModuleNodes.getModel(this).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
-        }
     }
 
 }

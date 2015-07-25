@@ -83,7 +83,13 @@ public abstract class ModuleNodes {
     }
 
     public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        return new RubyModule(context, selfClass, lexicalParent, name, currentNode, false, null);
+        final RubyModule module = new RubyModule(context, selfClass, lexicalParent, name, false, null);
+        if (lexicalParent == null) { // bootstrap or anonymous module
+            ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;
+        } else {
+            ModuleNodes.getModel(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+        }
+        return module;
     }
 
     @CoreMethod(names = "===", required = 1)

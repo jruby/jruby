@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -24,11 +23,13 @@ public class RubyClass extends RubyModule {
     public Allocator allocator;
 
     public RubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
-        super(context, classClass, lexicalParent, name, null, isSingleton, attached);
+        super(context, classClass, lexicalParent, name, isSingleton, attached);
 
-        assert superclass == null || RubyGuards.isRubyClass(superclass);
-
-        assert isSingleton || attached == null;
+        if (lexicalParent == null) { // bootstrap or anonymous module
+            ModuleNodes.getModel(this).name = ModuleNodes.getModel(this).givenBaseName;
+        } else {
+            ModuleNodes.getModel(this).getAdoptedByLexicalParent(lexicalParent, name, null);
+        }
 
         ClassNodes.unsafeSetAllocator(this, allocator);
 
