@@ -159,7 +159,13 @@ public abstract class QueueNodes {
                     long now = System.currentTimeMillis();
                     long waited = now - start;
                     if (waited >= durationInMillis) {
-                        return false;
+                        // Try again to make sure we at least tried once
+                        final Object result = queue.poll();
+                        if (result == null) {
+                            return false;
+                        } else {
+                            return result;
+                        }
                     }
 
                     final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
