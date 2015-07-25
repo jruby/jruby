@@ -37,7 +37,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.util.*;
 
@@ -575,8 +574,8 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(RubyBasicObject regexp, RubyBasicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions(((RubyMatchData) matchResult)) > 0
-                && MatchDataNodes.getRegion(((RubyMatchData) matchResult)).beg[0] == startPos) {
+            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions((RubyBasicObject) matchResult) > 0
+                && MatchDataNodes.getRegion((RubyBasicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
             }
             return nil();

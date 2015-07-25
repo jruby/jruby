@@ -214,7 +214,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMatchData(Object object) {
-        return object instanceof RubyMatchData;
+        return (object instanceof RubyBasicObject) && isRubyMatchData((RubyBasicObject) object);
+    }
+
+    public static boolean isRubyMatchData(RubyBasicObject object) {
+        return MatchDataNodes.MATCH_DATA_LAYOUT.isMatchData(object.getDynamicObject());
     }
 
     // Internal types
