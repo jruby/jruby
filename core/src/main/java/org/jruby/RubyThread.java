@@ -1106,26 +1106,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyFixnum.newFixnum(getRuntime(), iPriority);
     }
      
-    /* helper methods to translate java thread priority (1-10) to
-     * Ruby thread priority (-3 to 3) using a quadratic polynoimal ant its
-     * inverse
+    /* helper methods to translate Java thread priority (1-10) to
+     * Ruby thread priority (-3 to 3) using a quadratic polynomial ant its
+     * inverse passing by (Ruby,Java): (-3,1), (0,5) and (3,10)
      * i.e., j = r^2/18 + 3*r/2 + 5
      *       r = 3/2*sqrt(8*j + 41) - 27/2
      */
-    private int javaPriorityToRubyPriority(int javaPriority) {
-        double d; // intermediate value
-        d = 1.5 * Math.sqrt(8.0*javaPriority + 41) - 13.5;
+    public static int javaPriorityToRubyPriority(int javaPriority) {
+        double d = 1.5 * Math.sqrt(8.0 * javaPriority + 41) - 13.5;
         return Math.round((float) d);
     }
-    
-    private int rubyPriorityToJavaPriority(int rubyPriority) {
-        double d;
-        if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
-            rubyPriority = RUBY_MIN_THREAD_PRIORITY;
-        } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {
-            rubyPriority = RUBY_MAX_THREAD_PRIORITY;
-        }
-        d = Math.pow(rubyPriority, 2.0)/18.0 + 1.5 * rubyPriority + 5;
+
+    public static int rubyPriorityToJavaPriority(int rubyPriority) {
+        double d = (rubyPriority * rubyPriority) / 18.0 + 1.5 * rubyPriority + 5;
         return Math.round((float) d);
     }
     
