@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2 {
-    protected int arityValue;
+
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
@@ -45,9 +45,9 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     private String parameterDesc;
     private String[] parameterList;
 
-    private static String[] ONE_REQ = new String[] { "q" };
-    private static String[] TWO_REQ = new String[] { "q", "q" };
-    private static String[] THREE_REQ = new String[] { "q", "q", "q" };
+    private static final String[] ONE_REQ = new String[] { "q" };
+    private static final String[] TWO_REQ = new String[] { "q", "q" };
+    private static final String[] THREE_REQ = new String[] { "q", "q", "q" };
 
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
@@ -94,8 +94,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     public void init(RubyModule implementationClass, Arity arity, Visibility visibility, StaticScope staticScope, CallConfiguration callConfig) {
         this.staticScope = staticScope;
-        this.arity = arity;
-        this.arityValue = arity.getValue();
+        setArity(arity);
         super.init(implementationClass, visibility, callConfig);
     }
 
@@ -190,7 +189,6 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
 
     public void setArity(Arity arity) {
         this.arity = arity;
-        this.arityValue = arity.getValue();
     }
 
     @Override

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (c) 2007 Peter Brant <peter.brant@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,38 +44,41 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectedJavaMethod extends JavaMethod {
     private final Method method;
-    
+
     private final boolean needsBlock;
     private final boolean isStatic;
     private final int required;
     private final int optional;
     private final boolean rest;
     private final int max;
-    
+
     private final boolean argsAsIs;
 
     private final boolean needsThreadContext;
 
+    final int arityValue;
+
     public ReflectedJavaMethod(
             RubyModule implementationClass, Method method, JRubyMethod annotation) {
         super(implementationClass, annotation.visibility());
-        
+
         this.method = method;
-        
+
         Class<?>[] params = method.getParameterTypes();
         this.needsBlock = params.length > 0 && params[params.length - 1] == Block.class;
         this.isStatic = Modifier.isStatic(method.getModifiers());
-        
+
         Arity arity = Arity.fromAnnotation(annotation, params, this.isStatic);
         setArity(arity);
+        this.arityValue = arity.getValue();
 
-        this.required = arity.getValue() >= 0 ? arity.getValue() : Math.abs(arity.getValue())-1;
+        this.required = arityValue >= 0 ? arityValue : ( - arityValue ) - 1;
         this.optional = annotation.optional();
         this.rest = annotation.rest();
-        
+
         this.needsThreadContext = params.length > 0 && params[0] == ThreadContext.class;
         this.argsAsIs = ! isStatic && optional == 0 && !rest && !needsBlock && !needsThreadContext;
-        
+
         if (rest) {
             max = -1;
         } else {
@@ -88,31 +91,31 @@ public class ReflectedJavaMethod extends JavaMethod {
             IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         Arity.checkArgumentCount(runtime, name, args, required, max);
-        
+
         callConfig.pre(context, self, getImplementationClass(), name, block, null);
-        
+
         try {
             if (! isStatic && ! method.getDeclaringClass().isAssignableFrom(self.getClass())) {
                 throw new ClassCastException(
                         self.getClass().getName() + " cannot be converted to " +
                         method.getDeclaringClass().getName());
             }
-            
+
             if (argsAsIs) {
                 boolean isTrace = runtime.hasEventHooks();
                 try {
                     if (isTrace) {
                         runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
-                    }  
+                    }
                     return (IRubyObject)method.invoke(self, (Object[])args);
                 } finally {
                     if (isTrace) {
                         runtime.callEventHooks(context, RubyEvent.C_RETURN, context.getFile(), context.getLine(), name, getImplementationClass());
                     }
-                }                    
+                }
             } else {
                 int argsLength = calcArgsLength();
-                
+
                 Object[] params = new Object[argsLength];
                 int offset = 0;
                 if (needsThreadContext) {
@@ -135,7 +138,7 @@ public class ReflectedJavaMethod extends JavaMethod {
                 if (needsBlock) {
                     params[offset++] = block;
                 }
-                
+
                 boolean isTrace = runtime.hasEventHooks();
                 try {
                     if (isTrace) {
@@ -175,7 +178,7 @@ public class ReflectedJavaMethod extends JavaMethod {
 
     private int calcArgsLength() {
         int argsLength = 0;
-        
+
         if (needsThreadContext) {
             argsLength++;
         }
