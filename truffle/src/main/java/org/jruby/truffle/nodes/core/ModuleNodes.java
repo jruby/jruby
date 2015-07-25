@@ -83,7 +83,9 @@ public abstract class ModuleNodes {
     }
 
     public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        final RubyModule module = new RubyModule(context, selfClass, new RubyModuleModel(context, lexicalParent, name, false, null));
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null);
+        final RubyModule module = new RubyModule(context, selfClass, model);
+        model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;
         } else {

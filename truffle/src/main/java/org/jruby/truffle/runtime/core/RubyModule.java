@@ -27,7 +27,6 @@ public class RubyModule extends RubyBasicObject {
     public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyModuleModel model) {
         super(context, selfClass);
         this.model = model;
-        model.rubyModuleObject = this;
     }
 
 }
