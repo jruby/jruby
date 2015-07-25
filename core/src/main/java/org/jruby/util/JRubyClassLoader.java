@@ -147,6 +147,17 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         catch (Exception e) {
             if (debug) LOG.debug(e);
         }
+        // if we're on Java 7+ call URLClassLoader#close :
+        try {
+            URLClassLoader.class.getMethod("close").invoke(this);
+        }
+        catch (NoSuchMethodException ex) { /* noop on Java 6 */ }
+        catch (IllegalAccessException ex) {
+            LOG.info("unexpected illegal access: ", ex);
+        }
+        catch (Exception ex) {
+            LOG.debug(ex);
+        }
     }
 
     @Deprecated
@@ -331,18 +342,19 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         if (resource != null) {
             try {
                 resource.close();
-            } catch (IOException ignore) {
             }
+            catch (IOException ignore) { /* ignored */ }
         }
     }
 
-    private void definePackageInternal(String pkgname) {
-        if (getPackage(pkgname) == null) {
+    private void definePackageInternal(final String name) {
+        if (getPackage(name) == null) {
             try {
-                definePackage(pkgname, null, null, null, null, null, null, null);
-            } catch (IllegalArgumentException iae) {
-                if (getPackage(pkgname) == null) {
-                    throw new AssertionError("Cannot find package " + pkgname);
+                definePackage(name, null, null, null, null, null, null, null);
+            }
+            catch (IllegalArgumentException iae) {
+                if (getPackage(name) == null) {
+                    throw new AssertionError("Cannot find package " + name);
                 }
             }
         }
