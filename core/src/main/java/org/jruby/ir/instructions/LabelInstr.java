@@ -10,11 +10,11 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class LabelInstr extends Instr implements FixedArityInstr {
     public LabelInstr(Label label) {
-        super(Operation.LABEL, new Operand[] { label });
+        super(Operation.LABEL, label);
     }
 
     public Label getLabel() {
-        return (Label) operands[0];
+        return (Label) getSingleOperand();
     }
 
     @Override

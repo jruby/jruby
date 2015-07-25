@@ -18,7 +18,7 @@ public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityIn
     private final String varName;
 
     public SetCapturedVarInstr(Variable result, Operand match2Result, String varName) {
-        super(Operation.SET_CAPTURED_VAR, result, new Operand[] { match2Result });
+        super(Operation.SET_CAPTURED_VAR, result, match2Result);
 
         assert result != null: "SetCapturedVarInstr result is null";
 
@@ -26,7 +26,7 @@ public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityIn
     }
 
     public Operand getMatch2Result() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     public String getVarName() {

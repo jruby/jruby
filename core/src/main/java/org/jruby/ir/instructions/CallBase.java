@@ -91,7 +91,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     /** From interface ClosureAcceptingInstr */
     public Operand getClosureArg() {
-        return hasClosure ? operands[argsCount + 1] : null;
+        return hasClosure ? getOperands()[argsCount + 1] : null;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {
@@ -99,7 +99,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     }
 
     public Operand getReceiver() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     /**
@@ -107,7 +107,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
      * null of the closure argument from operands.
      */
     public Operand getArg1() {
-        return operands[1]; // operands layout: receiver, args*, closure
+        return getOperands()[1]; // operands layout: receiver, args*, closure
     }
 
     // FIXME: Maybe rename this.
@@ -119,7 +119,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     public Operand[] getCallArgs() {
         Operand[] callArgs = new Operand[argsCount];
 
-        System.arraycopy(operands, 1, callArgs, 0, argsCount);
+        System.arraycopy(getOperands(), 1, callArgs, 0, argsCount);
 
         return callArgs;
     }
@@ -236,14 +236,14 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         super.simplifyOperands(valueMap, force);
 
         // Recompute containsArgSplat flag
-        containsArgSplat = containsArgSplat(operands); // also checking receiver but receiver can never be a splat
+        containsArgSplat = containsArgSplat(getOperands()); // also checking receiver but receiver can never be a splat
         flagsComputed = false; // Forces recomputation of flags
     }
 
     public Operand[] cloneCallArgs(CloneInfo ii) {
         Operand[] clonedArgs = new Operand[argsCount];
         for (int i = 0; i < argsCount; i++) {
-            clonedArgs[i] = operands[i+1].cloneForInlining(ii);  // +1 for receiver being operands[0]
+            clonedArgs[i] = getOperands()[i+1].cloneForInlining(ii);  // +1 for receiver being operands[0]
         }
 
         return clonedArgs;
@@ -429,7 +429,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         IRubyObject[] newArgs = new IRubyObject[argsCount];
 
         for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
-            newArgs[i] = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
+            newArgs[i] = (IRubyObject) getOperands()[i+1].retrieve(context, self, currScope, currDynScope, temp);
         }
 
         return newArgs;
@@ -443,8 +443,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         // optimize for CallInstr which has splats only in the first position, we could do that.
         List<IRubyObject> argList = new ArrayList<>(argsCount * 2);
         for (int i = 0; i < argsCount; i++) { // receiver is operands[0]
-            IRubyObject rArg = (IRubyObject) operands[i+1].retrieve(context, self, currScope, currDynScope, temp);
-            if (operands[i+1] instanceof Splat) {
+            IRubyObject rArg = (IRubyObject) getOperands()[i+1].retrieve(context, self, currScope, currDynScope, temp);
+            if (getOperands()[i+1] instanceof Splat) {
                 RubyArray array = (RubyArray) rArg;
                 for (int j = 0; j < array.size(); j++) {
                     argList.add(array.eltOk(j));

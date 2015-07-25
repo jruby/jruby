@@ -10,16 +10,16 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
     public ExceptionRegionStartMarkerInstr(Label firstRescueBlockLabel) {
-        super(Operation.EXC_REGION_START, new Operand[] { firstRescueBlockLabel });
+        super(Operation.EXC_REGION_START, firstRescueBlockLabel);
     }
 
     public Label getFirstRescueBlockLabel() {
-        return (Label) operands[0];
+        return (Label) getSingleOperand();
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel((Label) operands[0]));
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel((Label) getSingleOperand()));
     }
 
     @Override

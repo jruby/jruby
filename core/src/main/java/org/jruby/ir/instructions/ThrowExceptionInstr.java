@@ -19,11 +19,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
     public ThrowExceptionInstr(Operand exception) {
-        super(Operation.THROW, new Operand[] { exception });
+        super(Operation.THROW, exception);
     }
 
     public Operand getException() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override

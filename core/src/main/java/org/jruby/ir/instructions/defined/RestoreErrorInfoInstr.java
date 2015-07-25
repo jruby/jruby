@@ -15,11 +15,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     public RestoreErrorInfoInstr(Operand arg) {
-        super(Operation.RESTORE_ERROR_INFO, new Operand[] { arg });
+        super(Operation.RESTORE_ERROR_INFO, arg);
     }
 
     public Operand getArg() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override

@@ -22,11 +22,11 @@ public class EQQInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getArg1() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public Operand getArg2() {
-        return operands[1];
+        return getOperands()[1];
     }
 
     @Override

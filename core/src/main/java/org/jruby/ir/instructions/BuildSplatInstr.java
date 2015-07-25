@@ -16,11 +16,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Represents a splat value in Ruby code: *array
 public class BuildSplatInstr extends ResultBaseInstr {
     public BuildSplatInstr(Variable result, Operand array) {
-        super(Operation.BUILD_SPLAT, result, new Operand[] { array });
+        super(Operation.BUILD_SPLAT, result, array);
     }
 
     public Operand getArray() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override

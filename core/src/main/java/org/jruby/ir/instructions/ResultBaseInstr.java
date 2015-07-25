@@ -19,6 +19,12 @@ public abstract class ResultBaseInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    public ResultBaseInstr(Operation operation, Variable result, Operand singleOperand) {
+        super(operation, singleOperand);
+
+        this.result = result;
+    }
+
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);

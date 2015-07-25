@@ -28,12 +28,12 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
 
     /** The object whose metaclass token has to be verified*/
     public Operand getCandidateObject() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     /** Where to jump if the version assumption fails? */
     public Label getFailurePathLabel() {
-        return (Label) operands[1];
+        return (Label) getOperands()[1];
     }
 
     // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?

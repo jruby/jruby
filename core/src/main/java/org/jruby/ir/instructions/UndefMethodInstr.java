@@ -19,11 +19,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class UndefMethodInstr extends ResultBaseInstr implements FixedArityInstr {
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public UndefMethodInstr(Variable result, Operand methodName) {
-        super(Operation.UNDEF_METHOD, result, new Operand[] { methodName });
+        super(Operation.UNDEF_METHOD, result, methodName);
     }
 
     public Operand getMethodName() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override

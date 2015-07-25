@@ -28,7 +28,7 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
     private volatile transient ConstantCache cache;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
-        super(Operation.INHERITANCE_SEARCH_CONST, result, new Operand[] { currentModule });
+        super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
 
@@ -37,7 +37,7 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
     }
 
     public Operand getCurrentModule() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     public String getConstName() {

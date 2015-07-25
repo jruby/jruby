@@ -18,7 +18,7 @@ public class DefineModuleInstr extends ResultBaseInstr implements FixedArityInst
     private final IRModuleBody newIRModuleBody;
 
     public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {
-        super(Operation.DEF_MODULE, result, new Operand[] { container });
+        super(Operation.DEF_MODULE, result, container);
 
         assert result != null : "DefineModuleInstr result is null";
 
@@ -31,7 +31,7 @@ public class DefineModuleInstr extends ResultBaseInstr implements FixedArityInst
     }
 
     public Operand getContainer() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override

@@ -7,10 +7,10 @@ import org.jruby.ir.operands.Variable;
 
 public abstract class BoxInstr extends ResultBaseInstr {
     public BoxInstr(Operation op, Variable result, Operand val) {
-        super(op, result, new Operand[] { val });
+        super(op, result, val);
     }
 
     public Operand getValue() {
-        return operands[0];
+        return getSingleOperand();
     }
 }

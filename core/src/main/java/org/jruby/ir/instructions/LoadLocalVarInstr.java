@@ -18,7 +18,7 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
     private final IRScope scope;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryLocalVariable result, LocalVariable lvar) {
-        super(Operation.BINDING_LOAD, result, new Operand[] { lvar });
+        super(Operation.BINDING_LOAD, result, lvar);
 
         assert result != null: "LoadLocalVarInstr result is null";
 
@@ -29,7 +29,7 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
      * computation itself.  We just use it as a proxy for its (a) name (b) offset (c) scope-depth.
      */
     public LocalVariable getLocalVar() {
-        return (LocalVariable) operands[0];
+        return (LocalVariable) getSingleOperand();
     }
 
     public IRScope getScope() {
@@ -46,7 +46,7 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
 
     // SSS FIXME: This feels dirty
     public void decrementLVarScopeDepth() {
-        operands[0] = getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1);
+        setSingleOperand(getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1));
     }
 
     @Override

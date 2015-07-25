@@ -27,11 +27,11 @@ public class GetClassVarContainerModuleInstr extends ResultBaseInstr implements 
     }
 
     public Variable getObject() {
-        return (Variable) (operands.length >= 2 ? operands[1] : null);
+        return (Variable) (getOperands().length >= 2 ? getOperands()[1] : null);
     }
 
     public Operand getStartingScope() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     @Override

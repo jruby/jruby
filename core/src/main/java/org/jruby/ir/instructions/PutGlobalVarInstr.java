@@ -36,11 +36,11 @@ public class PutGlobalVarInstr extends Instr implements FixedArityInstr {
     }
 
     public GlobalVariable getTarget() {
-        return (GlobalVariable) operands[0];
+        return (GlobalVariable) getOperands()[0];
     }
 
     public Operand getValue() {
-        return operands[1];
+        return getOperands()[1];
     }
 
     @Override

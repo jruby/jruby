@@ -27,7 +27,7 @@ public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedAri
     private volatile transient ConstantCache cache;
 
     public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
-        super(Operation.LEXICAL_SEARCH_CONST, result, new Operand[] { definingScope });
+        super(Operation.LEXICAL_SEARCH_CONST, result, definingScope);
 
         assert result != null: "LexicalSearchConstInstr result is null";
 
@@ -35,7 +35,7 @@ public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedAri
     }
 
     public Operand getDefiningScope() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     public String getConstName() {

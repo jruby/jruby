@@ -18,12 +18,12 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_CLASS_METH, new Operand[] { container });
+        super(Operation.DEF_CLASS_METH, container);
         this.method = method;
     }
 
     public Operand getContainer() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     public IRMethod getMethod() {

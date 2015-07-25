@@ -16,7 +16,7 @@ public class JumpInstr extends Instr implements FixedArityInstr {
     }
 
     public JumpInstr(Label target, boolean exitsExcRegion) {
-        super(Operation.JUMP, new Operand[] { target });
+        super(Operation.JUMP, target);
         this.exitsExcRegion = exitsExcRegion;
     }
 
@@ -25,7 +25,7 @@ public class JumpInstr extends Instr implements FixedArityInstr {
     }
 
     public Label getJumpTarget() {
-        return (Label) operands[0];
+        return (Label) getSingleOperand();
     }
 
     @Override

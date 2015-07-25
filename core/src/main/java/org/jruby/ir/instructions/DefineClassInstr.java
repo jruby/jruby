@@ -31,11 +31,11 @@ public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     public Operand getContainer() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public Operand getSuperClass() {
-        return operands[1];
+        return getOperands()[1];
     }
 
     @Override

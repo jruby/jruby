@@ -57,10 +57,10 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getNewName() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public Operand getOldName() {
-        return operands[1];
+        return getOperands()[1];
     }
 }

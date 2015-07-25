@@ -27,11 +27,11 @@ public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getBlockArg() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public Operand getYieldArg() {
-        return operands[1];
+        return getOperands()[1];
     }
 
     @Override

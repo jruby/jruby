@@ -22,7 +22,7 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
     private final int line;
 
     public BuildLambdaInstr(Variable result, Operand lambdaBody, String file, int line) {
-        super(Operation.LAMBDA, result, new Operand[] { lambdaBody });
+        super(Operation.LAMBDA, result, lambdaBody);
 
         this.file = file;
         this.line = line;
@@ -49,11 +49,11 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     public Operand getLambdaBody() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     public Operand getClosureArg() {
-        return operands[0];
+        return getSingleOperand();
     }
 
     @Override
