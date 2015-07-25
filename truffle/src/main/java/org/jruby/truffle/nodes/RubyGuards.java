@@ -189,8 +189,12 @@ public abstract class RubyGuards {
         return TimeNodes.TIME_LAYOUT.isTime(object.getDynamicObject());
     }
 
-    public static boolean isRubyException(Object object) {
-        return object instanceof RubyException;
+    public static boolean isRubyException(Object value) {
+        return (value instanceof RubyBasicObject) && isRubyException((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyException(RubyBasicObject object) {
+        return ExceptionNodes.EXCEPTION_LAYOUT.isException(object.getDynamicObject());
     }
 
     public static boolean isRubyFiber(Object fiber) {

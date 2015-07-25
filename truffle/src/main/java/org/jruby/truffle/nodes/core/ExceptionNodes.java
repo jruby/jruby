@@ -11,35 +11,57 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
 
+    @Layout
+    public interface ExceptionLayout {
+
+        DynamicObject createException(@Nullable Object message, @Nullable Backtrace backtrace);
+
+        boolean isException(DynamicObject object);
+
+        @Nullable
+        Object getMessage(DynamicObject object);
+
+        @Nullable
+        void setMessage(DynamicObject object, Object message);
+
+        @Nullable
+        Backtrace getBacktrace(DynamicObject object);
+
+        @Nullable
+        void setBacktrace(DynamicObject object, Backtrace backtrace);
+
+    }
+
+    public static final ExceptionLayout EXCEPTION_LAYOUT = ExceptionLayoutImpl.INSTANCE;
+
     // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
     public static Object getMessage(RubyBasicObject exception) {
-        assert RubyGuards.isRubyException(exception);
-        return ((RubyException) exception).message;
+        return EXCEPTION_LAYOUT.getMessage(exception.getDynamicObject());
     }
 
     public static Backtrace getBacktrace(RubyBasicObject exception) {
-        assert RubyGuards.isRubyException(exception);
-        return ((RubyException) exception).backtrace;
+        return EXCEPTION_LAYOUT.getBacktrace(exception.getDynamicObject());
     }
 
     public static void setBacktrace(RubyBasicObject exception, Backtrace backtrace) {
-        assert RubyGuards.isRubyException(exception);
-        ((RubyException) exception).backtrace = backtrace;
+        EXCEPTION_LAYOUT.setBacktrace(exception.getDynamicObject(), backtrace);
     }
 
     public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
@@ -58,16 +80,15 @@ public abstract class ExceptionNodes {
     }
 
     public static void setMessage(RubyBasicObject exception, Object message) {
-        assert RubyGuards.isRubyException(exception);
-        ((RubyException) exception).message = message;
+        EXCEPTION_LAYOUT.setMessage(exception.getDynamicObject(), message);
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return new RubyException(rubyClass);
+        return new RubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(null, null));
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return new RubyException(rubyClass, message, backtrace);
+        return new RubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)
