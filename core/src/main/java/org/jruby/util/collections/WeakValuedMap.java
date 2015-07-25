@@ -32,52 +32,50 @@ package org.jruby.util.collections;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A Map that holds its values weakly and uses object identity for keys.
+ * Map-like that holds its values weakly (backed by a concurrent hash map).
  */
 public class WeakValuedMap<Key, Value> {
-    private final ReferenceQueue deadReferences = new ReferenceQueue();
-    private final Map<Key, KeyedReference<Key, Value>> references = newMap();
 
-    public void put(Key key, Value value) {
+    private final Map<Key, KeyedReference<Key, Value>> map = newMap();
+    @SuppressWarnings("unchecked")
+    private final ReferenceQueue<Value> deadRefs = new ReferenceQueue();
+
+    public final void put(Key key, Value value) {
         cleanReferences();
-        references.put(key, new KeyedReference(value, key, deadReferences));
+        map.put(key, new KeyedReference<Key, Value>(value, key, deadRefs));
     }
 
-    public Value get(Key key) {
+    public final Value get(Key key) {
         cleanReferences();
-        KeyedReference<Key, Value> reference = references.get(key);
-        if (reference == null) {
-            return null;
-        }
+        KeyedReference<Key, Value> reference = map.get(key);
+        if (reference == null) return null;
         return reference.get();
     }
 
     protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return new ConcurrentHashMap();
+        return new ConcurrentHashMap<Key, KeyedReference<Key, Value>>();
     }
 
     protected static class KeyedReference<Key, Value> extends WeakReference<Value> {
-        private final Key key;
 
-        public KeyedReference(Value object, Key key, ReferenceQueue queue) {
+        protected final Key key;
+
+        public KeyedReference(Value object, Key key, ReferenceQueue<? super Value> queue) {
             super(object, queue);
             this.key = key;
         }
 
-        public Key key() {
-            return key;
-        }
     }
 
+    @SuppressWarnings("unchecked")
     private void cleanReferences() {
-        KeyedReference ref;
-        while ((ref = (KeyedReference) deadReferences.poll()) != null) {
-            references.remove((ref.key()));
+        KeyedReference<Key, Value> ref;
+        while ( ( ref = (KeyedReference) deadRefs.poll() ) != null ) {
+            map.remove( ref.key );
         }
     }
 }
