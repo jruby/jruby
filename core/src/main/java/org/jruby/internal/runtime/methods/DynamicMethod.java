@@ -135,7 +135,11 @@ public abstract class DynamicMethod {
     }
 
     public void setIsBuiltin(boolean isBuiltin) {
-        flags = (byte)(flags & BUILTIN_FLAG);
+        if (isBuiltin) {
+            flags |= BUILTIN_FLAG;
+        } else {
+            flags &= ~BUILTIN_FLAG;
+        }
     }
 
     /**
@@ -570,6 +574,10 @@ public abstract class DynamicMethod {
      * Set whether this method is "not implemented".
      */
     public void setNotImplemented(boolean setNotImplemented) {
-        flags = (byte)(flags & NOTIMPL_FLAG);
+        if (setNotImplemented) {
+            flags |= NOTIMPL_FLAG;
+        } else {
+            flags &= ~NOTIMPL_FLAG;
+        }
     }
 }
