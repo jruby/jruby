@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -20,15 +21,34 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
+
+    @Layout
+    public interface ClassLayout {
+
+        DynamicObject createClass(@Nullable Allocator allocator);
+
+        boolean isClass(DynamicObject dynamicObject);
+
+        @Nullable
+        Allocator getAllocator(DynamicObject dynamicObject);
+
+        @Nullable
+        void setAllocator(DynamicObject dynamicObject, Allocator allocator);
+
+    }
+
+    public static final ClassLayout CLASS_LAYOUT = ClassLayoutImpl.INSTANCE;
 
     /** Special constructor for class Class */
     public static RubyBasicObject createClassClass(RubyContext context, Allocator allocator) {
@@ -59,22 +79,22 @@ public abstract class ClassNodes {
     }
 
     public static Allocator getAllocator(RubyBasicObject rubyClass) {
-        return ((RubyClass) rubyClass).allocator;
+        return CLASS_LAYOUT.getAllocator(rubyClass.getDynamicObject());
     }
 
     public static void unsafeSetAllocator(RubyBasicObject rubyClass, Allocator allocator) {
-        ((RubyClass) rubyClass).allocator = allocator;
+        CLASS_LAYOUT.setAllocator(rubyClass.getDynamicObject(), allocator);
     }
 
-    public static RubyClass createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
-        final RubyClass rubyClass = createRubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
+    public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
+        final RubyBasicObject rubyClass = createRubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
         return rubyClass;
     }
 
-    public static RubyClass createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
+    public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
-        final RubyClass rubyClass = new RubyClass(context, classClass, superclass, model, allocator);
+        final RubyBasicObject rubyClass = new RubyModule(classClass, model, CLASS_LAYOUT.createClass(allocator));
 
         model.rubyModuleObject = rubyClass;
 
@@ -108,7 +128,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
             }
-            return ClassNodes.allocate(((RubyClass) rubyClass), this);
+            return ClassNodes.allocate(rubyClass, this);
         }
 
     }

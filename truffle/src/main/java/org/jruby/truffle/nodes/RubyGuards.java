@@ -95,7 +95,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyClass(Object value) {
-        return value instanceof RubyClass;
+        return (value instanceof RubyBasicObject) && isRubyClass((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyClass(RubyBasicObject value) {
+        return ClassNodes.CLASS_LAYOUT.isClass(value.getDynamicObject());
     }
 
     public static boolean isRubyHash(Object value) {

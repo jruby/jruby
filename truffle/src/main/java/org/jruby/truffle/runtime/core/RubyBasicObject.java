@@ -53,18 +53,10 @@ public class RubyBasicObject implements TruffleObject {
     @CompilationFinal private RubyBasicObject metaClass;
 
     public RubyBasicObject(RubyBasicObject rubyClass) {
-        this(rubyClass.getContext(), rubyClass);
+        this(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
     }
 
     public RubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
-        this(rubyClass.getContext(), rubyClass, dynamicObject);
-    }
-
-    protected RubyBasicObject(RubyContext context, RubyBasicObject rubyClass) {
-        this(context, rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
-    }
-
-    private RubyBasicObject(RubyContext context, RubyBasicObject rubyClass, DynamicObject dynamicObject) {
         assert rubyClass == null || RubyGuards.isRubyClass(rubyClass);
 
         this.dynamicObject = dynamicObject;

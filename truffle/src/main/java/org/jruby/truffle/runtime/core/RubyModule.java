@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
@@ -24,8 +25,8 @@ public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;
 
-    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyModuleModel model) {
-        super(context, selfClass);
+    public RubyModule(RubyBasicObject selfClass, RubyModuleModel model, DynamicObject dynamicObject) {
+        super(selfClass, dynamicObject);
         this.model = model;
     }
 
