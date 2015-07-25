@@ -23,7 +23,7 @@ public class RubyClass extends RubyModule {
     public Allocator allocator;
 
     public RubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
-        super(context, classClass, lexicalParent, name, isSingleton, attached);
+        super(context, classClass, new RubyModuleModel(context, lexicalParent, name, isSingleton, attached));
 
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(this).name = ModuleNodes.getModel(this).givenBaseName;
