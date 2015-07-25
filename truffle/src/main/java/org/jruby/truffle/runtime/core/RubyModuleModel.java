@@ -51,7 +51,7 @@ public class RubyModuleModel implements ModuleChain {
     @CompilerDirectives.CompilationFinal
     protected ModuleChain parentModule;
 
-    private final RubyBasicObject lexicalParent;
+    public final RubyBasicObject lexicalParent;
     public final String givenBaseName;
     /**
      * Full name, including named parent
@@ -641,7 +641,7 @@ public class RubyModuleModel implements ModuleChain {
      * This method supports initialization and solves boot-order problems and should not normally be
      * used.
      */
-    protected void unsafeSetSuperclass(RubyBasicObject superClass) {
+    public void unsafeSetSuperclass(RubyBasicObject superClass) {
         assert RubyGuards.isRubyClass(superClass);
         assert isClass();
         assert parentModule == null;

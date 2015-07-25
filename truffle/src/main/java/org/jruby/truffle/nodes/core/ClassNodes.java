@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModuleModel;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -66,13 +67,30 @@ public abstract class ClassNodes {
     }
 
     public static RubyClass createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
-        final RubyClass rubyClass = new RubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
+        final RubyClass rubyClass = createRubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
         return rubyClass;
     }
 
     public static RubyClass createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
-        return new RubyClass(context, classClass, lexicalParent, superclass, name, isSingleton, attached, allocator);
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
+        final RubyClass rubyClass = new RubyClass(context, classClass, superclass, model, allocator);
+
+        model.rubyModuleObject = rubyClass;
+
+        if (model.lexicalParent == null) { // bootstrap or anonymous module
+            ModuleNodes.getModel(rubyClass).name = ModuleNodes.getModel(rubyClass).givenBaseName;
+        } else {
+            ModuleNodes.getModel(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+        }
+
+        ClassNodes.unsafeSetAllocator(rubyClass, allocator);
+
+        if (superclass != null) {
+            ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);
+        }
+
+        return rubyClass;
     }
 
     @CoreMethod(names = "allocate")
