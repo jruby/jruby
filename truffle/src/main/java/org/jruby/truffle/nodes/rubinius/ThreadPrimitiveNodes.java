@@ -13,6 +13,7 @@ import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
 import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
 import static org.jruby.RubyThread.javaPriorityToRubyPriority;
 import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
+
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -60,8 +61,13 @@ public class ThreadPrimitiveNodes {
 
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(RubyBasicObject thread) {
-            int javaPriority = ThreadNodes.getFields(thread).thread.getPriority();
-            return javaPriorityToRubyPriority(javaPriority);
+            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            if (javaThread != null) {
+                int javaPriority = javaThread.getPriority();
+                return javaPriorityToRubyPriority(javaPriority);
+            } else {
+                return ThreadNodes.getFields(thread).priority;
+            }
         }
     }
 
@@ -80,7 +86,11 @@ public class ThreadPrimitiveNodes {
             }
 
             int javaPriority = rubyPriorityToJavaPriority(rubyPriority);
-            ThreadNodes.getFields(thread).thread.setPriority(javaPriority);
+            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            if (javaThread != null) {
+                javaThread.setPriority(javaPriority);
+                ThreadNodes.getFields(thread).priority = rubyPriority;
+            }
             return rubyPriority;
         }
     }

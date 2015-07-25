@@ -102,7 +102,7 @@ public abstract class ThreadNodes {
         getFields(((RubyThread) thread)).manager.unregisterThread(thread);
 
         getFields(((RubyThread) thread)).status = Status.DEAD;
-        // getFields(((RubyThread) thread)).thread = null; // kept for Thread#priority
+        getFields(((RubyThread) thread)).thread = null;
         releaseOwnedLocks(thread);
         getFields(((RubyThread) thread)).finished.countDown();
     }
