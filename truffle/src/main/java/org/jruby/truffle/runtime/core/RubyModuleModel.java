@@ -42,7 +42,7 @@ public class RubyModuleModel implements ModuleChain {
         }
     }
 
-    private final RubyBasicObject rubyModuleObject;
+    public RubyBasicObject rubyModuleObject;
 
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
@@ -79,11 +79,9 @@ public class RubyModuleModel implements ModuleChain {
     public final boolean isSingleton;
     public final RubyBasicObject attached;
 
-    public RubyModuleModel(RubyBasicObject rubyModuleObject, RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyBasicObject attached) {
-        assert RubyGuards.isRubyModule(rubyModuleObject);
+    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, CyclicAssumption unmodifiedAssumption, boolean isSingleton, RubyBasicObject attached) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         assert attached == null || RubyGuards.isRubyModule(attached);
-        this.rubyModuleObject = rubyModuleObject;
         this.context = context;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;

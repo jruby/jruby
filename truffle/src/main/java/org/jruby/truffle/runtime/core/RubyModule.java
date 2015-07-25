@@ -29,7 +29,8 @@ public class RubyModule extends RubyBasicObject {
 
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
 
-        model = new RubyModuleModel(this, context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"), isSingleton, attached);
+        model = new RubyModuleModel(context, lexicalParent, name, new CyclicAssumption(name + " is unmodified"), isSingleton, attached);
+        model.rubyModuleObject = this;
 
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(this).name = ModuleNodes.getModel(this).givenBaseName;
