@@ -13,15 +13,17 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Map;
+
 public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr {
     public BlockGivenInstr(Variable result, Operand block) {
-        super(Operation.BLOCK_GIVEN, result, block);
+        super(Operation.BLOCK_GIVEN, result, new Operand[] {block});
 
         assert result != null: "BlockGivenInstr result is null";
     }
 
     public Operand getBlockArg() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

@@ -1,8 +1,10 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 
+import java.util.Map;
 import org.jruby.ir.persistence.IRWriterEncoder;
 
 public abstract class OneOperandBranchInstr extends BranchInstr {
@@ -11,7 +13,7 @@ public abstract class OneOperandBranchInstr extends BranchInstr {
     }
 
     public Operand getArg1() {
-        return getOperands()[1];
+        return operands[1];
     }
 
     @Override

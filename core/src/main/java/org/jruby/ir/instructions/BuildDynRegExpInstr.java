@@ -35,7 +35,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     public Operand[] getPieces() {
-       return getOperands();
+       return operands;
     }
 
     public RegexpOptions getOptions() {
@@ -57,10 +57,10 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        int length = getOperands().length;
+        int length = operands.length;
         RubyString[] strings = new RubyString[length];
         for (int i = 0; i < length; i++) {
-            strings[i] = (RubyString) getOperands()[i].retrieve(context, self, currScope, currDynScope, temp);
+            strings[i] = (RubyString) operands[i].retrieve(context, self, currScope, currDynScope, temp);
         }
         return strings;
     }

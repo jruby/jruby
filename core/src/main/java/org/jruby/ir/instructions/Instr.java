@@ -35,8 +35,7 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
-    private Operand singleOperand;
-    private Operand[] operands;
+    protected Operand[] operands;
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
     private final Operation operation;
@@ -50,13 +49,6 @@ public abstract class Instr {
         this.rpc = -1;
         this.operation = operation;
         this.operands = operands;
-    }
-
-    public Instr(Operation operation, Operand singleOperand) {
-        this.ipc = -1;
-        this.rpc = -1;
-        this.operation = operation;
-        this.singleOperand = singleOperand;
     }
 
     private static String[] EMPTY_STRINGS = new String[0];
@@ -180,10 +172,6 @@ public abstract class Instr {
 
     /* Array of all operands for this instruction */
     public Operand[] getOperands() {
-        Operand[] operands = this.operands;
-        if (operands != null) return operands;
-        operands = new Operand[] {singleOperand};
-        this.operands = operands;
         return operands;
     }
 
@@ -274,18 +262,5 @@ public abstract class Instr {
 
     public void visit(IRVisitor visitor) {
         throw new RuntimeException(this.getClass().getSimpleName() + " has no compile logic");
-    }
-
-    public Operand getSingleOperand() {
-        return singleOperand;
-    }
-
-    public void setSingleOperand(Operand singleOperand) {
-        this.singleOperand = singleOperand;
-        this.operands = null;
-    }
-
-    public void setOperands(Operand[] operands) {
-        this.operands = operands;
     }
 }

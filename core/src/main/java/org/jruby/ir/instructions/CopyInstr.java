@@ -16,7 +16,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
     public CopyInstr(Operation op, Variable result, Operand source) {
-        super(op, result, source);
+        super(op, result, new Operand[] { source });
     }
 
     public CopyInstr(Variable result, Operand source) {
@@ -24,7 +24,7 @@ public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getSource() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

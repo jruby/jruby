@@ -10,6 +10,6 @@ public abstract class BranchInstr extends Instr {
     }
 
     public Label getJumpTarget() {
-        return (Label) getOperands()[0];
+        return (Label) operands[0];
     }
 }

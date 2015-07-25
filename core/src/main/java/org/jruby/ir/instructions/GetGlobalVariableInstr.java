@@ -21,11 +21,11 @@ public class GetGlobalVariableInstr extends ResultBaseInstr  implements FixedAri
     }
 
     public GetGlobalVariableInstr(Variable dest, GlobalVariable gvar) {
-        super(Operation.GET_GLOBAL_VAR, dest, gvar);
+        super(Operation.GET_GLOBAL_VAR, dest, new Operand[] { gvar });
     }
 
     public GlobalVariable getGVar() {
-        return (GlobalVariable) getSingleOperand();
+        return (GlobalVariable) operands[0];
     }
 
     public boolean computeScopeFlags(IRScope scope) {

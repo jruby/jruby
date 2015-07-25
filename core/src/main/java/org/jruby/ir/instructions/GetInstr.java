@@ -10,7 +10,7 @@ public abstract class GetInstr extends ResultBaseInstr implements FixedArityInst
     private final String  ref;
 
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
-        super(op, result, source);
+        super(op, result, new Operand[] { source });
 
         assert result != null: "" + getClass().getSimpleName() + " result is null";
 
@@ -22,7 +22,7 @@ public abstract class GetInstr extends ResultBaseInstr implements FixedArityInst
     }
 
     public Operand getSource() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

@@ -9,11 +9,11 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class UnboxInstr extends ResultBaseInstr {
     public UnboxInstr(Operation op, Variable result, Operand value) {
-        super(op, result, value);
+        super(op, result, new Operand[] { value });
     }
 
     public Operand getValue() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

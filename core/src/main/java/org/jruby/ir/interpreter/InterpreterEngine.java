@@ -331,7 +331,7 @@ public class InterpreterEngine {
             case LABEL:
                 break;
             case EXC_REGION_START:
-                rescuePCs.push(((Label)instr.getSingleOperand()).getTargetPC());
+                rescuePCs.push(((Label)instr.getOperands()[0]).getTargetPC());
                 break;
             case EXC_REGION_END:
                 rescuePCs.pop();

@@ -47,7 +47,7 @@ public class BacktickInstr extends ResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString newString = context.runtime.newString();
 
-        for (Operand p: getOperands()) {
+        for (Operand p: operands) {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
             newString.append19((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }

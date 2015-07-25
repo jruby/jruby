@@ -22,13 +22,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReifyClosureInstr extends ResultBaseInstr implements FixedArityInstr {
     public ReifyClosureInstr(Variable result, Variable source) {
-        super(Operation.REIFY_CLOSURE, result, source);
+        super(Operation.REIFY_CLOSURE, result, new Operand[] { source });
 
         assert result != null: "ReceiveClosureInstr result is null";
     }
 
     public Variable getSource() {
-        return (Variable) getSingleOperand();
+        return (Variable) operands[0];
     }
 
     @Override

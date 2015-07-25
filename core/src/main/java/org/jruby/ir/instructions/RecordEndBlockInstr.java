@@ -17,7 +17,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
 
     public RecordEndBlockInstr(IRScope declaringScope, WrappedIRClosure endBlockClosure) {
-        super(Operation.RECORD_END_BLOCK, endBlockClosure);
+        super(Operation.RECORD_END_BLOCK, new Operand[] { endBlockClosure });
 
         this.declaringScope = declaringScope;
     }
@@ -27,7 +27,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     }
 
     public WrappedIRClosure getEndBlockClosure() {
-        return (WrappedIRClosure) getSingleOperand();
+        return (WrappedIRClosure) operands[0];
     }
 
     @Override

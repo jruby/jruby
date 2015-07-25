@@ -23,11 +23,11 @@ public class ProcessModuleBodyInstr extends ResultBaseInstr implements FixedArit
     }
 
     public Operand getModuleBody() {
-        return getOperands()[0];
+        return operands[0];
     }
 
     public Operand getBlock() {
-        return getOperands()[1];
+        return operands[1];
     }
 
     @Override

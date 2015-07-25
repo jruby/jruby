@@ -13,7 +13,7 @@ public abstract class MultipleAsgnBase extends ResultBaseInstr {
     protected final int index;
 
     public MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
-        super(op, result, array);
+        super(op, result, new Operand[] { array });
 
         assert result != null : "MultipleAsgnBase result is null";
 
@@ -21,7 +21,7 @@ public abstract class MultipleAsgnBase extends ResultBaseInstr {
     }
 
     public Operand getArray() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     public int getIndex() {

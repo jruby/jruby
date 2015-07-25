@@ -19,11 +19,11 @@ public abstract class PutInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getTarget() {
-        return getOperands()[0];
+        return operands[0];
     }
 
     public Operand getValue() {
-        return getOperands()[1];
+        return operands[1];
     }
 
     @Override

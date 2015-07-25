@@ -5,12 +5,15 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+
+import java.util.Map;
 
 // NOTE: breaks that jump out of while/until loops would have
 // been transformed by the IR building into an ordinary jump.
@@ -35,7 +38,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     private final String scopeName; // Primarily a debugging aid
 
     public BreakInstr(Operand returnValue, String scopeName) {
-        super(Operation.BREAK, returnValue);
+        super(Operation.BREAK, new Operand[] { returnValue });
         this.scopeName = scopeName;
     }
 
@@ -44,7 +47,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getReturnValue() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

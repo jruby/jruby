@@ -19,13 +19,13 @@ import java.util.Map;
 
 public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
     public ToAryInstr(Variable result, Operand array) {
-        super(Operation.TO_ARY, result, array);
+        super(Operation.TO_ARY, result, new Operand[] { array });
 
         assert result != null: "ToAryInstr result is null";
     }
 
     public Operand getArray() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

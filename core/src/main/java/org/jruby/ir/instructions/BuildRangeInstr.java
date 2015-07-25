@@ -28,11 +28,11 @@ public class BuildRangeInstr extends ResultBaseInstr {
     }
 
     public Operand getBegin() {
-        return getOperands()[0];
+        return operands[0];
     }
 
     public Operand getEnd() {
-        return getOperands()[1];
+        return operands[1];
     }
 
     public boolean isExclusive() {

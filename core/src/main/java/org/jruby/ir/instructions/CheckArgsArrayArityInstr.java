@@ -19,7 +19,7 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     public final boolean rest;
 
     public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, boolean rest) {
-        super(Operation.CHECK_ARGS_ARRAY_ARITY, argsArray);
+        super(Operation.CHECK_ARGS_ARRAY_ARITY, new Operand[] { argsArray });
 
         this.required = required;
         this.opt = opt;
@@ -27,7 +27,7 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getArgsArray() {
-        return getSingleOperand();
+        return operands[0];
     }
 
     @Override

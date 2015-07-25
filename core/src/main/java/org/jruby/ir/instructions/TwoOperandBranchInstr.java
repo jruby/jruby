@@ -19,10 +19,10 @@ public abstract class TwoOperandBranchInstr extends BranchInstr {
     }
 
     public Operand getArg1() {
-        return getOperands()[1];
+        return operands[1];
     }
 
     public Operand getArg2() {
-        return getOperands()[2];
+        return operands[2];
     }
 }
