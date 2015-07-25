@@ -143,10 +143,9 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
-        } catch (Exception e) {
-            if (debug) {
-                LOG.debug(e);
-            }
+        }
+        catch (Exception e) {
+            if (debug) LOG.debug(e);
         }
     }
 
@@ -164,9 +163,9 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
 
                 Class unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
                 unloader = (Runnable) unloaderClass.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
+            catch (RuntimeException e) { throw e; }
+            catch (Exception e) { throw new RuntimeException(e); }
         }
         return unloader;
     }
