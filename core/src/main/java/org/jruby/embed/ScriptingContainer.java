@@ -267,7 +267,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
                 return SingletonLocalContextProvider.getProvider(behavior, lazy);
         }
     }
-    
+
     private void initRubyInstanceConfig() throws RaiseException {
         String home = SystemPropertyCatcher.findJRubyHome(this);
         if (home != null) {
@@ -1856,14 +1856,15 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @since JRuby 1.5.0
      */
     public void terminate() {
-        if (getProvider().isRuntimeInitialized()) {
-            getProvider().getRuntime().tearDown(false);
+        LocalContextProvider provider = getProvider();
+        if (provider.isRuntimeInitialized()) {
+            provider.getRuntime().tearDown(false);
             try {
                 getProvider().getRuntime().getJRubyClassLoader().close();
             }
             catch(IOException weTriedIt){}
         }
-        getProvider().terminate();
+        provider.terminate();
     }
 
     /**
@@ -1876,6 +1877,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @since JRuby 1.6.0
      */
+    @Override
     public void finalize() throws Throwable {
         super.finalize();
         // singleton containers share global runtime, and should not tear it down

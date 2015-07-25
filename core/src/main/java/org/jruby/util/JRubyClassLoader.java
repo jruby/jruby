@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -110,11 +111,24 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             if (debug) LOG.debug(e);
+        }
+        // if we're on Java 7+ call URLClassLoader#close :
+        try {
+            URLClassLoader.class.getMethod("close").invoke(this);
+        }
+        catch (NoSuchMethodException ex) { /* noop on Java 6 */ }
+        catch (IllegalAccessException ex) {
+            LOG.info("unexpected illegal access: ", ex);
+        }
+        catch (Exception ex) {
+            LOG.debug(ex);
         }
     }
 
+    @Deprecated
     public synchronized Runnable getJDBCDriverUnloader() {
         if (unloader == null) {
             try {
@@ -128,9 +142,9 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
                 Class<?> unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
                 unloader = (Runnable) unloaderClass.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
+            catch (RuntimeException e) { throw e; }
+            catch (Exception e) { throw new RuntimeException(e); }
         }
         return unloader;
     }

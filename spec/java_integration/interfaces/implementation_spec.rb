@@ -218,6 +218,42 @@ describe "Single-method Java interfaces" do
       dir.should be_kind_of(java.io.File)
       name.should be_kind_of(String)
     end
+
+    java.io.File.new('.').listFiles do |dir, name, invalid|
+      # should choose FilenameFilter#accept(File, String)
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+    end
+
+    java.io.File.new('.').listFiles do |pathname, *args|
+      pathname.should be_kind_of(java.io.File)
+      args.should be_empty
+    end
+
+    java.io.File.new('.').listFiles do |dir, name, *args|
+      dir.should be_kind_of(java.io.File)
+      name.should be_kind_of(String)
+      args.should be_empty
+    end
+
+    java.io.File.new('.').listFiles do |*args|
+      args[0].should be_kind_of(java.io.File)
+      args.size.should eql 1
+    end
+
+    #executor = java.util.concurrent.Executors.newSingleThreadExecutor
+    #executor.execute { |*args| args.should be_empty }; sleep 0.1
+    #executor.shutdown
+
+    work_queue = java.util.concurrent.LinkedBlockingQueue.new
+    executor = java.util.concurrent.ThreadPoolExecutor.new(0, 2, 0, java.util.concurrent.TimeUnit::SECONDS, work_queue) do
+      |*args| # newThread(Runnable)
+      args[0].should be_kind_of(java.lang.Runnable)
+      args.size.should eql 1
+      java.lang.Thread.new(args[0])
+    end
+    executor.execute { |*args| args.should be_empty }; sleep 0.1
+    executor.shutdown
   end
 
   it "should maintain Ruby object equality when passed through Java and back" do

@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -10,11 +11,6 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
- * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004-2006 Charles O Nutter <headius@headius.com>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -28,18 +24,39 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.util.collections;
+package org.jruby.util;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.net.URL;
 
-/**
- * Map-like that holds its values weakly and uses object identity for keys.
- */
-public class WeakValuedIdentityMap<Key, Value> extends WeakValuedMap<Key, Value> {
-    @Override
-    protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return Collections.synchronizedMap( new IdentityHashMap<Key, KeyedReference<Key, Value>>() );
+public class UriLikePathHelper {
+    
+    private final ClassLoader classLoader;
+
+    public UriLikePathHelper(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+    
+    public URL getResource(String ref) {
+        URL url = classLoader.getResource( ref );
+        if ( url == null && ref.startsWith( "/" ) ) {
+            url = classLoader.getResource( ref.substring( 1 ) );
+        }
+        return url;
+    }
+    
+    public String getUriLikePath() {
+        return createUri("/.jrubydir");
+    }
+
+    public String getUriLikePath(String ref) {
+        return createUri(ref);
+    }
+    
+    String createUri(String ref) {
+        URL url = getResource( ref );
+        if ( url == null ) {
+            throw new RuntimeException( "reference " + ref + " not found on classloader " + classLoader );
+        }
+        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
 }
