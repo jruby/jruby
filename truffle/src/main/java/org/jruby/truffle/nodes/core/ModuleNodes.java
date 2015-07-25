@@ -83,7 +83,7 @@ public abstract class ModuleNodes {
     }
 
     public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        return new RubyModule(context, selfClass, lexicalParent, name, currentNode);
+        return new RubyModule(context, selfClass, lexicalParent, name, currentNode, false, null);
     }
 
     @CoreMethod(names = "===", required = 1)

@@ -23,12 +23,6 @@ public class RubyClass extends RubyModule {
     @CompilationFinal
     public Allocator allocator;
 
-    public RubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
-        this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
-        // Always create a class singleton class for normal classes for consistency.
-        ModuleNodes.getModel(this).ensureSingletonConsistency();
-    }
-
     public RubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
         super(context, classClass, lexicalParent, name, null, isSingleton, attached);
 

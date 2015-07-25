@@ -556,24 +556,24 @@ public class CoreLibrary {
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, objectClass, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
+        return ClassNodes.createRubyClass(context, objectClass, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
     }
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name, Allocator allocator) {
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, objectClass, superclass, name, allocator);
+        return ClassNodes.createRubyClass(context, objectClass, superclass, name, allocator);
     }
 
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, lexicalParent, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
+        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, ClassNodes.getAllocator(((RubyClass) superclass)));
     }
 
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return new RubyClass(context, lexicalParent, superclass, name, allocator);
+        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, allocator);
     }
 
     private RubyBasicObject defineModule(String name) {

@@ -683,7 +683,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         String name = String.format("#<Class:%s>", getName());
-        rubyModuleObject.setMetaClass(new RubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
+        rubyModuleObject.setMetaClass(ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
 
         return rubyModuleObject.getMetaClass();
     }

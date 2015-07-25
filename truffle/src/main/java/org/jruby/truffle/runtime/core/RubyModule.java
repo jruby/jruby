@@ -24,10 +24,6 @@ public class RubyModule extends RubyBasicObject {
 
     public final RubyModuleModel model;
 
-    public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        this(context, selfClass, lexicalParent, name, currentNode, false, null);
-    }
-
     public RubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode, boolean isSingleton, RubyBasicObject attached) {
         super(context, selfClass);
 

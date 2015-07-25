@@ -31,7 +31,7 @@ public abstract class ClassNodes {
 
     /** Special constructor for class Class */
     public static RubyBasicObject createClassClass(RubyContext context, Allocator allocator) {
-        return new RubyClass(context, null, null, null, "Class", false, null, allocator);
+        return createRubyClass(context, null, null, null, "Class", false, null, allocator);
     }
 
     /**
@@ -41,7 +41,7 @@ public abstract class ClassNodes {
     public static RubyBasicObject createBootClass(RubyBasicObject classClass, RubyBasicObject superclass, String name, Allocator allocator) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        return new RubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
+        return createRubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
     }
 
     public static RubyBasicObject createSingletonClassOfObject(RubyContext context, RubyBasicObject superclass, RubyBasicObject attached, String name) {
@@ -50,7 +50,7 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached == null || RubyGuards.isRubyModule(attached);
-        return ModuleNodes.getModel(new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
+        return ModuleNodes.getModel(createRubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
     public static RubyBasicObject allocate(RubyClass rubyClass, Node currentNode) {
@@ -63,6 +63,16 @@ public abstract class ClassNodes {
 
     public static void unsafeSetAllocator(RubyClass rubyClass, Allocator allocator) {
         rubyClass.allocator = allocator;
+    }
+
+    public static RubyClass createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
+        final RubyClass rubyClass = new RubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
+        ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
+        return rubyClass;
+    }
+
+    public static RubyClass createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
+        return new RubyClass(context, classClass, lexicalParent, superclass, name, isSingleton, attached, allocator);
     }
 
     @CoreMethod(names = "allocate")
@@ -227,7 +237,7 @@ public abstract class ClassNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
+            return createRubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
         }
 
     }
