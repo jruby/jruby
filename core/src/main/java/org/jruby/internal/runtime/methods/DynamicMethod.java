@@ -61,16 +61,17 @@ public abstract class DynamicMethod {
     protected CallConfiguration callConfig;
     /** The serial number for this method object, to globally identify it */
     protected long serialNumber;
-    /** Is this a builtin core method or not */
-    protected boolean builtin = false;
+    /** Flags for builtin, notimpl, etc */
+    protected byte flags;
     /** Single-arity native call */
     protected NativeCall nativeCall;
     /** The simple, base name this method was defined under. May be null.*/
     protected String name;
-    /** Whether this method is "not implemented". */
-    protected boolean notImplemented = false;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
+
+    private static final int BUILTIN_FLAG = 0x1;
+    private static final int NOTIMPL_FLAG = 0x2;
 
     /**
      * Base constructor for dynamic method handles.
@@ -130,11 +131,11 @@ public abstract class DynamicMethod {
     }
 
     public boolean isBuiltin() {
-        return builtin;
+        return (flags & BUILTIN_FLAG) == BUILTIN_FLAG;
     }
 
     public void setIsBuiltin(boolean isBuiltin) {
-        this.builtin = isBuiltin;
+        flags = (byte)(flags & BUILTIN_FLAG);
     }
 
     /**
@@ -555,7 +556,7 @@ public abstract class DynamicMethod {
      * the feature in question is unsupported (but still having the method defined).
      */
     public boolean isNotImplemented() {
-        return notImplemented;
+        return (flags & NOTIMPL_FLAG) == NOTIMPL_FLAG;
     }
     
     /**
@@ -569,6 +570,6 @@ public abstract class DynamicMethod {
      * Set whether this method is "not implemented".
      */
     public void setNotImplemented(boolean setNotImplemented) {
-        this.notImplemented = setNotImplemented;
+        flags = (byte)(flags & NOTIMPL_FLAG);
     }
 }
