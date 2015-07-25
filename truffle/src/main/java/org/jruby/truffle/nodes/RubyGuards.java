@@ -111,7 +111,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyRegexp(Object value) {
-        return value instanceof RubyRegexp;
+        return (value instanceof RubyBasicObject) && isRubyRegexp((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyRegexp(RubyBasicObject value) {
+        return RegexpNodes.REGEXP_LAYOUT.isRegexp(value.getDynamicObject());
     }
 
     public static boolean isRubyString(Object value) {
