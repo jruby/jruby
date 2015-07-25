@@ -104,28 +104,28 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     }
 
     /**
-     * Called when the parent runtime is torn down.
+     * @deprecated use {@link #close()} instead
      */
     public void tearDown(boolean debug) {
+        close();
+    }
+
+    /**
+     * Called when the parent runtime is torn down.
+     */
+    @Override
+    public void close() {
+        try {
+            super.close();
+        }
+        catch (Exception ex) { LOG.debug(ex); }
+
         try {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
         }
-        catch (Exception e) {
-            if (debug) LOG.debug(e);
-        }
-        // if we're on Java 7+ call URLClassLoader#close :
-        try {
-            URLClassLoader.class.getMethod("close").invoke(this);
-        }
-        catch (NoSuchMethodException ex) { /* noop on Java 6 */ }
-        catch (IllegalAccessException ex) {
-            LOG.info("unexpected illegal access: ", ex);
-        }
-        catch (Exception ex) {
-            LOG.debug(ex);
-        }
+        catch (Exception ex) { LOG.debug(ex); }
     }
 
     @Deprecated

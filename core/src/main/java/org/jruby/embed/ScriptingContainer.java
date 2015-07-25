@@ -29,16 +29,11 @@
  */
 package org.jruby.embed;
 
-import java.io.UnsupportedEncodingException;
-
-import org.jruby.embed.internal.LocalContextProvider;
-
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -1859,10 +1854,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         LocalContextProvider provider = getProvider();
         if (provider.isRuntimeInitialized()) {
             provider.getRuntime().tearDown(false);
-            try {
-                getProvider().getRuntime().getJRubyClassLoader().close();
-            }
-            catch(IOException weTriedIt){}
         }
         provider.terminate();
     }
