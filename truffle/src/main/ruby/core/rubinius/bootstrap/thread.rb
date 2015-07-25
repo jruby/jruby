@@ -33,6 +33,12 @@ class Thread
     nil
   end
 
+  def raise_prim(exc)
+    Rubinius.primitive :thread_raise
+    Kernel.raise PrimitiveFailure, "Thread#raise primitive failed"
+  end
+  private :raise_prim
+
   def self.exit
     Thread.current.kill
   end
