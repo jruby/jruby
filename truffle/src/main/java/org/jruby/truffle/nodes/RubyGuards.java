@@ -182,9 +182,14 @@ public abstract class RubyGuards {
         return value.getDynamicObject().getShape().getObjectType() == ByteArrayNodes.BYTE_ARRAY_TYPE;
     }
 
-    public static boolean isRubyProc(Object value) {
-        return value instanceof RubyProc;
+    public static boolean isRubyProc(Object object) {
+        return (object instanceof RubyBasicObject) && isRubyProc((RubyBasicObject) object);
     }
+
+    public static boolean isRubyProc(RubyBasicObject object) {
+        return ProcNodes.PROC_LAYOUT.isProc(object.getDynamicObject());
+    }
+
     public static boolean isRubyEncodingConverter(RubyBasicObject encodingConverter) {
         return EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.isEncodingConverter(encodingConverter.getDynamicObject());
     }
