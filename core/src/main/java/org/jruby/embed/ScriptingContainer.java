@@ -29,6 +29,7 @@
  */
 package org.jruby.embed;
 
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
@@ -1896,8 +1897,11 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @since JRuby 1.5.0
      */
     public void terminate() {
-        if (getProvider().isRuntimeInitialized()) getProvider().getRuntime().tearDown(false);
-        getProvider().terminate();
+        LocalContextProvider provider = getProvider();
+        if (provider.isRuntimeInitialized()) {
+            provider.getRuntime().tearDown(false);
+        }
+        provider.terminate();
     }
 
     /**
@@ -1908,6 +1912,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @since JRuby 1.6.0
      */
+    @Override
     public void finalize() throws Throwable {
         super.finalize();
         terminate();
