@@ -102,7 +102,7 @@ public abstract class ThreadNodes {
         getFields(((RubyThread) thread)).manager.unregisterThread(thread);
 
         getFields(((RubyThread) thread)).status = Status.DEAD;
-        getFields(((RubyThread) thread)).thread = null;
+        // getFields(((RubyThread) thread)).thread = null; // kept for Thread#priority
         releaseOwnedLocks(thread);
         getFields(((RubyThread) thread)).finished.countDown();
     }
@@ -267,6 +267,11 @@ public abstract class ThreadNodes {
 
     public static RubyThread.ThreadFields getFields(RubyThread thread) {
         return thread.fields;
+    }
+
+    public static RubyThread.ThreadFields getFields(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
+        return ((RubyThread) thread).fields;
     }
 
     public enum InterruptMode {

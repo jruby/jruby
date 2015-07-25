@@ -39,6 +39,17 @@ class Thread
   end
   private :raise_prim
 
+  def priority
+    Rubinius.primitive :thread_get_priority
+    Kernel.raise ThreadError, "Thread#priority primitive failed"
+  end
+
+  def priority=(val)
+    Rubinius.primitive :thread_set_priority
+    Kernel.raise TypeError, "priority must be a Fixnum" unless val.kind_of? Fixnum
+    Kernel.raise ThreadError, "Thread#priority= primitive failed"
+  end
+
   def self.exit
     Thread.current.kill
   end
