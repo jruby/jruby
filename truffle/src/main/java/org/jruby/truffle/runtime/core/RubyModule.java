@@ -42,19 +42,4 @@ public class RubyModule extends RubyBasicObject {
         }
     }
 
-    @Override
-    public RubyContext getContext() {
-        return ModuleNodes.getModel(this).getContext();
-    }
-
-    @Override
-    public String toString() {
-        return ModuleNodes.getModel(this).toString();
-    }
-
-    @Override
-    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        ModuleNodes.getModel(this).visitObjectGraphChildren(visitor);
-    }
-
 }

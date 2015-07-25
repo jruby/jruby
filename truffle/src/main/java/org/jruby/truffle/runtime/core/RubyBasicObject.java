@@ -186,6 +186,8 @@ public class RubyBasicObject implements TruffleObject {
             if (RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(this.getDynamicObject()) instanceof RubyBasicObject) {
                 ((RubyBasicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(this.getDynamicObject())).visitObjectGraph(visitor);
             }
+        } else if (RubyGuards.isRubyModule(this)) {
+            ModuleNodes.getModel(this).visitObjectGraphChildren(visitor);
         }
     }
 
@@ -194,7 +196,11 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     public RubyContext getContext() {
-        return logicalClass.getContext();
+        if (RubyGuards.isRubyModule(this)) {
+            return ModuleNodes.getModel(this).getContext();
+        } else {
+            return logicalClass.getContext();
+        }
     }
 
     public Shape getObjectLayout() {
@@ -235,6 +241,8 @@ public class RubyBasicObject implements TruffleObject {
         } else if (RubyGuards.isRubyException(this)) {
             return ExceptionNodes.getMessage(this) + " : " + super.toString() + "\n" +
                     Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(), this, ExceptionNodes.getBacktrace(this)));
+        } else if (RubyGuards.isRubyModule(this)) {
+            return ModuleNodes.getModel(this).toString();
         } else {
             return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(this), ModuleNodes.getModel(logicalClass).getName());
         }
