@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
@@ -120,7 +119,7 @@ public abstract class ThreadNodes {
 
     public static Thread getCurrentFiberJavaThread(RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        return FiberNodes.getFields(((RubyFiber) getFields(((RubyThread) thread)).fiberManager.getCurrentFiber())).thread;
+        return FiberNodes.getFields((getFields(((RubyThread) thread)).fiberManager.getCurrentFiber())).thread;
     }
 
     public static void join(final RubyBasicObject thread) {

@@ -197,8 +197,12 @@ public abstract class RubyGuards {
         return ExceptionNodes.EXCEPTION_LAYOUT.isException(object.getDynamicObject());
     }
 
-    public static boolean isRubyFiber(Object fiber) {
-        return fiber instanceof RubyFiber;
+    public static boolean isRubyFiber(Object value) {
+        return (value instanceof RubyBasicObject) && isRubyFiber((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyFiber(RubyBasicObject fiber) {
+        return FiberNodes.FIBER_LAYOUT.isFiber(fiber.getDynamicObject());
     }
 
     public static boolean isRubyThread(Object object) {

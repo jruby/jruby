@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.subsystems;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyFiber;
 
 import java.util.Collections;
 import java.util.Set;
@@ -57,7 +56,7 @@ public class FiberManager {
 
     public void shutdown() {
         for (RubyBasicObject fiber : runningFibers) {
-            if (!FiberNodes.getFields(((RubyFiber) fiber)).isRootFiber) {
+            if (!FiberNodes.getFields(fiber).isRootFiber) {
                 FiberNodes.shutdown(fiber);
             }
         }

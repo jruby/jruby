@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -22,20 +23,35 @@ import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    public static RubyFiber.FiberFields getFields(RubyBasicObject fiber) {
-        assert RubyGuards.isRubyFiber(fiber);
-        return getFields(((RubyFiber) fiber));
+    @Layout
+    public interface FiberLayout {
+
+        DynamicObject createFiber(FiberFields fields);
+
+        boolean isFiber(DynamicObject object);
+
+        FiberFields getFields(DynamicObject object);
+
+    }
+
+    public static final FiberLayout FIBER_LAYOUT = FiberLayoutImpl.INSTANCE;
+
+    public static FiberFields getFields(RubyBasicObject fiber) {
+        return FIBER_LAYOUT.getFields(fiber.getDynamicObject());
     }
 
     public static RubyBasicObject newRootFiber(RubyBasicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
@@ -139,7 +155,7 @@ public abstract class FiberNodes {
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
             final FiberResumeMessage resumeMessage = (FiberResumeMessage) message;
-            assert fiber.getContext().getThreadManager().getCurrentThread() == getFields(((RubyFiber) resumeMessage.getSendingFiber())).rubyThread;
+            assert fiber.getContext().getThreadManager().getCurrentThread() == getFields(resumeMessage.getSendingFiber()).rubyThread;
             if (!(resumeMessage.isYield())) {
                 getFields(fiber).lastResumedByFiber = resumeMessage.getSendingFiber();
             }
@@ -184,17 +200,15 @@ public abstract class FiberNodes {
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
-        assert RubyGuards.isRubyThread(parent);
-        return new RubyFiber(parent, rubyClass, name);
+        final FiberFields fields = new FiberNodes.FiberFields(parent, false);
+        fields.name = name;
+        return new RubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyBasicObject rubyClass, String name, boolean isRootFiber) {
-        assert RubyGuards.isRubyThread(parent);
-        return new RubyFiber(parent, fiberManager, threadManager, rubyClass, name, isRootFiber);
-    }
-
-    public static RubyFiber.FiberFields getFields(RubyFiber fiber) {
-        return fiber.fields;
+        final FiberFields fields = new FiberNodes.FiberFields(parent, isRootFiber);
+        fields.name = name;
+        return new RubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
     }
 
     public interface FiberMessage {
@@ -227,7 +241,7 @@ public abstract class FiberNodes {
             }
 
             RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
-            if (getFields(((RubyFiber) fiber)).rubyThread != currentThread) {
+            if (getFields(fiber).rubyThread != currentThread) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
@@ -287,9 +301,9 @@ public abstract class FiberNodes {
         public Object yield(VirtualFrame frame, Object[] args) {
             final RubyBasicObject currentThread = getContext().getThreadManager().getCurrentThread();
             final RubyBasicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
-            final RubyBasicObject fiberYieldedTo = getFields(((RubyFiber) yieldingFiber)).lastResumedByFiber;
+            final RubyBasicObject fiberYieldedTo = getFields(yieldingFiber).lastResumedByFiber;
 
-            if (getFields(((RubyFiber) yieldingFiber)).isRootFiber || fiberYieldedTo == null) {
+            if (getFields(yieldingFiber).isRootFiber || fiberYieldedTo == null) {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 
@@ -354,5 +368,22 @@ public abstract class FiberNodes {
             return createRubyFiber(parent, rubyClass, null);
         }
 
+    }
+
+    public static class FiberFields {
+        public final RubyBasicObject rubyThread;
+        public String name;
+        public final boolean isRootFiber;
+        // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
+        public final BlockingQueue<FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
+        public RubyBasicObject lastResumedByFiber = null;
+        public boolean alive = true;
+        public volatile Thread thread;
+
+        public FiberFields(RubyBasicObject rubyThread, boolean isRootFiber) {
+            assert RubyGuards.isRubyThread(rubyThread);
+            this.rubyThread = rubyThread;
+            this.isRootFiber = isRootFiber;
+        }
     }
 }
