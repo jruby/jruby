@@ -148,8 +148,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final SleepTask2 sleepTask = new SleepTask2();
 
     private static final boolean DEBUG = false;
-    private static final int RUBY_MIN_THREAD_PRIORITY = -3;
-    private static final int RUBY_MAX_THREAD_PRIORITY = 3;
+    public static final int RUBY_MIN_THREAD_PRIORITY = -3;
+    public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
     /** Thread statuses */
     public static enum Status { 
