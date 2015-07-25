@@ -119,7 +119,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyString(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == StringNodes.STRING_TYPE;
+        return StringNodes.STRING_LAYOUT.isString(value.getDynamicObject());
     }
 
     public static boolean isRubyEncoding(Object object) {

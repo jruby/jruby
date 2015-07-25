@@ -7,7 +7,6 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-
 package org.jruby.truffle.nodes.coerce;
 
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -17,7 +16,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToPathNode extends RubyNode {
@@ -25,8 +23,6 @@ public abstract class ToPathNode extends RubyNode {
     public ToPathNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
-
-    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
 
     @Specialization(guards = "isRubyString(path)")
     public RubyBasicObject coerceRubyString(RubyBasicObject path) {

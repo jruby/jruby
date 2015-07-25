@@ -2706,7 +2706,7 @@ public abstract class ArrayNodes {
         public RubyBasicObject packCached(
                 VirtualFrame frame,
                 RubyBasicObject array,
-                RubyString format,
+                RubyBasicObject format,
                 @Cached("privatizeByteList(format)") ByteList cachedFormat,
                 @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
@@ -2725,7 +2725,7 @@ public abstract class ArrayNodes {
         public RubyBasicObject packUncached(
                 VirtualFrame frame,
                 RubyBasicObject array,
-                RubyString format,
+                RubyBasicObject format,
                 @Cached("create()") IndirectCallNode callPackNode) {
             final PackResult result;
 

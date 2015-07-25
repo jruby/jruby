@@ -39,7 +39,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
@@ -340,7 +339,7 @@ public abstract class RegexpNodes {
             }
         }
 
-        return strings.toArray(new RubyString[strings.size()]);
+        return strings.toArray(new RubyBasicObject[strings.size()]);
     }
 
     @TruffleBoundary

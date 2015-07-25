@@ -29,6 +29,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
@@ -61,6 +62,8 @@ import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -76,48 +79,56 @@ import java.util.Arrays;
 @CoreClass(name = "String")
 public abstract class StringNodes {
 
-    public static class StringType extends BasicObjectType {
+    @Layout
+    public interface StringLayout {
+
+        DynamicObject createString(ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+
+        boolean isString(DynamicObject dynamicObject);
+
+        ByteList getByteList(DynamicObject object);
+
+        void setByteList(DynamicObject object, ByteList byteList);
+
+        int getCodeRange(DynamicObject object);
+
+        void setCodeRange(DynamicObject object, int codeRange);
+
+        @Nullable
+        StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
+
+        @Nullable
+        void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
 
     }
 
-    public static final StringType STRING_TYPE = new StringType();
-
-    private static final DynamicObjectFactory STRING_FACTORY;
-
-    static {
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(STRING_TYPE);
-        STRING_FACTORY = shape.createFactory();
-    }
-
+    public static final StringLayout STRING_LAYOUT = StringLayoutImpl.INSTANCE;
 
     public static ByteList getByteList(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return ((RubyString) string).bytes;
+        return STRING_LAYOUT.getByteList(string.getDynamicObject());
     }
 
-    public static void setByteList(RubyBasicObject string, ByteList bytes) {
-        assert RubyGuards.isRubyString(string);
-        ((RubyString) string).bytes = bytes;
+    public static void setByteList(RubyBasicObject string, ByteList byteList) {
+        STRING_LAYOUT.setByteList(string.getDynamicObject(), byteList);
     }
 
     public static int getCodeRange(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return ((RubyString) string).codeRange;
+        return STRING_LAYOUT.getCodeRange(string.getDynamicObject());
     }
 
-    public static void setCodeRange(RubyBasicObject string, int newCodeRange) {
-        assert RubyGuards.isRubyString(string);
-        ((RubyString) string).codeRange = newCodeRange;
+    public static void setCodeRange(RubyBasicObject string, int codeRange) {
+        STRING_LAYOUT.setCodeRange(string.getDynamicObject(), codeRange);
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
+        StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(string.getDynamicObject());
 
-        if (((RubyString) string).codeRangeableWrapper == null) {
-            ((RubyString) string).codeRangeableWrapper = new StringCodeRangeableWrapper((RubyString) string);
+        if (wrapper == null) {
+            wrapper = new StringCodeRangeableWrapper(string);
+            STRING_LAYOUT.setCodeRangeableWrapper(string.getDynamicObject(), wrapper);
         }
 
-        return ((RubyString) string).codeRangeableWrapper;
+        return wrapper;
     }
 
     @TruffleBoundary
@@ -133,13 +144,11 @@ public abstract class StringNodes {
     }
 
     public static boolean isCodeRangeValid(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return ((RubyString) string).codeRange == StringSupport.CR_VALID;
+        return getCodeRange(string) == StringSupport.CR_VALID;
     }
 
     public static void clearCodeRange(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
-        ((RubyString) string).codeRange = StringSupport.CR_UNKNOWN;
+        setCodeRange(string, StringSupport.CR_UNKNOWN);
     }
 
     public static void keepCodeRange(RubyBasicObject string) {
@@ -149,16 +158,14 @@ public abstract class StringNodes {
     }
 
     public static void modify(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
         // TODO (nirvdrum 16-Feb-15): This should check whether the underlying ByteList is being shared and copy if necessary.
-        ((RubyString) string).bytes.invalidate();
+        getByteList(string).invalidate();
     }
 
     public static void modify(RubyBasicObject string, int length) {
-        assert RubyGuards.isRubyString(string);
         // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
-        ((RubyString) string).bytes.ensure(length);
-        ((RubyString) string).bytes.invalidate();
+        getByteList(string).ensure(length);
+        getByteList(string).invalidate();
     }
 
     public static void modifyAndKeepCodeRange(RubyBasicObject string) {
@@ -216,7 +223,7 @@ public abstract class StringNodes {
 
     public static int clampExclusiveIndex(RubyBasicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayNodes.clampExclusiveIndex(((RubyString) string).bytes.length(), index);
+        return ArrayNodes.clampExclusiveIndex(getByteList(string).length(), index);
     }
 
     @TruffleBoundary
@@ -262,7 +269,7 @@ public abstract class StringNodes {
 
     public static RubyBasicObject createString(RubyBasicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return new RubyString(stringClass, bytes, STRING_FACTORY.newInstance());
+        return new RubyBasicObject(stringClass, STRING_LAYOUT.createString(bytes, StringSupport.CR_UNKNOWN, null));
     }
 
     @CoreMethod(names = "+", required = 1)
