@@ -65,8 +65,6 @@ public abstract class DynamicMethod {
     protected boolean builtin = false;
     /** Single-arity native call */
     protected NativeCall nativeCall;
-    /** Alternate-arity NativeCalls */
-    protected NativeCall[] nativeCalls = new NativeCall[10];
     /** The simple, base name this method was defined under. May be null.*/
     protected String name;
     /** Whether this method is "not implemented". */
@@ -485,7 +483,6 @@ public abstract class DynamicMethod {
      */
     public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
         this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
-        Arrays.fill(nativeCalls, nativeCall);
     }
 
 
@@ -505,18 +502,6 @@ public abstract class DynamicMethod {
     
     public NativeCall getNativeCall() {
         return this.nativeCall;
-    }
-    
-    public NativeCall getNativeCall(int args, boolean block) {
-        if (args == -1 || args > 3) args = 4;
-        if (block) args += 5;
-        return this.nativeCalls[args];
-    }
-    
-    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
-        if (args == -1 || args > 3) args = 4;
-        if (block) args += 5;
-        this.nativeCalls[args] = nativeCall;
     }
 
     /**

@@ -219,16 +219,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
-        delegate.setNativeCall(args, block, nativeCall);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public NativeCall getNativeCall(int args, boolean block) {
-        return delegate.getNativeCall(args, block);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
         delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);    //To change body of overridden methods use File | Settings | File Templates.
     }
