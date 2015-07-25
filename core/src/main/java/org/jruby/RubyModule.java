@@ -1485,29 +1485,29 @@ public class RubyModule extends RubyObject {
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
         DynamicMethod method = deepMethodSearch(name, runtime);
 
-        if (method instanceof JavaMethod) {
-            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-            // We warn because we treat certain method names as "special" for purposes of
-            // optimization. Hopefully this will be enough to convince people not to alias
-            // them.
-            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
-
-            if (callerReq.framing() != Framing.None ||
-                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
-                char refChar = '#';
-                String simpleName = getSimpleName();
-
-                if (baseName == null && this instanceof MetaClass) {
-                    IRubyObject attached = ((MetaClass)this).getAttached();
-                    if (attached instanceof RubyModule) {
-                        simpleName = ((RubyModule)attached).getSimpleName();
-                        refChar = '.';
-                    }
-                }
-
-                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
-            }
-        }
+//        if (method instanceof JavaMethod) {
+//            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+//            // We warn because we treat certain method names as "special" for purposes of
+//            // optimization. Hopefully this will be enough to convince people not to alias
+//            // them.
+//            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
+//
+//            if (callerReq.framing() != Framing.None ||
+//                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
+//                char refChar = '#';
+//                String simpleName = getSimpleName();
+//
+//                if (baseName == null && this instanceof MetaClass) {
+//                    IRubyObject attached = ((MetaClass)this).getAttached();
+//                    if (attached instanceof RubyModule) {
+//                        simpleName = ((RubyModule)attached).getSimpleName();
+//                        refChar = '.';
+//                    }
+//                }
+//
+//                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
+//            }
+//        }
 
         return method;
     }
@@ -1608,12 +1608,12 @@ public class RubyModule extends RubyObject {
 
         final String variableName = ("@" + internedName).intern();
         if (readable) {
-            addMethod(internedName, new AttrReaderMethod(methodLocation, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
+            addMethod(internedName, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
         if (writeable) {
             internedName = (internedName + "=").intern();
-            addMethod(internedName, new AttrWriterMethod(methodLocation, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
+            addMethod(internedName, new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
     }

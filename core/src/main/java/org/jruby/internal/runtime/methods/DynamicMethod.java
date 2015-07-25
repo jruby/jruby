@@ -57,8 +57,6 @@ public abstract class DynamicMethod {
     protected RubyModule protectedClass;
     /** The visibility of this method. */
     protected Visibility visibility;
-    /** The "call configuration" to use for pre/post call logic. */
-    protected CallConfiguration callConfig;
     /** The serial number for this method object, to globally identify it */
     protected long serialNumber;
     /** Flags for builtin, notimpl, etc */
@@ -79,12 +77,11 @@ public abstract class DynamicMethod {
      * @param implementationClass The class to which this method will be
      * immediately bound
      * @param visibility The visibility assigned to this method
-     * @param callConfig The CallConfiguration to use for this method's
      * pre/post invocation logic.
      */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         assert implementationClass != null;
-        init(implementationClass, visibility, callConfig);
+        init(implementationClass, visibility);
     }
 
     /**
@@ -93,11 +90,10 @@ public abstract class DynamicMethod {
      * @param implementationClass The class to which this method will be
      * immediately bound
      * @param visibility The visibility assigned to this method
-     * @param callConfig The CallConfiguration to use for this method's
-     * pre/post invocation logic.
+     * @param name The simple name of this method
      */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
-        this(implementationClass, visibility, callConfig);
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
+        this(implementationClass, visibility);
         this.name = name;
     }
 
@@ -111,13 +107,12 @@ public abstract class DynamicMethod {
 //                this instanceof );
     }
 
-    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+    protected void init(RubyModule implementationClass, Visibility visibility) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
         // TODO: Determine whether we should perhaps store non-singleton class
         // in the implementationClass
         this.protectedClass = calculateProtectedClass(implementationClass);
-        this.callConfig = callConfig;
         this.serialNumber = implementationClass.getRuntime().getNextDynamicMethodSerial();
     }
 
@@ -384,24 +379,6 @@ public abstract class DynamicMethod {
     public DynamicMethod getRealMethod() {
         return this;
     }
-
-    /**
-     * Get the CallConfiguration used for pre/post logic for this method handle.
-     *
-     * @return The CallConfiguration for this method handle
-     */
-    public CallConfiguration getCallConfig() {
-        return callConfig;
-    }
-
-    /**
-     * Set the CallConfiguration used for pre/post logic for this method handle.
-     *
-     * @param callConfig The CallConfiguration for this method handle
-     */
-    public void setCallConfig(CallConfiguration callConfig) {
-        this.callConfig = callConfig;
-    }
     
     public static class NativeCall {
         private final Class nativeTarget;
@@ -579,5 +556,29 @@ public abstract class DynamicMethod {
         } else {
             flags &= ~NOTIMPL_FLAG;
         }
+    }
+
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        this(implementationClass, visibility);
+    }
+
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+        this(implementationClass, visibility, name);
+    }
+
+    @Deprecated
+    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        init(implementationClass, visibility);
+    }
+
+    @Deprecated
+    public CallConfiguration getCallConfig() {
+        return CallConfiguration.FrameNoneScopeNone;
+    }
+
+    @Deprecated
+    public void setCallConfig(CallConfiguration callConfig) {
     }
 }

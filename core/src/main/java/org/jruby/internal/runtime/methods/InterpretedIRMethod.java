@@ -37,7 +37,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected int callCount = 0;
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
+        super(implementationClass, visibility, method.getName());
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.signature = getStaticScope().getSignature();

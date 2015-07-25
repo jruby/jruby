@@ -36,7 +36,7 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
                             Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
+        super(implementationClass, visibility, method.getName());
         this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg

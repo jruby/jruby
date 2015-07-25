@@ -41,7 +41,7 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
 
     public DelegatingDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getCallConfig());
+        super(delegate.getImplementationClass(), delegate.getVisibility());
         this.delegate = delegate;
     }
 
@@ -119,11 +119,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public void setCallConfig(CallConfiguration callConfig) {
-        delegate.setCallConfig(callConfig);
-    }
-
-    @Override
     public boolean isNative() {
         return delegate.isNative();
     }
@@ -171,11 +166,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public boolean isImplementedBy(RubyModule other) {
         return delegate.isImplementedBy(other);
-    }
-
-    @Override
-    public CallConfiguration getCallConfig() {
-        return delegate.getCallConfig();
     }
 
     @Override
