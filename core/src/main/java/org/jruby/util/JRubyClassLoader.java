@@ -210,6 +210,11 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
                         }
 
                         byte[] data = output.toByteArray();
+                        int dotIndex = className.lastIndexOf(".");
+                        if (dotIndex != -1) {
+                            String packageName = className.substring(0, dotIndex);
+                            definePackageInternal(packageName);
+                        }
                         return defineClass(className, data, 0, data.length);
                     } finally {
                         close(input);
@@ -326,6 +331,18 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             try {
                 resource.close();
             } catch (IOException ignore) {
+            }
+        }
+    }
+
+    private void definePackageInternal(String pkgname) {
+        if (getPackage(pkgname) == null) {
+            try {
+                definePackage(pkgname, null, null, null, null, null, null, null);
+            } catch (IllegalArgumentException iae) {
+                if (getPackage(pkgname) == null) {
+                    throw new AssertionError("Cannot find package " + pkgname);
+                }
             }
         }
     }
