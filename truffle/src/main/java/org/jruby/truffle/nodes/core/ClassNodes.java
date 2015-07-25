@@ -54,16 +54,16 @@ public abstract class ClassNodes {
         return ModuleNodes.getModel(createRubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
-    public static RubyBasicObject allocate(RubyClass rubyClass, Node currentNode) {
+    public static RubyBasicObject allocate(RubyBasicObject rubyClass, Node currentNode) {
         return getAllocator(rubyClass).allocate(rubyClass.getContext(), rubyClass, currentNode);
     }
 
-    public static Allocator getAllocator(RubyClass rubyClass) {
-        return rubyClass.allocator;
+    public static Allocator getAllocator(RubyBasicObject rubyClass) {
+        return ((RubyClass) rubyClass).allocator;
     }
 
-    public static void unsafeSetAllocator(RubyClass rubyClass, Allocator allocator) {
-        rubyClass.allocator = allocator;
+    public static void unsafeSetAllocator(RubyBasicObject rubyClass, Allocator allocator) {
+        ((RubyClass) rubyClass).allocator = allocator;
     }
 
     public static RubyClass createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {

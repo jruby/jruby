@@ -9,7 +9,10 @@
  */
 package org.jruby.truffle.om.dsl.processor.layout.model;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class LayoutModel {
 

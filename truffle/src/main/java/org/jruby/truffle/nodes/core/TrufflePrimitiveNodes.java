@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;

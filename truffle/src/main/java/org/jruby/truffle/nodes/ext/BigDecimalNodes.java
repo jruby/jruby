@@ -45,7 +45,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigDecimal;
@@ -333,7 +332,7 @@ public abstract class BigDecimalNodes {
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value) {
-            return executeCreate(frame, value, ClassNodes.allocate(((RubyClass) getBigDecimalClass()), this));
+            return executeCreate(frame, value, ClassNodes.allocate(getBigDecimalClass(), this));
         }
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf) {

@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of
@@ -42,7 +41,7 @@ public class RescueSplatNode extends RescueNode {
         final RubyBasicObject exceptionRubyClass = exception.getLogicalClass();
 
         for (Object handlingClass : ArrayNodes.slowToArray(handlingClasses)) {
-            if (ModuleOperations.assignableTo(exceptionRubyClass, (RubyClass) handlingClass)) {
+            if (ModuleOperations.assignableTo(exceptionRubyClass, (RubyBasicObject) handlingClass)) {
                 return true;
             }
         }

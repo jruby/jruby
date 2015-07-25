@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 /**
  * Define a new module, or get the existing one of the same name.
@@ -58,7 +57,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((RubyBasicObject) module).isOnlyAModule()) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
-            definingModule = (RubyModule) module;
+            definingModule = (RubyBasicObject) module;
         }
 
         return definingModule;

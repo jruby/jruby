@@ -61,8 +61,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -311,7 +309,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel((RubyBasicObject) object).isSingleton();
         }
 
     }

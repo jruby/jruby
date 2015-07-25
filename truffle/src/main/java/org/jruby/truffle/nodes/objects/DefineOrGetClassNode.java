@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -63,7 +62,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         RubyBasicObject superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name, ClassNodes.getAllocator(((RubyClass) superClassObject)));
+            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name, ClassNodes.getAllocator(superClassObject));
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (RubyGuards.isRubyClass(constant.getValue())) {
@@ -81,11 +80,11 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         final Object superClassObj = superClass.execute(frame);
 
         if (RubyGuards.isRubyClass(superClassObj)){
-            if (ModuleNodes.getModel(((RubyClass) superClassObj)).isSingleton()) {
+            if (ModuleNodes.getModel((RubyBasicObject) superClassObj).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
-            return (RubyClass) superClassObj;
+            return (RubyBasicObject) superClassObj;
         }
         throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
     }

@@ -29,7 +29,6 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 
@@ -55,7 +54,7 @@ public abstract class UnboundMethodNodes {
     static {
         final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
 
-        ORIGIN_PROPERTY = Property.create(ORIGIN_IDENTIFIER, allocator.locationForType(RubyModule.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+        ORIGIN_PROPERTY = Property.create(ORIGIN_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
         METHOD_PROPERTY = Property.create(METHOD_IDENTIFIER, allocator.locationForType(InternalMethod.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
 
         final Shape shape = RubyBasicObject.LAYOUT.createShape(UNBOUND_METHOD_TYPE)

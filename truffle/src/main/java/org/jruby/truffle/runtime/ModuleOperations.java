@@ -17,8 +17,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.Function;
 import org.jruby.util.IdUtil;
@@ -53,7 +51,7 @@ public abstract class ModuleOperations {
         if (!(RubyGuards.isRubyClass(origin))) {
             return true;
         } else {
-            return ((RubyGuards.isRubyClass(module)) && ModuleOperations.assignableTo((RubyClass) module, origin));
+            return ((RubyGuards.isRubyClass(module)) && ModuleOperations.assignableTo(module, origin));
         }
     }
 
@@ -218,7 +216,7 @@ public abstract class ModuleOperations {
 
         for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(ancestor).isSingleton()) {
                 break;
             }
 
@@ -246,7 +244,7 @@ public abstract class ModuleOperations {
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(((RubyClass) ancestor)).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(ancestor).isSingleton()) {
                 break;
             }
         }

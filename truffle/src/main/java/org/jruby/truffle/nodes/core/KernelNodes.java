@@ -60,7 +60,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -390,7 +389,7 @@ public abstract class KernelNodes {
         public RubyBasicObject copy(RubyBasicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final RubyBasicObject newObject = ClassNodes.allocate(((RubyClass) self.getLogicalClass()), this);
+            final RubyBasicObject newObject = ClassNodes.allocate(self.getLogicalClass(), this);
 
             RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
 

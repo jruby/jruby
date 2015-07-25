@@ -28,7 +28,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -494,7 +493,7 @@ public abstract class ThreadNodes {
 
         @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubyString(message)"})
         public RubyBasicObject raise(VirtualFrame frame, final RubyBasicObject thread, RubyBasicObject exceptionClass, RubyBasicObject message) {
-            final Object exception = ClassNodes.allocate(((RubyClass) exceptionClass), this);
+            final Object exception = ClassNodes.allocate(exceptionClass, this);
             initialize.call(frame, exception, "initialize", null, message);
 
             if (!RubyGuards.isRubyException(exception)) {

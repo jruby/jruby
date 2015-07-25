@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -19,9 +18,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
@@ -36,11 +33,6 @@ public abstract class AliasNode extends RubyNode {
         this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         this.newName = newName;
         this.oldName = oldName;
-    }
-
-    public Object noClass() {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
     }
 
     @Specialization(guards = "isRubyModule(module)")

@@ -146,7 +146,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         if (isClass()) {
-            ClassNodes.unsafeSetAllocator(((RubyClass) rubyModuleObject), ClassNodes.getAllocator(((RubyClass) from)));
+            ClassNodes.unsafeSetAllocator(rubyModuleObject, ClassNodes.getAllocator(from));
             // isSingleton is false as we cannot copy a singleton class.
             // and therefore attached is null.
         }
@@ -634,7 +634,7 @@ public class RubyModuleModel implements ModuleChain {
         assert RubyGuards.isRubyClass(superclass);
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
-        ClassNodes.unsafeSetAllocator(((RubyClass) rubyModuleObject), ClassNodes.getAllocator(((RubyClass) superclass)));
+        ClassNodes.unsafeSetAllocator(rubyModuleObject, ClassNodes.getAllocator(superclass));
     }
 
     /**
@@ -655,7 +655,7 @@ public class RubyModuleModel implements ModuleChain {
     public RubyBasicObject ensureSingletonConsistency() {
         assert isClass();
         createOneSingletonClass();
-        return (RubyClass) rubyModuleObject;
+        return rubyModuleObject;
     }
 
     public RubyBasicObject getSingletonClass() {
@@ -703,7 +703,7 @@ public class RubyModuleModel implements ModuleChain {
 
         for (RubyBasicObject ancestor : parentAncestors()) {
             if (RubyGuards.isRubyClass(ancestor)) {
-                return (RubyClass) ancestor;
+                return ancestor;
             }
         }
 
