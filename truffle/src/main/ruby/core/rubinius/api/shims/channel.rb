@@ -23,7 +23,9 @@ module Rubinius
     end
 
     def receive_timeout(duration)
-      raise "Not yet implemented"
+      Rubinius.privately do
+        @queue.receive_timeout(duration)
+      end
     end
 
     def try_receive
