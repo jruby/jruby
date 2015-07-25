@@ -17,13 +17,19 @@ import org.jruby.util.ByteList;
 public abstract class StringCachingGuards {
 
     public static ByteList privatizeByteList(RubyBasicObject string) {
-        assert RubyGuards.isRubyString(string);
-        return StringNodes.getByteList(string).dup();
+        if (RubyGuards.isRubyString(string)) {
+            return StringNodes.getByteList(string).dup();
+        } else {
+            return null;
+        }
     }
 
     public static boolean byteListsEqual(RubyBasicObject string, ByteList byteList) {
-        assert RubyGuards.isRubyString(string);
-        return StringNodes.getByteList(string).equal(byteList);
+        if (RubyGuards.isRubyString(string)) {
+            return StringNodes.getByteList(string).equal(byteList);
+        } else {
+            return false;
+        }
     }
 
 }
