@@ -18,6 +18,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -31,6 +33,7 @@ import org.jruby.util.unsafe.UnsafeHolder;
 import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -122,6 +125,57 @@ public abstract class QueueNodes {
             }
 
             return value;
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "queue"),
+            @NodeChild(type = RubyNode.class, value = "duration")
+    })
+    public abstract static class ReceiveTimeoutNode extends CoreMethodNode {
+
+        public ReceiveTimeoutNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object receiveTimeout(RubyBasicObject self, int duration) {
+            return receiveTimeout(self, (double) duration);
+        }
+
+        @Specialization
+        public Object receiveTimeout(RubyBasicObject self, double duration) {
+            final BlockingQueue<Object> queue = getQueue(self);
+
+            final long durationInMillis = (long) (duration * 1000.0);
+            final long start = System.currentTimeMillis();
+
+            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
+                @Override
+                public Object block() throws InterruptedException {
+                    long now = System.currentTimeMillis();
+                    long waited = now - start;
+                    if (waited >= durationInMillis) {
+                        // Try again to make sure we at least tried once
+                        final Object result = queue.poll();
+                        if (result == null) {
+                            return false;
+                        } else {
+                            return result;
+                        }
+                    }
+
+                    final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+                    if (result == null) {
+                        return false;
+                    } else {
+                        return result;
+                    }
+                }
+            });
         }
 
     }

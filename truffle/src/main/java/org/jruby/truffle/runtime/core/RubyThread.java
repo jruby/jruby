@@ -53,6 +53,7 @@ public class RubyThread extends RubyBasicObject {
         public final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
         public boolean abortOnException = false;
+        public volatile int priority = 0;
 
         public ThreadNodes.InterruptMode interruptMode = ThreadNodes.InterruptMode.IMMEDIATE;
 
