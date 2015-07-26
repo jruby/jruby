@@ -113,7 +113,7 @@ class TestLoad < Test::Unit::TestCase
 
   def test_require_nested_jar_defines_packages_for_classes_in_that_jar
     assert_equal "test", run_in_sub_runtime(%{
-      require 'test/jar_with_nested_classes_jar'
+      require 'test/jruby/jar_with_nested_classes_jar'
       require 'jar_with_classes'
       java_import "test.HelloThere"
       HelloThere.java_class.package.name
