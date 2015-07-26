@@ -2219,7 +2219,6 @@ public abstract class ArrayNodes {
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2228,22 +2227,18 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isNullArray(array)", "isIntIndexAndOtherSingleObjectArg(values)"})
         public Object insertNull(RubyBasicObject array, Object[] values) {
             CompilerDirectives.transferToInterpreter();
-            final int index = (int) values[0];
-            if (index < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            }
+            final int index = normalizeInsertIndex(array, (int) values[0]);
             final Object value = (Object) values[1];
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
-            setStore(array, store, getSize(array) + 1);
+            setStore(array, store, index + 1);
             return array;
         }
 
-        @Specialization(guards = "isArgsLengthTwo(values)", rewriteOn = {ClassCastException.class, IndexOutOfBoundsException.class})
-        public Object insert(RubyBasicObject array, Object[] values) {
-            final int index = (int) values[0];
+        @Specialization(guards = { "isArgsTwoInts(values)", "isIndexSmallerThanSize(values,array)", "isIntArray(array)", "hasRoomForOneExtra(array)" })
+        public Object insert(VirtualFrame frame, RubyBasicObject array, Object[] values) {
+            final int index = normalizeInsertIndex(array, (int) values[0]);
             final int value = (int) values[1];
             final int[] store = (int[]) getStore(array);
             System.arraycopy(store, index, store, index + 1, getSize(array) - index);
@@ -2252,31 +2247,17 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(contains = {"insert", "insertNull"})
+        @Specialization(contains = { "insert", "insertNull" })
         public Object insertBoxed(VirtualFrame frame, RubyBasicObject array, Object[] values) {
             CompilerDirectives.transferToInterpreter();
             if (values.length == 1) {
                 return array;
             }
 
-            int index;
-            if (values[0] instanceof Integer) {
-                index = (int) values[0];
-            } else {
-                if (toIntNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-                }
-                index = toIntNode.doInt(frame, values[0]);
-            }
+            int index = toInt(frame, values[0]);
 
             final int valuesLength = values.length - 1;
-            final int normalizedIndex = index < 0 ? normalizeIndex(array, index) + 1 : normalizeIndex(array, index);
-            if (normalizedIndex < 0) {
-                CompilerDirectives.transferToInterpreter();
-                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
-                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
-            }
+            final int normalizedIndex = normalizeInsertIndex(array, index);
 
             Object[] store = ArrayUtils.box(getStore(array));
             final int newSize = normalizedIndex < getSize(array) ? getSize(array) + valuesLength : normalizedIndex + valuesLength;
@@ -2297,12 +2278,38 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        protected static boolean isArgsLengthTwo(Object[] others) {
-            return others.length == 2;
+        private int normalizeInsertIndex(RubyBasicObject array, int index) {
+            final int normalizedIndex = index < 0 ? normalizeIndex(array, index) + 1 : index;
+            if (normalizedIndex < 0) {
+                CompilerDirectives.transferToInterpreter();
+                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
+                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+            }
+            return normalizedIndex;
+        }
+
+        protected static boolean isArgsTwoInts(Object[] others) {
+            return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Integer;
         }
         
+        protected static boolean isIndexSmallerThanSize(Object[] others, RubyBasicObject array) {
+            return (int) others[0] < getSize(array);
+        }
+
+        protected static boolean hasRoomForOneExtra(RubyBasicObject array) {
+            return ((int[]) getStore(array)).length > getSize(array);
+        }
+
         protected static boolean isIntIndexAndOtherSingleObjectArg(Object[] others) {
             return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Object;
+        }
+
+        private int toInt(VirtualFrame frame, Object indexObject) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return toIntNode.doInt(frame, indexObject);
         }
 
     }
