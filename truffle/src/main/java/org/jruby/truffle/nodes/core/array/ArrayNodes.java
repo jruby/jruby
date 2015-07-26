@@ -737,11 +737,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
         public Object set(VirtualFrame frame, RubyBasicObject array, Object indexObject, Object value, NotProvided unused) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            final int index = toIntNode.doInt(frame, indexObject);
+            final int index = toInt(frame, indexObject);
             return set(frame, array, index, value, unused);
         }
 
@@ -753,41 +749,25 @@ public abstract class ArrayNodes {
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-            return writeNode.executeWrite(frame, (RubyBasicObject) array, index, value);
+            return write(frame, (RubyBasicObject) array, index, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, RubyBasicObject array, int start, Object lengthObject, Object value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int length = toIntNode.doInt(frame, lengthObject);
+            int length = toInt(frame, lengthObject);
             return setObject(frame, array, start, length, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)" })
         public Object setObject(VirtualFrame frame, RubyBasicObject array, Object startObject, int length, Object value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int start = toIntNode.doInt(frame, startObject);
+            int start = toInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, RubyBasicObject array, Object startObject, Object lengthObject, Object value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int length = toIntNode.doInt(frame, lengthObject);
-            int start = toIntNode.doInt(frame, startObject);
+            int length = toInt(frame, lengthObject);
+            int start = toInt(frame, startObject);
             return setObject(frame, array, start, length, value);
         }
 
@@ -811,12 +791,7 @@ public abstract class ArrayNodes {
             final int begin = normalizeIndex(array, start);
 
             if (begin < getSize(array) && length == 1) {
-                if (writeNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-                }
-
-                return writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
+                return write(frame, array, begin, value);
             } else {
                 if (getSize(array) > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
@@ -824,20 +799,16 @@ public abstract class ArrayNodes {
                         readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
                     RubyBasicObject endValues = (RubyBasicObject) readSliceNode.executeReadSlice(frame, (RubyBasicObject) array, (begin + length), (getSize(array) - begin - length));
-                    if (writeNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-                    }
-                    writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
+                    write(frame, array, begin, value);
                     Object[] endValuesStore = ArrayUtils.box(getStore(endValues));
 
                     int i = begin + 1;
                     for (Object obj : endValuesStore) {
-                        writeNode.executeWrite(frame, (RubyBasicObject) array, i, obj);
+                        write(frame, array, i, obj);
                         i += 1;
                     }
                 } else {
-                    writeNode.executeWrite(frame, (RubyBasicObject) array, begin, value);
+                    write(frame, array, begin, value);
                 }
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -853,32 +824,20 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isInteger(startObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, RubyBasicObject array, Object startObject, int length, RubyBasicObject value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int start = toIntNode.doInt(frame, startObject);
+            int start = toInt(frame, startObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
         @Specialization(guards = {"!isInteger(lengthObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, RubyBasicObject array, int start, Object lengthObject, RubyBasicObject value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int length = toIntNode.doInt(frame, lengthObject);
+            int length = toInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
         @Specialization(guards = {"!isInteger(startObject)", "!isInteger(lengthObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, RubyBasicObject array, Object startObject, Object lengthObject, RubyBasicObject value) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
-            }
-            int start = toIntNode.doInt(frame, startObject);
-            int length = toIntNode.doInt(frame, lengthObject);
+            int start = toInt(frame, startObject);
+            int length = toInt(frame, lengthObject);
             return setOtherArray(frame, array, start, length, value);
         }
 
@@ -903,13 +862,8 @@ public abstract class ArrayNodes {
             final Object[] replacementStore = slowToArray(replacement);
 
             if (replacementLength == length) {
-                if (writeNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-                }
-
                 for (int i = 0; i < length; i++) {
-                    writeNode.executeWrite(frame, array, start + i, replacementStore[i]);
+                    write(frame, array, start + i, replacementStore[i]);
                 }
             } else {
                 final int arrayLength = getSize(array);
@@ -1011,6 +965,21 @@ public abstract class ArrayNodes {
             return other;
         }
 
+        private Object write(VirtualFrame frame, RubyBasicObject array, int index, Object value) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return writeNode.executeWrite(frame, array, index, value);
+        }
+
+        private int toInt(VirtualFrame frame, Object indexObject) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeGen.create(getContext(), getSourceSection(), null));
+            }
+            return toIntNode.doInt(frame, indexObject);
+        }
 
     }
 
