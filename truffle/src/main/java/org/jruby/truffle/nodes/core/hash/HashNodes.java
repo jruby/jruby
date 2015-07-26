@@ -331,6 +331,10 @@ public abstract class HashNodes {
                         return constructFallback(frame, hashClass, args);
                     }
 
+                    if (ArrayNodes.getSize(pairArray) != 2) {
+                        return constructFallback(frame, hashClass, args);
+                    }
+
                     final Object[] pairStore = (Object[]) ArrayNodes.getStore(pairArray);
 
                     final Object key = pairStore[0];
