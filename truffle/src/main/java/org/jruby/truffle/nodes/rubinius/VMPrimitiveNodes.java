@@ -118,7 +118,7 @@ public abstract class VMPrimitiveNodes {
                 if (areSame(frame, e.getTag(), tag)) {
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        clearExceptionVariableNode = new ClearExceptionVariableNode(getContext(), getSourceSection());
+                        clearExceptionVariableNode = insert(new ClearExceptionVariableNode(getContext(), getSourceSection()));
                     }
                     clearExceptionVariableNode.execute(frame);
                     return e.getValue();
