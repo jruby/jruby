@@ -135,8 +135,8 @@ public class FeatureManager {
                 System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
-            context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
             ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
+            context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
 
             return true;
         }
@@ -157,8 +157,8 @@ public class FeatureManager {
                 System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
-            context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
             ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
+            context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
 
             return true;
         } else {
