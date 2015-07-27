@@ -89,8 +89,8 @@ public class ThreadPrimitiveNodes {
             final Thread javaThread = ThreadNodes.getFields(thread).thread;
             if (javaThread != null) {
                 javaThread.setPriority(javaPriority);
-                ThreadNodes.getFields(thread).priority = rubyPriority;
             }
+            ThreadNodes.getFields(thread).priority = rubyPriority;
             return rubyPriority;
         }
     }
