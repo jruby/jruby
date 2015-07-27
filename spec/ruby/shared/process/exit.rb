@@ -46,7 +46,7 @@ describe :process_exit, :shared => true do
 end
 
 describe :process_exit!, :shared => true do
-  platform_is_not :windows do
+  with_feature :fork do
     it "exits with the given status" do
       pid = Process.fork { @object.exit!(1) }
       pid, status = Process.waitpid2(pid)
