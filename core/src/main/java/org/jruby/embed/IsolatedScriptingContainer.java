@@ -4,6 +4,10 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedList;
+
+import org.jruby.util.UriLikePathHelper;
 
 /**
  * the IsolatedScriptingContainer does set GEM_HOME and GEM_PATH and JARS_HOME
@@ -48,7 +52,16 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     {
         super(scope, behavior, lazy);
 
-        setLoadPaths( Arrays.asList( URI_CLASSLOADER ) );
+        List<String> loadPaths = new LinkedList<String>();
+        loadPaths.add(URI_CLASSLOADER);
+        setLoadPaths(loadPaths);
+
+        // set the right jruby home
+        UriLikePathHelper uriPath = new UriLikePathHelper(getClassLoader());
+        URL url = uriPath.getResource("/.jrubydir");
+        if (url != null){
+            setCurrentDirectory( URI_CLASSLOADER );
+        }
 
         // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
         setEnvironment(null);
