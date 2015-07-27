@@ -27,7 +27,8 @@ project 'JRuby Truffle' do
     execute_goals( 'compile',
                    :id => 'anno',
                    :phase => 'process-resources',
-                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ] )
+                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
+                   'compilerArgs' => [ '-J-ea' ] )
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
@@ -36,7 +37,8 @@ project 'JRuby Truffle' do
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
-                                       '-J-Dfile.encoding=UTF-8' ] )
+                                       '-J-Dfile.encoding=UTF-8',
+                                       '-J-ea' ] )
   end
 
   plugin :shade do
