@@ -12,8 +12,7 @@ module Gem
     def ruby
       ruby_path = original_ruby
       if jarred_path?(ruby_path)
-        # use quote as the original_ruby does it
-        ruby_path = "\"#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}\""
+        ruby_path = "#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}"
       end
       ruby_path
     end
