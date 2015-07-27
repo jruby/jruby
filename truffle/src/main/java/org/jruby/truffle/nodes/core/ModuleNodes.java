@@ -20,6 +20,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -50,11 +51,11 @@ import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -71,6 +72,19 @@ import java.util.Map.Entry;
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
 
+    @Layout
+    public interface ModuleLayout {
+
+        DynamicObject createModule(RubyModuleModel model);
+
+        boolean isModule(DynamicObject object);
+
+        RubyModuleModel getModel(DynamicObject object);
+
+    }
+
+    public static final ModuleLayout MODULE_LAYOUT = ModuleLayoutImpl.INSTANCE;
+
     /**
      * The slot within a module definition method frame where we store the implicit state that is
      * the current visibility for new methods.
@@ -78,13 +92,12 @@ public abstract class ModuleNodes {
     public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     public static RubyModuleModel getModel(RubyBasicObject module) {
-        assert RubyGuards.isRubyModule(module);
-        return ((RubyModule) module).model;
+        return MODULE_LAYOUT.getModel(module.getDynamicObject());
     }
 
-    public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
+    public static RubyBasicObject createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null);
-        final RubyModule module = new RubyModule(selfClass, model, RubyBasicObject.LAYOUT.newInstance(RubyBasicObject.EMPTY_SHAPE));
+        final RubyBasicObject module = new RubyBasicObject(selfClass, MODULE_LAYOUT.createModule(model));
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;

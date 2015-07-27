@@ -20,6 +20,9 @@ public class PropertyModel {
     private final boolean nullable;
 
     public PropertyModel(String name, boolean hasGetter, boolean hasSetter, TypeMirror type, boolean nullable) {
+        assert name != null;
+        assert type != null;
+
         this.name = name;
         this.hasGetter = hasGetter;
         this.hasSetter = hasSetter;

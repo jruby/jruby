@@ -17,11 +17,16 @@ import org.jruby.truffle.om.dsl.processor.layout.model.PropertyBuilder;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LayoutParser {
 
+    private LayoutModel superLayout;
     private String name;
     private String packageName;
     private String interfaceFullName;
@@ -31,6 +36,10 @@ public class LayoutParser {
     private final Map<String, PropertyBuilder> properties = new HashMap<>();
 
     public void parse(TypeElement layoutElement) {
+        if (!layoutElement.getInterfaces().isEmpty()) {
+            parseSuperLayout((TypeElement) ((DeclaredType) layoutElement.getInterfaces().get(0)).asElement());
+        }
+
         parseName(layoutElement);
 
         for (Element element : layoutElement.getEnclosedElements()) {
@@ -55,14 +64,11 @@ public class LayoutParser {
         assert constructorProperties.containsAll(properties.keySet());
     }
 
-    private void parseConstructor(ExecutableElement methodElement) {
-        for (VariableElement element : methodElement.getParameters()) {
-            final String name = element.getSimpleName().toString();
+    private void parseSuperLayout(TypeElement superTypeElement) {
+        final LayoutParser superParser = new LayoutParser();
+        superParser.parse(superTypeElement);
 
-            constructorProperties.add(name);
-            final PropertyBuilder property = getProperty(name);
-            parseNullable(property, element);
-        }
+        superLayout = superParser.build();
     }
 
     private void parseName(TypeElement layoutElement) {
@@ -73,6 +79,23 @@ public class LayoutParser {
         final String nameString = layoutElement.getSimpleName().toString();
         assert nameString.endsWith("Layout");
         name = nameString.substring(0, nameString.length() - "Layout".length());
+    }
+
+    private void parseConstructor(ExecutableElement methodElement) {
+        List<? extends VariableElement> parameters = methodElement.getParameters();
+
+        if (superLayout != null) {
+            assert parameters.size() >= superLayout.getAllProperties().size();
+            parameters = parameters.subList(superLayout.getAllProperties().size(), parameters.size());
+        }
+
+        for (VariableElement element : parameters) {
+            final String name = element.getSimpleName().toString();
+
+            constructorProperties.add(name);
+            final PropertyBuilder property = getProperty(name);
+            parseNullable(property, element);
+        }
     }
 
     private void parsePackageName(TypeElement layoutElement) {
@@ -179,8 +202,8 @@ public class LayoutParser {
     }
 
     public LayoutModel build() {
-        return new LayoutModel(name, packageName, hasObjectGuard, hasDynamicObjectGuard, buildProperties(),
-                interfaceFullName);
+        return new LayoutModel(superLayout, name, packageName, hasObjectGuard, hasDynamicObjectGuard,
+                buildProperties(), interfaceFullName);
     }
 
     private List<PropertyModel> buildProperties() {

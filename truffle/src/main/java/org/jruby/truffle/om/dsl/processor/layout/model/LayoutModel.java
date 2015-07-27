@@ -16,6 +16,7 @@ import java.util.List;
 
 public class LayoutModel {
 
+    private final LayoutModel superLayout;
     private final String name;
     private final String packageName;
     private final String interfaceFullName;
@@ -23,13 +24,25 @@ public class LayoutModel {
     private final boolean hasDynamicObjectGuard;
     private final List<PropertyModel> properties;
 
-    public LayoutModel(String name, String packageName, boolean hasObjectGuard, boolean hasDynamicObjectGuard, Collection<PropertyModel> properties, String interfaceFullName) {
+    public LayoutModel(LayoutModel superLayout, String name, String packageName,
+                       boolean hasObjectGuard, boolean hasDynamicObjectGuard,
+                       Collection<PropertyModel> properties, String interfaceFullName) {
+        assert name != null;
+        assert packageName != null;
+        assert interfaceFullName != null;
+        assert properties != null;
+
+        this.superLayout = superLayout;
         this.name = name;
         this.packageName = packageName;
         this.interfaceFullName = interfaceFullName;
         this.hasObjectGuard = hasObjectGuard;
         this.hasDynamicObjectGuard = hasDynamicObjectGuard;
         this.properties = Collections.unmodifiableList(new ArrayList<>(properties));
+    }
+
+    public LayoutModel getSuperLayout() {
+        return superLayout;
     }
 
     public String getName() {
@@ -60,4 +73,15 @@ public class LayoutModel {
         return properties;
     }
 
+    public List<PropertyModel> getAllProperties() {
+        final List<PropertyModel> allProperties = new ArrayList<>();
+
+        if (superLayout != null) {
+            allProperties.addAll(superLayout.getAllProperties());
+        }
+
+        allProperties.addAll(properties);
+
+        return allProperties;
+    }
 }

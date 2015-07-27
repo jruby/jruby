@@ -111,7 +111,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyModule(Object value) {
-        return value instanceof RubyModule;
+        return (value instanceof RubyBasicObject) && isRubyModule((RubyBasicObject) value);
+    }
+
+    public static boolean isRubyModule(RubyBasicObject value) {
+        return ModuleNodes.MODULE_LAYOUT.isModule(value.getDynamicObject());
     }
 
     public static boolean isRubyRegexp(Object value) {

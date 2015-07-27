@@ -27,16 +27,15 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
     @Layout
-    public interface ClassLayout {
+    public interface ClassLayout extends ModuleNodes.ModuleLayout {
 
-        DynamicObject createClass(@Nullable Allocator allocator);
+        DynamicObject createClass(RubyModuleModel model, @Nullable Allocator allocator);
 
         boolean isClass(DynamicObject dynamicObject);
 
@@ -94,7 +93,7 @@ public abstract class ClassNodes {
 
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
-        final RubyBasicObject rubyClass = new RubyModule(classClass, model, CLASS_LAYOUT.createClass(allocator));
+        final RubyBasicObject rubyClass = new RubyBasicObject(classClass, CLASS_LAYOUT.createClass(model, allocator));
 
         model.rubyModuleObject = rubyClass;
 
