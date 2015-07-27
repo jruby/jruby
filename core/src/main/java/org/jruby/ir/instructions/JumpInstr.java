@@ -8,7 +8,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class JumpInstr extends Instr implements FixedArityInstr {
+public class JumpInstr extends NOperandInstr implements FixedArityInstr {
     final boolean exitsExcRegion;
 
     public JumpInstr(Label target) {

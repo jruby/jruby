@@ -13,7 +13,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
+public class CheckArgsArrayArityInstr extends NOperandInstr implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final boolean rest;

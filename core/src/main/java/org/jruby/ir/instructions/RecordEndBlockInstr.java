@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
+public class RecordEndBlockInstr extends NOperandInstr implements FixedArityInstr {
     private final IRScope declaringScope;
 
     public RecordEndBlockInstr(IRScope declaringScope, WrappedIRClosure endBlockClosure) {

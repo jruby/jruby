@@ -6,7 +6,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class PushFrameInstr extends Instr implements FixedArityInstr {
+public class PushFrameInstr extends NOperandInstr implements FixedArityInstr {
     private final String frameName;
     public PushFrameInstr(String frameName) {
         super(Operation.PUSH_FRAME, EMPTY_OPERANDS);

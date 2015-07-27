@@ -35,7 +35,6 @@ import java.util.Map;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
 
-    protected Operand[] operands;
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
     private final Operation operation;
@@ -44,11 +43,10 @@ public abstract class Instr {
     // we can remove this instruction altogether without affecting program correctness.
     private boolean isDead;
 
-    public Instr(Operation operation, Operand[] operands) {
+    public Instr(Operation operation) {
         this.ipc = -1;
         this.rpc = -1;
         this.operation = operation;
-        this.operands = operands;
     }
 
     private static String[] EMPTY_STRINGS = new String[0];
@@ -67,13 +65,15 @@ public abstract class Instr {
      *
      * (result_op '=')? instr '(' (operand ',' )* operand? ';' (extra_arg ',')* extra_arg? ')'
      * extra_arg can either be plain value or in a key: value format.
-     * @return
+     * @return a String
      */
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(isDead() ? "[DEAD]" : "");
 
         if (this instanceof ResultInstr) buf.append(((ResultInstr) this).getResult()).append(" = ");
+
+        Operand[] operands = getOperands();
 
         buf.append(operation).append('(');
         toArgList(buf, operands);
@@ -171,14 +171,12 @@ public abstract class Instr {
     }
 
     /* Array of all operands for this instruction */
-    public Operand[] getOperands() {
-        return operands;
-    }
+    public abstract Operand[] getOperands();
 
     /* List of all variables used by all operands of this instruction */
     public List<Variable> getUsedVariables() {
         ArrayList<Variable> vars = new ArrayList<>();
-        for (Operand operand : operands) {
+        for (Operand operand : getOperands()) {
             operand.addUsedVariables(vars);
         }
 
@@ -209,6 +207,7 @@ public abstract class Instr {
     public abstract Instr clone(CloneInfo info);
 
     public Operand[] cloneOperands(CloneInfo info) {
+        Operand[] operands = getOperands();
         Operand[] newOperands = new Operand[operands.length];
 
         for (int i = 0; i < operands.length; i++) {
@@ -226,6 +225,7 @@ public abstract class Instr {
      * to simplify
      */
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        Operand[] operands = getOperands();
         for (int i = 0; i < operands.length; i++) {
             operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
         }

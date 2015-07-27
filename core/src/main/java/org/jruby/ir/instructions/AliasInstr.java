@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class AliasInstr extends Instr implements FixedArityInstr {
+public class AliasInstr extends NOperandInstr implements FixedArityInstr {
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public AliasInstr(Operand newName, Operand oldName) {
         super(Operation.ALIAS, new Operand[] {newName, oldName});

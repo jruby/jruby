@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
+public class RaiseArgumentErrorInstr extends NOperandInstr implements FixedArityInstr {
     private final int required;
     private final int opt;
     private final boolean rest;

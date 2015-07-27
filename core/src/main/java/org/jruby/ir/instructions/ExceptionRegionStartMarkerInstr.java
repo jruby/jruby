@@ -8,7 +8,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
+public class ExceptionRegionStartMarkerInstr extends NOperandInstr implements FixedArityInstr {
     public ExceptionRegionStartMarkerInstr(Label firstRescueBlockLabel) {
         super(Operation.EXC_REGION_START, new Operand[] { firstRescueBlockLabel });
     }

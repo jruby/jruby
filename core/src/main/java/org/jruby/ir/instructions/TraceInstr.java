@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Instrumented trace.
  */
-public class TraceInstr extends Instr {
+public class TraceInstr extends NOperandInstr {
     private final RubyEvent event;
     private final String name;
     private final String filename;

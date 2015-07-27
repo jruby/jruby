@@ -34,7 +34,7 @@ import java.util.Map;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BreakInstr extends Instr implements FixedArityInstr {
+public class BreakInstr extends NOperandInstr implements FixedArityInstr {
     private final String scopeName; // Primarily a debugging aid
 
     public BreakInstr(Operand returnValue, String scopeName) {

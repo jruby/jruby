@@ -8,7 +8,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class LabelInstr extends Instr implements FixedArityInstr {
+public class LabelInstr extends NOperandInstr implements FixedArityInstr {
     public LabelInstr(Label label) {
         super(Operation.LABEL, new Operand[] { label });
     }

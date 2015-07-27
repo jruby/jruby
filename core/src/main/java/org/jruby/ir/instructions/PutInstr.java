@@ -5,7 +5,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents target.ref = value or target = value where target is not a stack variable
-public abstract class PutInstr extends Instr implements FixedArityInstr {
+public abstract class PutInstr extends NOperandInstr implements FixedArityInstr {
     protected String  ref;
 
     public PutInstr(Operation op, Operand target, String ref, Operand value) {

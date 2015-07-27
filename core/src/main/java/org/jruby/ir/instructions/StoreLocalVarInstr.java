@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
+public class StoreLocalVarInstr extends NOperandInstr implements FixedArityInstr {
     private final IRScope scope;
 
     public StoreLocalVarInstr(IRScope scope, Operand value, LocalVariable lvar) {

@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.NOperandInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -13,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
+public class RestoreErrorInfoInstr extends NOperandInstr implements FixedArityInstr {
     public RestoreErrorInfoInstr(Operand arg) {
         super(Operation.RESTORE_ERROR_INFO, new Operand[] { arg });
     }

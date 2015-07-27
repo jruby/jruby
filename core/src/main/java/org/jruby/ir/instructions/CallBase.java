@@ -19,7 +19,7 @@ import java.util.Map;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
+public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
     public final long callSiteId;

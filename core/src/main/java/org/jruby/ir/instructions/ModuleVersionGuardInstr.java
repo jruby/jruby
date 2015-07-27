@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on assuming that an object's metaclass is C (as determined by the version number
  * of C -- where the version number changes every time C's class structure changes).
  */
-public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
+public class ModuleVersionGuardInstr extends NOperandInstr implements FixedArityInstr {
     private final int expectedVersion;  // The token value that has been assumed
     private final RubyModule module;    // The module whose version we are testing */
 

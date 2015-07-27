@@ -14,7 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
-public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
+public class DefineClassMethodInstr extends NOperandInstr implements FixedArityInstr {
     private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {

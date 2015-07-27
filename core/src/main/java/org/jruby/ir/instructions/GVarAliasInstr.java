@@ -11,7 +11,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GVarAliasInstr extends Instr implements FixedArityInstr {
+public class GVarAliasInstr extends NOperandInstr implements FixedArityInstr {
     public GVarAliasInstr(Operand newName, Operand oldName) {
         super(Operation.GVAR_ALIAS, new Operand[] { newName, oldName });
     }

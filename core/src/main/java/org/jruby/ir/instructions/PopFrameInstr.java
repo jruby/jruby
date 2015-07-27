@@ -6,7 +6,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class PopFrameInstr extends Instr implements FixedArityInstr {
+public class PopFrameInstr extends NOperandInstr implements FixedArityInstr {
     public PopFrameInstr() {
         super(Operation.POP_FRAME, EMPTY_OPERANDS);
     }

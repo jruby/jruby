@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
-public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
+public class ThrowExceptionInstr extends NOperandInstr implements FixedArityInstr {
     public ThrowExceptionInstr(Operand exception) {
         super(Operation.THROW, new Operand[] { exception });
     }

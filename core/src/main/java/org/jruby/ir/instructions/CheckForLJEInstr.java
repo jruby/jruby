@@ -12,7 +12,7 @@ import org.jruby.runtime.ThreadContext;
 
 /**
   */
-public class CheckForLJEInstr extends Instr {
+public class CheckForLJEInstr extends NOperandInstr {
     private boolean maybeLambda;
 
     public CheckForLJEInstr(boolean maybeLambda) {
