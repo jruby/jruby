@@ -1178,11 +1178,6 @@ public class ShellLauncher {
             execArgs[0] = shell;
             execArgs[1] = shell.endsWith("sh") ? "-c" : "/c";
 
-            // HACK to get the builtin command right
-            if (cmdline.startsWith("\"java -cp") && cmdline.contains("org.jruby.Main\"")) {
-                cmdline = cmdline.replace("\"java -cp", "java -cp")
-                        .replace("org.jruby.Main\"", "org.jruby.Main");
-            }
             if (Platform.IS_WINDOWS) {
                 // that's how MRI does it too
                 execArgs[2] = "\"" + cmdline + "\"";
