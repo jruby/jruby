@@ -11,10 +11,11 @@ import java.util.*;
 
 public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, LiveVariableNode> {
     public static final String NAME = "Live Variables Analysis";
-    private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
 
     public LiveVariablesProblem(IRScope scope) {
         super(DataFlowProblem.DF_Direction.BACKWARD);
+        alwaysLiveVars = new ArrayList<LocalVariable>();
+        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
         setup(scope);
     }
 
