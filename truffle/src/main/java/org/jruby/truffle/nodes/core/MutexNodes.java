@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -30,33 +31,28 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
 
-    private static class MutexType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface MutexLayout {
+
+        DynamicObject createMutex(ReentrantLock lock);
+
+        boolean isMutex(DynamicObject object);
+
+        ReentrantLock getLock(DynamicObject object);
+
     }
 
-    public static final MutexType MUTEX_TYPE = new MutexType();
-
-    private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
-    private static final Property LOCK_PROPERTY;
-    private static final DynamicObjectFactory MUTEX_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(MUTEX_TYPE).addProperty(LOCK_PROPERTY);
-        MUTEX_FACTORY = shape.createFactory();
-    }
+    public static final MutexLayout MUTEX_LAYOUT = MutexLayoutImpl.INSTANCE;
 
     public static class MutexAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, MUTEX_FACTORY.newInstance(new ReentrantLock()));
+            return new RubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(new ReentrantLock()));
         }
     }
 
     protected static ReentrantLock getLock(RubyBasicObject mutex) {
-        // mutex has the proper shape since Ruby disallow calling Mutex methods on non-Mutex instances.
-        assert mutex.getDynamicObject().getShape().hasProperty(LOCK_IDENTIFIER);
-        return (ReentrantLock) LOCK_PROPERTY.get(mutex.getDynamicObject(), true);
+        return MUTEX_LAYOUT.getLock(mutex.getDynamicObject());
     }
 
     @CoreMethod(names = "lock")

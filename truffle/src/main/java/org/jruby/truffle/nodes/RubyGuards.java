@@ -47,7 +47,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyBignum(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == BignumNodes.BIGNUM_TYPE;
+        return BignumNodes.BIGNUM_LAYOUT.isBignum(value.getDynamicObject());
     }
 
     public static boolean isRubyBigDecimal(RubyBasicObject value) {
@@ -147,7 +147,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubySymbol(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == SymbolNodes.SYMBOL_TYPE;
+        return SymbolNodes.SYMBOL_LAYOUT.isSymbol(value.getDynamicObject());
     }
 
     public static boolean isRubyMethod(Object value) {
@@ -155,7 +155,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMethod(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == MethodNodes.METHOD_TYPE;
+        return MethodNodes.METHOD_LAYOUT.isMethod(value.getDynamicObject());
     }
 
     public static boolean isRubyUnboundMethod(Object value) {
@@ -163,11 +163,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyUnboundMethod(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == UnboundMethodNodes.UNBOUND_METHOD_TYPE;
+        return UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.isUnboundMethod(value.getDynamicObject());
     }
 
     public static boolean isRubyMutex(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == MutexNodes.MUTEX_TYPE;
+        return MutexNodes.MUTEX_LAYOUT.isMutex(value.getDynamicObject());
     }
 
     public static boolean isRubyBasicObject(Object value) {

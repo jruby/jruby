@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -37,93 +38,53 @@ import java.util.EnumSet;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    public static class SymbolType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface SymbolLayout {
+
+        DynamicObject createSymbol(String string, ByteList byteList, int hashCode,
+                                   int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
+
+        boolean isSymbol(DynamicObject object);
+
+        String getString(DynamicObject object);
+        ByteList getByteList(DynamicObject object);
+        int getHashCode(DynamicObject object);
+
+        int getCodeRange(DynamicObject object);
+        void setCodeRange(DynamicObject object, int codeRange);
+
+        @Nullable
+        SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
+
+        @Nullable
+        void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);
 
     }
 
-    public static final SymbolType SYMBOL_TYPE = new SymbolType();
-
-    private static final HiddenKey STRING_IDENTIFIER = new HiddenKey("string");
-    private static final Property STRING_PROPERTY;
-
-    private static final HiddenKey BYTE_LIST_IDENTIFIER = new HiddenKey("byteList");
-    private static final Property BYTE_LIST_PROPERTY;
-
-    private static final HiddenKey HASH_CODE_IDENTIFIER = new HiddenKey("hashCode");
-    private static final Property HASH_CODE_PROPERTY;
-
-    private static final HiddenKey CODE_RANGE_IDENTIFIER = new HiddenKey("codeRange");
-    private static final Property CODE_RANGE_PROPERTY;
-
-    private static final HiddenKey CODE_RANGEABLE_WRAPPER_IDENTIFIER = new HiddenKey("codeRangeableWrapper");
-    private static final Property CODE_RANGEABLE_WRAPPER_PROPERTY;
-
-    public static final DynamicObjectFactory SYMBOL_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        STRING_PROPERTY = Property.create(STRING_IDENTIFIER, allocator.locationForType(String.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        BYTE_LIST_PROPERTY = Property.create(BYTE_LIST_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.Final)), 0);
-        CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class), 0);
-        CODE_RANGEABLE_WRAPPER_PROPERTY = Property.create(CODE_RANGEABLE_WRAPPER_IDENTIFIER, allocator.locationForType(SymbolCodeRangeableWrapper.class), 0);
-
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(SYMBOL_TYPE)
-            .addProperty(STRING_PROPERTY)
-            .addProperty(BYTE_LIST_PROPERTY)
-            .addProperty(HASH_CODE_PROPERTY)
-            .addProperty(CODE_RANGE_PROPERTY)
-            .addProperty(CODE_RANGEABLE_WRAPPER_PROPERTY);
-
-        SYMBOL_FACTORY = shape.createFactory();
-    }
+    public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 
     public static String getString(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(STRING_IDENTIFIER);
-
-        return (String) STRING_PROPERTY.get(symbol.getDynamicObject(), true);
+        return SYMBOL_LAYOUT.getString(symbol.getDynamicObject());
     }
 
     public static ByteList getByteList(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(BYTE_LIST_IDENTIFIER);
-
-        return (ByteList) BYTE_LIST_PROPERTY.get(symbol.getDynamicObject(), true);
+        return SYMBOL_LAYOUT.getByteList(symbol.getDynamicObject());
     }
 
     public static int getHashCode(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(HASH_CODE_IDENTIFIER);
-
-        return (int) HASH_CODE_PROPERTY.get(symbol.getDynamicObject(), true);
+        return SYMBOL_LAYOUT.getHashCode(symbol.getDynamicObject());
     }
 
     public static int getCodeRange(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
-
-        return (int) CODE_RANGE_PROPERTY.get(symbol.getDynamicObject(), true);
+        return SYMBOL_LAYOUT.getCodeRange(symbol.getDynamicObject());
     }
 
     public static void setCodeRange(RubyBasicObject symbol, int codeRange) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
-
-        try {
-            CODE_RANGE_PROPERTY.set(symbol.getDynamicObject(), codeRange, symbol.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
+        SYMBOL_LAYOUT.setCodeRange(symbol.getDynamicObject(), codeRange);
     }
 
     public static SymbolCodeRangeableWrapper getCodeRangeable(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGEABLE_WRAPPER_IDENTIFIER);
-
-        SymbolCodeRangeableWrapper wrapper = (SymbolCodeRangeableWrapper)
-                CODE_RANGEABLE_WRAPPER_PROPERTY.get(symbol.getDynamicObject(), true);
+        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(symbol.getDynamicObject());
 
         if (wrapper != null) {
             return wrapper;
@@ -131,11 +92,7 @@ public abstract class SymbolNodes {
 
         wrapper = new SymbolCodeRangeableWrapper(symbol);
 
-        try {
-            CODE_RANGEABLE_WRAPPER_PROPERTY.set(symbol.getDynamicObject(), wrapper, symbol.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
+        SYMBOL_LAYOUT.setCodeRangeableWrapper(symbol.getDynamicObject(), wrapper);
 
         return wrapper;
     }

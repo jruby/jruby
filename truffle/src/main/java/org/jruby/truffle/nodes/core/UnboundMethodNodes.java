@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -37,45 +38,30 @@ import java.util.EnumSet;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
-    public static class MethodType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface UnboundMethodLayout {
+
+        DynamicObject createUnboundMethod(RubyBasicObject origin, InternalMethod method);
+
+        boolean isUnboundMethod(DynamicObject object);
+
+        RubyBasicObject getOrigin(DynamicObject object);
+        InternalMethod getMethod(DynamicObject object);
 
     }
 
-    public static final MethodType UNBOUND_METHOD_TYPE = new MethodType();
-
-    private static final HiddenKey ORIGIN_IDENTIFIER = new HiddenKey("origin");
-    public static final Property ORIGIN_PROPERTY;
-
-    private static final HiddenKey METHOD_IDENTIFIER = new HiddenKey("method");
-    public static final Property METHOD_PROPERTY;
-
-    private static final DynamicObjectFactory UNBOUND_METHOD_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        ORIGIN_PROPERTY = Property.create(ORIGIN_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        METHOD_PROPERTY = Property.create(METHOD_IDENTIFIER, allocator.locationForType(InternalMethod.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(UNBOUND_METHOD_TYPE)
-                .addProperty(ORIGIN_PROPERTY)
-                .addProperty(METHOD_PROPERTY);
-
-        UNBOUND_METHOD_FACTORY = shape.createFactory();
-    }
+    public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createUnboundMethod(RubyBasicObject rubyClass, RubyBasicObject origin, InternalMethod method) {
-        return new RubyBasicObject(rubyClass, UNBOUND_METHOD_FACTORY.newInstance(origin, method));
+        return new RubyBasicObject(rubyClass, UNBOUND_METHOD_LAYOUT.createUnboundMethod(origin, method));
     }
 
     public static RubyBasicObject getOrigin(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(ORIGIN_IDENTIFIER);
-        return (RubyBasicObject) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
+        return UNBOUND_METHOD_LAYOUT.getOrigin(method.getDynamicObject());
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(METHOD_IDENTIFIER);
-        return (InternalMethod) METHOD_PROPERTY.get(method.getDynamicObject(), true);
+        return UNBOUND_METHOD_LAYOUT.getMethod(method.getDynamicObject());
     }
 
     @CoreMethod(names = "==", required = 1)

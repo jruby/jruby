@@ -21,6 +21,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -37,33 +38,29 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
 
-    private static class QueueType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface QueueLayout {
+
+        DynamicObject createQueue(LinkedBlockingQueue queue);
+
+        boolean isQueue(DynamicObject object);
+
+        LinkedBlockingQueue getQueue(DynamicObject object);
+
     }
 
-    public static final QueueType QUEUE_TYPE = new QueueType();
-
-    private static final HiddenKey QUEUE_IDENTIFIER = new HiddenKey("queue");
-    private static final Property QUEUE_PROPERTY;
-    private static final DynamicObjectFactory QUEUE_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        QUEUE_PROPERTY = Property.create(QUEUE_IDENTIFIER, allocator.locationForType(LinkedBlockingQueue.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(QUEUE_TYPE).addProperty(QUEUE_PROPERTY);
-        QUEUE_FACTORY = shape.createFactory();
-    }
+    public static final QueueLayout QUEUE_LAYOUT = QueueLayoutImpl.INSTANCE;
 
     public static class QueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, QUEUE_FACTORY.newInstance(new LinkedBlockingQueue<Object>()));
+            return new RubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(new LinkedBlockingQueue()));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static BlockingQueue<Object> getQueue(RubyBasicObject queue) {
-        assert queue.getDynamicObject().getShape().hasProperty(QUEUE_IDENTIFIER);
-        return (BlockingQueue<Object>) QUEUE_PROPERTY.get(queue.getDynamicObject(), true);
+    private static BlockingQueue getQueue(RubyBasicObject queue) {
+        return QUEUE_LAYOUT.getQueue(queue.getDynamicObject());
     }
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)

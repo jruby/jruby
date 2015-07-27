@@ -73,7 +73,7 @@ public class SymbolTable {
 
             final RubyBasicObject newSymbol = new RubyBasicObject(
                     context.getCoreLibrary().getSymbolClass(),
-                    SymbolNodes.SYMBOL_FACTORY.newInstance(
+                    SymbolNodes.SYMBOL_LAYOUT.createSymbol(
                             storedBytes.toString(), storedBytes,
                             storedBytes.toString().hashCode(),
                             StringSupport.CR_UNKNOWN, null));

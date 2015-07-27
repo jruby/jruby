@@ -15,15 +15,13 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.HiddenKey;
-import com.oracle.truffle.api.object.Property;
-import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -44,39 +42,38 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "SizedQueue")
 public abstract class SizedQueueNodes {
 
-    private static class SizedQueueType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface SizedQueueLayout {
+
+        DynamicObject createSizedQueue(@Nullable BlockingQueue queue);
+
+        boolean isSizedQueue(DynamicObject object);
+
+        @Nullable
+        BlockingQueue getQueue(DynamicObject object);
+
+        @Nullable
+        void setQueue(DynamicObject object, BlockingQueue queue);
+
     }
 
-    public static final SizedQueueType SIZED_QUEUE_TYPE = new SizedQueueType();
-
-    private static final HiddenKey QUEUE_IDENTIFIER = new HiddenKey("queue");
-    private static final Property QUEUE_PROPERTY;
-    private static final DynamicObjectFactory SIZED_QUEUE_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        QUEUE_PROPERTY = Property.create(QUEUE_IDENTIFIER, allocator.locationForType(LinkedBlockingQueue.class), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(SIZED_QUEUE_TYPE).addProperty(QUEUE_PROPERTY);
-        SIZED_QUEUE_FACTORY = shape.createFactory();
-    }
+    public static final SizedQueueLayout SIZED_QUEUE_LAYOUT = SizedQueueLayoutImpl.INSTANCE;
 
     public static class SizedQueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, SIZED_QUEUE_FACTORY.newInstance((Object) null));
+            return new RubyBasicObject(rubyClass, SIZED_QUEUE_LAYOUT.createSizedQueue(null));
         }
     }
 
     @SuppressWarnings("unchecked")
     private static BlockingQueue<Object> getQueue(RubyBasicObject sizedQueue) {
-        assert sizedQueue.getDynamicObject().getShape().hasProperty(QUEUE_IDENTIFIER);
-        return (BlockingQueue<Object>) QUEUE_PROPERTY.get(sizedQueue.getDynamicObject(), true);
+        return SIZED_QUEUE_LAYOUT.getQueue(sizedQueue.getDynamicObject());
     }
 
     private static void setQueue(RubyBasicObject sizedQueue, BlockingQueue<Object> value) {
         // TODO (eregon, 12 July 2015): CAS when swapping the queue?
-        assert sizedQueue.getDynamicObject().getShape().hasProperty(QUEUE_IDENTIFIER);
-        QUEUE_PROPERTY.setSafe(sizedQueue.getDynamicObject(), value, sizedQueue.getDynamicObject().getShape());
+        SIZED_QUEUE_LAYOUT.setQueue(sizedQueue.getDynamicObject(), value);
     }
 
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)

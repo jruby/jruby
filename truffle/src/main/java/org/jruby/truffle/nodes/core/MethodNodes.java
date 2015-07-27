@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -38,45 +39,31 @@ import java.util.EnumSet;
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
 
-    public static class MethodType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface MethodLayout {
+
+        DynamicObject createMethod(Object receiver, InternalMethod method);
+
+        boolean isMethod(DynamicObject object);
+
+        Object getReceiver(DynamicObject object);
+
+        InternalMethod getMethod(DynamicObject object);
 
     }
 
-    public static final MethodType METHOD_TYPE = new MethodType();
-
-    private static final HiddenKey RECEIVER_IDENTIFIER = new HiddenKey("receiver");
-    public static final Property RECEIVER_PROPERTY;
-
-    private static final HiddenKey METHOD_IDENTIFIER = new HiddenKey("method");
-    public static final Property METHOD_PROPERTY;
-
-    private static final DynamicObjectFactory METHOD_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        RECEIVER_PROPERTY = Property.create(RECEIVER_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        METHOD_PROPERTY = Property.create(METHOD_IDENTIFIER, allocator.locationForType(InternalMethod.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(METHOD_TYPE)
-                .addProperty(RECEIVER_PROPERTY)
-                .addProperty(METHOD_PROPERTY);
-
-        METHOD_FACTORY = shape.createFactory();
-    }
+    public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createMethod(RubyBasicObject rubyClass, Object receiver, InternalMethod method) {
-        return new RubyBasicObject(rubyClass, METHOD_FACTORY.newInstance(receiver, method));
+        return new RubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(receiver, method));
     }
 
     public static Object getReceiver(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(RECEIVER_IDENTIFIER);
-        return RECEIVER_PROPERTY.get(method.getDynamicObject(), true);
+        return METHOD_LAYOUT.getReceiver(method.getDynamicObject());
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(METHOD_IDENTIFIER);
-        return (InternalMethod) METHOD_PROPERTY.get(method.getDynamicObject(), true);
+        return METHOD_LAYOUT.getMethod(method.getDynamicObject());
     }
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)

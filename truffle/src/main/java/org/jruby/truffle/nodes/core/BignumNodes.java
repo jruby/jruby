@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -38,32 +39,26 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
-    public static class BignumType extends BasicObjectType {
+    @Layout
+    public interface BignumLayout {
+
+        DynamicObject createBignum(BigInteger value);
+
+        boolean isBignum(DynamicObject object);
+
+        BigInteger getValue(DynamicObject object);
 
     }
 
-    public static final BignumType BIGNUM_TYPE = new BignumType();
-
-    private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
-    public static final Property VALUE_PROPERTY;
-    private static final DynamicObjectFactory BIGNUM_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        VALUE_PROPERTY = Property.create(VALUE_IDENTIFIER, allocator.locationForType(BigInteger.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(BIGNUM_TYPE).addProperty(VALUE_PROPERTY);
-        BIGNUM_FACTORY = shape.createFactory();
-    }
+    public static final BignumLayout BIGNUM_LAYOUT = BignumLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyBignum(RubyBasicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return new RubyBasicObject(rubyClass, BIGNUM_FACTORY.newInstance(value));
+        return new RubyBasicObject(rubyClass, BIGNUM_LAYOUT.createBignum(value));
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {
-        assert RubyGuards.isRubyBignum(bignum);
-        assert bignum.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-        return (BigInteger) VALUE_PROPERTY.get(bignum.getDynamicObject(), true);
+        return BIGNUM_LAYOUT.getValue(bignum.getDynamicObject());
     }
 
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
