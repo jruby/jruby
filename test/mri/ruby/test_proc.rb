@@ -377,6 +377,16 @@ class TestProc < Test::Unit::TestCase
     assert_equal([1, 2, 3], b.eval("[x, y, z]"))
   end
 
+  def identity_proc
+    p = proc { p }
+  end
+
+  def test_visibility
+    p = identity_proc
+
+    assert_equal(p.call, p)
+  end
+
   def test_proc_lambda
     assert_raise(ArgumentError) { proc }
     assert_raise(ArgumentError) { lambda }
