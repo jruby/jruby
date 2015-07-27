@@ -207,7 +207,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 6 /*nsec*/, 7 /*isdst*/})
+    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true, lowerFixnumParameters = { 0 /*sec*/, 1 /* min */, 2 /* hour */, 3 /* mday */, 4 /* month */, 5 /* year */, 6 /*nsec*/, 7 /*isdst*/ })
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child ReadTimeZoneNode readTimeZoneNode;
