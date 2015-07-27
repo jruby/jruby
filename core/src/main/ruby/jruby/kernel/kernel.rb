@@ -8,7 +8,7 @@ module Kernel
     file = $` # just the filename
     raise LoadError, "cannot infer basepath" if /\A\((.*)\)/ =~ file # eval etc.
 
-    absolute_feature = File.expand_path(relative_arg, File.dirname(file))
+    absolute_feature = File.expand_path(relative_arg, File.dirname(File.realpath(file)))
 
     require absolute_feature
   end
