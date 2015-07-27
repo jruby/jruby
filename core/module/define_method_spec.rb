@@ -180,6 +180,32 @@ describe "Module#define_method" do
     lambda{o.other_inspect}.should raise_error(NoMethodError)
   end
 
+  it "raises a TypeError when a Method from a singleton class is defined on another class" do
+    c = Class.new do
+      class << self
+        def foo
+        end
+      end
+    end
+    m = c.method(:foo)
+
+    lambda {
+      Class.new { define_method :bar, m }
+    }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError when a Method from one class is defined on an unrelated class" do
+    c = Class.new do
+      def foo
+      end
+    end
+    m = c.new.method(:foo)
+
+    lambda {
+      Class.new { define_method :bar, m }
+    }.should raise_error(TypeError)
+  end
+
   it "maintains the Proc's scope" do
     class DefineMethodByProcClass
       in_scope = true

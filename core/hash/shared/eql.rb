@@ -126,7 +126,15 @@ describe :hash_eql_additional, :shared => true do
     b[:a] = 5
     a.send(@method, b).should be_true
 
-    c = new_hash("a" => 5)
+    not_supported_on :opal do
+      c = new_hash("a" => 5)
+      a.send(@method, c).should be_false
+    end
+
+    c = new_hash("A" => 5)
+    a.send(@method, c).should be_false
+
+    c = new_hash(:a => 6)
     a.send(@method, c).should be_false
   end
 
@@ -143,17 +151,14 @@ describe :hash_eql_additional, :shared => true do
 
   # Why isn't this true of eql? too ?
   it "compares keys with matching hash codes via eql?" do
-    # Can't use should_receive because it uses hash and eql? internally
     a = Array.new(2) do
       obj = mock('0')
+      obj.should_receive(:hash).at_least(1).and_return(0)
 
-      def obj.hash()
-        return 0
-      end
       # It's undefined whether the impl does a[0].eql?(a[1]) or
       # a[1].eql?(a[0]) so we taint both.
       def obj.eql?(o)
-        return true if self == o
+        return true if self.equal?(o)
         taint
         o.taint
         false
@@ -168,12 +173,14 @@ describe :hash_eql_additional, :shared => true do
 
     a = Array.new(2) do
       obj = mock('0')
+      obj.should_receive(:hash).at_least(1).and_return(0)
 
-      def obj.hash()
+      def obj.eql?(o)
         # It's undefined whether the impl does a[0].send(@method, a[1]) or
         # a[1].send(@method, a[0]) so we taint both.
-        def self.eql?(o) taint; o.taint; true; end
-        return 0
+        taint
+        o.taint
+        true
       end
 
       obj

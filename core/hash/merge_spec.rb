@@ -7,6 +7,16 @@ describe "Hash#merge" do
   it "returns a new hash by combining self with the contents of other" do
     h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(:a => 1, :c => 2)
     h.should == new_hash(:c => 2, 1 => :a, 2 => :b, :a => 1, 3 => :c)
+
+    hash = new_hash(:a => 1, :b => 2)
+    new_hash().merge(hash).should == hash
+    hash.merge(new_hash()).should == hash
+
+    h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(1 => :b)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
+
+    h = new_hash(1 => :a, 2 => :b).merge(1 => :b, 3 => :c)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
   end
 
   it "sets any duplicate key to the value of block if passed a block" do
