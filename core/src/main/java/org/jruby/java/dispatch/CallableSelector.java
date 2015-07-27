@@ -245,8 +245,8 @@ public class CallableSelector {
                                             mostSpecific = candidate; msTypes = cTypes;
                                             mostSpecificArity = methodArity; // ambiguous = false;
                                         }
+                                        ambiguous = false;
                                     }
-                                    ambiguous = false;
                                     continue; /* OUTER */
                                 }
                             }
