@@ -65,7 +65,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int getByte(RubyBasicObject bytes, int index) {
-            return getBytes(bytes).get(index);
+            return getBytes(bytes).get(index) & 0xff;
         }
 
     }
