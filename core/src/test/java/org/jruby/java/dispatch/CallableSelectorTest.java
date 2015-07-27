@@ -17,6 +17,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.NullBlockBody;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
@@ -41,12 +42,12 @@ public class CallableSelectorTest {
         Binding binding = new Binding(new Frame(), null, new BacktraceElement());
         JavaMethod result; IRubyObject[] args;
 
-        if ( true ) return;// FIXME - temporary hack to resolve 1_7 merge issues
-
         // arity 1 :
 
         BlockBody body1 = new NullBlockBody() {
-            @Override public Arity arity() { return Arity.ONE_ARGUMENT; }
+            // @Override public Arity arity() { return Arity.ONE_ARGUMENT; }
+            @Override
+            public Signature getSignature() { return Signature.ONE_ARGUMENT; }
         };
         RubyProc dummyProc = RubyProc.newProc(runtime, new Block(body1, binding), Block.Type.PROC);
 
@@ -77,7 +78,9 @@ public class CallableSelectorTest {
         // arity 2 :
 
         BlockBody body2 = new NullBlockBody() {
-            @Override public Arity arity() { return Arity.TWO_ARGUMENTS; }
+            // @Override public Arity arity() { return Arity.TWO_ARGUMENTS; }
+            @Override
+            public Signature getSignature() { return Signature.TWO_ARGUMENTS; }
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body2, binding), Block.Type.PROC);
 
@@ -108,7 +111,9 @@ public class CallableSelectorTest {
         // arity -1 :
 
         BlockBody body_1 = new NullBlockBody() { // arity -1
-            @Override public Arity arity() { return Arity.OPTIONAL; }
+            // @Override public Arity arity() { return Arity.OPTIONAL; }
+            @Override
+            public Signature getSignature() { return Signature.OPTIONAL; }
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_1, binding), Block.Type.PROC);
 
@@ -129,7 +134,9 @@ public class CallableSelectorTest {
         // arity -3 :
 
         BlockBody body_3 = new NullBlockBody() { // arity -3
-            @Override public Arity arity() { return Arity.TWO_REQUIRED; }
+            // @Override public Arity arity() { return Arity.TWO_REQUIRED; }
+            @Override
+            public Signature getSignature() { return Signature.TWO_REQUIRED; }
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_3, binding), Block.Type.PROC);
 
@@ -150,7 +157,9 @@ public class CallableSelectorTest {
         // arity -2 :
 
         BlockBody body_2 = new NullBlockBody() { // arity -2 (arg1, *rest) should prefer (single)
-            @Override public Arity arity() { return Arity.ONE_REQUIRED; }
+            // @Override public Arity arity() { return Arity.ONE_REQUIRED; }
+            @Override
+            public Signature getSignature() { return Signature.ONE_REQUIRED; }
         };
         dummyProc = RubyProc.newProc(runtime, new Block(body_2, binding), Block.Type.PROC);
 

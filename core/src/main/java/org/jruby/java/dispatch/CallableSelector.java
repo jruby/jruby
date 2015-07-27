@@ -175,7 +175,7 @@ public class CallableSelector {
                     if ( last >= 0 && msTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
                         mostSpecificArity = implMethod.getParameterTypes().length;
                     }
-                    procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
+                    procArity = ((RubyProc) lastArg).getBlock().getSignature().arityValue();
                 }
                 else {
                     procArity = Integer.MIN_VALUE;
