@@ -46,12 +46,12 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.object.BasicObjectType;
+import org.jruby.truffle.om.dsl.api.Layout;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.EnumSet;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,29 +61,22 @@ public abstract class BigDecimalNodes {
 
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
 
-    public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
-    public static final Property VALUE_PROPERTY;
-    public static final Property TYPE_PROPERTY;
-    private static final HiddenKey VALUE_IDENTIFIER = new HiddenKey("value");
-    private static final HiddenKey TYPE_IDENTIFIER = new HiddenKey("type");
-    private static final DynamicObjectFactory BIG_DECIMAL_FACTORY;
+    @Layout
+    public interface BigDecimalLayout {
 
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        VALUE_PROPERTY = Property.create(
-                VALUE_IDENTIFIER,
-                allocator.locationForType(BigDecimal.class, EnumSet.of(LocationModifier.NonNull)),
-                0);
-        TYPE_PROPERTY = Property.create(
-                TYPE_IDENTIFIER,
-                allocator.locationForType(Type.class, EnumSet.of(LocationModifier.NonNull)),
-                0);
-        BIG_DECIMAL_FACTORY = RubyBasicObject.LAYOUT.
-                createShape(BIG_DECIMAL_TYPE).
-                addProperty(TYPE_PROPERTY).
-                addProperty(VALUE_PROPERTY).
-                createFactory();
+        DynamicObject createBigDecimal(BigDecimal value, Type type);
+
+        boolean isBigDecimal(DynamicObject object);
+
+        BigDecimal getValue(DynamicObject object);
+        void setValue(DynamicObject object, BigDecimal value);
+
+        Type getType(DynamicObject object);
+        void setType(DynamicObject object, Type type);
+
     }
+
+    public static final BigDecimalLayout BIG_DECIMAL_LAYOUT = BigDecimalLayoutImpl.INSTANCE;
 
     public static BigDecimal getBigDecimalValue(long v) {
         return BigDecimal.valueOf(v);
@@ -98,15 +91,11 @@ public abstract class BigDecimalNodes {
     }
 
     public static BigDecimal getBigDecimalValue(RubyBasicObject bigdecimal) {
-        assert RubyGuards.isRubyBigDecimal(bigdecimal);
-        assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-        return (BigDecimal) VALUE_PROPERTY.get(bigdecimal.getDynamicObject(), true);
+        return BIG_DECIMAL_LAYOUT.getValue(bigdecimal.getDynamicObject());
     }
 
     public static Type getBigDecimalType(RubyBasicObject bigdecimal) {
-        assert RubyGuards.isRubyBigDecimal(bigdecimal);
-        assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
-        return (Type) TYPE_PROPERTY.get(bigdecimal.getDynamicObject(), true);
+        return BIG_DECIMAL_LAYOUT.getType(bigdecimal.getDynamicObject());
     }
 
     public static RoundingMode toRoundingMode(int constValue) {
@@ -160,21 +149,6 @@ public abstract class BigDecimalNodes {
             assert representation != null;
             return representation;
         }
-    }
-
-    public static class BigDecimalType extends BasicObjectType {
-        private BigDecimalType() {
-            super();
-        }
-    }
-
-    public static class RubyBigDecimalAllocator implements Allocator {
-
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, BIG_DECIMAL_FACTORY.newInstance(Type.NORMAL, BigDecimal.ZERO));
-        }
-
     }
 
     public abstract static class BigDecimalCoreMethodNode extends CoreMethodNode {
@@ -316,17 +290,11 @@ public abstract class BigDecimalNodes {
         }
 
         private void setBigDecimalValue(RubyBasicObject bigdecimal, BigDecimal value) {
-            assert RubyGuards.isRubyBigDecimal(bigdecimal);
-            assert bigdecimal.getDynamicObject().getShape().hasProperty(VALUE_IDENTIFIER);
-            VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), value, null);
-            TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), Type.NORMAL, null);
+            BIG_DECIMAL_LAYOUT.setValue(bigdecimal.getDynamicObject(), value);
         }
 
         private void setBigDecimalValue(RubyBasicObject bigdecimal, Type type) {
-            assert RubyGuards.isRubyBigDecimal(bigdecimal);
-            assert bigdecimal.getDynamicObject().getShape().hasProperty(TYPE_IDENTIFIER);
-            VALUE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), BigDecimal.ZERO, null);
-            TYPE_PROPERTY.setSafe(bigdecimal.getDynamicObject(), type, null);
+            BIG_DECIMAL_LAYOUT.setType(bigdecimal.getDynamicObject(), type);
         }
 
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
@@ -1994,7 +1962,7 @@ public abstract class BigDecimalNodes {
             return createArray(
                     new int[]{
                             bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                            nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length()) },
+                            nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())},
                     2);
         }
 
@@ -2186,4 +2154,15 @@ public abstract class BigDecimalNodes {
         // TODO (pitr 22-Jun-2015): deal with not-coerce-able values
 
     }
+
+    public static class RubyBigDecimalAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+            return new RubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(BigDecimal.ZERO, Type.NORMAL));
+        }
+
+    }
+
+
 }

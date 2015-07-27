@@ -51,7 +51,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyBigDecimal(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == BigDecimalNodes.BIG_DECIMAL_TYPE;
+        return BigDecimalNodes.BIG_DECIMAL_LAYOUT.isBigDecimal(value.getDynamicObject());
     }
 
     public static boolean isIntegerFixnumRange(Object object) {
