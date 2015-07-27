@@ -1267,6 +1267,8 @@ public class CoreLibrary {
         return hashClass;
     }
 
+    public RubyBasicObject getStandardErrorClass() { return standardErrorClass; }
+
     public RubyBasicObject getLoadErrorClass() {
         return loadErrorClass;
     }
