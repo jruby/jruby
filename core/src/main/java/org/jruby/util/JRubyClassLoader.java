@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -103,18 +104,31 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
     }
 
     /**
-     * Called when the parent runtime is torn down.
+     * @deprecated use {@link #close()} instead
      */
     public void tearDown(boolean debug) {
+        close();
+    }
+
+    /**
+     * Called when the parent runtime is torn down.
+     */
+    @Override
+    public void close() {
+        try {
+            super.close();
+        }
+        catch (Exception ex) { LOG.debug(ex); }
+
         try {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
-        } catch (Exception e) {
-            if (debug) LOG.debug(e);
         }
+        catch (Exception ex) { LOG.debug(ex); }
     }
 
+    @Deprecated
     public synchronized Runnable getJDBCDriverUnloader() {
         if (unloader == null) {
             try {
@@ -128,9 +142,9 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
                 Class<?> unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
                 unloader = (Runnable) unloaderClass.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
+            catch (RuntimeException e) { throw e; }
+            catch (Exception e) { throw new RuntimeException(e); }
         }
         return unloader;
     }

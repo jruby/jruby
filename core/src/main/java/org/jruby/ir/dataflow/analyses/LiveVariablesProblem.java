@@ -14,13 +14,8 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
 
     public LiveVariablesProblem(IRScope scope) {
-        this(scope, EMPTY_SET);
-    }
-
-    LiveVariablesProblem(IRScope scope, Set<LocalVariable> nonSelfLocalVars) {
         super(DataFlowProblem.DF_Direction.BACKWARD);
-
-        setup(scope, nonSelfLocalVars);
+        setup(scope);
     }
 
     public Integer getDFVar(Variable v) {
@@ -98,30 +93,6 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         }
 
         return liveVars;
-    }
-
-    /**
-     * Initialize the problem with all vars from the surrounding scope variables.
-     * In closures, vars defined in the closure (or accessed from the surrounding scope)
-     * can be used outside the closure.
-     *
-     *      sum = 0; a.each { |i| sum += i }; return sum
-     *
-     * In the code snippet above, 'sum' is live on entry to and exit from the closure.
-     **/
-    public final void setup(IRScope scope, Collection<LocalVariable> allVars) {
-        // System.out.println("\nCFG:\n" + scope.cfg().toStringGraph());
-        // System.out.println("\nInstrs:\n" + scope.cfg().toStringInstrs());
-
-        alwaysLiveVars = new ArrayList<LocalVariable>();
-        setup(scope);
-
-        // Init vars live on scope exit to vars that always live throughout the scope
-        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
-
-        for (LocalVariable v: allVars) {
-            if (!dfVarExists(v)) addDFVar(v);
-        }
     }
 
     @Override

@@ -30,17 +30,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.collections;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * A Map that holds its values weakly and uses object identity for keys.
+ * Map-like that holds its values weakly and uses object identity for keys.
  */
 public class WeakValuedIdentityMap<Key, Value> extends WeakValuedMap<Key, Value> {
+    @Override
     protected Map<Key, KeyedReference<Key, Value>> newMap() {
-        return Collections.synchronizedMap(new IdentityHashMap());
+        return Collections.synchronizedMap( new IdentityHashMap<Key, KeyedReference<Key, Value>>() );
     }
 }

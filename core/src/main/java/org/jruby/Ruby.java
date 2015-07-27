@@ -3307,7 +3307,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        tearDownClassLoader();
+        releaseClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3332,9 +3332,9 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void tearDownClassLoader() {
+    private void releaseClassLoader() {
         if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().tearDown(isDebug());
+            getJRubyClassLoader().close();
         }
     }
 

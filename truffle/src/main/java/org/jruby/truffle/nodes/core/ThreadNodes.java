@@ -269,6 +269,11 @@ public abstract class ThreadNodes {
         return thread.fields;
     }
 
+    public static RubyThread.ThreadFields getFields(RubyBasicObject thread) {
+        assert RubyGuards.isRubyThread(thread);
+        return ((RubyThread) thread).fields;
+    }
+
     public enum InterruptMode {
         IMMEDIATE, ON_BLOCKING, NEVER
     }

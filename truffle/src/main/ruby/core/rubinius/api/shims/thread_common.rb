@@ -35,13 +35,6 @@
 
 class Thread
 
-  def raise_prim(exc)
-    Rubinius.primitive :thread_raise
-    Kernel.raise PrimitiveFailure, "Thread#raise primitive failed"
-  end
-
-  private :raise_prim
-
   def raise(exc=undefined, msg=nil, trace=nil)
     return self unless alive?
 

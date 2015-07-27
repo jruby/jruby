@@ -1366,6 +1366,7 @@ public class BodyTranslator extends Translator {
         m.put("$-v", "$VERBOSE");
         m.put("$-w", "$VERBOSE");
         m.put("$-0", "$/");
+        m.put("$>", "$stdout");
     }
 
     @Override

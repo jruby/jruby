@@ -37,46 +37,51 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-import jnr.constants.platform.Sysconf;
-import jnr.posix.Passwd;
-import jnr.posix.Times;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ThrowException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.signal.ProcSignalHandler;
-import org.jruby.truffle.runtime.signal.SignalOperations;
-import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.util.io.PosixShim;
-import sun.misc.Signal;
+import static jnr.constants.platform.Errno.ECHILD;
+import static jnr.constants.platform.Errno.EINTR;
+import static jnr.constants.platform.WaitFlags.WNOHANG;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jnr.constants.platform.Errno.ECHILD;
-import static jnr.constants.platform.Errno.EINTR;
-import static jnr.constants.platform.WaitFlags.WNOHANG;
+import jnr.constants.platform.Sysconf;
+import jnr.posix.Passwd;
+import jnr.posix.Times;
+
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
+import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.ClassNodeGen;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+import org.jruby.truffle.runtime.signal.SignalOperations;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.io.PosixShim;
+
+import sun.misc.Signal;
+
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Rubinius primitives associated with the VM.
@@ -88,7 +93,7 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldDispatchHeadNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child private WriteInstanceVariableNode clearExceptionVariableNode;
+        @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -113,18 +118,8 @@ public abstract class VMPrimitiveNodes {
                 if (areSame(frame, e.getTag(), tag)) {
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        RubyContext context = getContext();
-                        SourceSection sourceSection = getSourceSection();
-                        clearExceptionVariableNode = insert(
-                                new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
-                                        new LiteralNode(getContext(), getSourceSection(), ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread())),
-                                        new DefinedWrapperNode(context, sourceSection,
-                                                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                                                "nil"),
-                                        true)
-                        );
+                        clearExceptionVariableNode = insert(new ClearExceptionVariableNode(getContext(), getSourceSection()));
                     }
-
                     clearExceptionVariableNode.execute(frame);
                     return e.getValue();
                 } else {

@@ -9,18 +9,20 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.SourceSection;
+import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
+import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
+import static org.jruby.RubyThread.javaPriorityToRubyPriority;
+import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
+
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
-import java.util.Locale;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Thread} class.
@@ -49,6 +51,48 @@ public class ThreadPrimitiveNodes {
             return nil();
         }
 
+    }
+
+    @RubiniusPrimitive(name = "thread_get_priority")
+    public static abstract class ThreadGetPriorityPrimitiveNode extends RubiniusPrimitiveNode {
+        public ThreadGetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public int getPriority(RubyBasicObject thread) {
+            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            if (javaThread != null) {
+                int javaPriority = javaThread.getPriority();
+                return javaPriorityToRubyPriority(javaPriority);
+            } else {
+                return ThreadNodes.getFields(thread).priority;
+            }
+        }
+    }
+
+    @RubiniusPrimitive(name = "thread_set_priority")
+    public static abstract class ThreadSetPriorityPrimitiveNode extends RubiniusPrimitiveNode {
+        public ThreadSetPriorityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyThread(thread)")
+        public int getPriority(RubyBasicObject thread, int rubyPriority) {
+            if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
+                rubyPriority = RUBY_MIN_THREAD_PRIORITY;
+            } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {
+                rubyPriority = RUBY_MAX_THREAD_PRIORITY;
+            }
+
+            int javaPriority = rubyPriorityToJavaPriority(rubyPriority);
+            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            if (javaThread != null) {
+                javaThread.setPriority(javaPriority);
+            }
+            ThreadNodes.getFields(thread).priority = rubyPriority;
+            return rubyPriority;
+        }
     }
 
 }
