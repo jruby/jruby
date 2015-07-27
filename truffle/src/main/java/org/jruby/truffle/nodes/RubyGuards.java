@@ -179,7 +179,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyPointer(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == PointerNodes.POINTER_TYPE;
+        return PointerNodes.POINTER_LAYOUT.isPointer(value.getDynamicObject());
     }
 
     public static boolean isRubiniusByteArray(Object value) {
@@ -187,7 +187,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubiniusByteArray(RubyBasicObject value) {
-        return value.getDynamicObject().getShape().getObjectType() == ByteArrayNodes.BYTE_ARRAY_TYPE;
+        return ByteArrayNodes.BYTE_ARRAY_LAYOUT.isByteArray(value.getDynamicObject());
     }
 
     public static boolean isRubyProc(Object object) {

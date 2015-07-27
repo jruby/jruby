@@ -12,33 +12,28 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import jnr.ffi.Pointer;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
-
-import java.util.EnumSet;
 
 public abstract class PointerNodes {
 
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
 
-    public static class PointerType extends BasicObjectType {
+    @Layout
+    public interface PointerLayout {
+
+        DynamicObject createPointer(Pointer pointer);
+
+        boolean isPointer(DynamicObject object);
+
+        Pointer getPointer(DynamicObject object);
+        void setPointer(DynamicObject object, Pointer pointer);
 
     }
 
-    public static final PointerType POINTER_TYPE = new PointerType();
-
-    private static final HiddenKey POINTER_IDENTIFIER = new HiddenKey("pointer");
-    private static final Property POINTER_PROPERTY;
-    private static final DynamicObjectFactory POINTER_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        POINTER_PROPERTY = Property.create(POINTER_IDENTIFIER, allocator.locationForType(Pointer.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        POINTER_FACTORY = RubyBasicObject.LAYOUT.createShape(POINTER_TYPE).addProperty(POINTER_PROPERTY).createFactory();
-    }
+    public static final PointerLayout POINTER_LAYOUT = PointerLayoutImpl.INSTANCE;
 
     public static class PointerAllocator implements Allocator {
         @Override
@@ -52,26 +47,15 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return new RubyBasicObject(rubyClass, POINTER_FACTORY.newInstance(pointer));
+        return new RubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
-        assert RubyGuards.isRubyPointer(pointer);
-        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
-
-        assert newPointer != null;
-
-        try {
-            POINTER_PROPERTY.set(pointer.getDynamicObject(), newPointer, pointer.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        POINTER_LAYOUT.setPointer(pointer.getDynamicObject(), newPointer);
     }
 
     public static Pointer getPointer(RubyBasicObject pointer) {
-        assert RubyGuards.isRubyPointer(pointer);
-        assert pointer.getDynamicObject().getShape().hasProperty(POINTER_IDENTIFIER);
-        return (Pointer) POINTER_PROPERTY.get(pointer.getDynamicObject(), true);
+        return POINTER_LAYOUT.getPointer(pointer.getDynamicObject());
     }
 
 }

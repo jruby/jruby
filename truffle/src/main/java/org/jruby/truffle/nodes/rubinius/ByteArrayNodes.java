@@ -21,39 +21,31 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
+import org.jruby.truffle.om.dsl.api.Layout;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    public static class ByteArrayType extends BasicObjectType {
+    @Layout
+    public interface ByteArrayLayout {
+
+        DynamicObject createByteArray(ByteList bytes);
+
+        boolean isByteArray(DynamicObject object);
+
+        ByteList getBytes(DynamicObject object);
 
     }
 
-    public static final ByteArrayType BYTE_ARRAY_TYPE = new ByteArrayType();
-
-    private static final HiddenKey BYTES_IDENTIFIER = new HiddenKey("bytes");
-    public static final Property BYTES_PROPERTY;
-    private static final DynamicObjectFactory BYTE_ARRAY_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        BYTES_PROPERTY = Property.create(BYTES_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(BYTE_ARRAY_TYPE).addProperty(BYTES_PROPERTY);
-        BYTE_ARRAY_FACTORY = shape.createFactory();
-    }
+    public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
-        return new RubyBasicObject(rubyClass, BYTE_ARRAY_FACTORY.newInstance(bytes));
+        return new RubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(bytes));
     }
 
     public static ByteList getBytes(RubyBasicObject byteArray) {
-        assert RubyGuards.isRubiniusByteArray(byteArray);
-        assert byteArray.getDynamicObject().getShape().hasProperty(BYTES_IDENTIFIER);
-        return (ByteList) BYTES_PROPERTY.get(byteArray.getDynamicObject(), true);
+        return BYTE_ARRAY_LAYOUT.getBytes(byteArray.getDynamicObject());
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
