@@ -11,6 +11,14 @@ describe "Module#private_constant" do
     end.should raise_error(NameError)
   end
 
+  it "accepts strings as constant names" do
+    cls = Class.new
+    cls.const_set :Foo, true
+    cls.send :private_constant, "Foo"
+
+    lambda { cls::Foo }.should raise_error(NameError)
+  end
+
   it "accepts multiple names" do
     mod = Module.new
     mod.const_set :Foo, true

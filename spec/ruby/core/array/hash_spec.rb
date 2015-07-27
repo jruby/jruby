@@ -40,17 +40,14 @@ describe "Array#hash" do
   not_supported_on :rubinius, :opal do
     it "calls to_int on result of calling hash on each element" do
       ary = Array.new(5) do
-        # Can't use should_receive here because it calls hash()
         obj = mock('0')
-        def obj.hash()
-          def self.to_int() freeze; 0 end
-          return self
-        end
+        obj.should_receive(:hash).and_return(obj)
+        obj.should_receive(:to_int).and_return(0)
         obj
       end
 
       ary.hash
-      ary.each { |obj| obj.frozen?.should == true }
+
 
       hash = mock('1')
       hash.should_receive(:to_int).and_return(1.hash)
