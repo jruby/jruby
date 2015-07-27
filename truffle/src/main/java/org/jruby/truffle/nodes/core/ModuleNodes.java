@@ -1727,20 +1727,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_constant", argumentsAsArray = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
+        @Child NameToJavaStringNode nameToJavaStringNode;
+
         public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject privateConstant(RubyBasicObject module, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
-                    getModel(module).changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
+        public RubyBasicObject privateConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+            for (Object arg : args) {
+                String name = nameToJavaStringNode.executeToJavaString(frame, arg);
+                getModel(module).changeConstantVisibility(this, name, true);
             }
             return module;
         }
@@ -1749,20 +1747,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_constant", argumentsAsArray = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
+        @Child NameToJavaStringNode nameToJavaStringNode;
+
         public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject publicConstant(RubyBasicObject module, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
-                    getModel(module).changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
+        public RubyBasicObject publicConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+            for (Object arg : args) {
+                String name = nameToJavaStringNode.executeToJavaString(frame, arg);
+                getModel(module).changeConstantVisibility(this, name, false);
             }
             return module;
         }
