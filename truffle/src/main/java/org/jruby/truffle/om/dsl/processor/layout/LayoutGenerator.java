@@ -44,15 +44,9 @@ public class LayoutGenerator {
         }
 
         stream.printf(" implements %sLayout {\n", layout.getName());
+
         stream.println("    ");
-
-        if (layout.getSuperLayout() != null) {
-            final String superName = layout.getSuperLayout().getName();
-            stream.printf("    private static final %sLayoutImpl SUPER_INSTANCE = (%sLayoutImpl) %sLayoutImpl.INSTANCE;\n", superName, superName, superName);
-        }
-
         stream.printf("    public static final %sLayout INSTANCE = new %sLayoutImpl();\n", layout.getName(), layout.getName());
-
         stream.println("    ");
 
         final String typeSuperclass;
@@ -67,29 +61,24 @@ public class LayoutGenerator {
         stream.println("        ");
         stream.println("    }");
         stream.println("    ");
-        stream.printf("    protected final %sType %s_TYPE = new %sType();\n", layout.getName(), layout.getNameAsConstant(), layout.getName());
+        stream.printf("    protected static final %sType %s_TYPE = new %sType();\n", layout.getName(), layout.getNameAsConstant(), layout.getName());
         stream.println("    ");
 
         if (layout.getSuperLayout() == null) {
-            stream.println("    protected final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);");
-            stream.println("    protected final Shape.Allocator ALLOCATOR = LAYOUT.createAllocator();");
-            stream.println("    ");
-        } else {
-            stream.println("    protected final Layout LAYOUT = SUPER_INSTANCE.LAYOUT;");
-            stream.println("    protected final Shape.Allocator ALLOCATOR = SUPER_INSTANCE.ALLOCATOR;");
-            stream.println("    ");
+            stream.println("    protected static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);");
+            stream.println("    protected static final Shape.Allocator ALLOCATOR = LAYOUT.createAllocator();");
         }
 
         for (PropertyModel property : layout.getProperties()) {
-            stream.printf("    protected final HiddenKey %s_IDENTIFIER = new HiddenKey(\"%s\");\n", property.getNameAsConstant(), property.getName());
-            stream.printf("    protected final Property %s_PROPERTY;\n", property.getNameAsConstant());
+            stream.printf("    protected static final HiddenKey %s_IDENTIFIER = new HiddenKey(\"%s\");\n", property.getNameAsConstant(), property.getName());
+            stream.printf("    protected static final Property %s_PROPERTY;\n", property.getNameAsConstant());
             stream.println("    ");
         }
 
 
-        stream.printf("    private final DynamicObjectFactory %s_FACTORY;\n", layout.getNameAsConstant());
+        stream.printf("    private static final DynamicObjectFactory %s_FACTORY;\n", layout.getNameAsConstant());
         stream.println("    ");
-        stream.printf("    protected %sLayoutImpl() {\n", layout.getName());
+        stream.println("    static {");
 
         for (PropertyModel property : layout.getProperties()) {
             final List<String> modifiers = new ArrayList<>();
@@ -133,22 +122,21 @@ public class LayoutGenerator {
 
         stream.printf("        final Shape shape = LAYOUT.createShape(%s_TYPE)\n", layout.getNameAsConstant());
 
-        if (layout.getSuperLayout() != null) {
-            for (PropertyModel property : layout.getSuperLayout().getAllProperties()) {
-                stream.printf("            .addProperty(SUPER_INSTANCE.%s_PROPERTY)\n", property.getNameAsConstant());
-            }
-        }
-
-        for (PropertyModel property : layout.getProperties()) {
+        for (PropertyModel property : layout.getAllProperties()) {
             stream.printf("            .addProperty(%s_PROPERTY)\n", property.getNameAsConstant());
         }
 
-        stream.print("                ;");
+        stream.println("                ;");
 
         stream.println("        ");
         stream.printf("        %s_FACTORY = shape.createFactory();\n", layout.getNameAsConstant());
         stream.println("    }");
         stream.println("    ");
+
+        stream.printf("    protected %sLayoutImpl() {\n", layout.getName());
+        stream.println("    }");
+        stream.println("    ");
+
 
         stream.println("    @Override");
         stream.printf("    public DynamicObject create%s(", layout.getName());
