@@ -26,10 +26,11 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-@NodeChildren({
-        @NodeChild("self"),
-        @NodeChild("name")
-})
+/**
+ * Caches {@link ModuleOperations#lookupMethod(RubyBasicObject, String)}
+ * on an actual instance.
+ */
+@NodeChildren({ @NodeChild("self"), @NodeChild("name") })
 public abstract class LookupMethodNode extends RubyNode {
 
     @Child MetaClassNode metaClassNode;
