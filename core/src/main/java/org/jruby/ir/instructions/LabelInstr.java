@@ -3,18 +3,17 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class LabelInstr extends NOperandInstr implements FixedArityInstr {
+public class LabelInstr extends OneOperandInstr implements FixedArityInstr {
     public LabelInstr(Label label) {
-        super(Operation.LABEL, new Operand[] { label });
+        super(Operation.LABEL, label);
     }
 
     public Label getLabel() {
-        return (Label) operands[0];
+        return (Label) getOperand1();
     }
 
     @Override

@@ -13,11 +13,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ThreadPollInstr extends NOperandInstr implements FixedArityInstr {
+public class ThreadPollInstr extends NoOperandInstr implements FixedArityInstr {
     public final boolean onBackEdge;
 
     public ThreadPollInstr(boolean onBackEdge) {
-        super(Operation.THREAD_POLL, EMPTY_OPERANDS);
+        super(Operation.THREAD_POLL);
         this.onBackEdge = onBackEdge;
     }
 

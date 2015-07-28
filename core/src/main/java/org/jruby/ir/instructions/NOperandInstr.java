@@ -18,4 +18,13 @@ public abstract class NOperandInstr extends Instr {
     public Operand[] getOperands() {
         return operands;
     }
+
+    public void setOperand(int i, Operand operand) {
+        if (i < 0 || i >= operands.length) {
+            throw new IllegalArgumentException("No such operand to set at index: " + i);
+        }
+
+        operands[i] = operand;
+    }
+
 }

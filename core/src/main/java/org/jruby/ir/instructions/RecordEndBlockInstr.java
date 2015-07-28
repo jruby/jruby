@@ -1,7 +1,9 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.*;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -13,11 +15,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RecordEndBlockInstr extends NOperandInstr implements FixedArityInstr {
+public class RecordEndBlockInstr extends OneOperandInstr implements FixedArityInstr {
     private final IRScope declaringScope;
 
     public RecordEndBlockInstr(IRScope declaringScope, WrappedIRClosure endBlockClosure) {
-        super(Operation.RECORD_END_BLOCK, new Operand[] { endBlockClosure });
+        super(Operation.RECORD_END_BLOCK, endBlockClosure);
 
         this.declaringScope = declaringScope;
     }
@@ -27,7 +29,7 @@ public class RecordEndBlockInstr extends NOperandInstr implements FixedArityInst
     }
 
     public WrappedIRClosure getEndBlockClosure() {
-        return (WrappedIRClosure) operands[0];
+        return (WrappedIRClosure) getOperand1();
     }
 
     @Override

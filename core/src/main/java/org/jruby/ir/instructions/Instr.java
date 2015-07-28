@@ -172,6 +172,7 @@ public abstract class Instr {
 
     /* Array of all operands for this instruction */
     public abstract Operand[] getOperands();
+    public abstract void setOperand(int i, Operand operand);
 
     /* List of all variables used by all operands of this instruction */
     public List<Variable> getUsedVariables() {
@@ -227,7 +228,7 @@ public abstract class Instr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         Operand[] operands = getOperands();
         for (int i = 0; i < operands.length; i++) {
-            operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
+            setOperand(i, operands[i].getSimplifiedOperand(valueMap, force));
         }
     }
 

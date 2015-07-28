@@ -5,7 +5,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -34,11 +33,11 @@ import java.util.Map;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BreakInstr extends NOperandInstr implements FixedArityInstr {
+public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     private final String scopeName; // Primarily a debugging aid
 
     public BreakInstr(Operand returnValue, String scopeName) {
-        super(Operation.BREAK, new Operand[] { returnValue });
+        super(Operation.BREAK, returnValue);
         this.scopeName = scopeName;
     }
 
@@ -47,7 +46,7 @@ public class BreakInstr extends NOperandInstr implements FixedArityInstr {
     }
 
     public Operand getReturnValue() {
-        return operands[0];
+        return getOperand1();
     }
 
     @Override

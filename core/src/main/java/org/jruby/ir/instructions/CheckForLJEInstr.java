@@ -12,11 +12,11 @@ import org.jruby.runtime.ThreadContext;
 
 /**
   */
-public class CheckForLJEInstr extends NOperandInstr {
+public class CheckForLJEInstr extends NoOperandInstr {
     private boolean maybeLambda;
 
     public CheckForLJEInstr(boolean maybeLambda) {
-        super(Operation.CHECK_FOR_LJE, EMPTY_OPERANDS);
+        super(Operation.CHECK_FOR_LJE);
 
         this.maybeLambda = maybeLambda;
     }

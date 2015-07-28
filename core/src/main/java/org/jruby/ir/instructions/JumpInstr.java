@@ -3,12 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class JumpInstr extends NOperandInstr implements FixedArityInstr {
+public class JumpInstr extends OneOperandInstr implements FixedArityInstr {
     final boolean exitsExcRegion;
 
     public JumpInstr(Label target) {
@@ -16,7 +15,7 @@ public class JumpInstr extends NOperandInstr implements FixedArityInstr {
     }
 
     public JumpInstr(Label target, boolean exitsExcRegion) {
-        super(Operation.JUMP, new Operand[] { target });
+        super(Operation.JUMP, target);
         this.exitsExcRegion = exitsExcRegion;
     }
 
@@ -25,7 +24,7 @@ public class JumpInstr extends NOperandInstr implements FixedArityInstr {
     }
 
     public Label getJumpTarget() {
-        return (Label) operands[0];
+        return (Label) getOperand1();
     }
 
     @Override
