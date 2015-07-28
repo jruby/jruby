@@ -1604,6 +1604,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        @Child private CallDispatchHeadNode respondToMissingNode;
         private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
@@ -1627,22 +1628,46 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(name)")
         public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
+            final boolean ret;
+
             if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
-                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+                ret = dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
-                return dispatch.doesRespondTo(frame, name, object);
+                ret = dispatch.doesRespondTo(frame, name, object);
+            }
+
+            if (ret) {
+                return true;
+            } else {
+                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
             }
         }
 
         @Specialization(guards = "isRubySymbol(name)")
         public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
+            final boolean ret;
+
             if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
-                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+                ret = dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
-                return dispatch.doesRespondTo(frame, name, object);
+                ret = dispatch.doesRespondTo(frame, name, object);
+            }
+
+            if (ret) {
+                return true;
+            } else {
+                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
             }
         }
 
+        private boolean respondToMissing(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
+            if (respondToMissingNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return respondToMissingNode.callBoolean(frame, object, "respond_to_missing?", null, name, includeProtectedAndPrivate);
+        }
     }
 
     @CoreMethod(names = "respond_to_missing?", required = 2)
