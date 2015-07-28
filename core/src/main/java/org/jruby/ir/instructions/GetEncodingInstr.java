@@ -3,8 +3,6 @@ package org.jruby.ir.instructions;
 import org.jcodings.Encoding;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -14,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetEncodingInstr extends ResultBaseInstr implements FixedArityInstr {
+public class GetEncodingInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     private final Encoding encoding;
 
     public GetEncodingInstr(Variable result, Encoding encoding) {

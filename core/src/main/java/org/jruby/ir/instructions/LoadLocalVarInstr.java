@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInstr {
+public class LoadLocalVarInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     private final IRScope scope;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryLocalVariable result, LocalVariable lvar) {
@@ -29,7 +29,7 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
      * computation itself.  We just use it as a proxy for its (a) name (b) offset (c) scope-depth.
      */
     public LocalVariable getLocalVar() {
-        return (LocalVariable) operands[0];
+        return (LocalVariable) getOperands()[0];
     }
 
     public IRScope getScope() {
@@ -46,7 +46,7 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
 
     // SSS FIXME: This feels dirty
     public void decrementLVarScopeDepth() {
-        operands[0] = getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1);
+        setOperand(0, getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1));
     }
 
     @Override

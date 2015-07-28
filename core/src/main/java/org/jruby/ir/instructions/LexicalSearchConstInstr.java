@@ -20,7 +20,7 @@ import org.jruby.runtime.opto.Invalidator;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedArityInstr {
+public class LexicalSearchConstInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     String constName;
 
     // Constant caching
@@ -35,7 +35,7 @@ public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedAri
     }
 
     public Operand getDefiningScope() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public String getConstName() {

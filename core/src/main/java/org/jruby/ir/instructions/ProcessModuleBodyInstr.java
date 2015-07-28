@@ -15,7 +15,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ProcessModuleBodyInstr extends ResultBaseInstr implements FixedArityInstr {
+public class ProcessModuleBodyInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public ProcessModuleBodyInstr(Variable result, Operand moduleBody, Operand block) {
         super(Operation.PROCESS_MODULE_BODY, result, new Operand[] { moduleBody, block });
 
@@ -23,11 +23,11 @@ public class ProcessModuleBodyInstr extends ResultBaseInstr implements FixedArit
     }
 
     public Operand getModuleBody() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public Operand getBlock() {
-        return operands[1];
+        return getOperands()[1];
     }
 
     @Override

@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
+public class ToAryInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public ToAryInstr(Variable result, Operand array) {
         super(Operation.TO_ARY, result, new Operand[] { array });
 
@@ -25,7 +25,7 @@ public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getArray() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     @Override

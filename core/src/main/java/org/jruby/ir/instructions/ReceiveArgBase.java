@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Argument receive in IRExecution scopes.
  */
-public abstract class ReceiveArgBase extends ResultBaseInstr {
+public abstract class ReceiveArgBase extends NOperandResultBaseInstr {
     protected int argIndex;
 
     public ReceiveArgBase(Operation op, Variable result, int argIndex) {

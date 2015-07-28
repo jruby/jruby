@@ -13,7 +13,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * Load the "implicit" closure for this scope. Currently this is always the "block" passed
  * to a body of code on the JVM stack.
  */
-public class LoadImplicitClosureInstr extends ResultBaseInstr implements FixedArityInstr {
+public class LoadImplicitClosureInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public LoadImplicitClosureInstr(Variable result) {
         super(Operation.LOAD_IMPLICIT_CLOSURE, result, EMPTY_OPERANDS);
 

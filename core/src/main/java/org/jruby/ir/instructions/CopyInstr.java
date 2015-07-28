@@ -14,7 +14,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
+public class CopyInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public CopyInstr(Operation op, Variable result, Operand source) {
         super(op, result, new Operand[] { source });
     }
@@ -24,7 +24,7 @@ public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getSource() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     @Override

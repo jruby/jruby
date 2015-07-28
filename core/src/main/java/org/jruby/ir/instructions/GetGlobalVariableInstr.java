@@ -15,7 +15,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetGlobalVariableInstr extends ResultBaseInstr  implements FixedArityInstr {
+public class GetGlobalVariableInstr extends NOperandResultBaseInstr  implements FixedArityInstr {
     public GetGlobalVariableInstr(Variable dest, String gvarName) {
         this(dest, new GlobalVariable(gvarName));
     }
@@ -25,7 +25,7 @@ public class GetGlobalVariableInstr extends ResultBaseInstr  implements FixedAri
     }
 
     public GlobalVariable getGVar() {
-        return (GlobalVariable) operands[0];
+        return (GlobalVariable) getOperands()[0];
     }
 
     public boolean computeScopeFlags(IRScope scope) {

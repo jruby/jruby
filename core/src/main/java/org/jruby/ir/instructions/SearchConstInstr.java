@@ -22,7 +22,7 @@ import java.util.Map;
 // - looks up lexical scopes
 // - then inheritance hierarcy if lexical search fails
 // - then invokes const_missing if inheritance search fails
-public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr {
+public class SearchConstInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     private final String   constName;
     private final boolean  noPrivateConsts;
 
@@ -40,7 +40,7 @@ public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr
 
 
     public Operand getStartingScope() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public String getConstName() {

@@ -4,7 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultBaseInstr;
+import org.jruby.ir.instructions.NOperandResultBaseInstr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetErrorInfoInstr extends ResultBaseInstr implements FixedArityInstr {
+public class GetErrorInfoInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public GetErrorInfoInstr(Variable result) {
         super(Operation.GET_ERROR_INFO, result, EMPTY_OPERANDS);
     }

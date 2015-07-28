@@ -14,7 +14,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * This is typically used to access the "yieldable" target for blocks and evals. Only used
  * when within a scope that will use an on-heap frame.
  */
-public class LoadFrameClosureInstr extends ResultBaseInstr implements FixedArityInstr {
+public class LoadFrameClosureInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public LoadFrameClosureInstr(Variable result) {
         super(Operation.LOAD_FRAME_CLOSURE, result, EMPTY_OPERANDS);
 

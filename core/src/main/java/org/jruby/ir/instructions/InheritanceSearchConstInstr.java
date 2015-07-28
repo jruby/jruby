@@ -20,7 +20,7 @@ import org.jruby.runtime.opto.Invalidator;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class InheritanceSearchConstInstr extends ResultBaseInstr implements FixedArityInstr {
+public class InheritanceSearchConstInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     String   constName;
     private final boolean  noPrivateConsts;
 
@@ -37,7 +37,7 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
     }
 
     public Operand getCurrentModule() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     public String getConstName() {

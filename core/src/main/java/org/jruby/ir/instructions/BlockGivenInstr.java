@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr {
+public class BlockGivenInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public BlockGivenInstr(Variable result, Operand block) {
         super(Operation.BLOCK_GIVEN, result, new Operand[] {block});
 
@@ -23,7 +23,7 @@ public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr 
     }
 
     public Operand getBlockArg() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     @Override
