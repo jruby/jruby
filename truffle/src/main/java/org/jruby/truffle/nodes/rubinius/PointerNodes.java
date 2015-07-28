@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import jnr.ffi.Pointer;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
@@ -51,11 +52,11 @@ public abstract class PointerNodes {
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
-        POINTER_LAYOUT.setPointer(pointer.getDynamicObject(), newPointer);
+        POINTER_LAYOUT.setPointer(BasicObjectNodes.getDynamicObject(pointer), newPointer);
     }
 
     public static Pointer getPointer(RubyBasicObject pointer) {
-        return POINTER_LAYOUT.getPointer(pointer.getDynamicObject());
+        return POINTER_LAYOUT.getPointer(BasicObjectNodes.getDynamicObject(pointer));
     }
 
 }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -31,8 +32,8 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        if (object.getDynamicObject().getShape() == objectLayout) {
-            return object.getContext().getCoreLibrary().getNilObject();
+        if (BasicObjectNodes.getDynamicObject(object).getShape() == objectLayout) {
+            return BasicObjectNodes.getContext(object).getCoreLibrary().getNilObject();
         } else {
             return next.execute(object);
         }
@@ -47,7 +48,7 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
             return next.isSet(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.dynamicObject.getShape() == objectLayout;
 
         if (condition) {
             return false;

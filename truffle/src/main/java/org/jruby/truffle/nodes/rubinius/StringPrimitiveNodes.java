@@ -67,10 +67,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
-import org.jruby.truffle.nodes.core.EncodingNodes;
-import org.jruby.truffle.nodes.core.StringGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -184,7 +181,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = new ByteList(StringNodes.getByteList(source), index, length);
             bytes.setEncoding(StringNodes.getByteList(source).getEncoding());
 
-            final RubyBasicObject ret = StringNodes.createString(source.getLogicalClass(), bytes);
+            final RubyBasicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(source), bytes);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -234,7 +231,7 @@ public abstract class StringPrimitiveNodes {
                 length = bytes.length() - normalizedIndex;
             }
 
-            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), new ByteList(bytes, normalizedIndex, length));
+            final RubyBasicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length));
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -476,7 +473,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), new ByteList(byteList, offset, 1));
+            final RubyBasicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, 1));
 
             return propagate(string, ret);
         }
@@ -500,9 +497,9 @@ public abstract class StringPrimitiveNodes {
 
             final RubyBasicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(byteList, offset, clen));
+                ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, clen));
             } else {
-                ret = StringNodes.createString(string.getLogicalClass(), new ByteList(byteList, offset, 1));
+                ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, 1));
             }
 
             return propagate(string, ret);
@@ -1259,7 +1256,7 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), new ByteList(StringNodes.getByteList(string), beg, len));
+            final RubyBasicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(StringNodes.getByteList(string), beg, len));
             StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
             taintResultNode.maybeTaint(string, ret);
 

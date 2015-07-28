@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -57,7 +58,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "isNullArray(array)"}
     )
     public RubyBasicObject readNull(RubyBasicObject array, int index, int length) {
-        return ArrayNodes.createEmptyArray(array.getLogicalClass());
+        return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
     }
 
     // Reading within bounds on an array with actual storage
@@ -66,7 +67,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isIntArray(array)"}
     )
     public RubyBasicObject readIntInBounds(RubyBasicObject array, int index, int length) {
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
@@ -74,7 +75,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isLongArray(array)"}
     )
     public RubyBasicObject readLongInBounds(RubyBasicObject array, int index, int length) {
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
@@ -82,7 +83,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isDoubleArray(array)"}
     )
     public RubyBasicObject readDoubleInBounds(RubyBasicObject array, int index, int length) {
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
@@ -90,7 +91,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isObjectArray(array)"}
     )
     public RubyBasicObject readObjectInBounds(RubyBasicObject array, int index, int length) {
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + length), length);
     }
 
@@ -102,7 +103,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     public RubyBasicObject readIntOutOfBounds(RubyBasicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
@@ -112,7 +113,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     public RubyBasicObject readLongOutOfBounds(RubyBasicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
@@ -122,7 +123,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     public RubyBasicObject readDoubleOutOfBounds(RubyBasicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 
@@ -132,7 +133,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     public RubyBasicObject readObjectOutOfBounds(RubyBasicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
-        return ArrayNodes.createArray(array.getLogicalClass(),
+        return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
     }
 

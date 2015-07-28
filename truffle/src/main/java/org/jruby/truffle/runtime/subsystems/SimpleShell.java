@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -81,7 +82,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(((RubyBasicObject) e.getRubyException()).getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
+                        for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((RubyBasicObject) e.getRubyException())), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
                             System.console().writer().println(line);
                         }
                     }

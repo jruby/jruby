@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DoubleLocation;
 import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -36,10 +37,10 @@ public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
             return next.executeDouble(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.dynamicObject.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.getDouble(object.getDynamicObject(), objectLayout);
+            return storageLocation.getDouble(BasicObjectNodes.getDynamicObject(object), objectLayout);
         } else {
             return next.executeDouble(object);
         }
@@ -54,10 +55,10 @@ public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.dynamicObject.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.get(object.getDynamicObject(), objectLayout);
+            return storageLocation.get(BasicObjectNodes.getDynamicObject(object), objectLayout);
         } else {
             return next.execute(object);
         }

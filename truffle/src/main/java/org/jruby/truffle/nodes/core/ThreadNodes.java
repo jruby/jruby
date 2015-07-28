@@ -56,7 +56,7 @@ public abstract class ThreadNodes {
     public static final ThreadLayout THREAD_LAYOUT = ThreadLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
-        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass()));
+        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, new RubyBasicObject(BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass(), BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE)));
         final RubyBasicObject object = new RubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(fields));
         fields.fiberManager = new FiberManager(object, manager);
         return object;
@@ -285,7 +285,7 @@ public abstract class ThreadNodes {
     }
 
     public static ThreadFields getFields(RubyBasicObject thread) {
-        return THREAD_LAYOUT.getFields(thread.getDynamicObject());
+        return THREAD_LAYOUT.getFields(BasicObjectNodes.getDynamicObject(thread));
     }
 
     public enum InterruptMode {

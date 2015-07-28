@@ -43,6 +43,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -67,7 +68,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return new RubyBasicObject(dirClass);
+            return new RubyBasicObject(dirClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
         }
 
     }

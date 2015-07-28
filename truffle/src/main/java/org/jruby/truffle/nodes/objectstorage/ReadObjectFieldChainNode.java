@@ -33,7 +33,7 @@ public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
             return next.isSet(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.dynamicObject.getShape() == objectLayout;
 
         if (condition) {
             return true;

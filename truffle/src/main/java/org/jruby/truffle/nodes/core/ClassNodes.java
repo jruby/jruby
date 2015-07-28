@@ -61,7 +61,7 @@ public abstract class ClassNodes {
     public static RubyBasicObject createBootClass(RubyBasicObject classClass, RubyBasicObject superclass, String name, Allocator allocator) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        return createRubyClass(classClass.getContext(), classClass, null, superclass, name, false, null, allocator);
+        return createRubyClass(BasicObjectNodes.getContext(classClass), classClass, null, superclass, name, false, null, allocator);
     }
 
     public static RubyBasicObject createSingletonClassOfObject(RubyContext context, RubyBasicObject superclass, RubyBasicObject attached, String name) {
@@ -70,23 +70,23 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached == null || RubyGuards.isRubyModule(attached);
-        return ModuleNodes.getModel(createRubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
+        return ModuleNodes.getModel(createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
     public static RubyBasicObject allocate(RubyBasicObject rubyClass, Node currentNode) {
-        return getAllocator(rubyClass).allocate(rubyClass.getContext(), rubyClass, currentNode);
+        return getAllocator(rubyClass).allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, currentNode);
     }
 
     public static Allocator getAllocator(RubyBasicObject rubyClass) {
-        return CLASS_LAYOUT.getAllocator(rubyClass.getDynamicObject());
+        return CLASS_LAYOUT.getAllocator(BasicObjectNodes.getDynamicObject(rubyClass));
     }
 
     public static void unsafeSetAllocator(RubyBasicObject rubyClass, Allocator allocator) {
-        CLASS_LAYOUT.setAllocator(rubyClass.getDynamicObject(), allocator);
+        CLASS_LAYOUT.setAllocator(BasicObjectNodes.getDynamicObject(rubyClass), allocator);
     }
 
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
-        final RubyBasicObject rubyClass = createRubyClass(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false, null, allocator);
+        final RubyBasicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
         return rubyClass;
     }

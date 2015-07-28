@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -113,7 +114,7 @@ public class InternalMethod {
 
             case PROTECTED:
                 for (RubyBasicObject ancestor : ModuleNodes.getModel(callerClass).ancestors()) {
-                    if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
+                    if (ancestor == declaringModule || BasicObjectNodes.getMetaClass(ancestor) == declaringModule) {
                         return true;
                     }
                 }

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -54,7 +55,7 @@ public abstract class IsTaintedNode extends RubyNode {
     public boolean isTainted(RubyBasicObject object) {
         if (readTaintNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readTaintNode = insert(new ReadHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER));
+            readTaintNode = insert(new ReadHeadObjectFieldNode(BasicObjectNodes.TAINTED_IDENTIFIER));
         }
 
         try {

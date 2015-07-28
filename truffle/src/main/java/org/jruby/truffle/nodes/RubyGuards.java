@@ -47,11 +47,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyBignum(RubyBasicObject value) {
-        return BignumNodes.BIGNUM_LAYOUT.isBignum(value.getDynamicObject());
+        return BignumNodes.BIGNUM_LAYOUT.isBignum(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyBigDecimal(RubyBasicObject value) {
-        return BigDecimalNodes.BIG_DECIMAL_LAYOUT.isBigDecimal(value.getDynamicObject());
+        return BigDecimalNodes.BIG_DECIMAL_LAYOUT.isBigDecimal(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isIntegerFixnumRange(Object object) {
@@ -59,7 +59,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isIntegerFixnumRange(RubyBasicObject object) {
-        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.isIntegerFixnumRange(object.getDynamicObject());
+        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.isIntegerFixnumRange(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isLongFixnumRange(Object object) {
@@ -67,7 +67,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isLongFixnumRange(RubyBasicObject object) {
-        return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.isLongFixnumRange(object.getDynamicObject());
+        return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.isLongFixnumRange(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isObjectRange(Object object) {
@@ -75,7 +75,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isObjectRange(RubyBasicObject object) {
-        return RangeNodes.OBJECT_RANGE_LAYOUT.isObjectRange(object.getDynamicObject());
+        return RangeNodes.OBJECT_RANGE_LAYOUT.isObjectRange(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyRange(Object value) {
@@ -87,11 +87,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyArray(RubyBasicObject value) {
-        return ArrayNodes.ARRAY_LAYOUT.isArray(value.getDynamicObject());
+        return ArrayNodes.ARRAY_LAYOUT.isArray(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyBinding(RubyBasicObject object) {
-        return BindingNodes.BINDING_LAYOUT.isBinding(object.getDynamicObject());
+        return BindingNodes.BINDING_LAYOUT.isBinding(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyClass(Object value) {
@@ -99,7 +99,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyClass(RubyBasicObject value) {
-        return ClassNodes.CLASS_LAYOUT.isClass(value.getDynamicObject());
+        return ClassNodes.CLASS_LAYOUT.isClass(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyHash(Object value) {
@@ -107,7 +107,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyHash(RubyBasicObject value) {
-        return HashNodes.HASH_LAYOUT.isHash(value.getDynamicObject());
+        return HashNodes.HASH_LAYOUT.isHash(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyModule(Object value) {
@@ -115,7 +115,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyModule(RubyBasicObject value) {
-        return ModuleNodes.MODULE_LAYOUT.isModule(value.getDynamicObject());
+        return ModuleNodes.MODULE_LAYOUT.isModule(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyRegexp(Object value) {
@@ -123,7 +123,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyRegexp(RubyBasicObject value) {
-        return RegexpNodes.REGEXP_LAYOUT.isRegexp(value.getDynamicObject());
+        return RegexpNodes.REGEXP_LAYOUT.isRegexp(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyString(Object value) {
@@ -131,7 +131,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyString(RubyBasicObject value) {
-        return StringNodes.STRING_LAYOUT.isString(value.getDynamicObject());
+        return StringNodes.STRING_LAYOUT.isString(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyEncoding(Object object) {
@@ -139,7 +139,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyEncoding(RubyBasicObject object) {
-        return EncodingNodes.ENCODING_LAYOUT.isEncoding(object.getDynamicObject());
+        return EncodingNodes.ENCODING_LAYOUT.isEncoding(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubySymbol(Object value) {
@@ -147,7 +147,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubySymbol(RubyBasicObject value) {
-        return SymbolNodes.SYMBOL_LAYOUT.isSymbol(value.getDynamicObject());
+        return SymbolNodes.SYMBOL_LAYOUT.isSymbol(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyMethod(Object value) {
@@ -155,7 +155,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMethod(RubyBasicObject value) {
-        return MethodNodes.METHOD_LAYOUT.isMethod(value.getDynamicObject());
+        return MethodNodes.METHOD_LAYOUT.isMethod(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyUnboundMethod(Object value) {
@@ -163,11 +163,11 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyUnboundMethod(RubyBasicObject value) {
-        return UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.isUnboundMethod(value.getDynamicObject());
+        return UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.isUnboundMethod(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyMutex(RubyBasicObject value) {
-        return MutexNodes.MUTEX_LAYOUT.isMutex(value.getDynamicObject());
+        return MutexNodes.MUTEX_LAYOUT.isMutex(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyBasicObject(Object value) {
@@ -179,7 +179,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyPointer(RubyBasicObject value) {
-        return PointerNodes.POINTER_LAYOUT.isPointer(value.getDynamicObject());
+        return PointerNodes.POINTER_LAYOUT.isPointer(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubiniusByteArray(Object value) {
@@ -187,7 +187,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubiniusByteArray(RubyBasicObject value) {
-        return ByteArrayNodes.BYTE_ARRAY_LAYOUT.isByteArray(value.getDynamicObject());
+        return ByteArrayNodes.BYTE_ARRAY_LAYOUT.isByteArray(BasicObjectNodes.getDynamicObject(value));
     }
 
     public static boolean isRubyProc(Object object) {
@@ -195,15 +195,15 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyProc(RubyBasicObject object) {
-        return ProcNodes.PROC_LAYOUT.isProc(object.getDynamicObject());
+        return ProcNodes.PROC_LAYOUT.isProc(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyEncodingConverter(RubyBasicObject encodingConverter) {
-        return EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.isEncodingConverter(encodingConverter.getDynamicObject());
+        return EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.isEncodingConverter(BasicObjectNodes.getDynamicObject(encodingConverter));
     }
 
     public static boolean isRubyTime(RubyBasicObject object) {
-        return TimeNodes.TIME_LAYOUT.isTime(object.getDynamicObject());
+        return TimeNodes.TIME_LAYOUT.isTime(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyException(Object value) {
@@ -211,7 +211,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyException(RubyBasicObject object) {
-        return ExceptionNodes.EXCEPTION_LAYOUT.isException(object.getDynamicObject());
+        return ExceptionNodes.EXCEPTION_LAYOUT.isException(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyFiber(Object object) {
@@ -219,7 +219,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyFiber(RubyBasicObject object) {
-        return FiberNodes.FIBER_LAYOUT.isFiber(object.getDynamicObject());
+        return FiberNodes.FIBER_LAYOUT.isFiber(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyThread(Object object) {
@@ -227,7 +227,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyThread(RubyBasicObject object) {
-        return ThreadNodes.THREAD_LAYOUT.isThread(object.getDynamicObject());
+        return ThreadNodes.THREAD_LAYOUT.isThread(BasicObjectNodes.getDynamicObject(object));
     }
 
     public static boolean isRubyMatchData(Object object) {
@@ -235,7 +235,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMatchData(RubyBasicObject object) {
-        return MatchDataNodes.MATCH_DATA_LAYOUT.isMatchData(object.getDynamicObject());
+        return MatchDataNodes.MATCH_DATA_LAYOUT.isMatchData(BasicObjectNodes.getDynamicObject(object));
     }
 
     // Internal types

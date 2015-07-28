@@ -48,19 +48,19 @@ public abstract class TimeNodes {
     private static final DateTime ZERO = new DateTime(0);
 
     public static DateTime getDateTime(RubyBasicObject time) {
-        return TIME_LAYOUT.getDateTime(time.getDynamicObject());
+        return TIME_LAYOUT.getDateTime(BasicObjectNodes.getDynamicObject(time));
     }
 
     public static void setDateTime(RubyBasicObject time, DateTime dateTime) {
-        TIME_LAYOUT.setDateTime(time.getDynamicObject(), dateTime);
+        TIME_LAYOUT.setDateTime(BasicObjectNodes.getDynamicObject(time), dateTime);
     }
 
     public static Object getOffset(RubyBasicObject time) {
-        return TIME_LAYOUT.getOffset(time.getDynamicObject());
+        return TIME_LAYOUT.getOffset(BasicObjectNodes.getDynamicObject(time));
     }
 
     public static void setOffset(RubyBasicObject time, Object offset) {
-        TIME_LAYOUT.setOffset(time.getDynamicObject(), offset);
+        TIME_LAYOUT.setOffset(BasicObjectNodes.getDynamicObject(time), offset);
     }
 
     public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.*;
@@ -99,7 +100,7 @@ public class RubyModuleModel implements ModuleChain {
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            final RubyBasicObject classClass = getLogicalClass().getLogicalClass();
+            final RubyBasicObject classClass = BasicObjectNodes.getLogicalClass(getLogicalClass());
             final RubyBasicObject objectClass = ModuleNodes.getModel(ModuleNodes.getModel(classClass).getSuperClass()).getSuperClass();
 
             if (lexicalParent == objectClass) {
@@ -440,7 +441,7 @@ public class RubyModuleModel implements ModuleChain {
             } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
                 return "#<cyclic>";
             } else {
-                return "#<" + ModuleNodes.getModel(getLogicalClass()).getName() + ":0x" + Long.toHexString(rubyModuleObject.verySlowGetObjectID()) + ">";
+                return "#<" + ModuleNodes.getModel(getLogicalClass()).getName() + ":0x" + Long.toHexString(BasicObjectNodes.verySlowGetObjectID(rubyModuleObject)) + ">";
             }
         }
     }
@@ -515,13 +516,13 @@ public class RubyModuleModel implements ModuleChain {
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
             if (constant.getValue() instanceof RubyBasicObject) {
-                ((RubyBasicObject) constant.getValue()).visitObjectGraph(visitor);
+                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) constant.getValue()), visitor);
             }
         }
 
         for (Object classVariable : classVariables.values()) {
             if (classVariable instanceof RubyBasicObject) {
-                ((RubyBasicObject) classVariable).visitObjectGraph(visitor);
+                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) classVariable), visitor);
             }
         }
 
@@ -532,7 +533,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         for (RubyBasicObject ancestor : ancestors()) {
-            ancestor.visitObjectGraph(visitor);
+            BasicObjectNodes.visitObjectGraph(ancestor, visitor);
         }
     }
 
@@ -626,7 +627,7 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     public RubyBasicObject getLogicalClass() {
-        return rubyModuleObject.getLogicalClass();
+        return BasicObjectNodes.getLogicalClass(rubyModuleObject);
     }
 
     public void initialize(RubyBasicObject superclass) {
@@ -669,8 +670,8 @@ public class RubyModuleModel implements ModuleChain {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
-        if (ModuleNodes.getModel(rubyModuleObject.getMetaClass()).isSingleton()) {
-            return rubyModuleObject.getMetaClass();
+        if (ModuleNodes.getModel(BasicObjectNodes.getMetaClass(rubyModuleObject)).isSingleton()) {
+            return BasicObjectNodes.getMetaClass(rubyModuleObject);
         }
 
         final RubyBasicObject singletonSuperclass;
@@ -681,9 +682,9 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         String name = String.format("#<Class:%s>", getName());
-        rubyModuleObject.setMetaClass(ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
+        BasicObjectNodes.setMetaClass(rubyModuleObject, ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
 
-        return rubyModuleObject.getMetaClass();
+        return BasicObjectNodes.getMetaClass(rubyModuleObject);
     }
 
 

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -70,7 +71,7 @@ public abstract class IsFrozenNode extends RubyNode {
     public boolean isFrozen(RubyBasicObject object) {
         if (readFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readFrozenNode = insert(new ReadHeadObjectFieldNode(RubyBasicObject.FROZEN_IDENTIFIER));
+            readFrozenNode = insert(new ReadHeadObjectFieldNode(BasicObjectNodes.FROZEN_IDENTIFIER));
         }
 
         try {

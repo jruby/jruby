@@ -17,15 +17,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
-import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Mutex")
@@ -52,7 +49,7 @@ public abstract class MutexNodes {
     }
 
     protected static ReentrantLock getLock(RubyBasicObject mutex) {
-        return MUTEX_LAYOUT.getLock(mutex.getDynamicObject());
+        return MUTEX_LAYOUT.getLock(BasicObjectNodes.getDynamicObject(mutex));
     }
 
     @CoreMethod(names = "lock")

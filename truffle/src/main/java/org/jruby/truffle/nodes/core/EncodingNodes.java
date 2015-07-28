@@ -92,15 +92,15 @@ public abstract class EncodingNodes {
     }
 
     public static Encoding getEncoding(RubyBasicObject encoding) {
-        return ENCODING_LAYOUT.getEncoding(encoding.getDynamicObject());
+        return ENCODING_LAYOUT.getEncoding(BasicObjectNodes.getDynamicObject(encoding));
     }
 
     public static ByteList getName(RubyBasicObject encoding) {
-        return ENCODING_LAYOUT.getName(encoding.getDynamicObject());
+        return ENCODING_LAYOUT.getName(BasicObjectNodes.getDynamicObject(encoding));
     }
 
     public static boolean isDummy(RubyBasicObject encoding) {
-        return ENCODING_LAYOUT.getDummy(encoding.getDynamicObject());
+        return ENCODING_LAYOUT.getDummy(BasicObjectNodes.getDynamicObject(encoding));
     }
 
     public static RubyBasicObject[] cloneEncodingList() {

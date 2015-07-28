@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -50,10 +51,10 @@ public abstract class BucketsStrategy {
             Object key = entry.getKey();
 
             if (!byIdentity && RubyGuards.isRubyString(key)) {
-                key = DebugOperations.send(hashClass.getContext(), DebugOperations.send(hashClass.getContext(), key, "dup", null), "freeze", null);
+                key = DebugOperations.send(BasicObjectNodes.getContext(hashClass), DebugOperations.send(BasicObjectNodes.getContext(hashClass), key, "dup", null), "freeze", null);
             }
 
-            final int hashed = HashNodes.slowHashKey(hashClass.getContext(), key);
+            final int hashed = HashNodes.slowHashKey(BasicObjectNodes.getContext(hashClass), key);
             Entry newEntry = new Entry(hashed, key, entry.getValue());
 
             final int index = BucketsStrategy.getBucketIndex(hashed, newEntries.length);
@@ -66,7 +67,7 @@ public abstract class BucketsStrategy {
 
                 while (bucketEntry != null) {
                     if (hashed == bucketEntry.getHashed()
-                            && HashNodes.slowAreKeysEqual(hashClass.getContext(), bucketEntry.getKey(), key, byIdentity)) {
+                            && HashNodes.slowAreKeysEqual(BasicObjectNodes.getContext(hashClass), bucketEntry.getKey(), key, byIdentity)) {
                         bucketEntry.setValue(entry.getValue());
 
                         actualSize--;

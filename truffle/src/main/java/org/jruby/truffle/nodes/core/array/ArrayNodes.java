@@ -88,27 +88,27 @@ public abstract class ArrayNodes {
     public static final ArrayLayout ARRAY_LAYOUT = ArrayLayoutImpl.INSTANCE;
 
     public static Object getStore(RubyBasicObject array) {
-        return ARRAY_LAYOUT.getStore(array.getDynamicObject());
+        return ARRAY_LAYOUT.getStore(BasicObjectNodes.getDynamicObject(array));
     }
 
     public static void setStore(RubyBasicObject array, Object store, int size) {
         assert verifyStore(store, size);
 
         if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(array.getContext(), store, size);
+            store = randomizeStorageStrategy(BasicObjectNodes.getContext(array), store, size);
             assert verifyStore(store, size);
         }
 
-        ARRAY_LAYOUT.setStore(array.getDynamicObject(), store);
+        ARRAY_LAYOUT.setStore(BasicObjectNodes.getDynamicObject(array), store);
         setSize(array, size);
     }
 
     public static void setSize(RubyBasicObject array, int size) {
-        ARRAY_LAYOUT.setSize(array.getDynamicObject(), size);
+        ARRAY_LAYOUT.setSize(BasicObjectNodes.getDynamicObject(array), size);
     }
 
     public static int getSize(RubyBasicObject array) {
-        return ARRAY_LAYOUT.getSize(array.getDynamicObject());
+        return ARRAY_LAYOUT.getSize(BasicObjectNodes.getDynamicObject(array));
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
@@ -132,7 +132,7 @@ public abstract class ArrayNodes {
     }
 
     public static RubyBasicObject fromObjects(RubyBasicObject arrayClass, Object... objects) {
-        return createGeneralArray(arrayClass, storeFromObjects(arrayClass.getContext(), objects), objects.length);
+        return createGeneralArray(arrayClass, storeFromObjects(BasicObjectNodes.getContext(arrayClass), objects), objects.length);
     }
 
     private static Object storeFromObjects(RubyContext context, Object... objects) {
@@ -485,7 +485,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return ArrayNodes.createEmptyArray(array.getLogicalClass());
+            return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -503,7 +503,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(array.getLogicalClass(), newStore, newStoreLength);
+            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongArray(array)")
@@ -521,7 +521,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(array.getLogicalClass(), newStore, newStoreLength);
+            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isDoubleArray(array)")
@@ -539,7 +539,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(array.getLogicalClass(), newStore, newStoreLength);
+            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -557,7 +557,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(array.getLogicalClass(), newStore, newStoreLength);
+            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -640,16 +640,16 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object slice(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
+            final int normalizedIndex = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
-                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? end : end + 1);
+                final int end = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
+                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return ArrayNodes.createEmptyArray(array.getLogicalClass());
+                    return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
@@ -924,8 +924,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
-            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject())) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range)))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -939,13 +939,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRangeArray(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject()) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject())) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range)))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -956,12 +956,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setIntegerFixnumRange(VirtualFrame frame, RubyBasicObject array, RubyBasicObject range, RubyBasicObject other, NotProvided unused) {
-            if (RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((RubyBasicObject) range).getDynamicObject())) {
+            if (RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range)))) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((RubyBasicObject) range).getDynamicObject()));
-                int normalizedEnd = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((RubyBasicObject) range).getDynamicObject()));
+                int normalizedBegin = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
+                int normalizedEnd = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((RubyBasicObject) range))));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
@@ -1173,7 +1173,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1210,7 +1210,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(array.getLogicalClass()).getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;

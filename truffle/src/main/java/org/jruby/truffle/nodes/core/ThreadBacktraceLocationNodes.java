@@ -28,9 +28,9 @@ public class ThreadBacktraceLocationNodes {
     private static final DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
 
     static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
         ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(ACTIVATION_PROPERTY);
+        final Shape shape = BasicObjectNodes.EMPTY_SHAPE.addProperty(ACTIVATION_PROPERTY);
         THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
     }
 
@@ -39,8 +39,8 @@ public class ThreadBacktraceLocationNodes {
     }
 
     protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {
-        assert threadBacktraceLocation.getDynamicObject().getShape().hasProperty(ACTIVATION_IDENTIFIER);
-        return (Activation) ACTIVATION_PROPERTY.get(threadBacktraceLocation.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(threadBacktraceLocation).getShape().hasProperty(ACTIVATION_IDENTIFIER);
+        return (Activation) ACTIVATION_PROPERTY.get(BasicObjectNodes.getDynamicObject(threadBacktraceLocation), true);
     }
 
     @CoreMethod(names = { "absolute_path", "path" })

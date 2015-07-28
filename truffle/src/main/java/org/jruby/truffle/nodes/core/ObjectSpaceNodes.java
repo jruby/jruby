@@ -111,7 +111,7 @@ public abstract class ObjectSpaceNodes {
             int count = 0;
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
-                if (!isHidden(object) && ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
+                if (!isHidden(object) && ModuleOperations.assignableTo(BasicObjectNodes.getLogicalClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }

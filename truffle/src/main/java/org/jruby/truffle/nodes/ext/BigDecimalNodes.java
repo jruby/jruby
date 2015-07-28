@@ -45,7 +45,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 
 import java.math.BigDecimal;
@@ -91,11 +90,11 @@ public abstract class BigDecimalNodes {
     }
 
     public static BigDecimal getBigDecimalValue(RubyBasicObject bigdecimal) {
-        return BIG_DECIMAL_LAYOUT.getValue(bigdecimal.getDynamicObject());
+        return BIG_DECIMAL_LAYOUT.getValue(BasicObjectNodes.getDynamicObject(bigdecimal));
     }
 
     public static Type getBigDecimalType(RubyBasicObject bigdecimal) {
-        return BIG_DECIMAL_LAYOUT.getType(bigdecimal.getDynamicObject());
+        return BIG_DECIMAL_LAYOUT.getType(BasicObjectNodes.getDynamicObject(bigdecimal));
     }
 
     public static RoundingMode toRoundingMode(int constValue) {
@@ -290,11 +289,11 @@ public abstract class BigDecimalNodes {
         }
 
         private void setBigDecimalValue(RubyBasicObject bigdecimal, BigDecimal value) {
-            BIG_DECIMAL_LAYOUT.setValue(bigdecimal.getDynamicObject(), value);
+            BIG_DECIMAL_LAYOUT.setValue(BasicObjectNodes.getDynamicObject(bigdecimal), value);
         }
 
         private void setBigDecimalValue(RubyBasicObject bigdecimal, Type type) {
-            BIG_DECIMAL_LAYOUT.setType(bigdecimal.getDynamicObject(), type);
+            BIG_DECIMAL_LAYOUT.setType(BasicObjectNodes.getDynamicObject(bigdecimal), type);
         }
 
         public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);

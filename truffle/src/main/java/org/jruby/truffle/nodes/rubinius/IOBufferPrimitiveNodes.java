@@ -43,6 +43,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -75,7 +76,7 @@ public abstract class IOBufferPrimitiveNodes {
     private static final DynamicObjectFactory IO_BUFFER_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
 
         WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(boolean.class), 0);
         STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
@@ -83,7 +84,7 @@ public abstract class IOBufferPrimitiveNodes {
         START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(int.class), 0);
         TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(int.class), 0);
 
-        IO_BUFFER_FACTORY = RubyBasicObject.EMPTY_SHAPE
+        IO_BUFFER_FACTORY = BasicObjectNodes.EMPTY_SHAPE
                 .addProperty(WRITE_SYNCED_PROPERTY)
                 .addProperty(STORAGE_PROPERTY)
                 .addProperty(USED_PROPERTY)
@@ -93,38 +94,38 @@ public abstract class IOBufferPrimitiveNodes {
     }
 
     public static void setWriteSynced(RubyBasicObject io, boolean writeSynced) {
-        assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCED_IDENTIFIER);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(WRITE_SYNCED_IDENTIFIER);
 
         try {
-            WRITE_SYNCED_PROPERTY.set(io.getDynamicObject(), writeSynced, io.getDynamicObject().getShape());
+            WRITE_SYNCED_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), writeSynced, BasicObjectNodes.getDynamicObject(io).getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }
     }
 
     private static RubyBasicObject getStorage(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(STORAGE_IDENTIFIER);
-        return (RubyBasicObject) STORAGE_PROPERTY.get(io.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(STORAGE_IDENTIFIER);
+        return (RubyBasicObject) STORAGE_PROPERTY.get(BasicObjectNodes.getDynamicObject(io), true);
     }
 
     private static int getUsed(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
-        return (int) USED_PROPERTY.get(io.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(USED_IDENTIFIER);
+        return (int) USED_PROPERTY.get(BasicObjectNodes.getDynamicObject(io), true);
     }
 
     public static void setUsed(RubyBasicObject io, int used) {
-        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(USED_IDENTIFIER);
 
         try {
-            USED_PROPERTY.set(io.getDynamicObject(), used, io.getDynamicObject().getShape());
+            USED_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), used, BasicObjectNodes.getDynamicObject(io).getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }
     }
 
     private static int getTotal(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(TOTAL_IDENTIFIER);
-        return (int) TOTAL_PROPERTY.get(io.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(TOTAL_IDENTIFIER);
+        return (int) TOTAL_PROPERTY.get(BasicObjectNodes.getDynamicObject(io), true);
     }
 
     @RubiniusPrimitive(name = "iobuffer_allocate")

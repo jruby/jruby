@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -97,23 +98,23 @@ public abstract class SingletonClassNode extends RubyNode {
             return ModuleNodes.getModel(object).getSingletonClass();
         }
 
-        if (ModuleNodes.getModel(object.getMetaClass()).isSingleton()) {
-            return object.getMetaClass();
+        if (ModuleNodes.getModel(BasicObjectNodes.getMetaClass(object)).isSingleton()) {
+            return BasicObjectNodes.getMetaClass(object);
         }
 
         CompilerDirectives.transferToInterpreter();
-        final RubyBasicObject logicalClass = object.getLogicalClass();
+        final RubyBasicObject logicalClass = BasicObjectNodes.getLogicalClass(object);
 
         RubyBasicObject attached = null;
         if (RubyGuards.isRubyModule(object)) {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), object.verySlowGetObjectID());
+        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
         final RubyBasicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
-        object.setMetaClass(singletonClass);
+        BasicObjectNodes.setMetaClass(object, singletonClass);
 
         return singletonClass;
     }

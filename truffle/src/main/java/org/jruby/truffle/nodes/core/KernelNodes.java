@@ -389,9 +389,9 @@ public abstract class KernelNodes {
         public RubyBasicObject copy(RubyBasicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final RubyBasicObject newObject = ClassNodes.allocate(self.getLogicalClass(), this);
+            final RubyBasicObject newObject = ClassNodes.allocate(BasicObjectNodes.getLogicalClass(self), this);
 
-            RubyBasicObject.setInstanceVariables(newObject, RubyBasicObject.getInstanceVariables(self));
+            BasicObjectNodes.setInstanceVariables(newObject, BasicObjectNodes.getInstanceVariables(self));
 
             return newObject;
         }
@@ -426,8 +426,8 @@ public abstract class KernelNodes {
             final RubyBasicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (ModuleNodes.getModel(self.getMetaClass()).isSingleton()) {
-                ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(self.getMetaClass());
+            if (ModuleNodes.getModel(BasicObjectNodes.getMetaClass(self)).isSingleton()) {
+                ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(BasicObjectNodes.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -908,7 +908,7 @@ public abstract class KernelNodes {
         public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
             CompilerDirectives.transferToInterpreter();
 
-            if (self.getLogicalClass() != from.getLogicalClass()) {
+            if (BasicObjectNodes.getLogicalClass(self) != BasicObjectNodes.getLogicalClass(from)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
             }
@@ -962,13 +962,13 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public boolean isInstanceVariableDefinedString(RubyBasicObject object, RubyBasicObject name) {
-            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public boolean isInstanceVariableDefinedSymbol(RubyBasicObject object, RubyBasicObject name) {
-            return object.isFieldDefined(RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this));
+            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this));
         }
 
     }
@@ -993,7 +993,7 @@ public abstract class KernelNodes {
         }
 
         private Object instanceVariableGet(RubyBasicObject object, String name) {
-            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name, this));
+            return BasicObjectNodes.getInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name, this));
         }
 
     }
@@ -1010,14 +1010,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public Object instanceVariableSetString(RubyBasicObject object, RubyBasicObject name, Object value) {
-            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public Object instanceVariableSetSymbol(RubyBasicObject object, RubyBasicObject name, Object value) {
-            RubyBasicObject.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this), value);
+            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this), value);
             return value;
         }
 
@@ -1034,7 +1034,7 @@ public abstract class KernelNodes {
         public RubyBasicObject instanceVariables(RubyBasicObject self) {
             CompilerDirectives.transferToInterpreter();
 
-            final Object[] instanceVariableNames = RubyBasicObject.getFieldNames(self);
+            final Object[] instanceVariableNames = BasicObjectNodes.getFieldNames(self);
 
             Arrays.sort(instanceVariableNames);
 
@@ -2116,7 +2116,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
+            writeTaintNode = new WriteHeadObjectFieldNode(BasicObjectNodes.TAINTED_IDENTIFIER);
         }
 
         @Specialization

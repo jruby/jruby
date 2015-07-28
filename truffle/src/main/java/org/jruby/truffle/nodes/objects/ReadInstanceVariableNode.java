@@ -17,6 +17,7 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -116,7 +117,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         if (receiverObject instanceof RubyBasicObject) {
             final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
 
-            final Shape layout = receiverRubyObject.getDynamicObject().getShape();
+            final Shape layout = BasicObjectNodes.getDynamicObject(receiverRubyObject).getShape();
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {

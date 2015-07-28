@@ -17,10 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Regex;
-import org.jruby.truffle.nodes.core.RegexpGuards;
-import org.jruby.truffle.nodes.core.RegexpNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.ThreadNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -163,7 +160,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public Object setLastMatch(RubyBasicObject regexpClass, Object matchData) {
-            RubyBasicObject.setInstanceVariable(
+            BasicObjectNodes.setInstanceVariable(
                     ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
 
             return matchData;

@@ -25,13 +25,11 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -68,12 +66,12 @@ public abstract class SizedQueueNodes {
 
     @SuppressWarnings("unchecked")
     private static BlockingQueue<Object> getQueue(RubyBasicObject sizedQueue) {
-        return SIZED_QUEUE_LAYOUT.getQueue(sizedQueue.getDynamicObject());
+        return SIZED_QUEUE_LAYOUT.getQueue(BasicObjectNodes.getDynamicObject(sizedQueue));
     }
 
     private static void setQueue(RubyBasicObject sizedQueue, BlockingQueue<Object> value) {
         // TODO (eregon, 12 July 2015): CAS when swapping the queue?
-        SIZED_QUEUE_LAYOUT.setQueue(sizedQueue.getDynamicObject(), value);
+        SIZED_QUEUE_LAYOUT.setQueue(BasicObjectNodes.getDynamicObject(sizedQueue), value);
     }
 
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)

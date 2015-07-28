@@ -21,15 +21,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
@@ -60,7 +57,7 @@ public abstract class QueueNodes {
 
     @SuppressWarnings("unchecked")
     private static BlockingQueue getQueue(RubyBasicObject queue) {
-        return QUEUE_LAYOUT.getQueue(queue.getDynamicObject());
+        return QUEUE_LAYOUT.getQueue(BasicObjectNodes.getDynamicObject(queue));
     }
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)

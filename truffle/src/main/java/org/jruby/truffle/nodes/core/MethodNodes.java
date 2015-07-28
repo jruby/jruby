@@ -27,14 +27,10 @@ import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.BasicObjectType;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
@@ -59,11 +55,11 @@ public abstract class MethodNodes {
     }
 
     public static Object getReceiver(RubyBasicObject method) {
-        return METHOD_LAYOUT.getReceiver(method.getDynamicObject());
+        return METHOD_LAYOUT.getReceiver(BasicObjectNodes.getDynamicObject(method));
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
-        return METHOD_LAYOUT.getMethod(method.getDynamicObject());
+        return METHOD_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(method));
     }
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)

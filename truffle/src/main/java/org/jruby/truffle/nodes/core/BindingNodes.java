@@ -71,16 +71,16 @@ public abstract class BindingNodes {
     }
 
     public static void setSelfAndFrame(RubyBasicObject binding, Object self, MaterializedFrame frame) {
-        BINDING_LAYOUT.setSelf(binding.getDynamicObject(), self);
-        BINDING_LAYOUT.setFrame(binding.getDynamicObject(), frame);
+        BINDING_LAYOUT.setSelf(BasicObjectNodes.getDynamicObject(binding), self);
+        BINDING_LAYOUT.setFrame(BasicObjectNodes.getDynamicObject(binding), frame);
     }
 
     public static Object getSelf(RubyBasicObject binding) {
-        return BINDING_LAYOUT.getSelf(binding.getDynamicObject());
+        return BINDING_LAYOUT.getSelf(BasicObjectNodes.getDynamicObject(binding));
     }
 
     public static MaterializedFrame getFrame(RubyBasicObject binding) {
-        return BINDING_LAYOUT.getFrame(binding.getDynamicObject());
+        return BINDING_LAYOUT.getFrame(BasicObjectNodes.getDynamicObject(binding));
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)

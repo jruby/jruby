@@ -56,11 +56,11 @@ public abstract class EncodingConverterNodes {
     public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
 
     public static EConv getEConv(RubyBasicObject encodingConverter) {
-        return ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter.getDynamicObject());
+        return ENCODING_CONVERTER_LAYOUT.getEconv(BasicObjectNodes.getDynamicObject(encodingConverter));
     }
 
     public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
-        ENCODING_CONVERTER_LAYOUT.setEconv(encodingConverter.getDynamicObject(), econv);
+        ENCODING_CONVERTER_LAYOUT.setEconv(BasicObjectNodes.getDynamicObject(encodingConverter), econv);
     }
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
@@ -95,7 +95,7 @@ public abstract class EncodingConverterNodes {
             // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
             // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
             // we must override the flags after its had a pass in order to correct the bad flags value.
-            ecflags[0] = rubiniusToJRubyFlags((int) self.getInstanceVariable("@options"));
+            ecflags[0] = rubiniusToJRubyFlags((int) BasicObjectNodes.getInstanceVariable(self, "@options"));
 
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 

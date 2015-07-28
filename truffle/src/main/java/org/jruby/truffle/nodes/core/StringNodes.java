@@ -103,27 +103,27 @@ public abstract class StringNodes {
     public static final StringLayout STRING_LAYOUT = StringLayoutImpl.INSTANCE;
 
     public static ByteList getByteList(RubyBasicObject string) {
-        return STRING_LAYOUT.getByteList(string.getDynamicObject());
+        return STRING_LAYOUT.getByteList(BasicObjectNodes.getDynamicObject(string));
     }
 
     public static void setByteList(RubyBasicObject string, ByteList byteList) {
-        STRING_LAYOUT.setByteList(string.getDynamicObject(), byteList);
+        STRING_LAYOUT.setByteList(BasicObjectNodes.getDynamicObject(string), byteList);
     }
 
     public static int getCodeRange(RubyBasicObject string) {
-        return STRING_LAYOUT.getCodeRange(string.getDynamicObject());
+        return STRING_LAYOUT.getCodeRange(BasicObjectNodes.getDynamicObject(string));
     }
 
     public static void setCodeRange(RubyBasicObject string, int codeRange) {
-        STRING_LAYOUT.setCodeRange(string.getDynamicObject(), codeRange);
+        STRING_LAYOUT.setCodeRange(BasicObjectNodes.getDynamicObject(string), codeRange);
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(RubyBasicObject string) {
-        StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(string.getDynamicObject());
+        StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(string));
 
         if (wrapper == null) {
             wrapper = new StringCodeRangeableWrapper(string);
-            STRING_LAYOUT.setCodeRangeableWrapper(string.getDynamicObject(), wrapper);
+            STRING_LAYOUT.setCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(string), wrapper);
         }
 
         return wrapper;
@@ -177,7 +177,7 @@ public abstract class StringNodes {
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
-            throw string.getContext().getRuntime().newEncodingCompatibilityError(
+            throw BasicObjectNodes.getContext(string).getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));
@@ -230,7 +230,7 @@ public abstract class StringNodes {
 
         if (encoding == null) {
             throw new RaiseException(
-                    string.getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
+                    BasicObjectNodes.getContext(string).getCoreLibrary().encodingCompatibilityErrorIncompatible(
                             getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString(),
                             node)
@@ -331,7 +331,7 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
-            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), outputBytes);
+            final RubyBasicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
             setCodeRange(ret, getCodeRange(string));
 
             return ret;
@@ -439,7 +439,7 @@ public abstract class StringNodes {
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
-                    if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
+                    if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == getContext().getCoreLibrary().getTypeErrorClass()) {
                         return nil();
                     } else {
                         throw e;
@@ -623,22 +623,22 @@ public abstract class StringNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceIntegerRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
-            return sliceRange(frame, string, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
+            return sliceRange(frame, string, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
         }
 
         @Specialization(guards = {"isLongFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceLongRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
-            return sliceRange(frame, string, (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()), (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
+            return sliceRange(frame, string, (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)), (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
         }
 
         @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceObjectRange(VirtualFrame frame, RubyBasicObject string, RubyBasicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(range.getDynamicObject()));
-            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(range.getDynamicObject()));
+            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)));
+            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)));
 
-            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.OBJECT_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()));
+            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.OBJECT_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
         }
 
         private Object sliceRange(VirtualFrame frame, RubyBasicObject string, int begin, int end, boolean doesExcludeEnd) {
@@ -660,7 +660,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(getByteList(string).getEncoding());
-                    return StringNodes.createString(string.getLogicalClass(), byteList);
+                    return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), byteList);
                 }
 
                 end = normalizeIndex(stringLength, end);
@@ -1113,7 +1113,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyBasicObject downcase(RubyBasicObject string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), getByteList(string));
-            return StringNodes.createString(string.getLogicalClass(), newByteList);
+            return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), newByteList);
         }
     }
 
@@ -1233,7 +1233,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final RubyBasicObject ret = StringNodes.createString(string.getLogicalClass(), substringBytes);
+            final RubyBasicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), substringBytes);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1380,7 +1380,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(self.getLogicalClass()).getName(), this));
+                        getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(self)).getName(), this));
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
@@ -1736,7 +1736,7 @@ public abstract class StringNodes {
 
             ByteList outputBytes = dumpCommon(string);
 
-            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), outputBytes);
+            final RubyBasicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
             getByteList(result).setEncoding(getByteList(string).getEncoding());
             setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1759,7 +1759,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final RubyBasicObject result = StringNodes.createString(string.getLogicalClass(), outputBytes);
+            final RubyBasicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
             getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
             setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1934,9 +1934,9 @@ public abstract class StringNodes {
         @Specialization
         public RubyBasicObject succ(RubyBasicObject string) {
             if (length(string) > 0) {
-                return StringNodes.createString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), getByteList(string)));
+                return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), getByteList(string)));
             } else {
-                return StringNodes.createEmptyString(string.getLogicalClass());
+                return StringNodes.createEmptyString(BasicObjectNodes.getLogicalClass(string));
             }
         }
     }
@@ -2065,7 +2065,7 @@ public abstract class StringNodes {
         }
 
         public boolean isStringSubclass(RubyBasicObject string) {
-            return string.getLogicalClass() != getContext().getCoreLibrary().getStringClass();
+            return BasicObjectNodes.getLogicalClass(string) != getContext().getCoreLibrary().getStringClass();
         }
 
     }
@@ -2266,7 +2266,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyBasicObject upcase(RubyBasicObject string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), getByteList(string));
-            return StringNodes.createString(string.getLogicalClass(), byteListString);
+            return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), byteListString);
         }
 
     }

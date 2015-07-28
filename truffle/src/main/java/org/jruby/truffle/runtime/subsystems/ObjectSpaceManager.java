@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
@@ -142,7 +143,7 @@ public class ObjectSpaceManager {
 
             @Override
             public boolean visit(RubyBasicObject object) {
-                return liveObjects.put(object.verySlowGetObjectID(), object) == null;
+                return liveObjects.put(BasicObjectNodes.verySlowGetObjectID(object), object) == null;
             }
 
         };
@@ -152,8 +153,8 @@ public class ObjectSpaceManager {
             @Override
             public void run(RubyBasicObject currentThread, Node currentNode) {
                 synchronized (liveObjects) {
-                    currentThread.visitObjectGraph(visitor);
-                    context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
+                    BasicObjectNodes.visitObjectGraph(currentThread, visitor);
+                    BasicObjectNodes.visitObjectGraph(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
 
                     // Needs to be called from the corresponding Java thread or it will not use the correct call stack.
                     visitCallStack(visitor);
@@ -192,7 +193,7 @@ public class ObjectSpaceManager {
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             Object value = frame.getValue(slot);
             if (value instanceof RubyBasicObject) {
-                ((RubyBasicObject) value).visitObjectGraph(visitor);
+                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) value), visitor);
             }
         }
     }

@@ -67,7 +67,7 @@ public class CoreMethodNodeManager {
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = objectClass.getContext();
+        final RubyContext context = BasicObjectNodes.getContext(objectClass);
 
         RubyBasicObject module;
         String fullName = methodDetails.getClassAnnotation().name();

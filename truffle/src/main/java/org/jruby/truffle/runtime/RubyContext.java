@@ -198,7 +198,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Set the load path
 
-        final RubyBasicObject loadPath = (RubyBasicObject) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
+        final RubyBasicObject loadPath = (RubyBasicObject) BasicObjectNodes.getInstanceVariable(coreLibrary.getGlobalVariablesObject(), "$:");
 
         final String home = runtime.getInstanceConfig().getJRubyHome();
 
@@ -436,7 +436,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final org.jruby.RubyString jrubyString = runtime.newString(StringNodes.getByteList(string).dup());
 
-        final Object tainted = RubyBasicObject.getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+        final Object tainted = BasicObjectNodes.getInstanceVariable(string, BasicObjectNodes.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -497,7 +497,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final RubyBasicObject truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            RubyBasicObject.setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+            BasicObjectNodes.setInstanceVariable(truffleString, BasicObjectNodes.TAINTED_IDENTIFIER, true);
         }
 
         return truffleString;
@@ -616,7 +616,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        RubyBasicObject.setInstanceVariable(
+        BasicObjectNodes.setInstanceVariable(
                 coreLibrary.getGlobalVariablesObject(), "$0",
                 toTruffle(runtime.getGlobalVariables().get("$0")));
 

@@ -50,6 +50,7 @@ import jnr.ffi.Pointer;
 import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -88,14 +89,14 @@ public abstract class IOPrimitiveNodes {
     private static final DynamicObjectFactory IO_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
 
         IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
         LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(int.class), 0);
         DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(int.class), 0);
         MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(int.class), 0);
 
-        IO_FACTORY = RubyBasicObject.EMPTY_SHAPE
+        IO_FACTORY = BasicObjectNodes.EMPTY_SHAPE
                 .addProperty(IBUFFER_PROPERTY)
                 .addProperty(LINENO_PROPERTY)
                 .addProperty(DESCRIPTOR_PROPERTY)
@@ -111,25 +112,25 @@ public abstract class IOPrimitiveNodes {
     }
 
     public static int getDescriptor(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
-        return (int) DESCRIPTOR_PROPERTY.get(io.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
+        return (int) DESCRIPTOR_PROPERTY.get(BasicObjectNodes.getDynamicObject(io), true);
     }
 
     public static void setDescriptor(RubyBasicObject io, int newDescriptor) {
-        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
 
         try {
-            DESCRIPTOR_PROPERTY.set(io.getDynamicObject(), newDescriptor, io.getDynamicObject().getShape());
+            DESCRIPTOR_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), newDescriptor, BasicObjectNodes.getDynamicObject(io).getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }
     }
 
     public static void setMode(RubyBasicObject io, int newMode) {
-        assert io.getDynamicObject().getShape().hasProperty(MODE_IDENTIFIER);
+        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(MODE_IDENTIFIER);
 
         try {
-            MODE_PROPERTY.set(io.getDynamicObject(), newMode, io.getDynamicObject().getShape());
+            MODE_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), newMode, BasicObjectNodes.getDynamicObject(io).getShape());
         } catch (IncompatibleLocationException | FinalLocationException e) {
             throw new UnsupportedOperationException(e);
         }

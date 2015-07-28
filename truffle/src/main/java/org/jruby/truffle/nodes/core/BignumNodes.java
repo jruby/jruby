@@ -18,7 +18,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -28,10 +27,8 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 
 import java.math.BigInteger;
-import java.util.EnumSet;
 
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
@@ -58,7 +55,7 @@ public abstract class BignumNodes {
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {
-        return BIGNUM_LAYOUT.getValue(bignum.getDynamicObject());
+        return BIGNUM_LAYOUT.getValue(BasicObjectNodes.getDynamicObject(bignum));
     }
 
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {

@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -35,7 +36,7 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
             final List<String> lines = new ArrayList<>();
 
             if (exception != null) {
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(exception.getLogicalClass()).getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(exception)).getName()));
             }
 
             for (Activation activation : activations) {

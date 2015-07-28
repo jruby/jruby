@@ -204,7 +204,7 @@ public class CoreLibrary {
         // Create the cyclic classes and modules
 
         classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
-        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new BasicObjectNodes.BasicObjectAllocator());
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ClassNodes.getAllocator(basicObjectClass));
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
 
@@ -379,12 +379,12 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = new RubyBasicObject(objectClass);
-        nilObject = new RubyBasicObject(nilClass);
+        mainObject = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+        nilObject = new RubyBasicObject(nilClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = new RubyBasicObject(objectClass);
+        rubiniusUndefined = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
 
-        globalVariablesObject = new RubyBasicObject(objectClass);
+        globalVariablesObject = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
@@ -470,25 +470,25 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         RubyBasicObject globals = globalVariablesObject;
 
-        RubyBasicObject.setInstanceVariable(globals, "$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass));
-        RubyBasicObject.setInstanceVariable(globals, "$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass));
-        RubyBasicObject.setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
-        RubyBasicObject.setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
-        RubyBasicObject.setInstanceVariable(globals, "$,", nilObject);
-        RubyBasicObject.setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
+        BasicObjectNodes.setInstanceVariable(globals, "$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass));
+        BasicObjectNodes.setInstanceVariable(globals, "$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass));
+        BasicObjectNodes.setInstanceVariable(globals, "$:", BasicObjectNodes.getInstanceVariable(globals, "$LOAD_PATH"));
+        BasicObjectNodes.setInstanceVariable(globals, "$\"", BasicObjectNodes.getInstanceVariable(globals, "$LOADED_FEATURES"));
+        BasicObjectNodes.setInstanceVariable(globals, "$,", nilObject);
+        BasicObjectNodes.setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
 
-        RubyBasicObject.setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
+        BasicObjectNodes.setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
 
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
-        RubyBasicObject.setInstanceVariable(globals, "$VERBOSE", value);
+        BasicObjectNodes.setInstanceVariable(globals, "$VERBOSE", value);
 
         final RubyBasicObject defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        RubyBasicObject.setInstanceVariable(globals, "$/", defaultRecordSeparator);
+        BasicObjectNodes.setInstanceVariable(globals, "$/", defaultRecordSeparator);
 
-        RubyBasicObject.setInstanceVariable(globals, "$SAFE", 0);
+        BasicObjectNodes.setInstanceVariable(globals, "$SAFE", 0);
     }
 
     private void initializeConstants() {
@@ -688,7 +688,7 @@ public class CoreLibrary {
 
     public RubyBasicObject getMetaClass(Object object) {
         if (object instanceof RubyBasicObject) {
-            return ((RubyBasicObject) object).getMetaClass();
+            return BasicObjectNodes.getMetaClass(((RubyBasicObject) object));
         } else if (object instanceof Boolean) {
             if ((boolean) object) {
                 return trueClass;
@@ -711,7 +711,7 @@ public class CoreLibrary {
 
     public RubyBasicObject getLogicalClass(Object object) {
         if (object instanceof RubyBasicObject) {
-            return ((RubyBasicObject) object).getLogicalClass();
+            return BasicObjectNodes.getLogicalClass(((RubyBasicObject) object));
         } else if (object instanceof Boolean) {
             if ((boolean) object) {
                 return trueClass;
@@ -943,7 +943,7 @@ public class CoreLibrary {
     public RubyBasicObject nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyBasicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
-        RubyBasicObject.setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
+        BasicObjectNodes.setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
         return nameError;
     }
 
@@ -1022,7 +1022,7 @@ public class CoreLibrary {
     public RubyBasicObject noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         RubyBasicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
-        RubyBasicObject.setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
+        BasicObjectNodes.setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
         return noMethodError;
     }
 
@@ -1149,9 +1149,9 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isIntegerFixnumRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()),
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()) ? "." : "",
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject())), currentNode);
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)),
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)) ? "." : "",
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range))), currentNode);
     }
 
     public RubyBasicObject rangeError(String message, Node currentNode) {
@@ -1348,11 +1348,11 @@ public class CoreLibrary {
     }
 
     public RubyBasicObject getLoadPath() {
-        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
+        return (RubyBasicObject) BasicObjectNodes.getInstanceVariable(globalVariablesObject, "$LOAD_PATH");
     }
 
     public RubyBasicObject getLoadedFeatures() {
-        return (RubyBasicObject) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
+        return (RubyBasicObject) BasicObjectNodes.getInstanceVariable(globalVariablesObject, "$LOADED_FEATURES");
     }
 
     public RubyBasicObject getMainObject() {

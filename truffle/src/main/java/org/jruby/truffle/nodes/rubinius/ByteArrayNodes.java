@@ -13,11 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.CoreClass;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -45,7 +41,7 @@ public abstract class ByteArrayNodes {
     }
 
     public static ByteList getBytes(RubyBasicObject byteArray) {
-        return BYTE_ARRAY_LAYOUT.getBytes(byteArray.getDynamicObject());
+        return BYTE_ARRAY_LAYOUT.getBytes(BasicObjectNodes.getDynamicObject(byteArray));
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)

@@ -26,14 +26,10 @@ import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.BasicObjectType;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
@@ -57,11 +53,11 @@ public abstract class UnboundMethodNodes {
     }
 
     public static RubyBasicObject getOrigin(RubyBasicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getOrigin(method.getDynamicObject());
+        return UNBOUND_METHOD_LAYOUT.getOrigin(BasicObjectNodes.getDynamicObject(method));
     }
 
     public static InternalMethod getMethod(RubyBasicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getMethod(method.getDynamicObject());
+        return UNBOUND_METHOD_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(method));
     }
 
     @CoreMethod(names = "==", required = 1)

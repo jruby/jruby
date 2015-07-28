@@ -14,10 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
-import org.jruby.truffle.nodes.core.CoreClass;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.util.ByteList;
@@ -34,9 +31,9 @@ public abstract class DigestNodes {
     private static final DynamicObjectFactory DIGEST_FACTORY;
 
     static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        final Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
         DIGEST_PROPERTY = Property.create(DIGEST_IDENTIFIER, allocator.locationForType(MessageDigest.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        DIGEST_FACTORY = RubyBasicObject.EMPTY_SHAPE.addProperty(DIGEST_PROPERTY).createFactory();
+        DIGEST_FACTORY = BasicObjectNodes.EMPTY_SHAPE.addProperty(DIGEST_PROPERTY).createFactory();
     }
 
     private enum Algorithm {
@@ -70,8 +67,8 @@ public abstract class DigestNodes {
     }
 
     public static MessageDigest getDigest(RubyBasicObject digest) {
-        assert digest.getDynamicObject().getShape().hasProperty(DIGEST_IDENTIFIER);
-        return (MessageDigest) DIGEST_PROPERTY.get(digest.getDynamicObject(), true);
+        assert BasicObjectNodes.getDynamicObject(digest).getShape().hasProperty(DIGEST_IDENTIFIER);
+        return (MessageDigest) DIGEST_PROPERTY.get(BasicObjectNodes.getDynamicObject(digest), true);
     }
 
     @CoreMethod(names = "md5", isModuleFunction = true)

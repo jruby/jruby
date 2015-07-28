@@ -53,34 +53,34 @@ public abstract class ExceptionNodes {
 
     // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
     public static Object getMessage(RubyBasicObject exception) {
-        return EXCEPTION_LAYOUT.getMessage(exception.getDynamicObject());
+        return EXCEPTION_LAYOUT.getMessage(BasicObjectNodes.getDynamicObject(exception));
     }
 
     public static Backtrace getBacktrace(RubyBasicObject exception) {
-        return EXCEPTION_LAYOUT.getBacktrace(exception.getDynamicObject());
+        return EXCEPTION_LAYOUT.getBacktrace(BasicObjectNodes.getDynamicObject(exception));
     }
 
     public static void setBacktrace(RubyBasicObject exception, Backtrace backtrace) {
-        EXCEPTION_LAYOUT.setBacktrace(exception.getDynamicObject(), backtrace);
+        EXCEPTION_LAYOUT.setBacktrace(BasicObjectNodes.getDynamicObject(exception), backtrace);
     }
 
     public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
         assert RubyGuards.isRubyException(exception);
 
         assert getBacktrace(exception) != null;
-        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(exception.getContext(), exception, getBacktrace(exception));
+        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, getBacktrace(exception));
 
         final Object[] array = new Object[lines.length];
 
         for (int n = 0;n < lines.length; n++) {
-            array[n] = StringNodes.createString(exception.getContext().getCoreLibrary().getStringClass(), lines[n]);
+            array[n] = StringNodes.createString(BasicObjectNodes.getContext(exception).getCoreLibrary().getStringClass(), lines[n]);
         }
 
-        return ArrayNodes.fromObjects(exception.getContext().getCoreLibrary().getArrayClass(), array);
+        return ArrayNodes.fromObjects(BasicObjectNodes.getContext(exception).getCoreLibrary().getArrayClass(), array);
     }
 
     public static void setMessage(RubyBasicObject exception, Object message) {
-        EXCEPTION_LAYOUT.setMessage(exception.getDynamicObject(), message);
+        EXCEPTION_LAYOUT.setMessage(BasicObjectNodes.getDynamicObject(exception), message);
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {

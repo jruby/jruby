@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -30,10 +29,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -64,27 +60,27 @@ public abstract class SymbolNodes {
     public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 
     public static String getString(RubyBasicObject symbol) {
-        return SYMBOL_LAYOUT.getString(symbol.getDynamicObject());
+        return SYMBOL_LAYOUT.getString(BasicObjectNodes.getDynamicObject(symbol));
     }
 
     public static ByteList getByteList(RubyBasicObject symbol) {
-        return SYMBOL_LAYOUT.getByteList(symbol.getDynamicObject());
+        return SYMBOL_LAYOUT.getByteList(BasicObjectNodes.getDynamicObject(symbol));
     }
 
     public static int getHashCode(RubyBasicObject symbol) {
-        return SYMBOL_LAYOUT.getHashCode(symbol.getDynamicObject());
+        return SYMBOL_LAYOUT.getHashCode(BasicObjectNodes.getDynamicObject(symbol));
     }
 
     public static int getCodeRange(RubyBasicObject symbol) {
-        return SYMBOL_LAYOUT.getCodeRange(symbol.getDynamicObject());
+        return SYMBOL_LAYOUT.getCodeRange(BasicObjectNodes.getDynamicObject(symbol));
     }
 
     public static void setCodeRange(RubyBasicObject symbol, int codeRange) {
-        SYMBOL_LAYOUT.setCodeRange(symbol.getDynamicObject(), codeRange);
+        SYMBOL_LAYOUT.setCodeRange(BasicObjectNodes.getDynamicObject(symbol), codeRange);
     }
 
     public static SymbolCodeRangeableWrapper getCodeRangeable(RubyBasicObject symbol) {
-        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(symbol.getDynamicObject());
+        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(symbol));
 
         if (wrapper != null) {
             return wrapper;
@@ -92,7 +88,7 @@ public abstract class SymbolNodes {
 
         wrapper = new SymbolCodeRangeableWrapper(symbol);
 
-        SYMBOL_LAYOUT.setCodeRangeableWrapper(symbol.getDynamicObject(), wrapper);
+        SYMBOL_LAYOUT.setCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(symbol), wrapper);
 
         return wrapper;
     }
@@ -203,7 +199,7 @@ public abstract class SymbolNodes {
                     sharedMethodInfo,
                     callTarget, callTarget, callTarget,
                     null, null,
-                    symbol.getContext().getCoreLibrary().getNilObject(),
+                    BasicObjectNodes.getContext(symbol).getCoreLibrary().getNilObject(),
                     null);
         }
 

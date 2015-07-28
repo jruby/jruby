@@ -76,7 +76,7 @@ public abstract class MatchDataNodes {
         final int b = (getFields(matchData).region == null) ? getFields(matchData).begin : getFields(matchData).region.beg[index];
 
         if (b < 0) {
-            return matchData.getContext().getCoreLibrary().getNilObject();
+            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
         }
 
         updateCharOffset(matchData);
@@ -89,7 +89,7 @@ public abstract class MatchDataNodes {
         int e = (getFields(matchData).region == null) ? getFields(matchData).end : getFields(matchData).region.end[index];
 
         if (e < 0) {
-            return matchData.getContext().getCoreLibrary().getNilObject();
+            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
         }
 
         final CodeRangeable sourceWrapped = StringNodes.getCodeRangeable(getFields(matchData).source);
@@ -278,7 +278,7 @@ public abstract class MatchDataNodes {
     }
 
     public static MatchDataFields getFields(RubyBasicObject matchData) {
-        return MATCH_DATA_LAYOUT.getFields(matchData.getDynamicObject());
+        return MATCH_DATA_LAYOUT.getFields(BasicObjectNodes.getDynamicObject(matchData));
     }
 
     @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
@@ -362,9 +362,9 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(RubyBasicObject matchData, RubyBasicObject range, NotProvided len) {
             final Object[] values = getValues(matchData);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range.getDynamicObject()));
-            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range.getDynamicObject()));
-            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range.getDynamicObject()) ? end : end + 1);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)));
+            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)));
+            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)) ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);

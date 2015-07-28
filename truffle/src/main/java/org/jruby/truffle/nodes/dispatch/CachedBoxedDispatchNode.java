@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,7 +69,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                BasicObjectNodes.getMetaClass(((RubyBasicObject) receiver)) == expectedClass;
     }
 
     @Override

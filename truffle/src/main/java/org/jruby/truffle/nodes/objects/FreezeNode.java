@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -69,7 +70,7 @@ public abstract class FreezeNode extends RubyNode {
     public Object freeze(RubyBasicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeFrozenNode = insert(new WriteHeadObjectFieldNode(RubyBasicObject.FROZEN_IDENTIFIER));
+            writeFrozenNode = insert(new WriteHeadObjectFieldNode(BasicObjectNodes.FROZEN_IDENTIFIER));
         }
 
         writeFrozenNode.execute(object, true);

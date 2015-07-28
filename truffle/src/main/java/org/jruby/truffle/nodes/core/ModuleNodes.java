@@ -92,7 +92,7 @@ public abstract class ModuleNodes {
     public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     public static RubyModuleModel getModel(RubyBasicObject module) {
-        return MODULE_LAYOUT.getModel(module.getDynamicObject());
+        return MODULE_LAYOUT.getModel(BasicObjectNodes.getDynamicObject(module));
     }
 
     public static RubyBasicObject createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
@@ -119,7 +119,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean containsInstance(RubyBasicObject module, RubyBasicObject instance) {
-            return includes(instance.getMetaClass(), module);
+            return includes(BasicObjectNodes.getMetaClass(instance), module);
         }
 
         @Specialization(guards = "!isRubyBasicObject(instance)")
@@ -830,7 +830,7 @@ public abstract class ModuleNodes {
         public RubyBasicObject getClassVariables(RubyBasicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
+            final RubyBasicObject array = ArrayNodes.createEmptyArray(BasicObjectNodes.getContext(module).getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, getSymbol(variable));

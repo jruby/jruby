@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Shape;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -35,10 +36,10 @@ public class ReadObjectObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.dynamicObject.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.get(object.getDynamicObject(), objectLayout);
+            return storageLocation.get(BasicObjectNodes.getDynamicObject(object), objectLayout);
         } else {
             return next.execute(object);
         }
