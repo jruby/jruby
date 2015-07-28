@@ -18,8 +18,10 @@ public class PropertyModel {
     private final boolean hasSetter;
     private final TypeMirror type;
     private final boolean nullable;
+    private final boolean hasIdentifier;
 
-    public PropertyModel(String name, boolean hasGetter, boolean hasSetter, TypeMirror type, boolean nullable) {
+    public PropertyModel(String name, boolean hasGetter, boolean hasSetter,
+                         TypeMirror type, boolean nullable, boolean hasIdentifier) {
         assert name != null;
         assert type != null;
 
@@ -28,6 +30,7 @@ public class PropertyModel {
         this.hasSetter = hasSetter;
         this.type = type;
         this.nullable = nullable;
+        this.hasIdentifier = hasIdentifier;
     }
 
     public String getName() {
@@ -35,7 +38,7 @@ public class PropertyModel {
     }
 
     public String getNameAsConstant() {
-        return name.toUpperCase();
+        return NameUtils.identifierToConstant(name);
     }
 
     public String getNameAsGetter() {
@@ -65,4 +68,9 @@ public class PropertyModel {
     public boolean isNullable() {
         return nullable;
     }
+
+    public boolean hasIdentifier() {
+        return hasIdentifier;
+    }
+
 }

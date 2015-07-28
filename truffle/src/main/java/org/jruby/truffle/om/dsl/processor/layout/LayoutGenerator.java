@@ -70,7 +70,10 @@ public class LayoutGenerator {
         }
 
         for (PropertyModel property : layout.getProperties()) {
-            stream.printf("    protected static final HiddenKey %s_IDENTIFIER = new HiddenKey(\"%s\");\n", property.getNameAsConstant(), property.getName());
+            if (!property.hasIdentifier()) {
+                stream.printf("    protected static final HiddenKey %s_IDENTIFIER = new HiddenKey(\"%s\");\n", property.getNameAsConstant(), property.getName());
+            }
+
             stream.printf("    protected static final Property %s_PROPERTY;\n", property.getNameAsConstant());
             stream.println("    ");
         }
@@ -207,7 +210,7 @@ public class LayoutGenerator {
                 stream.println("    @Override");
                 stream.printf("    public %s %s(DynamicObject object) {\n", property.getType(), property.getNameAsGetter());
                 stream.printf("        assert is%s(object);\n", layout.getName());
-                stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER) : object.getShape().getObjectType().getClass();\n", property.getNameAsConstant());
+                stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);\n", property.getNameAsConstant());
                 stream.println("        ");
                 stream.printf("        return (%s) %s_PROPERTY.get(object, true);\n", property.getType(), property.getNameAsConstant());
                 stream.println("    }");

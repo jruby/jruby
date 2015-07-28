@@ -11,14 +11,13 @@ package org.jruby.truffle.om.dsl.processor.layout;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
-import org.jruby.truffle.om.dsl.processor.layout.model.NullableState;
-import org.jruby.truffle.om.dsl.processor.layout.model.PropertyBuilder;
-import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
+import org.jruby.truffle.om.dsl.processor.layout.model.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +42,15 @@ public class LayoutParser {
         parseName(layoutElement);
 
         for (Element element : layoutElement.getEnclosedElements()) {
-            if (element.getKind() == ElementKind.METHOD) {
+            if (element.getKind() == ElementKind.FIELD) {
+                final String simpleName = element.getSimpleName().toString();
+
+                if (simpleName.endsWith("_IDENTIFIER")) {
+                    parseIdentifier((VariableElement) element);
+                } else {
+                    throw new AssertionError("Unknown field in layout interface");
+                }
+            } else if (element.getKind() == ElementKind.METHOD) {
                 final String simpleName = element.getSimpleName().toString();
 
                 if (simpleName.equals("create" + name)) {
@@ -62,6 +69,23 @@ public class LayoutParser {
 
         assert constructorProperties.size() == properties.size();
         assert constructorProperties.containsAll(properties.keySet());
+    }
+
+    private void parseIdentifier(VariableElement fieldElement) {
+        final String name = fieldElement.getSimpleName().toString();
+        assert name.endsWith("_IDENTIFIER");
+
+        final String propertyName = NameUtils.constantToIdentifier(name.substring(0, name.length() - "_IDENTIFIER".length()));
+
+        try {
+            try (PrintStream stream = new PrintStream("log.txt")) {
+                stream.println(propertyName);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        getProperty(propertyName).setHasIdentifier(true);
     }
 
     private void parseSuperLayout(TypeElement superTypeElement) {

@@ -50,8 +50,8 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
-    public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
-    public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new BasicObjectType());
+    private static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
+    private static final Shape EMPTY_SHAPE = LAYOUT.createShape(new BasicObjectType());
 
     @CompilerDirectives.TruffleBoundary
     public static void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {

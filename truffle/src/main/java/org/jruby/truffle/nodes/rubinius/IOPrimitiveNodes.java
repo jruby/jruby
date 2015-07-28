@@ -56,6 +56,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -74,66 +75,48 @@ public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
-    private static final String IBUFFER_IDENTIFIER = "@ibuffer";
-    private static final Property IBUFFER_PROPERTY;
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface IOLayout {
 
-    private static final String LINENO_IDENTIFIER = "@lineno";
-    private static final Property LINENO_PROPERTY;
+        String I_BUFFER_IDENTIFIER = "@ibuffer";
+        String LINE_NO_IDENTIFIER = "@lineno";
+        String DESCRIPTOR_IDENTIFIER = "@descriptor";
+        String MODE_IDENTIFIER = "@mode";
 
-    private static final String DESCRIPTOR_IDENTIFIER = "@descriptor";
-    private static final Property DESCRIPTOR_PROPERTY;
+        DynamicObject createIO(Object iBuffer, int lineNo, int descriptor, int mode);
 
-    private static final String MODE_IDENTIFIER = "@mode";
-    private static final Property MODE_PROPERTY;
+        Object getIBuffer(DynamicObject object);
 
-    private static final DynamicObjectFactory IO_FACTORY;
+        int getLineNo(DynamicObject object);
+        void setLineNo(DynamicObject object, int value);
 
-    static {
-        final Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
+        int getDescriptor(DynamicObject object);
+        void setDescriptor(DynamicObject object, int value);
 
-        IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(int.class), 0);
-        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(int.class), 0);
-        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(int.class), 0);
+        int getMode(DynamicObject object);
+        void setMode(DynamicObject object, int value);
 
-        IO_FACTORY = BasicObjectNodes.EMPTY_SHAPE
-                .addProperty(IBUFFER_PROPERTY)
-                .addProperty(LINENO_PROPERTY)
-                .addProperty(DESCRIPTOR_PROPERTY)
-                .addProperty(MODE_PROPERTY)
-                .createFactory();
     }
+
+    public static final IOLayout IO_LAYOUT = IOLayoutImpl.INSTANCE;
 
     public static class IOAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
 
     public static int getDescriptor(RubyBasicObject io) {
-        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
-        return (int) DESCRIPTOR_PROPERTY.get(BasicObjectNodes.getDynamicObject(io), true);
+        return IO_LAYOUT.getDescriptor(io.dynamicObject);
     }
 
     public static void setDescriptor(RubyBasicObject io, int newDescriptor) {
-        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
-
-        try {
-            DESCRIPTOR_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), newDescriptor, BasicObjectNodes.getDynamicObject(io).getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        IO_LAYOUT.setDescriptor(io.dynamicObject, newDescriptor);
     }
 
     public static void setMode(RubyBasicObject io, int newMode) {
-        assert BasicObjectNodes.getDynamicObject(io).getShape().hasProperty(MODE_IDENTIFIER);
-
-        try {
-            MODE_PROPERTY.set(BasicObjectNodes.getDynamicObject(io), newMode, BasicObjectNodes.getDynamicObject(io).getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
+        IO_LAYOUT.setMode(io.dynamicObject, newMode);
     }
 
     @RubiniusPrimitive(name = "io_allocate")
@@ -149,7 +132,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(buffer, 0, 0, 0));
         }
 
     }
