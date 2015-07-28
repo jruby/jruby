@@ -9,86 +9,69 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import org.jruby.ast.*;
-
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Arity {
 
-    public static final Arity NO_ARGUMENTS = new Arity(0, 0, false, false, false, 0);
-    public static final Arity ONE_REQUIRED = new Arity(1, 0, false, false, false, 0);
-    public static final Arity AT_LEAST_ONE = new Arity(1, 0, true, false, false, 0);
+    public static final List<String> NO_KEYWORDS = Collections.emptyList();
+    public static final Arity NO_ARGUMENTS = new Arity(0, 0, false);
+    public static final Arity ONE_REQUIRED = new Arity(1, 0, false);
+    public static final Arity AT_LEAST_ONE = new Arity(1, 0, true);
 
-    private final int required;
+    private final int preRequired;
     private final int optional;
-    private final boolean allowsMore;
-    private final int definedKeywords;
-    private final boolean hasKeywords;
+    private final boolean hasRest;
+    private final int postRequired;
     private final boolean hasKeyRest;
 
     private final List<String> keywordArguments;
 
-    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords, boolean hasKeyRest, int definedKeywords) {
-        this.required = required;
-        this.optional = optional;
-        this.allowsMore = allowsMore;
-        this.definedKeywords = definedKeywords;
-        this.hasKeywords = hasKeywords;
-        this.hasKeyRest = hasKeyRest;
-        keywordArguments = null;
+    public Arity(int preRequired, int optional, boolean hasRest) {
+        this(preRequired, optional, hasRest, 0, NO_KEYWORDS, false);
     }
 
-    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords, boolean hasKeyRest, int definedKeywords, ArgsNode argsNode) {
-        this.required = required;
+    public Arity(int preRequired, int optional, boolean hasRest, int postRequired, List<String> keywordArguments, boolean hasKeyRest) {
+        this.preRequired = preRequired;
         this.optional = optional;
-        this.allowsMore = allowsMore;
-        this.definedKeywords = definedKeywords;
-        this.hasKeywords = hasKeywords;
+        this.hasRest = hasRest;
+        this.postRequired = postRequired;
+        this.keywordArguments = keywordArguments;
         this.hasKeyRest = hasKeyRest;
 
-        if (argsNode.hasKwargs()) {
-            keywordArguments = new ArrayList<>();
-            if (argsNode.getKeywords() != null) {
-                for (Node node : argsNode.getKeywords().children()) {
-                    final KeywordArgNode kwarg = (KeywordArgNode) node;
-                    final AssignableNode assignableNode = kwarg.getAssignable();
+        assert keywordArguments != null && preRequired >= 0 && optional >= 0 && postRequired >= 0 : toString();
+    }
 
-                    if (assignableNode instanceof LocalAsgnNode) {
-                        keywordArguments.add(((LocalAsgnNode) assignableNode)
-                                .getName());
-                    } else if (assignableNode instanceof DAsgnNode) {
-                        keywordArguments.add(((DAsgnNode) assignableNode)
-                                .getName());
-                    } else {
-                        throw new UnsupportedOperationException(
-                                "unsupported keyword arg " + node);
-                    }
-                }
-            }
-        } else {
-            keywordArguments = null;
-        }
+    public int getPreRequired() {
+        return preRequired;
+    }
+
+    public int getPostRequired() {
+        return postRequired;
     }
 
     public int getRequired() {
-        return required;
+        return preRequired + postRequired;
     }
 
     public int getOptional() {
         return optional;
     }
 
-    public boolean allowsMore() {
-        return allowsMore;
+    public boolean hasRest() {
+        return hasRest;
+    }
+
+    public int getRestPosition() {
+        return preRequired + optional;
     }
 
     public boolean hasKeywords() {
-        return hasKeywords;
+        return keywordArguments != NO_KEYWORDS;
     }
 
     public int getCountKeywords() {
-        return definedKeywords;
+        return keywordArguments.size();
     }
 
     public boolean hasKeyRest() {
@@ -96,13 +79,13 @@ public class Arity {
     }
 
     public int getArityNumber() {
-        int count = required;
+        int count = preRequired + postRequired;
 
-        if (hasKeywords) {
+        if (hasKeywords()) {
             count++;
         }
 
-        if (optional > 0 || allowsMore) {
+        if (optional > 0 || hasRest) {
             count = -count - 1;
         }
 
@@ -116,11 +99,11 @@ public class Arity {
     @Override
     public String toString() {
         return "Arity{" +
-                "required=" + required +
+                "preRequired=" + preRequired +
                 ", optional=" + optional +
-                ", allowsMore=" + allowsMore +
-                ", definedKeywords=" + definedKeywords +
-                ", hasKeywords=" + hasKeywords +
+                ", hasRest=" + hasRest +
+                ", postRequired=" + postRequired +
+                ", keywordArguments=" + keywordArguments +
                 ", hasKeyRest=" + hasKeyRest +
                 '}';
     }

@@ -159,7 +159,7 @@ public class CoreMethodNodeManager {
             optional = method.optional();
         }
 
-        final Arity arity = new Arity(required,  optional, method.argumentsAsArray(), false, false, 0);
+        final Arity arity = new Arity(required, optional, method.argumentsAsArray());
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 

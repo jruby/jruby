@@ -250,7 +250,7 @@ public class RubyCallNode extends RubyNode {
                 || method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
             shouldExpand = false;
         } else if (isSplatted
-                || method.getSharedMethodInfo().getArity().allowsMore()) {
+                || method.getSharedMethodInfo().getArity().hasRest()) {
             // TODO: make optimization work if splat arguments are involed
             // the problem is that Markers and keyword args are used when
             // reading splatted args
