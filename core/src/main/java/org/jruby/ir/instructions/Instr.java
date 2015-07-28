@@ -143,23 +143,30 @@ public abstract class Instr {
     }
 
     /**
-     * Can this instruction be deleted?  LVA will preserve instructions based on whether operands (variables)
+     * Can this instruction be deleted? LVA will preserve instructions based on whether operands (variables)
      * are living but even if there are no living variables then the instruction itself may not be able to be removed
-     * during DCE for other reasons (like if it unconditionally has a side-effect or it happens to be living in a
-     * scope where a binding can escape and one of its operands is a local variable).
+     * during DCE for other reasons (like if it unconditionally has a side-effect)
      */
-    public boolean canBeDeleted(IRScope s) {
-         if (hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl()) return false;
+    public boolean isDeletable() {
+         return !(hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl());
+    }
+
+    public boolean canBeDeletedFromScope(IRScope s) {
+        if (!isDeletable()) {
+            return false;
+        }
 
          if (this instanceof ResultInstr) {
              Variable r = ((ResultInstr) this).getResult();
 
-             // An escaped binding needs to preserve lvars since that consumers of that binding may access lvars.
+             // An escaped binding needs to preserve lvars since
+             // consumers of that binding may access lvars.
              if (s.bindingHasEscaped()) return !(r instanceof LocalVariable);
          }
 
         return true;
     }
+
 
     public void markDead() {
         isDead = true;

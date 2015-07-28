@@ -57,6 +57,14 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     in.set(problem.getDFVar(v));
                 }
             }
+
+            // If this scope's binding has escaped, all variables
+            // should be considered live on exit from the scope.
+            if (problem.getScope().bindingHasEscaped()) {
+                for (Variable x: problem.getNonSelfLocalVars()) {
+                    in.set(problem.getDFVar(x));
+                }
+            }
         }
         // System.out.println("Init state for BB " + basicBlock.getID() + " is " + toString());
     }
@@ -216,18 +224,19 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 if (living.get(dv)) {
                     living.clear(dv);
                     // System.out.println("NO! LIVE result:" + v);
-                } else if (i.canBeDeleted(scope)) {
-                    // System.out.println("YES!");
+                } else if (i.isDeletable()) {
+                    // System.out.println("YES! (result)");
                     i.markDead();
                     it.remove();
                 } else {
                     // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }
-            } else if (i.canBeDeleted(scope)) {
+            } else if (i.isDeletable()) {
+                 // System.out.println("YES! (non-result)");
                  i.markDead();
                  it.remove();
             } else {
-                // System.out.println("IGNORING! No result!");
+                // System.out.println("NO! has side effects! Op is: " + i.getOperation());
             }
 
             if (i instanceof ClosureAcceptingInstr) {

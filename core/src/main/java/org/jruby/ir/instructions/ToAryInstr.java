@@ -29,7 +29,7 @@ public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     @Override
-    public boolean canBeDeleted(IRScope s) {
+    public boolean canBeDeletedFromScope(IRScope s) {
         // This is an instruction that can be safely deleted
         // since it is inserted by JRuby to facilitate other operations
         // and has no real side effects. Currently, this has been marked
