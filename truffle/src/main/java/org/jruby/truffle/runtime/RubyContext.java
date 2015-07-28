@@ -436,7 +436,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final org.jruby.RubyString jrubyString = runtime.newString(StringNodes.getByteList(string).dup());
 
-        final Object tainted = BasicObjectNodes.getInstanceVariable(string, BasicObjectNodes.TAINTED_IDENTIFIER);
+        final Object tainted = BasicObjectNodes.getInstanceVariable2(string, BasicObjectNodes.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);

@@ -9,15 +9,18 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,14 +35,13 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -69,7 +71,7 @@ public abstract class BasicObjectNodes {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static Object getInstanceVariable(RubyBasicObject receiver, Object name) {
+    public static Object getInstanceVariable2(RubyBasicObject receiver, Object name) {
         Shape shape = getDynamicObject(receiver).getShape();
         Property property = shape.getProperty(name);
         if (property != null) {
@@ -137,7 +139,7 @@ public abstract class BasicObjectNodes {
     }
 
     public static Object getInstanceVariable(RubyBasicObject object, String name) {
-        final Object value = getInstanceVariable(object, name);
+        final Object value = getInstanceVariable2(object, name);
 
         if (value == null) {
             return getContext(object).getCoreLibrary().getNilObject();
@@ -218,6 +220,35 @@ public abstract class BasicObjectNodes {
 
     public static DynamicObject getDynamicObject(RubyBasicObject rubyBasicObject) {
         return rubyBasicObject.dynamicObject;
+    }
+
+    public static ForeignAccessFactory getForeignAccessFactory(RubyBasicObject object) {
+        if (RubyGuards.isRubyArray(object)) {
+            return new ArrayForeignAccessFactory(getContext(object));
+        } else if (RubyGuards.isRubyHash(object)) {
+            return new HashForeignAccessFactory(getContext(object));
+        } else if (RubyGuards.isRubyString(object)) {
+            return new StringForeignAccessFactory(getContext(object));
+        } else {
+            return new BasicForeignAccessFactory(getContext(object));
+        }
+    }
+
+    public static String toString(RubyBasicObject object) {
+        CompilerAsserts.neverPartOfCompilation("RubyBasicObject#toString should only be used for debugging");
+
+        if (RubyGuards.isRubyString(object)) {
+            return Helpers.decodeByteList(getContext(object).getRuntime(), StringNodes.getByteList(object));
+        } else if (RubyGuards.isRubySymbol(object)) {
+            return SymbolNodes.getString(object);
+        } else if (RubyGuards.isRubyException(object)) {
+            return ExceptionNodes.getMessage(object) + " : " + Objects.toString(object) + "\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(object), object, ExceptionNodes.getBacktrace(object)));
+        } else if (RubyGuards.isRubyModule(object)) {
+            return ModuleNodes.getModel(object).toString();
+        } else {
+            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getModel(getLogicalClass(object)).getName());
+        }
     }
 
     @CoreMethod(names = "!")
