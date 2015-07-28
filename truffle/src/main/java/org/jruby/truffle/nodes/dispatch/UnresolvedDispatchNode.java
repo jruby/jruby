@@ -12,6 +12,9 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.interop.messages.Argument;
@@ -170,7 +173,16 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object receiverObject,
             Object methodName,
             Object argumentsObjects) {
-        final RubyBasicObject callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        final RubyBasicObject callerClass;
+
+        if (ignoreVisibility) {
+            callerClass = null;
+        } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
+            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false);
+            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
+        } else {
+            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        }
 
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
