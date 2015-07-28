@@ -1604,6 +1604,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1626,7 +1627,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(name)")
         public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
-            if (includeProtectedAndPrivate) {
+            if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
                 return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
                 return dispatch.doesRespondTo(frame, name, object);
@@ -1635,7 +1636,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubySymbol(name)")
         public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
-            if (includeProtectedAndPrivate) {
+            if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
                 return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
                 return dispatch.doesRespondTo(frame, name, object);
