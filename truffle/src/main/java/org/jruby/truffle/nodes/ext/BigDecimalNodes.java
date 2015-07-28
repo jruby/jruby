@@ -61,9 +61,9 @@ public abstract class BigDecimalNodes {
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
 
     @Layout
-    public interface BigDecimalLayout {
+    public interface BigDecimalLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createBigDecimal(BigDecimal value, Type type);
+        DynamicObject createBigDecimal(RubyBasicObject logicalClass, RubyBasicObject metaClass, BigDecimal value, Type type);
 
         boolean isBigDecimal(DynamicObject object);
 
@@ -2158,7 +2158,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(BigDecimal.ZERO, Type.NORMAL));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(rubyClass, rubyClass, BigDecimal.ZERO, Type.NORMAL));
         }
 
     }

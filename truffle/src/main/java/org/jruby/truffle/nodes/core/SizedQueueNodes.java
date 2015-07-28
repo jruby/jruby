@@ -41,9 +41,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class SizedQueueNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface SizedQueueLayout {
+    public interface SizedQueueLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createSizedQueue(@Nullable BlockingQueue queue);
+        DynamicObject createSizedQueue(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable BlockingQueue queue);
 
         boolean isSizedQueue(DynamicObject object);
 
@@ -60,7 +60,7 @@ public abstract class SizedQueueNodes {
     public static class SizedQueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, SIZED_QUEUE_LAYOUT.createSizedQueue(null));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, SIZED_QUEUE_LAYOUT.createSizedQueue(rubyClass, rubyClass, null));
         }
     }
 

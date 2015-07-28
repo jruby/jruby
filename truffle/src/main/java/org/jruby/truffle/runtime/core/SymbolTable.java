@@ -72,9 +72,12 @@ public class SymbolTable {
 
             final ByteList storedBytes = bytes.dup();
 
+            final RubyBasicObject symbolClass = context.getCoreLibrary().getSymbolClass();
+
             final RubyBasicObject newSymbol = BasicObjectNodes.createRubyBasicObject(
-                    context.getCoreLibrary().getSymbolClass(),
+                    symbolClass,
                     SymbolNodes.SYMBOL_LAYOUT.createSymbol(
+                            symbolClass, symbolClass,
                             storedBytes.toString(), storedBytes,
                             storedBytes.toString().hashCode(),
                             StringSupport.CR_UNKNOWN, null));

@@ -39,9 +39,9 @@ import org.jruby.util.io.EncodingUtils;
 public abstract class EncodingConverterNodes {
 
     @Layout
-    public interface EncodingConverterLayout {
+    public interface EncodingConverterLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createEncodingConverter(@Nullable EConv econv);
+        DynamicObject createEncodingConverter(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable EConv econv);
 
         boolean isEncodingConverter(DynamicObject object);
 
@@ -64,7 +64,7 @@ public abstract class EncodingConverterNodes {
     }
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(econv));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(rubyClass, rubyClass, econv));
     }
 
     @RubiniusOnly

@@ -23,9 +23,9 @@ public abstract class PointerNodes {
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
 
     @Layout
-    public interface PointerLayout {
+    public interface PointerLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createPointer(Pointer pointer);
+        DynamicObject createPointer(RubyBasicObject logicalClass, RubyBasicObject metaClass, Pointer pointer);
 
         boolean isPointer(DynamicObject object);
 
@@ -48,7 +48,7 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(pointer));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(rubyClass, rubyClass, pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {

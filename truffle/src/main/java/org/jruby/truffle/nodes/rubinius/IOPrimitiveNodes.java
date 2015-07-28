@@ -76,14 +76,14 @@ public abstract class IOPrimitiveNodes {
     private static int STDOUT = 1;
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface IOLayout {
+    public interface IOLayout extends BasicObjectNodes.BasicObjectLayout {
 
         String I_BUFFER_IDENTIFIER = "@ibuffer";
         String LINE_NO_IDENTIFIER = "@lineno";
         String DESCRIPTOR_IDENTIFIER = "@descriptor";
         String MODE_IDENTIFIER = "@mode";
 
-        DynamicObject createIO(Object iBuffer, int lineNo, int descriptor, int mode);
+        DynamicObject createIO(RubyBasicObject logicalClass, RubyBasicObject metaClass, Object iBuffer, int lineNo, int descriptor, int mode);
 
         Object getIBuffer(DynamicObject object);
 
@@ -103,7 +103,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(context.getCoreLibrary().getNilObject(), 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(rubyClass, rubyClass, context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
 
@@ -132,7 +132,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(buffer, 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(classToAllocate, classToAllocate, buffer, 0, 0, 0));
         }
 
     }

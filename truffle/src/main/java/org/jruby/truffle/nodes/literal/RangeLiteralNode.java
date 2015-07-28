@@ -40,17 +40,20 @@ public abstract class RangeLiteralNode extends RubyNode {
 
     @Specialization
     public RubyBasicObject intRange(int begin, int end) {
-        return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(excludeEnd, begin, end));
+        final RubyBasicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(rangeClass, rangeClass, excludeEnd, begin, end));
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
     public RubyBasicObject longFittingIntRange(long begin, long end) {
-        return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(excludeEnd, (int) begin, (int) end));
+        final RubyBasicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(rangeClass, rangeClass, excludeEnd, (int) begin, (int) end));
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
     public RubyBasicObject longRange(long begin, long end) {
-        return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRange(excludeEnd, begin, end));
+        final RubyBasicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRange(rangeClass, rangeClass, excludeEnd, begin, end));
     }
 
     @Specialization(guards = { "!isIntOrLong(begin) || !isIntOrLong(end)" })
@@ -71,7 +74,9 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRangeClass(), RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(excludeEnd, begin, end));
+        final RubyBasicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+
+        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(rangeClass, rangeClass, excludeEnd, begin, end));
     }
 
     protected boolean fitsIntoInteger(long value) {

@@ -33,9 +33,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public abstract class RangeNodes {
 
     @Layout
-    public interface IntegerFixnumRangeLayout {
+    public interface IntegerFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createIntegerFixnumRange(boolean excludedEnd, int begin, int end);
+        DynamicObject createIntegerFixnumRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, int begin, int end);
 
         boolean isIntegerFixnumRange(DynamicObject object);
 
@@ -50,9 +50,9 @@ public abstract class RangeNodes {
     public static final IntegerFixnumRangeLayout INTEGER_FIXNUM_RANGE_LAYOUT = IntegerFixnumRangeLayoutImpl.INSTANCE;
 
     @Layout
-    public interface LongFixnumRangeLayout {
+    public interface LongFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createLongFixnumRange(boolean excludedEnd, long begin, long end);
+        DynamicObject createLongFixnumRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, long begin, long end);
 
         boolean isLongFixnumRange(DynamicObject object);
 
@@ -67,9 +67,9 @@ public abstract class RangeNodes {
     public static final LongFixnumRangeLayout LONG_FIXNUM_RANGE_LAYOUT = LongFixnumRangeLayoutImpl.INSTANCE;
 
     @Layout
-    public interface ObjectRangeLayout {
+    public interface ObjectRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createObjectRange(boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
+        DynamicObject createObjectRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
 
         boolean isObjectRange(DynamicObject object);
 
@@ -536,7 +536,7 @@ public abstract class RangeNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(rubyClass, rubyClass, false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
         }
 
     }

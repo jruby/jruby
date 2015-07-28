@@ -58,9 +58,9 @@ import java.io.File;
 public abstract class DirPrimitiveNodes {
 
     @Layout
-    public interface DirLayout {
+    public interface DirLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createDir(@Nullable Object contents, int position);
+        DynamicObject createDir(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object contents, int position);
 
         @Nullable
         Object getContents(DynamicObject object);
@@ -84,7 +84,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(null, 0));
+            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(dirClass, dirClass, null, 0));
         }
 
     }

@@ -27,9 +27,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public abstract class TimeNodes {
 
     @Layout
-    public interface TimeLayout {
+    public interface TimeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createTime(DateTime dateTime, Object offset);
+        DynamicObject createTime(RubyBasicObject logicalClass, RubyBasicObject metaClass, DateTime dateTime, Object offset);
 
         boolean isTime(DynamicObject object);
 
@@ -64,7 +64,7 @@ public abstract class TimeNodes {
     }
 
     public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
-        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(dateTime, offset));
+        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(timeClass, timeClass, dateTime, offset));
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

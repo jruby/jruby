@@ -53,9 +53,9 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 public abstract class RegexpNodes {
 
     @Layout
-    public interface RegexpLayout {
+    public interface RegexpLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createRegexp(@Nullable Regex regex, @Nullable ByteList source, RegexpOptions options, @Nullable Object cachedNames);
+        DynamicObject createRegexp(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Regex regex, @Nullable ByteList source, RegexpOptions options, @Nullable Object cachedNames);
 
         boolean isRegexp(DynamicObject object);
 
@@ -492,25 +492,25 @@ public abstract class RegexpNodes {
     }
 
     public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, RegexpOptions options) {
-        return BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, options), regex, options, null));
+        return BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(regexpClass, regexpClass, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, options), regex, options, null));
     }
 
     public static RubyBasicObject createRubyRegexp(Node currentNode, RubyBasicObject regexpClass, ByteList regex, int options) {
-        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(null, null, RegexpOptions.NULL_OPTIONS, null));
+        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(regexpClass, regexpClass, null, null, RegexpOptions.NULL_OPTIONS, null));
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, RegexpNodes.getOptions(regexp)), regex);
         return regexp;
     }
 
     public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
-        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(null, null, RegexpOptions.NULL_OPTIONS, null));
+        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(regexpClass, regexpClass, null, null, RegexpOptions.NULL_OPTIONS, null));
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
     public static RubyBasicObject createRubyRegexp(RubyBasicObject regexpClass, Regex regex, ByteList source) {
-        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(null, null, RegexpOptions.NULL_OPTIONS, null));
+        final RubyBasicObject regexp = BasicObjectNodes.createRubyBasicObject(regexpClass, REGEXP_LAYOUT.createRegexp(regexpClass, regexpClass, null, null, RegexpOptions.NULL_OPTIONS, null));
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
@@ -727,7 +727,7 @@ public abstract class RegexpNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, REGEXP_LAYOUT.createRegexp(null, null, RegexpOptions.NULL_OPTIONS, null));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, REGEXP_LAYOUT.createRegexp(rubyClass, rubyClass, null, null, RegexpOptions.NULL_OPTIONS, null));
         }
 
     }

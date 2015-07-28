@@ -36,9 +36,9 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 public abstract class MethodNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface MethodLayout {
+    public interface MethodLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createMethod(Object receiver, InternalMethod method);
+        DynamicObject createMethod(RubyBasicObject logicalClass, RubyBasicObject metaClass, Object receiver, InternalMethod method);
 
         boolean isMethod(DynamicObject object);
 
@@ -51,7 +51,7 @@ public abstract class MethodNodes {
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createMethod(RubyBasicObject rubyClass, Object receiver, InternalMethod method) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(receiver, method));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(rubyClass, rubyClass, receiver, method));
     }
 
     public static Object getReceiver(RubyBasicObject method) {

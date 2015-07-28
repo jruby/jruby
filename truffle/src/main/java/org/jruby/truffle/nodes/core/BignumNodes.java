@@ -37,9 +37,9 @@ public abstract class BignumNodes {
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
     @Layout
-    public interface BignumLayout {
+    public interface BignumLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createBignum(BigInteger value);
+        DynamicObject createBignum(RubyBasicObject logicalClass, RubyBasicObject metaClass, BigInteger value);
 
         boolean isBignum(DynamicObject object);
 
@@ -51,7 +51,7 @@ public abstract class BignumNodes {
 
     public static RubyBasicObject createRubyBignum(RubyBasicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, BIGNUM_LAYOUT.createBignum(value));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, BIGNUM_LAYOUT.createBignum(rubyClass, rubyClass, value));
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {

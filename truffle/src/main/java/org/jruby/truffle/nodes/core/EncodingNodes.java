@@ -40,9 +40,9 @@ import java.util.Map;
 public abstract class EncodingNodes {
 
     @Layout
-    public interface EncodingLayout {
+    public interface EncodingLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createEncoding(Encoding encoding, ByteList name, boolean dummy);
+        DynamicObject createEncoding(RubyBasicObject logicalClass, RubyBasicObject metaClass, Encoding encoding, ByteList name, boolean dummy);
 
         boolean isEncoding(DynamicObject object);
 
@@ -112,7 +112,7 @@ public abstract class EncodingNodes {
     }
 
     public static RubyBasicObject createRubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return BasicObjectNodes.createRubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encoding, name, dummy));
+        return BasicObjectNodes.createRubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encodingClass, encodingClass, encoding, name, dummy));
     }
 
     @CoreMethod(names = "ascii_compatible?")

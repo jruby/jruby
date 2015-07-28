@@ -24,9 +24,9 @@ import org.jruby.truffle.om.dsl.api.Layout;
 public abstract class ByteArrayNodes {
 
     @Layout
-    public interface ByteArrayLayout {
+    public interface ByteArrayLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createByteArray(ByteList bytes);
+        DynamicObject createByteArray(RubyBasicObject logicalClass, RubyBasicObject metaClass, ByteList bytes);
 
         boolean isByteArray(DynamicObject object);
 
@@ -37,7 +37,7 @@ public abstract class ByteArrayNodes {
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(bytes));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(rubyClass, rubyClass, bytes));
     }
 
     public static ByteList getBytes(RubyBasicObject byteArray) {

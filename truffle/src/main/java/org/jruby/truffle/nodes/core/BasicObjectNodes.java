@@ -31,6 +31,7 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -38,7 +39,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
@@ -50,8 +50,26 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
-    private static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
-    private static final Shape EMPTY_SHAPE = LAYOUT.createShape(new BasicObjectType());
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface BasicObjectLayout {
+
+        DynamicObject createBasicObject(@Nullable RubyBasicObject logicalClass, @Nullable RubyBasicObject metaClass);
+
+        @Nullable
+        RubyBasicObject getLogicalClass(DynamicObject object);
+
+        @Nullable
+        void setLogicalClass(DynamicObject object, RubyBasicObject value);
+
+        @Nullable
+        RubyBasicObject getMetaClass(DynamicObject object);
+
+        @Nullable
+        void setMetaClass(DynamicObject object, RubyBasicObject value);
+
+    }
+
+    public static final BasicObjectLayout BASIC_OBJECT_LAYOUT = BasicObjectLayoutImpl.INSTANCE;
 
     @CompilerDirectives.TruffleBoundary
     public static void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {
@@ -106,23 +124,21 @@ public abstract class BasicObjectNodes {
 
     public static void unsafeSetLogicalClass(RubyBasicObject object, RubyBasicObject newLogicalClass) {
         assert RubyGuards.isRubyClass(newLogicalClass);
-        assert object.logicalClass == null;
         unsafeChangeLogicalClass(object, newLogicalClass);
     }
 
     public static void unsafeChangeLogicalClass(RubyBasicObject object, RubyBasicObject newLogicalClass) {
         assert RubyGuards.isRubyClass(newLogicalClass);
-        object.logicalClass = newLogicalClass;
-        object.metaClass = newLogicalClass;
+        BASIC_OBJECT_LAYOUT.setLogicalClass(object.dynamicObject, newLogicalClass);
+        BASIC_OBJECT_LAYOUT.setMetaClass(object.dynamicObject, newLogicalClass);
     }
 
     public static RubyBasicObject getMetaClass(RubyBasicObject object) {
-        return object.metaClass;
+        return BASIC_OBJECT_LAYOUT.getMetaClass(object.dynamicObject);
     }
 
     public static void setMetaClass(RubyBasicObject object, RubyBasicObject metaClass) {
-        assert RubyGuards.isRubyClass(metaClass);
-        object.metaClass = metaClass;
+        BASIC_OBJECT_LAYOUT.setMetaClass(object.dynamicObject, metaClass);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -211,12 +227,12 @@ public abstract class BasicObjectNodes {
         if (RubyGuards.isRubyModule(rubyBasicObject)) {
             return ModuleNodes.getModel(rubyBasicObject).getContext();
         } else {
-            return getContext(rubyBasicObject.logicalClass);
+            return getContext(getLogicalClass(rubyBasicObject));
         }
     }
 
     public static RubyBasicObject getLogicalClass(RubyBasicObject rubyBasicObject) {
-        return rubyBasicObject.logicalClass;
+        return BASIC_OBJECT_LAYOUT.getLogicalClass(rubyBasicObject.dynamicObject);
     }
 
     public static DynamicObject getDynamicObject(RubyBasicObject rubyBasicObject) {
@@ -253,11 +269,11 @@ public abstract class BasicObjectNodes {
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass) {
-        return createRubyBasicObject(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
+        return createRubyBasicObject(rubyClass, BASIC_OBJECT_LAYOUT.createBasicObject(rubyClass, rubyClass));
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
-        final RubyBasicObject object = new RubyBasicObject(rubyClass, dynamicObject);
+        final RubyBasicObject object = new RubyBasicObject(dynamicObject);
         if (rubyClass == null && RubyGuards.isRubyClass(object)) { // For class Class
             rubyClass = object;
         }
@@ -493,7 +509,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return createRubyBasicObject(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
+            return createRubyBasicObject(rubyClass);
         }
 
     }

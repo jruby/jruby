@@ -67,9 +67,9 @@ import java.util.Random;
 public abstract class ArrayNodes {
 
     @Layout
-    public interface ArrayLayout {
+    public interface ArrayLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createArray(@Nullable Object store, int size);
+        DynamicObject createArray(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object store, int size);
 
         boolean isArray(DynamicObject object);
 
@@ -354,7 +354,7 @@ public abstract class ArrayNodes {
 
     public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
         assert RubyGuards.isRubyClass(arrayClass);
-        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(store, size));
+        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(arrayClass, arrayClass, store, size));
     }
 
     @CoreMethod(names = "+", required = 1)

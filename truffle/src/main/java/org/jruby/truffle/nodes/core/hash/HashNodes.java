@@ -55,9 +55,10 @@ import java.util.Map;
 public abstract class HashNodes {
 
     @Layout
-    public interface HashLayout {
+    public interface HashLayout extends BasicObjectNodes.BasicObjectLayout {
 
         DynamicObject createHash(
+                RubyBasicObject logicalClass, RubyBasicObject metaClass,
                 @Nullable RubyBasicObject defaultBlock,
                 @Nullable Object defaultValue,
                 @Nullable Object store,
@@ -298,7 +299,7 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createHash(RubyBasicObject hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return BasicObjectNodes.createRubyBasicObject(hashClass, HASH_LAYOUT.createHash(defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
+        return BasicObjectNodes.createRubyBasicObject(hashClass, HASH_LAYOUT.createHash(hashClass, hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
     }
 
     @TruffleBoundary

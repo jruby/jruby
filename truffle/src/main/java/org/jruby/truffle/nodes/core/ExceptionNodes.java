@@ -29,9 +29,9 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public abstract class ExceptionNodes {
 
     @Layout
-    public interface ExceptionLayout {
+    public interface ExceptionLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createException(@Nullable Object message, @Nullable Backtrace backtrace);
+        DynamicObject createException(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object message, @Nullable Backtrace backtrace);
 
         boolean isException(DynamicObject object);
 
@@ -84,11 +84,11 @@ public abstract class ExceptionNodes {
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(null, null));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(rubyClass, rubyClass, null, null));
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(message, backtrace));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(rubyClass, rubyClass, message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)

@@ -36,9 +36,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class QueueNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface QueueLayout {
+    public interface QueueLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createQueue(LinkedBlockingQueue queue);
+        DynamicObject createQueue(RubyBasicObject logicalClass, RubyBasicObject metaClass, LinkedBlockingQueue queue);
 
         boolean isQueue(DynamicObject object);
 
@@ -51,7 +51,7 @@ public abstract class QueueNodes {
     public static class QueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(new LinkedBlockingQueue()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(rubyClass, rubyClass, new LinkedBlockingQueue()));
         }
     }
 

@@ -28,9 +28,9 @@ import java.util.EnumSet;
 public abstract class DigestNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface DigestLayout {
+    public interface DigestLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createDigest(MessageDigest digest);
+        DynamicObject createDigest(RubyBasicObject logicalClass, RubyBasicObject metaClass, MessageDigest digest);
 
         MessageDigest getDigest(DynamicObject object);
 
@@ -65,7 +65,9 @@ public abstract class DigestNodes {
             throw new RuntimeException(e);
         }
 
-        return BasicObjectNodes.createRubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_LAYOUT.createDigest(digest));
+        final RubyBasicObject rubyClass = context.getCoreLibrary().getObjectClass();
+
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, DIGEST_LAYOUT.createDigest(rubyClass, rubyClass, digest));
     }
 
     public static MessageDigest getDigest(RubyBasicObject digest) {

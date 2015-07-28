@@ -23,12 +23,7 @@ public class RubyBasicObject implements TruffleObject {
 
     public final DynamicObject dynamicObject;
 
-    /** The class of the object, not a singleton class. */
-    @CompilationFinal public RubyBasicObject logicalClass;
-    /** Either the singleton class if it exists or the logicalClass. */
-    @CompilationFinal public RubyBasicObject metaClass;
-
-    public RubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
+    public RubyBasicObject(DynamicObject dynamicObject) {
         this.dynamicObject = dynamicObject;
     }
 

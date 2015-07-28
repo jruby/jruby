@@ -60,7 +60,7 @@ public abstract class IOBufferPrimitiveNodes {
     private static final int STACK_BUF_SZ = 8192;
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface IOBufferLayout {
+    public interface IOBufferLayout extends BasicObjectNodes.BasicObjectLayout {
 
         String WRITE_SYNCED_IDENTIFIER = "@write_synced";
         String STORAGE_IDENTIFIER = "@storage";
@@ -68,7 +68,7 @@ public abstract class IOBufferPrimitiveNodes {
         String START_IDENTIFIER = "@start";
         String TOTAL_IDENTIFIER = "@total";
 
-        DynamicObject createIOBuffer(boolean writeSynced, RubyBasicObject storage, int used, int start, int total);
+        DynamicObject createIOBuffer(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean writeSynced, RubyBasicObject storage, int used, int start, int total);
 
         boolean getWriteSynced(DynamicObject object);
         void setWriteSynced(DynamicObject object, boolean value);
@@ -119,6 +119,7 @@ public abstract class IOBufferPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
             return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
+                    classToAllocate, classToAllocate,
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                     0,

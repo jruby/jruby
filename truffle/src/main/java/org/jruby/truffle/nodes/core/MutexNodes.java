@@ -29,9 +29,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class MutexNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface MutexLayout {
+    public interface MutexLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createMutex(ReentrantLock lock);
+        DynamicObject createMutex(RubyBasicObject logicalClass, RubyBasicObject metaClass, ReentrantLock lock);
 
         boolean isMutex(DynamicObject object);
 
@@ -44,7 +44,7 @@ public abstract class MutexNodes {
     public static class MutexAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(new ReentrantLock()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(rubyClass, rubyClass, new ReentrantLock()));
         }
     }
 

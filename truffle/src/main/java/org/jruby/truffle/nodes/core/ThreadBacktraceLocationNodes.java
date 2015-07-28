@@ -25,9 +25,9 @@ import java.util.EnumSet;
 public class ThreadBacktraceLocationNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface ThreadBacktraceLocationLayout {
+    public interface ThreadBacktraceLocationLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createThreadBacktraceLocation(Activation activation);
+        DynamicObject createThreadBacktraceLocation(RubyBasicObject logicalClass, RubyBasicObject metaClass, Activation activation);
 
         Activation getActivation(DynamicObject object);
 
@@ -36,7 +36,7 @@ public class ThreadBacktraceLocationNodes {
     public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(activation));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(rubyClass, rubyClass, activation));
     }
 
     protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {

@@ -43,9 +43,9 @@ import java.util.Arrays;
 public abstract class MatchDataNodes {
 
     @Layout
-    public interface MatchDataLayout {
+    public interface MatchDataLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createMatchData(MatchDataFields fields);
+        DynamicObject createMatchData(RubyBasicObject logicalClass, RubyBasicObject metaClass, MatchDataFields fields);
 
         boolean isMatchData(DynamicObject object);
 
@@ -56,7 +56,7 @@ public abstract class MatchDataNodes {
     public static final MatchDataLayout MATCH_DATA_LAYOUT = MatchDataLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyMatchData(RubyBasicObject rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(rubyClass, rubyClass, new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
     }
 
     public static Object[] getValues(RubyBasicObject matchData) {

@@ -35,9 +35,9 @@ import org.jruby.util.ByteList;
 public abstract class SymbolNodes {
 
     @org.jruby.truffle.om.dsl.api.Layout
-    public interface SymbolLayout {
+    public interface SymbolLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createSymbol(String string, ByteList byteList, int hashCode,
+        DynamicObject createSymbol(RubyBasicObject logicalClass, RubyBasicObject metaClass, String string, ByteList byteList, int hashCode,
                                    int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
 
         boolean isSymbol(DynamicObject object);

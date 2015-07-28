@@ -73,9 +73,9 @@ import java.util.Map.Entry;
 public abstract class ModuleNodes {
 
     @Layout
-    public interface ModuleLayout {
+    public interface ModuleLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createModule(RubyModuleModel model);
+        DynamicObject createModule(RubyBasicObject logicalClass, RubyBasicObject metaClass, RubyModuleModel model);
 
         boolean isModule(DynamicObject object);
 
@@ -97,7 +97,7 @@ public abstract class ModuleNodes {
 
     public static RubyBasicObject createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null);
-        final RubyBasicObject module = BasicObjectNodes.createRubyBasicObject(selfClass, MODULE_LAYOUT.createModule(model));
+        final RubyBasicObject module = BasicObjectNodes.createRubyBasicObject(selfClass, MODULE_LAYOUT.createModule(selfClass, selfClass, model));
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;

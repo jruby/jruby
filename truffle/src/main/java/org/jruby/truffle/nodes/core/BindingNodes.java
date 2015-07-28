@@ -40,9 +40,9 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 public abstract class BindingNodes {
 
     @Layout
-    public interface BindingLayout {
+    public interface BindingLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createBinding(@Nullable Object self, @Nullable MaterializedFrame frame);
+        DynamicObject createBinding(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object self, @Nullable MaterializedFrame frame);
 
         boolean isBinding(DynamicObject object);
 
@@ -67,7 +67,7 @@ public abstract class BindingNodes {
     }
 
     public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(self, frame));
+        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(bindingClass, bindingClass, self, frame));
     }
 
     public static void setSelfAndFrame(RubyBasicObject binding, Object self, MaterializedFrame frame) {

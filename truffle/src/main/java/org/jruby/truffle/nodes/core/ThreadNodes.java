@@ -43,9 +43,9 @@ import java.util.concurrent.locks.Lock;
 public abstract class ThreadNodes {
 
     @Layout
-    public interface ThreadLayout {
+    public interface ThreadLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createThread(ThreadFields fields);
+        DynamicObject createThread(RubyBasicObject logicalClass, RubyBasicObject metaClass, ThreadFields fields);
 
         boolean isThread(DynamicObject object);
 
@@ -57,7 +57,7 @@ public abstract class ThreadNodes {
 
     public static RubyBasicObject createRubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, BasicObjectNodes.createRubyBasicObject(BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass()));
-        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(fields));
+        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(rubyClass, rubyClass, fields));
         fields.fiberManager = new FiberManager(object, manager);
         return object;
     }

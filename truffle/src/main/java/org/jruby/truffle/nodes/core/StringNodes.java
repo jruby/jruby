@@ -78,9 +78,9 @@ import java.util.Arrays;
 public abstract class StringNodes {
 
     @Layout
-    public interface StringLayout {
+    public interface StringLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createString(ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+        DynamicObject createString(RubyBasicObject logicalClass, RubyBasicObject metaClass, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
         boolean isString(DynamicObject dynamicObject);
 
@@ -267,7 +267,7 @@ public abstract class StringNodes {
 
     public static RubyBasicObject createString(RubyBasicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return BasicObjectNodes.createRubyBasicObject(stringClass, STRING_LAYOUT.createString(bytes, StringSupport.CR_UNKNOWN, null));
+        return BasicObjectNodes.createRubyBasicObject(stringClass, STRING_LAYOUT.createString(stringClass, stringClass, bytes, StringSupport.CR_UNKNOWN, null));
     }
 
     @CoreMethod(names = "+", required = 1)
