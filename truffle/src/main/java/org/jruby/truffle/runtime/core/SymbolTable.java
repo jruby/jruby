@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -71,7 +72,7 @@ public class SymbolTable {
 
             final ByteList storedBytes = bytes.dup();
 
-            final RubyBasicObject newSymbol = new RubyBasicObject(
+            final RubyBasicObject newSymbol = BasicObjectNodes.createRubyBasicObject(
                     context.getCoreLibrary().getSymbolClass(),
                     SymbolNodes.SYMBOL_LAYOUT.createSymbol(
                             storedBytes.toString(), storedBytes,

@@ -93,7 +93,7 @@ public abstract class ClassNodes {
 
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
-        final RubyBasicObject rubyClass = new RubyBasicObject(classClass, CLASS_LAYOUT.createClass(model, allocator));
+        final RubyBasicObject rubyClass = BasicObjectNodes.createRubyBasicObject(classClass, CLASS_LAYOUT.createClass(model, allocator));
 
         model.rubyModuleObject = rubyClass;
 

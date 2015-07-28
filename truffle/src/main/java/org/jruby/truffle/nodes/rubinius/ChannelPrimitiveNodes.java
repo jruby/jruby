@@ -26,7 +26,7 @@ public abstract class ChannelPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject channelNew() {
-            return new RubyBasicObject(getContext().getCoreLibrary().getRubiniusChannelClass(), BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+            return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRubiniusChannelClass(), BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
         }
 
     }

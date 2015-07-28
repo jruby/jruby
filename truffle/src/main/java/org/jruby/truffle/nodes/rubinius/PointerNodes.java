@@ -48,7 +48,7 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return new RubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(pointer));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {

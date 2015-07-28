@@ -267,7 +267,7 @@ public abstract class StringNodes {
 
     public static RubyBasicObject createString(RubyBasicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return new RubyBasicObject(stringClass, STRING_LAYOUT.createString(bytes, StringSupport.CR_UNKNOWN, null));
+        return BasicObjectNodes.createRubyBasicObject(stringClass, STRING_LAYOUT.createString(bytes, StringSupport.CR_UNKNOWN, null));
     }
 
     @CoreMethod(names = "+", required = 1)

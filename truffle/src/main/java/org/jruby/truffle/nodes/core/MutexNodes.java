@@ -44,7 +44,7 @@ public abstract class MutexNodes {
     public static class MutexAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(new ReentrantLock()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(new ReentrantLock()));
         }
     }
 

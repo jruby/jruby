@@ -298,7 +298,7 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createHash(RubyBasicObject hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return new RubyBasicObject(hashClass, HASH_LAYOUT.createHash(defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
+        return BasicObjectNodes.createRubyBasicObject(hashClass, HASH_LAYOUT.createHash(defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
     }
 
     @TruffleBoundary

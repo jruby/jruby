@@ -202,13 +202,13 @@ public abstract class FiberNodes {
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, false);
         fields.name = name;
-        return new RubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyBasicObject rubyClass, String name, boolean isRootFiber) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, isRootFiber);
         fields.name = name;
-        return new RubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(fields));
     }
 
     public interface FiberMessage {

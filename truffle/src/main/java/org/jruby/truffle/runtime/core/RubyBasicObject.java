@@ -29,14 +29,7 @@ public class RubyBasicObject implements TruffleObject {
     @CompilationFinal public RubyBasicObject metaClass;
 
     public RubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
-        assert rubyClass == null || RubyGuards.isRubyClass(rubyClass);
-
         this.dynamicObject = dynamicObject;
-
-        if (rubyClass == null && RubyGuards.isRubyClass(this)) { // For class Class
-            rubyClass = this;
-        }
-        BasicObjectNodes.unsafeSetLogicalClass(this, rubyClass);
     }
 
     @Override

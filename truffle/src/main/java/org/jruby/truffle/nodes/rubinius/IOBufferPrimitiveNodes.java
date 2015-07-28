@@ -137,7 +137,7 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
-            return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
+            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                     0,

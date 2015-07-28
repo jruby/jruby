@@ -112,7 +112,7 @@ public abstract class EncodingNodes {
     }
 
     public static RubyBasicObject createRubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return new RubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encoding, name, dummy));
+        return BasicObjectNodes.createRubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encoding, name, dummy));
     }
 
     @CoreMethod(names = "ascii_compatible?")

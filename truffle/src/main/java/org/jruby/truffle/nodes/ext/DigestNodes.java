@@ -63,7 +63,7 @@ public abstract class DigestNodes {
             throw new RuntimeException(e);
         }
 
-        return new RubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_FACTORY.newInstance(digest));
+        return BasicObjectNodes.createRubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_FACTORY.newInstance(digest));
     }
 
     public static MessageDigest getDigest(RubyBasicObject digest) {

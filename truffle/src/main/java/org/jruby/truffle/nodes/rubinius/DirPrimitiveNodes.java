@@ -68,7 +68,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return new RubyBasicObject(dirClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+            return BasicObjectNodes.createRubyBasicObject(dirClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
         }
 
     }

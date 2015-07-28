@@ -379,12 +379,12 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
-        nilObject = new RubyBasicObject(nilClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+        mainObject = BasicObjectNodes.createRubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+        nilObject = BasicObjectNodes.createRubyBasicObject(nilClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+        rubiniusUndefined = BasicObjectNodes.createRubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
 
-        globalVariablesObject = new RubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+        globalVariablesObject = BasicObjectNodes.createRubyBasicObject(objectClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);

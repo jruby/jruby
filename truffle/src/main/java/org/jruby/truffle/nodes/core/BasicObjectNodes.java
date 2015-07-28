@@ -251,6 +251,15 @@ public abstract class BasicObjectNodes {
         }
     }
 
+    public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
+        final RubyBasicObject object = new RubyBasicObject(rubyClass, dynamicObject);
+        if (rubyClass == null && RubyGuards.isRubyClass(object)) { // For class Class
+            rubyClass = object;
+        }
+        unsafeSetLogicalClass(object, rubyClass);
+        return object;
+    }
+
     @CoreMethod(names = "!")
     public abstract static class NotNode extends UnaryCoreMethodNode {
 
@@ -479,7 +488,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
+            return createRubyBasicObject(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
         }
 
     }

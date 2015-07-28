@@ -64,7 +64,7 @@ public abstract class EncodingConverterNodes {
     }
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
-        return new RubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(econv));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(econv));
     }
 
     @RubiniusOnly

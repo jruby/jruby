@@ -2158,7 +2158,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(BigDecimal.ZERO, Type.NORMAL));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(BigDecimal.ZERO, Type.NORMAL));
         }
 
     }

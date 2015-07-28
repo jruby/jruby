@@ -200,7 +200,7 @@ public abstract class ProcNodes {
     public static RubyBasicObject createRubyProc(RubyBasicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, RubyBasicObject block) {
-        final RubyBasicObject proc = new RubyBasicObject(procClass, PROC_LAYOUT.createProc(type, null, null, null, null, null, null, null, null));
+        final RubyBasicObject proc = BasicObjectNodes.createRubyBasicObject(procClass, PROC_LAYOUT.createProc(type, null, null, null, null, null, null, null, null));
         ProcNodes.initialize(proc, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
         return proc;

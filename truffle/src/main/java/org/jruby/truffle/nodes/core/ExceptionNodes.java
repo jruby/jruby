@@ -84,11 +84,11 @@ public abstract class ExceptionNodes {
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return new RubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(null, null));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(null, null));
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return new RubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(message, backtrace));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)

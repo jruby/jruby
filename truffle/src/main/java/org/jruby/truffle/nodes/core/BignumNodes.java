@@ -51,7 +51,7 @@ public abstract class BignumNodes {
 
     public static RubyBasicObject createRubyBignum(RubyBasicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return new RubyBasicObject(rubyClass, BIGNUM_LAYOUT.createBignum(value));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, BIGNUM_LAYOUT.createBignum(value));
     }
 
     public static BigInteger getBigIntegerValue(RubyBasicObject bignum) {

@@ -51,7 +51,7 @@ public abstract class MethodNodes {
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createMethod(RubyBasicObject rubyClass, Object receiver, InternalMethod method) {
-        return new RubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(receiver, method));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(receiver, method));
     }
 
     public static Object getReceiver(RubyBasicObject method) {

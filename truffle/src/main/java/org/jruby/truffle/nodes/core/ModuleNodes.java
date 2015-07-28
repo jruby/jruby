@@ -97,7 +97,7 @@ public abstract class ModuleNodes {
 
     public static RubyBasicObject createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null);
-        final RubyBasicObject module = new RubyBasicObject(selfClass, MODULE_LAYOUT.createModule(model));
+        final RubyBasicObject module = BasicObjectNodes.createRubyBasicObject(selfClass, MODULE_LAYOUT.createModule(model));
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;

@@ -37,7 +37,7 @@ public abstract class ByteArrayNodes {
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
-        return new RubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(bytes));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(bytes));
     }
 
     public static ByteList getBytes(RubyBasicObject byteArray) {

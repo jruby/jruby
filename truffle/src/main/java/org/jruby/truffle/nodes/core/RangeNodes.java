@@ -536,7 +536,7 @@ public abstract class RangeNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
         }
 
     }
