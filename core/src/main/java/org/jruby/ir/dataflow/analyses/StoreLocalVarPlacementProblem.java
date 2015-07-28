@@ -62,7 +62,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
          return value;
     }
 
-    boolean addClosureExitStoreLocalVars(ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+    boolean addScopeExitStoreLocalVars(ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
         IRScope scope        = getScope();
         boolean addedStores  = false;
         boolean isEvalScript = scope instanceof IREvalScript;
@@ -132,7 +132,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             Instr i = instrs.previous();
             // Assumption: Last instr should always be a control-transfer instruction
             assert i.getOperation().transfersControl(): "Last instruction of GEB in scope: " + getScope() + " is " + i + ", not a control-xfer instruction";
-            addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
+            addScopeExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
         }
     }
 }

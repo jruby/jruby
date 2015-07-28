@@ -67,15 +67,17 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
      *
      * In the code snippet above, 'sum' is live on entry to the closure
      */
-    public List<Variable> getVarsLiveOnScopeEntry() {
-        List<Variable> liveVars = new ArrayList<Variable>();
+    public Collection<LocalVariable> getLocalVarsLiveOnScopeEntry() {
+        List<LocalVariable> liveVars = new ArrayList<LocalVariable>();
         BitSet liveIn = getFlowGraphNode(getScope().getCFG().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (!liveIn.get(i)) continue;
 
             Variable v = getVariable(i);
-            liveVars.add(v);
+            if (v instanceof LocalVariable) {
+                liveVars.add((LocalVariable)v);
+            }
             // System.out.println("variable " + v + " is live on entry!");
         }
 
