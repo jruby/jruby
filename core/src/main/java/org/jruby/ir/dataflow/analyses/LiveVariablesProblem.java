@@ -60,20 +60,6 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     /**
-     * Add all local variables of interest from the provided bitset.
-     */
-    public Set<LocalVariable> addLiveLocalVars(Set<LocalVariable> list, BitSet living) {
-        for (int j = 0; j < living.size(); j++) {
-            if (!living.get(j)) continue;
-
-            Variable v = getVariable(j);
-            if (v instanceof LocalVariable) list.add((LocalVariable) v);
-        }
-
-        return list;
-    }
-
-    /**
      * Get variables that are live on entry to the cfg.
      * This is the case for closures which access variables from the parent scope.
      *
