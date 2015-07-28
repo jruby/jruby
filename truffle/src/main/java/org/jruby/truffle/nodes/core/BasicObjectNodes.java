@@ -49,6 +49,7 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
+
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
     public static final Shape EMPTY_SHAPE = LAYOUT.createShape(new BasicObjectType());
 
@@ -249,6 +250,10 @@ public abstract class BasicObjectNodes {
         } else {
             return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getModel(getLogicalClass(object)).getName());
         }
+    }
+
+    public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass) {
+        return createRubyBasicObject(rubyClass, LAYOUT.newInstance(EMPTY_SHAPE));
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {

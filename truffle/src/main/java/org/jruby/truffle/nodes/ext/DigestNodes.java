@@ -15,6 +15,7 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.util.ByteList;
@@ -26,15 +27,16 @@ import java.util.EnumSet;
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
 
-    private static final HiddenKey DIGEST_IDENTIFIER = new HiddenKey("digest");
-    private static final Property DIGEST_PROPERTY;
-    private static final DynamicObjectFactory DIGEST_FACTORY;
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface DigestLayout {
 
-    static {
-        final Shape.Allocator allocator = BasicObjectNodes.LAYOUT.createAllocator();
-        DIGEST_PROPERTY = Property.create(DIGEST_IDENTIFIER, allocator.locationForType(MessageDigest.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        DIGEST_FACTORY = BasicObjectNodes.EMPTY_SHAPE.addProperty(DIGEST_PROPERTY).createFactory();
+        DynamicObject createDigest(MessageDigest digest);
+
+        MessageDigest getDigest(DynamicObject object);
+
     }
+
+    public static final DigestLayout DIGEST_LAYOUT = DigestLayoutImpl.INSTANCE;
 
     private enum Algorithm {
         MD5("MD5"),
@@ -63,12 +65,11 @@ public abstract class DigestNodes {
             throw new RuntimeException(e);
         }
 
-        return BasicObjectNodes.createRubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_FACTORY.newInstance(digest));
+        return BasicObjectNodes.createRubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_LAYOUT.createDigest(digest));
     }
 
     public static MessageDigest getDigest(RubyBasicObject digest) {
-        assert BasicObjectNodes.getDynamicObject(digest).getShape().hasProperty(DIGEST_IDENTIFIER);
-        return (MessageDigest) DIGEST_PROPERTY.get(BasicObjectNodes.getDynamicObject(digest), true);
+        return DIGEST_LAYOUT.getDigest(digest.dynamicObject);
     }
 
     @CoreMethod(names = "md5", isModuleFunction = true)

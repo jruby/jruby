@@ -40,12 +40,15 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -54,10 +57,23 @@ import java.io.File;
 
 public abstract class DirPrimitiveNodes {
 
-    // TODO CS 14-April-15 use a shape, properties and allocator
+    @Layout
+    public interface DirLayout {
 
-    private static final HiddenKey contentsKey = new HiddenKey("contents");
-    private static final HiddenKey positionKey = new HiddenKey("position");
+        DynamicObject createDir(@Nullable Object contents, int position);
+
+        @Nullable
+        Object getContents(DynamicObject object);
+
+        @Nullable
+        void setContents(DynamicObject object, Object value);
+
+        int getPosition(DynamicObject object);
+        void setPosition(DynamicObject object, int value);
+
+    }
+
+    public static final DirLayout DIR_LAYOUT = DirLayoutImpl.INSTANCE;
 
     @RubiniusPrimitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -68,7 +84,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return BasicObjectNodes.createRubyBasicObject(dirClass, BasicObjectNodes.LAYOUT.newInstance(BasicObjectNodes.EMPTY_SHAPE));
+            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(null, 0));
         }
 
     }
@@ -76,13 +92,8 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_open")
     public static abstract class DirOpenPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private WriteHeadObjectFieldNode writeContentsNode;
-        @Child private WriteHeadObjectFieldNode writePositionNode;
-
         public DirOpenPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeContentsNode = new WriteHeadObjectFieldNode(contentsKey);
-            writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
         @TruffleBoundary
@@ -102,8 +113,8 @@ public abstract class DirPrimitiveNodes {
                 throw new UnsupportedOperationException();
             }
 
-            writeContentsNode.execute(dir, contents);
-            writePositionNode.execute(dir, -2); // -2 for . and then ..
+            DIR_LAYOUT.setContents(dir.dynamicObject, contents);
+            DIR_LAYOUT.setPosition(dir.dynamicObject, -2); // -2 for . and then ..
 
             return nil();
         }
@@ -120,36 +131,23 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_read")
     public static abstract class DirReadPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private ReadHeadObjectFieldNode readContentsNode;
-        @Child private ReadHeadObjectFieldNode readPositionNode;
-        @Child private WriteHeadObjectFieldNode writePositionNode;
-
         public DirReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readContentsNode = new ReadHeadObjectFieldNode(contentsKey);
-            readPositionNode = new ReadHeadObjectFieldNode(positionKey);
-            writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
         @TruffleBoundary
         @Specialization
         public Object read(RubyBasicObject dir) {
-            final int position;
+            final int position = DIR_LAYOUT.getPosition(dir.dynamicObject);
 
-            try {
-                position = readPositionNode.executeInteger(dir);
-            } catch (UnexpectedResultException e) {
-                throw new IllegalStateException();
-            }
-
-            writePositionNode.execute(dir, position + 1);
+            DIR_LAYOUT.setPosition(dir.dynamicObject, position + 1);
 
             if (position == -2) {
                 return createString(".");
             } else if (position == -1) {
                 return createString("..");
             } else {
-                final String[] contents = (String[]) readContentsNode.execute(dir);
+                final String[] contents = (String[]) DIR_LAYOUT.getContents(dir.dynamicObject);
 
                 if (position < contents.length) {
                     return createString(contents[position]);
@@ -165,13 +163,8 @@ public abstract class DirPrimitiveNodes {
     @RubiniusPrimitive(name = "dir_control")
     public static abstract class DirControlPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private ReadHeadObjectFieldNode readPositionNode;
-        @Child private WriteHeadObjectFieldNode writePositionNode;
-
         public DirControlPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readPositionNode = new ReadHeadObjectFieldNode(positionKey);
-            writePositionNode = new WriteHeadObjectFieldNode(positionKey);
         }
 
         @TruffleBoundary
@@ -179,25 +172,19 @@ public abstract class DirPrimitiveNodes {
         public Object control(RubyBasicObject dir, int kind, int position) {
             switch (kind) {
                 case 0:
-                    writePositionNode.execute(dir, position);
+                    DIR_LAYOUT.setPosition(dir.dynamicObject, position);
                     return true;
                 case 1:
-                    writePositionNode.execute(dir, -2);
+                    DIR_LAYOUT.setPosition(dir.dynamicObject, -2);
                     return true;
                 case 2:
-                    try {
-                        return readPositionNode.executeInteger(dir);
-                    } catch (UnexpectedResultException e) {
-                        throw new IllegalStateException();
-                    }
+                    return DIR_LAYOUT.getPosition(dir.dynamicObject);
 
             }
             return nil();
         }
 
     }
-
-
 
     @RubiniusPrimitive(name = "dir_close")
     public static abstract class DirClosePrimitiveNode extends RubiniusPrimitiveNode {
