@@ -1644,7 +1644,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1)
+    @CoreMethod(names = "respond_to_missing?", required = 2)
     public abstract static class RespondToMissingNode extends CoreMethodArrayArgumentsNode {
 
         public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
