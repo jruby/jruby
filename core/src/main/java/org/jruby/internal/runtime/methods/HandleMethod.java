@@ -68,14 +68,13 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
     public HandleMethod(
             RubyModule implementationClass,
             Visibility visibility,
-            CallConfiguration callConfig,
             Callable<MethodHandle[]> targetsGenerator,
             Signature signature,
             boolean builtin,
             boolean notImplemented,
             String parameterDesc) {
 
-        super(implementationClass, visibility, callConfig);
+        super(implementationClass, visibility);
         this.targetsGenerator = targetsGenerator;
         this.parameterDesc = parameterDesc;
         this.signature = signature;
@@ -188,7 +187,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, visibility, callConfig, targetsGenerator, signature, builtin, notImplemented, parameterDesc);
+        return new HandleMethod(implementationClass, visibility, targetsGenerator, signature, builtin, notImplemented, parameterDesc);
     }
 
     @Override

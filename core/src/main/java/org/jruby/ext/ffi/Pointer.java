@@ -6,7 +6,6 @@ import java.nio.ByteOrder;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -199,7 +198,7 @@ public class Pointer extends AbstractMemory {
         private final Pointer nullPointer;
 
         private NilToPointerMethod(RubyModule implementationClass, Pointer nullPointer) {
-            super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+            super(implementationClass, Visibility.PUBLIC);
             this.nullPointer = nullPointer;
         }
 

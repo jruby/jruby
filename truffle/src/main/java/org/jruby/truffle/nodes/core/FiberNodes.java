@@ -83,7 +83,13 @@ public abstract class FiberNodes {
             public void run() {
                 try {
                     final Object[] args = waitForResume(fiber);
-                    final Object result = ProcNodes.rootCall(block, args);
+                    final Object result;
+                    try {
+                        result = ProcNodes.rootCall(block, args);
+                    } finally {
+                        // Make sure that other fibers notice we are dead before they gain control back
+                        getFields(fiber).alive = false;
+                    }
                     resume(fiber, getFields(fiber).lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     assert !getFields(fiber).isRootFiber;
@@ -112,16 +118,15 @@ public abstract class FiberNodes {
     public static void start(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).thread = Thread.currentThread();
+        BasicObjectNodes.getContext(fiber).getThreadManager().initializeCurrentThread(getFields(fiber).rubyThread);
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).registerFiber(fiber);
         BasicObjectNodes.getContext(fiber).getSafepointManager().enterThread();
-        BasicObjectNodes.getContext(fiber).getThreadManager().enterGlobalLock(getFields(fiber).rubyThread);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).alive = false;
-        BasicObjectNodes.getContext(fiber).getThreadManager().leaveGlobalLock();
         BasicObjectNodes.getContext(fiber).getSafepointManager().leaveThread();
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).unregisterFiber(fiber);
         getFields(fiber).thread = null;
@@ -140,7 +145,7 @@ public abstract class FiberNodes {
     private static Object[] waitForResume(final RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final FiberMessage message = BasicObjectNodes.getContext(fiber).getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<FiberMessage>() {
+        final FiberMessage message = BasicObjectNodes.getContext(fiber).getThreadManager().runUntilResult(new ThreadManager.BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 return getFields(fiber).messageQueue.take();
@@ -193,10 +198,8 @@ public abstract class FiberNodes {
     }
 
     public static boolean isAlive(RubyBasicObject fiber) {
-        // TODO CS 2-Feb-15 race conditions (but everything in JRuby+Truffle is currently a race condition)
-        // TODO CS 2-Feb-15 should just be alive?
         assert RubyGuards.isRubyFiber(fiber);
-        return getFields(fiber).alive || !getFields(fiber).messageQueue.isEmpty();
+        return getFields(fiber).alive;
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
@@ -372,12 +375,13 @@ public abstract class FiberNodes {
 
     public static class FiberFields {
         public final RubyBasicObject rubyThread;
+        @CompilerDirectives.CompilationFinal
         public String name;
         public final boolean isRootFiber;
-        // we need 2 slots when the safepoint manager sends the kill message and there is another message unprocessed
-        public final BlockingQueue<FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
-        public RubyBasicObject lastResumedByFiber = null;
-        public boolean alive = true;
+        // we need 2 slots when the FiberManager sends the kill message and there is another message unprocessed
+        public final BlockingQueue<FiberNodes.FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
+        public volatile RubyBasicObject lastResumedByFiber = null;
+        public volatile boolean alive = true;
         public volatile Thread thread;
 
         public FiberFields(RubyBasicObject rubyThread, boolean isRootFiber) {
@@ -386,4 +390,5 @@ public abstract class FiberNodes {
             this.isRootFiber = isRootFiber;
         }
     }
+
 }

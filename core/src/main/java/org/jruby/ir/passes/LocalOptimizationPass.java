@@ -81,7 +81,7 @@ public class LocalOptimizationPass extends CompilerPass {
 
             if (!instr.hasSideEffects()) {
                 if (instr instanceof CopyInstr) {
-                    if (res.equals(val) && instr.canBeDeleted(s)) {
+                    if (res.equals(val) && instr.canBeDeletedFromScope(s)) {
                         System.out.println("DEAD: marking instr dead!!");
                         instr.markDead();
                     }

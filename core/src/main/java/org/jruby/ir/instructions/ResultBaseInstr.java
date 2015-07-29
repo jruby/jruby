@@ -10,7 +10,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
  * callinstr is more complicated because we would rather use inheritance to share call-related
  * logic.
  */
-public abstract class ResultBaseInstr extends Instr implements ResultInstr {
+public abstract class ResultBaseInstr extends NOperandInstr implements ResultInstr {
     protected Variable result;
 
     public ResultBaseInstr(Operation operation, Variable result, Operand[] operands) {

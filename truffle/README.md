@@ -97,7 +97,7 @@ http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/. `Truffle::Debug.break` will
 enter a shell and allow to introspect the program.
 
 If you don't want to modify the program to include a call to
-`Truffle::Debug.break` you can break the main thread externally. run with the
+`Truffle::Debug.break` you can break the main thread externally. Run with the
 instrumentation server enabled, `-Xtruffle.instrumentation_server_port=8080`.
 Then you can send a message to the runtime to break at the current location:
 

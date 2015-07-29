@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.core.MethodNodes;
 import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -37,7 +38,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
     }
 
     @Override
-    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, long returnID) {
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
         return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
                 new LiteralNode(context, sourceSection, method),
                 new ReadAllArgumentsNode(context, sourceSection),

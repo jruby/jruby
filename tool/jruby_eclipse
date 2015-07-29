@@ -7,24 +7,6 @@ TRUFFLEJAR = "#{Dir.home}/.m2/repository/com/oracle/truffle/0.7/truffle-0.7.jar"
 
 java = ENV["JAVACMD"] || "java"
 
-bootclasspath = "-Xbootclasspath/a"
-[
-  "#{JRUBY}/lib/jruby.jar",
-  TRUFFLEJAR,
-  "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar",
-  "#{JRUBY}/truffle/build.eclipse",
-  "#{JRUBY}/truffle/src/main/ruby"
-].each { |path| bootclasspath << ":#{path}" }
-
-args = [java]
-args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
-args << bootclasspath
-
-args << "-Djruby.home=#{JRUBY}"
-args << "-Djruby.lib=#{JRUBY}/lib"
-args << "-Djruby.script=jruby"
-args << "-Djruby.shell=/bin/sh"
-
 java_flags = []
 rest = []
 
@@ -40,6 +22,24 @@ ARGV.each { |arg|
     rest << arg
   end
 }
+
+bootclasspath = []
+bootclasspath << "#{JRUBY}/lib/jruby.jar"
+bootclasspath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
+if rest.include?('-X+T')
+  bootclasspath << TRUFFLEJAR
+  bootclasspath << "#{JRUBY}/truffle/build.eclipse"
+  bootclasspath << "#{JRUBY}/truffle/src/main/ruby"
+end
+
+args = [java]
+args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
+args << "-Xbootclasspath/a:" + bootclasspath.join(':')
+
+args << "-Djruby.home=#{JRUBY}"
+args << "-Djruby.lib=#{JRUBY}/lib"
+args << "-Djruby.script=jruby"
+args << "-Djruby.shell=/bin/sh"
 
 args += java_flags
 args << "org.jruby.Main"

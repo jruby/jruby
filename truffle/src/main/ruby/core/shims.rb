@@ -197,7 +197,7 @@ unless ENV['HOME']
   end
 end
 
-class Exception
+class Exception 
 
   def locations
     # These should be Rubinius::Location

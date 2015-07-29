@@ -194,14 +194,14 @@ public abstract class BigDecimalNodes {
             return createBigDecimal.executeCreate(frame, value);
         }
 
-        protected RubyBasicObject createBigDecimal(VirtualFrame frame, Object value, RubyBasicObject self) {
+        protected RubyBasicObject initializeBigDecimal(VirtualFrame frame, Object value, RubyBasicObject self) {
             setupCreateBigDecimal();
-            return createBigDecimal.executeCreate(frame, value, self);
+            return createBigDecimal.executeInitialize(frame, value, self);
         }
 
-        protected RubyBasicObject createBigDecimal(VirtualFrame frame, Object value, RubyBasicObject self, int digits) {
+        protected RubyBasicObject initializeBigDecimal(VirtualFrame frame, Object value, RubyBasicObject self, int digits) {
             setupCreateBigDecimal();
-            return createBigDecimal.executeCreate(frame, value, self, digits);
+            return createBigDecimal.executeInitialize(frame, value, self, digits);
         }
 
         private void setupLimitCall() {
@@ -296,14 +296,14 @@ public abstract class BigDecimalNodes {
             BIG_DECIMAL_LAYOUT.setType(BasicObjectNodes.getDynamicObject(bigdecimal), type);
         }
 
-        public abstract RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
+        public abstract RubyBasicObject executeInitialize(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf, int digits);
 
         public final RubyBasicObject executeCreate(VirtualFrame frame, Object value) {
-            return executeCreate(frame, value, ClassNodes.allocate(getBigDecimalClass(), this));
+            return executeInitialize(frame, value, ClassNodes.allocate((getBigDecimalClass()), this));
         }
 
-        public final RubyBasicObject executeCreate(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf) {
-            return executeCreate(frame, value, alreadyAllocatedSelf, 0);
+        public final RubyBasicObject executeInitialize(VirtualFrame frame, Object value, RubyBasicObject alreadyAllocatedSelf) {
+            return executeInitialize(frame, value, alreadyAllocatedSelf, 0);
         }
 
         @Specialization
@@ -358,7 +358,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "isRubyString(value)")
         public RubyBasicObject createString(VirtualFrame frame, RubyBasicObject value, RubyBasicObject self, int digits) {
-            return executeCreate(frame, getValueFromString(value.toString(), digits), self, digits);
+            return executeInitialize(frame, getValueFromString(value.toString(), digits), self, digits);
         }
 
         // TODO (pitr 21-Jun-2015): raise on underflow
@@ -470,12 +470,12 @@ public abstract class BigDecimalNodes {
 
         @Specialization
         public Object initialize(VirtualFrame frame, RubyBasicObject self, Object value, NotProvided digits) {
-            return createBigDecimal(frame, value, self);
+            return initializeBigDecimal(frame, value, self);
         }
 
         @Specialization
         public Object initialize(VirtualFrame frame, RubyBasicObject self, Object value, int digits) {
-            return createBigDecimal(frame, value, self, digits);
+            return initializeBigDecimal(frame, value, self, digits);
         }
     }
 

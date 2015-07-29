@@ -29,16 +29,11 @@
  */
 package org.jruby.embed;
 
-import java.io.UnsupportedEncodingException;
-
-import org.jruby.embed.internal.LocalContextProvider;
-
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -267,7 +262,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
                 return SingletonLocalContextProvider.getProvider(behavior, lazy);
         }
     }
-    
+
     private void initRubyInstanceConfig() throws RaiseException {
         String home = SystemPropertyCatcher.findJRubyHome(this);
         if (home != null) {
@@ -1856,14 +1851,12 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @since JRuby 1.5.0
      */
     public void terminate() {
-        if (getProvider().isRuntimeInitialized()) {
-            getProvider().getRuntime().tearDown(false);
-            try {
-                getProvider().getRuntime().getJRubyClassLoader().close();
-            }
-            catch(IOException weTriedIt){}
+        LocalContextProvider provider = getProvider();
+        if (provider.isRuntimeInitialized()) {
+            provider.getRuntime().tearDown(false);
+            provider.getRuntime().releaseClassLoader();
         }
-        getProvider().terminate();
+        provider.terminate();
     }
 
     /**
@@ -1876,6 +1869,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @since JRuby 1.6.0
      */
+    @Override
     public void finalize() throws Throwable {
         super.finalize();
         // singleton containers share global runtime, and should not tear it down

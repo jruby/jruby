@@ -1,17 +1,3 @@
-fails:Thread#raise on a sleeping thread raises a RuntimeError if no exception class is given
-fails:Thread#raise on a sleeping thread is captured and raised by Thread#value
-fails:Thread#raise on a sleeping thread raises a RuntimeError when called with no arguments inside rescue
-fails:Thread#raise on a running thread raises a RuntimeError if no exception class is given
-fails:Thread#raise on a running thread can go unhandled
 fails:Thread#raise on a running thread raises a RuntimeError when called with no arguments inside rescue
-fails:Thread#raise on same thread aborts execution
-fails:Thread#raise on same thread raises RuntimeError if no exception class is given
-fails:Thread#raise on same thread raises a given Exception instance
-fails:Thread#raise on same thread raises a RuntimeError if string given
-fails:Thread#raise on same thread raises a TypeError when passed a non-Exception object
-fails:Thread#raise on same thread raises a TypeError when passed true
-fails:Thread#raise on same thread raises a TypeError when passed false
-fails:Thread#raise on same thread raises a TypeError when passed nil
 fails:Thread#raise on same thread re-raises the rescued exception
-fails:Thread#raise on same thread allows Exception, message, and backtrace parameters
-fails:Thread#raise on same thread raises a RuntimeError when called with no arguments inside rescue
+fails:Thread#raise on a running thread can go unhandled

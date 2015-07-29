@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 
 /*
@@ -23,9 +24,9 @@ import org.jruby.truffle.runtime.RubyContext;
 public class CatchReturnPlaceholderNode extends RubyNode {
 
     @Child private RubyNode body;
-    private final long returnID;
+    private final ReturnID returnID;
 
-    public CatchReturnPlaceholderNode(RubyContext context, SourceSection sourceSection, RubyNode body, long returnID) {
+    public CatchReturnPlaceholderNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
         super(context, sourceSection);
         this.body = body;
         this.returnID = returnID;
@@ -40,7 +41,7 @@ public class CatchReturnPlaceholderNode extends RubyNode {
         return body;
     }
 
-    public long getReturnID() {
+    public ReturnID getReturnID() {
         return returnID;
     }
 

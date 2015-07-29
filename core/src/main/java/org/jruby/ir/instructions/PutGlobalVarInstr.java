@@ -14,7 +14,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutGlobalVarInstr extends Instr implements FixedArityInstr {
+public class PutGlobalVarInstr extends NOperandInstr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
         this(new GlobalVariable(varName), value);
     }

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -24,6 +25,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -44,10 +46,13 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
+import org.jruby.truffle.nodes.core.UnboundMethodNodes.BindNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
+import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -166,7 +171,6 @@ public abstract class ModuleNodes {
         @Specialization(guards = "!isRubyModule(other)")
         public Object isSubclassOfOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
             CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
 
@@ -199,7 +203,6 @@ public abstract class ModuleNodes {
         @Specialization(guards = "!isRubyModule(other)")
         public Object isSubclassOfOrEqualToOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
             CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
 
@@ -236,7 +239,6 @@ public abstract class ModuleNodes {
         @Specialization(guards = "!isRubyModule(other)")
         public Object isSuperclassOfOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
             CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
 
@@ -269,7 +271,6 @@ public abstract class ModuleNodes {
         @Specialization(guards = "!isRubyModule(other)")
         public Object isSuperclassOfOrEqualToOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
             CompilerDirectives.transferToInterpreter();
-
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
 
@@ -321,8 +322,6 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "!isRubyModule(other)")
         public Object compareOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
-            CompilerDirectives.transferToInterpreter();
-
             return nil();
         }
 
@@ -352,8 +351,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject aliasMethod(RubyBasicObject module, String newName, String oldName) {
-            CompilerDirectives.transferToInterpreter();
-
             getModel(module).alias(this, newName, oldName);
             return module;
         }
@@ -464,7 +461,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject attr(VirtualFrame frame, RubyBasicObject module, Object[] names) {
-            CompilerDirectives.transferToInterpreter();
             final boolean setter;
             if (names.length == 2 && names[1] instanceof Boolean) {
                 setter = (boolean) names[1];
@@ -1086,9 +1082,24 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyMethod(method)")
-        public RubyBasicObject defineMethodMethod(RubyBasicObject module, String name, RubyBasicObject method, NotProvided block) {
-            getModel(module).addMethod(this, MethodNodes.getMethod(method).withName(name));
+        @Specialization(guards = "isRubyMethod(methodObject)")
+        public RubyBasicObject defineMethodMethod(RubyBasicObject module, String name, RubyBasicObject methodObject, NotProvided block,
+                @Cached("createCanBindMethodToModuleNode()") CanBindMethodToModuleNode canBindMethodToModuleNode) {
+            final InternalMethod method = MethodNodes.getMethod(methodObject);
+
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
+                CompilerDirectives.transferToInterpreter();
+                final RubyBasicObject declaringModule = method.getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "can't bind singleton method to a different class", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(
+                            "class must be a subclass of " + ModuleNodes.getModel(declaringModule).getName(), this));
+                }
+            }
+
+            getModel(module).addMethod(this, method.withName(name));
             return getSymbol(name);
         }
 
@@ -1128,6 +1139,10 @@ public abstract class ModuleNodes {
 
             getModel(module).addMethod(this, method);
             return getSymbol(name);
+        }
+
+        protected CanBindMethodToModuleNode createCanBindMethodToModuleNode() {
+            return CanBindMethodToModuleNodeGen.create(getContext(), getSourceSection(), null, null);
         }
 
     }
@@ -1199,16 +1214,12 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = { "!isRubyClass(self)", "isRubyModule(from)", "!isRubyClass(from)" })
         public Object initializeCopyModule(RubyBasicObject self, RubyBasicObject from) {
-            CompilerDirectives.transferToInterpreter();
-
             getModel(self).initCopy(from);
             return nil();
         }
 
         @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
         public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
-            CompilerDirectives.transferToInterpreter();
-
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
@@ -1493,8 +1504,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isPrivateMethodDefined(RubyBasicObject module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility().isPrivate();
         }
@@ -1543,8 +1552,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isProtectedMethodDefined(RubyBasicObject module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility().isProtected();
         }
@@ -1594,8 +1601,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject publicInstanceMethod(RubyBasicObject module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
@@ -1655,8 +1660,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isPublicMethodDefined(RubyBasicObject module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility() == Visibility.PUBLIC;
         }
@@ -1706,8 +1709,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject instanceMethod(RubyBasicObject module, String name) {
-            CompilerDirectives.transferToInterpreter();
-
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
@@ -1724,20 +1725,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "private_constant", argumentsAsArray = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
+        @Child NameToJavaStringNode nameToJavaStringNode;
+
         public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject privateConstant(RubyBasicObject module, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
-                    getModel(module).changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), true);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
+        public RubyBasicObject privateConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+            for (Object arg : args) {
+                String name = nameToJavaStringNode.executeToJavaString(frame, arg);
+                getModel(module).changeConstantVisibility(this, name, true);
             }
             return module;
         }
@@ -1746,20 +1745,18 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "public_constant", argumentsAsArray = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
+        @Child NameToJavaStringNode nameToJavaStringNode;
+
         public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
         @Specialization
-        public RubyBasicObject publicConstant(RubyBasicObject module, Object[] args) {
-            CompilerDirectives.transferToInterpreter();
-
-            for (Object name : args) {
-                if (RubyGuards.isRubySymbol(name)) {
-                    getModel(module).changeConstantVisibility(this, SymbolNodes.getString((RubyBasicObject) name), false);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
+        public RubyBasicObject publicConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+            for (Object arg : args) {
+                String name = nameToJavaStringNode.executeToJavaString(frame, arg);
+                getModel(module).changeConstantVisibility(this, name, false);
             }
             return module;
         }
@@ -1944,8 +1941,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyBasicObject setVisibility(VirtualFrame frame, RubyBasicObject module, Object[] names) {
-            CompilerDirectives.transferToInterpreter();
-
             if (names.length == 0) {
                 setCurrentVisibility(visibility);
             } else {

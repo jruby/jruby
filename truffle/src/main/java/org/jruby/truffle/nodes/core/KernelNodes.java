@@ -62,7 +62,7 @@ import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
@@ -684,7 +684,7 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
+            int exitCode = context.getThreadManager().runUntilResult(new BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return process.waitFor();
@@ -825,7 +825,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
-            final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(new BlockingAction<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1603,6 +1603,8 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode dispatch;
         @Child private DoesRespondDispatchHeadNode dispatchIgnoreVisibility;
+        @Child private CallDispatchHeadNode respondToMissingNode;
+        private final ConditionProfile ignoreVisibilityProfile = ConditionProfile.createBinaryProfile();
 
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1625,25 +1627,49 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(name)")
         public boolean doesRespondToString(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
-            if (includeProtectedAndPrivate) {
-                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            final boolean ret;
+
+            if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
+                ret = dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
-                return dispatch.doesRespondTo(frame, name, object);
+                ret = dispatch.doesRespondTo(frame, name, object);
+            }
+
+            if (ret) {
+                return true;
+            } else {
+                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
             }
         }
 
         @Specialization(guards = "isRubySymbol(name)")
         public boolean doesRespondToSymbol(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
-            if (includeProtectedAndPrivate) {
-                return dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
+            final boolean ret;
+
+            if (ignoreVisibilityProfile.profile(includeProtectedAndPrivate)) {
+                ret = dispatchIgnoreVisibility.doesRespondTo(frame, name, object);
             } else {
-                return dispatch.doesRespondTo(frame, name, object);
+                ret = dispatch.doesRespondTo(frame, name, object);
+            }
+
+            if (ret) {
+                return true;
+            } else {
+                return respondToMissing(frame, object, name, includeProtectedAndPrivate);
             }
         }
 
+        private boolean respondToMissing(VirtualFrame frame, Object object, RubyBasicObject name, boolean includeProtectedAndPrivate) {
+            if (respondToMissingNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToMissingNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return respondToMissingNode.callBoolean(frame, object, "respond_to_missing?", null, name, includeProtectedAndPrivate);
+        }
     }
 
-    @CoreMethod(names = "respond_to_missing?", required = 1, optional = 1)
+    @CoreMethod(names = "respond_to_missing?", required = 2)
     public abstract static class RespondToMissingNode extends CoreMethodArrayArgumentsNode {
 
         public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -1772,7 +1798,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public long sleep(NotProvided duration) {
-            // TODO: this should actually be "forever".
             return doSleepMillis(Long.MAX_VALUE);
         }
 
@@ -1827,7 +1852,7 @@ public abstract class KernelNodes {
 
             final long start = System.currentTimeMillis();
 
-            long slept = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Long>() {
+            long slept = context.getThreadManager().runUntilResult(new BlockingAction<Long>() {
                 @Override
                 public Long block() throws InterruptedException {
                     long now = System.currentTimeMillis();
@@ -2076,7 +2101,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = { "to_s", "inspect" })
+    @CoreMethod(names = "to_s")
     public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ClassNode classNode;

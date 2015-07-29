@@ -30,15 +30,15 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
     @Override
     public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
-        assert RubyGuards.isRubyException(exception);
-
         try {
-            final List<Activation> activations = backtrace.getActivations();
+            final List<Activation> activations = backtrace == null ? new ArrayList<Activation>() : backtrace.getActivations();
 
             final ArrayList<String> lines = new ArrayList<>();
 
             if (activations.isEmpty()) {
                 if (exception != null) {
+                    assert RubyGuards.isRubyException(exception);
+
                     lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(exception)).getName()));
                 }
             } else {

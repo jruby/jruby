@@ -15,12 +15,16 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+/**
+ * Caches {@link ModuleOperations#canBindMethodTo} for a method.
+ */
 @NodeChildren({
         @NodeChild("method"),
         @NodeChild("module")
@@ -31,12 +35,12 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract boolean executeCanBindMethodToModule(VirtualFrame frame, InternalMethod method, RubyBasicObject module);
+    public abstract boolean executeCanBindMethodToModule(InternalMethod method, RubyBasicObject module);
 
     @Specialization(
             guards = { "isRubyModule(module)", "method.getDeclaringModule() == declaringModule", "module == cachedModule" },
             limit = "getCacheLimit()")
-    protected boolean canBindMethodToCached(VirtualFrame frame, InternalMethod method, RubyBasicObject module,
+    protected boolean canBindMethodToCached(InternalMethod method, RubyBasicObject module,
             @Cached("method.getDeclaringModule()") RubyBasicObject declaringModule,
             @Cached("module") RubyBasicObject cachedModule,
             @Cached("canBindMethodTo(declaringModule, cachedModule)") boolean canBindMethodTo) {
@@ -44,7 +48,7 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyModule(module)")
-    protected boolean canBindMethodToUncached(VirtualFrame frame, InternalMethod method, RubyBasicObject module) {
+    protected boolean canBindMethodToUncached(InternalMethod method, RubyBasicObject module) {
         final RubyBasicObject declaringModule = method.getDeclaringModule();
         return canBindMethodTo(declaringModule, module);
     }

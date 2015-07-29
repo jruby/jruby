@@ -46,20 +46,19 @@ describe :process_exit, :shared => true do
 end
 
 describe :process_exit!, :shared => true do
-  platform_is_not :windows do
+  with_feature :fork do
     it "exits with the given status" do
       pid = Process.fork { @object.exit!(1) }
       pid, status = Process.waitpid2(pid)
       status.exitstatus.should == 1
     end
 
-    it "exits immediately when called from a thread" do
+    it "exits when called from a thread" do
       pid = Process.fork do
         Thread.new { @object.exit!(1) }.join
 
-        # If the above doesn't instantly terminate the process our exit status
-        # would be "2", leading to the test below to fail.
-        Process.exit!(2)
+        # Do not let the main thread complete
+        sleep
       end
 
       pid, status = Process.waitpid2(pid)

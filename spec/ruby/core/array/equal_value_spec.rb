@@ -6,15 +6,9 @@ describe "Array#==" do
   it_behaves_like :array_eql, :==
 
   it "compares with an equivalent Array-like object using #to_ary" do
-    # FIXME: Proper implementation, commented out due
-    # to mspec bugs (#194 and #195):
-    # obj = mock('array-like')
-    # obj.should_receive(:respond_to?).with(:to_ary).and_return(true)
-    # obj.should_receive(:==).with([1]).and_return(true)
-
-    obj = Object.new
-    def obj.to_ary; [1]; end
-    def obj.==(arg); to_ary == arg; end
+    obj = mock('array-like')
+    obj.should_receive(:respond_to?).at_least(1).with(:to_ary).and_return(true)
+    obj.should_receive(:==).with([1]).at_least(1).and_return(true)
 
     ([1] == obj).should be_true
     ([[1]] == [obj]).should be_true

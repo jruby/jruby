@@ -1026,6 +1026,16 @@ public class CoreLibrary {
         return noMethodError;
     }
 
+    public RubyBasicObject noSuperMethodError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String message = "super called outside of method";
+        RubyBasicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(),
+                StringNodes.createString(context.getCoreLibrary().getStringClass(), message),
+                RubyCallStack.getBacktrace(currentNode));
+        BasicObjectNodes.setInstanceVariable(noMethodError, "@name", nilObject);
+        return noMethodError;
+    }
+
     public RubyBasicObject noMethodErrorOnModule(String name, RubyBasicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);

@@ -144,7 +144,7 @@ public abstract class ThreadNodes {
 
     public static void join(final RubyBasicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        getFields(thread).manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+        getFields(((RubyBasicObject) thread)).manager.runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 getFields(thread).finished.await();
@@ -160,7 +160,7 @@ public abstract class ThreadNodes {
     public static boolean join(final RubyBasicObject thread, final int timeoutInMillis) {
         assert RubyGuards.isRubyThread(thread);
         final long start = System.currentTimeMillis();
-        final boolean joined = getFields(thread).manager.runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+        final boolean joined = getFields(((RubyBasicObject) thread)).manager.runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 long now = System.currentTimeMillis();
@@ -471,50 +471,6 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "raise", required = 1, optional = 1)
-    public abstract static class RaiseNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode initialize;
-
-        public RaiseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            initialize = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
-        }
-
-        @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject raise(VirtualFrame frame, RubyBasicObject thread, RubyBasicObject message, NotProvided unused) {
-            return raise(frame, thread, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
-        }
-
-        @Specialization(guards = "isRubyClass(exceptionClass)")
-        public RubyBasicObject raiseClass(VirtualFrame frame, RubyBasicObject thread, RubyBasicObject exceptionClass, NotProvided message) {
-            return raise(frame, thread, exceptionClass, createEmptyString());
-        }
-
-        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubyString(message)"})
-        public RubyBasicObject raise(VirtualFrame frame, final RubyBasicObject thread, RubyBasicObject exceptionClass, RubyBasicObject message) {
-            final Object exception = ClassNodes.allocate(exceptionClass, this);
-            initialize.call(frame, exception, "initialize", null, message);
-
-            if (!RubyGuards.isRubyException(exception)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("exception class/object expected", this));
-            }
-
-            final RaiseException exceptionWrapper = new RaiseException(exception);
-
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(getCurrentFiberJavaThread(thread), this, new SafepointAction() {
-                @Override
-                public void run(RubyBasicObject currentThread, Node currentNode) {
-                    throw exceptionWrapper;
-                }
-            });
-
-            return nil();
-        }
-
-    }
-
     @CoreMethod(names = "status")
     public abstract static class StatusNode extends CoreMethodArrayArgumentsNode {
 
@@ -652,8 +608,9 @@ public abstract class ThreadNodes {
         public final List<Lock> ownedLocks = new ArrayList<>(); // Always accessed by the same underlying Java thread.
 
         public boolean abortOnException = false;
+        public volatile int priority = 0;
 
-        public InterruptMode interruptMode = InterruptMode.IMMEDIATE;
+        public ThreadNodes.InterruptMode interruptMode = ThreadNodes.InterruptMode.IMMEDIATE;
 
         public ThreadFields(ThreadManager manager, FiberManager fiberManager, RubyBasicObject threadLocals) {
             this.manager = manager;
@@ -661,4 +618,5 @@ public abstract class ThreadNodes {
             this.threadLocals = threadLocals;
         }
     }
+
 }

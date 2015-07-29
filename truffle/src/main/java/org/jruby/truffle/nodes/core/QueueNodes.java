@@ -18,17 +18,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -71,14 +74,7 @@ public abstract class QueueNodes {
         public RubyBasicObject push(RubyBasicObject self, final Object value) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
-                    queue.put(value);
-                    return SUCCESS;
-                }
-            });
-
+            queue.add(value);
             return self;
         }
 
@@ -104,7 +100,7 @@ public abstract class QueueNodes {
         public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Object>() {
+            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -123,6 +119,57 @@ public abstract class QueueNodes {
             }
 
             return value;
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "queue"),
+            @NodeChild(type = RubyNode.class, value = "duration")
+    })
+    public abstract static class ReceiveTimeoutNode extends CoreMethodNode {
+
+        public ReceiveTimeoutNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object receiveTimeout(RubyBasicObject self, int duration) {
+            return receiveTimeout(self, (double) duration);
+        }
+
+        @Specialization
+        public Object receiveTimeout(RubyBasicObject self, double duration) {
+            final BlockingQueue<Object> queue = getQueue(self);
+
+            final long durationInMillis = (long) (duration * 1000.0);
+            final long start = System.currentTimeMillis();
+
+            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
+                @Override
+                public Object block() throws InterruptedException {
+                    long now = System.currentTimeMillis();
+                    long waited = now - start;
+                    if (waited >= durationInMillis) {
+                        // Try again to make sure we at least tried once
+                        final Object result = queue.poll();
+                        if (result == null) {
+                            return false;
+                        } else {
+                            return result;
+                        }
+                    }
+
+                    final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+                    if (result == null) {
+                        return false;
+                    } else {
+                        return result;
+                    }
+                }
+            });
         }
 
     }
@@ -207,7 +254,7 @@ public abstract class QueueNodes {
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

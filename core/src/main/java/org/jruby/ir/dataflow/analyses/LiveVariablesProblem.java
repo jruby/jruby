@@ -11,16 +11,12 @@ import java.util.*;
 
 public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, LiveVariableNode> {
     public static final String NAME = "Live Variables Analysis";
-    private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
 
     public LiveVariablesProblem(IRScope scope) {
-        this(scope, EMPTY_SET);
-    }
-
-    LiveVariablesProblem(IRScope scope, Set<LocalVariable> nonSelfLocalVars) {
         super(DataFlowProblem.DF_Direction.BACKWARD);
-
-        setup(scope, nonSelfLocalVars);
+        alwaysLiveVars = new ArrayList<LocalVariable>();
+        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
+        setup(scope);
     }
 
     public Integer getDFVar(Variable v) {
@@ -64,20 +60,6 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     /**
-     * Add all local variables of interest from the provided bitset.
-     */
-    public Set<LocalVariable> addLiveLocalVars(Set<LocalVariable> list, BitSet living) {
-        for (int j = 0; j < living.size(); j++) {
-            if (!living.get(j)) continue;
-
-            Variable v = getVariable(j);
-            if (v instanceof LocalVariable) list.add((LocalVariable) v);
-        }
-
-        return list;
-    }
-
-    /**
      * Get variables that are live on entry to the cfg.
      * This is the case for closures which access variables from the parent scope.
      *
@@ -85,43 +67,21 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
      *
      * In the code snippet above, 'sum' is live on entry to the closure
      */
-    public List<Variable> getVarsLiveOnScopeEntry() {
-        List<Variable> liveVars = new ArrayList<Variable>();
+    public Collection<LocalVariable> getLocalVarsLiveOnScopeEntry() {
+        List<LocalVariable> liveVars = new ArrayList<LocalVariable>();
         BitSet liveIn = getFlowGraphNode(getScope().getCFG().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (!liveIn.get(i)) continue;
 
             Variable v = getVariable(i);
-            liveVars.add(v);
+            if (v instanceof LocalVariable) {
+                liveVars.add((LocalVariable)v);
+            }
             // System.out.println("variable " + v + " is live on entry!");
         }
 
         return liveVars;
-    }
-
-    /**
-     * Initialize the problem with all vars from the surrounding scope variables.
-     * In closures, vars defined in the closure (or accessed from the surrounding scope)
-     * can be used outside the closure.
-     *
-     *      sum = 0; a.each { |i| sum += i }; return sum
-     *
-     * In the code snippet above, 'sum' is live on entry to and exit from the closure.
-     **/
-    public final void setup(IRScope scope, Collection<LocalVariable> allVars) {
-        // System.out.println("\nCFG:\n" + scope.cfg().toStringGraph());
-        // System.out.println("\nInstrs:\n" + scope.cfg().toStringInstrs());
-
-        alwaysLiveVars = new ArrayList<LocalVariable>();
-        setup(scope);
-
-        // Init vars live on scope exit to vars that always live throughout the scope
-        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
-
-        for (LocalVariable v: allVars) {
-            if (!dfVarExists(v)) addDFVar(v);
-        }
     }
 
     @Override

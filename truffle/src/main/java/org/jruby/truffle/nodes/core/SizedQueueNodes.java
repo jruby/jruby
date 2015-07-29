@@ -25,7 +25,7 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -162,7 +162,7 @@ public abstract class SizedQueueNodes {
         public RubyBasicObject pushBlocking(RubyBasicObject self, final Object value, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     queue.put(value);
@@ -208,7 +208,7 @@ public abstract class SizedQueueNodes {
         public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Object>() {
+            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -298,7 +298,7 @@ public abstract class SizedQueueNodes {
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
             final Condition notFullCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_FULL_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();
