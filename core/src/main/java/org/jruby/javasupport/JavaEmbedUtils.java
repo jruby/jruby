@@ -216,8 +216,8 @@ public class JavaEmbedUtils {
      * compiler).
      */
     public static class InterpretedEvalUnit implements EvalUnit {
-        private Ruby runtime;
-        private Node node;
+        private final Ruby runtime;
+        private final Node node;
 
         protected InterpretedEvalUnit(Ruby runtime, Node node) {
             this.runtime = runtime;
