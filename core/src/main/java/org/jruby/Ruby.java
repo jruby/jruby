@@ -3341,7 +3341,7 @@ public final class Ruby implements Constantizable {
      * release the runtime loader but not otherwise - you should do that manually.
      */
     public void releaseClassLoader() {
-        JRubyClassLoader.close( getJRubyClassLoader() );
+        if ( jrubyClassLoader != null ) getJRubyClassLoader().close();
     }
 
     /**
