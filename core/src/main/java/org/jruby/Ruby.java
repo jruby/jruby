@@ -2930,8 +2930,6 @@ public final class Ruby implements Constantizable {
         InputStream readStream = in;
 
         Script script = null;
-        ScriptAndCode scriptAndCode = null;
-        String className = null;
 
         try {
             // read full contents of file, hash it, and try to load that class first
@@ -2943,12 +2941,12 @@ public final class Ruby implements Constantizable {
             }
             buffer = baos.toByteArray();
             String hash = JITCompiler.getHashForBytes(buffer);
-            className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
+            final String className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
 
             // FIXME: duplicated from ClassCache
             Class contents;
             try {
-                contents = jrubyClassLoader.loadClass(className);
+                contents = getJRubyClassLoader().loadClass(className);
                 if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                     LOG.info("found jitted code for " + filename + " at class: " + className);
                 }
@@ -2974,7 +2972,9 @@ public final class Ruby implements Constantizable {
         // script was not found in cache above, so proceed to compile
         RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
         if (script == null) {
-            scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
+            ScriptAndCode scriptAndCode = tryCompile(scriptNode,
+                new ClassDefiningJRubyClassLoader(getJRubyClassLoader())
+            );
             if (scriptAndCode != null) script = scriptAndCode.script();
         }
 
