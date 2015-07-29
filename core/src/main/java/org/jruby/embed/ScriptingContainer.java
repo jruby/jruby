@@ -66,6 +66,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.ClassCache;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.cli.Options;
@@ -1900,6 +1901,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         LocalContextProvider provider = getProvider();
         if (provider.isRuntimeInitialized()) {
             provider.getRuntime().tearDown(false);
+            // NOTE: Ruby#tearDown does getJRubyClassLoader().tearDown()
+            provider.getRuntime().releaseClassLoader();
         }
         provider.terminate();
     }
