@@ -44,6 +44,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.URLResource;
+import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -65,6 +66,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +79,7 @@ import java.util.regex.Pattern;
  * embedding.
  */
 public class RubyInstanceConfig {
+
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
@@ -670,7 +673,7 @@ public class RubyInstanceConfig {
         if (!new File(jrubyHome).exists() && !environment.containsKey("RUBY")) {
             // the assumption that if JRubyHome is not a regular file that jruby
             // got launched in an embedded fashion
-            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()) );
+            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
         }
     }
 
@@ -684,6 +687,35 @@ public class RubyInstanceConfig {
 
     public void setLoader(ClassLoader loader) {
         this.loader = loader;
+    }
+
+    private final List<String> extraLoadPaths = new LinkedList<>();
+    public List<String> getExtraLoadPaths() {
+        return extraLoadPaths;
+    }
+    private final List<String> extraGemPaths = new LinkedList<>();
+    public List<String> getExtraGemPaths() {
+        return extraGemPaths;
+    }
+    public void addLoader(ClassLoader loader) {
+        addLoader((Object) loader);
+    }
+
+    /**
+     * adds a given "bundle" to jruby. an OSGi bundle and a classloader
+     * both have common set of method but do not share a common interface.
+     * for adding a bundle or classloader to jruby is done via the base URL of
+     * the classloader/bundle. all we need is the 'getResource'/'getResources'
+     * method to do so.
+     * @param bundle
+     */
+    public void addLoader(Object bundle) {
+        // loader can be a ClassLoader or an Bundle from OSGi
+        UriLikePathHelper helper = new UriLikePathHelper(loader);
+        String uri = helper.getUriLikePath();
+        if (uri != null) extraLoadPaths.add(uri);
+        uri = helper.getUriLikePath();
+        if (uri != null) extraGemPaths.add(uri);
     }
 
     public String[] getArgv() {

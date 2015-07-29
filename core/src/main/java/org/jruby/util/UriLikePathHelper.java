@@ -43,19 +43,19 @@ public class UriLikePathHelper {
         }
         return url;
     }
-    
+
     public String getUriLikePath() {
         return createUri("/.jrubydir");
     }
 
-    public String getUriLikePath(String ref) {
-        return createUri(ref);
+    public String getUriLikeGemPath() {
+        return createUri("/specifications/.jrubydir");
     }
-    
+
     String createUri(String ref) {
         URL url = getResource( ref );
         if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + classLoader );
+            return null;
         }
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
