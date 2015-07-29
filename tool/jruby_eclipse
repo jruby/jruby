@@ -24,17 +24,20 @@ ARGV.each { |arg|
 }
 
 bootclasspath = []
+classpath = []
+
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
 bootclasspath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
-  bootclasspath << "#{JRUBY}/truffle/build.eclipse"
-  bootclasspath << "#{JRUBY}/truffle/src/main/ruby"
+  classpath << "#{JRUBY}/truffle/build.eclipse"
+  classpath << "#{JRUBY}/truffle/src/main/ruby"
 end
 
 args = [java]
 args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
 args << "-Xbootclasspath/a:" + bootclasspath.join(':')
+args << "-cp" << classpath.join(':') unless classpath.empty?
 
 args << "-Djruby.home=#{JRUBY}"
 args << "-Djruby.lib=#{JRUBY}/lib"
