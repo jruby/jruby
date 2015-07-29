@@ -3307,7 +3307,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        releaseClassLoader();
+        // NOTE: its intentional that we're not doing releaseClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3332,10 +3332,16 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void releaseClassLoader() {
-        if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().close();
-        }
+    /**
+     * By default {@link #tearDown(boolean)} does not release the class-loader's
+     * resources as threads might be still running accessing the classes/packages
+     * even after the runtime has been torn down.
+     *
+     * This method exists to handle such cases, e.g. with embedded uses we always
+     * release the runtime loader but not otherwise - you should do that manually.
+     */
+    public void releaseClassLoader() {
+        JRubyClassLoader.close( getJRubyClassLoader() );
     }
 
     /**
