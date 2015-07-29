@@ -147,17 +147,6 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         catch (Exception e) {
             if (debug) LOG.debug(e);
         }
-        // if we're on Java 7+ call URLClassLoader#close :
-        try {
-            URLClassLoader.class.getMethod("close").invoke(this);
-        }
-        catch (NoSuchMethodException ex) { /* noop on Java 6 */ }
-        catch (IllegalAccessException ex) {
-            LOG.info("unexpected illegal access: ", ex);
-        }
-        catch (Exception ex) {
-            LOG.debug(ex);
-        }
     }
 
     @Deprecated
