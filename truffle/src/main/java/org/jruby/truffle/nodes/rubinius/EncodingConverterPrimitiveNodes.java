@@ -15,6 +15,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
@@ -51,6 +52,8 @@ public abstract class EncodingConverterPrimitiveNodes {
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
     public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
 
+        private final ConditionProfile nonNullSourceProfile = ConditionProfile.createBinaryProfile();
+
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -59,6 +62,12 @@ public abstract class EncodingConverterPrimitiveNodes {
         public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyBasicObject source,
                                                         RubyBasicObject target, int offset, int size, RubyBasicObject options) {
             throw new UnsupportedOperationException("not implemented");
+        }
+
+        @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
+        public Object primitiveConvertNilSource(RubyBasicObject encodingConverter, RubyBasicObject source,
+                                                        RubyBasicObject target, int offset, int size, int options) {
+            return primitiveConvertHelper(encodingConverter, new ByteList(), source, target, offset, size, options);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
@@ -70,10 +79,18 @@ public abstract class EncodingConverterPrimitiveNodes {
             StringNodes.modify(source);
             StringNodes.clearCodeRange(source);
 
+            return primitiveConvertHelper(encodingConverter, StringNodes.getByteList(source), source, target, offset, size, options);
+        }
+
+        private Object primitiveConvertHelper(RubyBasicObject encodingConverter, ByteList inBytes, RubyBasicObject source,
+                                              RubyBasicObject target, int offset, int size, int options) {
+            // Taken from org.jruby.RubyConverter#primitive_convert.
+
+            final boolean nonNullSource = source != nil();
+
             StringNodes.modify(target);
             StringNodes.clearCodeRange(target);
 
-            final ByteList inBytes = StringNodes.getByteList(source);
             final ByteList outBytes = StringNodes.getByteList(target);
 
             final Ptr inPtr = new Ptr();
@@ -87,8 +104,10 @@ public abstract class EncodingConverterPrimitiveNodes {
             if (size == -1) {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
-                if (size < StringNodes.getByteList(source).getRealSize()) {
-                    size = StringNodes.getByteList(source).getRealSize();
+                if (nonNullSourceProfile.profile(nonNullSource)) {
+                    if (size < StringNodes.getByteList(source).getRealSize()) {
+                        size = StringNodes.getByteList(source).getRealSize();
+                    }
                 }
             }
 
@@ -113,7 +132,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     );
                 }
 
-                outBytes.ensure((int)outputByteEnd);
+                outBytes.ensure((int) outputByteEnd);
 
                 inPtr.p = inBytes.getBegin();
                 outPtr.p = outBytes.getBegin() + offset;
@@ -122,8 +141,10 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
-                StringNodes.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                StringNodes.getByteList(source).setBegin(inPtr.p);
+                if (nonNullSourceProfile.profile(nonNullSource)) {
+                    StringNodes.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                    StringNodes.getByteList(source).setBegin(inPtr.p);
+                }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {

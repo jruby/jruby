@@ -45,8 +45,8 @@ public class AttrReaderMethod extends JavaMethodZero {
     private MethodData methodData;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String variableName) {
-        super(implementationClass, visibility, callConfig, variableName);
+    public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
+        super(implementationClass, visibility, variableName);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {

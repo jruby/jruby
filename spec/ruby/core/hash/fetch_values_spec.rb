@@ -25,7 +25,7 @@ ruby_version_is "2.3" do
         @hash.fetch_values(:a, :z) { |key| "`#{key}' is not found" }.should == [1, "`z' is not found"]
       end
     end
-    
+
     describe "without keys" do
       it "returns an empty Array" do
         @hash.fetch_values.should == []

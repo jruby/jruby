@@ -5,9 +5,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class PushBindingInstr extends Instr implements FixedArityInstr {
+public class PushBindingInstr extends NoOperandInstr implements FixedArityInstr {
     public PushBindingInstr() {
-        super(Operation.PUSH_BINDING, EMPTY_OPERANDS);
+        super(Operation.PUSH_BINDING);
     }
 
     @Override

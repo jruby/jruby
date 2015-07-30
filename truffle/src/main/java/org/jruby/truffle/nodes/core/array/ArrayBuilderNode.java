@@ -348,8 +348,15 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object ensure(Object store, int length) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+            if (length > ((double[]) store).length) {
+                CompilerDirectives.transferToInterpreter();
+                final Object[] newStore = ArrayUtils.box((double[]) store);
+                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+                replace(newNode);
+                newNode.resume(newStore);
+                return newNode.ensure(newStore, length);
+            }
+            return store;
         }
 
         @Override

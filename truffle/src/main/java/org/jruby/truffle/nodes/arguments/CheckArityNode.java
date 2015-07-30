@@ -47,8 +47,8 @@ public class CheckArityNode extends RubyNode {
         final Object[] frameArguments = frame.getArguments();
         final int given;
         final RubyBasicObject keywordArguments;
-        
-        //TODO (MS): Check merge 
+
+        //TODO (MS): Check merge
         if (RubyArguments.isKwOptimized(frame.getArguments())) {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments())
                     - arity.getCountKeywords() - 2;
@@ -84,7 +84,7 @@ public class CheckArityNode extends RubyNode {
 
         if (arity.getRequired() != 0 && given < arity.getRequired()) {
             return false;
-        } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
+        } else if (!arity.hasRest() && given > arity.getRequired() + arity.getOptional()) {
             return false;
         } else {
             return true;

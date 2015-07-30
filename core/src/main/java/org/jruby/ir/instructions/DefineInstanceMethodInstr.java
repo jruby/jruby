@@ -10,12 +10,12 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr {
+public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedArityInstr {
     private final IRMethod method;
 
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public DefineInstanceMethodInstr(IRMethod method) {
-        super(Operation.DEF_INST_METH, EMPTY_OPERANDS);
+        super(Operation.DEF_INST_METH);
 
         this.method = method;
     }

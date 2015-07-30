@@ -14,25 +14,25 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
+public class StoreLocalVarInstr extends TwoOperandInstr implements FixedArityInstr {
     private final IRScope scope;
 
     public StoreLocalVarInstr(IRScope scope, Operand value, LocalVariable lvar) {
-        super(Operation.BINDING_STORE, new Operand[] { value, lvar });
+        super(Operation.BINDING_STORE, value, lvar);
 
         this.scope = scope;
     }
 
 
     public Operand getValue() {
-        return operands[0];
+        return getOperand1();
     }
 
     /** This is the variable that is being stored into in this scope.  This variable
      * doesn't participate in the computation itself.  We just use it as a proxy for
      * its (a) name (b) offset (c) scope-depth. */
     public LocalVariable getLocalVar() {
-        return (LocalVariable) operands[1];
+        return (LocalVariable) getOperand2();
     }
 
     public IRScope getScope() {
@@ -46,7 +46,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
 
     // SSS FIXME: This feels dirty
     public void decrementLVarScopeDepth() {
-        operands[1] = getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1);
+        setOperand2(getLocalVar().cloneForDepth(getLocalVar().getScopeDepth()-1));
     }
 
     /**
@@ -55,7 +55,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
      */
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        operands[0] = getValue().getSimplifiedOperand(valueMap, force);
+        setOperand1(getValue().getSimplifiedOperand(valueMap, force));
     }
 
     @Override

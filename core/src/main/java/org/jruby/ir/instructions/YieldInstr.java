@@ -15,11 +15,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
+public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
     public final boolean unwrapArray;
 
     public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
-        super(Operation.YIELD, result, new Operand[] { block, arg == null ? UndefinedValue.UNDEFINED : arg });
+        super(Operation.YIELD, result, block, arg == null ? UndefinedValue.UNDEFINED : arg);
 
         assert result != null: "YieldInstr result is null";
 
@@ -27,11 +27,11 @@ public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
     }
 
     public Operand getBlockArg() {
-        return operands[0];
+        return getOperand1();
     }
 
     public Operand getYieldArg() {
-        return operands[1];
+        return getOperand2();
     }
 
     @Override

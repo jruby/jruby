@@ -11,6 +11,12 @@ describe "Hash#merge" do
     hash = new_hash(:a => 1, :b => 2)
     new_hash().merge(hash).should == hash
     hash.merge(new_hash()).should == hash
+
+    h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(1 => :b)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
+
+    h = new_hash(1 => :a, 2 => :b).merge(1 => :b, 3 => :c)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
   end
 
   it "sets any duplicate key to the value of block if passed a block" do

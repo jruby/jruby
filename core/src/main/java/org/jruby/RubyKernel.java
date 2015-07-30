@@ -48,7 +48,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
@@ -104,7 +103,7 @@ public class RubyKernel {
         private final CallType callType;
 
         public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
-            super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone);
+            super(implementationClass, Visibility.PRIVATE);
 
             this.callType = callType;
             this.visibility = visibility;

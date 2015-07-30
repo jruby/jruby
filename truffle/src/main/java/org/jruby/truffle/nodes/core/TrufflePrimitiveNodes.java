@@ -15,8 +15,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -28,9 +31,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -333,7 +336,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyString(file)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyString(file)", "isRubyProc(block)" })
         public RubyBasicObject attach(RubyBasicObject file, int line, RubyBasicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
@@ -365,7 +368,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)"})
+        @Specialization(guards = { "isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)" })
         public boolean cExtLoad(RubyBasicObject initFunctions, RubyBasicObject cFlags, RubyBasicObject files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
 
@@ -518,6 +521,22 @@ public abstract class TrufflePrimitiveNodes {
             return CoreLibrary.fitsIntoInteger(value);
         }
 
+    }
+
+    @CoreMethod(names = "synchronized", isModuleFunction = true, required = 1, needsBlock = true)
+    public abstract static class SynchronizedPrimitiveNode extends YieldingCoreMethodNode {
+
+        public SynchronizedPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        // We must not allow to synchronize on boxed primitives.
+        @Specialization(guards = "isRubyProc(block)")
+        public Object synchronize(VirtualFrame frame, RubyBasicObject self, RubyBasicObject block) {
+            synchronized (self) {
+                return yield(frame, block);
+            }
+        }
     }
 
 }

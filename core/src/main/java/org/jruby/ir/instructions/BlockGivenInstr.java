@@ -15,15 +15,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr {
+public class BlockGivenInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     public BlockGivenInstr(Variable result, Operand block) {
-        super(Operation.BLOCK_GIVEN, result, new Operand[] {block});
+        super(Operation.BLOCK_GIVEN, result, block);
 
         assert result != null: "BlockGivenInstr result is null";
     }
 
     public Operand getBlockArg() {
-        return operands[0];
+        return getOperand1();
     }
 
     @Override

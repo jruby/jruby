@@ -95,7 +95,7 @@ public class LoadArgumentsTranslator extends Translator {
             index = 0;
             for (org.jruby.ast.Node arg : node.getPre().children()) {
                 sequence.add(arg.accept(this));
-                ++index;
+                index++;
                 required++;
             }
         }

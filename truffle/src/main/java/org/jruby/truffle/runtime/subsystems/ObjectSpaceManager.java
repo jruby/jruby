@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -105,9 +105,8 @@ public class ObjectSpaceManager {
         // Run in a loop
 
         while (true) {
-            // Leave the global lock and wait on the finalizer queue
-
-            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
+            // Wait on the finalizer queue
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingAction<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();

@@ -250,7 +250,7 @@ public class RubyCallNode extends RubyNode {
                 || method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
             shouldExpand = false;
         } else if (isSplatted
-                || method.getSharedMethodInfo().getArity().allowsMore()) {
+                || method.getSharedMethodInfo().getArity().hasRest()) {
             // TODO: make optimization work if splat arguments are involed
             // the problem is that Markers and keyword args are used when
             // reading splatted args
@@ -384,7 +384,7 @@ public class RubyCallNode extends RubyNode {
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, createString(methodName));
+            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, createString(methodName), false);
 
             if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return nil();

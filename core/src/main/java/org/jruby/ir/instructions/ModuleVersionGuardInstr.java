@@ -16,24 +16,24 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on assuming that an object's metaclass is C (as determined by the version number
  * of C -- where the version number changes every time C's class structure changes).
  */
-public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
+public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedArityInstr {
     private final int expectedVersion;  // The token value that has been assumed
     private final RubyModule module;    // The module whose version we are testing */
 
     public ModuleVersionGuardInstr(RubyModule module, int expectedVersion, Operand candidateObj, Label failurePathLabel) {
-        super(Operation.MODULE_GUARD, new Operand[] { candidateObj, failurePathLabel });
+        super(Operation.MODULE_GUARD, candidateObj, failurePathLabel);
         this.module = module;
         this.expectedVersion = expectedVersion;
     }
 
     /** The object whose metaclass token has to be verified*/
     public Operand getCandidateObject() {
-        return operands[0];
+        return getOperand1();
     }
 
     /** Where to jump if the version assumption fails? */
     public Label getFailurePathLabel() {
-        return (Label) operands[1];
+        return (Label) getOperand2();
     }
 
     // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?

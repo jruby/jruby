@@ -10,6 +10,11 @@ properties( 'tesla.dump.pom' => 'pom.xml',
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
+repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+            :id => 'tb-rubygems-releases' )
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
+            :id => 'rubygems-releases' )
+
 jruby_plugin! :gem, :includeRubygemsInResources => true
 
 # ruby-maven will dump an equivalent pom.xml
@@ -67,7 +72,7 @@ scope :test do
     jar 'org.apache.felix:org.apache.felix.framework:3.2.2'
   end
   profile :id => 'knoplerfish' do
-    repository( :id => :knoplerfish, 
+    repository( :id => :knoplerfish,
                 :url => 'http://www.knopflerfish.org/maven2' )
     jar 'org.knopflerfish:framework:5.1.6'
   end

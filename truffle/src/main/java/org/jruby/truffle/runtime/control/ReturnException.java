@@ -10,16 +10,17 @@
 package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
+import org.jruby.truffle.runtime.ReturnID;
 
 /**
  * Controls an explicit return from a method.
  */
 public final class ReturnException extends ControlFlowException {
 
-    private final long returnID;
+    private final ReturnID returnID;
     private final Object value;
 
-    public ReturnException(long returnID, Object value) {
+    public ReturnException(ReturnID returnID, Object value) {
         this.returnID = returnID;
         this.value = value;
     }
@@ -27,7 +28,7 @@ public final class ReturnException extends ControlFlowException {
     /**
      * Return the return ID of this return that identifies where it intends to return to.
      */
-    public long getReturnID() {
+    public ReturnID getReturnID() {
         return returnID;
     }
 

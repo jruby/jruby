@@ -57,22 +57,19 @@ public abstract class DynamicMethod {
     protected RubyModule protectedClass;
     /** The visibility of this method. */
     protected Visibility visibility;
-    /** The "call configuration" to use for pre/post call logic. */
-    protected CallConfiguration callConfig;
     /** The serial number for this method object, to globally identify it */
     protected long serialNumber;
-    /** Is this a builtin core method or not */
-    protected boolean builtin = false;
+    /** Flags for builtin, notimpl, etc */
+    protected byte flags;
     /** Single-arity native call */
     protected NativeCall nativeCall;
-    /** Alternate-arity NativeCalls */
-    protected NativeCall[] nativeCalls = new NativeCall[10];
     /** The simple, base name this method was defined under. May be null.*/
     protected String name;
-    /** Whether this method is "not implemented". */
-    protected boolean notImplemented = false;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
+
+    private static final int BUILTIN_FLAG = 0x1;
+    private static final int NOTIMPL_FLAG = 0x2;
 
     /**
      * Base constructor for dynamic method handles.
@@ -80,12 +77,11 @@ public abstract class DynamicMethod {
      * @param implementationClass The class to which this method will be
      * immediately bound
      * @param visibility The visibility assigned to this method
-     * @param callConfig The CallConfiguration to use for this method's
      * pre/post invocation logic.
      */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         assert implementationClass != null;
-        init(implementationClass, visibility, callConfig);
+        init(implementationClass, visibility);
     }
 
     /**
@@ -94,11 +90,10 @@ public abstract class DynamicMethod {
      * @param implementationClass The class to which this method will be
      * immediately bound
      * @param visibility The visibility assigned to this method
-     * @param callConfig The CallConfiguration to use for this method's
-     * pre/post invocation logic.
+     * @param name The simple name of this method
      */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
-        this(implementationClass, visibility, callConfig);
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
+        this(implementationClass, visibility);
         this.name = name;
     }
 
@@ -112,13 +107,12 @@ public abstract class DynamicMethod {
 //                this instanceof );
     }
 
-    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+    protected void init(RubyModule implementationClass, Visibility visibility) {
         this.visibility = visibility;
         this.implementationClass = implementationClass;
         // TODO: Determine whether we should perhaps store non-singleton class
         // in the implementationClass
         this.protectedClass = calculateProtectedClass(implementationClass);
-        this.callConfig = callConfig;
         this.serialNumber = implementationClass.getRuntime().getNextDynamicMethodSerial();
     }
 
@@ -132,11 +126,15 @@ public abstract class DynamicMethod {
     }
 
     public boolean isBuiltin() {
-        return builtin;
+        return (flags & BUILTIN_FLAG) == BUILTIN_FLAG;
     }
 
     public void setIsBuiltin(boolean isBuiltin) {
-        this.builtin = isBuiltin;
+        if (isBuiltin) {
+            flags |= BUILTIN_FLAG;
+        } else {
+            flags &= ~BUILTIN_FLAG;
+        }
     }
 
     /**
@@ -381,24 +379,6 @@ public abstract class DynamicMethod {
     public DynamicMethod getRealMethod() {
         return this;
     }
-
-    /**
-     * Get the CallConfiguration used for pre/post logic for this method handle.
-     *
-     * @return The CallConfiguration for this method handle
-     */
-    public CallConfiguration getCallConfig() {
-        return callConfig;
-    }
-
-    /**
-     * Set the CallConfiguration used for pre/post logic for this method handle.
-     *
-     * @param callConfig The CallConfiguration for this method handle
-     */
-    public void setCallConfig(CallConfiguration callConfig) {
-        this.callConfig = callConfig;
-    }
     
     public static class NativeCall {
         private final Class nativeTarget;
@@ -485,7 +465,6 @@ public abstract class DynamicMethod {
      */
     public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
         this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
-        Arrays.fill(nativeCalls, nativeCall);
     }
 
 
@@ -505,18 +484,6 @@ public abstract class DynamicMethod {
     
     public NativeCall getNativeCall() {
         return this.nativeCall;
-    }
-    
-    public NativeCall getNativeCall(int args, boolean block) {
-        if (args == -1 || args > 3) args = 4;
-        if (block) args += 5;
-        return this.nativeCalls[args];
-    }
-    
-    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
-        if (args == -1 || args > 3) args = 4;
-        if (block) args += 5;
-        this.nativeCalls[args] = nativeCall;
     }
 
     /**
@@ -570,7 +537,7 @@ public abstract class DynamicMethod {
      * the feature in question is unsupported (but still having the method defined).
      */
     public boolean isNotImplemented() {
-        return notImplemented;
+        return (flags & NOTIMPL_FLAG) == NOTIMPL_FLAG;
     }
     
     /**
@@ -584,6 +551,34 @@ public abstract class DynamicMethod {
      * Set whether this method is "not implemented".
      */
     public void setNotImplemented(boolean setNotImplemented) {
-        this.notImplemented = setNotImplemented;
+        if (setNotImplemented) {
+            flags |= NOTIMPL_FLAG;
+        } else {
+            flags &= ~NOTIMPL_FLAG;
+        }
+    }
+
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        this(implementationClass, visibility);
+    }
+
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
+        this(implementationClass, visibility, name);
+    }
+
+    @Deprecated
+    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
+        init(implementationClass, visibility);
+    }
+
+    @Deprecated
+    public CallConfiguration getCallConfig() {
+        return CallConfiguration.FrameNoneScopeNone;
+    }
+
+    @Deprecated
+    public void setCallConfig(CallConfiguration callConfig) {
     }
 }

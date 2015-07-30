@@ -25,28 +25,40 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.collections;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * A simple set that uses weak references to ensure that its elements can be garbage collected.
- * See WeakHashMap.
+ *
+ * @see java.util.WeakHashMap
+ * @see java.util.HashSet
  *
  * @author <a href="http://www.cs.auckland.ac.nz/~robert/">Robert Egglestone</a>
  */
-public class WeakHashSet<T> implements Set<T> {
-    private WeakHashMap<T,Object> map;
+public class WeakHashSet<T> implements Set<T>, Cloneable {
+
+    // Dummy value to associate with an Object in the backing Map
+    private static final Object PRESENT = Boolean.TRUE;
+
+    private final WeakHashMap<T, Object> map;
 
     public WeakHashSet() {
-        map = new WeakHashMap<T,Object>();
+        map = new WeakHashMap<T, Object>();
     }
 
     public WeakHashSet(int size) {
-        map = new WeakHashMap<T,Object>(size);
+        map = new WeakHashMap<T, Object>(size);
     }
 
     public boolean add(T o) {
-        Object previousValue = map.put(o, null);
-        return previousValue == null;
+        return map.put(o, PRESENT) == null;
+    }
+
+    public boolean remove(Object o) {
+        return map.remove(o) == PRESENT;
     }
 
     public Iterator<T> iterator() {
@@ -61,47 +73,84 @@ public class WeakHashSet<T> implements Set<T> {
         return map.isEmpty();
     }
 
-    public boolean contains(Object o) {
-        return map.containsKey(o);
-    }
-
-    public boolean remove(Object o) {
-        boolean contains = contains(o);
-        map.remove(o);
-        return contains;
-    }
-
-    public boolean removeAll(Collection collection) {
-        return map.keySet().removeAll(collection);
-    }
-
-    public boolean retainAll(Collection collection) {
-        return map.keySet().retainAll(collection);
-    }
-
     public void clear() {
         map.clear();
     }
 
-    public Object[] toArray() {
-        return map.keySet().toArray();
+    public boolean contains(Object o) {
+        return map.containsKey(o);
     }
 
-    public boolean containsAll(Collection arg0) {
-        return map.keySet().containsAll(arg0);
+    public boolean containsAll(Collection<?> coll) {
+        return map.keySet().containsAll(coll);
     }
 
-    public boolean addAll(Collection<? extends T> arg0) {
+    public boolean removeAll(Collection<?> coll) {
+        return map.keySet().removeAll(coll);
+    }
+
+    public boolean retainAll(Collection<?> coll) {
+        return map.keySet().retainAll(coll);
+    }
+
+    public boolean addAll(Collection<? extends T> coll) {
         boolean added = false;
-        for (T i: arg0) {
+        for (T i: coll) {
             add(i);
             added = true;
         }
         return added;
     }
 
-    public <T> T[] toArray(T[] arg0) {
-        return map.keySet().toArray(arg0);
+    public Object[] toArray() {
+        return map.keySet().toArray();
+    }
+
+    public <T> T[] toArray(final T[] arr) {
+        return map.keySet().toArray(arr);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if ( o == this ) return true;
+        if ( o instanceof Set ) {
+            final Set that = (Set) o;
+            if ( that.size() != this.size() ) return false;
+            try {
+                return containsAll(that);
+            }
+            catch (ClassCastException ignore)   { /* return false; */ }
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 11 * map.hashCode();
+    }
+
+    @Override
+    public WeakHashSet<T> clone() {
+        //WeakHashSet<T> newSet = (WeakHashSet<T>) super.clone();
+        //newSet.map = (WeakHashMap<T, Object>) map.clone();
+        WeakHashSet<T> newSet = new WeakHashSet<T>(map.size());
+        newSet.map.putAll(this.map);
+        return newSet;
+    }
+
+    @Override
+    public String toString() {
+        Iterator<T> it = iterator();
+        if ( ! it.hasNext() ) return "[]";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        while (true) {
+            final T e = it.next();
+            sb.append(e == this ? "(this Collection)" : e);
+            if ( ! it.hasNext() ) return sb.append(']').toString();
+            sb.append(',').append(' ');
+        }
     }
 
 }

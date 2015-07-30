@@ -19,6 +19,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
@@ -30,6 +31,11 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 
+/**
+ * Caches {@link ModuleOperations#lookupConstant}
+ * and checks visibility.
+ * The {@link LexicalScope} is constant here.
+ */
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
 

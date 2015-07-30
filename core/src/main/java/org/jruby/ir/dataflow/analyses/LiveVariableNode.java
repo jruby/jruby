@@ -57,6 +57,14 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     in.set(problem.getDFVar(v));
                 }
             }
+
+            // If this scope's binding has escaped, all variables
+            // should be considered live on exit from the scope.
+            if (problem.getScope().bindingHasEscaped()) {
+                for (Variable x: problem.getNonSelfLocalVars()) {
+                    in.set(problem.getDFVar(x));
+                }
+            }
         }
         // System.out.println("Init state for BB " + basicBlock.getID() + " is " + toString());
     }
@@ -107,6 +115,15 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                 for (Variable x: problem.getNonSelfLocalVars()) {
                     living.set(problem.getDFVar(x));
+                }
+            } else {
+                // Variables that belong to outer scopes should always
+                // be considered live since they can be accessed downstream
+                // of this call.
+                for (Variable x: problem.getNonSelfLocalVars()) {
+                    if (x instanceof LocalVariable && ((LocalVariable)x).getScopeDepth() > 0) {
+                        living.set(problem.getDFVar(x));
+                    }
                 }
             }
         }
@@ -207,18 +224,19 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 if (living.get(dv)) {
                     living.clear(dv);
                     // System.out.println("NO! LIVE result:" + v);
-                } else if (i.canBeDeleted(scope)) {
-                    // System.out.println("YES!");
+                } else if (i.isDeletable()) {
+                    // System.out.println("YES! (result)");
                     i.markDead();
                     it.remove();
                 } else {
                     // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }
-            } else if (i.canBeDeleted(scope)) {
+            } else if (i.isDeletable()) {
+                 // System.out.println("YES! (non-result)");
                  i.markDead();
                  it.remove();
             } else {
-                // System.out.println("IGNORING! No result!");
+                // System.out.println("NO! has side effects! Op is: " + i.getOperation());
             }
 
             if (i instanceof ClosureAcceptingInstr) {
@@ -227,6 +245,15 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: problem.getNonSelfLocalVars()) {
                         living.set(problem.getDFVar(x));
+                    }
+                } else {
+                    // Variables that belong to outer scopes should always
+                    // be considered live since they can be accessed downstream
+                    // of this call.
+                    for (Variable x: problem.getNonSelfLocalVars()) {
+                        if (x instanceof LocalVariable && ((LocalVariable)x).getScopeDepth() > 0) {
+                            living.set(problem.getDFVar(x));
+                        }
                     }
                 }
             }

@@ -67,7 +67,13 @@ public abstract class FiberNodes {
             public void run() {
                 try {
                     final Object[] args = waitForResume(fiber);
-                    final Object result = ProcNodes.rootCall(block, args);
+                    final Object result;
+                    try {
+                        result = ProcNodes.rootCall(block, args);
+                    } finally {
+                        // Make sure that other fibers notice we are dead before they gain control back
+                        getFields(fiber).alive = false;
+                    }
                     resume(fiber, getFields(fiber).lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     assert !getFields(fiber).isRootFiber;
@@ -96,16 +102,15 @@ public abstract class FiberNodes {
     public static void start(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).thread = Thread.currentThread();
+        fiber.getContext().getThreadManager().initializeCurrentThread(getFields(fiber).rubyThread);
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).registerFiber(fiber);
         fiber.getContext().getSafepointManager().enterThread();
-        fiber.getContext().getThreadManager().enterGlobalLock(getFields(fiber).rubyThread);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         getFields(fiber).alive = false;
-        fiber.getContext().getThreadManager().leaveGlobalLock();
         fiber.getContext().getSafepointManager().leaveThread();
         ThreadNodes.getFiberManager(getFields(fiber).rubyThread).unregisterFiber(fiber);
         getFields(fiber).thread = null;
@@ -124,7 +129,7 @@ public abstract class FiberNodes {
     private static Object[] waitForResume(final RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final FiberMessage message = fiber.getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<FiberMessage>() {
+        final FiberMessage message = fiber.getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 return getFields(fiber).messageQueue.take();
@@ -177,10 +182,8 @@ public abstract class FiberNodes {
     }
 
     public static boolean isAlive(RubyBasicObject fiber) {
-        // TODO CS 2-Feb-15 race conditions (but everything in JRuby+Truffle is currently a race condition)
-        // TODO CS 2-Feb-15 should just be alive?
         assert RubyGuards.isRubyFiber(fiber);
-        return getFields(fiber).alive || !getFields(fiber).messageQueue.isEmpty();
+        return getFields(fiber).alive;
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {

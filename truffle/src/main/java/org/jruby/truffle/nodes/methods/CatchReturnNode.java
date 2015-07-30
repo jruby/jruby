@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ReturnException;
 
@@ -22,12 +23,12 @@ import org.jruby.truffle.runtime.control.ReturnException;
 public class CatchReturnNode extends RubyNode {
 
     @Child private RubyNode body;
-    private final long returnID;
+    private final ReturnID returnID;
 
     private final BranchProfile returnProfile = BranchProfile.create();
     private final BranchProfile returnToOtherMethodProfile = BranchProfile.create();
 
-    public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, long returnID) {
+    public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, ReturnID returnID) {
         super(context, sourceSection);
         this.body = body;
         this.returnID = returnID;

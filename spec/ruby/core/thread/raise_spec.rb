@@ -9,6 +9,23 @@ describe "Thread#raise" do
     lambda {t.raise("Kill the thread")}.should_not raise_error
     lambda {t.value}.should_not raise_error
   end
+
+  it "has backtrace" do
+    backtrace = nil
+
+    thread = Thread.new do
+      begin
+        sleep
+      rescue => e
+        backtrace = e.backtrace
+      end
+    end
+    sleep 1
+    thread.raise
+    thread.join
+    backtrace.should_not be_nil
+  end
+
 end
 
 describe "Thread#raise on a sleeping thread" do

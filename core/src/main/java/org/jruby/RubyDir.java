@@ -84,6 +84,8 @@ public class RubyDir extends RubyObject {
 
     private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
+    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
+
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -308,7 +310,7 @@ public class RubyDir extends RubyObject {
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
         String realPath = null;
         String oldCwd = runtime.getCurrentDirectory();
-        if (adjustedPath.startsWith("uri:")){
+        if (PROTOCOL_PATTERN.matcher(adjustedPath).matches()) {
             realPath = adjustedPath;
         }
         else {

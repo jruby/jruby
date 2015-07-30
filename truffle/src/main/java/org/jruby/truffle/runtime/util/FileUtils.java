@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.util;
 
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
@@ -23,7 +23,7 @@ public class FileUtils {
     public static byte[] readAllBytesInterruptedly(RubyContext context, String file) {
         final Path path = Paths.get(file);
 
-        return context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<byte[]>() {
+        return context.getThreadManager().runUntilResult(new BlockingAction<byte[]>() {
             @Override
             public byte[] block() throws InterruptedException {
                 try {

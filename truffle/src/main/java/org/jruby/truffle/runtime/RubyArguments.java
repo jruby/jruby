@@ -69,7 +69,7 @@ public final class RubyArguments {
     }
 
     public static Object[] extractUserArgumentsWithUnshift(Object first, Object[] arguments) {
-        final Object[] range = ArrayUtils.extractRange(arguments, BLOCK_INDEX, arguments.length);
+        final Object[] range = ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT - 1, arguments.length);
         range[0] = first;
         return range;
     }

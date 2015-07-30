@@ -53,9 +53,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,8 +68,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
 /**
@@ -1756,8 +1752,6 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
 
-    public static final String JIT_CODE_CACHE = Options.JIT_CODECACHE.load();
-
     public static final boolean REFLECTED_HANDLES = Options.REFLECTED_HANDLES.load();
 
     public static final boolean NO_UNWRAP_PROCESS_STREAMS = Options.PROCESS_NOUNWRAP.load();
@@ -1947,4 +1941,5 @@ public class RubyInstanceConfig {
         return false;
     }
 
+    @Deprecated public static final String JIT_CODE_CACHE = "";
 }

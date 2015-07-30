@@ -54,7 +54,7 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
-    
+
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
 
@@ -97,10 +97,10 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_CONSTANTS = bool(INVOKEDYNAMIC, "invokedynamic.cache.constants", true, "Use invokedynamic to load constants.");
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_LITERALS = bool(INVOKEDYNAMIC, "invokedynamic.cache.literals", true, "Use invokedynamic to load literals.");
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_IVARS = bool(INVOKEDYNAMIC, "invokedynamic.cache.ivars", true, "Use invokedynamic to get/set instance variables.");
-    public static final Option<Boolean> INVOKEDYNAMIC_CLASS_VALUES = bool(INVOKEDYNAMIC, "invokedynamic.class.values", false, "Use ClassValue to store class-specific data.");
+    public static final Option<Boolean> INVOKEDYNAMIC_CLASS_VALUES = bool(INVOKEDYNAMIC, "invokedynamic.class.values", true, "Use ClassValue to store class-specific data.");
     public static final Option<Integer> INVOKEDYNAMIC_GLOBAL_MAXFAIL = integer(INVOKEDYNAMIC, "invokedynamic.global.maxfail", 100, "Maximum global cache failures after which to use slow path.");
     public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
-    
+
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
     public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_METHODS_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
     public static final Option<Integer> JIT_MAXSIZE = integer(JIT, "jit.maxsize", Constants.JIT_MAX_SIZE_LIMIT, "Set the max size (in IR instructions) for a method to be eligible to JIT.");
@@ -109,10 +109,9 @@ public class Options {
     public static final Option<Boolean> JIT_DUMPING = bool(JIT, "jit.dumping", false, "Enable stdout dumping of JITed bytecode.");
     public static final Option<Integer> JIT_LOGEVERY = integer(JIT, "jit.logEvery", 0, "Log a message every n methods JIT compiled.");
     public static final Option<String> JIT_EXCLUDE = string(JIT, "jit.exclude", "", "Exclude methods from JIT. <ModClsName or '-'>::<method_name>, comma-delimited.");
-    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", JIT_THRESHOLD.load() != 0, "Run the JIT compiler in a background thread. Off if jit.threshold=0.");
-    
+
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
@@ -169,7 +168,7 @@ public class Options {
     public static final Option<Integer> FFI_COMPILE_THRESHOLD = integer(NATIVE, "ffi.compile.threshold", 100, "Number of FFI invocations before generating a bytecode stub.");
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
     public static final Option<Boolean> FFI_COMPILE_REIFY = bool(NATIVE, "ffi.compile.reify", false, "Reify FFI compiled classes.");
-    
+
     public static final Option<Integer> THREADPOOL_MIN = integer(THREADPOOL, "thread.pool.min", 0, "The minimum number of threads to keep alive in the pool.");
     public static final Option<Integer> THREADPOOL_MAX = integer(THREADPOOL, "thread.pool.max", Integer.MAX_VALUE, "The maximum number of threads to allow in the pool.");
     public static final Option<Integer> THREADPOOL_TTL = integer(THREADPOOL, "thread.pool.ttl", 60, "The maximum number of seconds to keep alive an idle thread.");
@@ -227,7 +226,7 @@ public class Options {
     public static final Option<Boolean> AOT_LOADCLASSES = bool(JAVA_INTEGRATION, "aot.loadClasses", false, "Look for .class before .rb to load AOT-compiled code");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
-    
+
     public static final Option<Boolean> CLI_AUTOSPLIT = bool(CLI, "cli.autosplit", false, "Split $_ into $F for -p or -n. Same as -a.");
     public static final Option<Boolean> CLI_DEBUG = bool(CLI, "cli.debug", false, "Enable debug mode logging. Same as -d.");
     public static final Option<Boolean> CLI_PROCESS_LINE_ENDS = bool(CLI, "cli.process.line.ends", false, "Enable line ending processing. Same as -l.");
@@ -265,43 +264,43 @@ public class Options {
     // After PROPERTIES so it doesn't show up in --properties
     @Deprecated
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");
-    
+
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, options, defval, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static Option<String> string(Category category, String name, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static Option<String> string(Category category, String name, String[] options, String description) {
         Option<String> option = Option.string("jruby", name, category, options, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static Option<String> string(Category category, String name, String description) {
         Option<String> option = Option.string("jruby", name, category, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static Option<Boolean> bool(Category category, String name, Boolean defval, String description) {
         Option<Boolean> option = Option.bool("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static Option<Integer> integer(Category category, String name, Integer defval, String description) {
         Option<Integer> option = Option.integer("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
     }
-    
+
     private static <T extends Enum<T>> Option<T> enumeration(Category category, String name, Class<T> enumClass, T defval, String description) {
         Option<T> option = Option.enumeration("jruby", name, category, defval, description);
         _loadedOptions.add(option);
@@ -355,4 +354,6 @@ public class Options {
         return Collections.unmodifiableSet(propertyNames);
     }
 
+    @Deprecated
+    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
 }
