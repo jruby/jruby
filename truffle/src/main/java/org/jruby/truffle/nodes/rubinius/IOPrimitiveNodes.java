@@ -564,8 +564,8 @@ public abstract class IOPrimitiveNodes {
         public int accept(VirtualFrame frame, RubyBasicObject io) {
             final int fd = getDescriptor(io);
 
-            final IntByReference addressLength = new IntByReference(16);
-            final long address = UnsafeHolder.U.allocateMemory(addressLength.intValue());
+            final int[] addressLength = {16};
+            final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
 
             final int newFd;
 
