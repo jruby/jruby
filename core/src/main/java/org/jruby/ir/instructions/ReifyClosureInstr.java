@@ -20,15 +20,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
-public class ReifyClosureInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class ReifyClosureInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     public ReifyClosureInstr(Variable result, Variable source) {
-        super(Operation.REIFY_CLOSURE, result, new Operand[] { source });
+        super(Operation.REIFY_CLOSURE, result, source);
 
         assert result != null: "ReceiveClosureInstr result is null";
     }
 
     public Variable getSource() {
-        return (Variable) getOperands()[0];
+        return (Variable) getOperand1();
     }
 
     @Override

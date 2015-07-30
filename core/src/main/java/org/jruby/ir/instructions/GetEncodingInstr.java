@@ -12,11 +12,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetEncodingInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class GetEncodingInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
     private final Encoding encoding;
 
     public GetEncodingInstr(Variable result, Encoding encoding) {
-        super(Operation.GET_ENCODING, result, EMPTY_OPERANDS);
+        super(Operation.GET_ENCODING, result);
 
         this.encoding = encoding;
     }

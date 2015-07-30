@@ -20,7 +20,7 @@ import org.jruby.runtime.opto.Invalidator;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class InheritanceSearchConstInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     String   constName;
     private final boolean  noPrivateConsts;
 
@@ -28,7 +28,7 @@ public class InheritanceSearchConstInstr extends NOperandResultBaseInstr impleme
     private volatile transient ConstantCache cache;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
-        super(Operation.INHERITANCE_SEARCH_CONST, result, new Operand[] { currentModule });
+        super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
 
@@ -37,7 +37,7 @@ public class InheritanceSearchConstInstr extends NOperandResultBaseInstr impleme
     }
 
     public Operand getCurrentModule() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     public String getConstName() {

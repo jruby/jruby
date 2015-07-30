@@ -18,20 +18,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   * Array + Splat ([1,2,3], *[5,6,7])
 // This used to be an operand, but since to_a can be called as part of
 // building the args-cat/push value, this is not really side-effect free.
-public class BuildCompoundArrayInstr extends NOperandResultBaseInstr {
+public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
     private boolean isArgsPush;
 
     public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {
-        super(Operation.BUILD_COMPOUND_ARRAY, result, new Operand[] { a1, a2 });
+        super(Operation.BUILD_COMPOUND_ARRAY, result, a1, a2);
         this.isArgsPush = isArgsPush;
     }
 
     public Operand getAppendingArg() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     public Operand getAppendedArg() {
-        return getOperands()[1];
+        return getOperand2();
     }
 
     public boolean isArgsPush() { return isArgsPush; }

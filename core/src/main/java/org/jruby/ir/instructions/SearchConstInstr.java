@@ -16,13 +16,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
-import java.util.Map;
-
 // Const search:
 // - looks up lexical scopes
 // - then inheritance hierarcy if lexical search fails
 // - then invokes const_missing if inheritance search fails
-public class SearchConstInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class SearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final String   constName;
     private final boolean  noPrivateConsts;
 
@@ -30,7 +28,7 @@ public class SearchConstInstr extends NOperandResultBaseInstr implements FixedAr
     private volatile transient ConstantCache cache;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
-        super(Operation.SEARCH_CONST, result, new Operand[] { startingScope });
+        super(Operation.SEARCH_CONST, result, startingScope);
 
         assert result != null: "SearchConstInstr result is null";
 
@@ -40,7 +38,7 @@ public class SearchConstInstr extends NOperandResultBaseInstr implements FixedAr
 
 
     public Operand getStartingScope() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     public String getConstName() {

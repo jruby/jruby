@@ -16,13 +16,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.ir.IRFlags;
 
-public class BuildLambdaInstr extends NOperandResultBaseInstr implements FixedArityInstr, ClosureAcceptingInstr {
+public class BuildLambdaInstr extends OneOperandResultBaseInstr implements FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
     private final String file;
     private final int line;
 
     public BuildLambdaInstr(Variable result, Operand lambdaBody, String file, int line) {
-        super(Operation.LAMBDA, result, new Operand[] { lambdaBody });
+        super(Operation.LAMBDA, result, lambdaBody);
 
         this.file = file;
         this.line = line;
@@ -49,11 +49,11 @@ public class BuildLambdaInstr extends NOperandResultBaseInstr implements FixedAr
     }
 
     public Operand getLambdaBody() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     public Operand getClosureArg() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     @Override

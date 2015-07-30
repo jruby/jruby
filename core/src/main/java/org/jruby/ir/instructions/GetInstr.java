@@ -6,11 +6,11 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents result = source.ref or result = source where source is not a stack variable
-public abstract class GetInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public abstract class GetInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final String  ref;
 
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
-        super(op, result, new Operand[] { source });
+        super(op, result, source);
 
         assert result != null: "" + getClass().getSimpleName() + " result is null";
 
@@ -22,7 +22,7 @@ public abstract class GetInstr extends NOperandResultBaseInstr implements FixedA
     }
 
     public Operand getSource() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     @Override

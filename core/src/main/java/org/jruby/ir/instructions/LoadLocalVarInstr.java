@@ -14,11 +14,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class LoadLocalVarInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRScope scope;
 
     public LoadLocalVarInstr(IRScope scope, TemporaryLocalVariable result, LocalVariable lvar) {
-        super(Operation.BINDING_LOAD, result, new Operand[] { lvar });
+        super(Operation.BINDING_LOAD, result, lvar);
 
         assert result != null: "LoadLocalVarInstr result is null";
 
@@ -29,7 +29,7 @@ public class LoadLocalVarInstr extends NOperandResultBaseInstr implements FixedA
      * computation itself.  We just use it as a proxy for its (a) name (b) offset (c) scope-depth.
      */
     public LocalVariable getLocalVar() {
-        return (LocalVariable) getOperands()[0];
+        return (LocalVariable) getOperand1();
     }
 
     public IRScope getScope() {

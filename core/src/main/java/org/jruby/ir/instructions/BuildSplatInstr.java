@@ -14,13 +14,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents a splat value in Ruby code: *array
-public class BuildSplatInstr extends NOperandResultBaseInstr {
+public class BuildSplatInstr extends OneOperandResultBaseInstr {
     public BuildSplatInstr(Variable result, Operand array) {
-        super(Operation.BUILD_SPLAT, result, new Operand[] { array });
+        super(Operation.BUILD_SPLAT, result, array);
     }
 
     public Operand getArray() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     @Override

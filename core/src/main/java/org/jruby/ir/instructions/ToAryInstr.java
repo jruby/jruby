@@ -17,15 +17,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     public ToAryInstr(Variable result, Operand array) {
-        super(Operation.TO_ARY, result, new Operand[] { array });
+        super(Operation.TO_ARY, result, array);
 
         assert result != null: "ToAryInstr result is null";
     }
 
     public Operand getArray() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     @Override

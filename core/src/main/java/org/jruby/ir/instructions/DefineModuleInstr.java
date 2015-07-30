@@ -14,11 +14,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineModuleInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class DefineModuleInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRModuleBody newIRModuleBody;
 
     public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {
-        super(Operation.DEF_MODULE, result, new Operand[] { container });
+        super(Operation.DEF_MODULE, result, container);
 
         assert result != null : "DefineModuleInstr result is null";
 
@@ -31,7 +31,7 @@ public class DefineModuleInstr extends NOperandResultBaseInstr implements FixedA
     }
 
     public Operand getContainer() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     @Override

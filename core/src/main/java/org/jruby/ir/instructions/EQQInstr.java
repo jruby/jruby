@@ -14,19 +14,19 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class EQQInstr extends NOperandResultBaseInstr implements FixedArityInstr {
+public class EQQInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
     public EQQInstr(Variable result, Operand v1, Operand v2) {
-        super(Operation.EQQ, result, new Operand[] {v1, v2});
+        super(Operation.EQQ, result, v1, v2);
 
         assert result != null: "EQQInstr result is null";
     }
 
     public Operand getArg1() {
-        return getOperands()[0];
+        return getOperand1();
     }
 
     public Operand getArg2() {
-        return getOperands()[1];
+        return getOperand2();
     }
 
     @Override
