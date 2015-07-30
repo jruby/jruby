@@ -6,14 +6,14 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',
-            'jruby.version' => '@project.version@' )
+            'jruby.version' => '9.0.0.0' )
 
-pom 'org.jruby:jruby', '${jruby.version}'
+pom 'org.jruby:jruby', '@project.version@'
 
 repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'tb-rubygems-releases' )
 repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-            :id => 'rubygems-releases' )
+            :id => 'takari-rubygems-releases' )
 
 jruby_plugin! :gem, :includeRubygemsInResources => true
 
