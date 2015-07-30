@@ -1918,7 +1918,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"size >= 0", "isRubyProc(block)"})
         public Object initialize(VirtualFrame frame, RubyBasicObject array, int size, NotProvided defaultValue, RubyBasicObject block) {
-            Object store = arrayBuilder.start();
+            Object store = arrayBuilder.start(size);
 
             int count = 0;
             int n = 0;
@@ -1928,7 +1928,6 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    arrayBuilder.ensure(store, n + 1);
                     store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
                 }
             } finally {
