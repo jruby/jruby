@@ -659,7 +659,7 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) {
                 throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
             }
-            rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
+            rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyInteger) end).getLongValue() - 1);
         } else {
             rangeEnd = end;
         }
