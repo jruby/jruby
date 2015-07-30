@@ -1906,13 +1906,23 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
+     * add the given classloader to the LOAD_PATH and GEM_PATH
+     * @param classloader
+     */
+    public void addClassLoader(ClassLoader classLoader) {
+        getProvider().getRubyInstanceConfig().addLoader(classLoader);
+    }
+
+    /**
      * add the given classloader to the LOAD_PATH
      * @param classloader
      */
+    @Deprecated
     public void addLoadPath(ClassLoader classloader) {
         addLoadPath(createUri(classloader, "/.jrubydir"));
     }
 
+    @Deprecated
     protected void addLoadPath(String uri) {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
     }
@@ -1921,6 +1931,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * add the given classloader to the GEM_PATH
      * @param classloader
      */
+    @Deprecated
     public void addGemPath(ClassLoader classloader) {
         addGemPath(createUri(classloader, "/specifications/.jrubydir"));
     }

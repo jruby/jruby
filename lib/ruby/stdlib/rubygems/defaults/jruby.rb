@@ -109,7 +109,7 @@ class Gem::Specification
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
       JRuby.runtime.instance_config.extra_gem_paths.each do |path|
-        stuff += File.join(path, 'specifications')
+        stuff << File.join(path, 'specifications')
       end
       stuff += JRuby::Util.classloader_resources('specifications')
       # some classloader return directory info. use only the "protocols"

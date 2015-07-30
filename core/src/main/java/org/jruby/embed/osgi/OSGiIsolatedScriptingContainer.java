@@ -1,11 +1,14 @@
 package org.jruby.embed.osgi;
 
+import java.io.IOException;
 import java.net.URL;
+import java.util.Enumeration;
 
 import org.jruby.embed.IsolatedScriptingContainer;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 
+import org.jruby.util.GetResources;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -62,8 +65,9 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
         return bundle;
     }
 
+    @Deprecated
     private String createUri(Bundle cl, String ref) {
-        URL url = cl.getResource( ref );
+        URL url = cl.getResource(ref);
         if ( url == null && ref.startsWith( "/" ) ) {
             url = cl.getResource( ref.substring( 1 ) );
         }
@@ -76,6 +80,7 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
      * add the classloader from the given bundle to the LOAD_PATH
      * @param bundle
      */
+    @Deprecated
     public void addBundleToLoadPath(Bundle bundle) {
         addLoadPath(createUri(bundle, "/.jrubydir"));
     }
@@ -86,25 +91,64 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
      * 
      * @param symbolicName
      */
+    @Deprecated
     public void addBundleToLoadPath(String symbolicName) {
         addBundleToLoadPath(toBundle(symbolicName));
+    }
+
+    /**
+     * add the classloader from the given bundle to the LOAD_PATH and the GEM_PATH
+     * using the bundle symbolic name
+     * @param symbolicName
+     */
+    public void addBundle(String symbolicName) {
+        addBundle(toBundle(symbolicName));
+    }
+
+    /**
+     * add the classloader from the given bundle to the LOAD_PATH and the GEM_PATH
+     * @param bundle
+     */
+    public void addBundle(Bundle bundle) {
+        getProvider().getRubyInstanceConfig().addLoader(new BundleGetResources(bundle));
     }
 
     /**
      * add the classloader from the given bundle to the GEM_PATH
      * @param bundle
      */
+    @Deprecated
     public void addBundleToGemPath(Bundle bundle) {
         addGemPath(createUri(bundle, "/specifications/.jrubydir"));
     }
- 
+
     /**
      * add the classloader from the given bundle to the GEM_PATH
      * using the bundle symbolic name
      * 
      * @param symbolicName
      */
+    @Deprecated
     public void addBundleToGemPath(String symbolicName) {
         addBundleToGemPath(toBundle(symbolicName));
+    }
+
+    static class BundleGetResources implements GetResources {
+
+        private final Bundle bundle;
+
+        BundleGetResources(Bundle bundle) {
+            this.bundle = bundle;
+        }
+
+        @Override
+        public URL getResource(String path) {
+            return bundle.getResource(path);
+        }
+
+        @Override
+        public Enumeration<URL> getResources(String path) throws IOException {
+            return bundle.getResources(path);
+        }
     }
 }

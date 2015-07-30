@@ -36,8 +36,10 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
+import org.jruby.util.ClassLoaderGetResourses;
 import org.jruby.util.ClasspathLauncher;
 import org.jruby.util.FileResource;
+import org.jruby.util.GetResources;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
@@ -693,12 +695,20 @@ public class RubyInstanceConfig {
     public List<String> getExtraLoadPaths() {
         return extraLoadPaths;
     }
+
     private final List<String> extraGemPaths = new LinkedList<>();
     public List<String> getExtraGemPaths() {
         return extraGemPaths;
     }
+
+    /**
+     * adds a given ClassLoader to jruby. i.e. adds the root of
+     * the classloader to the LOAD_PATH so embedded ruby scripts
+     * can be found. dito for embedded gems.
+     * @param loader
+     */
     public void addLoader(ClassLoader loader) {
-        addLoader((Object) loader);
+        addLoader(new ClassLoaderGetResourses(loader));
     }
 
     /**
@@ -709,12 +719,12 @@ public class RubyInstanceConfig {
      * method to do so.
      * @param bundle
      */
-    public void addLoader(Object bundle) {
+    public void addLoader(GetResources bundle) {
         // loader can be a ClassLoader or an Bundle from OSGi
-        UriLikePathHelper helper = new UriLikePathHelper(loader);
+        UriLikePathHelper helper = new UriLikePathHelper(bundle);
         String uri = helper.getUriLikePath();
         if (uri != null) extraLoadPaths.add(uri);
-        uri = helper.getUriLikePath();
+        uri = helper.getUriLikeGemPath();
         if (uri != null) extraGemPaths.add(uri);
     }
 
