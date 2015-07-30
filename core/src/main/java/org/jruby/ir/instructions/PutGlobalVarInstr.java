@@ -14,13 +14,13 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutGlobalVarInstr extends NOperandInstr implements FixedArityInstr {
+public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
         this(new GlobalVariable(varName), value);
     }
 
     public PutGlobalVarInstr(GlobalVariable gvar, Operand value) {
-        super(Operation.PUT_GLOBAL_VAR, new Operand[] {gvar, value});
+        super(Operation.PUT_GLOBAL_VAR, gvar, value);
     }
 
     @Override
@@ -36,11 +36,11 @@ public class PutGlobalVarInstr extends NOperandInstr implements FixedArityInstr 
     }
 
     public GlobalVariable getTarget() {
-        return (GlobalVariable) operands[0];
+        return (GlobalVariable) getOperand1();
     }
 
     public Operand getValue() {
-        return operands[1];
+        return getOperand2();
     }
 
     @Override

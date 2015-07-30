@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNilInstr extends OneOperandBranchInstr  implements FixedArityInstr {
     public BNilInstr(Label jmpTarget, Operand v) {
-        super(Operation.B_NIL, new Operand[] {jmpTarget, v});
+        super(Operation.B_NIL, jmpTarget, v);
     }
 
     @Override
