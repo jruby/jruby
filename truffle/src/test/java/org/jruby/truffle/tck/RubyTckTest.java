@@ -21,13 +21,13 @@ public class RubyTckTest extends TruffleTCK {
     @Test
     public void checkVM() {
         TruffleVM vm = TruffleVM.newVM().build();
-        assertNotNull(vm.getLanguages().get("application/x-ruby"));
+        assertNotNull(vm.getLanguages().get(mimeType()));
     }
 
     @Override
     protected TruffleVM prepareVM() throws Exception {
         TruffleVM vm = TruffleVM.newVM().build();
-        vm.eval("application/x-ruby",
+        vm.eval(mimeType(),
             "def sum(a, b)\n"
           + " a + b\n"
           + "end\n"
