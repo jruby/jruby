@@ -241,7 +241,8 @@ public class CoreMethodNodeManager {
     }
 
     public void allMethodInstalled() {
-        if (!AmbiguousOptionalArgumentChecker.SUCCESS) {
+        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null &&
+            !AmbiguousOptionalArgumentChecker.SUCCESS) {
             System.exit(1);
         }
     }
