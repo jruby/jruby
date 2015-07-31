@@ -38,7 +38,7 @@ public class RubyTckTest extends TruffleTCK {
           + " nil\n"
           + "end\n"
           + "def apply_numbers(f)\n"
-          + " f.call(18, 32) + 10\n"
+          + " Truffle::Interop.execute(f, 18, 32) + 10\n"
           + "end\n"
           + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
           + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
@@ -76,18 +76,6 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String invalidCode() {
         return "def something\n  ret urn 4.2\ne n d";
-    }
-
-    @Ignore
-    @Test
-    public void testMaxOrMinValue() throws Exception {
-        super.testMaxOrMinValue();
-    }
-
-    @Ignore
-    @Test
-    public void testMaxOrMinValue2() throws Exception {
-        super.testMaxOrMinValue2();
     }
     
 }
