@@ -186,7 +186,7 @@ public class CoreMethodNodeManager {
         if (method.argumentsAsArray()) {
             argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
         } else {
-            for (int n = 0; n < arity.getRequired() + arity.getOptional(); n++) {
+            for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
