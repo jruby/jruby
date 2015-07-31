@@ -37,7 +37,12 @@ unless $?.success?
   jt 'rebuild'
 end
 
-output = jt("bench compare #{bench}")
+output = (jt("bench compare #{bench}") rescue nil)
+unless $?.success?
+  puts "Benchmark failed, trying a rebuild"
+  jt 'rebuild'
+  output = jt("bench compare #{bench}")
+end
 
 /^#{Regexp.escape bench} (\d+)\./ =~ output
 raise "Unexpected output:\n#{output}" unless $1
