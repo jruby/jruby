@@ -296,7 +296,7 @@ public abstract class HashNodes {
         };
     }
 
-    @CoreMethod(names = "[]", constructor = true, argumentsAsArray = true)
+    @CoreMethod(names = "[]", constructor = true, rest = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
 

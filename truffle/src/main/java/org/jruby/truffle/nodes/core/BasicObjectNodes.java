@@ -149,7 +149,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "instance_exec", needsBlock = true, argumentsAsArray = true)
+    @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
     public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
@@ -172,7 +172,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, optional = 1, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -225,7 +225,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "__send__", needsBlock = true, argumentsAsArray = true, required = 1)
+    @CoreMethod(names = "__send__", needsBlock = true, rest = true, required = 1)
     public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;

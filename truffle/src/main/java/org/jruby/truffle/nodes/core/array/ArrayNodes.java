@@ -2216,7 +2216,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", raiseIfFrozenSelf = true, argumentsAsArray = true, required = 1, optional = 1)
+    @CoreMethod(names = "insert", raiseIfFrozenSelf = true, rest = true, required = 1, optional = 1)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -3196,7 +3196,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "push", "__append__" }, argumentsAsArray = true, optional = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "push", "__append__" }, rest = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
@@ -4497,7 +4497,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "unshift", rest = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodArrayArgumentsNode {
 
         public UnshiftNode(RubyContext context, SourceSection sourceSection) {
@@ -4514,7 +4514,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", argumentsAsArray = true, required = 1)
+    @CoreMethod(names = "zip", rest = true, required = 1)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {

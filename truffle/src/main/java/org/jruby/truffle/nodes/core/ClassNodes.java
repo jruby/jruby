@@ -85,7 +85,7 @@ public abstract class ClassNodes {
 
     }
 
-    @CoreMethod(names = "new", needsBlock = true, argumentsAsArray = true)
+    @CoreMethod(names = "new", needsBlock = true, rest = true)
     public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode allocateNode;

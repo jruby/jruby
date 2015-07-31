@@ -635,7 +635,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -750,7 +750,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
@@ -1424,7 +1424,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "public_send", needsBlock = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "public_send", needsBlock = true, required = 1, rest = true)
     public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
@@ -1871,7 +1871,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, argumentsAsArray = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 

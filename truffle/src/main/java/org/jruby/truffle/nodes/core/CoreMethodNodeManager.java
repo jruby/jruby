@@ -154,7 +154,7 @@ public class CoreMethodNodeManager {
         final int required = method.required();
         final int optional = method.optional();
 
-        final Arity arity = new Arity(required, optional, method.argumentsAsArray());
+        final Arity arity = new Arity(required, optional, method.rest());
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 
@@ -191,7 +191,7 @@ public class CoreMethodNodeManager {
 
             argumentsNodes.add(readArgumentNode);
         }
-        if (method.argumentsAsArray()) {
+        if (method.rest()) {
             argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
         }
 
@@ -322,7 +322,7 @@ public class CoreMethodNodeManager {
                             // count from the end to ignore optional VirtualFrame in front.
                             Class<?>[] parameterTypes = method.getParameterTypes();
                             int n = parameterTypes.length - i;
-                            if (methodAnnotation.argumentsAsArray()) {
+                            if (methodAnnotation.rest()) {
                                 n--; // ignore final Object[] argument
                             }
                             Class<?> parameterType = parameterTypes[n];

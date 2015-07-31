@@ -915,7 +915,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "count", argumentsAsArray = true)
+    @CoreMethod(names = "count", rest = true)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -1040,7 +1040,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "delete!", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -1823,7 +1823,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "squeeze!", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
         private ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();

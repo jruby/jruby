@@ -247,7 +247,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;
