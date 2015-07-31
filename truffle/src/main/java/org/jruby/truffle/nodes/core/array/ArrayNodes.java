@@ -2214,7 +2214,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 1, raiseIfFrozenSelf = true, argumentsAsArray = true)
+    @CoreMethod(names = "insert", raiseIfFrozenSelf = true, argumentsAsArray = true, required = 1, optional = 1)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -2223,11 +2223,10 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isIntIndexAndOtherSingleObjectArg(values)"})
-        public Object insertNull(RubyBasicObject array, Object[] values) {
+        @Specialization(guards = { "isNullArray(array)", "wasProvided(value)", "values.length == 0" })
+        public Object insertNull(RubyBasicObject array, int idx, Object value, Object[] values) {
             CompilerDirectives.transferToInterpreter();
-            final int index = normalizeInsertIndex(array, (int) values[0]);
-            final Object value = (Object) values[1];
+            final int index = normalizeInsertIndex(array, idx);
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
@@ -2235,10 +2234,9 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "isArgsTwoInts(values)", "isIndexSmallerThanSize(values,array)", "isIntArray(array)", "hasRoomForOneExtra(array)" })
-        public Object insert(VirtualFrame frame, RubyBasicObject array, Object[] values) {
-            final int index = normalizeInsertIndex(array, (int) values[0]);
-            final int value = (int) values[1];
+        @Specialization(guards = { "values.length == 0", "wasProvided(value)", "isIndexSmallerThanSize(idx,array)", "isIntArray(array)", "hasRoomForOneExtra(array)" })
+        public Object insert(VirtualFrame frame, RubyBasicObject array, int idx, int value, Object[] values) {
+            final int index = normalizeInsertIndex(array, idx);
             final int[] store = (int[]) getStore(array);
             System.arraycopy(store, index, store, index + 1, getSize(array) - index);
             store[index] = value;
@@ -2246,32 +2244,35 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(contains = { "insert", "insertNull" })
-        public Object insertBoxed(VirtualFrame frame, RubyBasicObject array, Object[] values) {
+        @Specialization
+        public Object insertMissingValue(VirtualFrame frame, RubyBasicObject array, Object idx, NotProvided value, Object[] values) {
+            return array;
+        }
+
+        @Specialization(contains = { "insert", "insertNull" }, guards = "wasProvided(value)")
+        public Object insertBoxed(VirtualFrame frame, RubyBasicObject array, Object idxObject, Object value, Object[] values) {
             CompilerDirectives.transferToInterpreter();
-            if (values.length == 1) {
-                return array;
-            }
+            final int idx = toInt(frame, idxObject);
 
-            int index = toInt(frame, values[0]);
-
-            final int valuesLength = values.length - 1;
-            final int normalizedIndex = normalizeInsertIndex(array, index);
+            final int valuesToInsert = 1 + values.length;
+            final int index = normalizeInsertIndex(array, idx);
 
             Object[] store = ArrayUtils.box(getStore(array));
-            final int newSize = normalizedIndex < getSize(array) ? getSize(array) + valuesLength : normalizedIndex + valuesLength;
+            final int newSize = (index < getSize(array) ? getSize(array) : index) + valuesToInsert;
             store = Arrays.copyOf(store, newSize);
-            if (normalizedIndex >= getSize(array)) {
-                for (int i = getSize(array); i < normalizedIndex; i++) {
+            if (index >= getSize(array)) {
+                for (int i = getSize(array); i < index; i++) {
                     store[i] = nil();
                 }
+            } else {
+                final int dest = index + valuesToInsert;
+                final int len = getSize(array) - index;
+                System.arraycopy(store, index, store, dest, len);
             }
-            final int dest = normalizedIndex + valuesLength;
-            final int len = getSize(array) - normalizedIndex;
-            if (normalizedIndex < getSize(array)) {
-                System.arraycopy(store, normalizedIndex, store, dest, len);
-            }
-            System.arraycopy(values, 1, store, normalizedIndex, valuesLength);
+
+            store[index] = value;
+            System.arraycopy(values, 0, store, index + 1, values.length);
+
             setStore(array, store, newSize);
 
             return array;
@@ -2287,20 +2288,12 @@ public abstract class ArrayNodes {
             return normalizedIndex;
         }
 
-        protected static boolean isArgsTwoInts(Object[] others) {
-            return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Integer;
-        }
-        
-        protected static boolean isIndexSmallerThanSize(Object[] others, RubyBasicObject array) {
-            return (int) others[0] < getSize(array);
+        protected static boolean isIndexSmallerThanSize(int idx, RubyBasicObject array) {
+            return idx < getSize(array);
         }
 
         protected static boolean hasRoomForOneExtra(RubyBasicObject array) {
             return ((int[]) getStore(array)).length > getSize(array);
-        }
-
-        protected static boolean isIntIndexAndOtherSingleObjectArg(Object[] others) {
-            return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Object;
         }
 
         private int toInt(VirtualFrame frame, Object indexObject) {
@@ -3195,7 +3188,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "push", "__append__" }, argumentsAsArray = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
@@ -3204,33 +3197,35 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isSingleIntegerFixnum(array, values)"})
-        public RubyBasicObject pushNullEmptySingleIntegerFixnum(RubyBasicObject array, Object... values) {
-            setStore(array, new int[]{(int) values[0]}, 1);
+        @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
+        public RubyBasicObject pushNullEmptySingleIntegerFixnum(RubyBasicObject array, int value, Object[] values) {
+            setStore(array, new int[] { value }, 1);
             return array;
         }
 
-        @Specialization(guards = {"isNullArray(array)", "isSingleLongFixnum(array, values)"})
-        public RubyBasicObject pushNullEmptySingleIntegerLong(RubyBasicObject array, Object... values) {
-            setStore(array, new long[]{(long) values[0]}, 1);
+        @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
+        public RubyBasicObject pushNullEmptySingleIntegerLong(RubyBasicObject array, long value, Object[] values) {
+            setStore(array, new long[] { value }, 1);
             return array;
         }
 
         @Specialization(guards = "isNullArray(array)")
-        public RubyBasicObject pushNullEmptyObjects(RubyBasicObject array, Object... values) {
+        public RubyBasicObject pushNullEmptyObjects(VirtualFrame frame, RubyBasicObject array, Object unusedValue, Object[] unusedRest) {
+            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
             setStore(array, values, values.length);
             return array;
         }
 
-        @Specialization(guards = {"!isNullArray(array)", "isEmptyArray(array)"})
-        public RubyBasicObject pushEmptySingleIntegerFixnum(RubyBasicObject array, Object... values) {
+        @Specialization(guards = { "!isNullArray(array)", "isEmptyArray(array)" })
+        public RubyBasicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, RubyBasicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
+            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
             setStore(array, values, values.length);
             return array;
         }
 
-        @Specialization(guards = {"isIntArray(array)", "isSingleIntegerFixnum(array, values)"})
-        public RubyBasicObject pushIntegerFixnumSingleIntegerFixnum(RubyBasicObject array, Object... values) {
+        @Specialization(guards = { "isIntArray(array)", "values.length == 0" })
+        public RubyBasicObject pushIntegerFixnumSingleIntegerFixnum(RubyBasicObject array, int value, Object[] values) {
             final int oldSize = getSize(array);
             final int newSize = oldSize + 1;
 
@@ -3246,8 +3241,30 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "isIntArray(array)", "!isSingleIntegerFixnum(array, values)", "!isSingleLongFixnum(array, values)" })
-        public RubyBasicObject pushIntegerFixnum(RubyBasicObject array, Object... values) {
+        @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "values.length == 0", "!isInteger(value)", "!isLong(value)" })
+        public RubyBasicObject pushIntegerFixnumSingleOther(RubyBasicObject array, Object value, Object[] values) {
+            final int oldSize = getSize(array);
+            final int newSize = oldSize + 1;
+
+            int[] oldStore = (int[]) getStore(array);
+            final Object[] store;
+
+            if (oldStore.length < newSize) {
+                extendBranch.enter();
+                store = ArrayUtils.boxExtra(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+            } else {
+                store = ArrayUtils.box(oldStore);
+            }
+
+            store[oldSize] = value;
+            setStore(array, store, newSize);
+            return array;
+        }
+
+        @Specialization(guards = { "isIntArray(array)", "wasProvided(value)", "rest.length != 0" })
+        public RubyBasicObject pushIntegerFixnum(VirtualFrame frame, RubyBasicObject array, Object value, Object[] rest) {
+            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
 
@@ -3269,8 +3286,8 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isSingleIntegerFixnum(array, values)"})
-        public RubyBasicObject pushLongFixnumSingleIntegerFixnum(RubyBasicObject array, Object... values) {
+        @Specialization(guards = { "isLongArray(array)", "values.length == 0" })
+        public RubyBasicObject pushLongFixnumSingleIntegerFixnum(RubyBasicObject array, int value, Object[] values) {
             final int oldSize = getSize(array);
             final int newSize = oldSize + 1;
 
@@ -3281,13 +3298,13 @@ public abstract class ArrayNodes {
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
             }
 
-            store[oldSize] = (long) (int) values[0];
+            store[oldSize] = (long) value;
             setStore(array, store, newSize);
             return array;
         }
 
-        @Specialization(guards = {"isLongArray(array)", "isSingleLongFixnum(array, values)"})
-        public RubyBasicObject pushLongFixnumSingleLongFixnum(RubyBasicObject array, Object... values) {
+        @Specialization(guards = { "isLongArray(array)", "values.length == 0" })
+        public RubyBasicObject pushLongFixnumSingleLongFixnum(RubyBasicObject array, long value, Object[] values) {
             final int oldSize = getSize(array);
             final int newSize = oldSize + 1;
 
@@ -3298,25 +3315,27 @@ public abstract class ArrayNodes {
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
             }
 
-            store[oldSize] = (long) values[0];
+            store[oldSize] = value;
             setStore(array, store, newSize);
             return array;
         }
 
         @Specialization(guards = "isDoubleArray(array)")
-        public RubyBasicObject pushFloat(RubyBasicObject array, Object... values) {
-            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
-
+        public RubyBasicObject pushFloat(VirtualFrame frame, RubyBasicObject array, Object unusedValue, Object[] unusedRest) {
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store            
             if (getSize(array) != 0) {
                 throw new UnsupportedOperationException();
             }
 
+            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
             setStore(array, values, values.length);
             return array;
         }
 
         @Specialization(guards = "isObjectArray(array)")
-        public RubyBasicObject pushObject(RubyBasicObject array, Object... values) {
+        public RubyBasicObject pushObject(VirtualFrame frame, RubyBasicObject array, Object unusedValue, Object[] unusedRest) {
+            final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
+
             final int oldSize = getSize(array);
             final int newSize = oldSize + values.length;
 
@@ -3326,7 +3345,7 @@ public abstract class ArrayNodes {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
             }
-
+            ;
             for (int n = 0; n < values.length; n++) {
                 store[oldSize + n] = values[n];
             }
@@ -4491,16 +4510,15 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "zip", argumentsAsArray = true, required = 1)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isSingleIntegerFixnumArray(others)"})
-        public RubyBasicObject zipObjectIntegerFixnum(RubyBasicObject array, Object[] others) {
-            final RubyBasicObject other = (RubyBasicObject) others[0];
+        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
+        public RubyBasicObject zipObjectIntegerFixnum(RubyBasicObject array, RubyBasicObject other, Object[] others) {
             final Object[] a = (Object[]) getStore(array);
 
             final int[] b = (int[]) getStore(other);
@@ -4528,9 +4546,8 @@ public abstract class ArrayNodes {
             return createArray(zipped, zippedLength);
         }
 
-        @Specialization(guards = {"isObjectArray(array)", "isSingleObjectArray(others)"})
-        public RubyBasicObject zipObjectObject(RubyBasicObject array, Object[] others) {
-            final RubyBasicObject other = (RubyBasicObject) others[0];
+        @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
+        public RubyBasicObject zipObjectObject(RubyBasicObject array, RubyBasicObject other, Object[] others) {
             final Object[] a = (Object[]) getStore(array);
 
             final Object[] b = (Object[]) getStore(other);
@@ -4559,35 +4576,27 @@ public abstract class ArrayNodes {
             return createArray(zipped, zippedLength);
         }
 
-        @Specialization(guards = {"!isSingleObjectArray(others)"})
-        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyBasicObject array, Object[] others) {
-            return zipRuby(frame, others);
+        @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyBasicObject array, RubyBasicObject other, Object[] others) {
+            return zipRuby(frame);
         }
 
-        @Specialization(guards = {"!isSingleIntegerFixnumArray(others)"})
-        public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyBasicObject array, Object[] others) {
-            return zipRuby(frame, others);
+        @Specialization(guards = { "!isRubyArray(other)" })
+        public Object zipObjectObjectNotArray(VirtualFrame frame, RubyBasicObject array, RubyBasicObject other, Object[] others) {
+            return zipRuby(frame);
         }
 
-        @Specialization(guards = {"!isObjectArray(array)"})
-        public Object zipObjectObjectNotObject(VirtualFrame frame, RubyBasicObject array, Object[] others) {
-            return zipRuby(frame, others);
-        }
-
-        private Object zipRuby(VirtualFrame frame, Object[] others) {
+        private Object zipRuby(VirtualFrame frame) {
             RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
             if (proc == null) {
                 proc = nil();
             }
+            final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
             return ruby(frame, "zip_internal(*others, &block)", "others", createArray(others, others.length), "block", proc);
         }
 
-        protected static boolean isSingleIntegerFixnumArray(Object[] others) {
-            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyBasicObject) others[0])) instanceof int[];
-        }
-
-        protected static boolean isSingleObjectArray(Object[] others) {
-            return others.length == 1 && RubyGuards.isRubyArray(others[0]) && ArrayNodes.getStore(((RubyBasicObject) others[0])) instanceof Object[];
+        protected static boolean fallback(RubyBasicObject array, RubyBasicObject other, Object[] others) {
+            return !ArrayGuards.isObjectArray(array) || ArrayGuards.isNullArray(other) || ArrayGuards.isLongArray(other) || others.length > 0;
         }
 
     }

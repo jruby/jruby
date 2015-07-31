@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -151,13 +152,7 @@ public class CoreMethodNodeManager {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
 
         final int required = method.required();
-        final int optional;
-
-        if (method.argumentsAsArray()) {
-            optional = 0;
-        } else {
-            optional = method.optional();
-        }
+        final int optional = method.optional();
 
         final Arity arity = new Arity(required, optional, method.argumentsAsArray());
 
@@ -183,22 +178,21 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(readSelfNode);
         }
 
-        if (method.argumentsAsArray()) {
-            argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
-        } else {
-            for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
-                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+        for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
-                if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
-                    readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
-                }
-
-                if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
-                }
-
-                argumentsNodes.add(readArgumentNode);
+            if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
+                readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
             }
+
+            if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
+                readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
+            }
+
+            argumentsNodes.add(readArgumentNode);
+        }
+        if (method.argumentsAsArray()) {
+            argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
         }
 
         if (method.needsBlock()) {

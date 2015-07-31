@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -28,6 +29,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyException;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -170,7 +172,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
@@ -178,19 +180,19 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object methodMissing(Object self, Object[] args, NotProvided block) {
+        public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("no id given", this));
+        }
 
-            return methodMissing(self, args, (RubyBasicObject) null);
+        @Specialization
+        public Object methodMissingNoBlock(Object self, RubyBasicObject name, Object[] args, NotProvided block) {
+            return methodMissingBlock(self, name, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object methodMissing(Object self, Object[] args, RubyBasicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
-            final RubyBasicObject name = (RubyBasicObject) args[0];
-            final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);
-            return methodMissing(self, name, sentArgs, block);
+        public Object methodMissingBlock(Object self, RubyBasicObject name, Object[] args, RubyBasicObject block) {
+            return methodMissing(self, name, args, block);
         }
 
         private Object methodMissing(Object self, RubyBasicObject name, Object[] args, RubyBasicObject block) {
@@ -223,7 +225,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "__send__", needsBlock = true, argumentsAsArray = true, required = 1)
     public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
@@ -241,15 +243,13 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyBasicObject) null);
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, NotProvided block) {
+            return send(frame, self, name, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
-            final Object name = args[0];
-            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
-            return dispatchNode.call(frame, self, name, block, sendArgs);
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, RubyBasicObject block) {
+            return dispatchNode.call(frame, self, name, block, args);
         }
 
     }

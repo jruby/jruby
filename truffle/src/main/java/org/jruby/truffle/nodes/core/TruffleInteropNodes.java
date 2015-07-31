@@ -246,7 +246,7 @@ public abstract class TruffleInteropNodes {
         }
 
     }
-    // TODO: remove maxArgs - hits an assertion if maxArgs is removed - trying argumentsAsArray = true (CS)
+
     @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, argumentsAsArray = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
