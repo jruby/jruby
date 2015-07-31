@@ -318,6 +318,9 @@ public class CoreMethodNodeManager {
                             // count from the end to ignore optional VirtualFrame in front.
                             Class<?>[] parameterTypes = method.getParameterTypes();
                             int n = parameterTypes.length - i;
+                            if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
+                                n--; // ignore final Object[] argument
+                            }
                             Class<?> parameterType = parameterTypes[n];
                             Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
 
