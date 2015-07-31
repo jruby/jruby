@@ -238,8 +238,7 @@ public class RubyCallNode extends RubyNode {
         final RubyNode[] result;
 
         boolean shouldExpand = true;
-        if (method == null
-                || method.getSharedMethodInfo().getArity().getKeywordArguments() == null) {
+        if (method == null || !method.getSharedMethodInfo().getArity().acceptsKeywords()) {
             // no keyword arguments in method definition
             shouldExpand = false;
         } else if (argumentNodes.length != 0
@@ -258,9 +257,9 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (shouldExpand) {
-            List<String> kwargs = method.getSharedMethodInfo().getArity().getKeywordArguments();
+            String[] kwargs = method.getSharedMethodInfo().getArity().getKeywordArguments();
 
-            int countArgNodes = argumentNodes.length + kwargs.size() + 1;
+            int countArgNodes = argumentNodes.length + kwargs.length + 1;
             if (argumentNodes.length == 0) {
                 countArgNodes++;
             }
@@ -315,7 +314,7 @@ public class RubyCallNode extends RubyNode {
             result[i++] = new MarkerNode(getContext(), null);
 
             if (restKeywordLabels.size() > 0
-                    && !method.getSharedMethodInfo().getArity().hasKeyRest()) {
+                    && !method.getSharedMethodInfo().getArity().hasKeywordsRest()) {
                 result[firstMarker] = new UnknownArgumentErrorNode(getContext(), null, restKeywordLabels.get(0));
             } else if (restKeywordLabels.size() > 0) {
                 i = 0;

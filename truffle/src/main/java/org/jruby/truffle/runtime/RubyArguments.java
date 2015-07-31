@@ -42,7 +42,7 @@ public final class RubyArguments {
 
         return packed;
     }
-    
+
     public static Object getOptimizedKeywordArgument(Object[] arguments,
             int index) {
         return arguments[arguments.length - 1 + index];
@@ -86,7 +86,7 @@ public final class RubyArguments {
         if (isKwOptimized(internalArguments)) {
             return getUserArgumentsCount(internalArguments)
                     - getMethod(internalArguments).getSharedMethodInfo().getArity()
-                            .getKeywordArguments().size() - 1;
+                            .getKeywordsCount() - 1;
         } else {
             return getUserArgumentsCount(internalArguments);
         }
