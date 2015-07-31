@@ -46,7 +46,7 @@ import java.lang.annotation.Target;
  * properties.
  *
  * <pre>
- * DynamicObject createWidget(int width, int height);
+ * DynamicObject createRect(int x, int y, int width, int height);
  * </pre>
  *
  * Guards can tell you if an object has this layout.
@@ -63,6 +63,8 @@ import java.lang.annotation.Target;
  * RectLayout rectLayout = RectLayoutImpl.INSTANCE;
  * </pre>
  *
+ * <p><strong>Nullability</strong></p>
+ *
  * Properties can are non-nullable by default - they cannot contain null values
  * and attempting to set them to null in the constructor method or a setter
  * is an assertion failure.
@@ -77,6 +79,38 @@ import java.lang.annotation.Target;
  * {@literal@}Nullable Object getFoo(DynamicObject object);
  * {@literal@}Nullable void setFoo(DynamicObject object, Object value);
  * </pre>
+ *
+ * <p><strong>Inheritance</strong></p>
+ *
+ * One layout can inherit properties from another by having one interface
+ * annotated with {@link Layout} extend another.
+ *
+ * <pre>
+ * {@literal@}Layout
+ * public interface RectLayout {
+ *
+ *     DynamicObject createRect(int x, int y, int width, int height);
+ *
+ *     int getX(DynamicObject object);
+ *     ...
+ *
+ * }
+ *
+ * {@literal@}Layout
+ * public interface ColouredRectLayout extends RectLayout {
+ *
+ *     DynamicObject createRect(int x, int y, int width, int height, Colour colour);
+ *
+ *     Colour getColour(DynamicObject object);
+ *     ...
+ * }
+ * </pre>
+ *
+ * The inheriting layout must have the properties of the inherited layout
+ * in its create method. Inherited properties and guards are available from
+ * the base-interface as normal in Java.
+ *
+ * <p><strong>Processing</strong></p>
  *
  * {@link Layout} annotations are processed by {@link OMProcessor}.
  */
