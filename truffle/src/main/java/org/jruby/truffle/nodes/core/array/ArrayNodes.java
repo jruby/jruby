@@ -4379,7 +4379,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNullArray(array)")
-        public RubyBasicObject sortNull(RubyBasicObject array, Object block) {
+        public RubyBasicObject sortNull(RubyBasicObject array, Object unusedBlock) {
             return createEmptyArray();
         }
 
@@ -4462,18 +4462,14 @@ public abstract class ArrayNodes {
             return createArray(store, size);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization(guards = { "!isNullArray(array)", "isRubyProc(block)" })
         public Object sortUsingRubinius(VirtualFrame frame, RubyBasicObject array, RubyBasicObject block) {
-            return sortUsingRubinius(frame, array, (Object) block);
+            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
         }
 
-        @Specialization(guards = {"!isNullArray(array)", "!isSmall(array)"})
-        public Object sortUsingRubinius(VirtualFrame frame, RubyBasicObject array, Object block) {
-            if (block == NotProvided.INSTANCE) {
-                return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
-            } else {
-                return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", getSize(array), "block", block);
-            }
+        @Specialization(guards = { "!isNullArray(array)", "!isSmall(array)" })
+        public Object sortUsingRubinius(VirtualFrame frame, RubyBasicObject array, NotProvided block) {
+            return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", getSize(array));
         }
 
         private int castSortValue(Object value) {

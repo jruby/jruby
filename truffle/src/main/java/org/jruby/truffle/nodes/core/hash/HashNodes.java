@@ -611,18 +611,21 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isNullHash(hash)")
-        public Object deleteNull(VirtualFrame frame, RubyBasicObject hash, Object key, Object block) {
+        public Object deleteNull(VirtualFrame frame, RubyBasicObject hash, Object key, NotProvided block) {
             assert verifyStore(hash);
 
-            if (block == NotProvided.INSTANCE) {
-                return nil();
-            } else {
-                return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
-            }
+            return nil();
+        }
+
+        @Specialization(guards = { "isNullHash(hash)", "isRubyProc(block)" })
+        public Object deleteNull(VirtualFrame frame, RubyBasicObject hash, Object key, RubyBasicObject block) {
+            assert verifyStore(hash);
+
+            return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
         }
 
         @Specialization(guards = {"isPackedHash(hash)", "!isCompareByIdentity(hash)"})
-        public Object deletePackedArray(VirtualFrame frame, RubyBasicObject hash, Object key, Object block) {
+        public Object deletePackedArray(VirtualFrame frame, RubyBasicObject hash, Object key, Object maybeBlock) {
             assert verifyStore(hash);
 
             final int hashed = hashNode.hash(frame, key);
@@ -646,24 +649,24 @@ public abstract class HashNodes {
 
             assert verifyStore(hash);
 
-            if (block == NotProvided.INSTANCE) {
+            if (maybeBlock == NotProvided.INSTANCE) {
                 return nil();
             } else {
-                return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
+                return yieldNode.dispatch(frame, (RubyBasicObject) maybeBlock, key);
             }
         }
 
         @Specialization(guards = "isBucketHash(hash)")
-        public Object delete(VirtualFrame frame, RubyBasicObject hash, Object key, Object block) {
+        public Object delete(VirtualFrame frame, RubyBasicObject hash, Object key, Object maybeBlock) {
             assert verifyStore(hash);
 
             final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
             if (hashLookupResult.getEntry() == null) {
-                if (block == NotProvided.INSTANCE) {
+                if (maybeBlock == NotProvided.INSTANCE) {
                     return nil();
                 } else {
-                    return yieldNode.dispatch(frame, (RubyBasicObject) block, key);
+                    return yieldNode.dispatch(frame, (RubyBasicObject) maybeBlock, key);
                 }
             }
 
@@ -1295,21 +1298,20 @@ public abstract class HashNodes {
         // Merge with something that wasn't a hash
 
         @Specialization(guards = "!isRubyHash(other)")
-        public Object merge(VirtualFrame frame, RubyBasicObject hash, Object other, Object block) {
+        public Object merge(VirtualFrame frame, RubyBasicObject hash, Object other, Object maybeBlock) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
             
-            final RubyBasicObject blockProc;
-            
-            if (block == NotProvided.INSTANCE) {
-                blockProc = null;
+            final RubyBasicObject block;
+            if (maybeBlock == NotProvided.INSTANCE) {
+                block = null;
             } else {
-                blockProc = (RubyBasicObject) block;
+                block = (RubyBasicObject) maybeBlock;
             }
 
-            return fallbackCallNode.call(frame, hash, "merge_fallback", blockProc, other);
+            return fallbackCallNode.call(frame, hash, "merge_fallback", block, other);
         }
 
     }
