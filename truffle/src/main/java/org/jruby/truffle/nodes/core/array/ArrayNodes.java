@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
@@ -19,6 +20,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -2223,6 +2225,11 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
+        @Specialization
+        public Object insertMissingValue(VirtualFrame frame, RubyBasicObject array, Object idx, NotProvided value, Object[] values) {
+            return array;
+        }
+
         @Specialization(guards = { "isNullArray(array)", "wasProvided(value)", "values.length == 0" })
         public Object insertNull(RubyBasicObject array, int idx, Object value, Object[] values) {
             CompilerDirectives.transferToInterpreter();
@@ -2234,9 +2241,9 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = { "values.length == 0", "wasProvided(value)", "isIndexSmallerThanSize(idx,array)", "isIntArray(array)", "hasRoomForOneExtra(array)" })
+        @Specialization(guards = { "isIntArray(array)", "values.length == 0", "idx >= 0", "isIndexSmallerThanSize(idx,array)", "hasRoomForOneExtra(array)" })
         public Object insert(VirtualFrame frame, RubyBasicObject array, int idx, int value, Object[] values) {
-            final int index = normalizeInsertIndex(array, idx);
+            final int index = idx;
             final int[] store = (int[]) getStore(array);
             System.arraycopy(store, index, store, index + 1, getSize(array) - index);
             store[index] = value;
@@ -2245,33 +2252,26 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object insertMissingValue(VirtualFrame frame, RubyBasicObject array, Object idx, NotProvided value, Object[] values) {
-            return array;
-        }
-
-        @Specialization(contains = { "insert", "insertNull" }, guards = "wasProvided(value)")
-        public Object insertBoxed(VirtualFrame frame, RubyBasicObject array, Object idxObject, Object value, Object[] values) {
-            CompilerDirectives.transferToInterpreter();
+        public Object insertBoxed(VirtualFrame frame, RubyBasicObject array, Object idxObject, Object unusedValue, Object[] unusedRest) {
+            final Object[] values = RubyArguments.extractUserArgumentsFrom(frame.getArguments(), 1);
             final int idx = toInt(frame, idxObject);
 
-            final int valuesToInsert = 1 + values.length;
+            CompilerDirectives.transferToInterpreter();
             final int index = normalizeInsertIndex(array, idx);
 
-            Object[] store = ArrayUtils.box(getStore(array));
-            final int newSize = (index < getSize(array) ? getSize(array) : index) + valuesToInsert;
-            store = Arrays.copyOf(store, newSize);
-            if (index >= getSize(array)) {
-                for (int i = getSize(array); i < index; i++) {
-                    store[i] = nil();
-                }
+            final int oldSize = getSize(array);
+            final int newSize = (index < oldSize ? oldSize : index) + values.length;
+            final Object[] store = ArrayUtils.boxExtra(getStore(array), newSize - oldSize);
+
+            if (index >= oldSize) {
+                Arrays.fill(store, oldSize, index, nil());
             } else {
-                final int dest = index + valuesToInsert;
-                final int len = getSize(array) - index;
+                final int dest = index + values.length;
+                final int len = oldSize - index;
                 System.arraycopy(store, index, store, dest, len);
             }
 
-            store[index] = value;
-            System.arraycopy(values, 0, store, index + 1, values.length);
+            System.arraycopy(values, 0, store, index, values.length);
 
             setStore(array, store, newSize);
 
@@ -2279,7 +2279,7 @@ public abstract class ArrayNodes {
         }
 
         private int normalizeInsertIndex(RubyBasicObject array, int index) {
-            final int normalizedIndex = index < 0 ? normalizeIndex(array, index) + 1 : index;
+            final int normalizedIndex = normalizeInsertIndex(getSize(array), index);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-getSize(array));
@@ -2288,8 +2288,16 @@ public abstract class ArrayNodes {
             return normalizedIndex;
         }
 
+        private static int normalizeInsertIndex(int length, int index) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
+                return length + index + 1;
+            } else {
+                return index;
+            }
+        }
+
         protected static boolean isIndexSmallerThanSize(int idx, RubyBasicObject array) {
-            return idx < getSize(array);
+            return idx <= getSize(array);
         }
 
         protected static boolean hasRoomForOneExtra(RubyBasicObject array) {
