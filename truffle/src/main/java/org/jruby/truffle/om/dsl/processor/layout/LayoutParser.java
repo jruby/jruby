@@ -16,8 +16,6 @@ import org.jruby.truffle.om.dsl.processor.layout.model.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,14 +74,6 @@ public class LayoutParser {
         assert name.endsWith("_IDENTIFIER");
 
         final String propertyName = NameUtils.constantToIdentifier(name.substring(0, name.length() - "_IDENTIFIER".length()));
-
-        try {
-            try (PrintStream stream = new PrintStream("log.txt")) {
-                stream.println(propertyName);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
 
         getProperty(propertyName).setHasIdentifier(true);
     }
