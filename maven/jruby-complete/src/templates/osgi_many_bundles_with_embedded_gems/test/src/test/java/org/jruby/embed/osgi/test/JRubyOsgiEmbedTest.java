@@ -92,7 +92,7 @@ public class JRubyOsgiEmbedTest {
 
         String gemPath = (String) jruby.runScriptlet( "Gem::Specification.dirs.inspect" );
         gemPath = gemPath.replaceAll( "bundle[^:]*://[^/]*", "bundle:/" );
-        assertEquals( gemPath, "[\"uri:bundle://specifications\"]" );
+        assertEquals( "[\"uri:bundle://specifications\"]", gemPath );
 
         // ensure we can load rake from the default gems
         boolean loaded = (Boolean) jruby.runScriptlet( "require 'rake'" );
