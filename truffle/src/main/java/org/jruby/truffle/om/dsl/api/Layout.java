@@ -91,6 +91,8 @@ import java.lang.annotation.Target;
  *
  *     DynamicObject createRect(int x, int y, int width, int height);
  *
+ *     boolean isRect(DynamicObject object);
+ *
  *     int getX(DynamicObject object);
  *     ...
  *
@@ -101,6 +103,8 @@ import java.lang.annotation.Target;
  *
  *     DynamicObject createRect(int x, int y, int width, int height, Colour colour);
  *
+ *     boolean isColouredRect(DynamicObject object);
+ *
  *     Colour getColour(DynamicObject object);
  *     ...
  * }
@@ -109,6 +113,11 @@ import java.lang.annotation.Target;
  * The inheriting layout must have the properties of the inherited layout
  * in its create method. Inherited properties and guards are available from
  * the base-interface as normal in Java.
+ *
+ * Instances of the {@code ColouredRectLayout} layout will pass the {@code isRect}
+ * guard (so like {@code instanceof}, and properties inherited from {@code RectLayout}
+ * can be accessed using {@code RectLayoutImpl.INSTANCE} as well as
+ * {@code ColouredRectLayoutImpl.INSTANCE}.
  *
  * <p><strong>Processing</strong></p>
  *
