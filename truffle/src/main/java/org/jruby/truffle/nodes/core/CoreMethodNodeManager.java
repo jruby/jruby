@@ -240,6 +240,12 @@ public class CoreMethodNodeManager {
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
+    public void allMethodInstalled() {
+        if (!AmbiguousOptionalArgumentChecker.SUCCESS) {
+            System.exit(1);
+        }
+    }
+
     public static class MethodDetails {
 
         private final CoreClass classAnnotation;
@@ -275,6 +281,7 @@ public class CoreMethodNodeManager {
     private static class AmbiguousOptionalArgumentChecker {
 
         private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
+        private static boolean SUCCESS = true;
 
         private static Method checkParametersNamesAvailable() {
             try {
@@ -282,26 +289,21 @@ public class CoreMethodNodeManager {
             } catch (NoSuchMethodException | SecurityException e) {
                 // Java 7 or could not find how to get names of method parameters
                 System.err.println("Could not find method Method.getParameters()");
+                System.exit(1);
                 return null;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArguments(MethodDetails methodDetails) {
-            if (GET_PARAMETERS == null) {
-                System.exit(1);
-            }
-
             try {
                 verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
             } catch (Exception e) {
                 e.printStackTrace();
-                System.exit(1);
+                SUCCESS = false;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
-            boolean success = true;
-
             final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
             if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
                 int opt = methodAnnotation.optional();
@@ -344,15 +346,11 @@ public class CoreMethodNodeManager {
                     }
 
                     if (unguardedObjectArgument) {
-                        success = false;
+                        SUCCESS = false;
                         System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
                         System.err.println(errors);
                     }
                 }
-            }
-
-            if (!success) {
-                System.exit(1);
             }
         }
 
