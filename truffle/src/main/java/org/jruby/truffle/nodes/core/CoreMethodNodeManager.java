@@ -302,9 +302,10 @@ public class CoreMethodNodeManager {
         private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
             boolean success = true;
 
-            if (methodDetails.getMethodAnnotation().optional() > 0) {
-                int opt = methodDetails.getMethodAnnotation().optional();
-                if (methodDetails.getMethodAnnotation().needsBlock()) {
+            final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
+            if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
+                int opt = methodAnnotation.optional();
+                if (methodAnnotation.needsBlock()) {
                     opt++;
                 }
 
@@ -318,7 +319,7 @@ public class CoreMethodNodeManager {
                             // count from the end to ignore optional VirtualFrame in front.
                             Class<?>[] parameterTypes = method.getParameterTypes();
                             int n = parameterTypes.length - i;
-                            if (methodDetails.getMethodAnnotation().argumentsAsArray()) {
+                            if (methodAnnotation.argumentsAsArray()) {
                                 n--; // ignore final Object[] argument
                             }
                             Class<?> parameterType = parameterTypes[n];
@@ -332,7 +333,7 @@ public class CoreMethodNodeManager {
                             }
                             String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
 
-                            if (parameterType == Object.class && !name.startsWith("unused")) {
+                            if (parameterType == Object.class && !name.startsWith("unused") && !name.equals("maybeBlock")) {
                                 String[] guards = method.getAnnotation(Specialization.class).guards();
                                 if (!isGuarded(name, guards)) {
                                     unguardedObjectArgument = true;
