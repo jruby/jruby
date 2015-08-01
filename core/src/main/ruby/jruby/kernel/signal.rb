@@ -4,7 +4,7 @@ module Signal
     sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
     if RESERVED_SIGNALS.include?(sig)
-      raise ArgumentError.new("can't trap reserved signal: SIG%S" % sig)
+      raise ArgumentError.new("can't trap reserved signal: SIG%s" % sig)
     end
 
     oldhandler, installed = if block
