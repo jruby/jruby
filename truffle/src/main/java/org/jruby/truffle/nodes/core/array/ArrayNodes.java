@@ -3244,7 +3244,7 @@ public abstract class ArrayNodes {
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
             }
 
-            store[oldSize] = (int) values[0];
+            store[oldSize] = value;
             setStore(array, store, newSize);
             return array;
         }
@@ -3360,14 +3360,6 @@ public abstract class ArrayNodes {
 
             setStore(array, store, newSize);
             return array;
-        }
-
-        protected boolean isSingleIntegerFixnum(RubyBasicObject array, Object... values) {
-            return values.length == 1 && values[0] instanceof Integer;
-        }
-
-        protected boolean isSingleLongFixnum(RubyBasicObject array, Object... values) {
-            return values.length == 1 && values[0] instanceof Long;
         }
 
     }
