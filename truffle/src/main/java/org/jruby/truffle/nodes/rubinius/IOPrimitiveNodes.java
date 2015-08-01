@@ -216,7 +216,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(RubyBasicObject path, int mode, int permission) {
-            return posix().open(StringNodes.getByteList(path), mode, permission);
+            return posix().open(path.toString(), mode, permission);
         }
 
     }
