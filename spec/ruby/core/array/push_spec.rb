@@ -8,6 +8,10 @@ describe "Array#push" do
     a.push().should == ["a", "b", "c", "d", "e", "f"]
     a.push(5)
     a.should == ["a", "b", "c", "d", "e", "f", 5]
+
+    a = [0, 1]
+    a.push(2)
+    a.should == [0, 1, 2]
   end
 
   it "isn't confused by previous shift" do
