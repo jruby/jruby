@@ -137,7 +137,8 @@ public class JRubyApplet extends Applet {
      */
     private CompatVersion getCompatVersionParameter(String compat, CompatVersion defaultVersion) {
         CompatVersion compatVersion = defaultVersion;
-        if (getParameter(compat).equals("1.9")) compatVersion = CompatVersion.RUBY1_9;
+        String compatString = getParameter(compat);
+        if (compatString != null && compatString.equals("1.9")) compatVersion = CompatVersion.RUBY1_9;
         return compatVersion;
     }
 
