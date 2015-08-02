@@ -61,8 +61,6 @@ public abstract class DynamicMethod {
     protected long serialNumber;
     /** Flags for builtin, notimpl, etc */
     protected byte flags;
-    /** Single-arity native call */
-    protected NativeCall nativeCall;
     /** The simple, base name this method was defined under. May be null.*/
     protected String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
@@ -450,40 +448,6 @@ public abstract class DynamicMethod {
         public String toString() {
             return "" + (statik?"static ":"") + nativeReturn.getSimpleName() + " " + nativeTarget.getSimpleName() + "." + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
         }
-    }
-
-    /**
-     * Set the single-arity NativeCall for this method. All signatures for the
-     * non-single-arity getNativeCall will also be set to this value.
-     * 
-     * @param nativeTarget native method target
-     * @param nativeName native method name
-     * @param nativeReturn native method return
-     * @param nativeSignature native method arguments
-     * @param statik static?
-     * @param java plain Java method?
-     */
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
-        this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
-    }
-
-
-    /**
-     * Set the single-arity NativeCall for this method. All signatures for the
-     * non-single-arity getNativeCall will also be set to this value.
-     * 
-     * @param nativeTarget native method target
-     * @param nativeName native method name
-     * @param nativeReturn native method return
-     * @param nativeSignature native method arguments
-     * @param statik static?
-     */
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
-        setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
-    }
-    
-    public NativeCall getNativeCall() {
-        return this.nativeCall;
     }
 
     /**
