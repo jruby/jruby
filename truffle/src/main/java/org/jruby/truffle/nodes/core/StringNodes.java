@@ -34,13 +34,16 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
@@ -98,6 +101,12 @@ public abstract class StringNodes {
     public static void setByteList(RubyBasicObject string, ByteList bytes) {
         assert RubyGuards.isRubyString(string);
         ((RubyString) string).bytes = bytes;
+    }
+
+    // Since ByteList.toString does not decode properly
+    @TruffleBoundary
+    public static String getString(RubyBasicObject string) {
+        return Helpers.decodeByteList(string.getContext().getRuntime(), getByteList(string));
     }
 
     public static int getCodeRange(RubyBasicObject string) {
