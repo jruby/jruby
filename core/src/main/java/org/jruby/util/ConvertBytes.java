@@ -733,9 +733,10 @@ public class ConvertBytes {
     }
 
     private BigInteger stringToBig(String str) {
+        str = str.replaceAll("_", "");
         int size = str.length();
         int nDigits = 512;
-        if (size <= nDigits) { nDigits = size; }
+        if (size < nDigits) { nDigits = size; }
 
         int j = size - 1;
         int i = j - nDigits + 1;
@@ -743,7 +744,7 @@ public class ConvertBytes {
         BigInteger digits[] = new BigInteger[j / nDigits + 1];
 
         for(int z = 0; j >= 0; z++) {
-            digits[z] = new BigInteger(str.substring(i, j + 1));
+            digits[z] = new BigInteger(str.substring(i, j + 1).trim());
             j = i - 1;
             i = j - nDigits + 1;
             if(i < 0) { i = 0; }
