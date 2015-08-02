@@ -714,7 +714,8 @@ public class ConvertBytes {
             }
         }
 
-        BigInteger z = stringToBig(new String(result));
+        String s = new String(result, 0, resultIndex);
+        BigInteger z = (base == 10) ? stringToBig(s) : new BigInteger(s, base);
         if(!sign) { z = z.negate(); }
 
         if(badcheck) {
