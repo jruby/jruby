@@ -2805,9 +2805,9 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.Node argsNode = node.getArgsNode();
 
-        final boolean unsplat = argsNode instanceof org.jruby.ast.SplatNode;
+        final boolean unsplat = argsNode instanceof org.jruby.ast.SplatNode || argsNode instanceof org.jruby.ast.ArgsCatNode;
 
-        if (unsplat) {
+        if (argsNode instanceof org.jruby.ast.SplatNode) {
             argsNode = ((org.jruby.ast.SplatNode) argsNode).getValue();
         }
 
