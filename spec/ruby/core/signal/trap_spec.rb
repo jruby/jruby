@@ -88,6 +88,12 @@ describe "Signal.trap" do
     Signal.trap(:HUP, "IGNORE").should == "IGNORE"
   end
 
+  it "raises ArgumentError when given a reserved signal" do
+    [:SEGV, :BUS, :ILL, :FPE, :VTALRM].each do
+      lambda { Signal.trap(:ILL) }.should raise_error(ArgumentError, /reserved signal/)
+    end
+  end
+
   describe "the special EXIT signal code" do
 
     it "accepts the EXIT code" do
