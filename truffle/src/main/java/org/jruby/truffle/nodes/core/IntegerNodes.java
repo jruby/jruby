@@ -24,63 +24,6 @@ import java.math.BigInteger;
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class DownToNode extends YieldingCoreMethodNode {
-
-        public DownToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
-            int count = 0;
-
-            try {
-                for (int i = from; i >= to; i--) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, i);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return nil();
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
-            // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
-            int count = 0;
-
-            try {
-                for (long i = from; i >= to; i--) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, i);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return nil();
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
-            return downto(frame, from, (int) Math.ceil(to), block);
-        }
-
-    }
-
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
@@ -177,62 +120,6 @@ public abstract class IntegerNodes {
         @Specialization(guards = "isRubyBignum(n)")
         public RubyBasicObject toI(RubyBasicObject n) {
             return n;
-        }
-
-    }
-
-    @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class UpToNode extends YieldingCoreMethodNode {
-
-        public UpToNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
-            int count = 0;
-
-            try {
-                for (int i = from; i <= to; i++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, i);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return nil();
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
-            return upto(frame, from, (int) Math.floor(to), block);
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
-            int count = 0;
-
-            try {
-                for (long i = from; i <= to; i++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
-
-                    yield(frame, block, i);
-                }
-            } finally {
-                if (CompilerDirectives.inInterpreter()) {
-                    getRootNode().reportLoopCount(count);
-                }
-            }
-
-            return nil();
         }
 
     }
