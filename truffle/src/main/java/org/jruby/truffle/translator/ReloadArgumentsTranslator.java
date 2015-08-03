@@ -47,17 +47,21 @@ public class ReloadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
+        final org.jruby.ast.Node[] args = node.getArgs();
+        final int preCount = node.getPreCount();
 
-        if (node.getPre() != null) {
-            for (org.jruby.ast.Node arg : node.getPre().children()) {
-                sequence.add(arg.accept(this));
+        if (preCount > 0) {
+            for (int i = 0; i < preCount; i++) {
+                sequence.add(args[i].accept(this));
                 index++;
             }
         }
 
-        if (node.getOptArgs() != null) {
-            for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
-                sequence.add(arg.accept(this));
+        final int optArgsCount = node.getOptionalArgsCount();
+        if (optArgsCount > 0) {
+            final int optArgsIndex = node.getOptArgIndex();
+            for (int i = 0; i < optArgsCount; i++) {
+                sequence.add(args[optArgsIndex + i].accept(this));
                 index++;
             }
         }
