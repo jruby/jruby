@@ -735,13 +735,13 @@ public class IRRuntimeHelpers {
         for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                // The most common use case here is where :
-                // - a method is defined inside a closure
+                // The most common use case in the MODULE_EVAL case is:
+                //   a method is defined inside a closure
                 //   that is nested inside a module_eval.
                 //   here self = the module
-                // - in the rare case where it is not (looks like it can
-                //   happen in some testing frameworks), we have to add
-                //   the method to self itself => its metaclass.
+                // In the rare case where it is not (looks like it can
+                // happen in some testing frameworks), we have to add
+                // the method to self itself => its metaclass.
                 //
                 // SSS FIXME: Looks like this rare case happens when
                 // the closure is used in a "define_method &block" scenario
@@ -769,21 +769,21 @@ public class IRRuntimeHelpers {
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
+                        // Walk up the dynscope hierarchy
                         ds = ds.getParentScope();
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
-                    } else if (scopeType == IRScopeType.CLASS_METHOD) {
-                        return (RubyModule) self;
-                    } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
-                        return self.getMetaClass();
                     } else {
                         switch (scopeType) {
+                            case CLASS_METHOD:
                             case MODULE_BODY:
                             case CLASS_BODY:
-                                return (RubyModule)self;
                             case METACLASS_BODY:
                                 return (RubyModule) self;
+
+                            case INSTANCE_METHOD:
+                                return self.getMetaClass();
 
                             default:
                                 throw new RuntimeException("Should not get here! scopeType is " + scopeType);

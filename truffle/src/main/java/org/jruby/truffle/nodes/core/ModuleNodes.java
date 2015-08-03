@@ -426,7 +426,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "attr", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "attr", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrNode extends CoreMethodArrayArgumentsNode {
 
         @Child GenerateAccessorNode generateGetterNode;
@@ -459,7 +459,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "attr_accessor", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "attr_accessor", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrAccessorNode extends CoreMethodArrayArgumentsNode {
 
         @Child GenerateAccessorNode generateGetterNode;
@@ -482,7 +482,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "attr_reader", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "attr_reader", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrReaderNode extends CoreMethodArrayArgumentsNode {
 
         @Child GenerateAccessorNode generateGetterNode;
@@ -502,7 +502,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "attr_writer", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "attr_writer", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class AttrWriterNode extends CoreMethodArrayArgumentsNode {
 
         @Child GenerateAccessorNode generateSetterNode;
@@ -679,7 +679,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = { "class_exec", "module_exec" }, argumentsAsArray = true, needsBlock = true)
+    @CoreMethod(names = { "class_exec", "module_exec" }, rest = true, needsBlock = true)
     public abstract static class ClassExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
@@ -1287,7 +1287,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "module_function", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "module_function", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class ModuleFunctionNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
@@ -1357,7 +1357,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "public", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "public", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
@@ -1376,7 +1376,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "public_class_method", argumentsAsArray = true)
+    @CoreMethod(names = "public_class_method", rest = true)
     public abstract static class PublicClassMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child SingletonClassNode singletonClassNode;
@@ -1400,7 +1400,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "private", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "private", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
@@ -1441,7 +1441,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "private_class_method", argumentsAsArray = true)
+    @CoreMethod(names = "private_class_method", rest = true)
     public abstract static class PrivateClassMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child SingletonClassNode singletonClassNode;
@@ -1701,7 +1701,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "private_constant", argumentsAsArray = true)
+    @CoreMethod(names = "private_constant", rest = true)
     public abstract static class PrivateConstantNode extends CoreMethodArrayArgumentsNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode;
@@ -1721,7 +1721,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "public_constant", argumentsAsArray = true)
+    @CoreMethod(names = "public_constant", rest = true)
     public abstract static class PublicConstantNode extends CoreMethodArrayArgumentsNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode;
@@ -1741,7 +1741,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "protected", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "protected", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class ProtectedNode extends CoreMethodArrayArgumentsNode {
 
         @Child SetVisibilityNode setVisibilityNode;
@@ -1812,7 +1812,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "remove_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "remove_method", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class RemoveMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode;
@@ -1865,7 +1865,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "undef_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "undef_method", rest = true, visibility = Visibility.PRIVATE)
     public abstract static class UndefMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child NameToJavaStringNode nameToJavaStringNode;

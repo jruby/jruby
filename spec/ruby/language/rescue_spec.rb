@@ -118,4 +118,14 @@ describe "The rescue keyword" do
     a += b rescue c
     a.should == 'ac'
   end
+
+  it "without classes will not rescue Exception" do
+    lambda do
+      begin
+        raise Exception
+      rescue
+        'Exception wrongly rescued'
+      end
+    end.should raise_error(Exception)
+  end
 end

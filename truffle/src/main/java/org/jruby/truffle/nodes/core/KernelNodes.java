@@ -635,7 +635,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "exec", isModuleFunction = true, required = 1, rest = true)
     public abstract static class ExecNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode toHashNode;
@@ -645,7 +645,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object exec(VirtualFrame frame, Object[] args) {
+        public Object exec(VirtualFrame frame, Object command, Object[] args) {
             if (toHashNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -653,10 +653,10 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
 
-            final String[] commandLine = new String[args.length];
-
+            final String[] commandLine = new String[1 + args.length];
+            commandLine[0] = command.toString();
             for (int n = 0; n < args.length; n++) {
-                commandLine[n] = args[n].toString();
+                commandLine[1 + n] = args[n].toString();
             }
 
             final RubyBasicObject env = getContext().getCoreLibrary().getENV();
@@ -750,7 +750,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "fork", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
         public ForkNode(RubyContext context, SourceSection sourceSection) {
@@ -1424,7 +1424,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "public_send", needsBlock = true, required = 1, argumentsAsArray = true)
+    @CoreMethod(names = "public_send", needsBlock = true, required = 1, rest = true)
     public abstract static class PublicSendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
@@ -1442,15 +1442,13 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, NotProvided block) {
-            return send(frame, self, args, (RubyBasicObject) null);
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, NotProvided block) {
+            return send(frame, self, name, args, (RubyBasicObject) null);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyBasicObject block) {
-            final Object name = args[0];
-            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
-            return dispatchNode.call(frame, self, name, block, sendArgs);
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, RubyBasicObject block) {
+            return dispatchNode.call(frame, self, name, block, args);
         }
 
     }
@@ -1873,7 +1871,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, argumentsAsArray = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
@@ -1883,18 +1881,17 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(firstArgument(arguments))", "byteListsEqual(asRubyBasicObject(firstArgument(arguments)), cachedFormat)"})
+        @Specialization(guards = { "isRubyString(format)", "byteListsEqual(format, cachedFormat)" })
         public RubyBasicObject formatCached(
                 VirtualFrame frame,
+                RubyBasicObject format,
                 Object[] arguments,
-                @Cached("privatizeByteList(asRubyBasicObject(firstArgument(arguments)))") ByteList cachedFormat,
-                @Cached("create(compileFormat(asRubyBasicObject(firstArgument(arguments))))") DirectCallNode callPackNode) {
-            final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
-
+                @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[]{store, store.length});
+                result = (PackResult) callPackNode.call(frame, new Object[] { arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1903,18 +1900,16 @@ public abstract class KernelNodes {
             return finishFormat(cachedFormat, result);
         }
 
-        @Specialization(guards = "isRubyString(firstArgument(arguments))", contains = "formatCached")
+        @Specialization(guards = "isRubyString(format)", contains = "formatCached")
         public RubyBasicObject formatUncached(
                 VirtualFrame frame,
+                RubyBasicObject format,
                 Object[] arguments,
                 @Cached("create()") IndirectCallNode callPackNode) {
-            final RubyBasicObject format = (RubyBasicObject) arguments[0];
-            final Object[] store = ArrayUtils.extractRange(arguments, 1, arguments.length);
-
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat((RubyBasicObject) arguments[0]), new Object[]{store, store.length});
+                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[] { arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1983,14 +1978,6 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
-        }
-
-        protected Object firstArgument(Object[] args) {
-            return args[0];
-        }
-
-        protected RubyBasicObject asRubyBasicObject(Object arg) {
-            return (RubyBasicObject) arg;
         }
 
     }

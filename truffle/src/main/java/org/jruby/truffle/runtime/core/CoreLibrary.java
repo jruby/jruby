@@ -462,6 +462,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
+        coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = ModuleNodes.getModel(basicObjectClass).getMethods().get("__send__");
         assert basicObjectSendMethod != null;
@@ -1266,6 +1267,8 @@ public class CoreLibrary {
     public RubyBasicObject getHashClass() {
         return hashClass;
     }
+
+    public RubyBasicObject getStandardErrorClass() { return standardErrorClass; }
 
     public RubyBasicObject getLoadErrorClass() {
         return loadErrorClass;

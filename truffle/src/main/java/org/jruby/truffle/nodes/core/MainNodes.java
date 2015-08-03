@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "public", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PublicNode publicNode;
@@ -37,7 +37,7 @@ public abstract class MainNodes {
         }
     }
 
-    @CoreMethod(names = "private", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PrivateNode privateNode;

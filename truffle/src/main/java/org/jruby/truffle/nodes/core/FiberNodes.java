@@ -259,7 +259,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "resume", argumentsAsArray = true)
+    @CoreMethod(names = "resume", rest = true)
     public abstract static class ResumeNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
@@ -276,7 +276,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "yield", onSingleton = true, argumentsAsArray = true)
+    @CoreMethod(names = "yield", onSingleton = true, rest = true)
     public abstract static class YieldNode extends CoreMethodArrayArgumentsNode {
 
         @Child FiberTransferNode fiberTransferNode;
