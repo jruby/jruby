@@ -201,21 +201,11 @@ class TestSignal < Test::Unit::TestCase
   end if Signal.list.key?('QUIT')
 
   def test_reserved_signal
-    assert_raise(ArgumentError) {
-      Signal.trap(:SEGV) {}
-    }
-    assert_raise(ArgumentError) {
-      Signal.trap(:BUS) {}
-    }
-    assert_raise(ArgumentError) {
-      Signal.trap(:ILL) {}
-    }
-    assert_raise(ArgumentError) {
-      Signal.trap(:FPE) {}
-    }
-    assert_raise(ArgumentError) {
-      Signal.trap(:VTALRM) {}
-    }
+    [:SEGV, :BUS, :ILL, :FPE, :VTALRM].each do |signal|
+      assert_raise_with_message(ArgumentError, /reserved signal/) {
+        Signal.trap(signal) {}
+      }
+    end
   end
 
   def test_signame
