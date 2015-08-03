@@ -49,9 +49,12 @@ public class Arity {
 
         if (argsNode.hasKwargs()) {
             keywordArguments = new ArrayList<>();
-            if (argsNode.getKeywords() != null) {
-                for (Node node : argsNode.getKeywords().children()) {
-                    final KeywordArgNode kwarg = (KeywordArgNode) node;
+            Node[] args = argsNode.getArgs();
+            int keywordCount = argsNode.getKeywordCount();
+            int keywordIndex = argsNode.getKeywordsIndex();
+            if (keywordCount > 0) {
+                for (int i = 0; i < keywordCount; i++) {
+                    final KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                     final AssignableNode assignableNode = kwarg.getAssignable();
 
                     if (assignableNode instanceof LocalAsgnNode) {
@@ -62,7 +65,7 @@ public class Arity {
                                 .getName());
                     } else {
                         throw new UnsupportedOperationException(
-                                "unsupported keyword arg " + node);
+                                "unsupported keyword arg " + args[keywordIndex + i]);
                     }
                 }
             }

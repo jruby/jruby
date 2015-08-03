@@ -105,6 +105,22 @@ public class ArgsNode extends Node {
         this.keyRest = keyRest;
     }
 
+    public Node[] getArgs() {
+        return args;
+    }
+
+    public int getOptArgIndex() {
+        return optIndex;
+    }
+
+    public int getPostIndex() {
+        return postIndex;
+    }
+
+    public int getKeywordsIndex() {
+        return keywordsIndex;
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.ARGSNODE;
@@ -248,8 +264,8 @@ public class ArgsNode extends Node {
         if (getKeywordCount() < 1) return 0;
 
         int count = 0;
-        for (Node keyWordNode : getKeywords().children()) {
-            for (Node asgnNode : keyWordNode.childNodes()) {
+        for (int i = 0; i < getKeywordCount(); i++) {
+            for (Node asgnNode : args[keywordsIndex + i].childNodes()) {
                 if (Helpers.isRequiredKeywordArgumentValueNode(asgnNode)) count++;
             }
         }
