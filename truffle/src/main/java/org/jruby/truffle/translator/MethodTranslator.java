@@ -31,7 +31,6 @@ import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ThreadPassNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -165,10 +164,6 @@ class MethodTranslator extends BodyTranslator {
                         new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
                         loadArguments);
             }
-        }
-
-        if (YIELDS) {
-            body = SequenceNode.sequence(context, sourceSection, new ThreadPassNode(context, sourceSection), body);
         }
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
