@@ -31,7 +31,6 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -1499,7 +1498,7 @@ primary         : literal
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefnNode($1, new ArgumentNode($1, $2), (ArgsNode) $4, support.getCurrentScope(), body);
+                    $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                 }
@@ -1513,7 +1512,7 @@ primary         : literal
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), (ArgsNode) $7, support.getCurrentScope(), body);
+                    $$ = new DefsNode($1, $2, $5, (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                 }

@@ -51,12 +51,12 @@ public class CheckArityNode extends RubyNode {
         //TODO (MS): Check merge
         if (RubyArguments.isKwOptimized(frame.getArguments())) {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments())
-                    - arity.getCountKeywords() - 2;
+                    - arity.getKeywordsCount() - 2;
         } else {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments());
         }
 
-        if (arity.hasKeywords()) {
+        if (arity.acceptsKeywords()) {
             keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired());
         } else {
             keywordArguments = null;

@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
- * Read a post-optional argument.
+ * Read a post argument.
  */
 public class ReadPostArgumentNode extends RubyNode {
 
@@ -29,7 +29,7 @@ public class ReadPostArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        final int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
         final int effectiveIndex = count + negativeIndex;
         assert effectiveIndex < count;
         return RubyArguments.getUserArgument(frame.getArguments(), effectiveIndex);

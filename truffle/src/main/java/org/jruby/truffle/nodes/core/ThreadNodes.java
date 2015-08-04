@@ -370,7 +370,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", argumentsAsArray = true, needsBlock = true)
+    @CoreMethod(names = "initialize", rest = true, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {

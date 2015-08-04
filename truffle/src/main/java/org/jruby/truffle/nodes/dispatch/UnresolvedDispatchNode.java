@@ -15,11 +15,14 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -172,7 +175,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (ignoreVisibility) {
             callerClass = null;
         } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
-            final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false);
+            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
         } else {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));

@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
 public class Arity {
 
-    public static final List<String> NO_KEYWORDS = Collections.emptyList();
+    public static final String[] NO_KEYWORDS = new String[]{};
     public static final Arity NO_ARGUMENTS = new Arity(0, 0, false);
     public static final Arity ONE_REQUIRED = new Arity(1, 0, false);
     public static final Arity AT_LEAST_ONE = new Arity(1, 0, true);
@@ -23,21 +22,20 @@ public class Arity {
     private final int optional;
     private final boolean hasRest;
     private final int postRequired;
-    private final boolean hasKeyRest;
-
-    private final List<String> keywordArguments;
+    private final boolean hasKeywordsRest;
+    private final String[] keywordArguments;
 
     public Arity(int preRequired, int optional, boolean hasRest) {
         this(preRequired, optional, hasRest, 0, NO_KEYWORDS, false);
     }
 
-    public Arity(int preRequired, int optional, boolean hasRest, int postRequired, List<String> keywordArguments, boolean hasKeyRest) {
+    public Arity(int preRequired, int optional, boolean hasRest, int postRequired, String[] keywordArguments, boolean hasKeywordsRest) {
         this.preRequired = preRequired;
         this.optional = optional;
         this.hasRest = hasRest;
         this.postRequired = postRequired;
         this.keywordArguments = keywordArguments;
-        this.hasKeyRest = hasKeyRest;
+        this.hasKeywordsRest = hasKeywordsRest;
 
         assert keywordArguments != null && preRequired >= 0 && optional >= 0 && postRequired >= 0 : toString();
     }
@@ -66,22 +64,26 @@ public class Arity {
         return preRequired + optional;
     }
 
+    public boolean acceptsKeywords() {
+        return hasKeywords() || hasKeywordsRest();
+    }
+
     public boolean hasKeywords() {
-        return keywordArguments != NO_KEYWORDS;
+        return keywordArguments.length != 0;
     }
 
-    public int getCountKeywords() {
-        return keywordArguments.size();
+    public int getKeywordsCount() {
+        return keywordArguments.length;
     }
 
-    public boolean hasKeyRest() {
-        return hasKeyRest;
+    public boolean hasKeywordsRest() {
+        return hasKeywordsRest;
     }
 
     public int getArityNumber() {
-        int count = preRequired + postRequired;
+        int count = getRequired();
 
-        if (hasKeywords()) {
+        if (acceptsKeywords()) {
             count++;
         }
 
@@ -92,7 +94,7 @@ public class Arity {
         return count;
     }
 
-    public List<String> getKeywordArguments() {
+    public String[] getKeywordArguments() {
         return keywordArguments;
     }
 
@@ -103,8 +105,8 @@ public class Arity {
                 ", optional=" + optional +
                 ", hasRest=" + hasRest +
                 ", postRequired=" + postRequired +
-                ", keywordArguments=" + keywordArguments +
-                ", hasKeyRest=" + hasKeyRest +
+                ", keywordArguments=" + Arrays.toString(keywordArguments) +
+                ", hasKeywordsRest=" + hasKeywordsRest +
                 '}';
     }
 }

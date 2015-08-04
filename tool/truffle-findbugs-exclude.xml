@@ -30,6 +30,10 @@
     <Bug pattern="DM_EXIT" />
   </Match>
   <Match>
+    <Class name="org.jruby.truffle.nodes.core.CoreMethodNodeManager" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
     <Class name="org.jruby.truffle.nodes.core.CoreMethodNodeManager$AmbiguousOptionalArgumentChecker" />
     <Bug pattern="DM_EXIT" />
   </Match>
@@ -155,6 +159,10 @@
   </Match>
   <Match>
     <Class name="org.jruby.truffle.nodes.core.FiberNodes$FiberResumeMessage" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.methods.Arity" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
 

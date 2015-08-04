@@ -3680,7 +3680,7 @@ states[351] = new ParserState() {
                     Node body = ((Node)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    yyVal = new DefnNode(((ISourcePosition)yyVals[-5+yyTop]), new ArgumentNode(((ISourcePosition)yyVals[-5+yyTop]), ((String)yyVals[-4+yyTop])), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
+                    yyVal = new DefnNode(((ISourcePosition)yyVals[-5+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
     return yyVal;
@@ -3705,7 +3705,7 @@ states[354] = new ParserState() {
                     Node body = ((Node)yyVals[-1+yyTop]);
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    yyVal = new DefsNode(((ISourcePosition)yyVals[-8+yyTop]), ((Node)yyVals[-7+yyTop]), new ArgumentNode(((ISourcePosition)yyVals[-8+yyTop]), ((String)yyVals[-4+yyTop])), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
+                    yyVal = new DefsNode(((ISourcePosition)yyVals[-8+yyTop]), ((Node)yyVals[-7+yyTop]), ((String)yyVals[-4+yyTop]), (ArgsNode) yyVals[-2+yyTop], support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
     return yyVal;

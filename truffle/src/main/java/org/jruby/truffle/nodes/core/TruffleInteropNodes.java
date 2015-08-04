@@ -259,7 +259,7 @@ public abstract class TruffleInteropNodes {
 
     }
 
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, argumentsAsArray = true)
+    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private Node node;
@@ -269,12 +269,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, Object[] arguments) {
-            TruffleObject receiver = (TruffleObject) arguments[0];
-            Object[] args = new Object[arguments.length - 1];
-            for (int i = 1; i < arguments.length; i++) {
-                args[i - 1] = arguments[i];
-            }
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, Object[] args) {
             if (node == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.node = Message.createExecute(args.length).createNode();

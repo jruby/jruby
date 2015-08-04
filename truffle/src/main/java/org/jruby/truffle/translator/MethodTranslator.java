@@ -46,6 +46,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class MethodTranslator extends BodyTranslator {
@@ -84,7 +85,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false);
+            arityForCheck = new Arity(arity.getPreRequired(), 0, false);
         } else {
             arityForCheck = arity;
         }
@@ -265,25 +266,24 @@ class MethodTranslator extends BodyTranslator {
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
-        final List<String> keywordArguments;
+        final String[] keywordArguments;
 
-        if (argsNode.hasKwargs()) {
-            keywordArguments = new ArrayList<>();
-            if (argsNode.getKeywords() != null) {
-                for (org.jruby.ast.Node node : argsNode.getKeywords().children()) {
-                    final KeywordArgNode kwarg = (KeywordArgNode) node;
-                    final AssignableNode assignableNode = kwarg.getAssignable();
+        if (argsNode.hasKwargs() && argsNode.getKeywords() != null) {
+            final org.jruby.ast.Node[] keywordNodes = argsNode.getKeywords().children();
+            final int keywordsCount = keywordNodes.length;
 
-                    if (assignableNode instanceof LocalAsgnNode) {
-                        keywordArguments.add(((LocalAsgnNode) assignableNode)
-                                .getName());
-                    } else if (assignableNode instanceof DAsgnNode) {
-                        keywordArguments.add(((DAsgnNode) assignableNode)
-                                .getName());
-                    } else {
-                        throw new UnsupportedOperationException(
-                                "unsupported keyword arg " + node);
-                    }
+            keywordArguments = new String[keywordsCount];
+            for (int i = 0; i < keywordsCount; i++) {
+                final KeywordArgNode kwarg = (KeywordArgNode) keywordNodes[i];
+                final AssignableNode assignableNode = kwarg.getAssignable();
+
+                if (assignableNode instanceof LocalAsgnNode) {
+                    keywordArguments[i] = ((LocalAsgnNode) assignableNode).getName();
+                } else if (assignableNode instanceof DAsgnNode) {
+                    keywordArguments[i] = ((DAsgnNode) assignableNode).getName();
+                } else {
+                    throw new UnsupportedOperationException(
+                            "unsupported keyword arg " + kwarg);
                 }
             }
         } else {
