@@ -339,6 +339,7 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there

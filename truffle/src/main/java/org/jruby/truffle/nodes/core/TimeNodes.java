@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -97,6 +98,7 @@ public abstract class TimeNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean internalSetGMT(RubyBasicObject time, boolean isGMT) {
             if (isGMT) {

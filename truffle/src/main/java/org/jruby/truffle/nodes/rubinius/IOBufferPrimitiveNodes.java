@@ -38,6 +38,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
@@ -197,8 +198,28 @@ public abstract class IOBufferPrimitiveNodes {
                 count = left(frame, ioBuffer);
             }
 
-            int bytesRead;
+            int bytesRead = performFill(fd, readBuffer, count);
 
+            if (bytesRead > 0) {
+                // Detect if another thread has updated the buffer
+                // and now there isn't enough room for this data.
+                if (bytesRead > left(frame, ioBuffer)) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
+                }
+                final int used = getUsed(ioBuffer);
+                final ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
+                System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
+                storage.setRealSize(used + bytesRead);
+                setUsed(ioBuffer, used + bytesRead);
+            }
+
+            return bytesRead;
+        }
+
+        @TruffleBoundary
+        private int performFill(int fd, byte[] readBuffer, int count) {
+            int bytesRead;
             while (true) {
                 bytesRead = posix().read(fd, readBuffer, count);
 
@@ -223,21 +244,6 @@ public abstract class IOBufferPrimitiveNodes {
                     break;
                 }
             }
-
-            if (bytesRead > 0) {
-                // Detect if another thread has updated the buffer
-                // and now there isn't enough room for this data.
-                if (bytesRead > left(frame, ioBuffer)) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
-                }
-                final int used = getUsed(ioBuffer);
-                final ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
-                System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
-                storage.setRealSize(used + bytesRead);
-                setUsed(ioBuffer, used + bytesRead);
-            }
-
             return bytesRead;
         }
 

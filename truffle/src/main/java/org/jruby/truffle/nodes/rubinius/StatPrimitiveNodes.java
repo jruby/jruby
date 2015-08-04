@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.HiddenKey;
@@ -165,6 +166,7 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int stat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();
@@ -196,6 +198,7 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
+        @TruffleBoundary
         @Specialization
         public int fstat(RubyBasicObject rubyStat, int fd) {
             final FileStat stat = posix().allocateStat();
@@ -220,6 +223,7 @@ public abstract class StatPrimitiveNodes {
             writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
         public int lstat(RubyBasicObject rubyStat, RubyBasicObject path) {
             final FileStat stat = posix().allocateStat();

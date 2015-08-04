@@ -21,6 +21,7 @@
 package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -86,6 +87,7 @@ public abstract class CmpIntNode extends RubyNode {
         return BignumNodes.getBigIntegerValue(value).signum();
     }
 
+    @TruffleBoundary
     @Specialization(guards = "isNil(nil)")
     public int cmpNil(Object nil, Object receiver, Object other) {
         throw new RaiseException(
