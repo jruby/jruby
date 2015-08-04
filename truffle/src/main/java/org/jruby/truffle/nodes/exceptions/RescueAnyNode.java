@@ -12,21 +12,26 @@ package org.jruby.truffle.nodes.exceptions;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
- * Rescues any exception.
+ * Rescues any exception where {@code $!.is_a?(StandardError)}.
  */
 public class RescueAnyNode extends RescueNode {
 
+    @Child private KernelNodes.IsANode isANode;
+
     public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection, body);
+        isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, null);
     }
 
     @Override
     public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
-        return true;
+        return isANode.executeIsA(frame, exception, getContext().getCoreLibrary().getStandardErrorClass());
     }
 
 }

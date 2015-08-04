@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -151,15 +152,9 @@ public class CoreMethodNodeManager {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
 
         final int required = method.required();
-        final int optional;
+        final int optional = method.optional();
 
-        if (method.argumentsAsArray()) {
-            optional = 0;
-        } else {
-            optional = method.optional();
-        }
-
-        final Arity arity = new Arity(required,  optional, method.argumentsAsArray(), false, false, 0);
+        final Arity arity = new Arity(required, optional, method.rest());
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 
@@ -183,22 +178,21 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(readSelfNode);
         }
 
-        if (method.argumentsAsArray()) {
-            argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
-        } else {
-            for (int n = 0; n < arity.getRequired() + arity.getOptional(); n++) {
-                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+        for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
-                if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
-                    readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
-                }
-
-                if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
-                }
-
-                argumentsNodes.add(readArgumentNode);
+            if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
+                readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
             }
+
+            if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
+                readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
+            }
+
+            argumentsNodes.add(readArgumentNode);
+        }
+        if (method.rest()) {
+            argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
         }
 
         if (method.needsBlock()) {
@@ -246,6 +240,13 @@ public class CoreMethodNodeManager {
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
+    public void allMethodInstalled() {
+        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null &&
+            !AmbiguousOptionalArgumentChecker.SUCCESS) {
+            System.exit(1);
+        }
+    }
+
     public static class MethodDetails {
 
         private final CoreClass classAnnotation;
@@ -281,6 +282,7 @@ public class CoreMethodNodeManager {
     private static class AmbiguousOptionalArgumentChecker {
 
         private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
+        private static boolean SUCCESS = true;
 
         private static Method checkParametersNamesAvailable() {
             try {
@@ -288,29 +290,25 @@ public class CoreMethodNodeManager {
             } catch (NoSuchMethodException | SecurityException e) {
                 // Java 7 or could not find how to get names of method parameters
                 System.err.println("Could not find method Method.getParameters()");
+                System.exit(1);
                 return null;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArguments(MethodDetails methodDetails) {
-            if (GET_PARAMETERS == null) {
-                System.exit(1);
-            }
-
             try {
                 verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
             } catch (Exception e) {
                 e.printStackTrace();
-                System.exit(1);
+                SUCCESS = false;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
-            boolean success = true;
-
-            if (methodDetails.getMethodAnnotation().optional() > 0) {
-                int opt = methodDetails.getMethodAnnotation().optional();
-                if (methodDetails.getMethodAnnotation().needsBlock()) {
+            final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
+            if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
+                int opt = methodAnnotation.optional();
+                if (methodAnnotation.needsBlock()) {
                     opt++;
                 }
 
@@ -324,6 +322,9 @@ public class CoreMethodNodeManager {
                             // count from the end to ignore optional VirtualFrame in front.
                             Class<?>[] parameterTypes = method.getParameterTypes();
                             int n = parameterTypes.length - i;
+                            if (methodAnnotation.rest()) {
+                                n--; // ignore final Object[] argument
+                            }
                             Class<?> parameterType = parameterTypes[n];
                             Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
 
@@ -335,7 +336,7 @@ public class CoreMethodNodeManager {
                             }
                             String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
 
-                            if (parameterType == Object.class && !name.startsWith("unused")) {
+                            if (parameterType == Object.class && !name.startsWith("unused") && !name.equals("maybeBlock")) {
                                 String[] guards = method.getAnnotation(Specialization.class).guards();
                                 if (!isGuarded(name, guards)) {
                                     unguardedObjectArgument = true;
@@ -346,15 +347,11 @@ public class CoreMethodNodeManager {
                     }
 
                     if (unguardedObjectArgument) {
-                        success = false;
+                        SUCCESS = false;
                         System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
                         System.err.println(errors);
                     }
                 }
-            }
-
-            if (!success) {
-                System.exit(1);
             }
         }
 

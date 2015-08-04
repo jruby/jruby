@@ -19,7 +19,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.7', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.8', true ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
@@ -32,7 +32,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
- 
+
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
     def to_pathname
@@ -236,7 +236,7 @@ project 'JRuby Lib Setup' do
 
   execute( 'fix shebang on gem bin files and add *.bat files',
            'generate-resources' ) do |ctx|
-    
+
     puts 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'
     bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
@@ -246,7 +246,7 @@ project 'JRuby Lib Setup' do
 " )
       File.open( f, "w" ) { |file| file.print( new_content ) }
     end
-    
+
     puts 'generate the missing bat files'
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
@@ -263,12 +263,12 @@ project 'JRuby Lib Setup' do
       end
     end
   end
-  
+
   execute( 'copy bin/jruby.bash to bin/jruby',
            'process-resources' ) do |ctx|
     require 'fileutils'
     jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
-    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ), 
+    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ),
                   File.join( jruby_complete, 'bin', 'jruby' ) )
   end
 

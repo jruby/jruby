@@ -18,6 +18,10 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.AssignableNode;
+import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.DAsgnNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -27,7 +31,6 @@ import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ThreadPassNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -40,6 +43,10 @@ import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 class MethodTranslator extends BodyTranslator {
 
@@ -77,7 +84,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false, false, false, 0);
+            arityForCheck = new Arity(arity.getPreRequired(), 0, false);
         } else {
             arityForCheck = arity;
         }
@@ -157,10 +164,6 @@ class MethodTranslator extends BodyTranslator {
                         new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
                         loadArguments);
             }
-        }
-
-        if (YIELDS) {
-            body = SequenceNode.sequence(context, sourceSection, new ThreadPassNode(context, sourceSection), body);
         }
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
@@ -244,8 +247,8 @@ class MethodTranslator extends BodyTranslator {
                     newRootNodeForLambdas.getSourceSection(),
                     newRootNodeForLambdas.getFrameDescriptor(), newRootNodeForLambdas.getSharedMethodInfo(),
                     new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, newRootNodeForLambdas.getSourceSection(),
-                            newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())), environment.needsDeclarationFrame());
+                            new CatchReturnNode(context, newRootNodeForLambdas.getSourceSection(),
+                                    newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())), environment.needsDeclarationFrame());
 
             final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
 
@@ -258,10 +261,37 @@ class MethodTranslator extends BodyTranslator {
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
-        final int minimum = argsNode.getRequiredArgsCount();
-        final int maximum = argsNode.getMaxArgumentsCount();
-        // TODO CS 19-Mar-15 collect up the keyword argument names here
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords(), argsNode);
+        final String[] keywordArguments;
+
+        if (argsNode.hasKwargs() && argsNode.getKeywords() != null) {
+            final org.jruby.ast.Node[] keywordNodes = argsNode.getKeywords().children();
+            final int keywordsCount = keywordNodes.length;
+
+            keywordArguments = new String[keywordsCount];
+            for (int i = 0; i < keywordsCount; i++) {
+                final KeywordArgNode kwarg = (KeywordArgNode) keywordNodes[i];
+                final AssignableNode assignableNode = kwarg.getAssignable();
+
+                if (assignableNode instanceof LocalAsgnNode) {
+                    keywordArguments[i] = ((LocalAsgnNode) assignableNode).getName();
+                } else if (assignableNode instanceof DAsgnNode) {
+                    keywordArguments[i] = ((DAsgnNode) assignableNode).getName();
+                } else {
+                    throw new UnsupportedOperationException(
+                            "unsupported keyword arg " + kwarg);
+                }
+            }
+        } else {
+            keywordArguments = Arity.NO_KEYWORDS;
+        }
+
+        return new Arity(
+                argsNode.getPreCount(),
+                argsNode.getOptionalArgsCount(),
+                argsNode.hasRestArg(),
+                argsNode.getPostCount(),
+                keywordArguments,
+                argsNode.hasKeyRest());
     }
 
     @Override

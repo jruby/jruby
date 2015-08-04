@@ -23,8 +23,12 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+
+import java.util.List;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
@@ -54,6 +58,15 @@ public abstract class ExceptionNodes {
 
     public static final ExceptionLayout EXCEPTION_LAYOUT = ExceptionLayoutImpl.INSTANCE;
 
+    public static class BacktraceFormatter extends MRIBacktraceFormatter {
+        @Override
+        protected String formatFromLine(List<Activation> activations, int n) {
+            return formatCallerLine(activations, n);
+        }
+    }
+
+    public static final BacktraceFormatter BACKTRACE_FORMATTER = new BacktraceFormatter();
+
     // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
     public static Object getMessage(RubyBasicObject exception) {
         return EXCEPTION_LAYOUT.getMessage(BasicObjectNodes.getDynamicObject(exception));
@@ -71,7 +84,7 @@ public abstract class ExceptionNodes {
         assert RubyGuards.isRubyException(exception);
 
         assert getBacktrace(exception) != null;
-        final String[] lines = Backtrace.EXCEPTION_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, getBacktrace(exception));
+        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, getBacktrace(exception));
 
         final Object[] array = new Object[lines.length];
 

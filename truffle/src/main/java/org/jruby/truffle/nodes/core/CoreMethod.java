@@ -23,6 +23,7 @@ public @interface CoreMethod {
 
     String[] names();
 
+    // where the method is to be defined
     Visibility visibility() default Visibility.PUBLIC;
 
     /**
@@ -45,6 +46,7 @@ public @interface CoreMethod {
      */
     boolean isModuleFunction() default false;
 
+    // arguments specification
     /** Whether <code>self</code> is passed as first argument to specializations. */
     boolean needsSelf() default true;
 
@@ -53,12 +55,13 @@ public @interface CoreMethod {
     int optional() default 0;
 
     /**
-     * Give arguments as a Object[] and allows unlimited arguments.
+     * Give the remaining arguments as a Object[] and allows unlimited arguments.
      */
-    boolean argumentsAsArray() default false;
+    boolean rest() default false;
 
     boolean needsBlock() default false;
 
+    // arguments transformation
     boolean lowerFixnumSelf() default false;
 
     int[] lowerFixnumParameters() default {};
@@ -71,6 +74,7 @@ public @interface CoreMethod {
 
     int[] raiseIfFrozenParameters() default {};
 
+    // extra behavior
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
     boolean returnsEnumeratorIfNoBlock() default false;

@@ -34,13 +34,16 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import jnr.posix.POSIX;
+
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
@@ -111,6 +114,12 @@ public abstract class StringNodes {
 
     public static void setByteList(RubyBasicObject string, ByteList byteList) {
         STRING_LAYOUT.setByteList(BasicObjectNodes.getDynamicObject(string), byteList);
+    }
+
+    // Since ByteList.toString does not decode properly
+    @TruffleBoundary
+    public static String getString(RubyBasicObject string) {
+        return Helpers.decodeByteList(BasicObjectNodes.getContext(string).getRuntime(), getByteList(string));
     }
 
     public static int getCodeRange(RubyBasicObject string) {
@@ -923,7 +932,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "count", argumentsAsArray = true)
+    @CoreMethod(names = "count", rest = true)
     public abstract static class CountNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -1048,7 +1057,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "delete!", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class DeleteBangNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStr;
@@ -1831,7 +1840,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "squeeze!", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
         private ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();

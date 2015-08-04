@@ -203,7 +203,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(RubyBasicObject path, int mode, int permission) {
-            return posix().open(StringNodes.getByteList(path), mode, permission);
+            return posix().open(StringNodes.getString(path), mode, permission);
         }
 
     }
@@ -223,9 +223,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int truncate(RubyBasicObject path, long length) {
-            final ByteList byteList = StringNodes.getByteList(path);
-            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            final int result = posix().truncate(pathString, length);
+            final int result = posix().truncate(StringNodes.getString(path), length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -265,12 +263,14 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(RubyBasicObject pattern, RubyBasicObject path, int flags) {
-            return Dir.fnmatch(StringNodes.getByteList(pattern).getUnsafeBytes(),
-                    StringNodes.getByteList(pattern).getBegin(),
-                    StringNodes.getByteList(pattern).getBegin() + StringNodes.getByteList(pattern).getRealSize(),
-                    StringNodes.getByteList(path).getUnsafeBytes(),
-                    StringNodes.getByteList(path).getBegin(),
-                    StringNodes.getByteList(path).getBegin() + StringNodes.getByteList(path).getRealSize(),
+            final ByteList patternBytes = StringNodes.getByteList(pattern);
+            final ByteList pathBytes = StringNodes.getByteList(path);
+            return Dir.fnmatch(patternBytes.getUnsafeBytes(),
+                    patternBytes.getBegin(),
+                    patternBytes.getBegin() + patternBytes.getRealSize(),
+                    pathBytes.getUnsafeBytes(),
+                    pathBytes.getBegin(),
+                    pathBytes.getBegin() + pathBytes.getRealSize(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -403,7 +403,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization(guards = "isRubyString(path)")
         public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
             int fd = getDescriptor(file);
-            final String pathString = path.toString();
+            final String pathString = StringNodes.getString(path);
 
             int otherFd = posix().open(pathString, mode, 666);
             if (otherFd < 0) {
@@ -462,7 +462,6 @@ public abstract class IOPrimitiveNodes {
                 return byteList.length();
             }
 
-            // We have to copy here as write starts at byte[0], and the ByteList may not
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
             final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 
@@ -551,8 +550,8 @@ public abstract class IOPrimitiveNodes {
         public int accept(VirtualFrame frame, RubyBasicObject io) {
             final int fd = getDescriptor(io);
 
-            final IntByReference addressLength = new IntByReference(16);
-            final long address = UnsafeHolder.U.allocateMemory(addressLength.intValue());
+            final int[] addressLength = {16};
+            final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
 
             final int newFd;
 

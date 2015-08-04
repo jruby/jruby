@@ -2752,10 +2752,6 @@ public class BodyTranslator extends Translator {
 
         final RubyNode loop;
 
-        if (YIELDS) {
-            body = SequenceNode.sequence(context, sourceSection, new ThreadPassNode(context, sourceSection), body);
-        }
-
         if (node.evaluateAtStart()) {
             loop = WhileNode.createWhile(context, sourceSection, condition, body);
         } else {

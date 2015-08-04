@@ -105,7 +105,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         return builder.toString();
     }
 
-    private static String formatFromLine(List<Activation> activations, int n) {
+    protected String formatFromLine(List<Activation> activations, int n) {
         return "\tfrom " + formatCallerLine(activations, n);
     }
 

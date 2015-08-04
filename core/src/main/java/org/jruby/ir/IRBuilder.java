@@ -1828,10 +1828,10 @@ public class IRBuilder {
         int argIndex = 0;
 
         // Pre(-opt and rest) required args
-        ListNode preArgs = argsNode.getPre();
+        Node[] args = argsNode.getArgs();
         int preCount = signature.pre();
         for (int i = 0; i < preCount; i++, argIndex++) {
-            receiveRequiredArg(preArgs.get(i), argIndex, false, -1, -1);
+            receiveRequiredArg(args[i], argIndex, false, -1, -1);
         }
 
         // Fixup opt/rest
@@ -1839,11 +1839,11 @@ public class IRBuilder {
 
         // Now for opt args
         if (opt > 0) {
-            ListNode optArgs = argsNode.getOptArgs();
+            int optIndex = argsNode.getOptArgIndex();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
-                OptArgNode n = (OptArgNode)optArgs.get(j);
+                OptArgNode n = (OptArgNode)args[optIndex + j];
                 String argName = n.getName();
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
@@ -1875,10 +1875,10 @@ public class IRBuilder {
         }
 
         // Post(-opt and rest) required args
-        ListNode postArgs = argsNode.getPost();
-        int postCount = postArgs != null ? postArgs.size() : -1;
+        int postCount = argsNode.getPostCount();
+        int postIndex = argsNode.getPostIndex();
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(postArgs.get(i), i, true, signature.pre(), postCount);
+            receiveRequiredArg(args[postIndex + i], i, true, signature.pre(), postCount);
         }
     }
 
@@ -1930,11 +1930,13 @@ public class IRBuilder {
         receiveNonBlockArgs(argsNode);
 
         // 2.0 keyword args
-        ListNode keywords = argsNode.getKeywords();
+        Node[] args = argsNode.getArgs();
         int required = argsNode.getRequiredArgsCount();
-        if (keywords != null) {
-            for (Node knode : keywords.children()) {
-                KeywordArgNode kwarg = (KeywordArgNode)knode;
+        if (argsNode.hasKwargs()) {
+            int keywordIndex = argsNode.getKeywordsIndex();
+            int keywordsCount = argsNode.getKeywordCount();
+            for (int i = 0; i < keywordsCount; i++) {
+                KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                 AssignableNode kasgn = kwarg.getAssignable();
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = getNewLocalVariable(argName, 0);

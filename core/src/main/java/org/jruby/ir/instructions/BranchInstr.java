@@ -4,12 +4,10 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 
-public abstract class BranchInstr extends NOperandInstr {
-    public BranchInstr(Operation op, Operand[] operands) {
-        super(op, operands);
+public abstract class BranchInstr extends Instr {
+    public BranchInstr(Operation op) {
+        super(op);
     }
 
-    public Label getJumpTarget() {
-        return (Label) operands[0];
-    }
+    public abstract Label getJumpTarget();
 }

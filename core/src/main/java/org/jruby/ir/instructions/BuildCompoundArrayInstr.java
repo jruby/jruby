@@ -14,26 +14,24 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // This represents an array that is used solely during arguments construction
 //   * Array + Splat ([1,2,3], *[5,6,7])
 // This used to be an operand, but since to_a can be called as part of
 // building the args-cat/push value, this is not really side-effect free.
-public class BuildCompoundArrayInstr extends ResultBaseInstr {
+public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
     private boolean isArgsPush;
 
     public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {
-        super(Operation.BUILD_COMPOUND_ARRAY, result, new Operand[] { a1, a2 });
+        super(Operation.BUILD_COMPOUND_ARRAY, result, a1, a2);
         this.isArgsPush = isArgsPush;
     }
 
     public Operand getAppendingArg() {
-        return operands[0];
+        return getOperand1();
     }
 
     public Operand getAppendedArg() {
-        return operands[1];
+        return getOperand2();
     }
 
     public boolean isArgsPush() { return isArgsPush; }

@@ -128,16 +128,6 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         catch (Exception ex) { LOG.debug(ex); }
     }
 
-    /**
-     * Helper to close the JRuby class-loader.
-     * @param loader
-     * @note This is internal API, do not rely on it to exists!
-     */
-    public static void close(final JRubyClassLoader loader) {
-        if ( loader == null ) return;
-        loader.close();
-    }
-
     @Deprecated
     public synchronized Runnable getJDBCDriverUnloader() {
         if (unloader == null) {

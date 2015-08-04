@@ -89,40 +89,45 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
+        final org.jruby.ast.Node[] args = node.getArgs();
+        final int preCount = node.getPreCount();
 
-        if (node.getPre() != null) {
+        if (preCount > 0) {
             state = State.PRE;
             index = 0;
-            for (org.jruby.ast.Node arg : node.getPre().children()) {
-                sequence.add(arg.accept(this));
+            for (int i = 0; i < preCount; i++) {
+                sequence.add(args[i].accept(this));
                 index++;
                 required++;
             }
         }
 
-        if (node.getOptArgs() != null) {
+        final int optArgCount = node.getOptionalArgsCount();
+        if (optArgCount > 0) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
             state = State.OPT;
             index = argsNode.getPreCount();
-            for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
-                sequence.add(arg.accept(this));
+            final int optArgIndex = node.getOptArgIndex();
+            for (int i = 0; i < optArgCount; i++) {
+                sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
         }
 
-        hasKeywordArguments = node.hasKwargs() && node.getKeywords() != null;
+        hasKeywordArguments = node.hasKwargs();
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
             sequence.add(node.getRestArgNode().accept(this));
         }
 
-        if (node.getPost() != null) {
+        int postCount = node.getPostCount();
+        if (postCount > 0) {
             state = State.POST;
             index = -1;
-            org.jruby.ast.Node[] children = node.getPost().children();
-            for (int i = children.length - 1; i >= 0; i--) {
-                sequence.add(children[i].accept(this));
+            int postIndex = node.getPostIndex();
+            for (int i = postCount - 1; i >= 0; i--) {
+                sequence.add(args[postIndex + i].accept(this));
                 required++;
                 index--;
             }
@@ -131,9 +136,11 @@ public class LoadArgumentsTranslator extends Translator {
         if (hasKeywordArguments) {
             kwIndex = 0;
             countKwArgs = 0;
-            
-            for (org.jruby.ast.Node arg : node.getKeywords().children()) {
-                sequence.add(arg.accept(this));
+            final int keywordIndex = node.getKeywordsIndex();
+            final int keywordCount = node.getKeywordCount();
+
+            for (int i = 0; i < keywordCount; i++) {
+                sequence.add(args[keywordIndex + i].accept(this));
                 kwIndex++;
                 countKwArgs++;
             }

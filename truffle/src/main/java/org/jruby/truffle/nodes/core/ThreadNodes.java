@@ -387,7 +387,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "initialize", argumentsAsArray = true, needsBlock = true)
+    @CoreMethod(names = "initialize", rest = true, needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -459,16 +459,13 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "pass", onSingleton = true)
     public abstract static class PassNode extends CoreMethodArrayArgumentsNode {
 
-        @Child ThreadPassNode threadPassNode;
-
         public PassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threadPassNode = new ThreadPassNode(context, sourceSection);
         }
 
         @Specialization
         public RubyBasicObject pass(VirtualFrame frame) {
-            threadPassNode.executeVoid(frame);
+            Thread.yield();
             return nil();
         }
 

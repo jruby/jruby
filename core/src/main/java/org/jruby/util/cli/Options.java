@@ -125,15 +125,11 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
-
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
     public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
-    public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array_max", 3, "Maximum size of a Hash to use with the packed array storage strategy.");
 
-    public static final Option<Boolean> TRUFFLE_YIELDS = bool(TRUFFLE, "truffle.yields", false, "Insert GIL yieldpoints");
     public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
@@ -158,7 +154,6 @@ public class Options {
     public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
     public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
     public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.MRI, "How to format backtraces in Exception objects.");
-    public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_PANIC_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.panic_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.IMPL_DEBUG, "How to format backtraces in panics.");
     public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
 
