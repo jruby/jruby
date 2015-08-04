@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
@@ -69,7 +70,9 @@ public abstract class ArrayNodes {
     @Layout
     public interface ArrayLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createArray(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object store, int size);
+        DynamicObjectFactory createArrayShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createArray(DynamicObjectFactory factory, @Nullable Object store, int size);
 
         boolean isArray(DynamicObject object);
 
@@ -354,7 +357,7 @@ public abstract class ArrayNodes {
 
     public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
         assert RubyGuards.isRubyClass(arrayClass);
-        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(arrayClass, arrayClass, store, size));
+        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).factory, store, size));
     }
 
     @CoreMethod(names = "+", required = 1)

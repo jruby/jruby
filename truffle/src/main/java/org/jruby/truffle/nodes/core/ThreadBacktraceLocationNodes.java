@@ -27,7 +27,9 @@ public class ThreadBacktraceLocationNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface ThreadBacktraceLocationLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createThreadBacktraceLocation(RubyBasicObject logicalClass, RubyBasicObject metaClass, Activation activation);
+        DynamicObjectFactory createThreadBacktraceLocationShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createThreadBacktraceLocation(DynamicObjectFactory factory, Activation activation);
 
         Activation getActivation(DynamicObject object);
 
@@ -36,7 +38,7 @@ public class ThreadBacktraceLocationNodes {
     public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(rubyClass, rubyClass, activation));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ModuleNodes.getModel(rubyClass).factory, activation));
     }
 
     protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {

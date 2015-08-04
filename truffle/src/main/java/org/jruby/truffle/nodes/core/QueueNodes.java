@@ -41,7 +41,9 @@ public abstract class QueueNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface QueueLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createQueue(RubyBasicObject logicalClass, RubyBasicObject metaClass, LinkedBlockingQueue queue);
+        DynamicObjectFactory createQueueShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createQueue(DynamicObjectFactory factory, LinkedBlockingQueue queue);
 
         boolean isQueue(DynamicObject object);
 
@@ -54,7 +56,7 @@ public abstract class QueueNodes {
     public static class QueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(rubyClass, rubyClass, new LinkedBlockingQueue()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).factory, new LinkedBlockingQueue()));
         }
     }
 

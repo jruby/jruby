@@ -45,6 +45,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,7 +69,9 @@ public abstract class IOBufferPrimitiveNodes {
         String START_IDENTIFIER = "@start";
         String TOTAL_IDENTIFIER = "@total";
 
-        DynamicObject createIOBuffer(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean writeSynced, RubyBasicObject storage, int used, int start, int total);
+        DynamicObjectFactory createIOBufferShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, RubyBasicObject storage, int used, int start, int total);
 
         boolean getWriteSynced(DynamicObject object);
         void setWriteSynced(DynamicObject object, boolean value);
@@ -119,7 +122,7 @@ public abstract class IOBufferPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
             return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
-                    classToAllocate, classToAllocate,
+                    ModuleNodes.getModel(classToAllocate).factory,
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                     0,

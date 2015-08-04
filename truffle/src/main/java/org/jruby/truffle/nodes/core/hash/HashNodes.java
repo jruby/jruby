@@ -20,6 +20,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -57,8 +58,10 @@ public abstract class HashNodes {
     @Layout
     public interface HashLayout extends BasicObjectNodes.BasicObjectLayout {
 
+        DynamicObjectFactory createHashShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
         DynamicObject createHash(
-                RubyBasicObject logicalClass, RubyBasicObject metaClass,
+                DynamicObjectFactory factory,
                 @Nullable RubyBasicObject defaultBlock,
                 @Nullable Object defaultValue,
                 @Nullable Object store,
@@ -299,7 +302,7 @@ public abstract class HashNodes {
     }
 
     public static RubyBasicObject createHash(RubyBasicObject hashClass, RubyBasicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return BasicObjectNodes.createRubyBasicObject(hashClass, HASH_LAYOUT.createHash(hashClass, hashClass, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
+        return BasicObjectNodes.createRubyBasicObject(hashClass, HASH_LAYOUT.createHash(ModuleNodes.getModel(hashClass).factory, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
     }
 
     @TruffleBoundary

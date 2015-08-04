@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -41,7 +42,9 @@ public abstract class EncodingConverterNodes {
     @Layout
     public interface EncodingConverterLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createEncodingConverter(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable EConv econv);
+        DynamicObjectFactory createEncodingConverterShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createEncodingConverter(DynamicObjectFactory factory, @Nullable EConv econv);
 
         boolean isEncodingConverter(DynamicObject object);
 
@@ -64,7 +67,7 @@ public abstract class EncodingConverterNodes {
     }
 
     public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(rubyClass, rubyClass, econv));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getModel(rubyClass).getFactory(), econv));
     }
 
     @RubiniusOnly

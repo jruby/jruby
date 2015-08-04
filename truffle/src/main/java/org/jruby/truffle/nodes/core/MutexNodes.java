@@ -31,7 +31,9 @@ public abstract class MutexNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface MutexLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createMutex(RubyBasicObject logicalClass, RubyBasicObject metaClass, ReentrantLock lock);
+        DynamicObjectFactory createMutexShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createMutex(DynamicObjectFactory factory, ReentrantLock lock);
 
         boolean isMutex(DynamicObject object);
 
@@ -44,7 +46,7 @@ public abstract class MutexNodes {
     public static class MutexAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(rubyClass, rubyClass, new ReentrantLock()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, MUTEX_LAYOUT.createMutex(ModuleNodes.getModel(rubyClass).factory, new ReentrantLock()));
         }
     }
 

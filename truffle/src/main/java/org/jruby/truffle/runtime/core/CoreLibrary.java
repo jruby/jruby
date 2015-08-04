@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
@@ -34,6 +35,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodes;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
+import org.jruby.truffle.nodes.ext.DigestNodes;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.*;
@@ -72,6 +74,7 @@ public class CoreLibrary {
     private final RubyBasicObject complexClass;
     private final RubyBasicObject dirClass;
     private final RubyBasicObject encodingClass;
+    private final RubyBasicObject encodingConverterClass;
     private final RubyBasicObject encodingErrorClass;
     private final RubyBasicObject exceptionClass;
     private final RubyBasicObject falseClass;
@@ -130,7 +133,6 @@ public class CoreLibrary {
     private final RubyBasicObject signalModule;
     private final RubyBasicObject truffleModule;
     private final RubyBasicObject bigDecimalClass;
-    private final RubyBasicObject encodingConverterClass;
     private final RubyBasicObject encodingCompatibilityErrorClass;
     private final RubyBasicObject methodClass;
     private final RubyBasicObject unboundMethodClass;
@@ -144,6 +146,7 @@ public class CoreLibrary {
     private final RubyBasicObject mainObject;
     private final RubyBasicObject nilObject;
     private final RubyBasicObject rubiniusUndefined;
+    private final RubyBasicObject digestClass;
 
     private final ArrayNodes.MinBlock arrayMinBlock;
     private final ArrayNodes.MaxBlock arrayMaxBlock;
@@ -168,6 +171,11 @@ public class CoreLibrary {
             throw new RaiseException(typeError(String.format("allocator undefined for %s", ModuleNodes.getModel(rubyClass).getName()), currentNode));
         }
     };
+
+    private DynamicObjectFactory integerFixnumRangeFactory;
+    private DynamicObjectFactory longFixnumRangeFactory;
+    private DynamicObjectFactory ioFactory;
+    private DynamicObjectFactory ioBufferFactory;
 
     private static class CoreLibraryNode extends RubyNode {
 
@@ -204,9 +212,14 @@ public class CoreLibrary {
         // Create the cyclic classes and modules
 
         classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
+
         basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new BasicObjectNodes.BasicObjectAllocator());
-        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ClassNodes.getAllocator(basicObjectClass));
+        ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
+
+        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ModuleNodes.getModel(basicObjectClass).allocator);
+
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
+        ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
 
         // Close the cycles
         ModuleNodes.getModel(classClass).unsafeSetSuperclass(moduleClass);
@@ -220,6 +233,7 @@ public class CoreLibrary {
 
         // Exception
         exceptionClass = defineClass("Exception", new ExceptionNodes.ExceptionAllocator());
+        ModuleNodes.getModel(exceptionClass).factory = ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass);
 
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
@@ -293,36 +307,59 @@ public class CoreLibrary {
         integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
+        ModuleNodes.getModel(bignumClass).factory = BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass);
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
 
         arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
+        ModuleNodes.getModel(arrayClass).factory = ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass);
         bindingClass = defineClass("Binding", new BindingNodes.BindingAllocator());
+        ModuleNodes.getModel(bindingClass).factory = BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass);
         dirClass = defineClass("Dir");
+        ModuleNodes.getModel(dirClass).factory = DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass);
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
+        ModuleNodes.getModel(encodingClass).factory = EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
         fiberClass = defineClass("Fiber", new FiberNodes.FiberAllocator());
+        ModuleNodes.getModel(fiberClass).factory = FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass);
         defineModule("FileTest");
         hashClass = defineClass("Hash", new HashNodes.HashAllocator());
+        ModuleNodes.getModel(hashClass).factory = HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass);
         matchDataClass = defineClass("MatchData");
+        ModuleNodes.getModel(matchDataClass).factory = MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass);
         methodClass = defineClass("Method", NO_ALLOCATOR);
-        defineClass("Mutex", new MutexNodes.MutexAllocator());
+        ModuleNodes.getModel(methodClass).factory = MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass);
+        final RubyBasicObject mutexClass = defineClass("Mutex", new MutexNodes.MutexAllocator());
+        ModuleNodes.getModel(mutexClass).factory = MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass);
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
+        ModuleNodes.getModel(procClass).factory = ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass);
         processModule = defineModule("Process");
         RubyBasicObject queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
-        defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
+        ModuleNodes.getModel(queueClass).factory = QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass);
+        RubyBasicObject sizedQueueClass = defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
+        ModuleNodes.getModel(sizedQueueClass).factory = SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass);
         rangeClass = defineClass("Range", new RangeNodes.RangeAllocator());
+        ModuleNodes.getModel(rangeClass).factory = RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass);
+        integerFixnumRangeFactory = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRangeShape(rangeClass, rangeClass);
+        longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
+        ModuleNodes.getModel(regexpClass).factory = RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass);
         stringClass = defineClass("String", new StringNodes.StringAllocator());
+        ModuleNodes.getModel(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
+        ModuleNodes.getModel(symbolClass).factory = SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass);
         threadClass = defineClass("Thread", new ThreadNodes.ThreadAllocator());
+        ModuleNodes.getModel(threadClass).factory = ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass);
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
+        ModuleNodes.getModel(threadBacktraceLocationClass).factory = ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass);
         timeClass = defineClass("Time", new TimeNodes.TimeAllocator());
+        ModuleNodes.getModel(timeClass).factory = TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass);
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
+        ModuleNodes.getModel(unboundMethodClass).factory = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         final RubyBasicObject ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
         ioBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
 
@@ -342,6 +379,7 @@ public class CoreLibrary {
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
         encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new EncodingConverterNodes.EncodingConverterAllocator());
+        ModuleNodes.getModel(encodingConverterClass).factory = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass);
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
@@ -350,6 +388,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal", new BigDecimalNodes.RubyBigDecimalAllocator());
+        ModuleNodes.getModel(bigDecimalClass).factory = BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass);
 
         // Rubinius
 
@@ -358,12 +397,14 @@ public class CoreLibrary {
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
+        ModuleNodes.getModel(rubiniusFFIPointerClass).factory = PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass);
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
+        ModuleNodes.getModel(byteArrayClass).factory = ByteArrayNodes.BYTE_ARRAY_LAYOUT.createByteArrayShape(byteArrayClass, byteArrayClass);
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
@@ -388,6 +429,17 @@ public class CoreLibrary {
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+
+        digestClass = defineClass(truffleModule, "Digest");
+        ModuleNodes.getModel(digestClass).factory = DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass);
+
+        final RubyBasicObject rubiniusIOClass = defineClass(rubiniusModule, "IO");
+        ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
+        ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
+
+        final RubyBasicObject rubiniusIOBufferClass = defineClass(rubiniusModule, "IOBuffer");
+        ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(rubiniusIOBufferClass, rubiniusIOBufferClass);
+        ModuleNodes.getModel(rubiniusIOBufferClass).factory = ioBufferFactory;
     }
 
     private void includeModules(RubyBasicObject comparableModule) {
@@ -547,7 +599,7 @@ public class CoreLibrary {
     }
 
     private RubyBasicObject defineClass(String name) {
-        return defineClass(objectClass, name, ClassNodes.getAllocator(objectClass));
+        return defineClass(objectClass, name, ModuleNodes.getModel(objectClass).allocator);
     }
 
     private RubyBasicObject defineClass(String name, Allocator allocator) {
@@ -556,7 +608,7 @@ public class CoreLibrary {
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, objectClass, superclass, name, ClassNodes.getAllocator(superclass));
+        return ClassNodes.createRubyClass(context, objectClass, superclass, name, ModuleNodes.getModel(superclass).allocator);
     }
 
     private RubyBasicObject defineClass(RubyBasicObject superclass, String name, Allocator allocator) {
@@ -567,7 +619,7 @@ public class CoreLibrary {
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, ClassNodes.getAllocator(superclass));
+        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, ModuleNodes.getModel(superclass).allocator);
     }
 
     private RubyBasicObject defineClass(RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
@@ -1471,5 +1523,25 @@ public class CoreLibrary {
 
     public boolean isSend(InternalMethod method) {
         return method.getCallTarget() == basicObjectSendMethod.getCallTarget();
+    }
+
+    public DynamicObjectFactory getIntegerFixnumRangeFactory() {
+        return integerFixnumRangeFactory;
+    }
+
+    public DynamicObjectFactory getLongFixnumRangeFactory() {
+        return longFixnumRangeFactory;
+    }
+
+    public RubyBasicObject getDigestClass() {
+        return digestClass;
+    }
+
+    public DynamicObjectFactory getIoBufferFactory() {
+        return ioBufferFactory;
+    }
+
+    public DynamicObjectFactory getIoFactory() {
+        return ioFactory;
     }
 }

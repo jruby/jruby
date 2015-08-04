@@ -22,6 +22,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -46,7 +47,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
-import org.jruby.truffle.nodes.core.UnboundMethodNodes.BindNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -80,11 +80,15 @@ public abstract class ModuleNodes {
     @Layout
     public interface ModuleLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createModule(RubyBasicObject logicalClass, RubyBasicObject metaClass, RubyModuleModel model);
+        DynamicObjectFactory createModuleShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createModule(DynamicObjectFactory factory, RubyModuleModel model);
 
         boolean isModule(DynamicObject object);
 
         RubyModuleModel getModel(DynamicObject object);
+
+        void setModel(DynamicObject object, RubyModuleModel model);
 
     }
 
@@ -101,8 +105,8 @@ public abstract class ModuleNodes {
     }
 
     public static RubyBasicObject createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null);
-        final RubyBasicObject module = BasicObjectNodes.createRubyBasicObject(selfClass, MODULE_LAYOUT.createModule(selfClass, selfClass, model));
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null, null, null);
+        final RubyBasicObject module = BasicObjectNodes.createRubyBasicObject(selfClass, MODULE_LAYOUT.createModule(ModuleNodes.getModel(selfClass).getFactory(), model));
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;

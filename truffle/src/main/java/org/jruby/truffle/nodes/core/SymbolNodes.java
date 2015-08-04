@@ -37,7 +37,9 @@ public abstract class SymbolNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface SymbolLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createSymbol(RubyBasicObject logicalClass, RubyBasicObject metaClass, String string, ByteList byteList, int hashCode,
+        DynamicObjectFactory createSymbolShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createSymbol(DynamicObjectFactory factory, String string, ByteList byteList, int hashCode,
                                    int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
 
         boolean isSymbol(DynamicObject object);

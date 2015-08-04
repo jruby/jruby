@@ -37,7 +37,9 @@ public abstract class UnboundMethodNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface UnboundMethodLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createUnboundMethod(RubyBasicObject logicalClass, RubyBasicObject metaClass, RubyBasicObject origin, InternalMethod method);
+        DynamicObjectFactory createUnboundMethodShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createUnboundMethod(DynamicObjectFactory factory, RubyBasicObject origin, InternalMethod method);
 
         boolean isUnboundMethod(DynamicObject object);
 
@@ -49,7 +51,7 @@ public abstract class UnboundMethodNodes {
     public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createUnboundMethod(RubyBasicObject rubyClass, RubyBasicObject origin, InternalMethod method) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, UNBOUND_METHOD_LAYOUT.createUnboundMethod(rubyClass, rubyClass, origin, method));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).factory, origin, method));
     }
 
     public static RubyBasicObject getOrigin(RubyBasicObject method) {

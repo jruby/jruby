@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -45,7 +46,9 @@ public abstract class MatchDataNodes {
     @Layout
     public interface MatchDataLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createMatchData(RubyBasicObject logicalClass, RubyBasicObject metaClass, MatchDataFields fields);
+        DynamicObjectFactory createMatchDataShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createMatchData(DynamicObjectFactory factory, MatchDataFields fields);
 
         boolean isMatchData(DynamicObject object);
 
@@ -56,7 +59,7 @@ public abstract class MatchDataNodes {
     public static final MatchDataLayout MATCH_DATA_LAYOUT = MatchDataLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyMatchData(RubyBasicObject rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(rubyClass, rubyClass, new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(ModuleNodes.getModel(rubyClass).factory, new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
     }
 
     public static Object[] getValues(RubyBasicObject matchData) {

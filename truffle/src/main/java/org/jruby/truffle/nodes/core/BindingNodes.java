@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -42,7 +43,9 @@ public abstract class BindingNodes {
     @Layout
     public interface BindingLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createBinding(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object self, @Nullable MaterializedFrame frame);
+        DynamicObjectFactory createBindingShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createBinding(DynamicObjectFactory factory, @Nullable Object self, @Nullable MaterializedFrame frame);
 
         boolean isBinding(DynamicObject object);
 
@@ -67,7 +70,7 @@ public abstract class BindingNodes {
     }
 
     public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(bindingClass, bindingClass, self, frame));
+        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).factory, self, frame));
     }
 
     public static void setSelfAndFrame(RubyBasicObject binding, Object self, MaterializedFrame frame) {

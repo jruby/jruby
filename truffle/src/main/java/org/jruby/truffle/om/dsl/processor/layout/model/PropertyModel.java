@@ -19,9 +19,11 @@ public class PropertyModel {
     private final TypeMirror type;
     private final boolean nullable;
     private final boolean hasIdentifier;
+    private final boolean isShapeProperty;
 
     public PropertyModel(String name, boolean hasGetter, boolean hasSetter,
-                         TypeMirror type, boolean nullable, boolean hasIdentifier) {
+                         TypeMirror type, boolean nullable, boolean hasIdentifier,
+                         boolean isShapeProperty) {
         assert name != null;
         assert type != null;
 
@@ -31,26 +33,11 @@ public class PropertyModel {
         this.type = type;
         this.nullable = nullable;
         this.hasIdentifier = hasIdentifier;
+        this.isShapeProperty = isShapeProperty;
     }
 
     public String getName() {
         return name;
-    }
-
-    public String getNameAsConstant() {
-        return NameUtils.identifierToConstant(name);
-    }
-
-    public String getNameAsGetter() {
-        return getNameAsGetterSetter("get");
-    }
-
-    public String getNameAsSetter() {
-        return getNameAsGetterSetter("set");
-    }
-
-    private String getNameAsGetterSetter(String getSet) {
-        return getSet + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     public boolean hasGetter() {
@@ -73,4 +60,7 @@ public class PropertyModel {
         return hasIdentifier;
     }
 
+    public boolean isShapeProperty() {
+        return isShapeProperty;
+    }
 }

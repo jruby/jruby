@@ -63,7 +63,9 @@ public abstract class BigDecimalNodes {
     @Layout
     public interface BigDecimalLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createBigDecimal(RubyBasicObject logicalClass, RubyBasicObject metaClass, BigDecimal value, Type type);
+        DynamicObjectFactory createBigDecimalShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createBigDecimal(DynamicObjectFactory factory, BigDecimal value, Type type);
 
         boolean isBigDecimal(DynamicObject object);
 
@@ -2158,7 +2160,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(rubyClass, rubyClass, BigDecimal.ZERO, Type.NORMAL));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).factory, BigDecimal.ZERO, Type.NORMAL));
         }
 
     }

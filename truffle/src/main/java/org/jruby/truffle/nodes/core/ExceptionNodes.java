@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -31,7 +32,9 @@ public abstract class ExceptionNodes {
     @Layout
     public interface ExceptionLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createException(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object message, @Nullable Backtrace backtrace);
+        DynamicObjectFactory createExceptionShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createException(DynamicObjectFactory factory, @Nullable Object message, @Nullable Backtrace backtrace);
 
         boolean isException(DynamicObject object);
 
@@ -84,11 +87,11 @@ public abstract class ExceptionNodes {
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(rubyClass, rubyClass, null, null));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, null, null));
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(rubyClass, rubyClass, message, backtrace));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)

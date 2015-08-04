@@ -41,10 +41,12 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.om.dsl.api.Layout;
@@ -60,7 +62,9 @@ public abstract class DirPrimitiveNodes {
     @Layout
     public interface DirLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createDir(RubyBasicObject logicalClass, RubyBasicObject metaClass, @Nullable Object contents, int position);
+        DynamicObjectFactory createDirShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
 
         @Nullable
         Object getContents(DynamicObject object);
@@ -84,7 +88,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(dirClass, dirClass, null, 0));
+            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).factory, null, 0));
         }
 
     }

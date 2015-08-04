@@ -13,12 +13,14 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -79,8 +81,10 @@ public class RubyModuleModel implements ModuleChain {
 
     public final boolean isSingleton;
     public final RubyBasicObject attached;
+    public Allocator allocator;
+    public DynamicObjectFactory factory;
 
-    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, boolean isSingleton, RubyBasicObject attached) {
+    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, boolean isSingleton, RubyBasicObject attached, Allocator allocator, DynamicObjectFactory factory) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         assert attached == null || RubyGuards.isRubyModule(attached);
         this.context = context;
@@ -90,6 +94,8 @@ public class RubyModuleModel implements ModuleChain {
         start = new PrependMarker(this);
         this.isSingleton = isSingleton;
         this.attached = attached;
+        this.allocator = allocator;
+        this.factory = factory;
     }
 
     public void getAdoptedByLexicalParent(RubyBasicObject lexicalParent, String name, Node currentNode) {
@@ -147,7 +153,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         if (isClass()) {
-            ClassNodes.unsafeSetAllocator(rubyModuleObject, ClassNodes.getAllocator(from));
+            ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(from).allocator;
             // isSingleton is false as we cannot copy a singleton class.
             // and therefore attached is null.
         }
@@ -635,7 +641,7 @@ public class RubyModuleModel implements ModuleChain {
         assert RubyGuards.isRubyClass(superclass);
         unsafeSetSuperclass(superclass);
         ensureSingletonConsistency();
-        ClassNodes.unsafeSetAllocator(rubyModuleObject, ClassNodes.getAllocator(superclass));
+        ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
     }
 
     /**
@@ -711,4 +717,13 @@ public class RubyModuleModel implements ModuleChain {
         return null;
     }
 
+    public DynamicObjectFactory getFactory() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        if (factory == null) {
+            return ModuleNodes.getModel(getParentModule().getActualModule()).factory;
+        }
+
+        return factory;
+    }
 }

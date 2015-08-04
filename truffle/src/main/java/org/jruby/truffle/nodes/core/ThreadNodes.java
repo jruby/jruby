@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
@@ -45,7 +46,9 @@ public abstract class ThreadNodes {
     @Layout
     public interface ThreadLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createThread(RubyBasicObject logicalClass, RubyBasicObject metaClass, ThreadFields fields);
+        DynamicObjectFactory createThreadShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createThread(DynamicObjectFactory factory, ThreadFields fields);
 
         boolean isThread(DynamicObject object);
 
@@ -57,7 +60,7 @@ public abstract class ThreadNodes {
 
     public static RubyBasicObject createRubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, BasicObjectNodes.createRubyBasicObject(BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass()));
-        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(rubyClass, rubyClass, fields));
+        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).factory, fields));
         fields.fiberManager = new FiberManager(object, manager);
         return object;
     }

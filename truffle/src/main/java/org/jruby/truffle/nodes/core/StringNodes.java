@@ -30,6 +30,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -80,7 +81,9 @@ public abstract class StringNodes {
     @Layout
     public interface StringLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createString(RubyBasicObject logicalClass, RubyBasicObject metaClass, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+        DynamicObjectFactory createStringShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createString(DynamicObjectFactory factory, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
         boolean isString(DynamicObject dynamicObject);
 
@@ -267,7 +270,7 @@ public abstract class StringNodes {
 
     public static RubyBasicObject createString(RubyBasicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return BasicObjectNodes.createRubyBasicObject(stringClass, STRING_LAYOUT.createString(stringClass, stringClass, bytes, StringSupport.CR_UNKNOWN, null));
+        return BasicObjectNodes.createRubyBasicObject(stringClass, STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).getFactory(), bytes, StringSupport.CR_UNKNOWN, null));
     }
 
     @CoreMethod(names = "+", required = 1)

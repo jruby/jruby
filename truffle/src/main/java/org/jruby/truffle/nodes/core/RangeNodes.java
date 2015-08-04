@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -35,7 +36,9 @@ public abstract class RangeNodes {
     @Layout
     public interface IntegerFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createIntegerFixnumRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, int begin, int end);
+        DynamicObjectFactory createIntegerFixnumRangeShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createIntegerFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, int begin, int end);
 
         boolean isIntegerFixnumRange(DynamicObject object);
 
@@ -52,7 +55,9 @@ public abstract class RangeNodes {
     @Layout
     public interface LongFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createLongFixnumRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, long begin, long end);
+        DynamicObjectFactory createLongFixnumRangeShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createLongFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, long begin, long end);
 
         boolean isLongFixnumRange(DynamicObject object);
 
@@ -69,7 +74,9 @@ public abstract class RangeNodes {
     @Layout
     public interface ObjectRangeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createObjectRange(RubyBasicObject logicalClass, RubyBasicObject metaClass, boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
+        DynamicObjectFactory createObjectRangeShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createObjectRange(DynamicObjectFactory factory, boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
 
         boolean isObjectRange(DynamicObject object);
 
@@ -536,7 +543,7 @@ public abstract class RangeNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(rubyClass, rubyClass, false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).factory, false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject()));
         }
 
     }

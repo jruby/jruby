@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -40,7 +41,9 @@ public abstract class FiberNodes {
     @Layout
     public interface FiberLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createFiber(RubyBasicObject logicalClass, RubyBasicObject metaClass, FiberFields fields);
+        DynamicObjectFactory createFiberShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createFiber(DynamicObjectFactory factory, FiberFields fields);
 
         boolean isFiber(DynamicObject object);
 
@@ -205,13 +208,13 @@ public abstract class FiberNodes {
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, RubyBasicObject rubyClass, String name) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, false);
         fields.name = name;
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(rubyClass, rubyClass, fields));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).factory, fields));
     }
 
     public static RubyBasicObject createRubyFiber(RubyBasicObject parent, FiberManager fiberManager, ThreadManager threadManager, RubyBasicObject rubyClass, String name, boolean isRootFiber) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, isRootFiber);
         fields.name = name;
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(rubyClass, rubyClass, fields));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).factory, fields));
     }
 
     public interface FiberMessage {

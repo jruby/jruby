@@ -10,6 +10,7 @@
 package org.jruby.truffle.om.dsl.processor.layout;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.processor.layout.model.*;
 
@@ -29,6 +30,7 @@ public class LayoutParser {
     private String interfaceFullName;
     private boolean hasObjectGuard;
     private boolean hasDynamicObjectGuard;
+    private boolean hasShapeProperties;
     private final List<String> constructorProperties = new ArrayList<>();
     private final Map<String, PropertyBuilder> properties = new HashMap<>();
 
@@ -51,7 +53,9 @@ public class LayoutParser {
             } else if (element.getKind() == ElementKind.METHOD) {
                 final String simpleName = element.getSimpleName().toString();
 
-                if (simpleName.equals("create" + name)) {
+                if (simpleName.equals("create" + name + "Shape")) {
+                    parseShapeConstructor((ExecutableElement) element);
+                } else if (simpleName.equals("create" + name)) {
                     parseConstructor((ExecutableElement) element);
                 } else if (simpleName.equals("is" + name)) {
                     parseGuard((ExecutableElement) element);
@@ -60,7 +64,7 @@ public class LayoutParser {
                 } else if (simpleName.startsWith("set")) {
                     parseSetter((ExecutableElement) element);
                 } else {
-                    throw new AssertionError("Unknown method in layout interface");
+                    throw new AssertionError("Unknown method in layout interface " + interfaceFullName);
                 }
             }
         }
@@ -95,12 +99,12 @@ public class LayoutParser {
         name = nameString.substring(0, nameString.length() - "Layout".length());
     }
 
-    private void parseConstructor(ExecutableElement methodElement) {
+    private void parseShapeConstructor(ExecutableElement methodElement) {
         List<? extends VariableElement> parameters = methodElement.getParameters();
 
         if (superLayout != null) {
-            assert parameters.size() >= superLayout.getAllProperties().size();
-            parameters = parameters.subList(superLayout.getAllProperties().size(), parameters.size());
+            assert parameters.size() >= superLayout.getAllShapeProperties().size();
+            parameters = parameters.subList(superLayout.getAllShapeProperties().size(), parameters.size());
         }
 
         for (VariableElement element : parameters) {
@@ -108,6 +112,32 @@ public class LayoutParser {
 
             constructorProperties.add(name);
             final PropertyBuilder property = getProperty(name);
+            setPropertyType(property, element.asType());
+            parseNullable(property, element);
+            property.setIsShapeProperty(true);
+            hasShapeProperties = true;
+        }
+    }
+
+    private void parseConstructor(ExecutableElement methodElement) {
+        List<? extends VariableElement> parameters = methodElement.getParameters();
+
+        if (hasShapeProperties || (superLayout != null && superLayout.hasShapeProperties())) {
+            assert parameters.get(0).asType().toString().equals(DynamicObjectFactory.class.toString());
+            parameters = parameters.subList(1, parameters.size());
+        }
+
+        if (superLayout != null) {
+            assert parameters.size() >= superLayout.getAllNonShapeProperties().size();
+            parameters = parameters.subList(superLayout.getAllNonShapeProperties().size(), parameters.size());
+        }
+
+        for (VariableElement element : parameters) {
+            final String name = element.getSimpleName().toString();
+
+            constructorProperties.add(name);
+            final PropertyBuilder property = getProperty(name);
+            setPropertyType(property, element.asType());
             parseNullable(property, element);
         }
     }
@@ -216,8 +246,16 @@ public class LayoutParser {
     }
 
     public LayoutModel build() {
+        boolean hasShapeProperties = false;
+
+        for (PropertyBuilder property : properties.values()) {
+            if (property.isShapeProperty()) {
+                hasShapeProperties = true;
+            }
+        }
+
         return new LayoutModel(superLayout, name, packageName, hasObjectGuard, hasDynamicObjectGuard,
-                buildProperties(), interfaceFullName);
+                buildProperties(), interfaceFullName, hasShapeProperties);
     }
 
     private List<PropertyModel> buildProperties() {

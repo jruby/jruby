@@ -19,6 +19,7 @@ public class PropertyBuilder {
     private TypeMirror type;
     private NullableState nullable = NullableState.DEFAULT;
     private boolean hasIdentifier;
+    private boolean isShapeProperty;
 
     public PropertyBuilder(String name) {
         this.name = name;
@@ -31,7 +32,7 @@ public class PropertyBuilder {
     public PropertyModel build() {
         assert type != null;
         return new PropertyModel(name, hasGetter, hasSetter, type,
-                nullable == NullableState.NULLABLE, hasIdentifier);
+                nullable == NullableState.NULLABLE, hasIdentifier, isShapeProperty);
     }
 
     public void setHasGetter(boolean hasGetter) {
@@ -64,5 +65,13 @@ public class PropertyBuilder {
 
     public void setHasIdentifier(boolean hasIdentifier) {
         this.hasIdentifier = hasIdentifier;
+    }
+
+    public boolean isShapeProperty() {
+        return isShapeProperty;
+    }
+
+    public void setIsShapeProperty(boolean isShapeProperty) {
+        this.isShapeProperty = isShapeProperty;
     }
 }

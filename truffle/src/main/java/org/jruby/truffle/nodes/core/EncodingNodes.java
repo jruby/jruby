@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -42,7 +43,9 @@ public abstract class EncodingNodes {
     @Layout
     public interface EncodingLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createEncoding(RubyBasicObject logicalClass, RubyBasicObject metaClass, Encoding encoding, ByteList name, boolean dummy);
+        DynamicObjectFactory createEncodingShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createEncoding(DynamicObjectFactory factory, Encoding encoding, ByteList name, boolean dummy);
 
         boolean isEncoding(DynamicObject object);
 
@@ -112,7 +115,7 @@ public abstract class EncodingNodes {
     }
 
     public static RubyBasicObject createRubyEncoding(RubyBasicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return BasicObjectNodes.createRubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(encodingClass, encodingClass, encoding, name, dummy));
+        return BasicObjectNodes.createRubyBasicObject(encodingClass, ENCODING_LAYOUT.createEncoding(ModuleNodes.getModel(encodingClass).factory, encoding, name, dummy));
     }
 
     @CoreMethod(names = "ascii_compatible?")

@@ -51,6 +51,7 @@ import jnr.ffi.byref.IntByReference;
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -83,7 +84,9 @@ public abstract class IOPrimitiveNodes {
         String DESCRIPTOR_IDENTIFIER = "@descriptor";
         String MODE_IDENTIFIER = "@mode";
 
-        DynamicObject createIO(RubyBasicObject logicalClass, RubyBasicObject metaClass, Object iBuffer, int lineNo, int descriptor, int mode);
+        DynamicObjectFactory createIOShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createIO(DynamicObjectFactory factory, Object iBuffer, int lineNo, int descriptor, int mode);
 
         Object getIBuffer(DynamicObject object);
 
@@ -103,7 +106,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(rubyClass, rubyClass, context.getCoreLibrary().getNilObject(), 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).factory, context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
 
@@ -132,7 +135,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(classToAllocate, classToAllocate, buffer, 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).factory, buffer, 0, 0, 0));
         }
 
     }

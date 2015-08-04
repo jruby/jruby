@@ -26,7 +26,9 @@ public abstract class ByteArrayNodes {
     @Layout
     public interface ByteArrayLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createByteArray(RubyBasicObject logicalClass, RubyBasicObject metaClass, ByteList bytes);
+        DynamicObjectFactory createByteArrayShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes);
 
         boolean isByteArray(DynamicObject object);
 
@@ -37,7 +39,7 @@ public abstract class ByteArrayNodes {
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(rubyClass, rubyClass, bytes));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(ModuleNodes.getModel(rubyClass).factory, bytes));
     }
 
     public static ByteList getBytes(RubyBasicObject byteArray) {

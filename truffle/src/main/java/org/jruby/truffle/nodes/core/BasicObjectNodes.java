@@ -53,7 +53,9 @@ public abstract class BasicObjectNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface BasicObjectLayout {
 
-        DynamicObject createBasicObject(@Nullable RubyBasicObject logicalClass, @Nullable RubyBasicObject metaClass);
+        DynamicObjectFactory createBasicObjectShape(@Nullable RubyBasicObject logicalClass, @Nullable RubyBasicObject metaClass);
+
+        DynamicObject createBasicObject(DynamicObjectFactory factory);
 
         @Nullable
         RubyBasicObject getLogicalClass(DynamicObject object);
@@ -70,6 +72,8 @@ public abstract class BasicObjectNodes {
     }
 
     public static final BasicObjectLayout BASIC_OBJECT_LAYOUT = BasicObjectLayoutImpl.INSTANCE;
+
+    public static final DynamicObjectFactory BASIC_OBJECT_NULL_FACTORY = BASIC_OBJECT_LAYOUT.createBasicObjectShape(null, null);
 
     @CompilerDirectives.TruffleBoundary
     public static void setInstanceVariable(RubyBasicObject receiver, Object name, Object value) {
@@ -269,7 +273,7 @@ public abstract class BasicObjectNodes {
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass) {
-        return createRubyBasicObject(rubyClass, BASIC_OBJECT_LAYOUT.createBasicObject(rubyClass, rubyClass));
+        return createRubyBasicObject(rubyClass, BASIC_OBJECT_LAYOUT.createBasicObject(BASIC_OBJECT_NULL_FACTORY));
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {

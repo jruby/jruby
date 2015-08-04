@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
@@ -25,7 +26,9 @@ public abstract class PointerNodes {
     @Layout
     public interface PointerLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createPointer(RubyBasicObject logicalClass, RubyBasicObject metaClass, Pointer pointer);
+        DynamicObjectFactory createPointerShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createPointer(DynamicObjectFactory factory, Pointer pointer);
 
         boolean isPointer(DynamicObject object);
 
@@ -48,7 +51,7 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(rubyClass, rubyClass, pointer));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).factory, pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {

@@ -14,6 +14,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -22,7 +24,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -35,15 +36,11 @@ public abstract class ClassNodes {
     @Layout
     public interface ClassLayout extends ModuleNodes.ModuleLayout {
 
-        DynamicObject createClass(RubyBasicObject logicalClass, RubyBasicObject metaClass, RubyModuleModel model, @Nullable Allocator allocator);
+        DynamicObjectFactory createClassShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createClass(DynamicObjectFactory factory, RubyModuleModel model);
 
         boolean isClass(DynamicObject dynamicObject);
-
-        @Nullable
-        Allocator getAllocator(DynamicObject dynamicObject);
-
-        @Nullable
-        void setAllocator(DynamicObject dynamicObject, Allocator allocator);
 
     }
 
@@ -51,7 +48,33 @@ public abstract class ClassNodes {
 
     /** Special constructor for class Class */
     public static RubyBasicObject createClassClass(RubyContext context, Allocator allocator) {
-        return createRubyClass(context, null, null, null, "Class", false, null, allocator);
+        final RubyModuleModel model = new RubyModuleModel(context, null, "Class", false, null, allocator, null);
+
+        final com.oracle.truffle.api.object.Layout temporaryLayout = com.oracle.truffle.api.object.Layout.createLayout();
+
+        final DynamicObject classClassObject = temporaryLayout.newInstance(temporaryLayout.createShape(new ObjectType()));
+
+        final RubyBasicObject rubyClass = new RubyBasicObject(classClassObject);
+
+        model.factory = ClassNodes.CLASS_LAYOUT.createClassShape(rubyClass, rubyClass);
+        model.rubyModuleObject = rubyClass;
+
+        classClassObject.setShapeAndGrow(classClassObject.getShape(), model.factory.getShape());
+        assert RubyGuards.isRubyModule(rubyClass);
+        assert RubyGuards.isRubyClass(rubyClass);
+
+        ModuleNodes.MODULE_LAYOUT.setModel(classClassObject, model);
+
+        model.name = model.givenBaseName;
+        model.allocator = allocator;
+
+
+        assert RubyGuards.isRubyModule(rubyClass);
+        assert RubyGuards.isRubyClass(rubyClass);
+        assert ModuleNodes.getModel(rubyClass) == model;
+        assert BasicObjectNodes.getLogicalClass(rubyClass) == rubyClass;
+
+        return rubyClass;
     }
 
     /**
@@ -74,15 +97,7 @@ public abstract class ClassNodes {
     }
 
     public static RubyBasicObject allocate(RubyBasicObject rubyClass, Node currentNode) {
-        return getAllocator(rubyClass).allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, currentNode);
-    }
-
-    public static Allocator getAllocator(RubyBasicObject rubyClass) {
-        return CLASS_LAYOUT.getAllocator(BasicObjectNodes.getDynamicObject(rubyClass));
-    }
-
-    public static void unsafeSetAllocator(RubyBasicObject rubyClass, Allocator allocator) {
-        CLASS_LAYOUT.setAllocator(BasicObjectNodes.getDynamicObject(rubyClass), allocator);
+        return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, currentNode);
     }
 
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
@@ -92,8 +107,11 @@ public abstract class ClassNodes {
     }
 
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject classClass, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, boolean isSingleton, RubyBasicObject attached, Allocator allocator) {
-        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached);
-        final RubyBasicObject rubyClass = BasicObjectNodes.createRubyBasicObject(classClass, CLASS_LAYOUT.createClass(classClass, classClass, model, allocator));
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached, allocator, null);
+
+        final RubyBasicObject rubyClass = BasicObjectNodes.createRubyBasicObject(classClass, CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model));
+        assert RubyGuards.isRubyClass(rubyClass) : classClass.dynamicObject.getShape().getObjectType().getClass();
+        assert RubyGuards.isRubyModule(rubyClass) : classClass.dynamicObject.getShape().getObjectType().getClass();
 
         model.rubyModuleObject = rubyClass;
 
@@ -103,7 +121,7 @@ public abstract class ClassNodes {
             ModuleNodes.getModel(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
         }
 
-        ClassNodes.unsafeSetAllocator(rubyClass, allocator);
+        ModuleNodes.getModel(rubyClass).allocator = allocator;
 
         if (superclass != null) {
             ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);

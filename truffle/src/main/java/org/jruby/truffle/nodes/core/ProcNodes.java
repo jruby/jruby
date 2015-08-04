@@ -20,6 +20,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
@@ -46,8 +47,10 @@ public abstract class ProcNodes {
     @Layout
     public interface ProcLayout extends BasicObjectNodes.BasicObjectLayout {
 
+        DynamicObjectFactory createProcShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
         DynamicObject createProc(
-                RubyBasicObject logicalClass, RubyBasicObject metaClass,
+                DynamicObjectFactory factory,
                 @Nullable Type type,
                 @Nullable SharedMethodInfo sharedMethodInfo,
                 @Nullable CallTarget callTargetForBlocks,
@@ -201,7 +204,7 @@ public abstract class ProcNodes {
     public static RubyBasicObject createRubyProc(RubyBasicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, RubyBasicObject block) {
-        final RubyBasicObject proc = BasicObjectNodes.createRubyBasicObject(procClass, PROC_LAYOUT.createProc(procClass, procClass, type, null, null, null, null, null, null, null, null));
+        final RubyBasicObject proc = BasicObjectNodes.createRubyBasicObject(procClass, PROC_LAYOUT.createProc(ModuleNodes.getModel(procClass).factory, type, null, null, null, null, null, null, null, null));
         ProcNodes.initialize(proc, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
         return proc;

@@ -15,7 +15,7 @@ public abstract class NameUtils {
         final StringBuilder result = new StringBuilder();
 
         for (int n = 0; n < name.length(); n++) {
-            if (Character.isUpperCase(name.charAt(n))) {
+            if (n > 0 && Character.isUpperCase(name.charAt(n))) {
                 result.append('_');
             }
 
@@ -38,6 +38,18 @@ public abstract class NameUtils {
         }
 
         return result.toString();
+    }
+
+    public static String asGetter(String name) {
+        return asGetterSetter(name, "get");
+    }
+
+    public static String asSetter(String name) {
+        return asGetterSetter(name, "set");
+    }
+
+    private static String asGetterSetter(String name, String getSet) {
+        return getSet + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
 }

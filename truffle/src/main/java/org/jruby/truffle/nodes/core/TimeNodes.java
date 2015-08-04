@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -29,7 +30,9 @@ public abstract class TimeNodes {
     @Layout
     public interface TimeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObject createTime(RubyBasicObject logicalClass, RubyBasicObject metaClass, DateTime dateTime, Object offset);
+        DynamicObjectFactory createTimeShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+
+        DynamicObject createTime(DynamicObjectFactory factory, DateTime dateTime, Object offset);
 
         boolean isTime(DynamicObject object);
 
@@ -64,7 +67,7 @@ public abstract class TimeNodes {
     }
 
     public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
-        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(timeClass, timeClass, dateTime, offset));
+        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).factory, dateTime, offset));
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

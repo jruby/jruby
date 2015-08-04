@@ -119,6 +119,32 @@ import java.lang.annotation.Target;
  * can be accessed using {@code RectLayoutImpl.INSTANCE} as well as
  * {@code ColouredRectLayoutImpl.INSTANCE}.
  *
+ * <p><strong>Shape Properties</strong></p>
+ *
+ * You may wish to store some properties where the values are common to many objects
+ * and do not frequently change in the shape, instead of in the instances. This way
+ * you can guard against the value of that property by guarding against the shape.
+ *
+ * Guest language class references can be implemented using shape properties.
+ *
+ * To create a shape property you define an additional method, {@code createFooShape}
+ * that accepts the shape properties as arguments.
+ *
+ * <pre>
+ * DynamicObjectFactory createFooShape(Object myShapeProperty);
+ * </pre>
+ *
+ * The {@code create} method then takes this factory as well as non-shape properties
+ * as before.
+ *
+ * <pre>
+ * DynamicObject createRect(DynamicObjectFactory factory, int x, int y, int width, int height);
+ * </pre>
+ *
+ * Getters and getters for shape properties are defined and used as normal, although
+ * the performance of the setter will be much reduced, and the getter will use additional
+ * indirection so you may want to cache the result (against the shape).
+ *
  * <p><strong>Processing</strong></p>
  *
  * {@link Layout} annotations are processed by {@link OMProcessor}.
