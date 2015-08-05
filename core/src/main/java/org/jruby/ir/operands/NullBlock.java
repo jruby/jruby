@@ -14,7 +14,12 @@ public class NullBlock extends ImmutableLiteral {
     public static final NullBlock INSTANCE = new NullBlock();
 
     private NullBlock() {
-        super(OperandType.NULL_BLOCK);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.NULL_BLOCK;
     }
 
     @Override

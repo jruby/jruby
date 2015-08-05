@@ -7,9 +7,14 @@ public class UnboxedFloat extends ImmutableLiteral {
     final public double value;
 
     public UnboxedFloat(double value) {
-        super(OperandType.UNBOXED_FLOAT);
+        super();
 
         this.value = value;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.UNBOXED_FLOAT;
     }
 
     @Override

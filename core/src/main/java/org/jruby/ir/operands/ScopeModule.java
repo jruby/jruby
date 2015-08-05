@@ -28,9 +28,14 @@ public class ScopeModule extends Operand {
     private final int scopeModuleDepth;
 
     public ScopeModule(int scopeModuleDepth) {
-        super(OperandType.SCOPE_MODULE);
+        super();
 
         this.scopeModuleDepth = scopeModuleDepth;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.SCOPE_MODULE;
     }
 
     @Override

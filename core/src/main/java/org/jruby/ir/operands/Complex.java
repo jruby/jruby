@@ -13,9 +13,14 @@ public class Complex extends ImmutableLiteral {
     private final ImmutableLiteral number;
 
     public Complex(ImmutableLiteral number) {
-        super(OperandType.COMPLEX);
+        super();
 
         this.number = number;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.COMPLEX;
     }
 
     @Override

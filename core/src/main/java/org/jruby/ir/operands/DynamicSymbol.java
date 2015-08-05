@@ -17,10 +17,15 @@ public class DynamicSymbol extends Operand {
     final private Operand symbolName;
 
     public DynamicSymbol(Operand n) {
-        super(OperandType.DYNAMIC_SYMBOL);
+        super();
 
         symbolName = n;
    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.DYNAMIC_SYMBOL;
+    }
 
     public Operand getSymbolName() {
         return symbolName;

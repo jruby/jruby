@@ -30,10 +30,15 @@ public class Hash extends Operand {
     final public boolean isKWArgsHash;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
-        super(OperandType.HASH);
+        super();
 
         this.pairs = pairs;
         this.isKWArgsHash = isKWArgsHash;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.HASH;
     }
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
