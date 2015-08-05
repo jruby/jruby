@@ -167,6 +167,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.isNaN = false;
         this.infinitySign = 0;
         this.zeroSign = 0;
+        this.value = BigDecimal.ZERO;
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
@@ -499,26 +500,49 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getBigIntegerValue(), mathContext));
     }
 
-    private final static Pattern NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE][+-]?)?\\d*).*");
+    private final static Pattern NUMBER_PATTERN = Pattern.compile("^([+-]?\\d*\\.?\\d*([eE]?)([+-]?\\d*)).*");
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, MathContext mathContext) {
         String strValue = arg.convertToString().toString().trim();
 
-        switch ( strValue.length() > 2 ? strValue.charAt(0) : ' ' ) { // do not case length == 1
-            case 'N' :
-                if ( "NaN".equals(strValue) ) return newNaN(context.runtime);
-            case 'I' :
-                if ( "Infinity".equals(strValue) ) return newInfinity(context.runtime, 1);
-            case '-' :
-                if ( "-Infinity".equals(strValue) ) return newInfinity(context.runtime, -1);
-            case '+' :
-                if ( "+Infinity".equals(strValue) ) return newInfinity(context.runtime, +1);
+        int sign = 1;
+        if(strValue.length() > 0) {
+            switch (strValue.charAt(0)) {
+                case '_' :
+                    return newZero(context.runtime, 1); // leading "_" are not allowed
+                case 'N' :
+                    if ( "NaN".equals(strValue) ) return newNaN(context.runtime);
+                    break;
+                case 'I' :
+                    if ( "Infinity".equals(strValue) ) return newInfinity(context.runtime, 1);
+                    break;
+                case '-' :
+                    if ( "-Infinity".equals(strValue) ) return newInfinity(context.runtime, -1);
+                    sign = -1;
+                    break;
+                case '+' :
+                    if ( "+Infinity".equals(strValue) ) return newInfinity(context.runtime, +1);
+                    break;
+            }
         }
 
         // Convert String to Java understandable format (for BigDecimal).
         strValue = strValue.replaceFirst("[dD]", "E");                  // 1. MRI allows d and D as exponent separators
         strValue = strValue.replaceAll("_", "");                        // 2. MRI allows underscores anywhere
-        strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1"); // 3. MRI ignores the trailing junk
+
+        Matcher matcher = NUMBER_PATTERN.matcher(strValue);
+        strValue = matcher.replaceFirst("$1");                          // 3. MRI ignores the trailing junk
+
+        String exp = matcher.group(2);
+        if(!exp.isEmpty()) {
+            String expValue = matcher.group(3);
+            if (expValue.isEmpty() || expValue.equals("-") || expValue.equals("+")) {
+                strValue = strValue.concat("0");                        // 4. MRI allows 1E, 1E-, 1E+
+            } else if (isExponentOutOfRange(expValue)) {
+                // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
+                return newInfinity(context.runtime, sign);
+            }
+        }
 
         BigDecimal decimal;
         try {
@@ -531,9 +555,36 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         // MRI behavior: -0 and +0 are two different things
-        if (decimal.signum() == 0) return newZero(context.runtime, strValue.matches("^\\s*-.*") ? -1 : 1);
+        if (decimal.signum() == 0) return newZero(context.runtime, sign);
 
         return new RubyBigDecimal(context.runtime, (RubyClass) recv, decimal);
+    }
+
+    private static boolean isExponentOutOfRange(final String expValue) {
+        int num = 0;
+        int sign = 1;
+        final int len = expValue.length();
+        final char ch = expValue.charAt(0);
+        if (ch == '-') {
+          sign = -1;
+        } else if (ch != '+') {
+            num = '0' - ch;
+        }
+        int i = 1;
+        final int max = (sign == 1) ? -Integer.MAX_VALUE : Integer.MIN_VALUE + 1;
+        final int multmax = max / 10;
+        while (i < len) {
+            int d = expValue.charAt(i++) - '0';
+            if (num < multmax) {
+                return true;
+            }
+            num *= 10;
+            if (num < (max + d)) {
+                return true;
+            }
+            num -= d;
+        }
+        return false;
     }
 
     @Deprecated
