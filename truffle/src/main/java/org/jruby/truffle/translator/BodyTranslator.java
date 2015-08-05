@@ -2448,7 +2448,7 @@ public class BodyTranslator extends Translator {
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
         // Translate as Rubinius.privately { Rational.convert(a, b) }
 
-        final RubyNode moduleNode = new GetLexicalScopeModuleNode(context, sourceSection);
+        final RubyNode moduleNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
                 context, sourceSection, "convert",
                 new ReadConstantNode(context, sourceSection, name, moduleNode),
