@@ -75,7 +75,7 @@ public class IRMethod extends IRScope {
     }
 
     public void addNativeSignature(int arity, MethodType signature) {
-        if (signatures == null) signatures = new HashMap<>();
+        if (signatures == null) signatures = new HashMap<>(1);
         signatures.put(arity, signature);
     }
 

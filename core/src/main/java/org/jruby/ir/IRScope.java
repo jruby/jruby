@@ -142,7 +142,7 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nextVarIndex = new HashMap<>(); // SSS FIXME: clone!
+        this.nextVarIndex = new HashMap<>(1); // SSS FIXME: clone!
         this.interpreterContext = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -166,7 +166,7 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nextVarIndex = new HashMap<>();
+        this.nextVarIndex = new HashMap<>(1);
         this.interpreterContext = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -190,7 +190,7 @@ public abstract class IRScope implements ParseResult {
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
         if (parentMaybeUsingRefinements()) flags.add(MAYBE_USING_REFINEMENTS);
 
-        this.localVars = new HashMap<>();
+        this.localVars = new HashMap<>(1);
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
@@ -199,7 +199,7 @@ public abstract class IRScope implements ParseResult {
 
     private void setupLexicalContainment() {
         if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
-            lexicalChildren = new ArrayList<>();
+            lexicalChildren = new ArrayList<>(1);
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
     }
@@ -223,17 +223,17 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void addChildScope(IRScope scope) {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
         lexicalChildren.add(scope);
     }
 
     public List<IRScope> getLexicalScopes() {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
         return lexicalChildren;
     }
 
     public void addClosure(IRClosure closure) {
-        if (nestedClosures == null) nestedClosures = new ArrayList<>();
+        if (nestedClosures == null) nestedClosures = new ArrayList<>(1);
         nestedClosures.add(closure);
     }
 
@@ -487,7 +487,7 @@ public abstract class IRScope implements ParseResult {
 
     public List<CompilerPass> getExecutedPasses() {
         // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
-        return fullInterpreterContext == null ? new ArrayList<CompilerPass>() : fullInterpreterContext.getExecutedPasses();
+        return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
 
     // SSS FIXME: We should configure different optimization levels
@@ -589,7 +589,7 @@ public abstract class IRScope implements ParseResult {
     // construct a new fullInterpreterContext.  Primary obstacles is JITFlags and linearization of BBs.
 
     public Map<BasicBlock, Label> buildJVMExceptionTable() {
-        Map<BasicBlock, Label> map = new HashMap<>();
+        Map<BasicBlock, Label> map = new HashMap<>(1);
 
         for (BasicBlock bb: fullInterpreterContext.getLinearizedBBList()) {
             BasicBlock rescueBB = getCFG().getRescuerBBFor(bb);
@@ -931,8 +931,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<>();
-        usedLocalVars = new java.util.HashSet<>();
+        definedLocalVars = new java.util.HashSet<>(1);
+        usedLocalVars = new java.util.HashSet<>(1);
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
