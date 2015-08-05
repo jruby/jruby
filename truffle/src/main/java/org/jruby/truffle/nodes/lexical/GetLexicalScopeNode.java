@@ -9,15 +9,22 @@
  */
 package org.jruby.truffle.nodes.lexical;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.nodes.objects.GetCurrentMethodNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+
 public class GetLexicalScopeNode extends RubyNode {
+
+    public static GetLexicalScopeNode create(RubyContext context, SourceSection sourceSection) {
+        return new GetLexicalScopeNode(context, sourceSection);
+    }
+
+    @Child GetCurrentMethodNode getCurrentMethodNode = new GetCurrentMethodNode(getContext(), getSourceSection());
 
     public GetLexicalScopeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -25,8 +32,12 @@ public class GetLexicalScopeNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+        final InternalMethod method = getCurrentMethodNode.getCurrentMethod(frame);
         return method.getLexicalScope();
+    }
+
+    public LexicalScope getLexicalScope(VirtualFrame frame) {
+        return (LexicalScope) execute(frame);
     }
 
 }

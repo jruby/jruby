@@ -16,11 +16,15 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.lexical.GetLexicalScopeNode;
+import org.jruby.truffle.nodes.objects.GetCurrentMethodNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -28,6 +32,7 @@ import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Caches {@link ModuleOperations#lookupConstant}
@@ -35,6 +40,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  * The {@link LexicalScope} is derived from the current method.
  */
 public abstract class LookupConstantWithLexicalScopeNode extends AbstractLookupConstantNode {
+
+    @Child GetLexicalScopeNode getLexicalScopeNode = new GetLexicalScopeNode(getContext(), getSourceSection());
 
     public LookupConstantWithLexicalScopeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -85,7 +92,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends AbstractLookupC
     }
 
     protected LexicalScope getLexicalScope(VirtualFrame frame) {
-        return RubyArguments.getMethod(frame.getArguments()).getLexicalScope();
+        return getLexicalScopeNode.getLexicalScope(frame);
     }
 
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {

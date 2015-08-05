@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.nodes.objects.GetCurrentMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -22,6 +22,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
  * Find the RubyModule enclosing us lexically.
  */
 public class GetLexicalScopeModuleNode extends RubyNode {
+
+    @Child GetCurrentMethodNode getCurrentMethodNode = new GetCurrentMethodNode(getContext(), getSourceSection());
 
     public GetLexicalScopeModuleNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -34,7 +36,7 @@ public class GetLexicalScopeModuleNode extends RubyNode {
 
     @Override
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
-        final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+        final InternalMethod method = getCurrentMethodNode.getCurrentMethod(frame);
         return method.getLexicalScope().getModule();
     }
 
