@@ -1349,7 +1349,7 @@ public abstract class ModuleNodes {
             RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
 
             while (lexicalScope != null) {
-                final RubyBasicObject enclosing = lexicalScope.getLiveModule();
+                final RubyBasicObject enclosing = lexicalScope.getModule();
                 if (enclosing == object)
                     break;
                 modules.add(enclosing);

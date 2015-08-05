@@ -16,24 +16,24 @@ public class LexicalScope {
     public static final LexicalScope NONE = null;
 
     private final LexicalScope parent;
-    private final RubyBasicObject liveModule;
+    private final RubyBasicObject module;
 
-    public LexicalScope(LexicalScope parent, RubyBasicObject liveModule) {
-        assert liveModule == null || RubyGuards.isRubyModule(liveModule);
+    public LexicalScope(LexicalScope parent, RubyBasicObject module) {
+        assert RubyGuards.isRubyModule(module);
         this.parent = parent;
-        this.liveModule = liveModule;
+        this.module = module;
     }
 
     public LexicalScope getParent() {
         return parent;
     }
 
-    public RubyBasicObject getLiveModule() {
-        return liveModule;
+    public RubyBasicObject getModule() {
+        return module;
     }
 
     @Override
     public String toString() {
-        return " :: " + liveModule + (parent == null ? "" : parent.toString());
+        return " :: " + module + (parent == null ? "" : parent.toString());
     }
 }

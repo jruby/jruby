@@ -51,7 +51,7 @@ public class OpenModuleNode extends RubyNode {
         final LexicalScope oldLexicalScope = FiberNodes.getLexicalScopeStack(getContext());
         final LexicalScope newLexicalScope = new LexicalScope(oldLexicalScope, module);
 
-        ModuleNodes.getModel(oldLexicalScope.getLiveModule()).addLexicalDependent(module);
+        ModuleNodes.getModel(oldLexicalScope.getModule()).addLexicalDependent(module);
         FiberNodes.setLexicalScopeStack(getContext(), newLexicalScope);
         try {
             final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);

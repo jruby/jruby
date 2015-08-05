@@ -35,7 +35,7 @@ public class GetLexicalScopeModuleNode extends RubyNode {
     @Override
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
         final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
-        return method.getLexicalScope().getLiveModule();
+        return method.getLexicalScope().getModule();
     }
 
 }
