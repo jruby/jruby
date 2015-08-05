@@ -2,7 +2,7 @@ package org.jruby.runtime;
 
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
-import org.jruby.ir.IRScope;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -10,10 +10,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
-    protected final IRScope closure;
+    protected final IRClosure closure;
     protected ThreadLocal<EvalType> evalType;
 
-    public IRBlockBody(IRScope closure, Signature signature) {
+    public IRBlockBody(IRClosure closure, Signature signature) {
         super(closure.getStaticScope(), signature);
         this.closure = closure;
         this.fileName = closure.getFileName();

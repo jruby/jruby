@@ -9,6 +9,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -27,6 +28,9 @@ public class IRClosure extends IRScope {
     private boolean isBeginEndBlock;
 
     private Signature signature;
+
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
@@ -289,5 +293,17 @@ public class IRClosure extends IRScope {
 
     public Handle getHandle() {
         return handle;
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+
+    /**
+     * Set upon completion of IRBuild of this IRClosure.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 }

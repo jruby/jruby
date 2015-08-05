@@ -1,8 +1,8 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -15,7 +15,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected boolean reuseParentScope;
     protected boolean usesKwargs;
 
-    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
+    public CompiledIRBlockBody(MethodHandle handle, IRClosure closure, long encodedSignature) {
         super(closure, Signature.decode(encodedSignature));
         this.handle = handle;
         // FIXME: duplicated from InterpreterContext

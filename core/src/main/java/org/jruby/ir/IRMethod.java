@@ -9,9 +9,13 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
+
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     // Signatures to the jitted versions of this method
     private Map<Integer, MethodType> signatures;
@@ -88,5 +92,17 @@ public class IRMethod extends IRScope {
 
     public void setJittedName(String jittedName) {
         this.jittedName = jittedName;
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+
+    /**
+     * Set upon completion of IRBuild of this IRMethod.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 }
