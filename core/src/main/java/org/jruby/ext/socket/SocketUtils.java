@@ -129,9 +129,13 @@ public class SocketUtils {
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
-        int portNum = port instanceof RubyString ?
+        int portNum = 0;
+        
+        if(!port.isNil()){
+          portNum = port instanceof RubyString ?
                 Integer.parseInt(port.convertToString().toString()) :
                 RubyNumeric.fix2int(port);
+        }
 
         return Sockaddr.pack_sockaddr_in(
                 context,
