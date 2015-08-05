@@ -204,15 +204,12 @@ public class BacktraceData implements Serializable {
     private static String packagedFilenameFromElement(String filename, String className) {
         // stick package on the beginning
         if (filename == null) {
-            filename = className.replaceAll("\\.", "/");
-        } else {
-            int lastDot = className.lastIndexOf('.');
-            if (lastDot != -1) {
-                filename = className.substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
-            }
+            return className.replace('.', '/');
         }
 
-        return filename;
+        int lastDot = className.lastIndexOf('.');
+        if (lastDot == -1) return filename;
+        return className.substring(0, lastDot + 1).replace('.', '/') + filename;
     }
 
     // ^(org\\.jruby)|(sun\\.reflect)
