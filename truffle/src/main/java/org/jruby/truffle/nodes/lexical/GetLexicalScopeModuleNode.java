@@ -7,29 +7,35 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.objects;
+package org.jruby.truffle.nodes.lexical;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Find the RubyModule enclosing us lexically.
  */
-public class LexicalScopeNode extends RubyNode {
+public class GetLexicalScopeModuleNode extends RubyNode {
 
-    final LexicalScope lexicalScope;
-
-    public LexicalScopeNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
+    public GetLexicalScopeModuleNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.lexicalScope = lexicalScope;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return lexicalScope.getLiveModule();
+        return executeRubyBasicObject(frame);
+    }
+
+    @Override
+    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
+        final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+        return method.getLexicalScope().getLiveModule();
     }
 
 }

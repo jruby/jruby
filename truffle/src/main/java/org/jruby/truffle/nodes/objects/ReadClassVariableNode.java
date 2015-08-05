@@ -12,11 +12,13 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -24,12 +26,10 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public class ReadClassVariableNode extends RubyNode {
 
     private final String name;
-    private final LexicalScope lexicalScope;
 
-    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope) {
+    public ReadClassVariableNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalScope = lexicalScope;
     }
 
     public static RubyBasicObject resolveTargetModule(LexicalScope lexicalScope) {
@@ -44,6 +44,7 @@ public class ReadClassVariableNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
+        final LexicalScope lexicalScope = RubyArguments.getMethod(frame.getArguments()).getLexicalScope();
         final RubyBasicObject module = resolveTargetModule(lexicalScope);
 
         assert RubyGuards.isRubyModule(module);
@@ -60,6 +61,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        final LexicalScope lexicalScope = RubyArguments.getMethod(frame.getArguments()).getLexicalScope();
         final RubyBasicObject module = resolveTargetModule(lexicalScope);
 
         final Object value = ModuleOperations.lookupClassVariable(module, name);

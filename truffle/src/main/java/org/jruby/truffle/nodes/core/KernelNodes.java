@@ -539,9 +539,9 @@ public abstract class KernelNodes {
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     getContext().getCoreLibrary().getObjectClass(),
                     Visibility.PUBLIC,
+                    RubyArguments.getMethod(frame.getArguments()).getLexicalScope(),
                     false,
-                    cachedCallTarget,
-                    parentFrame);
+                    cachedCallTarget, parentFrame);
 
             return callNode.call(frame, RubyArguments.pack(
                     method,

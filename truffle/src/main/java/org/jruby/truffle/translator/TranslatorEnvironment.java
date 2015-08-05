@@ -79,18 +79,6 @@ public class TranslatorEnvironment {
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
-    public LexicalScope getLexicalScope() {
-        return parseEnvironment.getLexicalScope();
-    }
-
-    public LexicalScope pushLexicalScope() {
-        return parseEnvironment.pushLexicalScope();
-    }
-
-    public void popLexicalScope() {
-        parseEnvironment.popLexicalScope();
-    }
-
     public TranslatorEnvironment getParent() {
         return parent;
     }

@@ -11,13 +11,13 @@ package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -32,8 +32,7 @@ public class ReadTimeZoneNode extends RubyNode {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadConstantNode(context, sourceSection, "ENV",
-                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()),
-                LexicalScope.NONE);
+                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()));
         TZ = createString("TZ");
     }
 

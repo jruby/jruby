@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.LexicalScope;
 public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
-    private final LexicalScope lexicalScope;
     private final Arity arity;
     /** The original name of the method. Does not change when aliased. */
     private final String name;
@@ -28,12 +27,11 @@ public class SharedMethodInfo {
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysSplit) {
+    public SharedMethodInfo(SourceSection sourceSection, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
         assert name != null;
 
         this.sourceSection = sourceSection;
-        this.lexicalScope = lexicalScope;
         this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
@@ -43,10 +41,6 @@ public class SharedMethodInfo {
 
     public SourceSection getSourceSection() {
         return sourceSection;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public Arity getArity() {
@@ -70,7 +64,7 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysSplit);
+        return new SharedMethodInfo(sourceSection, arity, newName, isBlock, parseTree, alwaysSplit);
     }
 
     @Override
