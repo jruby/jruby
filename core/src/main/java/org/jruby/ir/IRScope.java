@@ -931,8 +931,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<>(1);
-        usedLocalVars = new java.util.HashSet<>(1);
+        definedLocalVars = new HashSet<>(1);
+        usedLocalVars = new HashSet<>(1);
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
