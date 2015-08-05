@@ -23,7 +23,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -45,7 +44,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFacto
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
-import org.jruby.truffle.nodes.lexical.GetLexicalScopeNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
@@ -529,8 +527,7 @@ public abstract class KernelNodes {
                 @Cached("privatizeByteList(source)") ByteList cachedSource,
                 @Cached("compileSource(frame, source)") RootNodeWrapper cachedRootNode,
                 @Cached("createCallTarget(cachedRootNode)") CallTarget cachedCallTarget,
-                @Cached("create(cachedCallTarget)") DirectCallNode callNode,
-                @Cached("create(getContext(), getSourceSection())") GetLexicalScopeNode getLexicalScopeNode
+                @Cached("create(cachedCallTarget)") DirectCallNode callNode
         ) {
             final RubyBasicObject callerBinding = getCallerBinding(frame);
 
@@ -542,7 +539,7 @@ public abstract class KernelNodes {
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     getContext().getCoreLibrary().getObjectClass(),
                     Visibility.PUBLIC,
-                    getLexicalScopeNode.getLexicalScope(frame),
+                    RubyArguments.getMethod(parentFrame.getArguments()).getLexicalScope(),
                     false,
                     cachedCallTarget, parentFrame);
 
