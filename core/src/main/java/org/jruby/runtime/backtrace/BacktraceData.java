@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] backtraceElements;
@@ -17,8 +16,6 @@ public class BacktraceData implements Serializable {
     private final boolean fullTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
-
-    private final Pattern FILTER_CLASSES = Pattern.compile("^(org\\.jruby)|(sun\\.reflect)");
 
     public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
         this.javaTrace = javaTrace;
@@ -221,7 +218,8 @@ public class BacktraceData implements Serializable {
         return filename;
     }
 
-    private boolean isFilteredClass(String className) {
-        return FILTER_CLASSES.matcher(className).find();
+    // ^(org\\.jruby)|(sun\\.reflect)
+    private static boolean isFilteredClass(final String className) {
+        return className.startsWith("org.jruby") || className.startsWith("sun.reflect") ;
     }
 }
