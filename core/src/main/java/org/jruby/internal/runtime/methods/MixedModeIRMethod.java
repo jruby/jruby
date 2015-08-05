@@ -341,7 +341,7 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
 
     @Override
     public DynamicMethod dup() {
-        MixedModeIRMethod x = new MixedModeIRMethod(method, visibility, implementationClass);
+        MixedModeIRMethod x = new MixedModeIRMethod(method, getVisibility(), implementationClass);
         x.box = box;
 
         return x;
