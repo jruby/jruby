@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ast.MethodDefNode;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
@@ -24,7 +23,7 @@ public class IRMethod extends IRScope {
 
     public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
-        super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
+        super(manager, lexicalParent, name, lineNumber, staticScope);
 
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;

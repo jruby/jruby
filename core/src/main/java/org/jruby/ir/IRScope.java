@@ -72,9 +72,6 @@ public abstract class IRScope implements ParseResult {
     /** Name */
     private String name;
 
-    /** File within which this scope has been defined */
-    private final String fileName;
-
     /** Starting line for this scope's definition */
     private final int lineNumber;
 
@@ -135,7 +132,6 @@ public abstract class IRScope implements ParseResult {
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
         this.manager = s.manager;
-        this.fileName = s.fileName;
         this.lineNumber = s.lineNumber;
         this.staticScope = s.staticScope;
         this.threadPollInstrsCount = s.threadPollInstrsCount;
@@ -155,11 +151,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, String name,
-            String fileName, int lineNumber, StaticScope staticScope) {
+            int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
         this.name = name;
-        this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
         this.threadPollInstrsCount = 0;
@@ -351,7 +346,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getFileName() {
-        return fileName;
+        IRScope current = this;
+
+        for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
+
+        return current.getFileName();
     }
 
     public int getLineNumber() {

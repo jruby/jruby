@@ -2039,7 +2039,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 i++;
             }
@@ -2054,7 +2054,7 @@ public class IRBuilder {
             } else {
                 Variable rhsVal = createTemporaryVariable();
                 addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
-                assigns.add(new Tuple<Node, Variable>(restNode, rhsVal)); // rest of the argument array!
+                assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
             }
         }
 
@@ -2068,7 +2068,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 j++;
             }

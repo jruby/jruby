@@ -9,10 +9,6 @@ public class IRClassBody extends IRModuleBody {
         super(manager, lexicalParent, name, lineNumber, scope);
     }
 
-    public IRClassBody(IRManager manager, IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope scope) {
-        super(manager, lexicalParent, name, fileName, lineNumber, scope);
-    }
-
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.CLASS_BODY;

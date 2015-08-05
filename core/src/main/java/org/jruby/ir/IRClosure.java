@@ -35,8 +35,8 @@ public class IRClosure extends IRScope {
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
-    protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
-        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, String prefix) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
 
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
@@ -71,7 +71,7 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
+        this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
 
