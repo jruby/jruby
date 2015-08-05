@@ -9,7 +9,6 @@ import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -38,15 +37,7 @@ public abstract class Instr {
 
     private int ipc; // Interpreter-only: instruction pointer
     private int rpc; // Interpreter-only: rescue pointer
-
-    // Packed ordinal of Operation enum
-    private final byte operation;
-
-    // Ensure we never exceed 8 bits worth of Operation values
-    static {
-        if (Operation.values().length > 255) throw new RuntimeException("Operation count exceeds packed field width");
-    }
-
+    private final Operation operation;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
@@ -55,7 +46,7 @@ public abstract class Instr {
     public Instr(Operation operation) {
         this.ipc = -1;
         this.rpc = -1;
-        this.operation = (byte)operation.ordinal();
+        this.operation = operation;
     }
 
     private static String[] EMPTY_STRINGS = new String[0];
@@ -84,7 +75,7 @@ public abstract class Instr {
 
         Operand[] operands = getOperands();
 
-        buf.append(getOperation()).append('(');
+        buf.append(operation).append('(');
         toArgList(buf, operands);
 
         String[] extraArgs = toStringNonOperandArgs();
@@ -111,7 +102,7 @@ public abstract class Instr {
 
     @Interp
     public Operation getOperation() {
-        return Operation.values()[operation & 0xFF];
+        return operation;
     }
 
     @Interp
@@ -130,17 +121,17 @@ public abstract class Instr {
     // This information is used in optimization phases to impact dead code elimination
     // and other optimization passes
     public boolean hasSideEffects() {
-        return getOperation().hasSideEffects();
+        return operation.hasSideEffects();
     }
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
     public boolean canRaiseException() {
-        return getOperation().canRaiseException();
+        return operation.canRaiseException();
     }
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
     public boolean transfersControl() {
-        return getOperation().transfersControl();
+        return operation.transfersControl();
     }
 
     /**
@@ -157,7 +148,7 @@ public abstract class Instr {
      * during DCE for other reasons (like if it unconditionally has a side-effect)
      */
     public boolean isDeletable() {
-         return !(hasSideEffects() || getOperation().isDebugOp() || canRaiseException() || transfersControl());
+         return !(hasSideEffects() || operation.isDebugOp() || canRaiseException() || transfersControl());
     }
 
     public boolean canBeDeletedFromScope(IRScope s) {

@@ -14,21 +14,14 @@ import java.util.Map;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
-
-    // Packed ordinal of OperandType enum
-    private final byte type;
-
-    // Ensure we never exceed 8 bits worth of OperandType values
-    static {
-        if (OperandType.values().length > 255) throw new RuntimeException("OperandType count exceeds packed field width");
-    }
+    private final OperandType type;
 
     public Operand(OperandType type) {
-        this.type = (byte)type.ordinal();
+        this.type = type;
     }
 
     public final OperandType getOperandType() {
-        return OperandType.values()[type & 0xFF];
+        return type;
     }
 
     /**
