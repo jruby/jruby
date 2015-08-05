@@ -6,7 +6,6 @@ import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class BacktraceData implements Serializable {
@@ -40,11 +39,10 @@ public class BacktraceData implements Serializable {
     }
 
     private RubyStackTraceElement[] transformBacktrace(Map<String, Map<String, String>> boundMethods) {
-        List<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
 
         // used for duplicating the previous Ruby frame when masking native calls
-        boolean dupFrame = false;
-        String dupFrameName = null;
+        boolean dupFrame = false; String dupFrameName = null;
 
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
@@ -69,7 +67,7 @@ public class BacktraceData implements Serializable {
                 if (!filename.endsWith(".java")) {
 
                     boolean compiled = false;
-                    int index = -1;
+                    int index;
 
                     // Check for compiled name markers
                     // FIXME: Formalize jitted method structure so this isn't quite as hacky
@@ -82,8 +80,8 @@ public class BacktraceData implements Serializable {
                         String tmpClassName = className;
                         int start = JITCompiler.RUBY_JIT_PREFIX.length() + 1;
                         int hash = tmpClassName.indexOf(JITCompiler.CLASS_METHOD_DELIMITER, start);
-                        int end = tmpClassName.lastIndexOf("_");
-                        if( hash != -1 ) { // TODO in case the class file was loaded by jit codeCache. Is this right
+                        int end = tmpClassName.lastIndexOf('_');
+                        if (hash != -1) { // TODO in case the class file was loaded by jit codeCache. Is this right
                             className = tmpClassName.substring(start, hash);
                         }
                         methodName = tmpClassName.substring(hash + JITCompiler.CLASS_METHOD_DELIMITER.length(), end);
@@ -188,7 +186,6 @@ public class BacktraceData implements Serializable {
                         line,
                         false
                 ));
-                continue;
             }
         }
 
