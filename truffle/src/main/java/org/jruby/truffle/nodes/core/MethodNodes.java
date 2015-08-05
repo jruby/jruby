@@ -304,6 +304,7 @@ public abstract class MethodNodes {
                     null);
         }
 
+        @TruffleBoundary
         protected CallTarget method2proc(RubyBasicObject methodObject) {
             // translate to something like:
             // lambda { |same args list| method.call(args) }

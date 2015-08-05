@@ -435,15 +435,20 @@ public abstract class EncodingNodes {
             final Object externalTuple = getContext().makeTuple(frame, newTupleNode, createString("external"), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
-            final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            final Encoding localeEncoding = getLocaleEncoding();
             final Object localeTuple = getContext().makeTuple(frame, newTupleNode, createString("locale"), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
-            final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            final Encoding filesystemEncoding = getLocaleEncoding();
             final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, createString("filesystem"), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
+        }
+
+        @TruffleBoundary
+        private Encoding getLocaleEncoding() {
+            return getContext().getRuntime().getEncodingService().getLocaleEncoding();
         }
 
         @TruffleBoundary
