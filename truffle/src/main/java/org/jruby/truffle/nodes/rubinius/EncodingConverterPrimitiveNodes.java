@@ -12,6 +12,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -82,6 +83,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             return primitiveConvertHelper(encodingConverter, StringNodes.getByteList(source), source, target, offset, size, options);
         }
 
+        @TruffleBoundary
         private Object primitiveConvertHelper(RubyBasicObject encodingConverter, ByteList inBytes, RubyBasicObject source,
                                               RubyBasicObject target, int offset, int size, int options) {
             // Taken from org.jruby.RubyConverter#primitive_convert.

@@ -422,11 +422,13 @@ public class Bootstrap {
         MethodHandle mh = null;
         SmartBinder binder = null;
 
-        if (method.getNativeCall() != null) {
+        if (method instanceof NativeCallMethod) {
+            NativeCallMethod nativeMethod = (NativeCallMethod)method;
+            DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+            int nativeArgCount = getNativeArgCount(method, nativeCall);
 
-            DynamicMethod.NativeCall nc = method.getNativeCall();
+            DynamicMethod.NativeCall nc = nativeCall;
 
             if (nc.isJava()) {
                 // not supported yet, use DynamicMethod.call

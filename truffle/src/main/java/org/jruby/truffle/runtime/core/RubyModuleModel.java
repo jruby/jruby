@@ -190,7 +190,7 @@ public class RubyModuleModel implements ModuleChain {
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
         ModuleChain inclusionPoint = this;
-        Stack<RubyBasicObject> modulesToInclude = new Stack<>();
+        Deque<RubyBasicObject> modulesToInclude = new ArrayDeque<>();
         for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
                 if (isIncludedModuleBeforeSuperClass(ancestor)) {
@@ -216,7 +216,7 @@ public class RubyModuleModel implements ModuleChain {
         newVersion();
     }
 
-    public void performIncludes(ModuleChain inclusionPoint, Stack<RubyBasicObject> moduleAncestors) {
+    public void performIncludes(ModuleChain inclusionPoint, Deque<RubyBasicObject> moduleAncestors) {
         while (!moduleAncestors.isEmpty()) {
             RubyBasicObject mod = moduleAncestors.pop();
             assert RubyGuards.isRubyModule(mod);

@@ -25,7 +25,7 @@ import org.jruby.util.ByteList;
  *
  * @author enebo
  */
-public class IRWriterAnalzer implements IRWriterEncoder {
+public class IRWriterAnalyzer implements IRWriterEncoder {
     private int currentOffsetId = 0;
     private final Map<String, Integer> offsetIds = new HashMap<String, Integer>();
 

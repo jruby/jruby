@@ -37,14 +37,14 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
-    private final IRWriterAnalzer analyzer;
+    private final IRWriterAnalyzer analyzer;
 
     int headersOffset = -1;
     int poolOffset = -1;
 
     public IRWriterStream(OutputStream stream) {
         this.stream = stream;
-        this.analyzer = new IRWriterAnalzer();
+        this.analyzer = new IRWriterAnalyzer();
     }
 
     public IRWriterStream(File file) throws FileNotFoundException {

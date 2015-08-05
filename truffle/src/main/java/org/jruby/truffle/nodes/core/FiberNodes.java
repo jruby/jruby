@@ -9,12 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import java.util.Deque;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
@@ -22,6 +25,7 @@ import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
@@ -36,6 +40,18 @@ public abstract class FiberNodes {
     public static RubyFiber.FiberFields getFields(RubyBasicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         return getFields(((RubyFiber) fiber));
+    }
+
+    public static LexicalScope getLexicalScopeStack(RubyContext context) {
+        final RubyBasicObject currentThread = context.getThreadManager().getCurrentThread();
+        final RubyBasicObject currentFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
+        return FiberNodes.getFields(currentFiber).lexicalScopeStack;
+    }
+
+    public static void setLexicalScopeStack(RubyContext context, LexicalScope lexicalScope) {
+        final RubyBasicObject currentThread = context.getThreadManager().getCurrentThread();
+        final RubyBasicObject currentFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
+        FiberNodes.getFields(currentFiber).lexicalScopeStack = lexicalScope;
     }
 
     public static RubyBasicObject newRootFiber(RubyBasicObject thread, FiberManager fiberManager, ThreadManager threadManager) {

@@ -187,7 +187,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2 {
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, visibility, targetsGenerator, signature, builtin, notImplemented, parameterDesc);
+        return new HandleMethod(implementationClass, getVisibility(), targetsGenerator, signature, builtin, notImplemented, parameterDesc);
     }
 
     @Override

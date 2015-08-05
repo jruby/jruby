@@ -12,9 +12,11 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -28,19 +30,21 @@ public class InternalMethod {
 
     private final RubyBasicObject declaringModule;
     private final Visibility visibility;
+    private LexicalScope lexicalScope;
     private final boolean undefined;
 
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
-                          RubyBasicObject declaringModule, Visibility visibility, boolean undefined,
-                          CallTarget callTarget, MaterializedFrame declarationFrame) {
+                          RubyBasicObject declaringModule, Visibility visibility, LexicalScope lexicalScope,
+                          boolean undefined, CallTarget callTarget, MaterializedFrame declarationFrame) {
         assert declaringModule == null || RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
+        this.lexicalScope = lexicalScope;
         this.undefined = undefined;
         this.callTarget = callTarget;
         this.declarationFrame = declarationFrame;
@@ -62,6 +66,10 @@ public class InternalMethod {
         return visibility;
     }
 
+    public LexicalScope getLexicalScope() {
+        return lexicalScope;
+    }
+
     public boolean isUndefined() {
         return undefined;
     }
@@ -80,7 +88,7 @@ public class InternalMethod {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, lexicalScope, undefined, callTarget, declarationFrame);
         }
     }
 
@@ -88,7 +96,7 @@ public class InternalMethod {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, lexicalScope, undefined, callTarget, declarationFrame);
         }
     }
 
@@ -96,12 +104,12 @@ public class InternalMethod {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, lexicalScope, undefined, callTarget, declarationFrame);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, lexicalScope, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(Node currentNode, RubyBasicObject callerClass) {

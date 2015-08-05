@@ -55,14 +55,12 @@ public abstract class DynamicMethod {
     protected RubyModule implementationClass;
     /** The "protected class" used for calculating protected access. */
     protected RubyModule protectedClass;
-    /** The visibility of this method. */
-    protected Visibility visibility;
+    /** The visibility of this method. This is the ordinal of the Visibility enum value. */
+    private byte visibility;
     /** The serial number for this method object, to globally identify it */
     protected long serialNumber;
     /** Flags for builtin, notimpl, etc */
     protected byte flags;
-    /** Single-arity native call */
-    protected NativeCall nativeCall;
     /** The simple, base name this method was defined under. May be null.*/
     protected String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
@@ -108,7 +106,7 @@ public abstract class DynamicMethod {
     }
 
     protected void init(RubyModule implementationClass, Visibility visibility) {
-        this.visibility = visibility;
+        this.visibility = (byte)visibility.ordinal();
         this.implementationClass = implementationClass;
         // TODO: Determine whether we should perhaps store non-singleton class
         // in the implementationClass
@@ -241,7 +239,7 @@ public abstract class DynamicMethod {
      * @return true if the call would not violate visibility; false otherwise
      */
     public boolean isCallableFrom(IRubyObject caller, CallType callType) {
-        switch (visibility) {
+        switch (Visibility.values()[visibility]) {
         case PUBLIC:
             return true;
         case PRIVATE:
@@ -324,7 +322,7 @@ public abstract class DynamicMethod {
      * @return The visibility of this method
      */
     public Visibility getVisibility() {
-        return visibility;
+        return Visibility.values()[visibility];
     }
 
     /**
@@ -333,7 +331,7 @@ public abstract class DynamicMethod {
      * @param visibility The visibility of this method
      */
     public void setVisibility(Visibility visibility) {
-        this.visibility = visibility;
+        this.visibility = (byte)visibility.ordinal();
     }
 
     /**
@@ -450,40 +448,6 @@ public abstract class DynamicMethod {
         public String toString() {
             return "" + (statik?"static ":"") + nativeReturn.getSimpleName() + " " + nativeTarget.getSimpleName() + "." + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
         }
-    }
-
-    /**
-     * Set the single-arity NativeCall for this method. All signatures for the
-     * non-single-arity getNativeCall will also be set to this value.
-     * 
-     * @param nativeTarget native method target
-     * @param nativeName native method name
-     * @param nativeReturn native method return
-     * @param nativeSignature native method arguments
-     * @param statik static?
-     * @param java plain Java method?
-     */
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
-        this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
-    }
-
-
-    /**
-     * Set the single-arity NativeCall for this method. All signatures for the
-     * non-single-arity getNativeCall will also be set to this value.
-     * 
-     * @param nativeTarget native method target
-     * @param nativeName native method name
-     * @param nativeReturn native method return
-     * @param nativeSignature native method arguments
-     * @param statik static?
-     */
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
-        setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
-    }
-    
-    public NativeCall getNativeCall() {
-        return this.nativeCall;
     }
 
     /**

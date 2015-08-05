@@ -273,7 +273,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public DynamicMethod dup() {
-        return new InterpretedIRMethod(method, visibility, implementationClass);
+        return new InterpretedIRMethod(method, getVisibility(), implementationClass);
     }
 
     public String getClassName(ThreadContext context) {

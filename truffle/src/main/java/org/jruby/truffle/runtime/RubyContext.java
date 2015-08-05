@@ -17,15 +17,18 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.tools.CoverageTracker;
+
 import jnr.ffi.LibraryLoader;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -57,6 +60,7 @@ import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -363,9 +367,23 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
+                getCoreLibrary().getObjectClass(), Visibility.PUBLIC, getLexicalScope(parserContext, self, parentFrame), false, callTarget, parentFrame);
 
         return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[]{}));
+    }
+
+    private LexicalScope getLexicalScope(ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
+        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        LexicalScope lexicalScope;
+        if (parentMethod != null && parentMethod.getLexicalScope() != null) {
+            lexicalScope = parentMethod.getLexicalScope();
+        } else {
+            lexicalScope = getRootLexicalScope();
+        }
+        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+            lexicalScope = new LexicalScope(lexicalScope, (RubyBasicObject) self);
+        }
+        return lexicalScope;
     }
 
     public long getNextObjectID() {

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
@@ -114,6 +115,7 @@ public abstract class ExceptionNodes {
             readCustomBacktrace = new ReadHeadObjectFieldNode("@custom_backtrace");
         }
 
+        @TruffleBoundary
         @Specialization
         public Object backtrace(RubyBasicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {

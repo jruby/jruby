@@ -49,7 +49,7 @@ public class RubyConstant {
         CompilerAsserts.neverPartOfCompilation();
 
         assert RubyGuards.isRubyModule(module);
-        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
+        assert lexicalScope == null || lexicalScope.getModule() == module;
 
         if (!isPrivate) {
             return true;
@@ -58,7 +58,7 @@ public class RubyConstant {
         // Look in lexical scope
         if (lexicalScope != null) {
             while (lexicalScope != context.getRootLexicalScope()) {
-                if (lexicalScope.getLiveModule() == declaringModule) {
+                if (lexicalScope.getModule() == declaringModule) {
                     return true;
                 }
                 lexicalScope = lexicalScope.getParent();

@@ -11,45 +11,54 @@ package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.lexical.GetLexicalScopeNode;
+import org.jruby.truffle.nodes.objects.GetCurrentMethodNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
- * No {@link LexicalScope} is considered.
+ * The {@link LexicalScope} is derived from the current method.
  */
-public abstract class LookupConstantNode extends AbstractLookupConstantNode {
+public abstract class LookupConstantWithLexicalScopeNode extends AbstractLookupConstantNode {
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection) {
+    @Child GetLexicalScopeNode getLexicalScopeNode = new GetLexicalScopeNode(getContext(), getSourceSection());
+
+    public LookupConstantWithLexicalScopeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Specialization(guards = {
             "isRubyModule(module)",
             "module == cachedModule",
+            "getLexicalScope(frame) == cachedLexicalScope",
             "guardName(name, cachedName, sameNameProfile)"
     }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
     protected RubyConstant lookupConstant(VirtualFrame frame, RubyBasicObject module, String name,
             @Cached("module") RubyBasicObject cachedModule,
             @Cached("name") String cachedName,
-            @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
-            @Cached("isVisible(cachedModule, constant)") boolean isVisible,
+            @Cached("getLexicalScope(frame)") LexicalScope cachedLexicalScope,
+            @Cached("doLookup(cachedModule, cachedName, cachedLexicalScope)") RubyConstant constant,
+            @Cached("isVisible(cachedModule, constant, cachedLexicalScope)") boolean isVisible,
             @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
@@ -62,11 +71,12 @@ public abstract class LookupConstantNode extends AbstractLookupConstantNode {
         return ModuleNodes.getModel(module).getUnmodifiedAssumption();
     }
 
-    @TruffleBoundary
     @Specialization(guards = "isRubyModule(module)")
-    protected RubyConstant lookupConstantUncached(RubyBasicObject module, String name) {
-        RubyConstant constant = doLookup(module, name);
-        boolean isVisible = isVisible(module, constant);
+    protected RubyConstant lookupConstantUncached(VirtualFrame frame, RubyBasicObject module, String name) {
+        LexicalScope lexicalScope = getLexicalScope(frame);
+        CompilerDirectives.transferToInterpreter();
+        RubyConstant constant = doLookup(module, name, lexicalScope);
+        boolean isVisible = isVisible(module, constant, lexicalScope);
 
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
@@ -81,6 +91,10 @@ public abstract class LookupConstantNode extends AbstractLookupConstantNode {
         throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(module.toString(), "class/module", this));
     }
 
+    protected LexicalScope getLexicalScope(VirtualFrame frame) {
+        return getLexicalScopeNode.getLexicalScope(frame);
+    }
+
     protected boolean guardName(String name, String cachedName, ConditionProfile sameNameProfile) {
         // This is likely as for literal constant lookup the name does not change and Symbols always return the same String.
         if (sameNameProfile.profile(name == cachedName)) {
@@ -90,12 +104,12 @@ public abstract class LookupConstantNode extends AbstractLookupConstantNode {
         }
     }
 
-    protected RubyConstant doLookup(RubyBasicObject module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+    protected RubyConstant doLookup(RubyBasicObject module, String name, LexicalScope lexicalScope) {
+        return ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
     }
 
-    protected boolean isVisible(RubyBasicObject module, RubyConstant constant) {
-        return constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
+    protected boolean isVisible(RubyBasicObject module, RubyConstant constant, LexicalScope lexicalScope) {
+        return constant == null || constant.isVisibleTo(getContext(), lexicalScope, module);
     }
 
 }

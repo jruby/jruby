@@ -95,6 +95,7 @@ public class ThreadManager {
         currentThread.set(thread);
     }
 
+    @TruffleBoundary
     public RubyBasicObject getCurrentThread() {
         return currentThread.get();
     }

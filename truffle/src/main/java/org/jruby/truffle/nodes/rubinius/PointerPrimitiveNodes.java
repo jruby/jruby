@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.kenai.jffi.MemoryIO;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
@@ -256,6 +257,7 @@ public abstract class PointerPrimitiveNodes {
             return PointerNodes.getPointer(pointer).getLongLong(offset);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public RubyBasicObject getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
             return createString(PointerNodes.getPointer(pointer).getString(offset));
@@ -304,6 +306,7 @@ public abstract class PointerPrimitiveNodes {
             return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public RubyBasicObject readStringToNull(RubyBasicObject pointer) {
             return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.getPointer(pointer).address()));

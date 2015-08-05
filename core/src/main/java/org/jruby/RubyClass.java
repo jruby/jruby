@@ -1391,7 +1391,7 @@ public class RubyClass extends RubyModule {
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
                     signature = sig(IRubyObject.class);
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1426,7 +1426,7 @@ public class RubyClass extends RubyModule {
                 int rubyIndex = baseIndex;
 
                 signature = sig(methodSignature[0], params);
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));

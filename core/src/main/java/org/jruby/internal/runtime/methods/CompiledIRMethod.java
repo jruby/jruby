@@ -238,7 +238,7 @@ public class CompiledIRMethod extends DynamicMethod implements IRMethodArgs, Pos
 
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(variable, specific, specificArity, method, visibility, implementationClass, hasKwargs);
+        return new CompiledIRMethod(variable, specific, specificArity, method, getVisibility(), implementationClass, hasKwargs);
     }
 
     public String getFile() {

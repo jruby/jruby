@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.array;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -2578,7 +2579,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, Arity.NO_ARGUMENTS, "max", false, null, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2680,7 +2681,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, Arity.NO_ARGUMENTS, "min", false, null, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2830,6 +2831,7 @@ public abstract class ArrayNodes {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
+        @TruffleBoundary
         protected CallTarget compileFormat(RubyBasicObject format) {
             assert RubyGuards.isRubyString(format);
             try {

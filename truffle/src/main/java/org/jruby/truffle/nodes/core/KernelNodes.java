@@ -539,9 +539,9 @@ public abstract class KernelNodes {
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     getContext().getCoreLibrary().getObjectClass(),
                     Visibility.PUBLIC,
+                    RubyArguments.getMethod(parentFrame.getArguments()).getLexicalScope(),
                     false,
-                    cachedCallTarget,
-                    parentFrame);
+                    cachedCallTarget, parentFrame);
 
             return callNode.call(frame, RubyArguments.pack(
                     method,
@@ -889,6 +889,7 @@ public abstract class KernelNodes {
             return Boolean.valueOf(value).hashCode();
         }
 
+        @TruffleBoundary
         @Specialization
         public int hash(RubyBasicObject self) {
             // TODO(CS 8 Jan 15) we shouldn't use the Java class hierarchy like this - every class should define it's
@@ -1969,6 +1970,7 @@ public abstract class KernelNodes {
             return string;
         }
 
+        @TruffleBoundary
         protected CallTarget compileFormat(RubyBasicObject format) {
             assert RubyGuards.isRubyString(format);
 
