@@ -297,8 +297,8 @@ public class RubyGlobal {
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
-    	Map environmentVariableMap = null;
-    	OSEnvironment environment = new OSEnvironment();
+    	Map environmentVariableMap;
+    	final OSEnvironment environment = new OSEnvironment();
         environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
 		
     	if (environmentVariableMap == null) {
@@ -312,6 +312,9 @@ public class RubyGlobal {
                                                        runtime.getInstanceConfig().isNativeEnabled() && 
                                                            runtime.getInstanceConfig().isUpdateNativeENVEnabled() );
         env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
+        if ( ! runtime.is2_0() ) { // MRI 1.9.3 does not have ENV#to_h
+            env.getSingletonClass().undefineMethod("to_h");
+        }
         runtime.defineGlobalConstant("ENV", env);
         runtime.setENV(env);
 
