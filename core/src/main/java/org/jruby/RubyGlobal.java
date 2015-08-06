@@ -338,6 +338,12 @@ public class RubyGlobal {
             return getRuntime().newString("ENV");
         }
 
+        @JRubyMethod
+        public RubyHash to_h(){
+          return to_hash();
+        }
+
+
     }
 
     /**
