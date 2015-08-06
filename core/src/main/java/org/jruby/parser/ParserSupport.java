@@ -172,14 +172,14 @@ public class ParserSupport {
      *  Wraps node with NEWLINE node.
      *
      *@param node
-     *@return a NewlineNode or null if node is null.
      */
     public Node newline_node(Node node, ISourcePosition position) {
         if (node == null) return null;
 
         configuration.coverLine(position.getLine());
-        
-        return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
+        node.setNewline();
+
+        return node;
     }
     
     public Node addRootNode(Node topOfAST) {
@@ -211,9 +211,6 @@ public class ParserSupport {
     public Node appendToBlock(Node head, Node tail) {
         if (tail == null) return head;
         if (head == null) return tail;
-
-        // Reduces overhead in interp by not set position every single line we encounter.
-        head = compactNewlines(head);
 
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getPosition()).add(head);
@@ -368,9 +365,6 @@ public class ParserSupport {
             if (node == null) return false;
 
             switch (node.getNodeType()) {
-            case NEWLINENODE:
-                node = ((NewlineNode) node).getNextNode();
-                continue breakLoop;
             case BREAKNODE: case NEXTNODE: case REDONODE:
             case RETRYNODE: case RETURNNODE:
                 return true;
@@ -390,18 +384,6 @@ public class ParserSupport {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
             warnings.warning(id, node.getPosition(), message);
         }
-    }
-
-    private Node compactNewlines(Node head) {
-        while (head instanceof NewlineNode) {
-            Node nextNode = ((NewlineNode) head).getNextNode();
-
-            if (!(nextNode instanceof NewlineNode)) {
-                break;
-            }
-            head = nextNode;
-        }
-        return head;
     }
 
     // logical equivalent to value_expr in MRI
@@ -428,9 +410,6 @@ public class ParserSupport {
             case ANDNODE: case ORNODE:
                 conditional = true;
                 node = ((BinaryOperatorNode) node).getSecondNode();
-                break;
-            case NEWLINENODE:
-                node = ((NewlineNode) node).getNextNode();
                 break;
             default: // Node
                 return true;
@@ -472,9 +451,6 @@ public class ParserSupport {
             if (node == null) return;
             
             switch (node.getNodeType()) {
-            case NEWLINENODE:
-                node = ((NewlineNode) node).getNextNode();
-                continue uselessLoop;
             case CALLNODE: {
                 String name = ((CallNode) node).getName();
                 
@@ -606,13 +582,11 @@ public class ParserSupport {
     }
 
     public Node getConditionNode(Node node) {
-        if (node == null) return NilImplicitNode.NIL;
+        Node cond = cond0(node);
 
-        if (node instanceof NewlineNode) {
-            return new NewlineNode(node.getPosition(), cond0(((NewlineNode) node).getNextNode()));
-        } 
+        cond.setNewline();
 
-        return cond0(node);
+        return cond;
     }
 
     /* MRI: range_op */
@@ -621,8 +595,6 @@ public class ParserSupport {
         
         node = getConditionNode(node);
 
-        if (node instanceof NewlineNode) return ((NewlineNode) node).getNextNode();
-        
         if (node instanceof FixnumNode) {
             warnUnlessEOption(ID.LITERAL_IN_CONDITIONAL_RANGE, node, "integer literal in conditional range");
             return getOperatorCallNode(node, "==", new GlobalVarNode(node.getPosition(), "$."));
@@ -958,20 +930,9 @@ public class ParserSupport {
     }
     
     public Node newEvStrNode(ISourcePosition position, Node node) {
-        Node head = node;
-        while (true) {
-            if (node == null) break;
-            
-            if (node instanceof StrNode || node instanceof DStrNode || node instanceof EvStrNode) {
-                return node;
-            }
-                
-            if (!(node instanceof NewlineNode)) break;
-                
-            node = ((NewlineNode) node).getNextNode();
-        }
-        
-        return new EvStrNode(position, head);
+        if (node instanceof StrNode || node instanceof DStrNode || node instanceof EvStrNode) return node;
+
+        return new EvStrNode(position, node);
     }
     
     public Node new_yield(ISourcePosition position, Node node) {
@@ -1020,13 +981,6 @@ public class ParserSupport {
         return new RationalNode(rationalNode.getPosition(),
                                 -rationalNode.getNumerator(),
                                 rationalNode.getDenominator());
-    }
-    
-    public Node unwrapNewlineNode(Node node) {
-    	if(node instanceof NewlineNode) {
-    		return ((NewlineNode) node).getNextNode();
-    	}
-    	return node;
     }
     
     private Node checkForNilNode(Node node, ISourcePosition defaultPosition) {

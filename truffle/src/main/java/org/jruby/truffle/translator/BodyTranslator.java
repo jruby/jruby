@@ -1064,10 +1064,6 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.Node expressionNode = node.getExpressionNode();
 
-        while (expressionNode instanceof org.jruby.ast.NewlineNode) {
-            expressionNode = ((org.jruby.ast.NewlineNode) expressionNode).getNextNode();
-        }
-
         return new DefinedNode(context, sourceSection, node.getExpressionNode().accept(this));
     }
 
