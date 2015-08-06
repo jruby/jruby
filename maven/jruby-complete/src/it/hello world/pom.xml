@@ -1,83 +1,86 @@
 <project>
-  <groupId>org.jruby</groupId>
+  <groupId>org.jruby.test</groupId>
   <artifactId>it-hello</artifactId>
   <version>1</version>
   <modelVersion>4.0.0</modelVersion>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-complete</artifactId>
-      <version>@project.version@</version>
-      <type>jar</type>
-    </dependency>
-  </dependencies>
-
   <build>
-    <resources>
-      <resource>  
-	<directory>../../local-repo/org/jruby/jruby-complete/@project.version@</directory>
-        <includes>
-          <include>jruby-complete-*.jar</include>
-        </includes>
-        <targetPath>${project.basedir}</targetPath>
-      </resource>
-    </resources>
     <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy jruby-complete.jar</id>
+            <phase>process-resources</phase>
+            <goals><goal>copy</goal></goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-complete</artifactId>
+                  <version>${jruby.version}</version>
+                  <type>jar</type>
+                  <outputDirectory>${project.basedir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2</version>
-	<executions>
-	  <execution>
-	    <id>simple</id>
-	    <phase>process-resources</phase>
-	    <goals><goal>exec</goal></goals>
+        <executions>
+          <execution>
+            <id>simple</id>
+            <phase>process-resources</phase>
+            <goals><goal>exec</goal></goals>
             <configuration>
               <executable>java</executable> 
               <arguments>
-<!--
-		<argument>-Djruby.debug.loadService=true</argument>
--->
-		<argument>-jar</argument>
-		<argument>jruby-complete-@project.version@.jar</argument>
-		<argument>-e</argument>
-		<!-- make sure openssl loads -->
-		<argument>
-		  puts 'hello world'
-		  puts 'openssl loaded' if require 'openssl'
-		  p OpenSSL::VERSION
-		  puts 'readline loaded' if require 'readline'
-		  p Java::jline.console.ConsoleReader
-		</argument>
+                <!--
+                    <argument>-Djruby.debug.loadService=true</argument>
+                -->
+                <argument>-jar</argument>
+                <argument>jruby-complete-${jruby.version}.jar</argument>
+                <argument>-e</argument>
+                <!-- make sure openssl loads -->
+                <argument>
+                  puts 'hello world'
+                  puts 'openssl loaded' if require 'openssl'
+                  p OpenSSL::VERSION
+                  puts 'readline loaded' if require 'readline'
+                  p Java::jline.console.ConsoleReader
+                </argument>
               </arguments>
             </configuration>
-	  </execution>
-	  <execution>
-	    <id>load_path</id>
-	    <phase>process-resources</phase>
-	    <goals><goal>exec</goal></goals>
+          </execution>
+          <execution>
+            <id>load_path</id>
+            <phase>process-resources</phase>
+            <goals><goal>exec</goal></goals>
             <configuration>
               <executable>java</executable> 
               <arguments>
-		<argument>-jar</argument>
-		<argument>jruby-complete-@project.version@.jar</argument>
-		<argument>-e</argument>
-		<!-- make sure openssl loads -->
-		<argument>
-		  orig = $LOAD_PATH.clone
-		  $LOAD_PATH.clear
-		  orig.each {|s| $LOAD_PATH.push s.gsub('%20', ' ')}
-		  puts 'hello world - 2'
-		  puts 'openssl loaded - 2' if require 'openssl'
-		  p OpenSSL::VERSION
-		  puts 'readline loaded - 2' if require 'readline'
-		  p Java::jline.console.ConsoleReader
-		</argument>
+                <argument>-jar</argument>
+                <argument>jruby-complete-${jruby.version}.jar</argument>
+                <argument>-e</argument>
+                <!-- make sure openssl loads -->
+                <argument>
+                  orig = $LOAD_PATH.clone
+                  $LOAD_PATH.clear
+                  orig.each {|s| $LOAD_PATH.push s.gsub('%20', ' ')}
+                  puts 'hello world - 2'
+                  puts 'openssl loaded - 2' if require 'openssl'
+                  p OpenSSL::VERSION
+                  puts 'readline loaded - 2' if require 'readline'
+                  p Java::jline.console.ConsoleReader
+                </argument>
               </arguments>
             </configuration>
-	  </execution>
-	</executions>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

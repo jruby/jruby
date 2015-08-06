@@ -4,4 +4,4 @@ gemfile
 
 id 'org.rubygems:zip', VERSION
 
-jruby_plugin! :gem, :includeRubygemsInResources => true
+jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'

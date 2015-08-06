@@ -2,29 +2,20 @@ gemfile
 
 packaging 'bundle'
 
-properties( 'tesla.dump.pom' => 'pom.xml',
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',
-            'jruby.version' => '@project.version@' )
+            # needed bundle plugin
+            'polyglot.dump.pom' => 'pom.xml' )
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-            :id => 'tb-rubygems-releases' )
 repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-            :id => 'rubygems-releases' )
+            :id => 'second-rubygems-releases' )
 
-jruby_plugin! :gem, :includeRubygemsInResources => true
-
-# ruby-maven will dump an equivalent pom.xml
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'jruby.home' => '../../../../../' )
-
-execute 'jrubydir', 'process-resources' do |ctx|
-  require 'jruby/commands'
-  JRuby::Commands.generate_dir_info( ctx.project.build.directory.to_pathname + '/rubygems' )
-end
+jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
 
 # add some ruby scripts to bundle
 resource :directory => 'src/main/ruby'
