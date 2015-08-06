@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by enebo on 8/6/15.
+ * Context for JITing methods.  Temporary data.
  */
-public class JVMVisitorContext {
+public class JVMVisitorMethodContext {
     // Method name in the jitted version of this method
     private String jittedName;
 

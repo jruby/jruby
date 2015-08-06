@@ -39,7 +39,7 @@ import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
-import org.jruby.ir.targets.JVMVisitorContext;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
@@ -243,7 +243,7 @@ public class JITCompiler implements JITCompilerMBean {
                 JVMVisitor visitor = new JVMVisitor();
                 JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, visitor);
 
-                JVMVisitorContext context = new JVMVisitorContext();
+                JVMVisitorMethodContext context = new JVMVisitorMethodContext();
                 generator.compile(context);
 
                 // FIXME: reinstate active bytecode size check
@@ -358,7 +358,7 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         @SuppressWarnings("unchecked")
-        protected void compile(JVMVisitorContext context) {
+        protected void compile(JVMVisitorMethodContext context) {
             if (bytecode != null) return;
 
             // Time the compilation
@@ -394,7 +394,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         // FIXME: Does anything call this?  If so we should document it.
         public void generate() {
-            compile(new JVMVisitorContext());
+            compile(new JVMVisitorMethodContext());
         }
 
         public byte[] bytecode() {
