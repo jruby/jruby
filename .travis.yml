@@ -3,7 +3,6 @@ language: java
 sudo: false
 
 before_script:
-  - export MAVEN_SKIP_RC=true
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
