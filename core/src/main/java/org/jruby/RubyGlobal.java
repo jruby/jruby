@@ -347,9 +347,13 @@ public class RubyGlobal {
             return case_aware_op_aset(context, key, value, false);
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = "to_s")
+        public IRubyObject to_s(ThreadContext context) {
+            return context.runtime.newString("ENV");
+        }
+
         @Override
-        public IRubyObject to_s(){
+        public IRubyObject to_s() {
             return getRuntime().newString("ENV");
         }
 
@@ -371,7 +375,7 @@ public class RubyGlobal {
         // class and not in the caseinsensitive hash.  In order to not refactor
         // both of these maps we will pass in a flag to specify whether we want
         // the op_aset to also update the real ENV map via setenv/unsetenv.
-        private boolean updateRealENV;
+        private final boolean updateRealENV;
 
         public StringOnlyRubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue);
@@ -413,7 +417,8 @@ public class RubyGlobal {
             return super.op_aref(context, key);
         }
 
-        protected IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, IRubyObject value, boolean caseSensitive) {
+        protected IRubyObject case_aware_op_aset(ThreadContext context,
+            IRubyObject key, final IRubyObject value, boolean caseSensitive) {
             if (!key.respondsTo("to_str")) {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
@@ -421,7 +426,7 @@ public class RubyGlobal {
                 throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
             }
 
-            if (! caseSensitive) {
+            if (!caseSensitive) {
                 key = getCorrectKey(key, context);
             }
 
@@ -430,14 +435,14 @@ public class RubyGlobal {
             }
 
             IRubyObject keyAsStr = normalizeEnvString(Helpers.invoke(context, key, "to_str"));
-            IRubyObject valueAsStr = value.isNil() ? getRuntime().getNil() :
+            IRubyObject valueAsStr = value.isNil() ? context.nil :
                     normalizeEnvString(Helpers.invoke(context, value, "to_str"));
 
             if (updateRealENV) {
-                POSIX posix = getRuntime().getPosix();
+                POSIX posix = context.runtime.getPosix();
                 String keyAsJava = keyAsStr.asJavaString();
                 // libc (un)setenv is not reentrant, so we need to synchronize across the entire JVM (JRUBY-5933)
-                if (valueAsStr == getRuntime().getNil()) {
+                if (valueAsStr == context.nil) {
                     synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
                     synchronized (Object.class) { posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1); }
@@ -473,9 +478,8 @@ public class RubyGlobal {
                 RubyString newStr = getRuntime().newString(new ByteList(str.toString().getBytes(), enc));
                 newStr.setFrozen(true);
                 return newStr;
-            } else {
-                return str;
             }
+            return str;
         }
     }
 
