@@ -1,9 +1,5 @@
 package org.jruby.ir;
 
-import java.lang.invoke.MethodType;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.ast.MethodDefNode;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
@@ -17,9 +13,6 @@ public class IRMethod extends IRScope {
     // Argument description
     protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
-    // Signatures to the jitted versions of this method
-    private Map<Integer, MethodType> signatures;
-
     private MethodDefNode defn;
 
     public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
@@ -28,7 +21,6 @@ public class IRMethod extends IRScope {
 
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
-        this.signatures = null;
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -72,15 +64,6 @@ public class IRMethod extends IRScope {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;
-    }
-
-    public void addNativeSignature(int arity, MethodType signature) {
-        if (signatures == null) signatures = new HashMap<>(1);
-        signatures.put(arity, signature);
-    }
-
-    public Map<Integer, MethodType> getNativeSignatures() {
-        return Collections.unmodifiableMap(signatures);
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {

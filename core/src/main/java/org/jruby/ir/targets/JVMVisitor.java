@@ -260,12 +260,12 @@ public class JVMVisitor extends IRVisitor {
 
         Signature signature = signatureFor(method, false);
         emitScope(method, context, name, signature, false);
-        method.addNativeSignature(-1, signature.type());
+        context.addNativeSignature(-1, signature.type());
 
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
             emitScope(method, context, name, specificSig, true);
-            method.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
+            context.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
 
@@ -934,7 +934,7 @@ public class JVMVisitor extends IRVisitor {
         JVMVisitorContext context = new JVMVisitorContext();
         emitMethod(method, context);
 
-        Map<Integer, MethodType> signatures = method.getNativeSignatures();
+        Map<Integer, MethodType> signatures = context.getNativeSignatures();
 
         MethodType signature = signatures.get(-1);
 
@@ -964,7 +964,7 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
 
         emitMethod(method, context);
-        Map<Integer, MethodType> signatures = method.getNativeSignatures();
+        Map<Integer, MethodType> signatures = context.getNativeSignatures();
 
         MethodType variable = signatures.get(-1); // always a variable arity handle
 
