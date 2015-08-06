@@ -3,17 +3,18 @@ under a tri EPL/GPL/LGPL license. You can use it, redistribute it
 and/or modify it under the terms of the:
 
   Eclipse Public License version 1.0
+    OR
   GNU General Public License version 2
+    OR
   GNU Lesser General Public License version 2.1
 
-build_lib/bytelist.jar (http://github.com/jruby/bytelist),
-build_lib/yydebug.jar (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
+bytelist (http://github.com/jruby/bytelist),
+yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
 are released under the same copyright/license.
 
 Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. Most of these libraries and their licenses are listed 
-below. Also see LICENSE.RUBY for most files found in lib/ruby/1.8,
-lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
+below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
 
  bench/rails/public/javascripts/* are distributed under the MIT
  license, and have the following copyrights:
@@ -36,74 +37,29 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
    
    Copyright (c) 2003, 2004 Jim Weirich
 
- build_lib/*asm*jar (http://asm.objectweb.org) are distributed under the BSD license.
+ asm (http://asm.objectweb.org) is distributed under the BSD license.
 
- build_lib/apt-mirror-api.jar, build_lib/bnd-0.0.249.jar,
- build_lib/commons-logging-1.1.1.jar, build_lib/joda-time-1.6.2.jar,
- BSF and ant are distributed under the Apache Software License,
- Version 1.1 (license file inside the jars).
-
- build_lib/jcodings.jar (http://github.com/jruby/jcodings) and
- build_lib/joni.jar (http://github.com/jruby/joni) are distributed
+ jcodings (http://github.com/jruby/jcodings) and
+ joni (http://github.com/jruby/joni) are distributed
  under the MIT license.
 
- build_lib/jnr-constants.jar (http://github.com/jnr/jnr-constants),
- build_lib/jarjar-1.0rc8.jar (http://code.google.com/p/jarjar),
- build_lib/joda-time-1.6.2.jar (http://joda-time.sourceforge.net),
- build_lib/jffi*jar (https://github.com/jnr/jffi),
- build_lib/jnr-ffi.jar (https://github.com/jnr/jnr-jffi),
- build_lib/jnr-netdb.jar (http://github.com/jnr/jnr-netdb),
- build_lib/dynalang-0.3.jar (http://dynalang.sourceforge.net),
- build_lib/nailgun-0.7.1.jar and tool/nailgun/ng.exe
- (http://martiansoftware.com/nailgun) are distributed under the
+ ant (http://ant.apache.org/),
+ jnr-constants (http://github.com/jnr/jnr-constants),
+ joda-time (http://joda-time.sourceforge.net),
+ jffi (https://github.com/jnr/jffi),
+ jnr-ffi (https://github.com/jnr/jnr-jffi),
+ jnr-enxio (https://github.com/jnr/jnr-enxio),
+ jnr-unixsocket (https://github.com/jnr/jnr-unixsocket),
+ jnr-netdb (http://github.com/jnr/jnr-netdb), and
+ nailgun (http://martiansoftware.com/nailgun) are distributed under the
  Apache License version 2.0.
 
- build_lib/emma*jar (http://emma.sourceforge.net) and
- build_lib/junit.jar (http://www.junit.org) are distributed under the
- Common Public License v1.0.
-
- build_lib/jline-* (http://jline.sourceforge.net) is distributed
- under the following license:
-
-   Redistribution and use in source and binary forms, with or
-   without modification, are permitted provided that the following
-   conditions are met:
-
-   Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-   Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer
-   in the documentation and/or other materials provided with
-   the distribution.
-
-   Neither the name of JLine nor the names of its contributors
-   may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-   BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-   AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
-   EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
-   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-   OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-   AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-   IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-   OF THE POSSIBILITY OF SUCH DAMAGE.
-
- build_lib/jsr292-mock.jar (http://code.google.com/p/jvm-language-runtime)
+ jsr292-mock (http://code.google.com/p/jvm-language-runtime)
  distributed under the LGPL license. It is only used as a compile-time mock
  for Java 7-only features.
 
  Bouncycastle is released under the MIT license, and is Copyright (c)
  2000 - 2006 The Legion Of The Bouncy Castle.
-
- The "yecht" library is Copyright (c) 2009-2011 Ola Bini, and released
- under the MIT license.
 
  The Rubinius API implementation in truffle/src/main/ruby/core/rubinius/api
  is copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD license.
