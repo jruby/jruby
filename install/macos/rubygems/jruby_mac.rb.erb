@@ -1,9 +1,0 @@
-require 'rubygems/config_file'
-
-module Gem
-
-  def self.default_dir
-    File.join '<%= JRUBY_DEST %>/Gems', ConfigMap[:ruby_version]
-  end
-
-end
