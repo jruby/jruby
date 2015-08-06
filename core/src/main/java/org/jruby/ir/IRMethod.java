@@ -20,9 +20,6 @@ public class IRMethod extends IRScope {
     // Signatures to the jitted versions of this method
     private Map<Integer, MethodType> signatures;
 
-    // Method name in the jitted version of this method
-    private String jittedName;
-
     private MethodDefNode defn;
 
     public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
@@ -84,14 +81,6 @@ public class IRMethod extends IRScope {
 
     public Map<Integer, MethodType> getNativeSignatures() {
         return Collections.unmodifiableMap(signatures);
-    }
-
-    public String getJittedName() {
-        return jittedName;
-    }
-
-    public void setJittedName(String jittedName) {
-        this.jittedName = jittedName;
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {

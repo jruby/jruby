@@ -14,6 +14,7 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -43,15 +44,14 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
 
     @Override
     protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, ClassDefiningClassLoader classLoader) {
-        JVMVisitor visitor;
         byte[] bytecode;
-        Class compiled;
-
         MethodHandle _compiledHandle;
+
         try {
-            visitor = new JVMVisitor();
-            bytecode = visitor.compileToBytecode(scope);
-            compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
+            JVMVisitor visitor = new JVMVisitor();
+            JVMVisitorContext context = new JVMVisitorContext();
+            bytecode = visitor.compileToBytecode(scope, context);
+            Class compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
 
             Method compiledMethod = compiled.getMethod("RUBY$script", ThreadContext.class,
                     StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class, String.class);

@@ -66,11 +66,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
-        return defineFromBytecode(scope, compileToBytecode(scope), jrubyClassLoader);
+        JVMVisitorContext context = new JVMVisitorContext();
+        return defineFromBytecode(scope, compileToBytecode(scope, context), jrubyClassLoader);
     }
 
-    public byte[] compileToBytecode(IRScope scope) {
-        codegenScope(scope);
+    public byte[] compileToBytecode(IRScope scope, JVMVisitorContext context) {
+        codegenScope(scope, context);
 
 //        try {
 //            FileOutputStream fos = new FileOutputStream("tmp.class");
@@ -101,20 +102,20 @@ public class JVMVisitor extends IRVisitor {
         return jvm.code();
     }
 
-    public void codegenScope(IRScope scope) {
+    public void codegenScope(IRScope scope, JVMVisitorContext context) {
         if (scope instanceof IRScriptBody) {
-            codegenScriptBody((IRScriptBody)scope);
+            codegenScriptBody((IRScriptBody)scope, context);
         } else if (scope instanceof IRMethod) {
-            emitMethodJIT((IRMethod)scope);
+            emitMethodJIT((IRMethod)scope, context);
         } else if (scope instanceof IRModuleBody) {
-            emitModuleBodyJIT((IRModuleBody)scope);
+            emitModuleBodyJIT((IRModuleBody)scope, context);
         } else {
             throw new NotCompilableException("don't know how to JIT: " + scope);
         }
     }
 
-    public void codegenScriptBody(IRScriptBody script) {
-        emitScriptBody(script);
+    public void codegenScriptBody(IRScriptBody script, JVMVisitorContext context) {
+        emitScriptBody(script, context);
     }
 
     private void logScope(IRScope scope) {
@@ -122,7 +123,7 @@ public class JVMVisitor extends IRVisitor {
         LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
     }
 
-    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
+    public void emitScope(IRScope scope, JVMVisitorContext context, String name, Signature signature, boolean specificArity) {
         BasicBlock[] bbs = scope.prepareForInitialCompilation();
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
@@ -225,57 +226,57 @@ public class JVMVisitor extends IRVisitor {
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
-    public void emitScriptBody(IRScriptBody script) {
+    public void emitScriptBody(IRScriptBody script, JVMVisitorContext context) {
         // Note: no index attached because there should be at most one script body per .class
         String name = JavaNameMangler.encodeScopeForBacktrace(script);
         String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
-        emitScope(script, name, signatureFor(script, false), false);
+        emitScope(script, context, name, signatureFor(script, false), false);
 
         jvm.cls().visitEnd();
         jvm.popclass();
     }
 
-    public void emitMethod(IRMethod method) {
+    public void emitMethod(IRMethod method, JVMVisitorContext context) {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
-        emitWithSignatures(method, name);
+        emitWithSignatures(method, context, name);
     }
 
-    public void  emitMethodJIT(IRMethod method) {
+    public void  emitMethodJIT(IRMethod method, JVMVisitorContext context) {
         String clsName = jvm.scriptToClass(method.getFileName());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
-        emitWithSignatures(method, name);
+        emitWithSignatures(method, context, name);
 
         jvm.cls().visitEnd();
         jvm.popclass();
     }
 
-    private void emitWithSignatures(IRMethod method, String name) {
-        method.setJittedName(name);
+    private void emitWithSignatures(IRMethod method, JVMVisitorContext context, String name) {
+        context.setJittedName(name);
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, context, name, signature, false);
         method.addNativeSignature(-1, signature.type());
 
         Signature specificSig = signatureFor(method, true);
         if (specificSig != null) {
-            emitScope(method, name, specificSig, true);
+            emitScope(method, context, name, specificSig, true);
             method.addNativeSignature(method.getStaticScope().getSignature().required(), specificSig.type());
         }
     }
 
-    public Handle emitModuleBodyJIT(IRModuleBody method) {
+    public Handle emitModuleBodyJIT(IRModuleBody method, JVMVisitorContext context) {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, context, name, signature, false);
 
         Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
 
@@ -288,24 +289,25 @@ public class JVMVisitor extends IRVisitor {
     private void emitClosures(IRScope s) {
         // Emit code for all nested closures
         for (IRClosure c: s.getClosures()) {
-            c.setHandle(emitClosure(c));
+            JVMVisitorContext context = new JVMVisitorContext();
+            c.setHandle(emitClosure(c, context));
         }
     }
 
-    public Handle emitClosure(IRClosure closure) {
+    public Handle emitClosure(IRClosure closure, JVMVisitorContext context) {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
-        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+        emitScope(closure, context, name, CLOSURE_SIGNATURE, false);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
 
-    public Handle emitModuleBody(IRModuleBody method) {
+    public Handle emitModuleBody(IRModuleBody method, JVMVisitorContext context) {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, name, signature, false);
+        emitScope(method, context, name, signature, false);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
     }
@@ -909,9 +911,10 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineClassInstr(DefineClassInstr defineclassinstr) {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
+        JVMVisitorContext context = new JVMVisitorContext();
 
         jvmMethod().loadContext();
-        Handle handle = emitModuleBody(newIRClassBody);
+        Handle handle = emitModuleBody(newIRClassBody, context);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
@@ -928,20 +931,21 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadContext();
 
-        emitMethod(method);
+        JVMVisitorContext context = new JVMVisitorContext();
+        emitMethod(method, context);
 
         Map<Integer, MethodType> signatures = method.getNativeSignatures();
 
         MethodType signature = signatures.get(-1);
 
         String defSignature = pushHandlesForDef(
-                method.getJittedName(),
+                context.getJittedName(),
                 signatures,
                 signature,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
 
-        jvmAdapter().getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
+        jvmAdapter().getstatic(jvm.clsData().clsName, context.getJittedName() + "_IRScope", ci(IRScope.class));
         visit(defineclassmethodinstr.getContainer());
 
         // add method
@@ -952,25 +956,26 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         IRMethod method = defineinstancemethodinstr.getMethod();
+        JVMVisitorContext context = new JVMVisitorContext();
 
         IRBytecodeAdapter   m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
 
         m.loadContext();
 
-        emitMethod(method);
+        emitMethod(method, context);
         Map<Integer, MethodType> signatures = method.getNativeSignatures();
 
         MethodType variable = signatures.get(-1); // always a variable arity handle
 
         String defSignature = pushHandlesForDef(
-                method.getJittedName(),
+                context.getJittedName(),
                 signatures,
                 variable,
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
                 sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
 
-        a.getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
+        a.getstatic(jvm.clsData().clsName, context.getJittedName() + "_IRScope", ci(IRScope.class));
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmMethod().loadSelf();
 
@@ -1002,9 +1007,10 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) {
         IRModuleBody metaClassBody = definemetaclassinstr.getMetaClassBody();
+        JVMVisitorContext context = new JVMVisitorContext();
 
         jvmMethod().loadContext();
-        Handle handle = emitModuleBody(metaClassBody);
+        Handle handle = emitModuleBody(metaClassBody, context);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemetaclassinstr.getObject());
@@ -1017,9 +1023,10 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
+        JVMVisitorContext context = new JVMVisitorContext();
 
         jvmMethod().loadContext();
-        Handle handle = emitModuleBody(newIRModuleBody);
+        Handle handle = emitModuleBody(newIRModuleBody, context);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
