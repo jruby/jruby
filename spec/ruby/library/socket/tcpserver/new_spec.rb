@@ -84,4 +84,9 @@ describe "TCPServer.new" do
       @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
     }.should raise_error(Errno::EADDRINUSE)
   end
+
+  it "sets SO_REUSEADDR on the resulting server" do
+    @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
+    @server.getsockopt(:SOCKET, :REUSEADDR).should == 1
+  end
 end
