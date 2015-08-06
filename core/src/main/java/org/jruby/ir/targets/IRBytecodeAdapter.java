@@ -9,7 +9,6 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -212,7 +211,7 @@ public abstract class IRBytecodeAdapter {
             adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
             adapter.ldc(signature.encode());
 
-            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRClosure.class, long.class));
+            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
             adapter.dup();
             adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
         }
