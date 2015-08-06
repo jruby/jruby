@@ -445,6 +445,11 @@ public class Helpers {
         return self.getMetaClass().finvokeChecked(context, self, name);
     }
 
+    // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
+        return self.getMetaClass().finvokeChecked(context, self, name, args);
+    }
+
     /**
      * The protocol for super method invocation is a bit complicated
      * in Ruby. In real terms it involves first finding the real
