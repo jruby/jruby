@@ -295,21 +295,13 @@ public class RubyGlobal {
         globals.alias("$LAST_PAREN_MATCH", "$+");
     }
 
+    @SuppressWarnings("unchecked")
     private static void defineGlobalEnvConstants(Ruby runtime) {
-    	Map environmentVariableMap;
-    	final OSEnvironment environment = new OSEnvironment();
-        environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
-
-    	if (environmentVariableMap == null) {
-            // if the environment variables can't be obtained, define an empty ENV
-    		environmentVariableMap = Collections.EMPTY_MAP;
-    	}
-
-    	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
-                                                       environmentVariableMap,
-                                                       runtime.getNil(),
-                                                       runtime.getInstanceConfig().isNativeEnabled() &&
-                                                           runtime.getInstanceConfig().isUpdateNativeENVEnabled() );
+    	Map<RubyString, RubyString> environmentVariableMap = OSEnvironment.environmentVariableMap(runtime);
+    	RubyHash env = new CaseInsensitiveStringOnlyRubyHash(
+            runtime, environmentVariableMap, runtime.getNil(),
+            runtime.getInstanceConfig().isNativeEnabled() && runtime.getInstanceConfig().isUpdateNativeENVEnabled()
+        );
         env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         if ( ! runtime.is2_0() ) { // MRI 1.9.3 does not have ENV#to_h
             env.getSingletonClass().undefineMethod("to_h");
@@ -318,11 +310,12 @@ public class RubyGlobal {
         runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
-        Map systemProps = environment.getSystemPropertiesMap(runtime);
-        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(
-                runtime, systemProps, runtime.getNil());
-        systemPropsHash.setFrozen(true);
-        runtime.defineGlobalConstant("ENV_JAVA", systemPropsHash);
+        Map<RubyString, RubyString> systemPropertiesMap = OSEnvironment.systemPropertiesMap(runtime);
+        RubyHash envJava = new ReadOnlySystemPropertiesHash(
+                runtime, systemPropertiesMap, runtime.getNil()
+        );
+        envJava.setFrozen(true);
+        runtime.defineGlobalConstant("ENV_JAVA", envJava);
     }
 
     /**
