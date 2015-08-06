@@ -19,4 +19,9 @@ describe :env_to_hash, :shared => true do
     h = ENV.send(@method)
     h.object_id.should_not == ENV.object_id
   end
+
+  it "duplicates the ENV when converting to a Hash" do
+    h = ENV.send(@method)
+    h.object_id.should_not == ENV.object_id
+  end
 end

@@ -21,7 +21,7 @@
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2006 Michael Studman <codehaus@michaelstudman.com>
  * Copyright (C) 2008 Joseph LaFata <joe@quibb.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -70,7 +70,7 @@ import java.nio.channels.Channels;
 import java.util.Map;
 
 /** This class initializes global variables and constants.
- * 
+ *
  * @author jpetersen
  */
 public class RubyGlobal {
@@ -95,7 +95,7 @@ public class RubyGlobal {
         GlobalVariables globals = runtime.getGlobalVariables();
 
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
-        
+
         runtime.defineGlobalConstant("TRUE", runtime.getTrue());
         runtime.defineGlobalConstant("FALSE", runtime.getFalse());
         runtime.defineGlobalConstant("NIL", runtime.getNil());
@@ -129,7 +129,7 @@ public class RubyGlobal {
 
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
-        
+
         IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze(context);
         IRubyObject jrubyRevision = runtime.newString(Constants.REVISION).freeze(context);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
@@ -139,11 +139,11 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY_REVISION));
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
-        
+
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
 
-        final GlobalVariable kcodeGV; 
+        final GlobalVariable kcodeGV;
         kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
 
         runtime.defineVariable(kcodeGV, GLOBAL);
@@ -168,7 +168,7 @@ public class RubyGlobal {
         } else {
             runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
-        
+
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
         IRubyObject verboseValue = null;
         if (verbose == RubyInstanceConfig.Verbosity.NIL) {
@@ -181,7 +181,7 @@ public class RubyGlobal {
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue), GLOBAL);
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue), GLOBAL);
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue), GLOBAL);
-        
+
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
@@ -212,26 +212,26 @@ public class RubyGlobal {
         runtime.defineVariable(new LoadPath(runtime, "$:"), GLOBAL);
         runtime.defineVariable(new LoadPath(runtime, "$-I"), GLOBAL);
         runtime.defineVariable(new LoadPath(runtime, "$LOAD_PATH"), GLOBAL);
-        
+
         runtime.defineVariable(new MatchMatchGlobalVariable(runtime, "$&"), FRAME);
         runtime.defineVariable(new PreMatchGlobalVariable(runtime, "$`"), FRAME);
         runtime.defineVariable(new PostMatchGlobalVariable(runtime, "$'"), FRAME);
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"), FRAME);
         runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"), FRAME);
 
-        // On platforms without a c-library accessable through JNA, getpid will return hashCode 
+        // On platforms without a c-library accessable through JNA, getpid will return hashCode
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
         globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
-        
-        // Fixme: Do we need the check or does Main.java not call this...they should consolidate 
+
+        // Fixme: Do we need the check or does Main.java not call this...they should consolidate
         if (globals.get("$*").isNil()) {
             globals.defineReadonly("$*", new ValueAccessor(runtime.newArray()), GLOBAL);
         }
-        
+
         globals.defineReadonly("$-p",
                 new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
                 GLOBAL);
@@ -291,24 +291,25 @@ public class RubyGlobal {
         }
     }
 
-    private static void defineGlobalEnvConstants(Ruby runtime) {
-    	OSEnvironment environment = new OSEnvironment();
-        Map<RubyString, RubyString> environmentVariableMap = environment.getEnvironmentVariableMap(runtime);
 
-    	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
-                                                       environmentVariableMap, 
-                                                       runtime.getNil(),
-                                                       runtime.getInstanceConfig().isNativeEnabled() && 
-                                                           runtime.getInstanceConfig().isUpdateNativeENVEnabled() );
+    @SuppressWarnings("unchecked")
+    private static void defineGlobalEnvConstants(Ruby runtime) {
+    	Map<RubyString, RubyString> environmentVariableMap = OSEnvironment.environmentVariableMap(runtime);
+    	RubyHash env = new CaseInsensitiveStringOnlyRubyHash(
+            runtime, environmentVariableMap, runtime.getNil(),
+            runtime.getInstanceConfig().isNativeEnabled() && runtime.getInstanceConfig().isUpdateNativeENVEnabled()
+        );
         env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", env);
         runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
-        Map<RubyString, RubyString> systemProps = environment.getSystemPropertiesMap(runtime);
-        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(runtime, systemProps, runtime.getNil());
-        systemPropsHash.setFrozen(true);
-        runtime.defineGlobalConstant("ENV_JAVA", systemPropsHash);
+        Map<RubyString, RubyString> systemPropertiesMap = OSEnvironment.systemPropertiesMap(runtime);
+        RubyHash envJava = new ReadOnlySystemPropertiesHash(
+                runtime, systemPropertiesMap, runtime.getNil()
+        );
+        envJava.setFrozen(true);
+        runtime.defineGlobalConstant("ENV_JAVA", envJava);
     }
 
     /**
@@ -332,9 +333,13 @@ public class RubyGlobal {
             return case_aware_op_aset(context, key, value, false);
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = "to_s")
+        public IRubyObject to_s(ThreadContext context) {
+            return context.runtime.newString("ENV");
+        }
+
         @Override
-        public IRubyObject to_s(){
+        public IRubyObject to_s() {
             return getRuntime().newString("ENV");
         }
 
@@ -356,7 +361,7 @@ public class RubyGlobal {
         // class and not in the caseinsensitive hash.  In order to not refactor
         // both of these maps we will pass in a flag to specify whether we want
         // the op_aset to also update the real ENV map via setenv/unsetenv.
-        private boolean updateRealENV;
+        private final boolean updateRealENV;
 
         public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue);
@@ -398,7 +403,8 @@ public class RubyGlobal {
             return super.op_aref(context, key);
         }
 
-        protected IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, IRubyObject value, boolean caseSensitive) {
+        protected IRubyObject case_aware_op_aset(ThreadContext context,
+            IRubyObject key, final IRubyObject value, boolean caseSensitive) {
             if (!key.respondsTo("to_str")) {
                 throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
@@ -406,7 +412,7 @@ public class RubyGlobal {
                 throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
             }
 
-            if (! caseSensitive) {
+            if (!caseSensitive) {
                 key = getCorrectKey(key, context);
             }
 
@@ -415,14 +421,14 @@ public class RubyGlobal {
             }
 
             IRubyObject keyAsStr = normalizeEnvString(Helpers.invoke(context, key, "to_str"));
-            IRubyObject valueAsStr = value.isNil() ? getRuntime().getNil() :
+            IRubyObject valueAsStr = value.isNil() ? context.nil :
                     normalizeEnvString(Helpers.invoke(context, value, "to_str"));
 
             if (updateRealENV) {
-                POSIX posix = getRuntime().getPosix();
+                POSIX posix = context.runtime.getPosix();
                 String keyAsJava = keyAsStr.asJavaString();
                 // libc (un)setenv is not reentrant, so we need to synchronize across the entire JVM (JRUBY-5933)
-                if (valueAsStr == getRuntime().getNil()) {
+                if (valueAsStr == context.nil) {
                     synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
                     synchronized (Object.class) { posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1); }
@@ -458,9 +464,8 @@ public class RubyGlobal {
                 RubyString newStr = getRuntime().newString(new ByteList(str.toString().getBytes(), enc));
                 newStr.setFrozen(true);
                 return newStr;
-            } else {
-                return str;
             }
+            return str;
         }
     }
 
@@ -502,13 +507,13 @@ public class RubyGlobal {
         public LastExitStatusVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             IRubyObject lastExitStatus = runtime.getCurrentContext().getLastExitStatus();
             return lastExitStatus == null ? runtime.getNil() : lastExitStatus;
         }
-        
+
         @Override
         public IRubyObject set(IRubyObject lastExitStatus) {
             throw runtime.newNameError("$? is a read-only variable", "$?");
@@ -519,7 +524,7 @@ public class RubyGlobal {
         public MatchMatchGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             return RubyRegexp.last_match(runtime.getCurrentContext().getBackRef());
@@ -530,7 +535,7 @@ public class RubyGlobal {
         public PreMatchGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             return RubyRegexp.match_pre(runtime.getCurrentContext().getBackRef());
@@ -541,7 +546,7 @@ public class RubyGlobal {
         public PostMatchGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             return RubyRegexp.match_post(runtime.getCurrentContext().getBackRef());
@@ -552,7 +557,7 @@ public class RubyGlobal {
         public LastMatchGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             return RubyRegexp.match_last(runtime.getCurrentContext().getBackRef());
@@ -563,7 +568,7 @@ public class RubyGlobal {
         public BackRefGlobalVariable(Ruby runtime, String name) {
             super(runtime, name, runtime.getNil());
         }
-        
+
         @Override
         public IRubyObject get() {
             return Helpers.getBackref(runtime, runtime.getCurrentContext());
@@ -610,7 +615,7 @@ public class RubyGlobal {
                     !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
             }
-            
+
             return runtime.getCurrentContext().setErrorInfo(value);
         }
 
@@ -674,7 +679,7 @@ public class RubyGlobal {
             super(runtime, name, initialValue);
             set(initialValue);
         }
-        
+
         @Override
         public IRubyObject get() {
             return runtime.getVerbose();
@@ -691,7 +696,7 @@ public class RubyGlobal {
             return newValue;
         }
     }
-    
+
     private static class WarningGlobalVariable extends ReadonlyGlobalVariable {
         public WarningGlobalVariable(Ruby runtime, String name, RubyInstanceConfig.Verbosity verbosity) {
             super(runtime, name,
@@ -779,7 +784,7 @@ public class RubyGlobal {
             if (value == get()) {
                 return value;
             }
-            
+
             return super.set(value);
         }
     }
@@ -808,7 +813,7 @@ public class RubyGlobal {
         public LoadPath(Ruby runtime, String name) {
             super(runtime, name, null);
         }
-        
+
         /**
          * @see org.jruby.runtime.GlobalVariable#get()
          */
@@ -822,7 +827,7 @@ public class RubyGlobal {
         public LoadedFeatures(Ruby runtime, String name) {
             super(runtime, name, null);
         }
-        
+
         /**
          * @see org.jruby.runtime.GlobalVariable#get()
          */
