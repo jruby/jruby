@@ -711,28 +711,17 @@ public class RubyProcess {
         return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getuid()));
     }
 
-    @Deprecated
-    public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
-        return waitpid2(recv.getRuntime(), args);
-    }
     @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject waitpid2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return waitpid2(context.runtime, args);
+        IRubyObject pid = waitpid(context, recv, args);
+
+        if (pid.isNil()) return pid;
+
+        return context.runtime.newArray(pid, context.getLastExitStatus());
     }
+
     public static IRubyObject waitpid2(Ruby runtime, IRubyObject[] args) {
-        int pid = -1;
-        int flags = 0;
-        if (args.length > 0) {
-            pid = (int)args[0].convertToInteger().getLongValue();
-        }
-        if (args.length > 1) {
-            flags = (int)args[1].convertToInteger().getLongValue();
-        }
-        
-        int[] status = new int[1];
-        pid = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, flags), ECHILD);
-        
-        return runtime.newArray(runtime.newFixnum(pid), RubyProcess.RubyStatus.newProcessStatus(runtime, (status[0] >> 8) & 0xff, pid));
+        return waitpid2(runtime.getCurrentContext(), runtime.getProcess(), args);
     }
 
     @JRubyMethod(name = "initgroups", required = 2, module = true, visibility = PRIVATE)
@@ -1116,5 +1105,10 @@ public class RubyProcess {
         if (runtime.getPosix().errno() != 0) {
             throw runtime.newErrnoFromInt(runtime.getPosix().errno());
         }
+    }
+
+    @Deprecated
+    public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
+        return waitpid2(recv.getRuntime(), args);
     }
 }
