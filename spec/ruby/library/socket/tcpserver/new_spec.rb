@@ -87,6 +87,6 @@ describe "TCPServer.new" do
 
   it "sets SO_REUSEADDR on the resulting server" do
     @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
-    @server.getsockopt(:SOCKET, :REUSEADDR).should == 1
+    @server.getsockopt(:SOCKET, :REUSEADDR).int.should == 1
   end
 end
