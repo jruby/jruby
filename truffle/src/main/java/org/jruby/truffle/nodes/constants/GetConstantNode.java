@@ -31,7 +31,7 @@ import org.jruby.util.IdUtil;
 
 @NodeChildren({
         @NodeChild("module"), @NodeChild("name"),
-        @NodeChild(value = "lookupConstantNode", type = AbstractLookupConstantNode.class, executeWith = { "module", "name" })
+        @NodeChild(value = "lookupConstantNode", type = LookupConstantNode.class, executeWith = { "module", "name" })
 })
 public abstract class GetConstantNode extends RubyNode {
 
@@ -40,7 +40,7 @@ public abstract class GetConstantNode extends RubyNode {
     }
 
     public abstract RubyNode getModule();
-    public abstract AbstractLookupConstantNode getLookupConstantNode();
+    public abstract LookupConstantNode getLookupConstantNode();
 
     public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name);
 

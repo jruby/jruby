@@ -12,10 +12,10 @@ package org.jruby.truffle.nodes.constants;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.ConstantReplacer;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -26,21 +26,13 @@ public class ReadConstantNode extends RubyNode {
     private final String name;
     @Child private GetConstantNode getConstantNode;
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
-        this(context, sourceSection, name, receiver, false);
-    }
-
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean considerLexicalScope) {
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
         super(context, sourceSection);
 
         this.name = ConstantReplacer.replacementName(sourceSection, name);
-        final AbstractLookupConstantNode lookupConstantNode;
-        if (considerLexicalScope) {
-            lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(context, sourceSection, null, null);
-        } else {
-            lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, null, null);
-        }
-        this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, this.name), lookupConstantNode);
+        this.getConstantNode =
+                GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, this.name),
+                        LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null));
     }
 
     @Override

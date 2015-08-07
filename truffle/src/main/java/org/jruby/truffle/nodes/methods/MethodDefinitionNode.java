@@ -12,10 +12,7 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.FiberNodes;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -40,8 +37,7 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        final LexicalScope lexicalScope = FiberNodes.getLexicalScopeStack(getContext());
-        return new InternalMethod(sharedMethodInfo, name, null, null, lexicalScope, false, callTarget, frame.materialize());
+        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, frame.materialize());
     }
 
     @Override

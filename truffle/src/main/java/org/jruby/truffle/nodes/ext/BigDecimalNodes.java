@@ -1715,7 +1715,7 @@ public abstract class BigDecimalNodes {
             return GetIntegerConstantNodeGen.create(
                     context, sourceSection, null, module,
                     GetConstantNodeGen.create(context, sourceSection, null, null,
-                            LookupConstantNodeGen.create(context, sourceSection, null, null)),
+                            LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null)),
                     ToIntNodeGen.create(context, sourceSection, null),
                     IntegerCastNodeGen.create(context, sourceSection, null));
         }
