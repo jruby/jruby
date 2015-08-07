@@ -36,82 +36,81 @@ public class JavaNameMangler {
 
     public static String mangleFilenameForClasspath(String filename, String parent, String prefix, boolean canonicalize,
           boolean preserveIdentifiers) {
-        try {
-            String classPath; final int idx = filename.indexOf('!');
-            if (idx != -1) {
-                String before = filename.substring(6, idx);
+        String classPath; final int idx = filename.indexOf('!');
+        if (idx != -1) {
+            String before = filename.substring(6, idx);
+            try {
                 if (canonicalize) {
                     classPath = new JRubyFile(before + filename.substring(idx + 1)).getCanonicalPath();
                 } else {
                     classPath = new JRubyFile(before + filename.substring(idx + 1)).toString();
                 }
-            } else {
-                try {
-                    if (canonicalize) {
-                        classPath = new JRubyFile(filename).getCanonicalPath();
-                    } else {
-                        classPath = new JRubyFile(filename).toString();
-                    }
-                } catch (IOException ioe) {
-                    // could not get canonical path, just use given path
-                    classPath = filename;
-                }
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
             }
-
-            if (parent != null && parent.length() > 0) {
-                String parentPath;
-                try {
-                    if (canonicalize) {
-                        parentPath = new JRubyFile(parent).getCanonicalPath();
-                    } else {
-                        parentPath = new JRubyFile(parent).toString();
-                    }
-                } catch (IOException ioe) {
-                    // could not get canonical path, just use given path
-                    parentPath = parent;
+        } else {
+            try {
+                if (canonicalize) {
+                    classPath = new JRubyFile(filename).getCanonicalPath();
+                } else {
+                    classPath = new JRubyFile(filename).toString();
                 }
-                if (!classPath.startsWith(parentPath)) {
-                    throw new FileNotFoundException("File path " + classPath +
-                            " does not start with parent path " + parentPath);
-                }
-                int parentLength = parentPath.length();
-                classPath = classPath.substring(parentLength);
+            } catch (IOException ioe) {
+                // could not get canonical path, just use given path
+                classPath = filename;
             }
-
-            String[] pathElements = PATH_SPLIT.split(classPath);
-            StringBuilder newPath = new StringBuilder(prefix);
-
-            for (String element : pathElements) {
-                if (element.length() <= 0) {
-                    continue;
-                }
-
-                if (newPath.length() > 0) {
-                    newPath.append('/');
-                }
-
-                if (!Character.isJavaIdentifierStart(element.charAt(0))) {
-                    newPath.append('$');
-                }
-
-                String pathId = element;
-                if (!preserveIdentifiers) {
-                    pathId = mangleStringForCleanJavaIdentifier(element);
-                }
-                newPath.append(pathId);
-            }
-
-            // strip off "_dot_rb" for .rb files
-            int dotRbIndex = newPath.indexOf("_dot_rb");
-            if (dotRbIndex != -1 && dotRbIndex == newPath.length() - 7) {
-                newPath.delete(dotRbIndex, dotRbIndex + 7);
-            }
-
-            return newPath.toString();
-        }catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw new RuntimeException(ioe);
         }
+
+        if (parent != null && parent.length() > 0) {
+            String parentPath;
+            try {
+                if (canonicalize) {
+                    parentPath = new JRubyFile(parent).getCanonicalPath();
+                } else {
+                    parentPath = new JRubyFile(parent).toString();
+                }
+            } catch (IOException ioe) {
+                // could not get canonical path, just use given path
+                parentPath = parent;
+            }
+            if (!classPath.startsWith(parentPath)) {
+                throw new RuntimeException("File path " + classPath +
+                        " does not start with parent path " + parentPath);
+            }
+            int parentLength = parentPath.length();
+            classPath = classPath.substring(parentLength);
+        }
+
+        String[] pathElements = PATH_SPLIT.split(classPath);
+        StringBuilder newPath = new StringBuilder(prefix);
+
+        for (String element : pathElements) {
+            if (element.length() <= 0) {
+                continue;
+            }
+
+            if (newPath.length() > 0) {
+                newPath.append('/');
+            }
+
+            if (!Character.isJavaIdentifierStart(element.charAt(0))) {
+                newPath.append('$');
+            }
+
+            String pathId = element;
+            if (!preserveIdentifiers) {
+                pathId = mangleStringForCleanJavaIdentifier(element);
+            }
+            newPath.append(pathId);
+        }
+
+        // strip off "_dot_rb" for .rb files
+        int dotRbIndex = newPath.indexOf("_dot_rb");
+        if (dotRbIndex != -1 && dotRbIndex == newPath.length() - 7) {
+            newPath.delete(dotRbIndex, dotRbIndex + 7);
+        }
+
+        return newPath.toString();
     }
 
     public static String mangleStringForCleanJavaIdentifier(String name) {
