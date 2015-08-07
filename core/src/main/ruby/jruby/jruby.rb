@@ -90,7 +90,8 @@ module JRuby
       irscope = compile_ir(content, filename)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
-      bytes = visitor.compile_to_bytecode(irscope);
+      context = org.jruby.ir.targets.JVMVisitorMethodContext.new
+      bytes = visitor.compile_to_bytecode(irscope, context)
       static_scope = irscope.static_scope;
       top_self = runtime.top_self
       static_scope.module = top_self.class
