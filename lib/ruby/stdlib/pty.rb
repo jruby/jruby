@@ -13,6 +13,36 @@ module PTY
     end
   end
 
+  class << self
+    def spawn(*args, &block)
+      if args.size > 1
+        self.fork_exec_pty(*args, &block)
+      else
+        self.fork_exec_pty("/bin/sh", "-c", *args, &block)
+      end
+    end
+    alias :getpty :spawn
+
+    def open(*args)
+      raise NotImplementedError
+    end
+
+    def check(target_pid, exception = false)
+      pid, status = Process.waitpid2(target_pid, Process::WNOHANG|Process::WUNTRACED)
+
+      # I sometimes see #<Process::Status: pid 0 signal 36> here.
+      if pid == target_pid && status
+        if exception
+          raise ChildExited.new(status)
+        else
+          status
+        end
+      end
+    rescue SystemCallError
+      nil
+    end
+  end
+
   private
   module LibUtil
     extend FFI::Library
@@ -48,7 +78,6 @@ module PTY
     end
     [ cmd, exec_args ]
   end
-  public
   def self.fork_exec_pty(*args)
     mfdp = Buffer.alloc_out :int
     name = Buffer.alloc_out 1024
@@ -73,36 +102,6 @@ module PTY
       retval
     else
       [ rfp, wfp, pid ]
-    end
-  end
-
-  class << self
-    def spawn(*args, &block)
-      if args.size > 1
-        self.fork_exec_pty(*args, &block)
-      else
-        self.fork_exec_pty("/bin/sh", "-c", *args, &block)
-      end
-    end
-    alias :getpty :spawn
-
-    def open(*args)
-      raise NotImplementedError
-    end
-
-    def check(target_pid, exception = false)
-      pid, status = Process.waitpid2(target_pid, Process::WNOHANG|Process::WUNTRACED)
-
-      # I sometimes see #<Process::Status: pid 0 signal 36> here.
-      if pid == target_pid && status
-        if exception
-          raise ChildExited.new(status)
-        else
-          status
-        end
-      end
-    rescue SystemCallError
-      nil
     end
   end
 end
