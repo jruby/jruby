@@ -227,8 +227,8 @@ public abstract class SymbolNodes {
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection, Arity.NO_ARGUMENTS, getString(symbol), true,
-                    null, false);
+                    sourceSection, null, Arity.NO_ARGUMENTS, getString(symbol),
+                    true, null, false);
 
             final RubyRootNode rootNode = new RubyRootNode(
                     getContext(), sourceSection,

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -16,24 +17,32 @@ public class LexicalScope {
     public static final LexicalScope NONE = null;
 
     private final LexicalScope parent;
-    private final RubyBasicObject module;
+    @CompilationFinal private RubyBasicObject liveModule;
 
-    public LexicalScope(LexicalScope parent, RubyBasicObject module) {
-        assert RubyGuards.isRubyModule(module);
+    public LexicalScope(LexicalScope parent, RubyBasicObject liveModule) {
+        assert liveModule == null || RubyGuards.isRubyModule(liveModule);
         this.parent = parent;
-        this.module = module;
+        this.liveModule = liveModule;
+    }
+
+    public LexicalScope(LexicalScope parent) {
+        this(parent, null);
     }
 
     public LexicalScope getParent() {
         return parent;
     }
 
-    public RubyBasicObject getModule() {
-        return module;
+    public RubyBasicObject getLiveModule() {
+        return liveModule;
+    }
+
+    public void setLiveModule(RubyBasicObject liveModule) {
+        this.liveModule = liveModule;
     }
 
     @Override
     public String toString() {
-        return " :: " + module + (parent == null ? "" : parent.toString());
+        return " :: " + liveModule + (parent == null ? "" : parent.toString());
     }
 }

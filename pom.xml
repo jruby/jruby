@@ -126,7 +126,7 @@ DO NOT MODIFIY - GENERATED CODE
     <rspec.version>2.14.1</rspec.version>
     <base.java.version>1.7</base.java.version>
     <rspec-mocks.version>2.14.1</rspec-mocks.version>
-    <jruby.plugins.version>1.0.9</jruby.plugins.version>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
     <power_assert.version>0.2.3</power_assert.version>
@@ -313,10 +313,9 @@ DO NOT MODIFIY - GENERATED CODE
             </execution>
           </executions>
           <configuration>
-            <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
             <properties>
-              <project.version>${project.version}</project.version>
+              <jruby.version>${project.version}</jruby.version>
+              <jruby.plugins.version>${jruby.plugins.version}</jruby.plugins.version>
             </properties>
             <pomIncludes>
               <pomInclude>*/pom.xml</pomInclude>

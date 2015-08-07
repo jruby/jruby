@@ -90,7 +90,7 @@ public abstract class ModuleOperations {
     public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyBasicObject module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
-        assert lexicalScope == null || lexicalScope.getModule() == module;
+        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
         assert RubyGuards.isRubyModule(module);
 
         RubyConstant constant;
@@ -110,7 +110,7 @@ public abstract class ModuleOperations {
             }
 
             while (lexicalScope != context.getRootLexicalScope()) {
-                constant = ModuleNodes.getModel(lexicalScope.getModule()).getConstants().get(name);
+                constant = ModuleNodes.getModel(lexicalScope.getLiveModule()).getConstants().get(name);
 
                 if (constant != null) {
                     return constant;

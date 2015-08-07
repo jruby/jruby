@@ -7,6 +7,8 @@ sudo: false
 #    - $HOME/.m2
 
 before_script:
+  - export MAVEN_SKIP_RC=true
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME

@@ -9,8 +9,12 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -19,25 +23,22 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.source.SourceSection;
-
 /**
  * Open a module and execute a method in it - probably to define new methods.
  */
 public class OpenModuleNode extends RubyNode {
 
     @Child private RubyNode definingModule;
-    @Child private MethodDefinitionNode definitionMethod;
+    final protected LexicalScope lexicalScope;
     @Child private IndirectCallNode callModuleDefinitionNode;
 
-    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod) {
+    final private MethodDefinitionNode definitionMethod;
+
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.definingModule = definingModule;
         this.definitionMethod = definitionMethod;
+        this.lexicalScope = lexicalScope;
         callModuleDefinitionNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
@@ -48,18 +49,11 @@ public class OpenModuleNode extends RubyNode {
         // TODO(CS): cast
         final RubyBasicObject module = (RubyBasicObject) definingModule.execute(frame);
 
-        final LexicalScope oldLexicalScope = FiberNodes.getLexicalScopeStack(getContext());
-        final LexicalScope newLexicalScope = new LexicalScope(oldLexicalScope, module);
+        lexicalScope.setLiveModule(module);
+        ModuleNodes.getModel(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
 
-        ModuleNodes.getModel(oldLexicalScope.getModule()).addLexicalDependent(module);
-        FiberNodes.setLexicalScopeStack(getContext(), newLexicalScope);
-        try {
-            final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
-            final Object[] frameArguments = RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[] {});
-            return callModuleDefinitionNode.call(frame, definition.getCallTarget(), frameArguments);
-        } finally {
-            FiberNodes.setLexicalScopeStack(getContext(), oldLexicalScope);
-        }
+        final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
     }
 
 }

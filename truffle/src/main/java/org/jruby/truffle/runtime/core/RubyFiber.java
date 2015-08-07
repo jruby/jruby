@@ -12,14 +12,11 @@ package org.jruby.truffle.runtime.core;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -37,9 +34,6 @@ public class RubyFiber extends RubyBasicObject {
         public final boolean isRootFiber;
         // we need 2 slots when the FiberManager sends the kill message and there is another message unprocessed
         public final BlockingQueue<FiberNodes.FiberMessage> messageQueue = new LinkedBlockingQueue<>(2);
-
-        public LexicalScope lexicalScopeStack;
-
         public volatile RubyBasicObject lastResumedByFiber = null;
         public volatile boolean alive = true;
         public volatile Thread thread;
@@ -48,7 +42,6 @@ public class RubyFiber extends RubyBasicObject {
             assert RubyGuards.isRubyThread(rubyThread);
             this.rubyThread = rubyThread;
             this.isRootFiber = isRootFiber;
-            this.lexicalScopeStack = rubyThread.getContext().getRootLexicalScope();
         }
     }
 

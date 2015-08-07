@@ -10,16 +10,22 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
+import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -1034,6 +1040,29 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
             return nativeSockets().getsockname(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
+        }
+
+    }
+
+    @CoreMethod(names = "_getsockopt", isModuleFunction = true, required = 5)
+    public abstract static class GetSockOptNode extends CoreMethodArrayArgumentsNode {
+
+        public GetSockOptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = { "isRubyPointer(optval)", "isRubyPointer(optlen)" })
+        public int getSockOptions(int sockfd, int level, int optname, RubyBasicObject optval, RubyBasicObject optlen) {
+            return nativeSockets().getsockopt(sockfd, level, optname, PointerNodes.getPointer(optval), PointerNodes.getPointer(optlen));
+        }
+
+        // This should probably done at a higher-level, but rubysl/socket does not handle it.
+        @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
+        public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, RubyBasicObject level, RubyBasicObject optname, RubyBasicObject optval, RubyBasicObject optlen) {
+            int levelInt = (int) ruby(frame, "Socket::SOL_" + SymbolNodes.getString(level));
+            int optnameInt = (int) ruby(frame, "Socket::SO_" + SymbolNodes.getString(optname));
+            return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 
     }

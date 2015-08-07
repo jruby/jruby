@@ -1,9 +1,7 @@
 #-*- mode: ruby -*-
 
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readOnly' => true,
-            'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.10' )
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10' )
 
 gemfile
 
@@ -22,7 +20,7 @@ files = [ '.rspec', '*.rb', 'config.ru', '*file', '*file.lock', '.jbundler/class
 jruby_plugin!( :gem,
                # need a jruby-complete from maven central here
                # TODO fix plugin to use the one from compile-artifacts
-               :jrubyVersion => '1.7.19',
+               :jrubyVersion => '9.0.0.0',
                :includeRubygemsInResources => true ) do
   execute_goals( 'generate-resources', 'process-resources', :includeBinStubs => true, :includeRubyResources => files )
 end
@@ -54,7 +52,7 @@ if File.file?('Jarfile.lock')
   end
 end
 
-plugin :shade do
+plugin :shade, '2.1' do
   execute_goals( 'shade',
                  :id => 'pack',
                  :artifactSet => { :excludes => ['rubygems:*'] },

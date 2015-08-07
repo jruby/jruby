@@ -6,18 +6,12 @@ id 'org.jruby.osgi:gems-bundle', '1.0'
 
 packaging 'bundle'
 
-jar 'org.osgi:org.osgi.core', '5.0.0', :scope => :provided
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
+            # needed bundle plugin
+            'polyglot.dump.pom' => 'pom.xml' )
 
-jruby_plugin! :gem, :includeRubygemsInResources => true
-
-# ruby-maven will dump an equivalent pom.xml
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'jruby.home' => '${project.basedir}/../../../../../../' )
-
-execute 'jrubydir', 'process-resources' do |ctx|
-  require 'jruby/commands'
-  JRuby::Commands.generate_dir_info( ctx.project.build.directory.to_pathname + '/rubygems' )
-end
+jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
 
 plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
         :instructions => {

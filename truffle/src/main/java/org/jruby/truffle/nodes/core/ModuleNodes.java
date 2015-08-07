@@ -406,7 +406,7 @@ public abstract class ModuleNodes {
             final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
             final CheckArityNode checkArity = new CheckArityNode(getContext(), sourceSection, arity);
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, arity, indicativeName, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false);
 
             final SelfNode self = new SelfNode(getContext(), sourceSection);
             final RubyNode accessInstanceVariable;
@@ -419,7 +419,7 @@ public abstract class ModuleNodes {
             final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, LexicalScope.NONE, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
             getModel(module).addMethod(this, method);
             return nil();
@@ -897,7 +897,7 @@ public abstract class ModuleNodes {
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null,
-                    LookupConstantNodeGen.create(context, sourceSection, null, null));
+                    LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null));
         }
 
         @CreateCast("name")
@@ -1104,10 +1104,7 @@ public abstract class ModuleNodes {
 
             final CallTarget modifiedCallTarget = ProcNodes.getCallTargetForLambdas(proc);
             final SharedMethodInfo info = ProcNodes.getSharedMethodInfo(proc).withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC,
-                    ProcNodes.getMethod(proc).getLexicalScope(),
-                    false, modifiedCallTarget,
-                    ProcNodes.getDeclarationFrame(proc));
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, ProcNodes.getDeclarationFrame(proc));
 
             return addMethod(module, name, modifiedMethod);
         }
@@ -1345,11 +1342,11 @@ public abstract class ModuleNodes {
             final List<RubyBasicObject> modules = new ArrayList<>();
 
             InternalMethod method = RubyCallStack.getCallingMethod(getContext());
-            LexicalScope lexicalScope = method == null ? null : method.getLexicalScope();
+            LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
 
             while (lexicalScope != null) {
-                final RubyBasicObject enclosing = lexicalScope.getModule();
+                final RubyBasicObject enclosing = lexicalScope.getLiveModule();
                 if (enclosing == object)
                     break;
                 modules.add(enclosing);

@@ -64,7 +64,7 @@ public class JRubyOsgiEmbedTest {
         return options(
             junitBundles(),
             systemProperty("org.ops4j.pax.url.mvn.localRepository").value(System.getProperty( "maven.repo.local" )),
-            mavenBundle("org.jruby", "jruby-complete", System.getProperty("project.version")),
+            mavenBundle("org.jruby", "jruby-complete", System.getProperty("jruby.version")),
             mavenBundle("org.jruby.osgi", "gems-bundle", "1.0"),
             mavenBundle("org.jruby.osgi", "scripts-bundle", "1.0")
         );

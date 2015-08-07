@@ -53,7 +53,6 @@ import org.jruby.truffle.nodes.exceptions.EnsureNode;
 import org.jruby.truffle.nodes.exceptions.*;
 import org.jruby.truffle.nodes.exceptions.RescueNode;
 import org.jruby.truffle.nodes.globals.*;
-import org.jruby.truffle.nodes.lexical.GetLexicalScopeModuleNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.literal.RangeLiteralNodeGen;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
@@ -874,16 +873,21 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, Arity.NO_ARGUMENTS, name, false, bodyNode, false);
+        LexicalScope newLexicalScope = environment.pushLexicalScope();
+        try {
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, bodyNode, false);
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
-                environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
+            final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
+                    environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
 
-        final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
+            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
 
-        return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod);
+            return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
+        } finally {
+            environment.popLexicalScope();
+        }
     }
 
     @Override
@@ -911,14 +915,14 @@ public class BodyTranslator extends Translator {
     public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode rhs = node.getValueNode().accept(this);
-        final RubyNode ret = new WriteClassVariableNode(context, sourceSection, node.getName(), rhs);
+        final RubyNode ret = new WriteClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope(), rhs);
         return addNewlineIfNeeded(node, ret);
     }
 
     @Override
     public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, node.getName());
+        final RubyNode ret = new ReadClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope());
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -931,7 +935,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        final RubyNode ret = new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
+        final RubyNode ret = new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs, LexicalScope.NONE);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -943,7 +947,7 @@ public class BodyTranslator extends Translator {
 
         final LiteralNode root = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), root);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), root, LexicalScope.NONE);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -951,7 +955,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (node instanceof Colon2ImplicitNode) { // use current lexical scope
-            ret = new GetLexicalScopeModuleNode(context, sourceSection);
+            ret = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
         } else if (node instanceof Colon2ConstNode) { // A::B
             ret = node.childNodes().get(0).accept(this);
         } else { // Colon3Node: on top-level (Object)
@@ -984,7 +988,7 @@ public class BodyTranslator extends Translator {
         RubyNode moduleNode;
         Node constNode = node.getConstNode();
         if (constNode == null || constNode instanceof Colon2ImplicitNode) {
-            moduleNode = new GetLexicalScopeModuleNode(context, sourceSection);
+            moduleNode = new LexicalScopeNode(context, sourceSection, environment.getLexicalScope());
         } else if (constNode instanceof Colon2ConstNode) {
             constNode = ((Colon2Node) constNode).getLeftNode(); // Misleading doc, we only want the defined part.
             moduleNode = constNode.accept(this);
@@ -1015,8 +1019,9 @@ public class BodyTranslator extends Translator {
             return addNewlineIfNeeded(node, ret);
         }
 
-        final RubyNode moduleNode = new GetLexicalScopeModuleNode(context, sourceSection);
-        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, true);
+        final LexicalScope lexicalScope = environment.getLexicalScope();
+        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
+        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1158,7 +1163,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, MethodTranslator.getArity(argsNode), methodName, false, parseTree, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, parseTree, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
@@ -1818,7 +1823,7 @@ public class BodyTranslator extends Translator {
         }
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, MethodTranslator.getArity(argsNode), currentCallMethodName, true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
@@ -2557,10 +2562,11 @@ public class BodyTranslator extends Translator {
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
         // Translate as Rubinius.privately { Rational.convert(a, b) }
 
-        final RubyNode moduleNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
+        final LexicalScope lexicalScope = environment.getLexicalScope();
+        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                new ReadConstantNode(context, sourceSection, name, moduleNode),
+                new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
                 null, false, true, new RubyNode[]{a, b});
     }
 
@@ -2976,7 +2982,7 @@ public class BodyTranslator extends Translator {
         }
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, MethodTranslator.getArity(argsNode), "(lambda)", true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, node, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,

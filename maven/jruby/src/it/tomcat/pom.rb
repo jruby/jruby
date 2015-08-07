@@ -3,8 +3,8 @@ id 'dummy:tomcat:1.0-SNAPSHOT'
 # it is war-file
 packaging 'war'
 
-# get jruby dependencies
-properties( 'jruby.version' => '@project.version@',
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
@@ -15,12 +15,9 @@ gem 'flickraw', '0.9.7'
 repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
-jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true do
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
   execute_goal :initialize
 end 
-
-# ruby-maven will dump an equivalent pom.xml
-properties[ 'tesla.dump.pom' ] = 'pom.xml'
 
 # start tomcat for the tests
 plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
@@ -28,6 +25,9 @@ plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
   execute_goals( 'run',
                  :id => 'run-tomcat',
                  :phase => 'pre-integration-test' )
+  execute_goals( 'shutdown',
+                 :id => 'shutdown-tomcat',
+                 :phase => 'post-integration-test' )
 end
 
 # download files during the tests
