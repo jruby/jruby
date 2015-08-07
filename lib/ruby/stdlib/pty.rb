@@ -1,6 +1,18 @@
 require 'ffi'
 
 module PTY
+  class ChildExited < RuntimeError
+    attr_reader :status
+
+    def initialize(status)
+      @status = status
+    end
+
+    def inspect
+      "<#{self.class.name}: #{status}>"
+    end
+  end
+
   private
   module LibUtil
     extend FFI::Library
@@ -24,12 +36,12 @@ module PTY
   end
   Buffer = FFI::Buffer
   def self.build_args(args)
-    cmd = args.shift
+    cmd, argv0 = args.shift
     cmd_args = args.map do |arg|
       FFI::MemoryPointer.from_string(arg)
     end
     exec_args = FFI::MemoryPointer.new(:pointer, 1 + cmd_args.length + 1)
-    exec_cmd = FFI::MemoryPointer.from_string(cmd)
+    exec_cmd = FFI::MemoryPointer.from_string(argv0 || cmd)
     exec_args[0].put_pointer(0, exec_cmd)
     cmd_args.each_with_index do |arg, i|
       exec_args[i + 1].put_pointer(0, arg)
@@ -37,7 +49,7 @@ module PTY
     [ cmd, exec_args ]
   end
   public
-  def self.getpty(*args)
+  def self.fork_exec_pty(*args)
     mfdp = Buffer.alloc_out :int
     name = Buffer.alloc_out 1024
     exec_cmd, exec_args = build_args(args)
@@ -63,7 +75,34 @@ module PTY
       [ rfp, wfp, pid ]
     end
   end
-  def self.spawn(*args, &block)
-    self.getpty("/bin/sh", "-c", args[0], &block)
+
+  class << self
+    def spawn(*args, &block)
+      if args.size > 1
+        self.fork_exec_pty(*args, &block)
+      else
+        self.fork_exec_pty("/bin/sh", "-c", *args, &block)
+      end
+    end
+    alias :getpty :spawn
+
+    def open(*args)
+      raise NotImplementedError
+    end
+
+    def check(target_pid, exception = false)
+      pid, status = Process.waitpid2(target_pid, Process::WNOHANG|Process::WUNTRACED)
+
+      # I sometimes see #<Process::Status: pid 0 signal 36> here.
+      if pid == target_pid && status
+        if exception
+          raise ChildExited.new(status)
+        else
+          status
+        end
+      end
+    rescue SystemCallError
+      nil
+    end
   end
 end
