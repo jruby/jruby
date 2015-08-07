@@ -7,7 +7,6 @@ package org.jruby.util;
 
 import org.jruby.platform.Platform;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -82,7 +81,7 @@ public class JavaNameMangler {
         }
 
         String[] pathElements = PATH_SPLIT.split(classPath);
-        StringBuilder newPath = new StringBuilder(prefix);
+        StringBuilder newPath = new StringBuilder(classPath.length() + 16).append(prefix);
 
         for (String element : pathElements) {
             if (element.length() <= 0) {
@@ -97,11 +96,12 @@ public class JavaNameMangler {
                 newPath.append('$');
             }
 
-            String pathId = element;
             if (!preserveIdentifiers) {
-                pathId = mangleStringForCleanJavaIdentifier(element);
+                mangleStringForCleanJavaIdentifier(newPath, element);
             }
-            newPath.append(pathId);
+            else {
+                newPath.append(element);
+            }
         }
 
         // strip off "_dot_rb" for .rb files
@@ -113,74 +113,80 @@ public class JavaNameMangler {
         return newPath.toString();
     }
 
-    public static String mangleStringForCleanJavaIdentifier(String name) {
+    public static String mangleStringForCleanJavaIdentifier(final String name) {
+        StringBuilder cleanBuffer = new StringBuilder(name.length() * 3);
+        mangleStringForCleanJavaIdentifier(cleanBuffer, name);
+        return cleanBuffer.toString();
+    }
+
+    private static void mangleStringForCleanJavaIdentifier(final StringBuilder buffer,
+        final String name) {
         final char[] chars = name.toCharArray();
         final int len = chars.length;
-        StringBuilder cleanBuffer = new StringBuilder(len * 2);
+        buffer.ensureCapacity(buffer.length() + len * 2);
         boolean prevWasReplaced = false;
         for (int i = 0; i < len; i++) {
             if ((i == 0 && Character.isJavaIdentifierStart(chars[i]))
                     || Character.isJavaIdentifierPart(chars[i])) {
-                cleanBuffer.append(chars[i]);
+                buffer.append(chars[i]);
                 prevWasReplaced = false;
-            } else {
-                if (!prevWasReplaced) {
-                    cleanBuffer.append('_');
+                continue;
+            }
+
+            if (!prevWasReplaced) buffer.append('_');
+            prevWasReplaced = true;
+
+            switch (chars[i]) {
+            case '?':
+                buffer.append("p_");
+                continue;
+            case '!':
+                buffer.append("b_");
+                continue;
+            case '<':
+                buffer.append("lt_");
+                continue;
+            case '>':
+                buffer.append("gt_");
+                continue;
+            case '=':
+                buffer.append("equal_");
+                continue;
+            case '[':
+                if ((i + 1) < len && chars[i + 1] == ']') {
+                    buffer.append("aref_");
+                    i++;
+                } else {
+                    buffer.append("lbracket_");
                 }
-                prevWasReplaced = true;
-                switch (chars[i]) {
-                case '?':
-                    cleanBuffer.append("p_");
-                    continue;
-                case '!':
-                    cleanBuffer.append("b_");
-                    continue;
-                case '<':
-                    cleanBuffer.append("lt_");
-                    continue;
-                case '>':
-                    cleanBuffer.append("gt_");
-                    continue;
-                case '=':
-                    cleanBuffer.append("equal_");
-                    continue;
-                case '[':
-                    if ((i + 1) < len && chars[i + 1] == ']') {
-                        cleanBuffer.append("aref_");
-                        i++;
-                    } else {
-                        cleanBuffer.append("lbracket_");
-                    }
-                    continue;
-                case ']':
-                    cleanBuffer.append("rbracket_");
-                    continue;
-                case '+':
-                    cleanBuffer.append("plus_");
-                    continue;
-                case '-':
-                    cleanBuffer.append("minus_");
-                    continue;
-                case '*':
-                    cleanBuffer.append("times_");
-                    continue;
-                case '/':
-                    cleanBuffer.append("div_");
-                    continue;
-                case '&':
-                    cleanBuffer.append("and_");
-                    continue;
-                case '.':
-                    cleanBuffer.append("dot_");
-                    continue;
-                case '@':
-                    cleanBuffer.append("at_");
-                default:
-                    cleanBuffer.append(Integer.toHexString(chars[i])).append('_');
-                }
+                continue;
+            case ']':
+                buffer.append("rbracket_");
+                continue;
+            case '+':
+                buffer.append("plus_");
+                continue;
+            case '-':
+                buffer.append("minus_");
+                continue;
+            case '*':
+                buffer.append("times_");
+                continue;
+            case '/':
+                buffer.append("div_");
+                continue;
+            case '&':
+                buffer.append("and_");
+                continue;
+            case '.':
+                buffer.append("dot_");
+                continue;
+            case '@':
+                buffer.append("at_");
+            default:
+                buffer.append(Integer.toHexString(chars[i])).append('_');
             }
         }
-        return cleanBuffer.toString();
     }
 
     private static final String DANGEROUS_CHARS = "\\/.;:$[]<>";
@@ -189,7 +195,7 @@ public class JavaNameMangler {
     private static final char NULL_ESCAPE_C = '=';
     private static final String NULL_ESCAPE = ESCAPE_C +""+ NULL_ESCAPE_C;
 
-    public static String mangleMethodName(String name) {
+    public static String mangleMethodName(final String name) {
         // scan for characters that need escaping
         StringBuilder builder = null; // lazy
         for (int i = 0; i < name.length(); i++) {
