@@ -19,8 +19,8 @@ public class JavaNameMangler {
     public static final Pattern PATH_SPLIT = Pattern.compile("[/\\\\]");
 
     public static String mangledFilenameForStartupClasspath(String filename) {
-        if (filename.equals("-e")) {
-            return "ruby/__dash_e__";
+        if (filename.length() == 2 && filename.charAt(0) == '-' && filename.charAt(1) == 'e') {
+            return "ruby/__dash_e__"; // "-e"
         }
 
         return mangleFilenameForClasspath(filename, null, "", false, false);
@@ -37,18 +37,18 @@ public class JavaNameMangler {
     public static String mangleFilenameForClasspath(String filename, String parent, String prefix, boolean canonicalize,
           boolean preserveIdentifiers) {
         try {
-            String classPath = "";
-            if(filename.indexOf("!") != -1) {
-                String before = filename.substring(6, filename.indexOf("!"));
+            String classPath; final int idx = filename.indexOf('!');
+            if (idx != -1) {
+                String before = filename.substring(6, idx);
                 if (canonicalize) {
-                    classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).getCanonicalPath().toString();
+                    classPath = new JRubyFile(before + filename.substring(idx + 1)).getCanonicalPath();
                 } else {
-                    classPath = new JRubyFile(before + filename.substring(filename.indexOf("!")+1)).toString();
+                    classPath = new JRubyFile(before + filename.substring(idx + 1)).toString();
                 }
             } else {
                 try {
                     if (canonicalize) {
-                        classPath = new JRubyFile(filename).getCanonicalPath().toString();
+                        classPath = new JRubyFile(filename).getCanonicalPath();
                     } else {
                         classPath = new JRubyFile(filename).toString();
                     }
@@ -62,7 +62,7 @@ public class JavaNameMangler {
                 String parentPath;
                 try {
                     if (canonicalize) {
-                        parentPath = new JRubyFile(parent).getCanonicalPath().toString();
+                        parentPath = new JRubyFile(parent).getCanonicalPath();
                     } else {
                         parentPath = new JRubyFile(parent).toString();
                     }
@@ -87,11 +87,11 @@ public class JavaNameMangler {
                 }
 
                 if (newPath.length() > 0) {
-                    newPath.append("/");
+                    newPath.append('/');
                 }
 
                 if (!Character.isJavaIdentifierStart(element.charAt(0))) {
-                    newPath.append("$");
+                    newPath.append('$');
                 }
 
                 String pathId = element;
@@ -108,27 +108,28 @@ public class JavaNameMangler {
             }
 
             return newPath.toString();
-        } catch (IOException ioe) {
+        }catch (IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException(ioe);
         }
     }
 
     public static String mangleStringForCleanJavaIdentifier(String name) {
-        char[] characters = name.toCharArray();
-        StringBuilder cleanBuffer = new StringBuilder();
+        final char[] chars = name.toCharArray();
+        final int len = chars.length;
+        StringBuilder cleanBuffer = new StringBuilder(len * 2);
         boolean prevWasReplaced = false;
-        for (int i = 0; i < characters.length; i++) {
-            if ((i == 0 && Character.isJavaIdentifierStart(characters[i]))
-                    || Character.isJavaIdentifierPart(characters[i])) {
-                cleanBuffer.append(characters[i]);
+        for (int i = 0; i < len; i++) {
+            if ((i == 0 && Character.isJavaIdentifierStart(chars[i]))
+                    || Character.isJavaIdentifierPart(chars[i])) {
+                cleanBuffer.append(chars[i]);
                 prevWasReplaced = false;
             } else {
                 if (!prevWasReplaced) {
-                    cleanBuffer.append("_");
+                    cleanBuffer.append('_');
                 }
                 prevWasReplaced = true;
-                switch (characters[i]) {
+                switch (chars[i]) {
                 case '?':
                     cleanBuffer.append("p_");
                     continue;
@@ -145,7 +146,7 @@ public class JavaNameMangler {
                     cleanBuffer.append("equal_");
                     continue;
                 case '[':
-                    if ((i + 1) < characters.length && characters[i + 1] == ']') {
+                    if ((i + 1) < len && chars[i + 1] == ']') {
                         cleanBuffer.append("aref_");
                         i++;
                     } else {
@@ -176,7 +177,7 @@ public class JavaNameMangler {
                 case '@':
                     cleanBuffer.append("at_");
                 default:
-                    cleanBuffer.append(Integer.toHexString(characters[i])).append("_");
+                    cleanBuffer.append(Integer.toHexString(chars[i])).append('_');
                 }
             }
         }
@@ -187,7 +188,7 @@ public class JavaNameMangler {
     private static final String REPLACEMENT_CHARS = "-|,?!%{}^_";
     private static final char ESCAPE_C = '\\';
     private static final char NULL_ESCAPE_C = '=';
-    private static final String NULL_ESCAPE = ESCAPE_C+""+NULL_ESCAPE_C;
+    private static final String NULL_ESCAPE = ESCAPE_C +""+ NULL_ESCAPE_C;
 
     public static String mangleMethodName(String name) {
         // scan for characters that need escaping
@@ -202,8 +203,9 @@ public class JavaNameMangler {
                     builder.append(NULL_ESCAPE);
                     builder.append(name.substring(0, i));
                 }
-                builder.append(ESCAPE_C).append((char)escape);
-            } else if (builder != null) builder.append(candidate);
+                builder.append(ESCAPE_C).append((char) escape);
+            }
+            else if (builder != null) builder.append(candidate);
         }
 
         if (builder != null) return builder.toString();
@@ -213,21 +215,22 @@ public class JavaNameMangler {
 
     public static String demangleMethodName(String name) {
         if (!name.startsWith(NULL_ESCAPE)) return name;
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 2; i < name.length(); i++) {
+        final int len = name.length();
+        StringBuilder builder = new StringBuilder(len);
+        for (int i = 2; i < len; i++) {
             char candidate = name.charAt(i);
             if (candidate == ESCAPE_C) {
                 i++;
                 char escaped = name.charAt(i);
                 char unescape = unescapeChar(escaped);
                 builder.append(unescape);
-            } else builder.append(candidate);
+            }
+            else builder.append(candidate);
         }
 
         return builder.toString();
     }
-    
+
     public static boolean willMethodMangleOk(String name) {
         if (Platform.IS_IBM) {
             // IBM's JVM is much less forgiving, so we disallow anythign with non-alphanumeric, _, and $
