@@ -22,6 +22,7 @@ import org.jruby.ast.AssignableNode;
 import org.jruby.ast.KeywordArgNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -83,7 +84,7 @@ class MethodTranslator extends BodyTranslator {
          * follow the specs for now until we see a reason to do something else.
          */
 
-        if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
+        if (isBlock && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
             arityForCheck = new Arity(arity.getPreRequired(), 0, false);
         } else {
             arityForCheck = arity;
