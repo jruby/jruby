@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -80,6 +81,7 @@ public abstract class ExceptionNodes {
         EXCEPTION_LAYOUT.setBacktrace(BasicObjectNodes.getDynamicObject(exception), backtrace);
     }
 
+    @TruffleBoundary
     public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
         assert RubyGuards.isRubyException(exception);
 

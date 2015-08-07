@@ -10,7 +10,12 @@ import org.jruby.util.ByteList;
  */
 public class Filename extends StringLiteral {
     public Filename(ByteList filename) {
-        super(OperandType.FILENAME, filename, 0);
+        super(filename, 0);
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.FILENAME;
     }
 
     @Override

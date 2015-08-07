@@ -665,6 +665,7 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject toS(RubyBasicObject regexp) {
             return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), getSource(regexp), getRegex(regexp).getOptions()).to_s()).getByteList());

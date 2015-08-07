@@ -22,6 +22,7 @@ import org.jruby.ast.AssignableNode;
 import org.jruby.ast.KeywordArgNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -83,7 +84,7 @@ class MethodTranslator extends BodyTranslator {
          * follow the specs for now until we see a reason to do something else.
          */
 
-        if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
+        if (isBlock && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
             arityForCheck = new Arity(arity.getPreRequired(), 0, false);
         } else {
             arityForCheck = arity;
@@ -189,75 +190,78 @@ class MethodTranslator extends BodyTranslator {
         if (!isBlock) {
             // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
             body = new ExceptionTranslatingNode(context, sourceSection, body);
+
+            final RubyRootNode rootNode = new RubyRootNode(
+                    context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+
+            if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
+                System.err.println(sourceSection + " " + methodName);
+                NodeUtil.printCompactTree(System.err, rootNode);
+            }
+
+            if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
+                System.err.println(sourceSection + " " + methodName);
+                NodeUtil.printTree(System.err, rootNode);
+            }
+
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
         }
 
-        final RubyRootNode rootNode = new RubyRootNode(
-                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+        // Blocks
+        final RubyNode newNodeForBlocks = NodeUtil.cloneNode(body);
 
-        if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            NodeUtil.printCompactTree(System.err, rootNode);
+        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForBlocks, BehaveAsBlockNode.class)) {
+            behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
         }
 
-        if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            NodeUtil.printTree(System.err, rootNode);
+        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForBlocks, BehaveAsProcNode.class)) {
+            behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
         }
 
-        if (isBlock) {
-            // Blocks
-            final RubyRootNode newRootNodeForBlocks = rootNode.cloneRubyRootNode();
+        final RubyRootNode newRootNodeForBlocks = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                newNodeForBlocks, environment.needsDeclarationFrame());
 
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-            }
+        // Procs
+        final RubyNode newNodeForProcs = NodeUtil.cloneNode(body);
 
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
-            }
-
-            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
-
-            // Procs
-            final RubyRootNode newRootNodeForProcs = rootNode.cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-            }
-
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getAsProc());
-            }
-
-            final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
-
-            // Lambdas
-            final RubyRootNode newRootNodeForLambdas = rootNode.cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForLambdas, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
-            }
-
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForLambdas, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
-            }
-
-            final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(
-                    context,
-                    newRootNodeForLambdas.getSourceSection(),
-                    newRootNodeForLambdas.getFrameDescriptor(), newRootNodeForLambdas.getSharedMethodInfo(),
-                    new CatchBreakAsReturnNode(context, sourceSection,
-                            new CatchReturnNode(context, newRootNodeForLambdas.getSourceSection(),
-                                    newRootNodeForLambdas.getBody(), getEnvironment().getReturnID())), environment.needsDeclarationFrame());
-
-            final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
-
-            return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
-        } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
-                    Truffle.getRuntime().createCallTarget(rootNode));
+        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForProcs, BehaveAsBlockNode.class)) {
+            behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
         }
+
+        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForProcs, BehaveAsProcNode.class)) {
+            behaveAsProcNode.replace(behaveAsProcNode.getAsProc());
+        }
+
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                newNodeForProcs, environment.needsDeclarationFrame());
+
+        // Lambdas
+        final RubyNode newNodeForLambdas = NodeUtil.cloneNode(body);
+
+        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForLambdas, BehaveAsBlockNode.class)) {
+            behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
+        }
+
+        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForLambdas, BehaveAsProcNode.class)) {
+            behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
+        }
+
+        final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
+                context, sourceSection,
+                environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                new CatchBreakAsReturnNode(context, sourceSection,
+                        new CatchReturnNode(context, sourceSection,
+                                newNodeForLambdas, environment.getReturnID())),
+                environment.needsDeclarationFrame());
+
+
+        final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
+        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
+        final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
+
+        return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
+                callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {

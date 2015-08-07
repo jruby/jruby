@@ -36,13 +36,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  */
-public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2 {
+public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2, NativeCallMethod {
     protected Arity arity = Arity.OPTIONAL;
     private String javaName;
     private boolean isSingleton;
     protected StaticScope staticScope;
     private String parameterDesc;
     private String[] parameterList;
+
+    /** Single-arity native call */
+    protected NativeCall nativeCall;
 
     private static final String[] ONE_REQ = new String[] { "q" };
     private static final String[] TWO_REQ = new String[] { "q", "q" };
@@ -236,6 +239,28 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         return parameterList;
+    }
+
+    /**
+     * @see NativeCallMethod#setNativeCall(Class, String, Class, Class[], boolean, boolean)
+     */
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
+        this.nativeCall = new NativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);
+    }
+
+
+    /**
+     * @see NativeCallMethod#setNativeCall(Class, String, Class, Class[], boolean)
+     */
+    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
+        setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
+    }
+
+    /**
+     * @see NativeCallMethod#getNativeCall()
+     */
+    public NativeCall getNativeCall() {
+        return this.nativeCall;
     }
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {

@@ -101,6 +101,8 @@ public class RubyTCPServer extends RubyTCPSocket {
             InetAddress addr = InetAddress.getByName(host);
 
             ServerSocketChannel ssc = ServerSocketChannel.open();
+            ssc.socket().setReuseAddress(true);
+
             InetSocketAddress socket_address = new InetSocketAddress(addr, port);
 
             ssc.socket().bind(socket_address);

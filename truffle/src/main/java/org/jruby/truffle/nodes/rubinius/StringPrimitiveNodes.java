@@ -587,6 +587,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object stringToF(RubyBasicObject string) {
             try {

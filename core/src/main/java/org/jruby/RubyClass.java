@@ -622,6 +622,15 @@ public class RubyClass extends RubyModule {
      * MRI: rb_check_funcall
      */
     public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
+        return finvokeChecked(context, self, name, IRubyObject.NULL_ARRAY);
+    }
+
+    /**
+     * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * MRI: rb_check_funcall
+     */
+    public IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         RubyClass klass = self.getMetaClass();
         DynamicMethod me;
         if (!checkFuncallRespondTo(context, self.getMetaClass(), self, name))
@@ -629,9 +638,9 @@ public class RubyClass extends RubyModule {
 
         me = searchMethod(name);
         if (!checkFuncallCallable(context, me, CallType.FUNCTIONAL, self)) {
-            return checkFuncallMissing(context, klass, self, name);
+            return checkFuncallMissing(context, klass, self, name, args);
         }
-        return me.call(context, self, klass, name);
+        return me.call(context, self, klass, name, args);
     }
 
     // MRI: check_funcall_exec
@@ -689,6 +698,7 @@ public class RubyClass extends RubyModule {
         return method != null && !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
+    // MRI: check_funcall_missing
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
         Ruby runtime = context.runtime;
         if (klass.isMethodBuiltin("method_missing")) {
@@ -1391,7 +1401,7 @@ public class RubyClass extends RubyModule {
                 switch (methodEntry.getValue().getArity().getValue()) {
                 case 0:
                     signature = sig(IRubyObject.class);
-                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                    m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                     m.aload(0);
@@ -1426,7 +1436,7 @@ public class RubyClass extends RubyModule {
                 int rubyIndex = baseIndex;
 
                 signature = sig(methodSignature[0], params);
-                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_VARARGS, javaMethodName, signature, null, null);
+                m = new SkinnyMethodAdapter(cw, ACC_PUBLIC, javaMethodName, signature, null, null);
                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                 m.getstatic(javaPath, "ruby", ci(Ruby.class));

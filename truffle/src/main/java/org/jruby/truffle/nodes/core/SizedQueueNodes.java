@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -104,6 +105,7 @@ public abstract class SizedQueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public int setMax(RubyBasicObject self, int newCapacity) {
             if (newCapacity <= 0) {
@@ -133,6 +135,7 @@ public abstract class SizedQueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public int max(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -175,6 +178,7 @@ public abstract class SizedQueueNodes {
             return self;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public RubyBasicObject pushNonBlock(RubyBasicObject self, final Object value, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -218,6 +222,7 @@ public abstract class SizedQueueNodes {
             });
         }
 
+        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -240,6 +245,7 @@ public abstract class SizedQueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean empty(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -270,6 +276,7 @@ public abstract class SizedQueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject clear(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);

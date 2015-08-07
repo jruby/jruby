@@ -3,8 +3,8 @@
 # it is war-file
 packaging 'war'
 
-# get jruby dependencies
-properties( 'jruby.version' => '@project.version@',
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )
 
@@ -13,17 +13,13 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 jar( 'org.jruby.rack:jruby-rack', '1.1.14', 
      :exclusions => [ 'org.jruby:jruby-complete' ] )
 
-
-# ruby-maven will dump an equivalent pom.xml
-properties[ 'tesla.dump.pom' ] = 'pom.xml'
-
 # a gem to be used
 gem 'flickraw', '0.9.7'
 
 repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
-jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true do
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true, :jrubyVersion => '9.0.0.0' do
   execute_goal :initialize
 end
 

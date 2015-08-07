@@ -72,6 +72,7 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject push(RubyBasicObject self, final Object value) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -98,6 +99,7 @@ public abstract class QueueNodes {
             return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!nonBlocking")
         public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -110,6 +112,7 @@ public abstract class QueueNodes {
             });
         }
 
+        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(RubyBasicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -183,6 +186,7 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean empty(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -198,6 +202,7 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public int size(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
@@ -213,6 +218,7 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject clear(RubyBasicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);

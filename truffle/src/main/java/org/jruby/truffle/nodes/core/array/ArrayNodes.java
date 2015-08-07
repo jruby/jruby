@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.array;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -2798,6 +2799,7 @@ public abstract class ArrayNodes {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
+        @TruffleBoundary
         protected CallTarget compileFormat(RubyBasicObject format) {
             assert RubyGuards.isRubyString(format);
             try {

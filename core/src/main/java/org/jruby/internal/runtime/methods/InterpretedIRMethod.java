@@ -60,7 +60,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return method.getArgumentDescriptors();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
     public Signature getSignature() {
@@ -273,7 +273,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public DynamicMethod dup() {
-        return new InterpretedIRMethod(method, visibility, implementationClass);
+        return new InterpretedIRMethod(method, getVisibility(), implementationClass);
     }
 
     public String getClassName(ThreadContext context) {

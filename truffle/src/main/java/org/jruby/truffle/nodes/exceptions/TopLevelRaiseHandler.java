@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -33,18 +34,23 @@ public class TopLevelRaiseHandler extends RubyNode {
         try {
             return body.execute(frame);
         } catch (RaiseException e) {
-            final Object rubyException = e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
-                System.err.println(line);
-            }
-
-            System.exit(1);
+            handleException(e);
         } catch (ThreadExitException e) {
             // Ignore
         }
 
         return nil();
+    }
+
+    @TruffleBoundary
+    private void handleException(RaiseException e) {
+        final Object rubyException = e.getRubyException();
+
+        for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
+            System.err.println(line);
+        }
+
+        System.exit(1);
     }
 
 }

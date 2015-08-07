@@ -16,10 +16,15 @@ public class Regexp extends ImmutableLiteral {
     final private ByteList source;
 
     public Regexp(ByteList source, RegexpOptions options) {
-        super(OperandType.REGEXP);
+        super();
 
         this.source = source;
         this.options = options;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.REGEXP;
     }
 
     public ByteList getSource() {

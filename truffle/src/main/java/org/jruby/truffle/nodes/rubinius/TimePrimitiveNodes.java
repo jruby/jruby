@@ -299,6 +299,7 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public long timeSetNSeconds(RubyBasicObject time, int nanoseconds) {
             TimeNodes.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));

@@ -84,6 +84,7 @@ public abstract class ProcessNodes {
             return timeToUnit(time, unit);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "isThreadCPUTime(clock_id)", "isRubySymbol(unit)" })
         protected Object clock_gettime_thread_cputime(int clock_id, RubyBasicObject unit,
                 @Cached("getLibCClockGetTime()") LibCClockGetTime libCClockGetTime) {

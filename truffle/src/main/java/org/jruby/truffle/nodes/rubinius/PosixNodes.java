@@ -10,16 +10,22 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+
 import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
+import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -858,6 +864,7 @@ public abstract class PosixNodes {
             return getaddrinfoString(createString("0.0.0.0"), serviceName, hintsPointer, resultsPointer);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(hostName)", "isRubyString(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfoString(RubyBasicObject hostName, RubyBasicObject serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
@@ -867,6 +874,7 @@ public abstract class PosixNodes {
                     PointerNodes.getPointer(resultsPointer));
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyString(hostName)", "isNil(serviceName)", "isRubyPointer(hintsPointer)", "isRubyPointer(resultsPointer)"})
         public int getaddrinfo(RubyBasicObject hostName, RubyBasicObject serviceName, RubyBasicObject hintsPointer, RubyBasicObject resultsPointer) {
             return nativeSockets().getaddrinfo(
@@ -885,6 +893,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(address)")
         public int connect(int socket, RubyBasicObject address, int address_len) {
             return nativeSockets().connect(socket, PointerNodes.getPointer(address), address_len);
@@ -899,6 +908,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(addrInfo)")
         public RubyBasicObject freeaddrinfo(RubyBasicObject addrInfo) {
             nativeSockets().freeaddrinfo(PointerNodes.getPointer(addrInfo));
@@ -914,6 +924,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(RubyBasicObject sa, int salen, RubyBasicObject host, int hostlen, RubyBasicObject serv, int servlen, int flags) {
             return nativeSockets().getnameinfo(
@@ -935,6 +946,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int getnameinfo(int domain, int type, int protocol) {
             return nativeSockets().socket(domain, type, protocol);
@@ -949,6 +961,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(optionValue)")
         public int setsockopt(int socket, int level, int optionName, RubyBasicObject optionValue, int optionLength) {
             return nativeSockets().setsockopt(socket, level, optionName, PointerNodes.getPointer(optionValue), optionLength);
@@ -963,6 +976,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(address)")
         public int bind(int socket, RubyBasicObject address, int addressLength) {
             return nativeSockets().bind(socket, PointerNodes.getPointer(address), addressLength);
@@ -977,6 +991,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int listen(int socket, int backlog) {
             return nativeSockets().listen(socket, backlog);
@@ -991,6 +1006,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(name)")
         public int getHostName(RubyBasicObject name, int nameLength) {
             return nativeSockets().gethostname(PointerNodes.getPointer(name), nameLength);
@@ -1005,6 +1021,7 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getPeerName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
             return nativeSockets().getpeername(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
@@ -1019,9 +1036,33 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getSockName(int socket, RubyBasicObject address, RubyBasicObject addressLength) {
             return nativeSockets().getsockname(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
+        }
+
+    }
+
+    @CoreMethod(names = "_getsockopt", isModuleFunction = true, required = 5)
+    public abstract static class GetSockOptNode extends CoreMethodArrayArgumentsNode {
+
+        public GetSockOptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = { "isRubyPointer(optval)", "isRubyPointer(optlen)" })
+        public int getSockOptions(int sockfd, int level, int optname, RubyBasicObject optval, RubyBasicObject optlen) {
+            return nativeSockets().getsockopt(sockfd, level, optname, PointerNodes.getPointer(optval), PointerNodes.getPointer(optlen));
+        }
+
+        // This should probably done at a higher-level, but rubysl/socket does not handle it.
+        @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
+        public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, RubyBasicObject level, RubyBasicObject optname, RubyBasicObject optval, RubyBasicObject optlen) {
+            int levelInt = (int) ruby(frame, "Socket::SOL_" + SymbolNodes.getString(level));
+            int optnameInt = (int) ruby(frame, "Socket::SO_" + SymbolNodes.getString(optname));
+            return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 
     }

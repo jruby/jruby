@@ -14,7 +14,6 @@ import com.oracle.truffle.api.ExecutionContext;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +28,6 @@ public class RubyRootNode extends RootNode {
     private final RubyContext context;
     private final SharedMethodInfo sharedMethodInfo;
     @Child private RubyNode body;
-    private final RubyNode uninitializedBody;
     private final boolean needsDeclarationFrame;
 
     private boolean instrumentationApplied = false;
@@ -45,11 +43,6 @@ public class RubyRootNode extends RootNode {
         this.body = body;
         this.sharedMethodInfo = sharedMethodInfo;
         this.needsDeclarationFrame = needsDeclarationFrame;
-        uninitializedBody = NodeUtil.cloneNode(body);
-    }
-
-    public RubyRootNode cloneRubyRootNode() {
-        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody), needsDeclarationFrame);
     }
 
     @Override

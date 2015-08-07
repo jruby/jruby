@@ -948,7 +948,8 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public RubyHash to_h(ThreadContext context) {
-        return getType() == getRuntime().getHash() ? this : newHash(getRuntime()).replace(context, this);
+        final Ruby runtime = context.runtime;
+        return getType() == runtime.getHash() ? this : newHash(runtime).replace(context, this);
     }
 
     @Override

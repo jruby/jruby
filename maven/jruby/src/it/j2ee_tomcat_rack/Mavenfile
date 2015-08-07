@@ -8,14 +8,10 @@ properties( 'jruby.plugins.version' => '1.0.10',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )
 
-pom( 'org.jruby:jruby', '@project.version@' )
+pom( 'org.jruby:jruby', '${jruby.version}' )
 
 jar( 'org.jruby.rack:jruby-rack', '1.1.18',
      :exclusions => [ 'org.jruby:jruby-complete' ] )
-
-
-# ruby-maven will dump an equivalent pom.xml
-properties[ 'tesla.dump.pom' ] = 'pom.xml'
 
 # a gem to be used
 gem 'flickraw', '0.9.7'
@@ -23,7 +19,7 @@ gem 'flickraw', '0.9.7'
 repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
-jruby_plugin :gem, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true, :jrubyVersion => '1.7.19' do
+jruby_plugin :gem, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true, :jrubyVersion => '9.0.0.0' do
   execute_goal :initialize
 end
 
@@ -41,6 +37,9 @@ plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
   execute_goals( 'run',
                  :id => 'run-tomcat',
                  :phase => 'pre-integration-test'  )
+  execute_goals( 'shutdown',
+                 :id => 'shutdown-tomcat',
+                 :phase => 'post-integration-test' )
 end
 
 # download files during the tests

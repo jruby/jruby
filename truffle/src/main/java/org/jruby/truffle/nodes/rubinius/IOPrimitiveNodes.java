@@ -173,6 +173,7 @@ public abstract class IOPrimitiveNodes {
             return true;
         }
 
+        @TruffleBoundary
         private void newOpenFd(int newFd) {
             final int FD_CLOEXEC = 1;
 
@@ -365,8 +366,8 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
+        @TruffleBoundary
+        private void performReopen(RubyBasicObject file, RubyBasicObject io) {
             final int fd = getDescriptor(file);
             final int fdOther = getDescriptor(io);
 
@@ -382,6 +383,11 @@ public abstract class IOPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
             setMode(file, mode);
+        }
+
+        @Specialization
+        public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
+            performReopen(file, io);
 
             resetBufferingNode.call(frame, io, "reset_buffering", null);
 
@@ -400,8 +406,8 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization(guards = "isRubyString(path)")
-        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
+        @TruffleBoundary
+        public void performReopenPath(RubyBasicObject file, RubyBasicObject path, int mode) {
             int fd = getDescriptor(file);
             final String pathString = StringNodes.getString(path);
 
@@ -436,6 +442,11 @@ public abstract class IOPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
             setMode(file, newMode);
+        }
+
+        @Specialization(guards = "isRubyString(path)")
+        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
+            performReopenPath(file, path, mode);
 
             resetBufferingNode.call(frame, file, "reset_buffering", null);
 
@@ -451,8 +462,9 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public int write(VirtualFrame frame, RubyBasicObject file, RubyBasicObject string) {
+        public int write(RubyBasicObject file, RubyBasicObject string) {
             final int fd = getDescriptor(file);
 
             final ByteList byteList = StringNodes.getByteList(string);
@@ -546,8 +558,9 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public int accept(VirtualFrame frame, RubyBasicObject io) {
+        public int accept(RubyBasicObject io) {
             final int fd = getDescriptor(io);
 
             final int[] addressLength = {16};

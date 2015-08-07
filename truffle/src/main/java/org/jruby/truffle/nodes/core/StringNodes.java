@@ -1485,6 +1485,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object lstripBangSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
@@ -1509,6 +1510,7 @@ public abstract class StringNodes {
             return nil();
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object lstripBang(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
@@ -1623,6 +1625,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object rstripBangSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#singleByteRStrip19.
@@ -1648,6 +1651,7 @@ public abstract class StringNodes {
             return nil();
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object rstripBang(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
@@ -1695,6 +1699,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyBasicObject swapcaseSingleByte(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#swapcase_bang19.
@@ -1755,6 +1760,7 @@ public abstract class StringNodes {
             return result;
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isAsciiCompatible(string)")
         public RubyBasicObject dump(RubyBasicObject string) {
             // Taken from org.jruby.RubyString#dump
@@ -1895,6 +1901,11 @@ public abstract class StringNodes {
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStrNode.executeToStr(frame, args[i]);
             }
+            return performSqueezeBang(string, otherStrings);
+        }
+
+        @TruffleBoundary
+        private Object performSqueezeBang(RubyBasicObject string, RubyBasicObject[] otherStrings) {
 
             RubyBasicObject otherStr = otherStrings[0];
             Encoding enc = checkEncoding(string, getCodeRangeable(otherStr), this);
