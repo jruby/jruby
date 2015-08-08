@@ -127,8 +127,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_exception_from_array_plus
+  def test_exception_from_array_plus
     @offset = __LINE__
     [1,2,3] + 5
   rescue Exception => ex
@@ -140,8 +139,7 @@ class TestBacktraces < Test::Unit::TestCase
   end
 
   # JRUBY-2138
-  # # TODO: currently fails
-  def XXXtest_exception_from_string_plus
+  def test_exception_from_string_plus
     @offset = __LINE__
     "hello" + nil
   rescue Exception => ex
