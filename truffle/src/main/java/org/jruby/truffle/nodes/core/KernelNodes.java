@@ -23,6 +23,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -1519,27 +1520,28 @@ public abstract class KernelNodes {
             return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
         }
 
-        @Specialization(guards = "isRubyString(feature)")
-        public boolean require(RubyBasicObject feature) {
+        @Specialization(guards = "isRubyString(featureString)")
+        public boolean require(RubyBasicObject featureString) {
             CompilerDirectives.transferToInterpreter();
+            final String feature = featureString.toString();
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
 
-            if (feature.toString().equals("strscan") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
+            if (feature.equals("strscan") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
             // TODO CS 19-May-15 securerandom will use openssl if it's there, but we've only shimmed it
 
-            if (feature.toString().equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
+            if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
                 ModuleNodes.getModel(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
             try {
-                getContext().getFeatureManager().require(feature.toString(), this);
+                getContext().getFeatureManager().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
