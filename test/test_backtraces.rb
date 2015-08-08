@@ -163,8 +163,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_zero_devision_exception
+  def test_zero_devision_exception
     @offset = __LINE__
     1/0
   rescue Exception => ex
@@ -175,8 +174,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_exeption_from_object_send
+  def test_exeption_from_object_send
     @offset = __LINE__
     "hello".__send__(:sub, /l/, 5)
   rescue Exception => ex
@@ -188,8 +186,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_arity_exception
+  def test_arity_exception
     @offset = __LINE__
     "hello".sub
   rescue Exception => ex
@@ -197,8 +194,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_exception_from_eval
+  def test_exception_from_eval
     ex = get_exception {
       @offset = __LINE__
       eval("raise RuntimeError.new")
@@ -212,8 +208,7 @@ class TestBacktraces < Test::Unit::TestCase
     assert_exception_backtrace(expectation, ex)
   end
 
-  # TODO: currently fails
-  def XXXtest_exception_from_block_inside_eval
+  def test_exception_from_block_inside_eval
     ex = get_exception {
       @offset = __LINE__
       eval("def foo; yield; end; foo { raise RuntimeError.new }")
