@@ -258,6 +258,35 @@ class TestBacktraces < Test::Unit::TestCase
     $stderr = STDERR
   end
 
+  def test_throwing_runnable_backtrace # GH-3177
+    fixnum_times_ = 'org.jruby.RubyFixnum.times(org/jruby/RubyFixnum.java:'
+    backtrace = nil
+
+    i = 0
+    throwing = org.jruby.javasupport.test.ThrowingRunnable.new do
+      1.times {
+        begin
+          throwing.doRun( (i += 1) > 0 )
+        rescue java.lang.Exception
+          assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+          assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
+          backtrace = $!.backtrace.dup
+          raise
+        end
+      }
+    end
+
+    begin
+      throwing.doRun(false)
+    rescue java.lang.Exception
+      # puts $!.backtrace
+      # second rewriting of the same exception :
+      assert e = $!.backtrace.find { |e| e.index('org.jruby.RubyFixnum.times') }
+      assert_equal fixnum_times_, e[ 0...fixnum_times_.size ]
+      assert_equal backtrace, $!.backtrace # expect the same back-trace
+    end
+  end
+
   private
 
   # Convenience method to obtain the exception,
