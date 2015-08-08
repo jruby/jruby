@@ -360,7 +360,7 @@ public abstract class ArrayNodes {
 
     public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
         assert RubyGuards.isRubyClass(arrayClass);
-        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).factory, store, size));
+        return BasicObjectNodes.createRubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).getFactory(), store, size));
     }
 
     @CoreMethod(names = "+", required = 1)

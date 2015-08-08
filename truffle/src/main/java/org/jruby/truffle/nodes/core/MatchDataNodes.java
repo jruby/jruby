@@ -59,7 +59,7 @@ public abstract class MatchDataNodes {
     public static final MatchDataLayout MATCH_DATA_LAYOUT = MatchDataLayoutImpl.INSTANCE;
 
     public static RubyBasicObject createRubyMatchData(RubyBasicObject rubyClass, RubyBasicObject source, RubyBasicObject regexp, Region region, Object[] values, RubyBasicObject pre, RubyBasicObject post, RubyBasicObject global, int begin, int end) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(ModuleNodes.getModel(rubyClass).factory, new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(ModuleNodes.getModel(rubyClass).getFactory(), new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
     }
 
     public static Object[] getValues(RubyBasicObject matchData) {

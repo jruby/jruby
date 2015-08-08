@@ -102,11 +102,11 @@ public abstract class ExceptionNodes {
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, null, null));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), null, null));
     }
 
     public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, message, backtrace));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)

@@ -51,7 +51,7 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).factory, pointer));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).getFactory(), pointer));
     }
 
     public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {

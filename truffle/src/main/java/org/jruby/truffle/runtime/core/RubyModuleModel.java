@@ -721,7 +721,7 @@ public class RubyModuleModel implements ModuleChain {
         CompilerAsserts.neverPartOfCompilation();
 
         if (factory == null) {
-            return ModuleNodes.getModel(getParentModule().getActualModule()).factory;
+            return ModuleNodes.getModel(getParentModule().getActualModule()).getFactory();
         }
 
         return factory;

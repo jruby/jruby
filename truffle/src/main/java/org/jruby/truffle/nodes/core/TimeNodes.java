@@ -68,7 +68,7 @@ public abstract class TimeNodes {
     }
 
     public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
-        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).factory, dateTime, offset));
+        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).getFactory(), dateTime, offset));
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

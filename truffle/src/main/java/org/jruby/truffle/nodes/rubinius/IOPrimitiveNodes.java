@@ -106,7 +106,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).factory, context.getCoreLibrary().getNilObject(), 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).getFactory(), context.getCoreLibrary().getNilObject(), 0, 0, 0));
         }
     }
 
@@ -135,7 +135,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
             final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).factory, buffer, 0, 0, 0));
+            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).getFactory(), buffer, 0, 0, 0));
         }
 
     }

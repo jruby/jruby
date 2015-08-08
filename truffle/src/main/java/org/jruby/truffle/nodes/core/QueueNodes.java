@@ -56,7 +56,7 @@ public abstract class QueueNodes {
     public static class QueueAllocator implements Allocator {
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).factory, new LinkedBlockingQueue()));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).getFactory(), new LinkedBlockingQueue()));
         }
     }
 

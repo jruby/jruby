@@ -123,7 +123,7 @@ public abstract class IOBufferPrimitiveNodes {
         @Specialization
         public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
             return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
-                    ModuleNodes.getModel(classToAllocate).factory,
+                    ModuleNodes.getModel(classToAllocate).getFactory(),
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                     0,

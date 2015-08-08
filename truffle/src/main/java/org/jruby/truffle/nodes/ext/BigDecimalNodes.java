@@ -2160,7 +2160,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).factory, BigDecimal.ZERO, Type.NORMAL));
+            return BasicObjectNodes.createRubyBasicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).getFactory(), BigDecimal.ZERO, Type.NORMAL));
         }
 
     }

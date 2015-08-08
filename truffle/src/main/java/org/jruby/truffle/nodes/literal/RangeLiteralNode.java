@@ -77,7 +77,7 @@ public abstract class RangeLiteralNode extends RubyNode {
 
         final RubyBasicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
 
-        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rangeClass).factory, excludeEnd, begin, end));
+        return BasicObjectNodes.createRubyBasicObject(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rangeClass).getFactory(), excludeEnd, begin, end));
     }
 
     protected boolean fitsIntoInteger(long value) {

@@ -61,7 +61,7 @@ public abstract class ThreadNodes {
 
     public static RubyBasicObject createRubyThread(RubyBasicObject rubyClass, ThreadManager manager) {
         final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, BasicObjectNodes.createRubyBasicObject(BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass()));
-        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).factory, fields));
+        final RubyBasicObject object = BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).getFactory(), fields));
         fields.fiberManager = new FiberManager(object, manager);
         return object;
     }

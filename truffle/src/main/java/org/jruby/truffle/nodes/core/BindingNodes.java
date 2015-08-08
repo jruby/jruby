@@ -70,7 +70,7 @@ public abstract class BindingNodes {
     }
 
     public static RubyBasicObject createRubyBinding(RubyBasicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).factory, self, frame));
+        return BasicObjectNodes.createRubyBasicObject(bindingClass, BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).getFactory(), self, frame));
     }
 
     public static void setSelfAndFrame(RubyBasicObject binding, Object self, MaterializedFrame frame) {

@@ -69,7 +69,7 @@ public abstract class DigestNodes {
 
         final RubyBasicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).factory, digest));
+        return BasicObjectNodes.createRubyBasicObject(rubyClass, DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).getFactory(), digest));
     }
 
     public static MessageDigest getDigest(RubyBasicObject digest) {
