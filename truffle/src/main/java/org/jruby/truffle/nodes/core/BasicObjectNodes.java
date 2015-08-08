@@ -265,7 +265,7 @@ public abstract class BasicObjectNodes {
         } else if (RubyGuards.isRubySymbol(object)) {
             return SymbolNodes.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
-            return ExceptionNodes.getMessage(object) + " : " + Objects.toString(object) + "\n" +
+            return ExceptionNodes.getMessage(object) + " :\n" +
                     Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(object), object, ExceptionNodes.getBacktrace(object)));
         } else if (RubyGuards.isRubyModule(object)) {
             return ModuleNodes.getModel(object).toString();
