@@ -120,11 +120,20 @@ public class LayoutGenerator {
             stream.println("        }");
             stream.println("        ");
 
-            for (PropertyModel property : layout.getShapeProperties()) {
-                stream.printf("        public %s %s() {\n", property.getType(), NameUtils.asGetter(property.getName()));
-                stream.printf("            return %s;\n", property.getName());
-                stream.println("        }");
-                stream.println("        ");
+            for (PropertyModel property : layout.getAllShapeProperties()) {
+                final boolean inherited = !layout.getShapeProperties().contains(property);
+
+                if (!inherited) {
+                    stream.printf("        public %s %s() {\n", property.getType(), NameUtils.asGetter(property.getName()));
+                    stream.printf("            return %s;\n", property.getName());
+                    stream.println("        }");
+                    stream.println("        ");
+                }
+
+                if (inherited) {
+                    stream.println("        @Override");
+                }
+
                 stream.printf("        public %sType %s(%s %s) {\n", layout.getName(), NameUtils.asSetter(property.getName()), property.getType(), property.getName());
                 stream.printf("            return new %sType(\n", layout.getName());
 
