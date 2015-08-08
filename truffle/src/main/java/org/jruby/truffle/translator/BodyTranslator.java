@@ -53,6 +53,7 @@ import org.jruby.truffle.nodes.exceptions.EnsureNode;
 import org.jruby.truffle.nodes.exceptions.*;
 import org.jruby.truffle.nodes.exceptions.RescueNode;
 import org.jruby.truffle.nodes.globals.*;
+import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.literal.RangeLiteralNodeGen;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
@@ -1219,9 +1220,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitFalseNode(org.jruby.ast.FalseNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                new LiteralNode(context, sourceSection, false),
-                "false");
+        final RubyNode ret = new BooleanLiteralNode(context, sourceSection, false);
 
         return addNewlineIfNeeded(node, ret);
     }
@@ -2771,9 +2770,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitTrueNode(org.jruby.ast.TrueNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode ret = new DefinedWrapperNode(context, sourceSection,
-                new LiteralNode(context, sourceSection, true),
-                "true");
+        final RubyNode ret = new BooleanLiteralNode(context, sourceSection, true);
 
         return addNewlineIfNeeded(node, ret);
     }
