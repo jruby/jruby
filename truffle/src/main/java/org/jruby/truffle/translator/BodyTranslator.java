@@ -2549,7 +2549,7 @@ public class BodyTranslator extends Translator {
         final RubyNode moduleNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, moduleNode, new LiteralNode(context, sourceSection, name)),
+                new ReadLiteralConstantNode(context, sourceSection, moduleNode, name),
                 null, false, true, new RubyNode[]{a, b});
     }
 

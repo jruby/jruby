@@ -28,7 +28,7 @@ public class ReadLiteralConstantNode extends RubyNode {
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, module, nameNode);
+        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, module, nameNode);
     }
 
     @Override

@@ -34,6 +34,10 @@ public abstract class ReadConstantNode extends RubyNode {
 
     @Child private RequireNode requireNode;
 
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, LexicalScope.NONE);
+    }
+
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
         super(context, sourceSection);
         this.lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null);

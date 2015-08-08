@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNodeGen;
+import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -26,16 +27,15 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
-    @Child private ReadConstantNode envNode;
+    @Child private ReadLiteralConstantNode envNode;
     
     private final RubyBasicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        envNode = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE,
-                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()),
-                new LiteralNode(context, sourceSection, "ENV"));
+        envNode = new ReadLiteralConstantNode(context, sourceSection,
+                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
         TZ = createString("TZ");
     }
 

@@ -898,7 +898,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null);
+            this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, null, null);
         }
 
         @CreateCast("name")
