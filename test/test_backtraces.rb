@@ -6,55 +6,13 @@ require 'test/unit'
 # Behavior of MRI 1.9 is different:
 # http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/15589
 class TestBacktraces < Test::Unit::TestCase
-  IS19 = RUBY_VERSION >= '1.9'
-
-  def setup
-    @offset = nil
-  end
-
-  # Convenience method to obtain the exception,
-  # and to print the stack trace, if needed.
-  def get_exception(verbose=false)
-    begin
-      @get_exception_yield_line = __LINE__ + 1
-      yield
-    rescue Exception => ex
-      puts ex.backtrace.join("\n") if verbose
-      ex
-    end
-  end
-
-  # Main verification method that performs actual checks
-  # on the stacktraces.
-  def check(expectations, exception)
-    backtrace = []
-    expectations.strip.split("\n").each { |line|
-      line.strip!
-
-      # if line starts with +nnn, we prepend
-      # the current file and offset
-      md = line.match(/^\+(\d+)(:.*)/)
-      if (md)
-        flunk("@offset is not defined in the test case") unless @offset
-        # For JRuby, we soften this requirement, since native calls will
-        # show their actual .java file and line, rather than the caller.
-        #line = "#{__FILE__}:#{$1.to_i + @offset}#{$2}"
-        line = /.*:#{$1.to_i + @offset}#{$2}/
-      end
-    }
-    backtrace.each_with_index { |expected, idx|
-      # Soften, per above comment
-      #assert_equal(expected, exception.backtrace[idx])
-      assert expected =~ exception.backtrace[idx]
-    }
-  end
 
   def test_simple_exception
     @offset = __LINE__
     raise RuntimeError.new("Test")
   rescue Exception => ex
     expectation = "+1:in `test_simple_exception'"
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   import org.jruby.test.TestHelper
@@ -68,7 +26,7 @@ class TestBacktraces < Test::Unit::TestCase
       flunk("test_java_backtrace not in backtrace")
     end
   end
-    
+
   def test_simple_exception_recursive
     @offset = __LINE__
     def meth(n)
@@ -83,7 +41,7 @@ class TestBacktraces < Test::Unit::TestCase
       +4:in `meth'
       +6:in `test_simple_exception_recursive'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   def test_native_exception_recursive
@@ -101,7 +59,7 @@ class TestBacktraces < Test::Unit::TestCase
       +4:in `meth'
       +6:in `test_native_exception_recursive'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   def test_exception_from_block
@@ -121,14 +79,14 @@ class TestBacktraces < Test::Unit::TestCase
       +2:in `foo'
       +7:in `test_exception_from_block'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
-  
+
   def test_exception_from_for
     array = [1,2,3,4,5]
     @offset = __LINE__
-    for element in array
-      raise RuntimeError
+    for e in array
+      raise RuntimeError if e
     end
   rescue Exception => ex
     expectation = %q{
@@ -136,7 +94,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `each'
       +1:in `test_exception_from_for'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   def test_exception_from_proc
@@ -151,7 +109,7 @@ class TestBacktraces < Test::Unit::TestCase
       +3:in `call'
       +3:in `test_exception_from_proc'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   def test_exception_from_lambda
@@ -166,7 +124,7 @@ class TestBacktraces < Test::Unit::TestCase
       +3:in `call'
       +3:in `test_exception_from_lambda'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -178,9 +136,9 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `+'
       +1:in `test_exception_from_array_plus'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
-  
+
   # JRUBY-2138
   # # TODO: currently fails
   def XXXtest_exception_from_string_plus
@@ -191,7 +149,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `+'
       +1:in `test_exception_from_string_plus'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   def test_exception_from_string_sub
@@ -202,7 +160,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `sub'
       +1:in `test_exception_from_string_sub'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -214,7 +172,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `/'
       +1:in `test_zero_devision_exception'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -227,7 +185,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `__send__'
       +1:in `test_exeption_from_object_send'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -236,7 +194,7 @@ class TestBacktraces < Test::Unit::TestCase
     "hello".sub
   rescue Exception => ex
     expectation = "+1:in `sub'"
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -251,7 +209,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `test_exception_from_eval'
       #{__FILE__}:#{@get_exception_yield_line}:in `get_exception'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # TODO: currently fails
@@ -268,7 +226,7 @@ class TestBacktraces < Test::Unit::TestCase
       +1:in `test_exception_from_block_inside_eval'
       #{__FILE__}:#{@get_exception_yield_line}:in `get_exception'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   end
 
   # JRUBY-2695
@@ -286,7 +244,7 @@ class TestBacktraces < Test::Unit::TestCase
       t.join
     }
 
-    if IS19
+    if RUBY_VERSION >= '1.9'
       assert_equal(RuntimeError, ex.class)
     else
       assert_match /RuntimeError/, $stderr.string
@@ -301,9 +259,47 @@ class TestBacktraces < Test::Unit::TestCase
     expectation = %Q{
       +2:in `test_exception_from_thread_with_abort_on_exception_true'
     }
-    check(expectation, ex)
+    assert_exception_backtrace(expectation, ex)
   ensure
     Thread.abort_on_exception = false
     $stderr = STDERR
   end
+
+  private
+
+  # Convenience method to obtain the exception,
+  # and to print the stack trace, if needed.
+  def get_exception(verbose = false)
+    begin
+      @get_exception_yield_line = __LINE__ + 1
+      yield
+    rescue Exception => ex
+      puts ex.backtrace.join("\n") if verbose
+      ex
+    end
+  end
+
+  # Main verification method that performs actual checks
+  # on the stacktraces.
+  def assert_exception_backtrace(expectations, exception)
+    backtrace = []
+    expectations.strip.split("\n").each { |line|
+      line.strip!
+
+      # if line starts with +nnn, we prepend the current file and offset
+      if line.match /^\+(\d+)(:.*)/
+        flunk("@offset is not defined in the test case") unless @offset ||= nil
+        # For JRuby, we soften this requirement, since native calls will
+        # show their actual .java file and line, rather than the caller.
+        #line = "#{__FILE__}:#{$1.to_i + @offset}#{$2}"
+        line = /.*:#{$1.to_i + @offset}#{$2}/
+      end
+    }
+    backtrace.each_with_index { |expected, idx|
+      # Soften, per above comment
+      #assert_equal(expected, exception.backtrace[idx])
+      assert expected =~ exception.backtrace[idx]
+    }
+  end
+
 end
