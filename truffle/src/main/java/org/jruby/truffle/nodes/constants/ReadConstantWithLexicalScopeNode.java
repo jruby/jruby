@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.objects.LexicalScopeNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -21,14 +22,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
-public class ReadLiteralConstantNode extends RubyNode {
+public class ReadConstantWithLexicalScopeNode extends RubyNode {
 
     @Child private ReadConstantNode readConstantNode;
 
-    public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {
+    public ReadConstantWithLexicalScopeNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope, String name) {
         super(context, sourceSection);
+        RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, module, nameNode);
+        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, lexicalScope, moduleNode, nameNode);
     }
 
     @Override
@@ -48,20 +50,7 @@ public class ReadLiteralConstantNode extends RubyNode {
             return createString("constant");
         }
 
-        final Object moduleObject;
-        try {
-            moduleObject = readConstantNode.getModule().execute(frame);
-        } catch (RaiseException e) {
-            /* If we are looking up a constant in a constant that is itself undefined, we return Nil
-             * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).
-             *
-             * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
-             * and we do not want to execute receiver twice. */
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
-                return nil();
-            }
-            throw e;
-        }
+        final Object moduleObject = readConstantNode.getModule().execute(frame);
 
         final RubyConstant constant;
         try {
