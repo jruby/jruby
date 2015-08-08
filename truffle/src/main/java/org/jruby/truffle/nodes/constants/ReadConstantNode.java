@@ -29,7 +29,7 @@ import com.oracle.truffle.api.source.SourceSection;
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class ReadConstantNode extends RubyNode {
 
-    @Child private LookupConstantNode lookupConstantNode;
+    @Child protected LookupConstantNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode;
 
     @Child private RequireNode requireNode;
@@ -79,54 +79,6 @@ public abstract class ReadConstantNode extends RubyNode {
             requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
         }
         return requireNode.require(feature);
-    }
-
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        final RubyContext context = getContext();
-        final String name = (String) getName().execute(frame);
-
-        if (name.equals("Encoding")) {
-            // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return createString("constant");
-        }
-
-        final Object moduleObject;
-        try {
-            moduleObject = getModule().execute(frame);
-        } catch (RaiseException e) {
-            /* If we are looking up a constant in a constant that is itself undefined, we return Nil
-             * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).
-             *
-             * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
-             * and we do not want to execute receiver twice. */
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
-                return nil();
-            }
-            throw e;
-        }
-
-        final RubyConstant constant;
-        try {
-            constant = lookupConstantNode.executeLookupConstant(frame, moduleObject, name);
-        } catch (RaiseException e) {
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
-                // module is not a class/module
-                return nil();
-            } else if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
-                // private constant
-                return nil();
-            }
-            throw e;
-        }
-
-        if (constant == null) {
-            return nil();
-        } else {
-            return createString("constant");
-        }
     }
 
 }

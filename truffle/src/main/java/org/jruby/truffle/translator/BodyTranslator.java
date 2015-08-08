@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNodeGen;
+import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.BreakNode;
@@ -931,7 +932,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, lhs, new LiteralNode(context, sourceSection, name));
+        final RubyNode ret = new ReadLiteralConstantNode(context, sourceSection, LexicalScope.NONE, lhs, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -944,7 +945,7 @@ public class BodyTranslator extends Translator {
 
         final LiteralNode root = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, root, new LiteralNode(context, sourceSection, name));
+        final RubyNode ret = new ReadLiteralConstantNode(context, sourceSection, LexicalScope.NONE, root, name);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1020,7 +1021,7 @@ public class BodyTranslator extends Translator {
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
-        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, lexicalScope, moduleNode, new LiteralNode(context, sourceSection, name));
+        final RubyNode ret = new ReadLiteralConstantNode(context, sourceSection, lexicalScope, moduleNode, name);
         return addNewlineIfNeeded(node, ret);
     }
 
