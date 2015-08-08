@@ -336,6 +336,7 @@ public class LayoutGenerator {
             stream.printf(" DynamicObject create%s(DynamicObjectFactory factory) {\n", layout.getName());
         }
 
+        stream.println("        assert factory != null;");
         stream.printf("        assert factory.getShape().getObjectType() instanceof %sType;\n", layout.getName());
 
         for (PropertyModel property : layout.getAllNonShapeProperties()) {

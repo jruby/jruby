@@ -430,14 +430,14 @@ public class CoreLibrary {
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
-        digestClass = defineClass(truffleModule, "Digest");
+        digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         ModuleNodes.getModel(digestClass).factory = DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass);
 
-        final RubyBasicObject rubiniusIOClass = defineClass(rubiniusModule, "IO");
+        final RubyBasicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
         ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
         ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
 
-        final RubyBasicObject rubiniusIOBufferClass = defineClass(rubiniusModule, "IOBuffer");
+        final RubyBasicObject rubiniusIOBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
         ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(rubiniusIOBufferClass, rubiniusIOBufferClass);
         ModuleNodes.getModel(rubiniusIOBufferClass).factory = ioBufferFactory;
     }
