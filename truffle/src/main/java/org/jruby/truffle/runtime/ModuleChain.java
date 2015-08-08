@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
@@ -21,4 +22,7 @@ public interface ModuleChain {
     RubyBasicObject getActualModule();
 
     void insertAfter(RubyBasicObject module);
+
+    DynamicObjectFactory getFactory();
+
 }

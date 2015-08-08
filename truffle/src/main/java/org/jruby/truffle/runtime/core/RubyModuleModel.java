@@ -717,11 +717,12 @@ public class RubyModuleModel implements ModuleChain {
         return null;
     }
 
+    @Override
     public DynamicObjectFactory getFactory() {
         CompilerAsserts.neverPartOfCompilation();
 
         if (factory == null) {
-            return ModuleNodes.getModel(getParentModule().getActualModule()).getFactory();
+            return getParentModule().getFactory();
         }
 
         return factory;

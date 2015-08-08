@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.runtime.ModuleChain;
 
 public class PrependMarker implements ModuleChain {
@@ -36,4 +37,8 @@ public class PrependMarker implements ModuleChain {
         parentModule = new IncludedModule(module, parentModule);
     }
 
+    @Override
+    public DynamicObjectFactory getFactory() {
+        return parentModule.getFactory();
+    }
 }

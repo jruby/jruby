@@ -10,7 +10,9 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.ModuleChain;
 
 /**
@@ -45,5 +47,10 @@ public class IncludedModule implements ModuleChain {
     @Override
     public void insertAfter(RubyBasicObject module) {
         parentModule = new IncludedModule(module, parentModule);
+    }
+
+    @Override
+    public DynamicObjectFactory getFactory() {
+        return ModuleNodes.getModel(includedModule).getFactory();
     }
 }
