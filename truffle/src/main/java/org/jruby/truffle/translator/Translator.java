@@ -12,8 +12,11 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
@@ -57,6 +60,12 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         } else {
             return source.createSection(identifier, sourcePosition.getLine() + 1);
         }
+    }
+
+    protected RubyNode nilNode(SourceSection sourceSection) {
+        return new DefinedWrapperNode(context, sourceSection,
+                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                "nil");
     }
 
     protected abstract String getIdentifier();

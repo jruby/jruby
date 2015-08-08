@@ -101,9 +101,7 @@ class MethodTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil");
+            body = nilNode(sourceSection);
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -152,9 +150,7 @@ class MethodTranslator extends BodyTranslator {
 
             prelude = SequenceNode.sequence(context, sourceSection,
                     new BehaveAsBlockNode(context, sourceSection,
-                            new DefinedWrapperNode(context, sourceSection,
-                                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                                    "nil"),
+                            nilNode(sourceSection),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
             if (usesRubiniusPrimitive) {

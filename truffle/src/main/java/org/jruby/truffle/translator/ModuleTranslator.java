@@ -54,9 +54,7 @@ class ModuleTranslator extends BodyTranslator {
                 parentSourceSection.pop();
             }
         } else {
-            body = new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil");
+            body = nilNode(sourceSection);
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

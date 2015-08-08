@@ -150,9 +150,7 @@ public class TranslatorDriver {
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
             translator.parentSourceSection.push(sourceSection);
             try {
-                truffleNode = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
+                truffleNode = translator.nilNode(sourceSection);
             } finally {
                 translator.parentSourceSection.pop();
             }

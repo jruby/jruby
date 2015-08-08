@@ -181,9 +181,7 @@ public class LoadArgumentsTranslator extends Translator {
             name = localAsgnNode.getName();
 
             if (localAsgnNode.getValueNode() == null) {
-                defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
+                defaultValue = nilNode(sourceSection);
             } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -198,9 +196,7 @@ public class LoadArgumentsTranslator extends Translator {
             name = dAsgnNode.getName();
 
             if (dAsgnNode.getValueNode() == null) {
-                defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
+                defaultValue = nilNode(sourceSection);
             } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
@@ -420,9 +416,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         for (String parameterToClear : parametersToClearCollector.getParameters()) {
-            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil")));
+            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(nilNode(sourceSection)));
         }
 
         if (!childNodes.isEmpty()) {
@@ -440,9 +434,7 @@ public class LoadArgumentsTranslator extends Translator {
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        notNil == null ? new DefinedWrapperNode(context, sourceSection,
-                                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                                "nil") : notNil));
+                        notNil == null ? nilNode(sourceSection) : notNil));
     }
 
     @Override
