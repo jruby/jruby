@@ -17,6 +17,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
@@ -63,9 +64,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected RubyNode nilNode(SourceSection sourceSection) {
-        return new DefinedWrapperNode(context, sourceSection,
-                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                "nil");
+        return new NilNode(context, sourceSection);
     }
 
     protected abstract String getIdentifier();
