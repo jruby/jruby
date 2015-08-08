@@ -416,7 +416,8 @@ public class LayoutGenerator {
 
 
                 if (property.isShapeProperty()) {
-                    stream.printf("        object.setShapeAndResize(object.getShape(), LAYOUT.createShape(getObjectType(object).%s(value)));\n", NameUtils.asSetter(property.getName()));
+                    stream.println("        final Shape shape = object.getShape();");
+                    stream.printf("        object.setShapeAndResize(shape, shape.changeType(getObjectType(object).%s(value)));\n", NameUtils.asSetter(property.getName()));
                 } else {
                     stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);\n", NameUtils.identifierToConstant(property.getName()));
 
