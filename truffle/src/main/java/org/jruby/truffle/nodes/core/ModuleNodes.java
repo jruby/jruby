@@ -41,6 +41,8 @@ import org.jruby.truffle.nodes.coerce.*;
 import org.jruby.truffle.nodes.constants.GetConstantNode;
 import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
 import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
+import org.jruby.truffle.nodes.constants.ReadConstantNode;
+import org.jruby.truffle.nodes.constants.ReadConstantNodeGen;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
@@ -892,12 +894,11 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private GetConstantNode getConstantNode;
+        @Child private ReadConstantNode readConstantNode;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null,
-                    LookupConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null));
+            this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, null, null);
         }
 
         @CreateCast("name")
@@ -913,7 +914,7 @@ public abstract class ModuleNodes {
         // Symbol
         @Specialization(guards = {"inherit", "isRubySymbol(name)"})
         public Object getConstant(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
+            return readConstantNode.executeReadConstant(frame, module, SymbolNodes.getString(name));
         }
 
         @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
@@ -924,7 +925,7 @@ public abstract class ModuleNodes {
         // String
         @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
         public Object getConstantString(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, name.toString());
+            return readConstantNode.executeReadConstant(frame, module, name.toString());
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })

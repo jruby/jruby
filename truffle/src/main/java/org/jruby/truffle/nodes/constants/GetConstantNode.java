@@ -29,45 +29,21 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.util.IdUtil;
 
-@NodeChildren({
-        @NodeChild("module"), @NodeChild("name"),
-        @NodeChild(value = "lookupConstantNode", type = LookupConstantNode.class, executeWith = { "module", "name" })
-})
+@NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant") })
 public abstract class GetConstantNode extends RubyNode {
 
     public GetConstantNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public abstract RubyNode getModule();
-    public abstract LookupConstantNode getLookupConstantNode();
+    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name, RubyConstant constant);
 
-    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name);
-
-    @Specialization(guards = { "isRubyModule(module)", "constant != null", "!constant.isAutoload()" })
+    @Specialization(guards = { "constant != null", "!constant.isAutoload()" })
     protected Object getConstant(RubyBasicObject module, String name, RubyConstant constant) {
         return constant.getValue();
     }
 
-    @Specialization(guards = { "isRubyModule(module)", "constant != null", "constant.isAutoload()" })
-    protected Object autoloadConstant(VirtualFrame frame, RubyBasicObject module, String name, RubyConstant constant,
-            @Cached("createRequireNode()") RequireNode requireNode) {
-
-        final RubyBasicObject path = (RubyBasicObject) constant.getValue();
-
-        // The autoload constant must only be removed if everything succeeds.
-        // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
-        try {
-            requireNode.require(path);
-            return executeGetConstant(frame, module, name);
-        } catch (RaiseException e) {
-            ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
-            throw e;
-        }
-    }
-
-    @Specialization(guards = {"isRubyModule(module)", "constant == null"})
+    @Specialization(guards = "constant == null")
     protected Object missingConstant(VirtualFrame frame, RubyBasicObject module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
@@ -77,10 +53,6 @@ public abstract class GetConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
         }
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
-    }
-
-    protected RequireNode createRequireNode() {
-        return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
     }
 
     protected boolean isValidConstantName(String name) {

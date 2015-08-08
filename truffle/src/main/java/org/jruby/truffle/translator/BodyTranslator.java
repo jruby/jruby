@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
+import org.jruby.truffle.nodes.constants.ReadConstantNodeGen;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.BreakNode;
@@ -66,6 +67,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
+import org.jruby.truffle.runtime.ConstantReplacer;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
@@ -924,9 +926,12 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException(node.toString());
         }
 
+        final SourceSection sourceSection = translate(node.getPosition());
+        final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
+
         final RubyNode lhs = node.getLeftNode().accept(this);
 
-        final RubyNode ret = new ReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs, LexicalScope.NONE);
+        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, lhs, new LiteralNode(context, sourceSection, name));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -935,10 +940,11 @@ public class BodyTranslator extends Translator {
         // Root namespace constant access, as in ::Foo
 
         final SourceSection sourceSection = translate(node.getPosition());
+        final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
         final LiteralNode root = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
 
-        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), root, LexicalScope.NONE);
+        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, root, new LiteralNode(context, sourceSection, name));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1005,14 +1011,16 @@ public class BodyTranslator extends Translator {
          * we will because we'll translate that to ::Rubinius. But it is a simpler translation.
          */
 
-        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/core/rubinius")) {
-            final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), node.getName()).accept(this);
+        final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
+
+        if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/core/rubinius")) {
+            final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
 
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
-        final RubyNode ret = new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);
+        final RubyNode ret = ReadConstantNodeGen.create(context, sourceSection, lexicalScope, moduleNode, new LiteralNode(context, sourceSection, name));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2537,11 +2545,10 @@ public class BodyTranslator extends Translator {
     private RubyNode translateRationalComplex(SourceSection sourceSection, String name, RubyNode a, RubyNode b) {
         // Translate as Rubinius.privately { Rational.convert(a, b) }
 
-        final LexicalScope lexicalScope = environment.getLexicalScope();
-        final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
+        final RubyNode moduleNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         return new RubyCallNode(
                 context, sourceSection, "convert",
-                new ReadConstantNode(context, sourceSection, name, moduleNode, lexicalScope),
+                ReadConstantNodeGen.create(context, sourceSection, LexicalScope.NONE, moduleNode, new LiteralNode(context, sourceSection, name)),
                 null, false, true, new RubyNode[]{a, b});
     }
 
