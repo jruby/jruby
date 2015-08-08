@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.exceptions;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -27,7 +27,7 @@ public class ClearExceptionVariableNode extends RubyNode {
         super(context, sourceSection);
         writeNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
                 new ThreadLocalObjectNode(context, sourceSection),
-                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
+                new NilNode(context, sourceSection),
                 true);
     }
 

@@ -438,7 +438,7 @@ public class BodyTranslator extends Translator {
             if (methodName.equals("omit")) {
                 // We're never going to run the omitted code and it's never used as the RHS for anything, so just
                 // replace the call with nil.
-                final RubyNode ret = new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+                final RubyNode ret = nilNode(sourceSection);
                 return addNewlineIfNeeded(node, ret);
             }
         } else if (receiver instanceof VCallNode // undefined.equal?(obj)
