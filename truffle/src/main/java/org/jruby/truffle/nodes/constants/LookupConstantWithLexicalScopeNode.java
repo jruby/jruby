@@ -36,10 +36,6 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
         this.name = name;
     }
 
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
-    }
-
     public RubyBasicObject getModule() {
         return lexicalScope.getLiveModule();
     }

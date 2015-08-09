@@ -40,23 +40,19 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode {
         this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null, null);
     }
 
-    public RubyBasicObject getModule() {
-        return lexicalScope.getLiveModule();
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyConstant constant = lookupConstantNode.executeLookupConstant(frame);
 
         if (constant != null && constant.isAutoload()) {
             CompilerDirectives.transferToInterpreter();
-            return autoload(frame, getModule(), name, constant);
+            return autoload(frame, constant);
         }
 
-        return getConstantNode.executeGetConstant(frame, getModule(), name, constant);
+        return getConstantNode.executeGetConstant(frame, lexicalScope.getLiveModule(), name, constant);
     }
 
-    protected Object autoload(VirtualFrame frame, Object module, String name, RubyConstant constant) {
+    protected Object autoload(VirtualFrame frame, RubyConstant constant) {
         final RubyBasicObject path = (RubyBasicObject) constant.getValue();
 
         // The autoload constant must only be removed if everything succeeds.
