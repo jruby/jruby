@@ -86,9 +86,9 @@ public abstract class IOPrimitiveNodes {
 
         DynamicObjectFactory createIOShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
 
-        DynamicObject createIO(DynamicObjectFactory factory, Object iBuffer, int lineNo, int descriptor, int mode);
+        DynamicObject createIO(DynamicObjectFactory factory, RubyBasicObject iBuffer, int lineNo, int descriptor, int mode);
 
-        Object getIBuffer(DynamicObject object);
+        RubyBasicObject getIBuffer(DynamicObject object);
 
         int getLineNo(DynamicObject object);
         void setLineNo(DynamicObject object, int value);
@@ -134,7 +134,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject allocate(VirtualFrame frame, RubyBasicObject classToAllocate) {
-            final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
+            final RubyBasicObject buffer = (RubyBasicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
             return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).getFactory(), buffer, 0, 0, 0));
         }
 

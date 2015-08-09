@@ -140,7 +140,6 @@ public class CoreLibrary {
     private final RubyBasicObject fiberErrorClass;
     private final RubyBasicObject threadErrorClass;
     private final RubyBasicObject internalBufferClass;
-    private final RubyBasicObject ioBufferClass;
 
     private final RubyBasicObject argv;
     private final RubyBasicObject globalVariablesObject;
@@ -175,8 +174,6 @@ public class CoreLibrary {
 
     private DynamicObjectFactory integerFixnumRangeFactory;
     private DynamicObjectFactory longFixnumRangeFactory;
-    private DynamicObjectFactory ioFactory;
-    private DynamicObjectFactory ioBufferFactory;
 
     private static class CoreLibraryNode extends RubyNode {
 
@@ -364,6 +361,7 @@ public class CoreLibrary {
         final RubyBasicObject ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
         ModuleNodes.getModel(ioClass).factory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass);
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
+        ModuleNodes.getModel(internalBufferClass).factory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass);
 
         // Modules
 
@@ -435,13 +433,13 @@ public class CoreLibrary {
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         ModuleNodes.getModel(digestClass).factory = DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass);
 
-        final RubyBasicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
-        ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
-        ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
+        //final RubyBasicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
+        //ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
+        //ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
 
-        ioBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
-        ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(ioBufferClass, ioBufferClass);
-        ModuleNodes.getModel(ioBufferClass).factory = ioBufferFactory;
+        //ioBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
+        //ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(ioBufferClass, ioBufferClass);
+        //ModuleNodes.getModel(ioBufferClass).factory = ioBufferFactory;
     }
 
     private void includeModules(RubyBasicObject comparableModule) {
@@ -1514,8 +1512,8 @@ public class CoreLibrary {
         return threadBacktraceLocationClass;
     }
 
-    public RubyBasicObject getIOBufferClass() {
-        return ioBufferClass;
+    public RubyBasicObject getInternalBufferClass() {
+        return internalBufferClass;
     }
 
     public boolean isLoadingRubyCore() {
@@ -1540,13 +1538,5 @@ public class CoreLibrary {
 
     public RubyBasicObject getDigestClass() {
         return digestClass;
-    }
-
-    public DynamicObjectFactory getIoBufferFactory() {
-        return ioBufferFactory;
-    }
-
-    public DynamicObjectFactory getIoFactory() {
-        return ioFactory;
     }
 }
