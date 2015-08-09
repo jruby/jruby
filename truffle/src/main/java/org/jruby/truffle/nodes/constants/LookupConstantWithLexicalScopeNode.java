@@ -62,7 +62,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
     }
 
     protected RubyConstant doLookup() {
-        return ModuleOperations.lookupConstant(getContext(), lexicalScope, getModule(), name);
+        return ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
     }
 
     protected boolean isVisible(RubyConstant constant) {

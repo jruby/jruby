@@ -590,7 +590,7 @@ public abstract class ModuleNodes {
         }
 
         private Object autoloadQuery(RubyBasicObject module, String name) {
-            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), module, name);
 
             if ((constant == null) || ! constant.isAutoload()) {
                 return nil();

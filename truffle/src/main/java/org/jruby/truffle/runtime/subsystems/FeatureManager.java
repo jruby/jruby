@@ -49,7 +49,7 @@ public class FeatureManager {
     // TODO CS 27-May-15 we should do lookup in one phase, returning a path, and then do the load
 
     public boolean require(String feature, Node currentNode) throws IOException {
-        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, LexicalScope.NONE, context.getCoreLibrary().getObjectClass(), "DATA");
+        final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
 
         if (feature.startsWith("./")) {
             final String cwd = context.getRuntime().getCurrentDirectory();

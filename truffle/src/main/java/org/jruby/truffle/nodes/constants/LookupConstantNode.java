@@ -37,15 +37,8 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
 
-    private final LexicalScope lexicalScope;
-
     public LookupConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
         super(context, sourceSection);
-        this.lexicalScope = lexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
@@ -101,11 +94,11 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     protected RubyConstant doLookup(RubyBasicObject module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
+        return ModuleOperations.lookupConstant(getContext(), module, name);
     }
 
     protected boolean isVisible(RubyBasicObject module, RubyConstant constant) {
-        return constant == null || constant.isVisibleTo(getContext(), lexicalScope, module);
+        return constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
     }
 
 }
