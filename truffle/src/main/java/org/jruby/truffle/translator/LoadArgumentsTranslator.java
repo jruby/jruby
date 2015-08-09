@@ -171,39 +171,27 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name;
-        final RubyNode defaultValue;
-
         final org.jruby.ast.Node firstChild = node.childNodes().get(0);
+        final org.jruby.ast.AssignableNode asgnNode;
+        final String name;
 
         if (firstChild instanceof org.jruby.ast.LocalAsgnNode) {
-            final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
-            name = localAsgnNode.getName();
-
-            if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
-                /*
-                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
-                 * the semantic action of executing this node is to report an error, and we do the same thing.
-                 */
-                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            } else {
-                defaultValue = translateNodeOrNil(sourceSection, localAsgnNode.getValueNode());
-            }
+            asgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
+            name = ((org.jruby.ast.LocalAsgnNode) firstChild).getName();
         } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) firstChild;
-            name = dAsgnNode.getName();
-
-            if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
-                /*
-                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
-                 * the semantic action of executing this node is to report an error, and we do the same thing.
-                 */
-                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            } else {
-                defaultValue = translateNodeOrNil(sourceSection, dAsgnNode.getValueNode());
-            }
+            asgnNode = (org.jruby.ast.DAsgnNode) firstChild;
+            name = ((org.jruby.ast.DAsgnNode) firstChild).getName();
         } else {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
+        }
+
+        final RubyNode defaultValue;
+        if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+            /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
+             * the semantic action of executing this node is to report an error, and we do the same thing. */
+            defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
+        } else {
+            defaultValue = translateNodeOrNil(sourceSection, asgnNode.getValueNode());
         }
 
         excludedKeywords.add(name);
