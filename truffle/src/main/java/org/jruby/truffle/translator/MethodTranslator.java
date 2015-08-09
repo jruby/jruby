@@ -32,6 +32,8 @@ import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.core.ProcNodes;
+import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -60,7 +62,7 @@ class MethodTranslator extends BodyTranslator {
         this.argsNode = argsNode;
     }
 
-    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
         final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
@@ -200,7 +202,7 @@ class MethodTranslator extends BodyTranslator {
         final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
         final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
 
-        return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
+        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
                 callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
