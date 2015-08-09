@@ -1169,7 +1169,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final MethodDefinitionNode functionExprNode = (MethodDefinitionNode) methodCompiler.compileFunctionNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
         return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
     }
@@ -1826,7 +1826,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        final RubyNode ret = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
+        final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -2951,7 +2951,7 @@ public class BodyTranslator extends Translator {
                 sharedMethodInfo, sharedMethodInfo.getName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, source, argsNode);
 
-        final RubyNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
+        final RubyNode definitionNode = methodCompiler.compileMethodNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo);
 
         final RubyNode ret = new LambdaNode(context, translate(node.getPosition()), definitionNode);
         return addNewlineIfNeeded(node, ret);
