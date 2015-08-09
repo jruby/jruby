@@ -50,13 +50,6 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        if (name.equals("Encoding")) {
-            // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return createString("constant");
-        }
-
         final RubyConstant constant;
         try {
             constant = lookupConstantNode.executeLookupConstant(frame);

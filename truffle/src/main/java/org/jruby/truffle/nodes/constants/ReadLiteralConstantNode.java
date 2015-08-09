@@ -37,19 +37,12 @@ public class ReadLiteralConstantNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
         final RubyContext context = getContext();
         final String name = (String) readConstantNode.nameNode.execute(frame);
 
-        if (name.equals("Encoding")) {
-            // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return createString("constant");
-        }
-
-        final Object moduleObject;
+        final Object module;
         try {
-            moduleObject = readConstantNode.moduleNode.execute(frame);
+            module = readConstantNode.moduleNode.execute(frame);
         } catch (RaiseException e) {
             /* If we are looking up a constant in a constant that is itself undefined, we return Nil
              * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).
@@ -64,7 +57,7 @@ public class ReadLiteralConstantNode extends RubyNode {
 
         final RubyConstant constant;
         try {
-            constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, moduleObject, name);
+            constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
             if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
                 // module is not a class/module
