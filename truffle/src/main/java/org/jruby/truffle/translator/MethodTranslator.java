@@ -61,18 +61,7 @@ class MethodTranslator extends BodyTranslator {
     }
 
     public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
-        }
-
-        final ParameterCollector parameterCollector = new ParameterCollector();
-        argsNode.accept(parameterCollector);
-
-        for (String parameter : parameterCollector.getParameters()) {
-            environment.declareVar(parameter);
-        }
-
+        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
         final Arity arityForCheck;
 
@@ -221,18 +210,7 @@ class MethodTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
-        }
-
-        final ParameterCollector parameterCollector = new ParameterCollector();
-        argsNode.accept(parameterCollector);
-
-        for (String parameter : parameterCollector.getParameters()) {
-            environment.declareVar(parameter);
-        }
-
+        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
         RubyNode body;
@@ -290,6 +268,22 @@ class MethodTranslator extends BodyTranslator {
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
+    }
+
+    private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
+            System.err.println(sourceSection + " " + methodName);
+            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
+        }
+
+        final ParameterCollector parameterCollector = new ParameterCollector();
+        argsNode.accept(parameterCollector);
+
+        for (String parameter : parameterCollector.getParameters()) {
+            environment.declareVar(parameter);
+        }
+
+        return parameterCollector;
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
