@@ -27,7 +27,7 @@ public class ReadLiteralConstantNode extends RubyNode {
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, module, nameNode);
+        this.readConstantNode = new ReadConstantNode(context, sourceSection, module, nameNode);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class ReadLiteralConstantNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         final RubyContext context = getContext();
-        final String name = (String) readConstantNode.getName().execute(frame);
+        final String name = (String) readConstantNode.nameNode.execute(frame);
 
         if (name.equals("Encoding")) {
             // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
@@ -49,7 +49,7 @@ public class ReadLiteralConstantNode extends RubyNode {
 
         final Object moduleObject;
         try {
-            moduleObject = readConstantNode.getModule().execute(frame);
+            moduleObject = readConstantNode.moduleNode.execute(frame);
         } catch (RaiseException e) {
             /* If we are looking up a constant in a constant that is itself undefined, we return Nil
              * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).

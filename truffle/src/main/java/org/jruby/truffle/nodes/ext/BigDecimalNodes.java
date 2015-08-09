@@ -28,11 +28,7 @@ import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
-import org.jruby.truffle.nodes.constants.GetConstantNode;
-import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
-import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
-import org.jruby.truffle.nodes.constants.ReadConstantNodeGen;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -41,9 +37,7 @@ import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGe
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -1705,7 +1699,7 @@ public abstract class BigDecimalNodes {
 
         public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readConstantNode = ReadConstantNodeGen.create(context, sourceSection, null, null);
+            readConstantNode = new ReadConstantNode(context, sourceSection, null, null);
             toIntNode = ToIntNodeGen.create(context, sourceSection, null);
             integerCastNode = IntegerCastNodeGen.create(context, sourceSection, null);
         }
@@ -1714,7 +1708,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization(guards = "isRubyModule(module)")
         public int doInteger(VirtualFrame frame, RubyBasicObject module, String name) {
-            final Object value = readConstantNode.executeReadConstant(frame, module, name);
+            final Object value = readConstantNode.readConstant(frame, module, name);
             return integerCastNode.executeInteger(frame, toIntNode.executeIntOrLong(frame, value));
         }
     }

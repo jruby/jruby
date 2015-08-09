@@ -32,7 +32,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 /**
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
- * The {@link LexicalScope} is constant here.
  */
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
