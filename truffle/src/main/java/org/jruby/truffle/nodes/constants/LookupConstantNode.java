@@ -37,7 +37,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
+    public LookupConstantNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

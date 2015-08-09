@@ -13,7 +13,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -35,12 +34,8 @@ public abstract class ReadConstantNode extends RubyNode {
     @Child private RequireNode requireNode;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection) {
-        this(context, sourceSection, LexicalScope.NONE);
-    }
-
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
         super(context, sourceSection);
-        this.lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null);
+        this.lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, null, null);
         this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null, null);
     }
 
