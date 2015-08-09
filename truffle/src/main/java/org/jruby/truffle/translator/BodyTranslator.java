@@ -1118,8 +1118,6 @@ public class BodyTranslator extends Translator {
     public RubyNode visitDefinedNode(org.jruby.ast.DefinedNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        org.jruby.ast.Node expressionNode = node.getExpressionNode();
-
         final RubyNode ret = new DefinedNode(context, sourceSection, node.getExpressionNode().accept(this));
         return addNewlineIfNeeded(node, ret);
     }
