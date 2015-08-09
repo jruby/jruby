@@ -85,7 +85,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
-            arityForCheck = new Arity(arity.getPreRequired(), 0, false);
+            arityForCheck = arity.withRest(false);
         } else {
             arityForCheck = arity;
         }
