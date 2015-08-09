@@ -24,10 +24,10 @@ public class ReadLiteralConstantNode extends RubyNode {
 
     @Child private ReadConstantNode readConstantNode;
 
-    public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {
+    public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = new ReadConstantNode(context, sourceSection, module, nameNode);
+        this.readConstantNode = new ReadConstantNode(context, sourceSection, moduleNode, nameNode);
     }
 
     @Override

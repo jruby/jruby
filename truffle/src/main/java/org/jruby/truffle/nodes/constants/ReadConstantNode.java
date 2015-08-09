@@ -34,8 +34,8 @@ public class ReadConstantNode extends RubyNode implements RestartableReadConstan
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final String name = (String) nameNode.execute(frame);
         final Object module = moduleNode.execute(frame);
+        final String name = (String) nameNode.execute(frame);
         return readConstant(frame, module, name);
     }
 
