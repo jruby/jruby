@@ -70,7 +70,7 @@ public abstract class ReadConstantNode extends RubyNode {
         ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             require(path);
-            return readConstant(frame, module, name);
+            return readConstant(frame, module, name); // retry
         } catch (RaiseException e) {
             ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;

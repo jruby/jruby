@@ -10,8 +10,9 @@
 package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.objects.LexicalScopeNode;
+import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -24,42 +25,74 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class ReadConstantWithLexicalScopeNode extends RubyNode {
 
-    @Child private ReadConstantNode readConstantNode;
+    private final LexicalScope lexicalScope;
+    private final String name;
+    @Child protected LookupConstantWithLexicalScopeNode lookupConstantNode;
+    @Child private GetConstantNode getConstantNode;
+
+    @Child private RequireNode requireNode;
 
     public ReadConstantWithLexicalScopeNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope, String name) {
         super(context, sourceSection);
-        RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
-        RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = ReadConstantNodeGen.create(context, sourceSection, lexicalScope, moduleNode, nameNode);
+        this.lexicalScope = lexicalScope;
+        this.name = name;
+        this.lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(context, sourceSection, lexicalScope, name);
+        this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null, null);
+    }
+
+    public RubyBasicObject getModule() {
+        return lexicalScope.getLiveModule();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return readConstantNode.execute(frame);
+        final RubyConstant constant = lookupConstantNode.executeLookupConstant(frame);
+
+        if (constant != null && constant.isAutoload()) {
+            CompilerDirectives.transferToInterpreter();
+            return autoload(frame, getModule(), name, constant);
+        }
+
+        return getConstantNode.executeGetConstant(frame, getModule(), name, constant);
+    }
+
+    protected Object autoload(VirtualFrame frame, Object module, String name, RubyConstant constant) {
+        final RubyBasicObject path = (RubyBasicObject) constant.getValue();
+
+        // The autoload constant must only be removed if everything succeeds.
+        // We remove it first to allow lookup to ignore it and add it back if there was a failure.
+        ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
+        try {
+            require(path);
+            return execute(frame); // retry
+        } catch (RaiseException e) {
+            ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
+            throw e;
+        }
+    }
+
+    private boolean require(RubyBasicObject feature) {
+        if (requireNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null));
+        }
+        return requireNode.require(feature);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyContext context = getContext();
-        final String name = (String) readConstantNode.getName().execute(frame);
-
         if (name.equals("Encoding")) {
             // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
             return createString("constant");
         }
 
-        final Object moduleObject = readConstantNode.getModule().execute(frame);
-
         final RubyConstant constant;
         try {
-            constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, moduleObject, name);
+            constant = lookupConstantNode.executeLookupConstant(frame);
         } catch (RaiseException e) {
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
-                // module is not a class/module
-                return nil();
-            } else if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == getContext().getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }
