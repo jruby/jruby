@@ -80,16 +80,11 @@ class MethodTranslator extends BodyTranslator {
 
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            body = nilNode(sourceSection);
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -215,16 +210,11 @@ class MethodTranslator extends BodyTranslator {
 
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            body = nilNode(sourceSection);
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);

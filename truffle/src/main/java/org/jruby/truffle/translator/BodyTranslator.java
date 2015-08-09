@@ -139,21 +139,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitAndNode(org.jruby.ast.AndNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode x;
-
-        if (node.getFirstNode() == null) {
-            x = nilNode(sourceSection);
-        } else {
-            x = node.getFirstNode().accept(this);
-        }
-
-        RubyNode y;
-
-        if (node.getSecondNode() == null) {
-            y = nilNode(sourceSection);
-        } else {
-            y = node.getSecondNode().accept(this);
-        }
+        final RubyNode x = translateNodeOrNil(sourceSection, node.getFirstNode());
+        final RubyNode y = translateNodeOrNil(sourceSection, node.getSecondNode());
 
         final RubyNode ret = new AndNode(context, sourceSection, x, y);
         return addNewlineIfNeeded(node, ret);
@@ -732,13 +719,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitCaseNode(org.jruby.ast.CaseNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode elseNode;
-
-        if (node.getElseNode() != null) {
-            elseNode = node.getElseNode().accept(this);
-        } else {
-            elseNode = nilNode(sourceSection);
-        }
+        RubyNode elseNode = translateNodeOrNil(sourceSection, node.getElseNode());
 
         /*
          * There are two sorts of case - one compares a list of expressions against a value, the
@@ -800,13 +781,7 @@ public class BodyTranslator extends Translator {
 
                 // Create the if node
 
-                RubyNode thenNode;
-
-                if (when.getBodyNode() == null || when.getBodyNode().isNil()) {
-                    thenNode = nilNode(sourceSection);
-                } else {
-                    thenNode = when.getBodyNode().accept(this);
-                }
+                final RubyNode thenNode = translateNodeOrNil(sourceSection, when.getBodyNode());
 
                 final IfNode ifNode = new IfNode(context, sourceSection, conditionNode, thenNode, elseNode);
 
@@ -1606,13 +1581,7 @@ public class BodyTranslator extends Translator {
             elseBody = new org.jruby.ast.NilNode(node.getPosition());
         }
 
-        RubyNode condition;
-
-        if (node.getCondition() == null) {
-            condition = nilNode(sourceSection);
-        } else {
-            condition = node.getCondition().accept(this);
-        }
+        final RubyNode condition = translateNodeOrNil(sourceSection, node.getCondition());
 
         final RubyNode thenBodyTranslated = thenBody.accept(this);
         final RubyNode elseBodyTranslated = elseBody.accept(this);
@@ -1626,8 +1595,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final String name = node.getName();
 
-        RubyNode rhs;
-
+        final RubyNode rhs;
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection, new Exception("null RHS of instance variable assignment"));
         } else {
@@ -2495,21 +2463,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitOrNode(org.jruby.ast.OrNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode x;
-
-        if (node.getFirstNode() == null) {
-            x = nilNode(sourceSection);
-        } else {
-            x = node.getFirstNode().accept(this);
-        }
-
-        RubyNode y;
-
-        if (node.getSecondNode() == null) {
-            y = nilNode(sourceSection);
-        } else {
-            y = node.getSecondNode().accept(this);
-        }
+        final RubyNode x = translateNodeOrNil(sourceSection, node.getFirstNode());
+        final RubyNode y = translateNodeOrNil(sourceSection, node.getSecondNode());
 
         final RubyNode ret = new OrNode(context, sourceSection, x, y);
         return addNewlineIfNeeded(node, ret);
@@ -2650,13 +2605,7 @@ public class BodyTranslator extends Translator {
                 } else if (rescueBody.getExceptionNodes() instanceof org.jruby.ast.SplatNode) {
                     final org.jruby.ast.SplatNode splat = (org.jruby.ast.SplatNode) rescueBody.getExceptionNodes();
 
-                    RubyNode splatTranslated;
-
-                    if (splat.getValue() == null) {
-                        splatTranslated = nilNode(sourceSection);
-                    } else {
-                        splatTranslated = splat.getValue().accept(this);
-                    }
+                    final RubyNode splatTranslated = translateNodeOrNil(sourceSection, splat.getValue());
 
                     RubyNode bodyTranslated;
 
@@ -2746,14 +2695,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitSplatNode(org.jruby.ast.SplatNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode value;
-
-        if (node.getValue() == null) {
-            value = nilNode(sourceSection);
-        } else {
-            value = node.getValue().accept(this);
-        }
-
+        final RubyNode value = translateNodeOrNil(sourceSection, node.getValue());
         final RubyNode ret = SplatCastNodeGen.create(context, sourceSection, SplatCastNode.NilBehavior.EMPTY_ARRAY, false, value);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2831,11 +2773,7 @@ public class BodyTranslator extends Translator {
         BreakID oldBreakID = environment.getBreakID();
         environment.setBreakIDForWhile(whileBreakID);
         try {
-            if (node.getBodyNode().isNil()) {
-                body = nilNode(sourceSection);
-            } else {
-                body = node.getBodyNode().accept(this);
-            }
+            body = translateNodeOrNil(sourceSection, node.getBodyNode());
         } finally {
             environment.setBreakIDForWhile(oldBreakID);
             translatingWhile = oldTranslatingWhile;

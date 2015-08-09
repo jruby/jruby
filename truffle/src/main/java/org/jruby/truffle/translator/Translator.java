@@ -67,6 +67,16 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         return new NilNode(context, sourceSection);
     }
 
+    protected RubyNode translateNodeOrNil(SourceSection sourceSection, org.jruby.ast.Node node) {
+        final RubyNode rubyNode;
+        if (node != null) {
+            rubyNode = node.accept(this);
+        } else {
+            rubyNode = nilNode(sourceSection);
+        }
+        return rubyNode;
+    }
+
     protected abstract String getIdentifier();
 
 }

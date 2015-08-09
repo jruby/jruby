@@ -180,31 +180,27 @@ public class LoadArgumentsTranslator extends Translator {
             final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
             name = localAsgnNode.getName();
 
-            if (localAsgnNode.getValueNode() == null) {
-                defaultValue = nilNode(sourceSection);
-            } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+            if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
                  * the semantic action of executing this node is to report an error, and we do the same thing.
                  */
                 defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
             } else {
-                defaultValue = localAsgnNode.getValueNode().accept(this);
+                defaultValue = translateNodeOrNil(sourceSection, localAsgnNode.getValueNode());
             }
         } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
             final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) firstChild;
             name = dAsgnNode.getName();
 
-            if (dAsgnNode.getValueNode() == null) {
-                defaultValue = nilNode(sourceSection);
-            } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+            if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
                 /*
                  * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
                  * the semantic action of executing this node is to report an error, and we do the same thing.
                  */
                 defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            }else {
-                defaultValue = dAsgnNode.getValueNode().accept(this);
+            } else {
+                defaultValue = translateNodeOrNil(sourceSection, dAsgnNode.getValueNode());
             }
         } else {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
