@@ -139,6 +139,7 @@ public class CoreLibrary {
     private final RubyBasicObject byteArrayClass;
     private final RubyBasicObject fiberErrorClass;
     private final RubyBasicObject threadErrorClass;
+    private final RubyBasicObject internalBufferClass;
     private final RubyBasicObject ioBufferClass;
 
     private final RubyBasicObject argv;
@@ -361,7 +362,8 @@ public class CoreLibrary {
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
         ModuleNodes.getModel(unboundMethodClass).factory = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         final RubyBasicObject ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
-        ioBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
+        ModuleNodes.getModel(ioClass).factory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass);
+        internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
 
         // Modules
 
@@ -437,9 +439,9 @@ public class CoreLibrary {
         ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
         ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
 
-        final RubyBasicObject rubiniusIOBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
-        ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(rubiniusIOBufferClass, rubiniusIOBufferClass);
-        ModuleNodes.getModel(rubiniusIOBufferClass).factory = ioBufferFactory;
+        ioBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
+        ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(ioBufferClass, ioBufferClass);
+        ModuleNodes.getModel(ioBufferClass).factory = ioBufferFactory;
     }
 
     private void includeModules(RubyBasicObject comparableModule) {

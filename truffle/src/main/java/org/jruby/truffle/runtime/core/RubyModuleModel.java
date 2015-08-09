@@ -722,7 +722,11 @@ public class RubyModuleModel implements ModuleChain {
         CompilerAsserts.neverPartOfCompilation();
 
         if (factory == null) {
-            return getParentModule().getFactory();
+            if (parentModule == null) {
+                return null;
+            }
+
+            return parentModule.getFactory();
         }
 
         return factory;

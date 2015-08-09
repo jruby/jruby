@@ -63,7 +63,6 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
         if (constant == null) {
             definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name, ModuleNodes.getModel(superClassObject).allocator);
-            ModuleNodes.getModel(definingClass).factory = ModuleNodes.getModel(superClassObject).getFactory();
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (RubyGuards.isRubyClass(constant.getValue())) {
