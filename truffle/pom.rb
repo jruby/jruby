@@ -15,10 +15,10 @@ project 'JRuby Truffle' do
   repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
               :id => 'truffle' )
 
-  truffle_version = '0.9-09531c471176ec637e92d3279ece721dd83b8868-SNAPSHOT'
-  jar 'com.oracle:truffle-api:' + truffle_version
-  jar 'com.oracle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
-  jar 'com.oracle:truffle-tck:' + truffle_version, :scope => 'test'
+  truffle_version = '60f3cb2c3a567e53c58e955486b64c7993bb2765-SNAPSHOT'
+  jar 'com.oracle.truffle:truffle-api:' + truffle_version
+  jar 'com.oracle.truffle:truffle-dsl-processor:' + truffle_version, :scope => 'provided'
+  jar 'com.oracle.truffle:truffle-tck:' + truffle_version, :scope => 'test'
   jar 'junit:junit', :scope => 'test'
 
   plugin( :compiler,

@@ -77,5 +77,10 @@ public class RubyTckTest extends TruffleTCK {
     protected String invalidCode() {
         return "def something\n  ret urn 4.2\ne n d";
     }
+
+    @Override
+    protected String countInvocations() {
+        throw new UnsupportedOperationException();
+    }
     
 }
