@@ -278,13 +278,13 @@ public abstract class BasicObjectNodes {
         final RubyBasicObject object = new RubyBasicObject(dynamicObject);
 
         if (getLogicalClass(object) != rubyClass) {
-            throw new UnsupportedOperationException();
-            //BASIC_OBJECT_LAYOUT.setLogicalClass(object.dynamicObject, newLogicalClass);
+            //throw new UnsupportedOperationException();
+            BASIC_OBJECT_LAYOUT.setLogicalClass(object.dynamicObject, rubyClass);
         }
 
         if (getMetaClass(object) != rubyClass) {
-            throw new UnsupportedOperationException();
-            //BASIC_OBJECT_LAYOUT.setMetaClass(object.dynamicObject, newLogicalClass);
+            //throw new UnsupportedOperationException();
+            BASIC_OBJECT_LAYOUT.setMetaClass(object.dynamicObject, rubyClass);
         }
 
         return object;
