@@ -28,22 +28,27 @@ public class RubyTckTest extends TruffleTCK {
     protected TruffleVM prepareVM() throws Exception {
         TruffleVM vm = TruffleVM.newVM().build();
         vm.eval(mimeType(),
-            "def sum(a, b)\n"
-          + " a + b\n"
-          + "end\n"
-          + "def fourty_two\n"
-          + " 42\n"
-          + "end\n"
-          + "def ret_nil\n"
-          + " nil\n"
-          + "end\n"
-          + "def apply_numbers(f)\n"
-          + " Truffle::Interop.execute(f, 18, 32) + 10\n"
-          + "end\n"
-          + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
-          + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
-          + "Truffle::Interop.export(\"ret_nil\", method(:ret_nil))\n"
-          + "Truffle::Interop.export(\"apply_numbers\", method(:apply_numbers))\n"
+                "def sum(a, b)\n"
+                        + " a + b\n"
+                        + "end\n"
+                        + "def fourty_two\n"
+                        + " 42\n"
+                        + "end\n"
+                        + "def ret_nil\n"
+                        + " nil\n"
+                        + "end\n"
+                        + "$invocations = 0\n"
+                        + "def count_invocations\n"
+                        + " $invocations += 1\n"
+                        + "end\n"
+                        + "def apply_numbers(f)\n"
+                        + " Truffle::Interop.execute(f, 18, 32) + 10\n"
+                        + "end\n"
+                        + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
+                        + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
+                        + "Truffle::Interop.export(\"ret_nil\", method(:ret_nil))\n"
+                        + "Truffle::Interop.export(\"count_invocations\", method(:count_invocations))\n"
+                        + "Truffle::Interop.export(\"apply_numbers\", method(:apply_numbers))\n"
         );
         return vm;
     }
@@ -74,13 +79,13 @@ public class RubyTckTest extends TruffleTCK {
     }
 
     @Override
-    protected String invalidCode() {
-        return "def something\n  ret urn 4.2\ne n d";
+    protected String countInvocations() {
+        return "count_invocations";
     }
 
     @Override
-    protected String countInvocations() {
-        throw new UnsupportedOperationException();
+    protected String invalidCode() {
+        return "def something\n  ret urn 4.2\ne n d";
     }
     
 }
