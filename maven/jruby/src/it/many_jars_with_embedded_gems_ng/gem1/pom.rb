@@ -2,7 +2,7 @@
 
 gemfile
 
-repositories.clear
+model.repositories.clear
 repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 

@@ -2,9 +2,8 @@
 
 gemfile
 
-repositories.clear
-repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-              :id => 'rubygems-releases' )
+model.repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases', :id => 'rubygems-releases' )
 
 id 'org.rubygems:zip', VERSION
 
