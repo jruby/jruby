@@ -185,6 +185,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
               <executable>java</executable>
               <arguments>
                 <argument>-classpath</argument>
