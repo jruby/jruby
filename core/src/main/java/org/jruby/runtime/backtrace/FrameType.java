@@ -10,8 +10,8 @@ import org.jruby.ir.interpreter.Interpreter;
 
 public enum FrameType {
     METHOD, BLOCK, EVAL, CLASS, ROOT;
-    public static final Set<String> INTERPRETED_CLASSES = new HashSet<String>();
-    public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>();
+    public static final Set<String> INTERPRETED_CLASSES = new HashSet<String>(4, 1);
+    public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>(8, 1);
 
     static {
         INTERPRETED_CLASSES.add(ASTInterpreter.class.getName());
