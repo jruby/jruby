@@ -9,10 +9,10 @@ properties( 'jruby.plugins.version' => '1.0.10',
             'logback.version' => '1.0.13',
             # needed by felix-bundle-plugin
             'polyglot.dump.pom' => 'pom.xml' )
-            'jruby.version' => '9.0.0.0' )
 
-pom 'org.jruby:jruby', '@project.version@'
+pom 'org.jruby:jruby', '${jruby.version}'
 
+repositories.clear
 repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
             :id => 'takari-rubygems-releases' )
 

@@ -2,6 +2,10 @@
 
 gemfile
 
+repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
+            :id => 'takari-rubygems-releases' )
+
 id 'org.jruby.osgi:gems-bundle', '1.0'
 
 packaging 'bundle'

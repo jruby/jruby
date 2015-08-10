@@ -5,6 +5,10 @@ properties( 'jruby.plugins.version' => '1.0.10' )
 
 gemfile
 
+repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
+              :id => 'rubygems-releases' )
+
 gem 'bundler', '1.7.7'
 
 pom 'org.jruby:jruby', '${jruby.version}'
