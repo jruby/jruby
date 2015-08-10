@@ -14,6 +14,8 @@ import javax.lang.model.type.TypeMirror;
 public class PropertyBuilder {
 
     private final String name;
+    private boolean hasFactoryGetter;
+    private boolean hasFactorySetter;
     private boolean hasGetter;
     private boolean hasSetter;
     private TypeMirror type;
@@ -31,8 +33,18 @@ public class PropertyBuilder {
 
     public PropertyModel build() {
         assert type != null;
-        return new PropertyModel(name, hasGetter, hasSetter, type,
+
+        return new PropertyModel(name, hasFactoryGetter, hasFactorySetter,
+                hasGetter, hasSetter, type,
                 nullable == NullableState.NULLABLE, hasIdentifier, isShapeProperty);
+    }
+
+    public void setHasFactoryGetter(boolean hasFactoryGetter) {
+        this.hasFactoryGetter = hasFactoryGetter;
+    }
+
+    public void setHasFactorySetter(boolean hasFactorySetter) {
+        this.hasFactorySetter = hasFactorySetter;
     }
 
     public void setHasGetter(boolean hasGetter) {

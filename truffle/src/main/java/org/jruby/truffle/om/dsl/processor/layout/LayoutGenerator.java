@@ -384,11 +384,30 @@ public class LayoutGenerator {
         }
 
         stream.printf(" boolean is%s(DynamicObject object) {\n", layout.getName());
-        stream.printf("        return object.getShape().getObjectType() instanceof %sType;\n", layout.getName());
+        stream.printf("        return is%s(object.getShape().getObjectType());\n", layout.getName());
+        stream.println("    }");
+        stream.println("    ");
+
+        stream.printf("    private boolean creates%s(DynamicObjectFactory factory) {\n", layout.getName());
+        stream.printf("        return is%s(factory.getShape().getObjectType());\n", layout.getName());
+        stream.println("    }");
+        stream.println("    ");
+
+        stream.printf("    private boolean is%s(ObjectType objectType) {\n", layout.getName());
+        stream.printf("        return objectType instanceof %sType;\n", layout.getName());
         stream.println("    }");
         stream.println("    ");
 
         for (PropertyModel property : layout.getProperties()) {
+            if (property.hasFactoryGetter()) {
+                stream.println("    @Override");
+                stream.printf("    public %s %s(DynamicObjectFactory factory) {\n", property.getType(), NameUtils.asGetter(property.getName()));
+                stream.printf("        assert creates%s(object);\n", layout.getName());
+                stream.printf("        return ((%sType) factory.getShape().getObjectType()).%s();\n", layout.getName(), NameUtils.asGetter(property.getName()));
+                stream.println("    }");
+                stream.println("    ");
+            }
+
             if (property.hasGetter()) {
                 stream.println("    @Override");
                 stream.printf("    public %s %s(DynamicObject object) {\n", property.getType(), NameUtils.asGetter(property.getName()));
@@ -402,6 +421,17 @@ public class LayoutGenerator {
                     stream.printf("        return (%s) %s_PROPERTY.get(object, true);\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
                 }
 
+                stream.println("    }");
+                stream.println("    ");
+            }
+
+            if (property.hasFactorySetter()) {
+                stream.println("    @TruffleBoundary");
+                stream.println("    @Override");
+                stream.printf("    public DynamicObjectFactory %s(DynamicObjectFactory factory, %s value) {\n", NameUtils.asSetter(property.getName()), property.getType());
+                stream.printf("        assert creates%s(factory);\n", layout.getName());
+                stream.println("        final Shape shape = factory.getShape();");
+                stream.printf("        return shape.changeType(((%sType) shape.getObjectType()).%s(value)).createFactory();\n", layout.getName(), NameUtils.asSetter(property.getName()));
                 stream.println("    }");
                 stream.println("    ");
             }

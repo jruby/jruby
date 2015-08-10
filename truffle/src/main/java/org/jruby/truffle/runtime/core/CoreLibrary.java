@@ -215,6 +215,7 @@ public class CoreLibrary {
         ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
 
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ModuleNodes.getModel(basicObjectClass).allocator);
+        ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
 
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
         ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
@@ -420,12 +421,12 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = BasicObjectNodes.createRubyBasicObject(objectClass);
-        nilObject = BasicObjectNodes.createRubyBasicObject(nilClass);
+        mainObject = BasicObjectNodes.createRubyBasicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
+        nilObject = BasicObjectNodes.createRubyBasicObject(nilClass, ModuleNodes.getModel(nilClass).getFactory().newInstance());
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = BasicObjectNodes.createRubyBasicObject(objectClass);
+        rubiniusUndefined = BasicObjectNodes.createRubyBasicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
 
-        globalVariablesObject = BasicObjectNodes.createRubyBasicObject(objectClass);
+        globalVariablesObject = BasicObjectNodes.createRubyBasicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);

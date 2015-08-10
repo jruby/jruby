@@ -14,6 +14,8 @@ import javax.lang.model.type.TypeMirror;
 public class PropertyModel {
 
     private final String name;
+    private final boolean hasFactoryGetter;
+    private final boolean hasFactorySetter;
     private final boolean hasGetter;
     private final boolean hasSetter;
     private final TypeMirror type;
@@ -21,13 +23,20 @@ public class PropertyModel {
     private final boolean hasIdentifier;
     private final boolean isShapeProperty;
 
-    public PropertyModel(String name, boolean hasGetter, boolean hasSetter,
+    public PropertyModel(String name, boolean hasFactoryGetter, boolean hasFactorySetter,
+                         boolean hasGetter, boolean hasSetter,
                          TypeMirror type, boolean nullable, boolean hasIdentifier,
                          boolean isShapeProperty) {
         assert name != null;
         assert type != null;
 
+        if (hasFactoryGetter || hasFactorySetter) {
+            assert isShapeProperty;
+        }
+
         this.name = name;
+        this.hasFactoryGetter = hasFactoryGetter;
+        this.hasFactorySetter = hasFactorySetter;
         this.hasGetter = hasGetter;
         this.hasSetter = hasSetter;
         this.type = type;
@@ -38,6 +47,14 @@ public class PropertyModel {
 
     public String getName() {
         return name;
+    }
+
+    public boolean hasFactorySetter() {
+        return hasFactorySetter;
+    }
+
+    public boolean hasFactoryGetter() {
+        return hasFactoryGetter;
     }
 
     public boolean hasGetter() {

@@ -145,6 +145,11 @@ import java.lang.annotation.Target;
  * the performance of the setter will be much reduced, and the getter will use additional
  * indirection so you may want to cache the result (against the shape).
  *
+ * You can also use the getter and setter against the {@code DynamicObjectFactory} that
+ * {@code createFooShape} returns, with the setter reutrning a new factory. This allows
+ * objects to be created with modified shape properties, and is much more efficient than
+ * using the instance setter after creating the object.
+ *
  * <p><strong>Processing</strong></p>
  *
  * {@link Layout} annotations are processed by {@link OMProcessor}.

@@ -12,6 +12,7 @@ package org.jruby.truffle.om.dsl.processor.layout;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.om.dsl.processor.OMProcessor;
 import org.jruby.truffle.om.dsl.processor.layout.model.*;
 
 import javax.lang.model.element.*;
@@ -182,12 +183,25 @@ public class LayoutParser {
     private void parseGetter(ExecutableElement methodElement) {
         assert methodElement.getSimpleName().toString().startsWith("get");
         assert methodElement.getParameters().size() == 1;
-        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.toString());
-        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+
+        final boolean isFactoryGetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
+
+        if (isFactoryGetter) {
+            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        } else {
+            assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        }
 
         final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
-        property.setHasGetter(true);
+
+        if (isFactoryGetter) {
+            property.setHasFactoryGetter(true);
+        } else {
+            property.setHasGetter(true);
+        }
+
         setPropertyType(property, methodElement.getReturnType());
         parseNullable(property, methodElement);
     }
@@ -195,13 +209,27 @@ public class LayoutParser {
     private void parseSetter(ExecutableElement methodElement) {
         assert methodElement.getSimpleName().toString().startsWith("set");
         assert methodElement.getParameters().size() == 2;
-        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.toString());
-        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+
+        final boolean isFactorySetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
+
+        if (isFactorySetter) {
+            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        } else {
+            assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+        }
+
         assert methodElement.getParameters().get(1).getSimpleName().toString().equals("value");
 
         final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
         final PropertyBuilder property = getProperty(name);
-        property.setHasSetter(true);
+
+        if (isFactorySetter) {
+            property.setHasFactorySetter(true);
+        } else {
+            property.setHasSetter(true);
+        }
+
         setPropertyType(property, methodElement.getParameters().get(1).asType());
         parseNullable(property, methodElement);
     }

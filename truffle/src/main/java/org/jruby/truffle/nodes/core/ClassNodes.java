@@ -103,6 +103,12 @@ public abstract class ClassNodes {
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
         final RubyBasicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
+
+        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
+        ModuleNodes.getModel(rubyClass).factory = factory;
+
         return rubyClass;
     }
 

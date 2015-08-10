@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
@@ -26,7 +27,8 @@ public abstract class ChannelPrimitiveNodes {
 
         @Specialization
         public RubyBasicObject channelNew() {
-            return BasicObjectNodes.createRubyBasicObject(getContext().getCoreLibrary().getRubiniusChannelClass());
+            final RubyBasicObject channelClass = getContext().getCoreLibrary().getRubiniusChannelClass();
+            return BasicObjectNodes.createRubyBasicObject(channelClass, ModuleNodes.getModel(channelClass).getFactory().newInstance());
         }
 
     }
