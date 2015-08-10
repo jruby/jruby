@@ -66,7 +66,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}"
 
-  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 
   plugin( :clean,

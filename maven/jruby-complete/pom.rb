@@ -10,7 +10,7 @@ project 'JRuby Complete' do
   packaging 'bundle'
 
   plugin_repository( :id => 'rubygems-releases',
-                     :url => 'http://rubygems-proxy.torquebox.org/releases' )
+                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,

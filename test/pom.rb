@@ -49,7 +49,7 @@ project 'JRuby Integration Tests' do
   packaging 'jar'
 
   repository( :id => 'rubygems-releases',
-              :url => 'http://rubygems-proxy.torquebox.org/releases' )
+              :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
   plugin_repository( :id => 'sonatype',
                      :url => 'https://oss.sonatype.org/content/repositories/snapshots/' ) do
@@ -57,7 +57,7 @@ project 'JRuby Integration Tests' do
     snapshots true
   end
   plugin_repository( :id => 'rubygems-releases',
-                     :url => 'http://rubygems-proxy.torquebox.org/releases' )
+                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
   properties( 'jruby.basedir' => '${basedir}/..',
               'gem.home' => '${jruby.basedir}/lib/ruby/gems/shared' )

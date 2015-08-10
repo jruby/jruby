@@ -55,7 +55,7 @@ freezing to) a specific jruby-complete jar version.</description>
   <repositories>
     <repository>
       <id>rubygems-releases</id>
-      <url>http://rubygems-proxy.torquebox.org/releases</url>
+      <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
     </repository>
   </repositories>
   <build>
