@@ -109,7 +109,7 @@ public class BacktraceData implements Serializable {
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
 
-                FrameType frameType = FrameType.INTERPRETED_FRAMES.get(methodName);
+                FrameType frameType = FrameType.getInterpreterFrame(methodName);
 
                 // construct Ruby trace element
                 String newName = rubyFrame.method;
