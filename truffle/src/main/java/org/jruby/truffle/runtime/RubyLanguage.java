@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.debug.DebugSupportProvider;
 import com.oracle.truffle.api.instrument.ToolSupportProvider;
@@ -19,9 +20,11 @@ import com.oracle.truffle.api.source.Source;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.Constants;
+import org.jruby.truffle.nodes.LazyRubyRootNode;
 
 @TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = "application/x-ruby")
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
+
     private RubyLanguage() {
     }
 
@@ -35,7 +38,7 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     protected CallTarget parse(Source source, Node node, String... strings) throws IOException {
-        throw new IOException();
+        return Truffle.getRuntime().createCallTarget(new LazyRubyRootNode(getClass(), null, null, source));
     }
 
     @Override
@@ -61,6 +64,14 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     @Override
     protected DebugSupportProvider getDebugSupport() {
         return null;
+    }
+
+    public Node unprotectedCreateFindContextNode() {
+        return super.createFindContextNode();
+    }
+
+    public RubyContext unprotectedFindContext(Node node) {
+        return super.findContext(node);
     }
 
 }
