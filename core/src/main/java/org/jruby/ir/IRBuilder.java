@@ -358,6 +358,17 @@ public class IRBuilder {
     }
 
     private Operand buildOperand(Node node) throws NotCompilableException {
+        if (node.isNewline()) {
+            int currLineNum = node.getLine();
+            if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
+                }
+                addInstr(manager.newLineNumber(currLineNum));
+                _lastProcessedLineNum = currLineNum;
+            }
+        }
+
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
             case ANDNODE: return buildAnd((AndNode) node);
@@ -416,7 +427,6 @@ public class IRBuilder {
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
             case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
-            case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -469,26 +479,6 @@ public class IRBuilder {
 
     public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope) {
         return new IRBuilder(manager, newScope, null);
-    }
-
-    public Node skipOverNewlines(Node n) {
-        if (n.getNodeType() == NodeType.NEWLINENODE) {
-            // Do not emit multiple line number instrs for the same line
-            int currLineNum = n.getLine();
-            if (currLineNum != _lastProcessedLineNum) {
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
-                }
-               addInstr(manager.newLineNumber(currLineNum));
-               _lastProcessedLineNum = currLineNum;
-            }
-        }
-
-        while (n.getNodeType() == NodeType.NEWLINENODE) {
-            n = ((NewlineNode) n).getNextNode();
-        }
-
-        return n;
     }
 
     public Operand build(Node node) {
@@ -1370,8 +1360,6 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
-        node = skipOverNewlines(node);
-
         // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
@@ -2039,7 +2027,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 i++;
             }
@@ -2054,7 +2042,7 @@ public class IRBuilder {
             } else {
                 Variable rhsVal = createTemporaryVariable();
                 addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
-                assigns.add(new Tuple<Node, Variable>(restNode, rhsVal)); // rest of the argument array!
+                assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
             }
         }
 
@@ -2068,7 +2056,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 j++;
             }
@@ -2109,7 +2097,7 @@ public class IRBuilder {
     public void receiveBlockArgs(final IterNode node) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
-            scope.setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+            ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
         } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
@@ -2544,7 +2532,7 @@ public class IRBuilder {
     //     --- r is the result of the if expression --
     //
     public Operand buildIf(final IfNode ifNode) {
-        Node actualCondition = skipOverNewlines(ifNode.getCondition());
+        Node actualCondition = ifNode.getCondition();
 
         Variable result;
         Label    falseLabel = getNewLabel();
@@ -2753,10 +2741,6 @@ public class IRBuilder {
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine());
         return processBodyResult;
-    }
-
-    public Operand buildNewline(NewlineNode node) {
-        return build(skipOverNewlines(node));
     }
 
     public Operand buildNext(final NextNode nextNode) {
@@ -3170,7 +3154,7 @@ public class IRBuilder {
 
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
-        Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
+        Node realBody = rescueBodyNode.getBodyNode();
         Operand x = build(realBody);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'

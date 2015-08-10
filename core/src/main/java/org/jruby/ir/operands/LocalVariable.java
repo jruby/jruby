@@ -15,17 +15,17 @@ public class LocalVariable extends Variable implements DepthCloneable {
     protected final int offset;
     protected final int hcode;
 
-    // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
-        this(OperandType.LOCAL_VARIABLE, name, scopeDepth, location);
-    }
-
-    protected LocalVariable(OperandType type, String name, int scopeDepth, int location) {
-        super(type);
+        super();
         this.name = name;
         this.scopeDepth = scopeDepth;
         this.offset = location;
         this.hcode = (name + ":" + offset).hashCode();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.LOCAL_VARIABLE;
     }
 
     public boolean isSameDepth(LocalVariable other) {

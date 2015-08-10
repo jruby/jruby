@@ -16,9 +16,14 @@ public class AsString extends Operand {
     final private Operand source;
 
     public AsString(Operand source) {
-        super(OperandType.AS_STRING);
+        super();
 
         this.source = source == null ? StringLiteral.EMPTY_STRING : source;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.AS_STRING;
     }
 
     @Override

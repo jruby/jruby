@@ -17,14 +17,12 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -109,8 +107,21 @@ public class TranslatorDriver {
     private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
+        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        LexicalScope lexicalScope;
+        if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
+            lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
+        } else {
+            lexicalScope = context.getRootLexicalScope();
+        }
+        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+            Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
+            lexicalScope = new LexicalScope(lexicalScope, (RubyBasicObject) module);
+        }
+        parseEnvironment.resetLexicalScope(lexicalScope);
+
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, parseEnvironment.getLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
                 parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false, null);
@@ -138,9 +149,7 @@ public class TranslatorDriver {
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
             translator.parentSourceSection.push(sourceSection);
             try {
-                truffleNode = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
+                truffleNode = translator.nilNode(sourceSection);
             } finally {
                 translator.parentSourceSection.pop();
             }
@@ -200,7 +209,7 @@ public class TranslatorDriver {
             return null;
         } else {
             SourceSection sourceSection = SourceSection.createUnavailable("Unknown source section", "(unknown)");
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,

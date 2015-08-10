@@ -1,15 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>no_group_id_given</groupId>
-  <artifactId>many_jars_with_embedded_gems_ng</artifactId>
+  <groupId>dummy</groupId>
+  <artifactId>dummy</artifactId>
   <version>0.0.0</version>
-  <packaging>pom</packaging>
-  <name>many_jars_with_embedded_gems_ng</name>
-  <modules>
-    <module>gem1</module>
-    <module>gem2</module>
-    <module>app</module>
-  </modules>
 </project>

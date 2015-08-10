@@ -4,7 +4,8 @@ id 'org.jruby.osgi:scripts-bundle', '1.0'
 
 packaging 'bundle'
 
-jar 'org.osgi:org.osgi.core', '5.0.0', :scope => :provided
+properties( # needed bundle plugin
+            'polyglot.dump.pom' => 'pom.xml' )
 
 # add some ruby scripts to bundle
 resource :directory => 'src/main/ruby'

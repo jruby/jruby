@@ -1,0 +1,3 @@
+fails:Constant resolution within a singleton class (class << obj) uses its own namespace for each object
+fails:Constant resolution within a singleton class (class << obj) uses its own namespace for nested modules
+fails:Constant resolution within a singleton class (class << obj) allows nested modules to have proper resolution

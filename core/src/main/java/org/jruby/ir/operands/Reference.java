@@ -10,8 +10,8 @@ import java.util.List;
 public abstract class Reference extends Operand {
     final private String name;
 
-    public Reference(OperandType type, String name) {
-        super(type);
+    public Reference(String name) {
+        super();
 
         this.name = name;
     }

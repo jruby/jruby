@@ -14,9 +14,14 @@ public class IRException extends Operand {
     private final RubyLocalJumpError.Reason type;
 
     protected IRException(RubyLocalJumpError.Reason type) {
-        super(OperandType.IR_EXCEPTION);
+        super();
 
         this.type = type;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.IR_EXCEPTION;
     }
 
     public RubyLocalJumpError.Reason getType() {

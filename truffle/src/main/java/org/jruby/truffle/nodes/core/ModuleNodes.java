@@ -38,9 +38,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.*;
-import org.jruby.truffle.nodes.constants.GetConstantNode;
-import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
-import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
+import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
@@ -406,7 +404,7 @@ public abstract class ModuleNodes {
             final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
             final CheckArityNode checkArity = new CheckArityNode(getContext(), sourceSection, arity);
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, arity, indicativeName, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false);
 
             final SelfNode self = new SelfNode(getContext(), sourceSection);
             final RubyNode accessInstanceVariable;
@@ -419,7 +417,7 @@ public abstract class ModuleNodes {
             final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, LexicalScope.NONE, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
             getModel(module).addMethod(this, method);
             return nil();
@@ -588,7 +586,7 @@ public abstract class ModuleNodes {
         }
 
         private Object autoloadQuery(RubyBasicObject module, String name) {
-            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), module, name);
 
             if ((constant == null) || ! constant.isAutoload()) {
                 return nil();
@@ -892,12 +890,11 @@ public abstract class ModuleNodes {
     })
     public abstract static class ConstGetNode extends CoreMethodNode {
 
-        @Child private GetConstantNode getConstantNode;
+        @Child private ReadConstantNode readConstantNode;
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, null, null,
-                    LookupConstantNodeGen.create(context, sourceSection, null, null));
+            this.readConstantNode = new ReadConstantNode(context, sourceSection, null, null);
         }
 
         @CreateCast("name")
@@ -913,7 +910,7 @@ public abstract class ModuleNodes {
         // Symbol
         @Specialization(guards = {"inherit", "isRubySymbol(name)"})
         public Object getConstant(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, SymbolNodes.getString(name));
+            return readConstantNode.readConstant(frame, module, SymbolNodes.getString(name));
         }
 
         @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
@@ -924,7 +921,7 @@ public abstract class ModuleNodes {
         // String
         @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
         public Object getConstantString(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
-            return getConstantNode.executeGetConstant(frame, module, name.toString());
+            return readConstantNode.readConstant(frame, module, name.toString());
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
@@ -1104,10 +1101,7 @@ public abstract class ModuleNodes {
 
             final CallTarget modifiedCallTarget = ProcNodes.getCallTargetForLambdas(proc);
             final SharedMethodInfo info = ProcNodes.getSharedMethodInfo(proc).withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC,
-                    ProcNodes.getMethod(proc).getLexicalScope(),
-                    false, modifiedCallTarget,
-                    ProcNodes.getDeclarationFrame(proc));
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, ProcNodes.getDeclarationFrame(proc));
 
             return addMethod(module, name, modifiedMethod);
         }
@@ -1345,11 +1339,11 @@ public abstract class ModuleNodes {
             final List<RubyBasicObject> modules = new ArrayList<>();
 
             InternalMethod method = RubyCallStack.getCallingMethod(getContext());
-            LexicalScope lexicalScope = method == null ? null : method.getLexicalScope();
+            LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
 
             while (lexicalScope != null) {
-                final RubyBasicObject enclosing = lexicalScope.getModule();
+                final RubyBasicObject enclosing = lexicalScope.getLiveModule();
                 if (enclosing == object)
                     break;
                 modules.add(enclosing);

@@ -48,3 +48,13 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
+expected = basedir + "/bin/me";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+File file = new File(basedir, "bin/.jrubydir");
+if ( !file.exists() )
+{
+    throw new RuntimeException( "file '" + file + "' does not exists" );
+}

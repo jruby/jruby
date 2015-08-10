@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -27,9 +28,7 @@ import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
-import org.jruby.truffle.nodes.constants.GetConstantNode;
-import org.jruby.truffle.nodes.constants.GetConstantNodeGen;
-import org.jruby.truffle.nodes.constants.LookupConstantNodeGen;
+import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -38,9 +37,7 @@ import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGe
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -403,7 +400,7 @@ public abstract class BigDecimalNodes {
             setupGetIntegerConstant();
             setupBooleanCast();
 
-            final int exceptionConstant = getIntegerConstant.executeGetIntegerConstant(frame, constantName);
+            final int exceptionConstant = getIntegerConstant.executeGetIntegerConstant(frame, getBigDecimalClass(), constantName);
             final boolean raise = booleanCast.executeBoolean(frame,
                     modeCall.call(frame, getBigDecimalClass(), "boolean_mode", null, exceptionConstant));
             if (raise) {
@@ -425,8 +422,7 @@ public abstract class BigDecimalNodes {
         private void setupGetIntegerConstant() {
             if (getIntegerConstant == null) {
                 CompilerDirectives.transferToInterpreter();
-                getIntegerConstant = insert(GetIntegerConstantNodeGen.create(getContext(), getSourceSection(),
-                        new LiteralNode(getContext(), getSourceSection(), getBigDecimalClass())));
+                getIntegerConstant = insert(GetIntegerConstantNodeGen.create(getContext(), getSourceSection(), null, null));
             }
         }
 
@@ -1694,45 +1690,26 @@ public abstract class BigDecimalNodes {
         }
     }
 
-    @NodeChildren({
-            @NodeChild(value = "name", type = RubyNode.class),
-            @NodeChild(value = "module", type = RubyNode.class),
-            @NodeChild(value = "getConst", type = GetConstantNode.class, executeWith = { "module", "name" }),
-            @NodeChild(value = "coerce", type = ToIntNode.class, executeWith = "getConst"),
-            @NodeChild(value = "cast", type = IntegerCastNode.class, executeWith = "coerce")
-    })
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
     public abstract static class GetIntegerConstantNode extends RubyNode {
+
+        @Child ReadConstantNode readConstantNode;
+        @Child ToIntNode toIntNode;
+        @Child IntegerCastNode integerCastNode;
 
         public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readConstantNode = new ReadConstantNode(context, sourceSection, null, null);
+            toIntNode = ToIntNodeGen.create(context, sourceSection, null);
+            integerCastNode = IntegerCastNodeGen.create(context, sourceSection, null);
         }
 
-        public static GetIntegerConstantNode create(RubyContext context, SourceSection sourceSection) {
-            return create(context, sourceSection, null);
-        }
-
-        public static GetIntegerConstantNode create(RubyContext context, SourceSection sourceSection, RubyNode module) {
-            return GetIntegerConstantNodeGen.create(
-                    context, sourceSection, null, module,
-                    GetConstantNodeGen.create(context, sourceSection, null, null,
-                            LookupConstantNodeGen.create(context, sourceSection, null, null)),
-                    ToIntNodeGen.create(context, sourceSection, null),
-                    IntegerCastNodeGen.create(context, sourceSection, null));
-        }
-
-        public abstract IntegerCastNode getCast();
-
-        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name, RubyBasicObject module);
-
-        public abstract int executeGetIntegerConstant(VirtualFrame frame, String name);
+        public abstract int executeGetIntegerConstant(VirtualFrame frame, RubyBasicObject module, String name);
 
         @Specialization(guards = "isRubyModule(module)")
-        public int doInteger(String name,
-                             RubyBasicObject module,
-                             Object constValue,
-                             Object coercedConstValue,
-                             int castedValue) {
-            return castedValue;
+        public int doInteger(VirtualFrame frame, RubyBasicObject module, String name) {
+            final Object value = readConstantNode.readConstant(frame, module, name);
+            return integerCastNode.executeInteger(frame, toIntNode.executeIntOrLong(frame, value));
         }
     }
 
@@ -1744,15 +1721,14 @@ public abstract class BigDecimalNodes {
 
         public SignNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            sign = GetIntegerConstantNodeGen.create(context, sourceSection,
-                    new LiteralNode(context, sourceSection, getBigDecimalClass()));
+            sign = GetIntegerConstantNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = {
                 "isNormal(value)",
                 "isNormalZero(value)" })
         public int signNormalZero(VirtualFrame frame, RubyBasicObject value) {
-            return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_ZERO");
+            return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_ZERO");
         }
 
         @Specialization(guards = {
@@ -1760,9 +1736,9 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(value)" })
         public int signNormal(VirtualFrame frame, RubyBasicObject value) {
             if (positive.profile(getBigDecimalValue(value).signum() > 0)) {
-                return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_FINITE");
+                return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_FINITE");
             } else {
-                return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_FINITE");
+                return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_FINITE");
             }
         }
 
@@ -1770,13 +1746,13 @@ public abstract class BigDecimalNodes {
         public int signSpecial(VirtualFrame frame, RubyBasicObject value) {
             switch (getBigDecimalType(value)) {
                 case NEGATIVE_INFINITY:
-                    return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_INFINITE");
+                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_INFINITE");
                 case POSITIVE_INFINITY:
-                    return sign.executeGetIntegerConstant(frame, "SIGN_POSITIVE_INFINITE");
+                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_POSITIVE_INFINITE");
                 case NEGATIVE_ZERO:
-                    return sign.executeGetIntegerConstant(frame, "SIGN_NEGATIVE_ZERO");
+                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NEGATIVE_ZERO");
                 case NAN:
-                    return sign.executeGetIntegerConstant(frame, "SIGN_NaN");
+                    return sign.executeGetIntegerConstant(frame, getBigDecimalClass(), "SIGN_NaN");
                 default:
                     throw new UnreachableCodeBranch();
             }

@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public Variable(OperandType type) {
-        super(type);
+    public Variable() {
+        super();
     }
 
     public abstract String getName();

@@ -2,14 +2,10 @@
 
 gemfile
 
+repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
+              :id => 'rubygems-releases' )
+
 id 'org.rubygems:gem2', '2'
 
-jruby_plugin! :gem, :includeRubygemsInResources => true
-
-execute 'jrubydir', 'initialize' do |ctx|
-  require 'jruby/commands'
-  JRuby::Commands.generate_dir_info( ctx.project.build.directory.to_pathname + '/rubygems' )
-end
-
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'jruby.home' => '../../../../../' )
+jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'

@@ -56,6 +56,7 @@ public abstract class ExceptionNodes {
         ((RubyException) exception).backtrace = backtrace;
     }
 
+    @TruffleBoundary
     public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
         assert RubyGuards.isRubyException(exception);
 
@@ -115,7 +116,6 @@ public abstract class ExceptionNodes {
             readCustomBacktrace = new ReadHeadObjectFieldNode("@custom_backtrace");
         }
 
-        @TruffleBoundary
         @Specialization
         public Object backtrace(RubyBasicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {

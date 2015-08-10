@@ -12,16 +12,14 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.FiberNodes;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a method. That is, store the definition of a method and when executed
+ * Define a method from a method literal (def mymethod ... end).
+ * That is, store the definition of a method and when executed
  * produce the executable object that results.
  */
 public class MethodDefinitionNode extends RubyNode {
@@ -40,8 +38,8 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        final LexicalScope lexicalScope = FiberNodes.getLexicalScopeStack(getContext());
-        return new InternalMethod(sharedMethodInfo, name, null, null, lexicalScope, false, callTarget, frame.materialize());
+        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget,
+                frame.materialize() /* Currently used for visibility, will be fixed when we keep visibility in some better place */);
     }
 
     @Override

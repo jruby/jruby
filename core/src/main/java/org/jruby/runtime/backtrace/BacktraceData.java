@@ -5,9 +5,7 @@ import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] backtraceElements;
@@ -16,8 +14,6 @@ public class BacktraceData implements Serializable {
     private final boolean fullTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
-
-    private final Pattern FILTER_CLASSES = Pattern.compile("^(org\\.jruby)|(sun\\.reflect)");
 
     public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
         this.javaTrace = javaTrace;
@@ -42,11 +38,10 @@ public class BacktraceData implements Serializable {
     }
 
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
-        List<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
 
         // used for duplicating the previous Ruby frame when masking native calls
-        boolean dupFrame = false;
-        String dupFrameName = null;
+        boolean dupFrame = false; String dupFrameName = null;
 
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
@@ -158,7 +153,6 @@ public class BacktraceData implements Serializable {
                         line,
                         false
                 ));
-                continue;
             }
         }
 
@@ -177,18 +171,16 @@ public class BacktraceData implements Serializable {
     private static String packagedFilenameFromElement(String filename, String className) {
         // stick package on the beginning
         if (filename == null) {
-            filename = className.replaceAll("\\.", "/");
-        } else {
-            int lastDot = className.lastIndexOf('.');
-            if (lastDot != -1) {
-                filename = className.substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
-            }
+            return className.replace('.', '/');
         }
 
-        return filename;
+        int lastDot = className.lastIndexOf('.');
+        if (lastDot == -1) return filename;
+        return className.substring(0, lastDot + 1).replace('.', '/') + filename;
     }
 
-    private boolean isFilteredClass(String className) {
-        return FILTER_CLASSES.matcher(className).find();
+    // ^(org\\.jruby)|(sun\\.reflect)
+    private static boolean isFilteredClass(final String className) {
+        return className.startsWith("org.jruby") || className.startsWith("sun.reflect") ;
     }
 }

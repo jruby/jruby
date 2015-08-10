@@ -40,6 +40,10 @@ public class Arity {
         assert keywordArguments != null && preRequired >= 0 && optional >= 0 && postRequired >= 0 : toString();
     }
 
+    public Arity withRest(boolean hasRest) {
+        return new Arity(preRequired, optional, hasRest, postRequired, keywordArguments, hasKeywordsRest);
+    }
+
     public int getPreRequired() {
         return preRequired;
     }

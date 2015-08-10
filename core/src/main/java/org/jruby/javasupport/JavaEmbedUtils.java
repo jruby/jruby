@@ -203,15 +203,6 @@ public class JavaEmbedUtils {
         }
     }
 
-    public static void addLoadPath(Ruby runtime, ClassLoader cl) {
-        runtime.getLoadService().addPaths(new UriLikePathHelper(cl).getUriLikePath());
-    }
-
-    public static void addGemPath(Ruby runtime, ClassLoader cl) {
-        String uri = new UriLikePathHelper(cl).getUriLikePath();
-        runtime.evalScriptlet("Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
-    }
-
     /**
      * Dispose of the runtime you initialized.
      *

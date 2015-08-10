@@ -22,7 +22,6 @@ import org.jruby.parser.StaticScope;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -63,17 +62,12 @@ public abstract class IRScope implements ParseResult {
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
-    // Argument description
-    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     /** Unique global scope id */
     private int scopeId;
 
     /** Name */
     private String name;
-
-    /** File within which this scope has been defined */
-    private final String fileName;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -135,14 +129,13 @@ public abstract class IRScope implements ParseResult {
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
         this.manager = s.manager;
-        this.fileName = s.fileName;
         this.lineNumber = s.lineNumber;
         this.staticScope = s.staticScope;
         this.threadPollInstrsCount = s.threadPollInstrsCount;
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nextVarIndex = new HashMap<>(); // SSS FIXME: clone!
+        this.nextVarIndex = new HashMap<>(1); // SSS FIXME: clone!
         this.interpreterContext = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -155,18 +148,17 @@ public abstract class IRScope implements ParseResult {
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, String name,
-            String fileName, int lineNumber, StaticScope staticScope) {
+            int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
         this.name = name;
-        this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
         this.threadPollInstrsCount = 0;
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nextVarIndex = new HashMap<>();
+        this.nextVarIndex = new HashMap<>(1);
         this.interpreterContext = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -190,16 +182,15 @@ public abstract class IRScope implements ParseResult {
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
         if (parentMaybeUsingRefinements()) flags.add(MAYBE_USING_REFINEMENTS);
 
-        this.localVars = new HashMap<>();
+        this.localVars = new HashMap<>(1);
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
-        this.argDesc = null;
     }
 
     private void setupLexicalContainment() {
         if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
-            lexicalChildren = new ArrayList<>();
+            lexicalChildren = new ArrayList<>(1);
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
     }
@@ -223,17 +214,17 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void addChildScope(IRScope scope) {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
         lexicalChildren.add(scope);
     }
 
     public List<IRScope> getLexicalScopes() {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
         return lexicalChildren;
     }
 
     public void addClosure(IRClosure closure) {
-        if (nestedClosures == null) nestedClosures = new ArrayList<>();
+        if (nestedClosures == null) nestedClosures = new ArrayList<>(1);
         nestedClosures.add(closure);
     }
 
@@ -351,7 +342,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getFileName() {
-        return fileName;
+        IRScope current = this;
+
+        for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
+
+        return current.getFileName();
     }
 
     public int getLineNumber() {
@@ -487,7 +482,7 @@ public abstract class IRScope implements ParseResult {
 
     public List<CompilerPass> getExecutedPasses() {
         // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
-        return fullInterpreterContext == null ? new ArrayList<CompilerPass>() : fullInterpreterContext.getExecutedPasses();
+        return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
 
     // SSS FIXME: We should configure different optimization levels
@@ -589,7 +584,7 @@ public abstract class IRScope implements ParseResult {
     // construct a new fullInterpreterContext.  Primary obstacles is JITFlags and linearization of BBs.
 
     public Map<BasicBlock, Label> buildJVMExceptionTable() {
-        Map<BasicBlock, Label> map = new HashMap<>();
+        Map<BasicBlock, Label> map = new HashMap<>(1);
 
         for (BasicBlock bb: fullInterpreterContext.getLinearizedBBList()) {
             BasicBlock rescueBB = getCFG().getRescuerBBFor(bb);
@@ -781,17 +776,6 @@ public abstract class IRScope implements ParseResult {
         return localVars.get(name);
     }
 
-    public ArgumentDescriptor[] getArgumentDescriptors() {
-        return argDesc;
-    }
-
-    /**
-     * Set upon completion of IRBuild of this IRMethod.
-     */
-    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
-        this.argDesc = argDesc;
-    }
-
     protected LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.get(name);
     }
@@ -931,8 +915,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<>();
-        usedLocalVars = new java.util.HashSet<>();
+        definedLocalVars = new HashSet<>(1);
+        usedLocalVars = new HashSet<>(1);
         for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {

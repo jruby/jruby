@@ -105,6 +105,13 @@ public interface NativeSockets {
 
     int getsockname(int socket, Pointer address, Pointer address_len);
 
+    /*
+     * int getsockopt(int sockfd, int level, int optname,
+     *                void *optval, socklen_t *optlen);
+     */
+    int getsockopt(int sockfd, int level, int optname, Pointer optval, Pointer optlen);
+
+
     /**
      * int connect(int sockfd, const struct sockaddr *addr,
      * socklen_t addrlen);

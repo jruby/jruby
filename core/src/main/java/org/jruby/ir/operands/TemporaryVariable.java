@@ -4,7 +4,12 @@ import org.jruby.ir.IRVisitor;
 
 public abstract class TemporaryVariable extends Variable {
     public TemporaryVariable() {
-        super(OperandType.TEMPORARY_VARIABLE);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.TEMPORARY_VARIABLE;
     }
 
     /**

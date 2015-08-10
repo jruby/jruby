@@ -9,6 +9,15 @@
  */
 package org.jruby.truffle.nodes.constants;
 
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -20,25 +29,18 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-
 /**
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
- * No {@link LexicalScope} is considered.
  */
-public abstract class LookupConstantNode extends AbstractLookupConstantNode {
+@NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+public abstract class LookupConstantNode extends RubyNode {
 
     public LookupConstantNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
+
+    public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
 
     @Specialization(guards = {
             "isRubyModule(module)",
@@ -91,7 +93,7 @@ public abstract class LookupConstantNode extends AbstractLookupConstantNode {
     }
 
     protected RubyConstant doLookup(RubyBasicObject module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+        return ModuleOperations.lookupConstant(getContext(), module, name);
     }
 
     protected boolean isVisible(RubyBasicObject module, RubyConstant constant) {

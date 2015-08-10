@@ -46,9 +46,11 @@ public class JavaEmbedUtilsTest {
     @Test
     public void testAddClassloaderToLoadPathOnTCCL() throws Exception {
         Thread.currentThread().setContextClassLoader( cl );
-        Ruby runtime = JavaEmbedUtils.initialize(EMPTY);
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setLoader(RubyInstanceConfig.class.getClassLoader());
         URL url = new File("src/test/resources/java_embed_utils").toURI().toURL();
-        JavaEmbedUtils.addLoadPath(runtime, new URLClassLoader(new URL[] { url }));
+        config.addLoader(new URLClassLoader(new URL[]{url}));
+        Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
         String result = runtime.evalScriptlet("require 'test_me'; $result").toString();
         assertEquals(result, "uri:" + url);
     }
@@ -57,9 +59,9 @@ public class JavaEmbedUtilsTest {
     public void testAddClassloaderToLoadPathOnNoneTCCL() throws Exception {
         RubyInstanceConfig config = new RubyInstanceConfig();
         config.setLoader(RubyInstanceConfig.class.getClassLoader());
-        Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
         URL url = new File("src/test/resources/java_embed_utils").toURI().toURL();
-        JavaEmbedUtils.addLoadPath(runtime, new URLClassLoader(new URL[] { url }));
+        config.addLoader(new URLClassLoader(new URL[]{url}));
+        Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
         String result = runtime.evalScriptlet("require 'test_me';$result").toString();
         assertEquals(result, "uri:" + url);
     }

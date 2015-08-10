@@ -9,7 +9,12 @@ import java.util.List;
 // for when the rescue block doesn't specify an exception object class
 public class StandardError extends Operand {
     public StandardError() {
-        super(OperandType.STANDARD_ERROR);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.STANDARD_ERROR;
     }
 
     @Override

@@ -37,8 +37,6 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-              :id => 'tb-rubygems-releases' )
   repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 

@@ -70,7 +70,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'polyglot.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.9',
+              'jruby.plugins.version' => '1.0.10',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
@@ -130,9 +130,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
-            'settingsFile' =>  '${basedir}/src/it/settings.xml',
-            'localRepositoryPath' =>  '${project.build.directory}/local-repo',
-            'properties' => { 'project.version' => '${project.version}' },
+            'properties' => { 'jruby.version' => '${project.version}',
+                              'jruby.plugins.version' => '${jruby.plugins.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
             'pomExcludes' => [ 'extended/pom.xml', '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',

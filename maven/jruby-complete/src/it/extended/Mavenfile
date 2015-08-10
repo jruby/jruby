@@ -1,8 +1,8 @@
 #-*- mode: ruby -*-
 
-properties( 'polyglot.dump.pom' => 'pom.xml',
-            'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.8',
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
+            'project.build.sourceEncoding' => 'utf-8',
             'jruby.home' => '${basedir}/../../../../..' )
 
 phase :package do

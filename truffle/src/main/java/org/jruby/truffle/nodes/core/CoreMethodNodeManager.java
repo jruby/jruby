@@ -80,7 +80,7 @@ public class CoreMethodNodeManager {
             module = objectClass;
 
             for (String moduleName : fullName.split("::")) {
-                final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
+                final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
 
                 if (constant == null) {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
@@ -140,8 +140,8 @@ public class CoreMethodNodeManager {
                 visibility = Visibility.PRIVATE;
             }
 
-            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, LexicalScope.NONE,
-                    false, Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
+            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
+                    Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
             ModuleNodes.getModel(module).addMethod(null, method.withVisibility(visibility).withName(name));
         }
@@ -157,7 +157,7 @@ public class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required, optional, method.rest());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, arity, methodDetails.getIndicativeName(), false, null, true);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 

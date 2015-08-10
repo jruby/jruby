@@ -251,6 +251,7 @@ public class LoadService {
             }
 
         } catch(SecurityException ignore) {}
+        addPaths(runtime.getInstanceConfig().getExtraLoadPaths());
     }
 
     /**

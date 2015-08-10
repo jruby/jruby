@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -73,6 +74,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -2820,6 +2822,46 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         return array;
+    }
+
+    /**
+     * This method is just a wrapper around the Ruby "==" method,
+     * provided so that RubyObjects can be used as keys in the Java
+     * HashMap object underlying RubyHash.
+     */
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+
+        if (other instanceof IRubyObject) {
+            IRubyObject equals = invokeChecked(getRuntime().getCurrentContext(), this, "==", (IRubyObject)other);
+            if (equals == null) return false;
+            return equals.isTrue();
+        }
+
+        return false;
+    }
+
+    /**
+     * Override the Object#hashCode method to make sure that the Ruby
+     * hash is actually used as the hashcode for Ruby objects. If the
+     * Ruby "hash" method doesn't return a number, the Object#hashCode
+     * implementation will be used instead.
+     */
+    @Override
+    public int hashCode() {
+        IRubyObject hashValue = invokeChecked(getRuntime().getCurrentContext(), this, "hash");
+        if (hashValue == null) return super.hashCode();
+        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
+        return nonFixnumHashCode(hashValue);
+    }
+
+    protected static int nonFixnumHashCode(IRubyObject hashValue) {
+        RubyInteger integer = hashValue.convertToInteger();
+        if (integer instanceof RubyBignum) {
+            return integer.getBigIntegerValue().intValue();
+        }
+        return (int) integer.getLongValue();
     }
 
     /**

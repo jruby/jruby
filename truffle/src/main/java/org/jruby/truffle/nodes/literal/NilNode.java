@@ -7,26 +7,32 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.constants;
+package org.jruby.truffle.nodes.literal;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 
-@NodeChildren({
-        @NodeChild(value = "module", type = RubyNode.class),
-        @NodeChild(value = "name", type = RubyNode.class) })
-public abstract class AbstractLookupConstantNode extends RubyNode {
+// For isDefined() and convenience
+@NodeInfo(cost = NodeCost.NONE)
+public class NilNode extends RubyNode {
 
-    public AbstractLookupConstantNode(RubyContext context, SourceSection sourceSection) {
+    public NilNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return nil();
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return createString("nil");
+    }
 
 }

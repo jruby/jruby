@@ -648,6 +648,10 @@ public class ArgumentProcessor {
         if (result != null) return scriptName;// use relative filename
                 result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
+        // since the current directory is also on the classpath we
+        // want to find it on filesystem first
+        result = resolve(config.getCurrentDirectory() + "/bin", scriptName);
+        if (result != null) return result;
         result = resolve("uri:classloader:/bin", scriptName);
         if (result != null) return result;
 
