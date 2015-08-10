@@ -185,6 +185,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
               <executable>java</executable>
               <arguments>
                 <argument>-classpath</argument>
@@ -198,7 +199,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>-S me - GH-3233</id>
+            <id>-S generate_dir_info bin</id>
             <phase>test</phase>
             <goals>
               <goal>exec</goal>
@@ -208,12 +209,11 @@
               <executable>java</executable>
               <arguments>
                 <argument>-classpath</argument>
-                <argument>.</argument>
-                <argument>-classpath</argument>
                 <classpath/>
                 <argument>org.jruby.Main</argument>
                 <argument>-S</argument>
-                <argument>me</argument>
+                <argument>generate_dir_info</argument>
+                <argument>bin</argument>
               </arguments>
             </configuration>
           </execution>
