@@ -197,6 +197,26 @@
               </arguments>
             </configuration>
           </execution>
+          <execution>
+            <id>-S me - GH-3233</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
+              <executable>java</executable>
+              <arguments>
+                <argument>-classpath</argument>
+                <argument>.</argument>
+                <argument>-classpath</argument>
+                <classpath/>
+                <argument>org.jruby.Main</argument>
+                <argument>-S</argument>
+                <argument>me</argument>
+              </arguments>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
