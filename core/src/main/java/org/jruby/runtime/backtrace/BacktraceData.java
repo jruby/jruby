@@ -171,8 +171,7 @@ public class BacktraceData implements Serializable {
             }
         }
 
-        RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
-        return trace.toArray(rubyStackTrace);
+        return trace.toArray(new RubyStackTraceElement[trace.size()]);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {
