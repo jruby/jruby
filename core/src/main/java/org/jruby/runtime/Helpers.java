@@ -152,7 +152,7 @@ public class Helpers {
         }
     }
 
-    // TODO: Only used by interface implementation; eliminate it
+    @Deprecated // no longer used - only been used by interface implementation
     public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
         ThreadContext context = receiver.getRuntime().getCurrentContext();
 

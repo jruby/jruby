@@ -14,8 +14,10 @@ import org.jruby.runtime.InterpretedIRBlockBody;
 
 public enum FrameType {
     METHOD, BLOCK, EVAL, CLASS, MODULE, METACLASS, ROOT;
-    public static final Set<String> INTERPRETED_CLASSES = new HashSet<String>();
-    public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>();
+    @Deprecated // no longer accessed directly
+    public static final Set<String> INTERPRETED_CLASSES = new HashSet<String>(4, 1);
+    @Deprecated // no longer accessed directly
+    public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>(8, 1);
 
     static {
         INTERPRETED_CLASSES.add(Interpreter.class.getName());
@@ -31,4 +33,14 @@ public enum FrameType {
         INTERPRETED_FRAMES.put("INTERPRET_BLOCK", FrameType.BLOCK);
         INTERPRETED_FRAMES.put("INTERPRET_ROOT", FrameType.ROOT);
     }
+
+    public static boolean isInterpreterFrame(final String className, final String methodName) {
+        return INTERPRETED_CLASSES.contains(className) &&
+               INTERPRETED_FRAMES.containsKey(methodName);
+    }
+
+    public static FrameType getInterpreterFrame(final String methodName) {
+        return INTERPRETED_FRAMES.get(methodName);
+    }
+
 }
