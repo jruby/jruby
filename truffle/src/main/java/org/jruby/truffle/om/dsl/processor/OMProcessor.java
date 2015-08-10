@@ -21,6 +21,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Set;
@@ -54,6 +56,14 @@ public class OMProcessor extends AbstractProcessor {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static void log(String file, String message) {
+        try (PrintStream stream = new PrintStream(new FileOutputStream(file, true))) {
+            stream.println(message);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
