@@ -144,9 +144,7 @@ public class BacktraceData implements Serializable {
             }
 
             // Interpreted frames
-            if ( rubyFrameIndex >= 0 &&
-                 FrameType.INTERPRETED_CLASSES.contains(className) &&
-                 FrameType.INTERPRETED_FRAMES.containsKey(methodName) ) {
+            if ( rubyFrameIndex >= 0 && FrameType.isInterpreterFrame(className, methodName) ) {
 
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
