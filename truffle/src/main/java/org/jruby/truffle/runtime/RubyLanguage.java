@@ -9,43 +9,42 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.debug.DebugSupportProvider;
 import com.oracle.truffle.api.instrument.ToolSupportProvider;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.Constants;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = "application/x-ruby")
-public class RubyLanguage extends TruffleLanguage {
+public class RubyLanguage extends TruffleLanguage<RubyContext> {
+    private RubyLanguage() {
+    }
 
-    private final RubyContext context;
+    public static final RubyLanguage INSTANCE = new RubyLanguage();
 
-    public RubyLanguage(Env env) {
-        super(env);
+    @Override
+    public RubyContext createContext(Env env) {
         Ruby r = Ruby.newInstance();
-        this.context = new RubyContext(r, env);
+        return new RubyContext(r, env);
     }
 
     @Override
-    protected Object eval(Source source) throws IOException {
-        try {
-            return context.eval(source);
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+    protected CallTarget parse(Source source, Node node, String... strings) throws IOException {
+        throw new IOException();
     }
 
     @Override
-    protected Object findExportedSymbol(String s, boolean b) {
+    protected Object findExportedSymbol(RubyContext context, String s, boolean b) {
         return context.findExportedObject(s);
     }
 
     @Override
-    protected Object getLanguageGlobal() {
+    protected Object getLanguageGlobal(RubyContext context) {
         return context.getCoreLibrary().getObjectClass();
     }
 
