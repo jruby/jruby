@@ -536,6 +536,8 @@ public class ParserSupport {
 
     private Node cond0(Node node) {
         checkAssignmentInCondition(node);
+
+        if (node == null) return new NilNode(lexer.getPosition());
         
         Node leftNode;
         Node rightNode;
