@@ -298,7 +298,8 @@ public abstract class BigDecimalNodes {
         public abstract DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf, int digits);
 
         public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
-            return executeInitialize(frame, value, ClassNodes.allocate((getBigDecimalClass()), this));
+            DynamicObject rubyClass = (getBigDecimalClass());
+            return executeInitialize(frame, value, ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this));
         }
 
         public final DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf) {

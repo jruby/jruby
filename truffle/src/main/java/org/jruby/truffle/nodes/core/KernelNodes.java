@@ -55,7 +55,6 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -380,17 +379,21 @@ public abstract class KernelNodes {
 
     public abstract static class CopyNode extends UnaryCoreMethodNode {
 
+        @Child private ClassNodes.AllocateNode allocateNode;
+
         public CopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
         public abstract DynamicObject executeCopy(VirtualFrame frame, DynamicObject self);
 
         @Specialization
-        public DynamicObject copy(DynamicObject self) {
+        public DynamicObject copy(VirtualFrame frame, DynamicObject self) {
             // This method is pretty crappy for compilation - it should improve with the OM
 
-            final DynamicObject newObject = ClassNodes.allocate(BasicObjectNodes.getLogicalClass(self), this);
+            DynamicObject rubyClass = BasicObjectNodes.getLogicalClass(self);
+            final DynamicObject newObject = allocateNode.executeAllocate(frame, rubyClass);
 
             BasicObjectNodes.setInstanceVariables(newObject, BasicObjectNodes.getInstanceVariables(self));
 

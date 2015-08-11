@@ -118,10 +118,6 @@ public abstract class ClassNodes {
         return ModuleNodes.getModel(createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
     }
 
-    public static DynamicObject allocate(DynamicObject rubyClass, Node currentNode) {
-        return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, currentNode);
-    }
-
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name, Allocator allocator) {
         final DynamicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
@@ -179,7 +175,7 @@ public abstract class ClassNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
             }
-            return ClassNodes.allocate(rubyClass, this);
+            return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
         }
 
     }
