@@ -50,9 +50,9 @@ public class RubyModuleModel implements ModuleChain {
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
 
-    protected final ModuleChain start;
+    public final ModuleChain start;
     @CompilerDirectives.CompilationFinal
-    protected ModuleChain parentModule;
+    public ModuleChain parentModule;
 
     public final RubyBasicObject lexicalParent;
     public final String givenBaseName;
@@ -639,24 +639,13 @@ public class RubyModuleModel implements ModuleChain {
     public void initialize(RubyBasicObject superclass) {
         assert isClass();
         assert RubyGuards.isRubyClass(superclass);
-        unsafeSetSuperclass(superclass);
-        ensureSingletonConsistency();
-        ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
-    }
 
-    /**
-     * This method supports initialization and solves boot-order problems and should not normally be
-     * used.
-     */
-    public void unsafeSetSuperclass(RubyBasicObject superClass) {
-        assert RubyGuards.isRubyClass(superClass);
-        assert isClass();
-        //assert parentModule == null;
-
-        parentModule = ModuleNodes.getModel(superClass).start;
-        ModuleNodes.getModel(superClass).addDependent(rubyModuleObject);
+        parentModule = ModuleNodes.getModel(superclass).start;
+        ModuleNodes.getModel(superclass).addDependent(rubyModuleObject);
 
         newVersion();
+        ensureSingletonConsistency();
+        ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
     }
 
     public RubyBasicObject ensureSingletonConsistency() {

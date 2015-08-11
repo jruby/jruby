@@ -101,7 +101,13 @@ public abstract class ClassNodes {
         ModuleNodes.getModel(rubyClass).allocator = allocator;
 
         if (superclass != null) {
-            ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);
+            assert RubyGuards.isRubyClass(superclass);
+            assert ModuleNodes.getModel(rubyClass).isClass();
+
+            ModuleNodes.getModel(rubyClass).parentModule = ModuleNodes.getModel(superclass).start;
+            ModuleNodes.getModel(superclass).addDependent(ModuleNodes.getModel(rubyClass).rubyModuleObject);
+
+            ModuleNodes.getModel(rubyClass).newVersion();
         }
 
         return rubyClass;
@@ -145,7 +151,13 @@ public abstract class ClassNodes {
         ModuleNodes.getModel(rubyClass).allocator = allocator;
 
         if (superclass != null) {
-            ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);
+            assert RubyGuards.isRubyClass(superclass);
+            assert ModuleNodes.getModel(rubyClass).isClass();
+
+            ModuleNodes.getModel(rubyClass).parentModule = ModuleNodes.getModel(superclass).start;
+            ModuleNodes.getModel(superclass).addDependent(ModuleNodes.getModel(rubyClass).rubyModuleObject);
+
+            ModuleNodes.getModel(rubyClass).newVersion();
         }
 
         DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();

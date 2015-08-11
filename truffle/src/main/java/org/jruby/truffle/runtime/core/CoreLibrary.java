@@ -221,7 +221,9 @@ public class CoreLibrary {
         ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
 
         // Close the cycles
-        ModuleNodes.getModel(classClass).unsafeSetSuperclass(moduleClass);
+        ModuleNodes.getModel(classClass).parentModule = ModuleNodes.getModel(moduleClass).start;
+        ModuleNodes.getModel(moduleClass).addDependent(ModuleNodes.getModel(classClass).rubyModuleObject);
+        ModuleNodes.getModel(classClass).newVersion();
 
         ModuleNodes.getModel(classClass).getAdoptedByLexicalParent(objectClass, "Class", node);
         ModuleNodes.getModel(basicObjectClass).getAdoptedByLexicalParent(objectClass, "BasicObject", node);
