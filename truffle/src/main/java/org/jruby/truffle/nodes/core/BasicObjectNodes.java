@@ -36,6 +36,7 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.RubyObjectType;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -51,7 +52,7 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
-    @org.jruby.truffle.om.dsl.api.Layout
+    @org.jruby.truffle.om.dsl.api.Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
     public interface BasicObjectLayout {
 
         DynamicObjectFactory createBasicObjectShape(@Nullable RubyBasicObject logicalClass, @Nullable RubyBasicObject metaClass);

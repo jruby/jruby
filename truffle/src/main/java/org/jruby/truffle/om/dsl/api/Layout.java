@@ -10,6 +10,7 @@
 package org.jruby.truffle.om.dsl.api;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.processor.OMProcessor;
 
 import java.lang.annotation.ElementType;
@@ -150,6 +151,15 @@ import java.lang.annotation.Target;
  * objects to be created with modified shape properties, and is much more efficient than
  * using the instance setter after creating the object.
  *
+ * <p><strong>Object Type Superclass</strong></p>
+ *
+ * By default the superclass of the generated object type is {@link ObjectType}. You can
+ * change this, perhaps to override methods in it, using the {@link #objectTypeSuperclass}
+ * property. This can't be used if you are inheriting another layout, as the DSL needs to
+ * inherit the object type of the inherited shape.
+ *
+ * The class used should have empty constructor that is protected or more visible.
+ *
  * <p><strong>Processing</strong></p>
  *
  * {@link Layout} annotations are processed by {@link OMProcessor}.
@@ -157,4 +167,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
 public @interface Layout {
+
+    String objectTypeSuperclass() default "ObjectType";
+
 }

@@ -11,6 +11,8 @@ package org.jruby.truffle.om.dsl.processor.layout;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.processor.OMProcessor;
 import org.jruby.truffle.om.dsl.processor.layout.model.*;
@@ -25,6 +27,7 @@ import java.util.Map;
 
 public class LayoutParser {
 
+    private String objectTypeSuperclass;
     private LayoutModel superLayout;
     private String name;
     private String packageName;
@@ -41,6 +44,8 @@ public class LayoutParser {
         }
 
         parseName(layoutElement);
+
+        objectTypeSuperclass = layoutElement.getAnnotation(Layout.class).objectTypeSuperclass();
 
         for (Element element : layoutElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.FIELD) {
@@ -282,7 +287,7 @@ public class LayoutParser {
             }
         }
 
-        return new LayoutModel(superLayout, name, packageName, hasObjectGuard, hasDynamicObjectGuard,
+        return new LayoutModel(objectTypeSuperclass, superLayout, name, packageName, hasObjectGuard, hasDynamicObjectGuard,
                 buildProperties(), interfaceFullName, hasShapeProperties);
     }
 

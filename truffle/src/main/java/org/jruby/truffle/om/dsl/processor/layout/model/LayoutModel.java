@@ -16,6 +16,7 @@ import java.util.List;
 
 public class LayoutModel {
 
+    private final String objectTypeSuperclass;
     private final LayoutModel superLayout;
     private final String name;
     private final String packageName;
@@ -25,15 +26,17 @@ public class LayoutModel {
     private final List<PropertyModel> properties;
     private final boolean hasShapeProperties;
 
-    public LayoutModel(LayoutModel superLayout, String name, String packageName,
+    public LayoutModel(String objectTypeSuperclass, LayoutModel superLayout, String name, String packageName,
                        boolean hasObjectGuard, boolean hasDynamicObjectGuard,
                        Collection<PropertyModel> properties, String interfaceFullName,
                        boolean hasShapeProperties) {
+        assert objectTypeSuperclass != null;
         assert name != null;
         assert packageName != null;
         assert interfaceFullName != null;
         assert properties != null;
 
+        this.objectTypeSuperclass = objectTypeSuperclass;
         this.superLayout = superLayout;
         this.name = name;
         this.packageName = packageName;
@@ -42,6 +45,10 @@ public class LayoutModel {
         this.hasDynamicObjectGuard = hasDynamicObjectGuard;
         this.properties = Collections.unmodifiableList(new ArrayList<>(properties));
         this.hasShapeProperties = hasShapeProperties;
+    }
+
+    public String getObjectTypeSuperclass() {
+        return objectTypeSuperclass;
     }
 
     public LayoutModel getSuperLayout() {
