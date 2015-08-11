@@ -38,8 +38,4 @@ public class PrependMarker implements ModuleChain {
         parentModule = new IncludedModule(module, parentModule);
     }
 
-    @Override
-    public DynamicObjectFactory getFactory() {
-        return parentModule.getFactory();
-    }
 }

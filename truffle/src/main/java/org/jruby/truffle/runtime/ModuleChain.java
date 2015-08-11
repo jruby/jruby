@@ -17,12 +17,11 @@ import com.oracle.truffle.api.object.DynamicObject;
  * Private interface, do not use outside RubyModule.
  */
 public interface ModuleChain {
+
     ModuleChain getParentModule();
 
     DynamicObject getActualModule();
 
     void insertAfter(DynamicObject module);
-
-    DynamicObjectFactory getFactory();
 
 }

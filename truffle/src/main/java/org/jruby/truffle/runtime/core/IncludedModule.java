@@ -50,14 +50,4 @@ public class IncludedModule implements ModuleChain {
         parentModule = new IncludedModule(module, parentModule);
     }
 
-    @Override
-    public DynamicObjectFactory getFactory() {
-        final DynamicObjectFactory includedFactory = ModuleNodes.getModel(includedModule).getFactory();
-
-        if (includedFactory != null) {
-            return includedFactory;
-        }
-
-        return parentModule.getFactory();
-    }
 }

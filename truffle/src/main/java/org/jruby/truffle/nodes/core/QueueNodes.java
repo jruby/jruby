@@ -56,7 +56,7 @@ public abstract class QueueNodes {
     public static class QueueAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).getFactory(), new LinkedBlockingQueue());
+            return QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).factory, new LinkedBlockingQueue());
         }
     }
 

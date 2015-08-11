@@ -102,7 +102,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).getFactory(), context.getCoreLibrary().getNilObject(), 0, 0, 0);
+            return IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).factory, context.getCoreLibrary().getNilObject(), 0, 0, 0);
         }
     }
 
@@ -131,7 +131,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
             final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
-            return IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).getFactory(), buffer, 0, 0, 0);
+            return IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).factory, buffer, 0, 0, 0);
         }
 
     }

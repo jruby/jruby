@@ -58,8 +58,8 @@ public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(DynamicObject rubyClass, ThreadManager manager) {
         final DynamicObject objectClass = BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass();
-        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, ModuleNodes.getModel(objectClass).getFactory().newInstance());
-        final DynamicObject object = THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).getFactory(), fields);
+        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, ModuleNodes.getModel(objectClass).factory.newInstance());
+        final DynamicObject object = THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).factory, fields);
         fields.fiberManager = new FiberManager(object, manager);
         return object;
     }

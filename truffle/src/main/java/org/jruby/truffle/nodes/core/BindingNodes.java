@@ -69,7 +69,7 @@ public abstract class BindingNodes {
     }
 
     public static DynamicObject createRubyBinding(DynamicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).getFactory(), self, frame);
+        return BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).factory, self, frame);
     }
 
     public static void setSelfAndFrame(DynamicObject binding, Object self, MaterializedFrame frame) {

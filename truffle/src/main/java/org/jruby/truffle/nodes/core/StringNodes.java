@@ -281,7 +281,7 @@ public abstract class StringNodes {
 
     public static DynamicObject createString(DynamicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).getFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+        return STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).factory, bytes, StringSupport.CR_UNKNOWN, null);
     }
 
     @CoreMethod(names = "+", required = 1)

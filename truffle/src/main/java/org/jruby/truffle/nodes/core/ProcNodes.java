@@ -203,7 +203,7 @@ public abstract class ProcNodes {
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, DynamicObject block) {
-        final DynamicObject proc = PROC_LAYOUT.createProc(ModuleNodes.getModel(procClass).getFactory(), type, null, null, null, null, null, null, null, null);
+        final DynamicObject proc = PROC_LAYOUT.createProc(ModuleNodes.getModel(procClass).factory, type, null, null, null, null, null, null, null, null);
         ProcNodes.initialize(proc, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
         return proc;

@@ -360,7 +360,7 @@ public abstract class ArrayNodes {
     }
 
     public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
-        return ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).getFactory(), store, size);
+        return ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).factory, store, size);
     }
 
     @CoreMethod(names = "+", required = 1)

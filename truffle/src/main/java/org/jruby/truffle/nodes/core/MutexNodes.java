@@ -46,7 +46,7 @@ public abstract class MutexNodes {
     public static class MutexAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return MUTEX_LAYOUT.createMutex(ModuleNodes.getModel(rubyClass).getFactory(), new ReentrantLock());
+            return MUTEX_LAYOUT.createMutex(ModuleNodes.getModel(rubyClass).factory, new ReentrantLock());
         }
     }
 

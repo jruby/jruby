@@ -27,7 +27,7 @@ public abstract class ChannelPrimitiveNodes {
         @Specialization
         public DynamicObject channelNew() {
             final DynamicObject channelClass = getContext().getCoreLibrary().getRubiniusChannelClass();
-            return ModuleNodes.getModel(channelClass).getFactory().newInstance();
+            return ModuleNodes.getModel(channelClass).factory.newInstance();
         }
 
     }

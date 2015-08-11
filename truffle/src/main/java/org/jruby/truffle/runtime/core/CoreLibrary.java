@@ -424,12 +424,12 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = ModuleNodes.getModel(objectClass).getFactory().newInstance();
-        nilObject = ModuleNodes.getModel(nilClass).getFactory().newInstance();
+        mainObject = ModuleNodes.getModel(objectClass).factory.newInstance();
+        nilObject = ModuleNodes.getModel(nilClass).factory.newInstance();
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = ModuleNodes.getModel(objectClass).getFactory().newInstance();
+        rubiniusUndefined = ModuleNodes.getModel(objectClass).factory.newInstance();
 
-        globalVariablesObject = ModuleNodes.getModel(objectClass).getFactory().newInstance();
+        globalVariablesObject = ModuleNodes.getModel(objectClass).factory.newInstance();
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);

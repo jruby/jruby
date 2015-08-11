@@ -51,7 +51,7 @@ public abstract class UnboundMethodNodes {
     public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 
     public static DynamicObject createUnboundMethod(DynamicObject rubyClass, DynamicObject origin, InternalMethod method) {
-        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).getFactory(), origin, method);
+        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).factory, origin, method);
     }
 
     public static DynamicObject getOrigin(DynamicObject method) {

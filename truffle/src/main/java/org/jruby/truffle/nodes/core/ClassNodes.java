@@ -82,7 +82,7 @@ public abstract class ClassNodes {
         assert superclass == null || RubyGuards.isRubyClass(superclass);
         final RubyModuleModel model = new RubyModuleModel(BasicObjectNodes.getContext(classClass), null, name, false, null, allocator, null);
 
-        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model);
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).factory, model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -132,7 +132,7 @@ public abstract class ClassNodes {
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached, Allocator allocator) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached, allocator, null);
 
-        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model);
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).factory, model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -156,7 +156,7 @@ public abstract class ClassNodes {
             ModuleNodes.getModel(rubyClass).newVersion();
         }
 
-        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
+        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).factory;
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
         ModuleNodes.getModel(rubyClass).factory = factory;

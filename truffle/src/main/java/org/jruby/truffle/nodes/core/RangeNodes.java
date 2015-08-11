@@ -542,7 +542,7 @@ public abstract class RangeNodes {
 
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).getFactory(), false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject());
+            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).factory, false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject());
         }
 
     }

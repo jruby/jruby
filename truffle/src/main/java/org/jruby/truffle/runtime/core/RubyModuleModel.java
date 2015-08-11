@@ -649,7 +649,7 @@ public class RubyModuleModel implements ModuleChain {
 
         ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
 
-        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
+        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).factory;
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyModuleObject);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyModuleObject);
         ModuleNodes.getModel(rubyModuleObject).factory = factory;
@@ -713,18 +713,4 @@ public class RubyModuleModel implements ModuleChain {
         return null;
     }
 
-    @Override
-    public DynamicObjectFactory getFactory() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (factory == null) {
-            if (parentModule == null) {
-                return null;
-            }
-
-            return parentModule.getFactory();
-        }
-
-        return factory;
-    }
 }

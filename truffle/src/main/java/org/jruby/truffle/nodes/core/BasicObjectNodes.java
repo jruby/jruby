@@ -30,7 +30,6 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -454,7 +453,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return ModuleNodes.getModel(rubyClass).getFactory().newInstance();
+            return ModuleNodes.getModel(rubyClass).factory.newInstance();
         }
 
     }

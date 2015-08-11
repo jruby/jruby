@@ -63,7 +63,7 @@ public abstract class SizedQueueNodes {
     public static class SizedQueueAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).getFactory(), null);
+            return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).factory, null);
         }
     }
 
