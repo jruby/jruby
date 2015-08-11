@@ -388,17 +388,33 @@ public class LayoutGenerator {
         stream.println("    }");
         stream.println("    ");
 
+        if (layout.hasObjectTypeGuard()) {
+            stream.println("    @Override");
+            stream.print("    public");
+        } else {
+            stream.print("    private");
+        }
+
+        stream.printf(" boolean is%s(ObjectType objectType) {\n", layout.getName());
+        stream.printf("        return objectType instanceof %sType;\n", layout.getName());
+        stream.println("    }");
+        stream.println("    ");
+
         stream.printf("    private boolean creates%s(DynamicObjectFactory factory) {\n", layout.getName());
         stream.printf("        return is%s(factory.getShape().getObjectType());\n", layout.getName());
         stream.println("    }");
         stream.println("    ");
 
-        stream.printf("    private boolean is%s(ObjectType objectType) {\n", layout.getName());
-        stream.printf("        return objectType instanceof %sType;\n", layout.getName());
-        stream.println("    }");
-        stream.println("    ");
-
         for (PropertyModel property : layout.getProperties()) {
+            if (property.hasObjectTypeGetter()) {
+                stream.println("    @Override");
+                stream.printf("    public %s %s(ObjectType objectType) {\n", property.getType(), NameUtils.asGetter(property.getName()));
+                stream.printf("        assert is%s(objectType);\n", layout.getName());
+                stream.printf("        return ((%sType) objectType).%s();\n", layout.getName(), NameUtils.asGetter(property.getName()));
+                stream.println("    }");
+                stream.println("    ");
+            }
+
             if (property.hasFactoryGetter()) {
                 stream.println("    @Override");
                 stream.printf("    public %s %s(DynamicObjectFactory factory) {\n", property.getType(), NameUtils.asGetter(property.getName()));

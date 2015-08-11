@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -69,6 +70,8 @@ public abstract class HashNodes {
                 @Nullable Entry firstInSequence,
                 @Nullable Entry lastInSequence,
                 @Nullable boolean compareByIdentity);
+
+        boolean isHash(ObjectType objectType);
 
         boolean isHash(DynamicObject object);
 

@@ -32,6 +32,7 @@ public class LayoutParser {
     private String name;
     private String packageName;
     private String interfaceFullName;
+    private boolean hasObjectTypeGuard;
     private boolean hasObjectGuard;
     private boolean hasDynamicObjectGuard;
     private boolean hasShapeProperties;
@@ -179,6 +180,9 @@ public class LayoutParser {
         if (type.equals(DynamicObject.class.getName())) {
             assert !hasDynamicObjectGuard;
             hasDynamicObjectGuard = true;
+        } else if (type.equals(ObjectType.class.getName())) {
+            assert !hasObjectTypeGuard;
+            hasObjectTypeGuard = true;
         } else if (type.equals(Object.class.getName())) {
             assert !hasObjectGuard;
             hasObjectGuard = true;
@@ -190,9 +194,14 @@ public class LayoutParser {
         assert methodElement.getParameters().size() == 1;
 
         final boolean isFactoryGetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
+        final boolean isObjectTypeGetter = methodElement.getParameters().get(0).asType().toString().equals(ObjectType.class.getName());
+
+        assert !(isFactoryGetter & isObjectTypeGetter);
 
         if (isFactoryGetter) {
             assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
+        } else if (isObjectTypeGetter) {
+            assert methodElement.getParameters().get(0).getSimpleName().toString().equals("objectType");
         } else {
             assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
             assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
@@ -203,6 +212,8 @@ public class LayoutParser {
 
         if (isFactoryGetter) {
             property.setHasFactoryGetter(true);
+        } else if (isObjectTypeGetter) {
+            property.setHasObjectTypeGetter(true);
         } else {
             property.setHasGetter(true);
         }
@@ -287,7 +298,7 @@ public class LayoutParser {
             }
         }
 
-        return new LayoutModel(objectTypeSuperclass, superLayout, name, packageName, hasObjectGuard, hasDynamicObjectGuard,
+        return new LayoutModel(objectTypeSuperclass, superLayout, name, packageName, hasObjectTypeGuard, hasObjectGuard, hasDynamicObjectGuard,
                 buildProperties(), interfaceFullName, hasShapeProperties);
     }
 

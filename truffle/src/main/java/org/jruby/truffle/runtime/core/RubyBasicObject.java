@@ -29,12 +29,12 @@ public class RubyBasicObject implements TruffleObject {
 
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
-        return BasicObjectNodes.getForeignAccessFactory(this);
+        return dynamicObject.getForeignAccessFactory();
     }
 
     @Override
     public String toString() {
-        return BasicObjectNodes.toString(this);
+        return dynamicObject.toString();
     }
 
 }

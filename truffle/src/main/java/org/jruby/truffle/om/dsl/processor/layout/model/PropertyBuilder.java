@@ -14,6 +14,7 @@ import javax.lang.model.type.TypeMirror;
 public class PropertyBuilder {
 
     private final String name;
+    private boolean hasObjectTypeGetter;
     private boolean hasFactoryGetter;
     private boolean hasFactorySetter;
     private boolean hasGetter;
@@ -34,9 +35,13 @@ public class PropertyBuilder {
     public PropertyModel build() {
         assert type != null;
 
-        return new PropertyModel(name, hasFactoryGetter, hasFactorySetter,
+        return new PropertyModel(name, hasObjectTypeGetter, hasFactoryGetter, hasFactorySetter,
                 hasGetter, hasSetter, type,
                 nullable == NullableState.NULLABLE, hasIdentifier, isShapeProperty);
+    }
+
+    public void setHasObjectTypeGetter(boolean hasObjectTypeGetter) {
+        this.hasObjectTypeGetter = hasObjectTypeGetter;
     }
 
     public void setHasFactoryGetter(boolean hasFactoryGetter) {

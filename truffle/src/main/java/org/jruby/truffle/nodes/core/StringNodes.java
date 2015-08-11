@@ -31,6 +31,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -87,6 +88,8 @@ public abstract class StringNodes {
         DynamicObjectFactory createStringShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
 
         DynamicObject createString(DynamicObjectFactory factory, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+
+        boolean isString(ObjectType objectType);
 
         boolean isString(DynamicObject dynamicObject);
 

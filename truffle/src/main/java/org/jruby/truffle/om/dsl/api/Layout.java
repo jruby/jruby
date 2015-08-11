@@ -55,6 +55,7 @@ import java.lang.annotation.Target;
  * <pre>
  * boolean isRect(DynamicObject object);
  * boolean isRect(Object object);
+ * boolean isRect(ObjectType objectType);
  * </pre>
  *
  * To access the implementation of the interface, use the {@code INSTANCE}
@@ -150,6 +151,8 @@ import java.lang.annotation.Target;
  * {@code createFooShape} returns, with the setter reutrning a new factory. This allows
  * objects to be created with modified shape properties, and is much more efficient than
  * using the instance setter after creating the object.
+ *
+ * Finally, the getters can be used against an {@code ObjectType}.
  *
  * <p><strong>Object Type Superclass</strong></p>
  *

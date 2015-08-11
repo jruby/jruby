@@ -21,13 +21,14 @@ public class LayoutModel {
     private final String name;
     private final String packageName;
     private final String interfaceFullName;
+    private final boolean hasObjectTypeGuard;
     private final boolean hasObjectGuard;
     private final boolean hasDynamicObjectGuard;
     private final List<PropertyModel> properties;
     private final boolean hasShapeProperties;
 
     public LayoutModel(String objectTypeSuperclass, LayoutModel superLayout, String name, String packageName,
-                       boolean hasObjectGuard, boolean hasDynamicObjectGuard,
+                       boolean hasObjectTypeGuard, boolean hasObjectGuard, boolean hasDynamicObjectGuard,
                        Collection<PropertyModel> properties, String interfaceFullName,
                        boolean hasShapeProperties) {
         assert objectTypeSuperclass != null;
@@ -41,6 +42,7 @@ public class LayoutModel {
         this.name = name;
         this.packageName = packageName;
         this.interfaceFullName = interfaceFullName;
+        this.hasObjectTypeGuard = hasObjectTypeGuard;
         this.hasObjectGuard = hasObjectGuard;
         this.hasDynamicObjectGuard = hasDynamicObjectGuard;
         this.properties = Collections.unmodifiableList(new ArrayList<>(properties));
@@ -163,4 +165,7 @@ public class LayoutModel {
         return !getAllNonShapeProperties().isEmpty();
     }
 
+    public boolean hasObjectTypeGuard() {
+        return hasObjectTypeGuard;
+    }
 }

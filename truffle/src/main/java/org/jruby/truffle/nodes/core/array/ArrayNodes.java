@@ -21,6 +21,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
@@ -76,6 +77,8 @@ public abstract class ArrayNodes {
         DynamicObjectFactory createArrayShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
 
         DynamicObject createArray(DynamicObjectFactory factory, @Nullable Object store, int size);
+
+        boolean isArray(ObjectType objectType);
 
         boolean isArray(DynamicObject object);
 

@@ -63,6 +63,9 @@ public abstract class BasicObjectNodes {
         DynamicObjectFactory setLogicalClass(DynamicObjectFactory factory, RubyBasicObject value);
 
         @Nullable
+        RubyBasicObject getLogicalClass(ObjectType objectType);
+
+        @Nullable
         RubyBasicObject getLogicalClass(DynamicObject object);
 
         @Nullable
@@ -244,35 +247,6 @@ public abstract class BasicObjectNodes {
 
     public static DynamicObject getDynamicObject(RubyBasicObject rubyBasicObject) {
         return rubyBasicObject.dynamicObject;
-    }
-
-    public static ForeignAccessFactory getForeignAccessFactory(RubyBasicObject object) {
-        if (RubyGuards.isRubyArray(object)) {
-            return new ArrayForeignAccessFactory(getContext(object));
-        } else if (RubyGuards.isRubyHash(object)) {
-            return new HashForeignAccessFactory(getContext(object));
-        } else if (RubyGuards.isRubyString(object)) {
-            return new StringForeignAccessFactory(getContext(object));
-        } else {
-            return new BasicForeignAccessFactory(getContext(object));
-        }
-    }
-
-    public static String toString(RubyBasicObject object) {
-        CompilerAsserts.neverPartOfCompilation("RubyBasicObject#toString should only be used for debugging");
-
-        if (RubyGuards.isRubyString(object)) {
-            return Helpers.decodeByteList(getContext(object).getRuntime(), StringNodes.getByteList(object));
-        } else if (RubyGuards.isRubySymbol(object)) {
-            return SymbolNodes.getString(object);
-        } else if (RubyGuards.isRubyException(object)) {
-            return ExceptionNodes.getMessage(object) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(getContext(object), object, ExceptionNodes.getBacktrace(object)));
-        } else if (RubyGuards.isRubyModule(object)) {
-            return ModuleNodes.getModel(object).toString();
-        } else {
-            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getModel(getLogicalClass(object)).getName());
-        }
     }
 
     public static RubyBasicObject createRubyBasicObject(RubyBasicObject rubyClass, DynamicObject dynamicObject) {
