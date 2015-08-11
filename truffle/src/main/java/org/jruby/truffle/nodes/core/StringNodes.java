@@ -284,6 +284,20 @@ public abstract class StringNodes {
         return STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).factory, bytes, StringSupport.CR_UNKNOWN, null);
     }
 
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return STRING_LAYOUT.createString(ModuleNodes.getModel(rubyClass).factory, new ByteList(), StringSupport.CR_UNKNOWN, null);
+        }
+
+    }
+
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "string"),

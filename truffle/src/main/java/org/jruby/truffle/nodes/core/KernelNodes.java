@@ -379,24 +379,20 @@ public abstract class KernelNodes {
 
     public abstract static class CopyNode extends UnaryCoreMethodNode {
 
-        @Child private ClassNodes.AllocateNode allocateNode;
+        @Child private CallDispatchHeadNode allocateNode;
 
         public CopyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateNode = ClassNodesFactory.AllocateNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            allocateNode = DispatchHeadNodeFactory.createMethodCall(context, true);
         }
 
         public abstract DynamicObject executeCopy(VirtualFrame frame, DynamicObject self);
 
         @Specialization
         public DynamicObject copy(VirtualFrame frame, DynamicObject self) {
-            // This method is pretty crappy for compilation - it should improve with the OM
-
-            DynamicObject rubyClass = BasicObjectNodes.getLogicalClass(self);
-            final DynamicObject newObject = allocateNode.executeAllocate(frame, rubyClass);
-
+            final DynamicObject rubyClass = BasicObjectNodes.getLogicalClass(self);
+            final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null);
             BasicObjectNodes.setInstanceVariables(newObject, BasicObjectNodes.getInstanceVariables(self));
-
             return newObject;
         }
 
