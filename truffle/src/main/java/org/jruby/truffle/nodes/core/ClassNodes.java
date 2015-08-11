@@ -177,25 +177,13 @@ public abstract class ClassNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
         }
 
-        @Specialization(guards = "isArrayClass(rubyClass)")
-        public DynamicObject allocateArray(DynamicObject rubyClass) {
-            return ArrayNodes.createEmptyArray(rubyClass);
-        }
-
-        @Specialization(guards = {
-                "!isSingleton(rubyClass)",
-                "!isArrayClass(rubyClass)"
-        })
+        @Specialization(guards = "!isSingleton(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
         }
 
         protected boolean isSingleton(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).isSingleton();
-        }
-
-        protected boolean isArrayClass(DynamicObject rubyClass) {
-            return ArrayNodes.ARRAY_LAYOUT.isArray(ModuleNodes.getModel(rubyClass).factory.getShape().getObjectType());
         }
 
     }

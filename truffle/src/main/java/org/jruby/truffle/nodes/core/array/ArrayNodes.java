@@ -363,6 +363,20 @@ public abstract class ArrayNodes {
         return ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).factory, store, size);
     }
 
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return ArrayNodes.createEmptyArray(rubyClass);
+        }
+
+    }
+
     @CoreMethod(names = "+", required = 1)
     @NodeChildren({
         @NodeChild(type = RubyNode.class, value = "a"),
