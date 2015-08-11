@@ -41,7 +41,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
@@ -235,65 +234,65 @@ public abstract class HashNodes {
     }
 
     public static DynamicObject getDefaultBlock(DynamicObject hash) {
-        return HASH_LAYOUT.getDefaultBlock(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getDefaultBlock(hash);
     }
 
     public static void setDefaultBlock(DynamicObject hash, DynamicObject defaultBlock) {
-        HASH_LAYOUT.setDefaultBlock(BasicObjectNodes.getDynamicObject(hash), defaultBlock);
+        HASH_LAYOUT.setDefaultBlock(hash, defaultBlock);
     }
 
     public static Object getDefaultValue(DynamicObject hash) {
-        return HASH_LAYOUT.getDefaultValue(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getDefaultValue(hash);
     }
 
     public static void setDefaultValue(DynamicObject hash, Object defaultValue) {
-        HASH_LAYOUT.setDefaultValue(BasicObjectNodes.getDynamicObject(hash), defaultValue);
+        HASH_LAYOUT.setDefaultValue(hash, defaultValue);
     }
 
     public static boolean isCompareByIdentity(DynamicObject hash) {
-        return HASH_LAYOUT.getCompareByIdentity(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getCompareByIdentity(hash);
     }
 
     public static void setCompareByIdentity(DynamicObject hash, boolean compareByIdentity) {
-        HASH_LAYOUT.setCompareByIdentity(BasicObjectNodes.getDynamicObject(hash), compareByIdentity);
+        HASH_LAYOUT.setCompareByIdentity(hash, compareByIdentity);
     }
 
     public static Object getStore(DynamicObject hash) {
-        return HASH_LAYOUT.getStore(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getStore(hash);
     }
 
     public static void setStore(DynamicObject hash, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         assert RubyGuards.isRubyHash(hash);
         assert verifyStore(store, size, firstInSequence, lastInSequence);
-        HASH_LAYOUT.setStore(BasicObjectNodes.getDynamicObject(hash), store);
-        HASH_LAYOUT.setSize(BasicObjectNodes.getDynamicObject(hash), size);
-        HASH_LAYOUT.setFirstInSequence(BasicObjectNodes.getDynamicObject(hash), firstInSequence);
-        HASH_LAYOUT.setLastInSequence(BasicObjectNodes.getDynamicObject(hash), lastInSequence);
+        HASH_LAYOUT.setStore(hash, store);
+        HASH_LAYOUT.setSize(hash, size);
+        HASH_LAYOUT.setFirstInSequence(hash, firstInSequence);
+        HASH_LAYOUT.setLastInSequence(hash, lastInSequence);
 
     }
 
     public static int getSize(DynamicObject hash) {
-        return HASH_LAYOUT.getSize(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getSize(hash);
     }
 
     public static void setSize(DynamicObject hash, int storeSize) {
-        HASH_LAYOUT.setSize(BasicObjectNodes.getDynamicObject(hash), storeSize);
+        HASH_LAYOUT.setSize(hash, storeSize);
     }
 
     public static Entry getFirstInSequence(DynamicObject hash) {
-        return HASH_LAYOUT.getFirstInSequence(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getFirstInSequence(hash);
     }
 
     public static void setFirstInSequence(DynamicObject hash, Entry firstInSequence) {
-        HASH_LAYOUT.setFirstInSequence(BasicObjectNodes.getDynamicObject(hash), firstInSequence);
+        HASH_LAYOUT.setFirstInSequence(hash, firstInSequence);
     }
 
     public static Entry getLastInSequence(DynamicObject hash) {
-        return HASH_LAYOUT.getLastInSequence(BasicObjectNodes.getDynamicObject(hash));
+        return HASH_LAYOUT.getLastInSequence(hash);
     }
 
     public static void setLastInSequence(DynamicObject hash, Entry lastInSequence) {
-        HASH_LAYOUT.setLastInSequence(BasicObjectNodes.getDynamicObject(hash), lastInSequence);
+        HASH_LAYOUT.setLastInSequence(hash, lastInSequence);
     }
 
     public static DynamicObject createEmptyHash(DynamicObject hashClass) {
@@ -305,7 +304,7 @@ public abstract class HashNodes {
     }
 
     public static DynamicObject createHash(DynamicObject hashClass, DynamicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return BasicObjectNodes.createDynamicObject(hashClass, HASH_LAYOUT.createHash(ModuleNodes.getModel(hashClass).getFactory(), defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false));
+        return HASH_LAYOUT.createHash(ModuleNodes.getModel(hashClass).getFactory(), defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false);
     }
 
     @TruffleBoundary

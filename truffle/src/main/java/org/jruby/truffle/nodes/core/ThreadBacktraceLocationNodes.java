@@ -14,12 +14,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import com.oracle.truffle.api.object.DynamicObject;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
@@ -38,7 +35,7 @@ public class ThreadBacktraceLocationNodes {
     public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
 
     public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ModuleNodes.getModel(rubyClass).getFactory(), activation));
+        return THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ModuleNodes.getModel(rubyClass).getFactory(), activation);
     }
 
     protected static Activation getActivation(DynamicObject threadBacktraceLocation) {

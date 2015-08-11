@@ -32,7 +32,6 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -59,15 +58,15 @@ public abstract class EncodingConverterNodes {
     public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
 
     public static EConv getEConv(DynamicObject encodingConverter) {
-        return ENCODING_CONVERTER_LAYOUT.getEconv(BasicObjectNodes.getDynamicObject(encodingConverter));
+        return ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
     }
 
     public static void setEConv(DynamicObject encodingConverter, EConv econv) {
-        ENCODING_CONVERTER_LAYOUT.setEconv(BasicObjectNodes.getDynamicObject(encodingConverter), econv);
+        ENCODING_CONVERTER_LAYOUT.setEconv(encodingConverter, econv);
     }
 
     public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getModel(rubyClass).getFactory(), econv));
+        return ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getModel(rubyClass).getFactory(), econv);
     }
 
     @RubiniusOnly

@@ -9,18 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.runtime.Helpers;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -36,10 +33,7 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.RubyObjectType;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
@@ -87,12 +81,12 @@ public abstract class BasicObjectNodes {
 
     @CompilerDirectives.TruffleBoundary
     public static void setInstanceVariable(DynamicObject receiver, Object name, Object value) {
-        Shape shape = getDynamicObject(receiver).getShape();
+        Shape shape = receiver.getShape();
         Property property = shape.getProperty(name);
         if (property != null) {
-            property.setGeneric(getDynamicObject(receiver), value, null);
+            property.setGeneric(receiver, value, null);
         } else {
-            getDynamicObject(receiver).define(name, value, 0);
+            receiver.define(name, value, 0);
         }
     }
 
@@ -105,10 +99,10 @@ public abstract class BasicObjectNodes {
 
     @CompilerDirectives.TruffleBoundary
     public static Object getInstanceVariable2(DynamicObject receiver, Object name) {
-        Shape shape = getDynamicObject(receiver).getShape();
+        Shape shape = receiver.getShape();
         Property property = shape.getProperty(name);
         if (property != null) {
-            return property.get(getDynamicObject(receiver), false);
+            return property.get(receiver, false);
         } else {
             return getContext(receiver).getCoreLibrary().getNilObject();
         }
@@ -116,30 +110,24 @@ public abstract class BasicObjectNodes {
 
     @CompilerDirectives.TruffleBoundary
     public static Map<Object, Object> getInstanceVariables(DynamicObject receiver) {
-        Shape shape = getDynamicObject(receiver).getShape();
+        Shape shape = receiver.getShape();
         Map<Object, Object> vars = new LinkedHashMap<>();
         List<Property> properties = shape.getPropertyList();
         for (Property property : properties) {
-            vars.put((String) property.getKey(), property.get(getDynamicObject(receiver), false));
+            vars.put((String) property.getKey(), property.get(receiver, false));
         }
         return vars;
     }
 
     @CompilerDirectives.TruffleBoundary
     public static Object[] getFieldNames(DynamicObject receiver) {
-        List<Object> keys = getDynamicObject(receiver).getShape().getKeyList();
+        List<Object> keys = receiver.getShape().getKeyList();
         return keys.toArray(new Object[keys.size()]);
     }
 
     @CompilerDirectives.TruffleBoundary
     public static boolean isFieldDefined(DynamicObject receiver, String name) {
-        return getDynamicObject(receiver).getShape().hasProperty(name);
-    }
-
-    public static void unsafeChangeLogicalClass(DynamicObject object, DynamicObject newLogicalClass) {
-        assert RubyGuards.isRubyClass(newLogicalClass);
-        BASIC_OBJECT_LAYOUT.setLogicalClass(object, newLogicalClass);
-        BASIC_OBJECT_LAYOUT.setMetaClass(object, newLogicalClass);
+        return receiver.getShape().hasProperty(name);
     }
 
     public static DynamicObject getMetaClass(DynamicObject object) {
@@ -216,20 +204,16 @@ public abstract class BasicObjectNodes {
                 }
             }
         } else if (RubyGuards.isObjectRange(rubyBasicObject)) {
-            if (RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(getDynamicObject(rubyBasicObject)) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(getDynamicObject(rubyBasicObject))), visitor);
+            if (RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(rubyBasicObject) instanceof DynamicObject) {
+                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(rubyBasicObject)), visitor);
             }
 
-            if (RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(getDynamicObject(rubyBasicObject)) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(getDynamicObject(rubyBasicObject))), visitor);
+            if (RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject) instanceof DynamicObject) {
+                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject)), visitor);
             }
         } else if (RubyGuards.isRubyModule(rubyBasicObject)) {
             ModuleNodes.getModel(rubyBasicObject).visitObjectGraphChildren(visitor);
         }
-    }
-
-    public static boolean isNumeric(DynamicObject rubyBasicObject) {
-        return ModuleOperations.assignableTo(getMetaClass(rubyBasicObject), getContext(rubyBasicObject).getCoreLibrary().getNumericClass());
     }
 
     public static RubyContext getContext(DynamicObject rubyBasicObject) {
@@ -242,14 +226,6 @@ public abstract class BasicObjectNodes {
 
     public static DynamicObject getLogicalClass(DynamicObject rubyBasicObject) {
         return BASIC_OBJECT_LAYOUT.getLogicalClass(rubyBasicObject);
-    }
-
-    public static DynamicObject getDynamicObject(DynamicObject rubyBasicObject) {
-        return rubyBasicObject;
-    }
-
-    public static DynamicObject createDynamicObject(DynamicObject rubyClass, DynamicObject dynamicObject) {
-        return dynamicObject;
     }
 
     @CoreMethod(names = "!")
@@ -478,7 +454,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createDynamicObject(rubyClass, ModuleNodes.getModel(rubyClass).getFactory().newInstance());
+            return ModuleNodes.getModel(rubyClass).getFactory().newInstance();
         }
 
     }

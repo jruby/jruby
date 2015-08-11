@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
@@ -52,23 +51,23 @@ public abstract class TimeNodes {
     private static final DateTime ZERO = new DateTime(0);
 
     public static DateTime getDateTime(DynamicObject time) {
-        return TIME_LAYOUT.getDateTime(BasicObjectNodes.getDynamicObject(time));
+        return TIME_LAYOUT.getDateTime(time);
     }
 
     public static void setDateTime(DynamicObject time, DateTime dateTime) {
-        TIME_LAYOUT.setDateTime(BasicObjectNodes.getDynamicObject(time), dateTime);
+        TIME_LAYOUT.setDateTime(time, dateTime);
     }
 
     public static Object getOffset(DynamicObject time) {
-        return TIME_LAYOUT.getOffset(BasicObjectNodes.getDynamicObject(time));
+        return TIME_LAYOUT.getOffset(time);
     }
 
     public static void setOffset(DynamicObject time, Object offset) {
-        TIME_LAYOUT.setOffset(BasicObjectNodes.getDynamicObject(time), offset);
+        TIME_LAYOUT.setOffset(time, offset);
     }
 
     public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
-        return BasicObjectNodes.createDynamicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).getFactory(), dateTime, offset));
+        return TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).getFactory(), dateTime, offset);
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

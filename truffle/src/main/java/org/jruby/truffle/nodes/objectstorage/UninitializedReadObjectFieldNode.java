@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
@@ -38,7 +37,7 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
     private ReadObjectFieldNode rewrite(DynamicObject object) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        if (BasicObjectNodes.getDynamicObject(object).updateShape()) {
+        if (object.updateShape()) {
             ReadObjectFieldNode topNode = getTopNode();
             if (topNode != this) {
                 // retry existing cache nodes
@@ -46,7 +45,7 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
             }
         }
 
-        final Shape layout = BasicObjectNodes.getDynamicObject(object).getShape();
+        final Shape layout = object.getShape();
         final Property property = layout.getProperty(name);
 
         final ReadObjectFieldNode newNode;

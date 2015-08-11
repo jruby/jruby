@@ -51,15 +51,15 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return BasicObjectNodes.createDynamicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).getFactory(), pointer));
+        return POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).getFactory(), pointer);
     }
 
     public static void setPointer(DynamicObject pointer, Pointer newPointer) {
-        POINTER_LAYOUT.setPointer(BasicObjectNodes.getDynamicObject(pointer), newPointer);
+        POINTER_LAYOUT.setPointer(pointer, newPointer);
     }
 
     public static Pointer getPointer(DynamicObject pointer) {
-        return POINTER_LAYOUT.getPointer(BasicObjectNodes.getDynamicObject(pointer));
+        return POINTER_LAYOUT.getPointer(pointer);
     }
 
 }

@@ -51,15 +51,15 @@ public abstract class UnboundMethodNodes {
     public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 
     public static DynamicObject createUnboundMethod(DynamicObject rubyClass, DynamicObject origin, InternalMethod method) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).getFactory(), origin, method));
+        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).getFactory(), origin, method);
     }
 
     public static DynamicObject getOrigin(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getOrigin(BasicObjectNodes.getDynamicObject(method));
+        return UNBOUND_METHOD_LAYOUT.getOrigin(method);
     }
 
     public static InternalMethod getMethod(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(method));
+        return UNBOUND_METHOD_LAYOUT.getMethod(method);
     }
 
     @CoreMethod(names = "==", required = 1)

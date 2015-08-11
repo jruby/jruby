@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.EnumSet;
-
 import com.oracle.truffle.api.object.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -64,15 +62,15 @@ public abstract class MethodNodes {
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
     public static DynamicObject createMethod(DynamicObject rubyClass, Object receiver, InternalMethod method) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, METHOD_LAYOUT.createMethod(ModuleNodes.getModel(rubyClass).getFactory(), receiver, method));
+        return METHOD_LAYOUT.createMethod(ModuleNodes.getModel(rubyClass).getFactory(), receiver, method);
     }
 
     public static Object getReceiver(DynamicObject method) {
-        return METHOD_LAYOUT.getReceiver(BasicObjectNodes.getDynamicObject(method));
+        return METHOD_LAYOUT.getReceiver(method);
     }
 
     public static InternalMethod getMethod(DynamicObject method) {
-        return METHOD_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(method));
+        return METHOD_LAYOUT.getMethod(method);
     }
 
     @CoreMethod(names = { "==", "eql?" }, required = 1)

@@ -48,13 +48,10 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
 
 public abstract class IOBufferPrimitiveNodes {
 
@@ -122,13 +119,13 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
-            return BasicObjectNodes.createDynamicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
-                    ModuleNodes.getModel(classToAllocate).getFactory(),
-                    true,
-                    ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
-                    0,
-                    0,
-                    IOBUFFER_SIZE));
+            return IO_BUFFER_LAYOUT.createIOBuffer(
+                        ModuleNodes.getModel(classToAllocate).getFactory(),
+                        true,
+                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                        0,
+                        0,
+                        IOBUFFER_SIZE);
         }
 
     }

@@ -89,11 +89,11 @@ public abstract class BigDecimalNodes {
     }
 
     public static BigDecimal getBigDecimalValue(DynamicObject bigdecimal) {
-        return BIG_DECIMAL_LAYOUT.getValue(BasicObjectNodes.getDynamicObject(bigdecimal));
+        return BIG_DECIMAL_LAYOUT.getValue(bigdecimal);
     }
 
     public static Type getBigDecimalType(DynamicObject bigdecimal) {
-        return BIG_DECIMAL_LAYOUT.getType(BasicObjectNodes.getDynamicObject(bigdecimal));
+        return BIG_DECIMAL_LAYOUT.getType(bigdecimal);
     }
 
     public static RoundingMode toRoundingMode(int constValue) {
@@ -288,11 +288,11 @@ public abstract class BigDecimalNodes {
         }
 
         private void setBigDecimalValue(DynamicObject bigdecimal, BigDecimal value) {
-            BIG_DECIMAL_LAYOUT.setValue(BasicObjectNodes.getDynamicObject(bigdecimal), value);
+            BIG_DECIMAL_LAYOUT.setValue(bigdecimal, value);
         }
 
         private void setBigDecimalValue(DynamicObject bigdecimal, Type type) {
-            BIG_DECIMAL_LAYOUT.setType(BasicObjectNodes.getDynamicObject(bigdecimal), type);
+            BIG_DECIMAL_LAYOUT.setType(bigdecimal, type);
         }
 
         public abstract DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf, int digits);
@@ -2136,7 +2136,7 @@ public abstract class BigDecimalNodes {
 
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createDynamicObject(rubyClass, BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).getFactory(), BigDecimal.ZERO, Type.NORMAL));
+            return BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).getFactory(), BigDecimal.ZERO, Type.NORMAL);
         }
 
     }

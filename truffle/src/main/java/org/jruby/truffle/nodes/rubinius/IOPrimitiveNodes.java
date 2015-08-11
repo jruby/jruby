@@ -47,8 +47,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
-import jnr.ffi.byref.IntByReference;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
@@ -57,7 +55,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -70,7 +67,6 @@ import org.jruby.util.Dir;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
-import java.util.EnumSet;
 
 public abstract class IOPrimitiveNodes {
 
@@ -106,7 +102,7 @@ public abstract class IOPrimitiveNodes {
     public static class IOAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createDynamicObject(rubyClass, IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).getFactory(), context.getCoreLibrary().getNilObject(), 0, 0, 0));
+            return IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).getFactory(), context.getCoreLibrary().getNilObject(), 0, 0, 0);
         }
     }
 
@@ -135,7 +131,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
             final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
-            return BasicObjectNodes.createDynamicObject(classToAllocate, IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).getFactory(), buffer, 0, 0, 0));
+            return IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).getFactory(), buffer, 0, 0, 0);
         }
 
     }

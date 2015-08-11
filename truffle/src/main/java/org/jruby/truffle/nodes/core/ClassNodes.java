@@ -27,7 +27,6 @@ import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
 
 @CoreClass(name = "Class")
@@ -83,7 +82,7 @@ public abstract class ClassNodes {
         assert superclass == null || RubyGuards.isRubyClass(superclass);
         final RubyModuleModel model = new RubyModuleModel(BasicObjectNodes.getContext(classClass), null, name, false, null, allocator, null);
 
-        final DynamicObject rubyClass = BasicObjectNodes.createDynamicObject(classClass, CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model));
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -133,7 +132,7 @@ public abstract class ClassNodes {
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached, Allocator allocator) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached, allocator, null);
 
-        final DynamicObject rubyClass = BasicObjectNodes.createDynamicObject(classClass, CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model));
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 

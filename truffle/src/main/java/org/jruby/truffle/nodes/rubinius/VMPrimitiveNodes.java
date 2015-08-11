@@ -551,11 +551,10 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isRubyClass(newClass)")
         public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
-            // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in DynamicObject?
-            CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
-            BasicObjectNodes.unsafeChangeLogicalClass(object, newClass);
+            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(object, newClass);
+            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(object, newClass);
             return object;
         }
 

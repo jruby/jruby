@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.BooleanLocation;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -46,9 +45,9 @@ public class WriteBooleanObjectFieldNode extends WriteObjectFieldChainNode {
         if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.setBoolean(BasicObjectNodes.getDynamicObject(object), value, expectedLayout);
+                    storageLocation.setBoolean(object, value, expectedLayout);
                 } else {
-                    storageLocation.setBoolean(BasicObjectNodes.getDynamicObject(object), value, expectedLayout, newLayout);
+                    storageLocation.setBoolean(object, value, expectedLayout, newLayout);
                 }
             } catch (FinalLocationException e) {
                 replace(next, "!final").execute(object, value);

@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -54,11 +53,11 @@ public abstract class BignumNodes {
 
     public static DynamicObject createRubyBignum(DynamicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return BasicObjectNodes.createDynamicObject(rubyClass, BIGNUM_LAYOUT.createBignum(ModuleNodes.getModel(rubyClass).getFactory(), value));
+        return BIGNUM_LAYOUT.createBignum(ModuleNodes.getModel(rubyClass).getFactory(), value);
     }
 
     public static BigInteger getBigIntegerValue(DynamicObject bignum) {
-        return BIGNUM_LAYOUT.getValue(BasicObjectNodes.getDynamicObject(bignum));
+        return BIGNUM_LAYOUT.getValue(bignum);
     }
 
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {

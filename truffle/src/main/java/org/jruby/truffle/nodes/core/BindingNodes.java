@@ -34,7 +34,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
@@ -70,20 +69,20 @@ public abstract class BindingNodes {
     }
 
     public static DynamicObject createRubyBinding(DynamicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BasicObjectNodes.createDynamicObject(bindingClass, BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).getFactory(), self, frame));
+        return BINDING_LAYOUT.createBinding(ModuleNodes.getModel(bindingClass).getFactory(), self, frame);
     }
 
     public static void setSelfAndFrame(DynamicObject binding, Object self, MaterializedFrame frame) {
-        BINDING_LAYOUT.setSelf(BasicObjectNodes.getDynamicObject(binding), self);
-        BINDING_LAYOUT.setFrame(BasicObjectNodes.getDynamicObject(binding), frame);
+        BINDING_LAYOUT.setSelf(binding, self);
+        BINDING_LAYOUT.setFrame(binding, frame);
     }
 
     public static Object getSelf(DynamicObject binding) {
-        return BINDING_LAYOUT.getSelf(BasicObjectNodes.getDynamicObject(binding));
+        return BINDING_LAYOUT.getSelf(binding);
     }
 
     public static MaterializedFrame getFrame(DynamicObject binding) {
-        return BINDING_LAYOUT.getFrame(BasicObjectNodes.getDynamicObject(binding));
+        return BINDING_LAYOUT.getFrame(binding);
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)

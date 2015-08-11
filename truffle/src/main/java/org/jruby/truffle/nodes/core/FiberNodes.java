@@ -28,7 +28,6 @@ import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
@@ -54,7 +53,7 @@ public abstract class FiberNodes {
     public static final FiberLayout FIBER_LAYOUT = FiberLayoutImpl.INSTANCE;
 
     public static FiberFields getFields(DynamicObject fiber) {
-        return FIBER_LAYOUT.getFields(BasicObjectNodes.getDynamicObject(fiber));
+        return FIBER_LAYOUT.getFields(fiber);
     }
 
     public static DynamicObject newRootFiber(DynamicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
@@ -208,13 +207,13 @@ public abstract class FiberNodes {
     public static DynamicObject createRubyFiber(DynamicObject parent, DynamicObject rubyClass, String name) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, false);
         fields.name = name;
-        return BasicObjectNodes.createDynamicObject(rubyClass, FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).getFactory(), fields));
+        return FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).getFactory(), fields);
     }
 
     public static DynamicObject createRubyFiber(DynamicObject parent, FiberManager fiberManager, ThreadManager threadManager, DynamicObject rubyClass, String name, boolean isRootFiber) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, isRootFiber);
         fields.name = name;
-        return BasicObjectNodes.createDynamicObject(rubyClass, FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).getFactory(), fields));
+        return FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).getFactory(), fields);
     }
 
     public interface FiberMessage {

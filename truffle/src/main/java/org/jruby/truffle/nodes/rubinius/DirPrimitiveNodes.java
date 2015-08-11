@@ -39,21 +39,16 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.io.File;
 
@@ -88,7 +83,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {
-            return BasicObjectNodes.createDynamicObject(dirClass, DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).getFactory(), null, 0));
+            return DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).getFactory(), null, 0);
         }
 
     }

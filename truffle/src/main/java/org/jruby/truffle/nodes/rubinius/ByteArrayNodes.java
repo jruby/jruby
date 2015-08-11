@@ -39,11 +39,11 @@ public abstract class ByteArrayNodes {
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, BYTE_ARRAY_LAYOUT.createByteArray(ModuleNodes.getModel(rubyClass).getFactory(), bytes));
+        return BYTE_ARRAY_LAYOUT.createByteArray(ModuleNodes.getModel(rubyClass).getFactory(), bytes);
     }
 
     public static ByteList getBytes(DynamicObject byteArray) {
-        return BYTE_ARRAY_LAYOUT.getBytes(BasicObjectNodes.getDynamicObject(byteArray));
+        return BYTE_ARRAY_LAYOUT.getBytes(byteArray);
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)

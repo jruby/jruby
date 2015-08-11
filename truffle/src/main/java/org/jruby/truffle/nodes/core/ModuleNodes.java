@@ -58,7 +58,6 @@ import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -99,12 +98,12 @@ public abstract class ModuleNodes {
     public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     public static RubyModuleModel getModel(DynamicObject module) {
-        return MODULE_LAYOUT.getModel(BasicObjectNodes.getDynamicObject(module));
+        return MODULE_LAYOUT.getModel(module);
     }
 
     public static DynamicObject createRubyModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
         final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null, null, null);
-        final DynamicObject module = BasicObjectNodes.createDynamicObject(selfClass, MODULE_LAYOUT.createModule(ModuleNodes.getModel(selfClass).getFactory(), model));
+        final DynamicObject module = MODULE_LAYOUT.createModule(ModuleNodes.getModel(selfClass).getFactory(), model);
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
             ModuleNodes.getModel(module).name = ModuleNodes.getModel(module).givenBaseName;

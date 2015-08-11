@@ -424,12 +424,12 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = BasicObjectNodes.createDynamicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
-        nilObject = BasicObjectNodes.createDynamicObject(nilClass, ModuleNodes.getModel(nilClass).getFactory().newInstance());
+        mainObject = ModuleNodes.getModel(objectClass).getFactory().newInstance();
+        nilObject = ModuleNodes.getModel(nilClass).getFactory().newInstance();
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = BasicObjectNodes.createDynamicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
+        rubiniusUndefined = ModuleNodes.getModel(objectClass).getFactory().newInstance();
 
-        globalVariablesObject = BasicObjectNodes.createDynamicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance());
+        globalVariablesObject = ModuleNodes.getModel(objectClass).getFactory().newInstance();
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
@@ -1216,9 +1216,9 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isIntegerFixnumRange(range);
         return rangeError(String.format("%d..%s%d out of range",
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)),
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)) ? "." : "",
-                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range))), currentNode);
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range),
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range) ? "." : "",
+                RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range)), currentNode);
     }
 
     public DynamicObject rangeError(String message, Node currentNode) {

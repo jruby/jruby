@@ -15,14 +15,12 @@ import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.EnumSet;
 
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
@@ -69,7 +67,7 @@ public abstract class DigestNodes {
 
         final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return BasicObjectNodes.createDynamicObject(rubyClass, DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).getFactory(), digest));
+        return DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).getFactory(), digest);
     }
 
     public static MessageDigest getDigest(DynamicObject digest) {

@@ -63,18 +63,18 @@ public abstract class SizedQueueNodes {
     public static class SizedQueueAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createDynamicObject(rubyClass, SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).getFactory(), null));
+            return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).getFactory(), null);
         }
     }
 
     @SuppressWarnings("unchecked")
     private static BlockingQueue<Object> getQueue(DynamicObject sizedQueue) {
-        return SIZED_QUEUE_LAYOUT.getQueue(BasicObjectNodes.getDynamicObject(sizedQueue));
+        return SIZED_QUEUE_LAYOUT.getQueue(sizedQueue);
     }
 
     private static void setQueue(DynamicObject sizedQueue, BlockingQueue<Object> value) {
         // TODO (eregon, 12 July 2015): CAS when swapping the queue?
-        SIZED_QUEUE_LAYOUT.setQueue(BasicObjectNodes.getDynamicObject(sizedQueue), value);
+        SIZED_QUEUE_LAYOUT.setQueue(sizedQueue, value);
     }
 
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)

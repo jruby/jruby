@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
@@ -57,7 +56,6 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -97,7 +95,7 @@ public abstract class ArrayNodes {
     public static final ArrayLayout ARRAY_LAYOUT = ArrayLayoutImpl.INSTANCE;
 
     public static Object getStore(DynamicObject array) {
-        return ARRAY_LAYOUT.getStore(BasicObjectNodes.getDynamicObject(array));
+        return ARRAY_LAYOUT.getStore(array);
     }
 
     public static void setStore(DynamicObject array, Object store, int size) {
@@ -108,16 +106,16 @@ public abstract class ArrayNodes {
             assert verifyStore(store, size);
         }
 
-        ARRAY_LAYOUT.setStore(BasicObjectNodes.getDynamicObject(array), store);
+        ARRAY_LAYOUT.setStore(array, store);
         setSize(array, size);
     }
 
     public static void setSize(DynamicObject array, int size) {
-        ARRAY_LAYOUT.setSize(BasicObjectNodes.getDynamicObject(array), size);
+        ARRAY_LAYOUT.setSize(array, size);
     }
 
     public static int getSize(DynamicObject array) {
-        return ARRAY_LAYOUT.getSize(BasicObjectNodes.getDynamicObject(array));
+        return ARRAY_LAYOUT.getSize(array);
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
@@ -362,8 +360,7 @@ public abstract class ArrayNodes {
     }
 
     public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
-        assert RubyGuards.isRubyClass(arrayClass);
-        return BasicObjectNodes.createDynamicObject(arrayClass, ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).getFactory(), store, size));
+        return ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).getFactory(), store, size);
     }
 
     @CoreMethod(names = "+", required = 1)
@@ -649,13 +646,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
+            final int normalizedIndex = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)));
 
             if (normalizedIndex < 0 || normalizedIndex > getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
-                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))) ? end : end + 1);
+                final int end = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)));
+                final int exclusiveEnd = clampExclusiveIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range)) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
@@ -887,8 +884,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
-            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range)))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -902,13 +899,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRangeArray(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
+            final int normalizedStart = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range)))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
+            int normalizedEnd = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -919,12 +916,12 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setIntegerFixnumRange(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            if (RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range)))) {
+            if (RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
-                int normalizedEnd = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(((DynamicObject) range))));
+                int normalizedBegin = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)));
+                int normalizedEnd = normalizeIndex(array, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }

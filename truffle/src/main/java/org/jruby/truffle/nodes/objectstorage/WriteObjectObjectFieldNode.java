@@ -16,7 +16,6 @@ import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -47,9 +46,9 @@ public class WriteObjectObjectFieldNode extends WriteObjectFieldChainNode {
         if (object.getShape() == expectedLayout && storageLocation.canStore(value)) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.set(BasicObjectNodes.getDynamicObject(object), value, expectedLayout);
+                    storageLocation.set(object, value, expectedLayout);
                 } else {
-                    storageLocation.set(BasicObjectNodes.getDynamicObject(object), value, expectedLayout, newLayout);
+                    storageLocation.set(object, value, expectedLayout, newLayout);
                 }
             } catch (IncompatibleLocationException e) {
                 throw new UnsupportedOperationException();

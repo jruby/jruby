@@ -32,7 +32,7 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        if (BasicObjectNodes.getDynamicObject(object).getShape() == objectLayout) {
+        if (object.getShape() == objectLayout) {
             return BasicObjectNodes.getContext(object).getCoreLibrary().getNilObject();
         } else {
             return next.execute(object);

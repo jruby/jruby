@@ -33,7 +33,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
@@ -59,7 +58,7 @@ public abstract class MatchDataNodes {
     public static final MatchDataLayout MATCH_DATA_LAYOUT = MatchDataLayoutImpl.INSTANCE;
 
     public static DynamicObject createRubyMatchData(DynamicObject rubyClass, DynamicObject source, DynamicObject regexp, Region region, Object[] values, DynamicObject pre, DynamicObject post, DynamicObject global, int begin, int end) {
-        return BasicObjectNodes.createDynamicObject(rubyClass, MATCH_DATA_LAYOUT.createMatchData(ModuleNodes.getModel(rubyClass).getFactory(), new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end)));
+        return MATCH_DATA_LAYOUT.createMatchData(ModuleNodes.getModel(rubyClass).getFactory(), new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end));
     }
 
     public static Object[] getValues(DynamicObject matchData) {
@@ -281,7 +280,7 @@ public abstract class MatchDataNodes {
     }
 
     public static MatchDataFields getFields(DynamicObject matchData) {
-        return MATCH_DATA_LAYOUT.getFields(BasicObjectNodes.getDynamicObject(matchData));
+        return MATCH_DATA_LAYOUT.getFields(matchData);
     }
 
     @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
@@ -365,9 +364,9 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = getValues(matchData);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)));
-            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)));
-            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)) ? end : end + 1);
+            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range));
+            final int end = ArrayNodes.normalizeIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range));
+            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range) ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);

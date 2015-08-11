@@ -56,13 +56,13 @@ public abstract class QueueNodes {
     public static class QueueAllocator implements Allocator {
         @Override
         public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return BasicObjectNodes.createDynamicObject(rubyClass, QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).getFactory(), new LinkedBlockingQueue()));
+            return QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).getFactory(), new LinkedBlockingQueue());
         }
     }
 
     @SuppressWarnings("unchecked")
     private static BlockingQueue getQueue(DynamicObject queue) {
-        return QUEUE_LAYOUT.getQueue(BasicObjectNodes.getDynamicObject(queue));
+        return QUEUE_LAYOUT.getQueue(queue);
     }
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)

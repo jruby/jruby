@@ -36,7 +36,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.Memo;
@@ -122,39 +121,39 @@ public abstract class ProcNodes {
     public static final ProcLayout PROC_LAYOUT = ProcLayoutImpl.INSTANCE;
 
     public static Type getType(DynamicObject proc) {
-        return PROC_LAYOUT.getType(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getType(proc);
     }
 
     public static SharedMethodInfo getSharedMethodInfo(DynamicObject proc) {
-        return PROC_LAYOUT.getSharedMethodInfo(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getSharedMethodInfo(proc);
     }
 
     public static CallTarget getCallTargetForBlocks(DynamicObject proc) {
-        return PROC_LAYOUT.getCallTargetForBlocks(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getCallTargetForBlocks(proc);
     }
 
     public static CallTarget getCallTargetForProcs(DynamicObject proc) {
-        return PROC_LAYOUT.getCallTargetForProcs(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getCallTargetForProcs(proc);
     }
 
     public static CallTarget getCallTargetForLambdas(DynamicObject proc) {
-        return PROC_LAYOUT.getCallTargetForLambdas(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getCallTargetForLambdas(proc);
     }
 
     public static MaterializedFrame getDeclarationFrame(DynamicObject proc) {
-        return PROC_LAYOUT.getDeclarationFrame(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getDeclarationFrame(proc);
     }
 
     public static InternalMethod getMethod(DynamicObject proc) {
-        return PROC_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getMethod(proc);
     }
 
     public static Object getSelfCapturedInScope(DynamicObject proc) {
-        return PROC_LAYOUT.getSelf(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getSelf(proc);
     }
 
     public static DynamicObject getBlockCapturedInScope(DynamicObject proc) {
-        return PROC_LAYOUT.getBlock(BasicObjectNodes.getDynamicObject(proc));
+        return PROC_LAYOUT.getBlock(proc);
     }
 
     public static CallTarget getCallTargetForType(DynamicObject proc) {
@@ -186,15 +185,15 @@ public abstract class ProcNodes {
                                   Object self, DynamicObject block) {
         assert RubyGuards.isRubyProc(proc);
 
-        PROC_LAYOUT.setSharedMethodInfo(BasicObjectNodes.getDynamicObject(proc), sharedMethodInfo);
-        PROC_LAYOUT.setCallTargetForBlocks(BasicObjectNodes.getDynamicObject(proc), callTargetForBlocks);
-        PROC_LAYOUT.setCallTargetForProcs(BasicObjectNodes.getDynamicObject(proc), callTargetForProcs);
-        PROC_LAYOUT.setCallTargetForLambdas(BasicObjectNodes.getDynamicObject(proc), callTargetForLambdas);
-        PROC_LAYOUT.setDeclarationFrame(BasicObjectNodes.getDynamicObject(proc), declarationFrame);
-        PROC_LAYOUT.setMethod(BasicObjectNodes.getDynamicObject(proc), method);
-        PROC_LAYOUT.setSelf(BasicObjectNodes.getDynamicObject(proc), self);
+        PROC_LAYOUT.setSharedMethodInfo(proc, sharedMethodInfo);
+        PROC_LAYOUT.setCallTargetForBlocks(proc, callTargetForBlocks);
+        PROC_LAYOUT.setCallTargetForProcs(proc, callTargetForProcs);
+        PROC_LAYOUT.setCallTargetForLambdas(proc, callTargetForLambdas);
+        PROC_LAYOUT.setDeclarationFrame(proc, declarationFrame);
+        PROC_LAYOUT.setMethod(proc, method);
+        PROC_LAYOUT.setSelf(proc, self);
         assert block == null || RubyGuards.isRubyProc(block);
-        PROC_LAYOUT.setBlock(BasicObjectNodes.getDynamicObject(proc), block);
+        PROC_LAYOUT.setBlock(proc, block);
     }
 
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type) {
@@ -204,7 +203,7 @@ public abstract class ProcNodes {
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                                           CallTarget callTargetForProcs, CallTarget callTargetForLambdas, MaterializedFrame declarationFrame,
                                           InternalMethod method, Object self, DynamicObject block) {
-        final DynamicObject proc = BasicObjectNodes.createDynamicObject(procClass, PROC_LAYOUT.createProc(ModuleNodes.getModel(procClass).getFactory(), type, null, null, null, null, null, null, null, null));
+        final DynamicObject proc = PROC_LAYOUT.createProc(ModuleNodes.getModel(procClass).getFactory(), type, null, null, null, null, null, null, null, null);
         ProcNodes.initialize(proc, sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForLambdas, declarationFrame,
                 method, self, block);
         return proc;

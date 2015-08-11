@@ -29,7 +29,6 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -95,15 +94,15 @@ public abstract class EncodingNodes {
     }
 
     public static Encoding getEncoding(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getEncoding(BasicObjectNodes.getDynamicObject(encoding));
+        return ENCODING_LAYOUT.getEncoding(encoding);
     }
 
     public static ByteList getName(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getName(BasicObjectNodes.getDynamicObject(encoding));
+        return ENCODING_LAYOUT.getName(encoding);
     }
 
     public static boolean isDummy(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getDummy(BasicObjectNodes.getDynamicObject(encoding));
+        return ENCODING_LAYOUT.getDummy(encoding);
     }
 
     public static DynamicObject[] cloneEncodingList() {
@@ -115,7 +114,7 @@ public abstract class EncodingNodes {
     }
 
     public static DynamicObject createRubyEncoding(DynamicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return BasicObjectNodes.createDynamicObject(encodingClass, ENCODING_LAYOUT.createEncoding(ModuleNodes.getModel(encodingClass).getFactory(), encoding, name, dummy));
+        return ENCODING_LAYOUT.createEncoding(ModuleNodes.getModel(encodingClass).getFactory(), encoding, name, dummy);
     }
 
     @CoreMethod(names = "ascii_compatible?")

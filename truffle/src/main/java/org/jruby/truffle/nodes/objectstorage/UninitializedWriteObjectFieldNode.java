@@ -29,10 +29,10 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
     public void execute(DynamicObject object, Object value) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final Shape currentShape = BasicObjectNodes.getDynamicObject(object).getShape();
+        final Shape currentShape = object.getShape();
 
         // If the current shape is obsolete, add a node to migrate
-        if (BasicObjectNodes.getDynamicObject(object).updateShape()) {
+        if (object.updateShape()) {
             final MigrateNode migrateNode = new MigrateNode(currentShape, this);
             replace(migrateNode);
             migrateNode.execute(object, value);
@@ -45,13 +45,13 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
         final Property currentProperty = currentShape.getProperty(name);
         final Property newProperty;
 
-        if (currentProperty != null && currentProperty.getLocation().canSet(BasicObjectNodes.getDynamicObject(object), value)) {
+        if (currentProperty != null && currentProperty.getLocation().canSet(object, value)) {
             newShape = currentShape;
             newProperty = currentProperty;
-            newProperty.setSafe(BasicObjectNodes.getDynamicObject(object), value, null);
+            newProperty.setSafe(object, value, null);
         } else {
             BasicObjectNodes.setInstanceVariable(object, name, value);
-            newShape = BasicObjectNodes.getDynamicObject(object).getShape();
+            newShape = object.getShape();
             newProperty = newShape.getProperty(name);
 
             if (newProperty == null) {

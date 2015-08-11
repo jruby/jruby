@@ -70,7 +70,6 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
@@ -112,11 +111,11 @@ public abstract class StringNodes {
     public static final StringLayout STRING_LAYOUT = StringLayoutImpl.INSTANCE;
 
     public static ByteList getByteList(DynamicObject string) {
-        return STRING_LAYOUT.getByteList(BasicObjectNodes.getDynamicObject(string));
+        return STRING_LAYOUT.getByteList(string);
     }
 
     public static void setByteList(DynamicObject string, ByteList byteList) {
-        STRING_LAYOUT.setByteList(BasicObjectNodes.getDynamicObject(string), byteList);
+        STRING_LAYOUT.setByteList(string, byteList);
     }
 
     // Since ByteList.toString does not decode properly
@@ -126,19 +125,19 @@ public abstract class StringNodes {
     }
 
     public static int getCodeRange(DynamicObject string) {
-        return STRING_LAYOUT.getCodeRange(BasicObjectNodes.getDynamicObject(string));
+        return STRING_LAYOUT.getCodeRange(string);
     }
 
     public static void setCodeRange(DynamicObject string, int codeRange) {
-        STRING_LAYOUT.setCodeRange(BasicObjectNodes.getDynamicObject(string), codeRange);
+        STRING_LAYOUT.setCodeRange(string, codeRange);
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
-        StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(string));
+        StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(string);
 
         if (wrapper == null) {
             wrapper = new StringCodeRangeableWrapper(string);
-            STRING_LAYOUT.setCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(string), wrapper);
+            STRING_LAYOUT.setCodeRangeableWrapper(string, wrapper);
         }
 
         return wrapper;
@@ -282,7 +281,7 @@ public abstract class StringNodes {
 
     public static DynamicObject createString(DynamicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return BasicObjectNodes.createDynamicObject(stringClass, STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).getFactory(), bytes, StringSupport.CR_UNKNOWN, null));
+        return STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).getFactory(), bytes, StringSupport.CR_UNKNOWN, null);
     }
 
     @CoreMethod(names = "+", required = 1)
@@ -638,22 +637,22 @@ public abstract class StringNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceIntegerRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
-            return sliceRange(frame, string, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
+            return sliceRange(frame, string, RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range), RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range));
         }
 
         @Specialization(guards = {"isLongFixnumRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceLongRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
-            return sliceRange(frame, string, (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)), (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
+            return sliceRange(frame, string, (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getBegin(range), (int) RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getEnd(range), RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range));
         }
 
         @Specialization(guards = {"isObjectRange(range)", "wasNotProvided(length) || isRubiniusUndefined(length)"})
         public Object sliceObjectRange(VirtualFrame frame, DynamicObject string, DynamicObject range, Object length) {
             // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
-            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(BasicObjectNodes.getDynamicObject(range)));
-            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(BasicObjectNodes.getDynamicObject(range)));
+            final int coercedBegin = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(range));
+            final int coercedEnd = getToIntNode().doInt(frame, RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(range));
 
-            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.OBJECT_RANGE_LAYOUT.getExcludedEnd(BasicObjectNodes.getDynamicObject(range)));
+            return sliceRange(frame, string, coercedBegin, coercedEnd, RangeNodes.OBJECT_RANGE_LAYOUT.getExcludedEnd(range));
         }
 
         private Object sliceRange(VirtualFrame frame, DynamicObject string, int begin, int end, boolean doesExcludeEnd) {

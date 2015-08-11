@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.BooleanLocation;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -40,7 +39,7 @@ public class ReadBooleanObjectFieldNode extends ReadObjectFieldChainNode {
         final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.getBoolean(BasicObjectNodes.getDynamicObject(object), objectLayout);
+            return storageLocation.getBoolean(object, objectLayout);
         } else {
             return next.executeBoolean(object);
         }
@@ -58,7 +57,7 @@ public class ReadBooleanObjectFieldNode extends ReadObjectFieldChainNode {
         final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.get(BasicObjectNodes.getDynamicObject(object), objectLayout);
+            return storageLocation.get(object, objectLayout);
         } else {
             return next.execute(object);
         }

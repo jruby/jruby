@@ -20,8 +20,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
@@ -29,7 +27,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -61,8 +58,8 @@ public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(DynamicObject rubyClass, ThreadManager manager) {
         final DynamicObject objectClass = BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass();
-        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, BasicObjectNodes.createDynamicObject(objectClass, ModuleNodes.getModel(objectClass).getFactory().newInstance()));
-        final DynamicObject object = BasicObjectNodes.createDynamicObject(rubyClass, THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).getFactory(), fields));
+        final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, ModuleNodes.getModel(objectClass).getFactory().newInstance());
+        final DynamicObject object = THREAD_LAYOUT.createThread(ModuleNodes.getModel(rubyClass).getFactory(), fields);
         fields.fiberManager = new FiberManager(object, manager);
         return object;
     }
@@ -290,7 +287,7 @@ public abstract class ThreadNodes {
     }
 
     public static ThreadFields getFields(DynamicObject thread) {
-        return THREAD_LAYOUT.getFields(BasicObjectNodes.getDynamicObject(thread));
+        return THREAD_LAYOUT.getFields(thread);
     }
 
     public enum InterruptMode {

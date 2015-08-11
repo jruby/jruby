@@ -62,27 +62,27 @@ public abstract class SymbolNodes {
     public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 
     public static String getString(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getString(BasicObjectNodes.getDynamicObject(symbol));
+        return SYMBOL_LAYOUT.getString(symbol);
     }
 
     public static ByteList getByteList(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getByteList(BasicObjectNodes.getDynamicObject(symbol));
+        return SYMBOL_LAYOUT.getByteList(symbol);
     }
 
     public static int getHashCode(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getHashCode(BasicObjectNodes.getDynamicObject(symbol));
+        return SYMBOL_LAYOUT.getHashCode(symbol);
     }
 
     public static int getCodeRange(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getCodeRange(BasicObjectNodes.getDynamicObject(symbol));
+        return SYMBOL_LAYOUT.getCodeRange(symbol);
     }
 
     public static void setCodeRange(DynamicObject symbol, int codeRange) {
-        SYMBOL_LAYOUT.setCodeRange(BasicObjectNodes.getDynamicObject(symbol), codeRange);
+        SYMBOL_LAYOUT.setCodeRange(symbol, codeRange);
     }
 
     public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
-        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(symbol));
+        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(symbol);
 
         if (wrapper != null) {
             return wrapper;
@@ -90,7 +90,7 @@ public abstract class SymbolNodes {
 
         wrapper = new SymbolCodeRangeableWrapper(symbol);
 
-        SYMBOL_LAYOUT.setCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(symbol), wrapper);
+        SYMBOL_LAYOUT.setCodeRangeableWrapper(symbol, wrapper);
 
         return wrapper;
     }
