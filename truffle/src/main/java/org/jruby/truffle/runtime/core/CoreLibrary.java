@@ -314,7 +314,7 @@ public class CoreLibrary {
 
         // Classes defined in Object
 
-        arrayClass = defineClass("Array", new ArrayNodes.ArrayAllocator());
+        arrayClass = defineClass("Array");
         ModuleNodes.getModel(arrayClass).factory = ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass);
         bindingClass = defineClass("Binding", new BindingNodes.BindingAllocator());
         ModuleNodes.getModel(bindingClass).factory = BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass);

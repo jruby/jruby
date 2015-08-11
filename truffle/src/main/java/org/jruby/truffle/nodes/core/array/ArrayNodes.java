@@ -4567,12 +4567,4 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class ArrayAllocator implements Allocator {
-
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createEmptyArray(rubyClass);
-        }
-
-    }
 }

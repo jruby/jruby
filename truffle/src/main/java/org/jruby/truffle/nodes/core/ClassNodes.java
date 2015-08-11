@@ -20,6 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -175,13 +176,25 @@ public abstract class ClassNodes {
             throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
         }
 
-        @Specialization(guards = "!isSingleton(rubyClass)")
+        @Specialization(guards = "isArrayClass(rubyClass)")
+        public DynamicObject allocateArray(DynamicObject rubyClass) {
+            return ArrayNodes.createEmptyArray(rubyClass);
+        }
+
+        @Specialization(guards = {
+                "!isSingleton(rubyClass)",
+                "!isArrayClass(rubyClass)"
+        })
         public DynamicObject allocate(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
         }
 
         protected boolean isSingleton(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).isSingleton();
+        }
+
+        protected boolean isArrayClass(DynamicObject rubyClass) {
+            return ArrayNodes.ARRAY_LAYOUT.isArray(ModuleNodes.getModel(rubyClass).factory.getShape().getObjectType());
         }
 
     }
