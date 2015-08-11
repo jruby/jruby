@@ -651,7 +651,7 @@ public class RubyModuleModel implements ModuleChain {
     public void unsafeSetSuperclass(RubyBasicObject superClass) {
         assert RubyGuards.isRubyClass(superClass);
         assert isClass();
-        assert parentModule == null;
+        //assert parentModule == null;
 
         parentModule = ModuleNodes.getModel(superClass).start;
         ModuleNodes.getModel(superClass).addDependent(rubyModuleObject);

@@ -215,7 +215,7 @@ public class CoreLibrary {
         ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
 
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ModuleNodes.getModel(basicObjectClass).allocator);
-        ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
+        ModuleNodes.getModel(objectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
 
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
         ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);

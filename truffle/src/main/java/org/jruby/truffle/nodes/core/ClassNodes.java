@@ -84,7 +84,27 @@ public abstract class ClassNodes {
     public static RubyBasicObject createBootClass(RubyBasicObject classClass, RubyBasicObject superclass, String name, Allocator allocator) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        return createRubyClass(BasicObjectNodes.getContext(classClass), classClass, null, superclass, name, false, null, allocator);
+        final RubyModuleModel model = new RubyModuleModel(BasicObjectNodes.getContext(classClass), null, name, false, null, allocator, null);
+
+        final RubyBasicObject rubyClass = BasicObjectNodes.createRubyBasicObject(classClass, CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).getFactory(), model));
+        assert RubyGuards.isRubyClass(rubyClass) : classClass.dynamicObject.getShape().getObjectType().getClass();
+        assert RubyGuards.isRubyModule(rubyClass) : classClass.dynamicObject.getShape().getObjectType().getClass();
+
+        model.rubyModuleObject = rubyClass;
+
+        if (model.lexicalParent == null) { // bootstrap or anonymous module
+            ModuleNodes.getModel(rubyClass).name = ModuleNodes.getModel(rubyClass).givenBaseName;
+        } else {
+            ModuleNodes.getModel(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+        }
+
+        ModuleNodes.getModel(rubyClass).allocator = allocator;
+
+        if (superclass != null) {
+            ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);
+        }
+
+        return rubyClass;
     }
 
     public static RubyBasicObject createSingletonClassOfObject(RubyContext context, RubyBasicObject superclass, RubyBasicObject attached, String name) {
@@ -103,11 +123,6 @@ public abstract class ClassNodes {
     public static RubyBasicObject createRubyClass(RubyContext context, RubyBasicObject lexicalParent, RubyBasicObject superclass, String name, Allocator allocator) {
         final RubyBasicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, allocator);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
-
-        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
-        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
-        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
-        ModuleNodes.getModel(rubyClass).factory = factory;
 
         return rubyClass;
     }
@@ -132,6 +147,11 @@ public abstract class ClassNodes {
         if (superclass != null) {
             ModuleNodes.getModel(rubyClass).unsafeSetSuperclass(superclass);
         }
+
+        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
+        ModuleNodes.getModel(rubyClass).factory = factory;
 
         return rubyClass;
     }
@@ -298,7 +318,7 @@ public abstract class ClassNodes {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return createRubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false, null, null);
+            return createRubyClass(context, context.getCoreLibrary().getClassClass(), null, context.getCoreLibrary().getObjectClass(), null, false, null, null);
         }
 
     }
