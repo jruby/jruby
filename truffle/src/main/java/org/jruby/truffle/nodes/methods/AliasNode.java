@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
@@ -36,7 +36,7 @@ public abstract class AliasNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyModule(module)")
-    public Object alias(RubyBasicObject module) {
+    public Object alias(DynamicObject module) {
         ModuleNodes.getModel(module).alias(this, newName, oldName);
         return module;
     }

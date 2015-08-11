@@ -32,7 +32,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
@@ -42,7 +42,7 @@ public abstract class EncodingConverterNodes {
     @Layout
     public interface EncodingConverterLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createEncodingConverterShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createEncodingConverterShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createEncodingConverter(DynamicObjectFactory factory, @Nullable EConv econv);
 
@@ -58,16 +58,16 @@ public abstract class EncodingConverterNodes {
 
     public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
 
-    public static EConv getEConv(RubyBasicObject encodingConverter) {
+    public static EConv getEConv(DynamicObject encodingConverter) {
         return ENCODING_CONVERTER_LAYOUT.getEconv(BasicObjectNodes.getDynamicObject(encodingConverter));
     }
 
-    public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
+    public static void setEConv(DynamicObject encodingConverter, EConv econv) {
         ENCODING_CONVERTER_LAYOUT.setEconv(BasicObjectNodes.getDynamicObject(encodingConverter), econv);
     }
 
-    public static RubyBasicObject createEncodingConverter(RubyBasicObject rubyClass, EConv econv) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getModel(rubyClass).getFactory(), econv));
+    public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
+        return BasicObjectNodes.createDynamicObject(rubyClass, ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getModel(rubyClass).getFactory(), econv));
     }
 
     @RubiniusOnly
@@ -80,7 +80,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, Object source, Object destination, Object unusedOptions) {
+        public DynamicObject initialize(DynamicObject self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();
@@ -193,7 +193,7 @@ public abstract class EncodingConverterNodes {
     public static class EncodingConverterAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
             return createEncodingConverter(rubyClass, null);
         }
 

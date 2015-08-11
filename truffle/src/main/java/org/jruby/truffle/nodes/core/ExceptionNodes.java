@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.List;
 
@@ -37,7 +37,7 @@ public abstract class ExceptionNodes {
     @Layout
     public interface ExceptionLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createExceptionShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createExceptionShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createException(DynamicObjectFactory factory, @Nullable Object message, @Nullable Backtrace backtrace);
 
@@ -69,20 +69,20 @@ public abstract class ExceptionNodes {
     public static final BacktraceFormatter BACKTRACE_FORMATTER = new BacktraceFormatter();
 
     // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
-    public static Object getMessage(RubyBasicObject exception) {
+    public static Object getMessage(DynamicObject exception) {
         return EXCEPTION_LAYOUT.getMessage(BasicObjectNodes.getDynamicObject(exception));
     }
 
-    public static Backtrace getBacktrace(RubyBasicObject exception) {
+    public static Backtrace getBacktrace(DynamicObject exception) {
         return EXCEPTION_LAYOUT.getBacktrace(BasicObjectNodes.getDynamicObject(exception));
     }
 
-    public static void setBacktrace(RubyBasicObject exception, Backtrace backtrace) {
+    public static void setBacktrace(DynamicObject exception, Backtrace backtrace) {
         EXCEPTION_LAYOUT.setBacktrace(BasicObjectNodes.getDynamicObject(exception), backtrace);
     }
 
     @TruffleBoundary
-    public static RubyBasicObject asRubyStringArray(RubyBasicObject exception) {
+    public static DynamicObject asRubyStringArray(DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
 
         assert getBacktrace(exception) != null;
@@ -97,16 +97,16 @@ public abstract class ExceptionNodes {
         return ArrayNodes.fromObjects(BasicObjectNodes.getContext(exception).getCoreLibrary().getArrayClass(), array);
     }
 
-    public static void setMessage(RubyBasicObject exception, Object message) {
+    public static void setMessage(DynamicObject exception, Object message) {
         EXCEPTION_LAYOUT.setMessage(BasicObjectNodes.getDynamicObject(exception), message);
     }
 
-    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), null, null));
+    public static DynamicObject createRubyException(DynamicObject rubyClass) {
+        return BasicObjectNodes.createDynamicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), null, null));
     }
 
-    public static RubyBasicObject createRubyException(RubyBasicObject rubyClass, Object message, Backtrace backtrace) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), message, backtrace));
+    public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
+        return BasicObjectNodes.createDynamicObject(rubyClass, EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).getFactory(), message, backtrace));
     }
 
     @CoreMethod(names = "initialize", optional = 1)
@@ -117,13 +117,13 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject exception, NotProvided message) {
+        public DynamicObject initialize(DynamicObject exception, NotProvided message) {
             setMessage(exception, nil());
             return exception;
         }
 
         @Specialization(guards = "wasProvided(message)")
-        public RubyBasicObject initialize(RubyBasicObject exception, Object message) {
+        public DynamicObject initialize(DynamicObject exception, Object message) {
             setMessage(exception, message);
             return exception;
         }
@@ -141,7 +141,7 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object backtrace(RubyBasicObject exception) {
+        public Object backtrace(DynamicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {
                 return readCustomBacktrace.execute(exception);
             } else if (getBacktrace(exception) != null) {
@@ -162,12 +162,12 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyBasicObject exception, NotProvided offset) {
+        public DynamicObject captureBacktrace(DynamicObject exception, NotProvided offset) {
             return captureBacktrace(exception, 1);
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyBasicObject exception, int offset) {
+        public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
             setBacktrace(exception, backtrace);
             return nil();
@@ -183,7 +183,7 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object message(RubyBasicObject exception) {
+        public Object message(DynamicObject exception) {
             return getMessage(exception);
         }
 
@@ -192,7 +192,7 @@ public abstract class ExceptionNodes {
     public static class ExceptionAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
             return createRubyException(rubyClass);
         }
 

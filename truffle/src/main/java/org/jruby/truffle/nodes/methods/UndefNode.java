@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class UndefNode extends RubyNode {
 
@@ -33,10 +33,10 @@ public class UndefNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject moduleObject;
+        final DynamicObject moduleObject;
 
         try {
-            moduleObject = module.executeRubyBasicObject(frame);
+            moduleObject = module.executeDynamicObject(frame);
         } catch (UnexpectedResultException e) {
             throw new RuntimeException(e);
         }

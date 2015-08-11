@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 
@@ -32,7 +32,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
+        public Object downto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
             try {
@@ -53,7 +53,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
+        public Object downto(VirtualFrame frame, long from, long to, DynamicObject block) {
             // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
             int count = 0;
 
@@ -75,7 +75,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object downto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
+        public Object downto(VirtualFrame frame, int from, double to, DynamicObject block) {
             return downto(frame, from, (int) Math.ceil(to), block);
         }
 
@@ -91,7 +91,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization
-        public RubyBasicObject times(VirtualFrame frame, int n, NotProvided block) {
+        public DynamicObject times(VirtualFrame frame, int n, NotProvided block) {
             // TODO (eregon, 16 June 2015): this should return an enumerator
             final int[] array = new int[n];
 
@@ -103,7 +103,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object times(VirtualFrame frame, int n, RubyBasicObject block) {
+        public Object times(VirtualFrame frame, int n, DynamicObject block) {
             int count = 0;
 
             try {
@@ -124,7 +124,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object times(VirtualFrame frame, long n, RubyBasicObject block) {
+        public Object times(VirtualFrame frame, long n, DynamicObject block) {
             int count = 0;
 
             try {
@@ -145,7 +145,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = {"isRubyBignum(n)", "isRubyProc(block)"})
-        public Object times(VirtualFrame frame, RubyBasicObject n, RubyBasicObject block,
+        public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
                 @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 
             for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
@@ -175,7 +175,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyBignum(n)")
-        public RubyBasicObject toI(RubyBasicObject n) {
+        public DynamicObject toI(DynamicObject n) {
             return n;
         }
 
@@ -189,7 +189,7 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, int from, int to, RubyBasicObject block) {
+        public Object upto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
             try {
@@ -210,12 +210,12 @@ public abstract class IntegerNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, int from, double to, RubyBasicObject block) {
+        public Object upto(VirtualFrame frame, int from, double to, DynamicObject block) {
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object upto(VirtualFrame frame, long from, long to, RubyBasicObject block) {
+        public Object upto(VirtualFrame frame, long from, long to, DynamicObject block) {
             int count = 0;
 
             try {

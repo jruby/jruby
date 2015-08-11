@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.DoubleLocation;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteDoubleObjectFieldNode extends WriteObjectFieldChainNode {
@@ -33,7 +33,7 @@ public class WriteDoubleObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, double value) {
+    public void execute(DynamicObject object, double value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -43,7 +43,7 @@ public class WriteDoubleObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.dynamicObject.getShape() == expectedLayout) {
+        if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
                     storageLocation.setDouble(BasicObjectNodes.getDynamicObject(object), value, expectedLayout);
@@ -59,7 +59,7 @@ public class WriteDoubleObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         if (value instanceof Double) {
             execute(object, (double) value);
         } else {

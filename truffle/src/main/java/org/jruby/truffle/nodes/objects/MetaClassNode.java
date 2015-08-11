@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Reads the internal metaclass of an object.
@@ -28,35 +28,35 @@ public abstract class MetaClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyBasicObject executeMetaClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeMetaClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyBasicObject singletonClassTrue(boolean value) {
+    protected DynamicObject singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyBasicObject singletonClassFalse(boolean value) {
+    protected DynamicObject singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyBasicObject singletonClass(int value) {
+    protected DynamicObject singletonClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyBasicObject singletonClass(long value) {
+    protected DynamicObject singletonClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyBasicObject singletonClass(double value) {
+    protected DynamicObject singletonClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyBasicObject singletonClass(RubyBasicObject object) {
+    protected DynamicObject singletonClass(DynamicObject object) {
         return BasicObjectNodes.getMetaClass(object);
     }
 

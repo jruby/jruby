@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,7 +62,7 @@ public class InstrumentationServerManager {
                     context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
 
                         @Override
-                        public void run(RubyBasicObject thread, Node currentNode) {
+                        public void run(DynamicObject thread, Node currentNode) {
                             try {
                                 Backtrace backtrace = RubyCallStack.getBacktrace(null);
 
@@ -111,7 +111,7 @@ public class InstrumentationServerManager {
                     Thread mainThread = ThreadNodes.getCurrentFiberJavaThread(context.getThreadManager().getRootThread());
                     context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
-                        public void run(RubyBasicObject thread, final Node currentNode) {
+                        public void run(DynamicObject thread, final Node currentNode) {
                             new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
                                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                         }

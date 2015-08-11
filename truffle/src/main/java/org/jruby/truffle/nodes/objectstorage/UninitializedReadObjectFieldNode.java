@@ -14,7 +14,7 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
@@ -26,16 +26,16 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
     }
 
     @Override
-    public Object execute(RubyBasicObject object) {
+    public Object execute(DynamicObject object) {
         return rewrite(object).execute(object);
     }
 
     @Override
-    public boolean isSet(RubyBasicObject object) {
+    public boolean isSet(DynamicObject object) {
         return rewrite(object).isSet(object);
     }
 
-    private ReadObjectFieldNode rewrite(RubyBasicObject object) {
+    private ReadObjectFieldNode rewrite(DynamicObject object) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         if (BasicObjectNodes.getDynamicObject(object).updateShape()) {

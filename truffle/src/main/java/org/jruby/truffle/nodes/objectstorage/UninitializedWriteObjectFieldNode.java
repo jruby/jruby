@@ -14,7 +14,7 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
@@ -26,7 +26,7 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final Shape currentShape = BasicObjectNodes.getDynamicObject(object).getShape();

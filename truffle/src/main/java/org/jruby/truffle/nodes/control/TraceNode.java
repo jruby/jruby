@@ -21,18 +21,18 @@ import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class TraceNode extends RubyNode {
 
     private final RubyContext context;
 
     @CompilationFinal private Assumption traceAssumption;
-    @CompilationFinal private RubyBasicObject traceFunc;
+    @CompilationFinal private DynamicObject traceFunc;
     @Child private DirectCallNode callNode;
 
-    private final RubyBasicObject event;
-    private final RubyBasicObject file;
+    private final DynamicObject event;
+    private final DynamicObject file;
     private final int line;
 
     public TraceNode(RubyContext context, SourceSection sourceSection) {

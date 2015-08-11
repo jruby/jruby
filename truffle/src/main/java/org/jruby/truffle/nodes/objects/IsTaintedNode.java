@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class IsTaintedNode extends RubyNode {
@@ -52,7 +52,7 @@ public abstract class IsTaintedNode extends RubyNode {
     }
 
     @Specialization
-    public boolean isTainted(RubyBasicObject object) {
+    public boolean isTainted(DynamicObject object) {
         if (readTaintNode == null) {
             CompilerDirectives.transferToInterpreter();
             readTaintNode = insert(new ReadHeadObjectFieldNode(BasicObjectNodes.TAINTED_IDENTIFIER));

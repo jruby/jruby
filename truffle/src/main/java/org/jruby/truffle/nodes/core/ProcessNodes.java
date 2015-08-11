@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.DefaultValueNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import sun.misc.Signal;
 
@@ -60,8 +60,8 @@ public abstract class ProcessNodes {
     })
     public abstract static class ClockGetTimeNode extends CoreMethodNode {
 
-        private final RubyBasicObject floatSecondSymbol = getContext().getSymbol("float_second");
-        private final RubyBasicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
+        private final DynamicObject floatSecondSymbol = getContext().getSymbol("float_second");
+        private final DynamicObject nanosecondSymbol = getContext().getSymbol("nanosecond");
 
         public ClockGetTimeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -73,20 +73,20 @@ public abstract class ProcessNodes {
         }
 
         @Specialization(guards = { "isMonotonic(clock_id)", "isRubySymbol(unit)" })
-        protected Object clock_gettime_monotonic(int clock_id, RubyBasicObject unit) {
+        protected Object clock_gettime_monotonic(int clock_id, DynamicObject unit) {
             long time = System.nanoTime();
             return timeToUnit(time, unit);
         }
 
         @Specialization(guards = { "isRealtime(clock_id)", "isRubySymbol(unit)" })
-        protected Object clock_gettime_realtime(int clock_id, RubyBasicObject unit) {
+        protected Object clock_gettime_realtime(int clock_id, DynamicObject unit) {
             long time = System.currentTimeMillis() * 1_000_000;
             return timeToUnit(time, unit);
         }
 
         @TruffleBoundary
         @Specialization(guards = { "isThreadCPUTime(clock_id)", "isRubySymbol(unit)" })
-        protected Object clock_gettime_thread_cputime(int clock_id, RubyBasicObject unit,
+        protected Object clock_gettime_thread_cputime(int clock_id, DynamicObject unit,
                 @Cached("getLibCClockGetTime()") LibCClockGetTime libCClockGetTime) {
             TimeSpec timeSpec = new TimeSpec(jnr.ffi.Runtime.getRuntime(libCClockGetTime));
             int r = libCClockGetTime.clock_gettime(CLOCK_THREAD_CPUTIME_ID, timeSpec);
@@ -98,7 +98,7 @@ public abstract class ProcessNodes {
             return timeToUnit(nanos, unit);
         }
 
-        private Object timeToUnit(long time, RubyBasicObject unit) {
+        private Object timeToUnit(long time, DynamicObject unit) {
             assert RubyGuards.isRubySymbol(unit);
             if (unit == nanosecondSymbol) {
                 return time;
@@ -136,7 +136,7 @@ public abstract class ProcessNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(signalName)")
-        public int kill(RubyBasicObject signalName, int pid) {
+        public int kill(DynamicObject signalName, int pid) {
             int self = posix().getpid();
 
             if (self == pid) {

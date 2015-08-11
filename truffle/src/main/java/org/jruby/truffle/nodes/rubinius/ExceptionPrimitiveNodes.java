@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Exception} class.
@@ -45,78 +45,78 @@ public abstract class ExceptionPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EPERM"})
-        public RubyBasicObject eperm(RubyBasicObject message, int errno) {
+        public DynamicObject eperm(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().operationNotPermittedError(message.toString(), this);
         }
 
         @Specialization(guards = {"errno == EPERM", "isNil(message)"})
-        public RubyBasicObject eperm(Object message, int errno) {
+        public DynamicObject eperm(Object message, int errno) {
             return getContext().getCoreLibrary().operationNotPermittedError("nil", this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == ENOENT"})
-        public RubyBasicObject enoent(RubyBasicObject message, int errno) {
+        public DynamicObject enoent(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError(message.toString(), this);
         }
 
         @Specialization(guards = { "errno == ENOENT", "isNil(message)" })
-        public RubyBasicObject enoent(Object message, int errno) {
+        public DynamicObject enoent(Object message, int errno) {
             return getContext().getCoreLibrary().fileNotFoundError("nil", this);
         }
 
         @Specialization(guards = { "errno == EBADF", "isNil(message)" })
-        public RubyBasicObject ebadf(Object message, int errno) {
+        public DynamicObject ebadf(Object message, int errno) {
             return getContext().getCoreLibrary().badFileDescriptor(this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EEXIST"})
-        public RubyBasicObject eexist(RubyBasicObject message, int errno) {
+        public DynamicObject eexist(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().fileExistsError(message.toString(), this);
         }
 
         @Specialization(guards = { "errno == EEXIST", "isNil(message)" })
-        public RubyBasicObject eexist(Object message, int errno) {
+        public DynamicObject eexist(Object message, int errno) {
             return getContext().getCoreLibrary().fileExistsError("nil", this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EACCES"})
-        public RubyBasicObject eacces(RubyBasicObject message, int errno) {
+        public DynamicObject eacces(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().permissionDeniedError(message.toString(), this);
         }
 
         @Specialization(guards = {"errno == EACCES", "isNil(message)"})
-        public RubyBasicObject eacces(Object message, int errno) {
+        public DynamicObject eacces(Object message, int errno) {
             return getContext().getCoreLibrary().permissionDeniedError("nil", this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EFAULT"})
-        public RubyBasicObject efault(RubyBasicObject message, int errno) {
+        public DynamicObject efault(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().badAddressError(this);
         }
 
         @Specialization(guards = {"errno == EFAULT", "isNil(message)"})
-        public RubyBasicObject efault(Object message, int errno) {
+        public DynamicObject efault(Object message, int errno) {
             return getContext().getCoreLibrary().badAddressError(this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == ENOTDIR"})
-        public RubyBasicObject enotdir(RubyBasicObject message, int errno) {
+        public DynamicObject enotdir(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().notDirectoryError(message.toString(), this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EINVAL"})
-        public RubyBasicObject einval(RubyBasicObject message, int errno) {
+        public DynamicObject einval(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
         @Specialization(guards = {"isRubyString(message)", "errno == EINPROGRESS"})
-        public RubyBasicObject einprogress(RubyBasicObject message, int errno) {
+        public DynamicObject einprogress(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
         @TruffleBoundary
         @Specialization(guards = "!isExceptionSupported(errno)")
-        public RubyBasicObject unsupported(Object message, int errno) {
+        public DynamicObject unsupported(Object message, int errno) {
             final Errno errnoObject = Errno.valueOf(errno);
 
             final String messageString;

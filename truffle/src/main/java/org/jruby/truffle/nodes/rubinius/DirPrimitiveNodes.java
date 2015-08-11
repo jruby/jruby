@@ -53,7 +53,7 @@ import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.io.File;
 
@@ -62,7 +62,7 @@ public abstract class DirPrimitiveNodes {
     @Layout
     public interface DirLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createDirShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createDirShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
 
@@ -87,8 +87,8 @@ public abstract class DirPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(RubyBasicObject dirClass) {
-            return BasicObjectNodes.createRubyBasicObject(dirClass, DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).getFactory(), null, 0));
+        public DynamicObject allocate(DynamicObject dirClass) {
+            return BasicObjectNodes.createDynamicObject(dirClass, DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).getFactory(), null, 0));
         }
 
     }
@@ -102,7 +102,7 @@ public abstract class DirPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isNil(encoding)"})
-        public RubyBasicObject open(RubyBasicObject dir, RubyBasicObject path, RubyBasicObject encoding) {
+        public DynamicObject open(DynamicObject dir, DynamicObject path, DynamicObject encoding) {
             // TODO CS 22-Apr-15 race conditions here
 
             final File file = new File(path.toString());
@@ -117,15 +117,15 @@ public abstract class DirPrimitiveNodes {
                 throw new UnsupportedOperationException();
             }
 
-            DIR_LAYOUT.setContents(dir.dynamicObject, contents);
-            DIR_LAYOUT.setPosition(dir.dynamicObject, -2); // -2 for . and then ..
+            DIR_LAYOUT.setContents(dir, contents);
+            DIR_LAYOUT.setPosition(dir, -2); // -2 for . and then ..
 
             return nil();
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(path)", "isRubyEncoding(encoding)"})
-        public RubyBasicObject openEncoding(RubyBasicObject dir, RubyBasicObject path, RubyBasicObject encoding) {
+        public DynamicObject openEncoding(DynamicObject dir, DynamicObject path, DynamicObject encoding) {
             // TODO BJF 30-APR-2015 HandleEncoding
             return open(dir, path, nil());
         }
@@ -141,17 +141,17 @@ public abstract class DirPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object read(RubyBasicObject dir) {
-            final int position = DIR_LAYOUT.getPosition(dir.dynamicObject);
+        public Object read(DynamicObject dir) {
+            final int position = DIR_LAYOUT.getPosition(dir);
 
-            DIR_LAYOUT.setPosition(dir.dynamicObject, position + 1);
+            DIR_LAYOUT.setPosition(dir, position + 1);
 
             if (position == -2) {
                 return createString(".");
             } else if (position == -1) {
                 return createString("..");
             } else {
-                final String[] contents = (String[]) DIR_LAYOUT.getContents(dir.dynamicObject);
+                final String[] contents = (String[]) DIR_LAYOUT.getContents(dir);
 
                 if (position < contents.length) {
                     return createString(contents[position]);
@@ -173,16 +173,16 @@ public abstract class DirPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object control(RubyBasicObject dir, int kind, int position) {
+        public Object control(DynamicObject dir, int kind, int position) {
             switch (kind) {
                 case 0:
-                    DIR_LAYOUT.setPosition(dir.dynamicObject, position);
+                    DIR_LAYOUT.setPosition(dir, position);
                     return true;
                 case 1:
-                    DIR_LAYOUT.setPosition(dir.dynamicObject, -2);
+                    DIR_LAYOUT.setPosition(dir, -2);
                     return true;
                 case 2:
-                    return DIR_LAYOUT.getPosition(dir.dynamicObject);
+                    return DIR_LAYOUT.getPosition(dir);
 
             }
             return nil();
@@ -199,7 +199,7 @@ public abstract class DirPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject open(RubyBasicObject dir) {
+        public DynamicObject open(DynamicObject dir) {
             return nil();
         }
 

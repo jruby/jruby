@@ -18,8 +18,10 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.exception.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.messages.Message;
 import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.interop.messages.*;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,7 +39,7 @@ public class BasicForeignAccessFactory implements ForeignAccessFactory {
         return new InteropPredicate() {
             @Override
             public boolean test(TruffleObject o) {
-                return o instanceof  RubyBasicObject;
+                return RubyGuards.isRubyBasicObject(o);
             }
         };
     }

@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
@@ -62,20 +62,20 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
-        public Object id2RefLargeFixnum(RubyBasicObject id) {
+        public Object id2RefLargeFixnum(DynamicObject id) {
             return BignumNodes.getBigIntegerValue(id).longValue();
         }
 
         @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
-        public double id2RefFloat(RubyBasicObject id) {
+        public double id2RefFloat(DynamicObject id) {
             return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
         }
 
-        protected boolean isLargeFixnumID(RubyBasicObject id) {
+        protected boolean isLargeFixnumID(DynamicObject id) {
             return ObjectIDOperations.isLargeFixnumID(BignumNodes.getBigIntegerValue(id));
         }
 
-        protected boolean isFloatID(RubyBasicObject id) {
+        protected boolean isFloatID(DynamicObject id) {
             return ObjectIDOperations.isFloatID(BignumNodes.getBigIntegerValue(id));
         }
 
@@ -89,12 +89,12 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public int eachObject(VirtualFrame frame, NotProvided ofClass, RubyBasicObject block) {
+        public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+            for (DynamicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 if (!isHidden(object)) {
                     yield(frame, block, object);
                     count++;
@@ -105,12 +105,12 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization(guards = {"isRubyClass(ofClass)", "isRubyProc(block)"})
-        public int eachObject(VirtualFrame frame, RubyBasicObject ofClass, RubyBasicObject block) {
+        public int eachObject(VirtualFrame frame, DynamicObject ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+            for (DynamicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 if (!isHidden(object) && ModuleOperations.assignableTo(BasicObjectNodes.getLogicalClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;
@@ -120,7 +120,7 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        private boolean isHidden(RubyBasicObject object) {
+        private boolean isHidden(DynamicObject object) {
             return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(object).isSingleton();
         }
 
@@ -137,7 +137,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public RubyBasicObject defineFinalizer(VirtualFrame frame, Object object, Object finalizer) {
+        public DynamicObject defineFinalizer(VirtualFrame frame, Object object, Object finalizer) {
             if (respondToNode.executeBoolean(frame, finalizer)) {
                 registerFinalizer(object, finalizer);
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
@@ -149,7 +149,7 @@ public abstract class ObjectSpaceNodes {
 
         @TruffleBoundary
         private void registerFinalizer(Object object, Object finalizer) {
-            getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
+            getContext().getObjectSpaceManager().defineFinalizer((DynamicObject) object, finalizer);
         }
     }
 
@@ -163,7 +163,7 @@ public abstract class ObjectSpaceNodes {
         @TruffleBoundary
         @Specialization
         public Object undefineFinalizer(Object object) {
-            getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);
+            getContext().getObjectSpaceManager().undefineFinalizer((DynamicObject) object);
             return object;
         }
     }

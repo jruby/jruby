@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.YieldingCoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "Rubinius::Type")
 public abstract class RubiniusTypeNodes {
@@ -30,8 +30,8 @@ public abstract class RubiniusTypeNodes {
         }
 
         @Specialization(guards = {"isRubyModule(module)", "isRubyProc(block)"})
-        public RubyBasicObject eachAncestor(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block) {
-            for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
+        public DynamicObject eachAncestor(VirtualFrame frame, DynamicObject module, DynamicObject block) {
+            for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
                 yield(frame, block, ancestor);
             }
             return nil();

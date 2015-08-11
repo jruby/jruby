@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.List;
 public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter {
 
     @Override
-    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         try {
             final List<Activation> activations = backtrace.getActivations();
 

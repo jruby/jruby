@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.runtime.ModuleChain;
 
@@ -28,12 +29,12 @@ public class PrependMarker implements ModuleChain {
     }
 
     @Override
-    public RubyBasicObject getActualModule() {
+    public DynamicObject getActualModule() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void insertAfter(RubyBasicObject module) {
+    public void insertAfter(DynamicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
 

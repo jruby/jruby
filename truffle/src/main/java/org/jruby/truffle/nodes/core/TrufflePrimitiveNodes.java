@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.Ruby;
@@ -52,7 +53,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject bindingOfCaller() {
+        public DynamicObject bindingOfCaller() {
             /*
              * When you use this method you're asking for the binding of the caller at the call site. When we get into
              * this method, that is then the binding of the caller of the caller.
@@ -90,7 +91,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject sourceOfCaller() {
+        public DynamicObject sourceOfCaller() {
             final Memo<Integer> frameCount = new Memo<>(0);
 
             final String source = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<String>() {
@@ -149,7 +150,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject assertConstant(Object value) {
+        public DynamicObject assertConstant(Object value) {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_constant can only be called lexically", this));
         }
 
@@ -164,7 +165,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject assertNotCompiled() {
+        public DynamicObject assertNotCompiled() {
             throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Primitive.assert_not_compiled can only be called lexically", this));
         }
 
@@ -178,7 +179,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject javaClassOf(Object value) {
+        public DynamicObject javaClassOf(Object value) {
             return createString(value.getClass().getSimpleName());
         }
 
@@ -193,7 +194,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject dumpString(RubyBasicObject string) {
+        public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
             final ByteList byteList = StringNodes.getByteList(string);
@@ -245,7 +246,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject graalVersion() {
+        public DynamicObject graalVersion() {
             return createString(System.getProperty("graal.version", "unknown"));
         }
 
@@ -260,7 +261,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject simpleShell() {
+        public DynamicObject simpleShell() {
             new SimpleShell(getContext()).run(RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
             return nil();
         }
@@ -276,7 +277,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject coverageResult() {
+        public DynamicObject coverageResult() {
             if (getContext().getCoverageTracker() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
@@ -285,7 +286,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
-                final RubyBasicObject array = createArray(store, store.length);
+                final DynamicObject array = createArray(store, store.length);
                 converted.put(createString(source.getKey().getPath()), array);
             }
 
@@ -316,7 +317,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject coverageStart() {
+        public DynamicObject coverageStart() {
             if (getContext().getCoverageTracker() == null) {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
@@ -336,7 +337,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyString(file)", "isRubyProc(block)" })
-        public RubyBasicObject attach(RubyBasicObject file, int line, RubyBasicObject block) {
+        public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -352,7 +353,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(file)")
-        public RubyBasicObject detach(RubyBasicObject file, int line) {
+        public DynamicObject detach(DynamicObject file, int line) {
             getContext().getAttachmentsManager().detach(file.toString(), line);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -368,7 +369,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = { "isRubyArray(initFunctions)", "isRubyArray(cFlags)", "isRubyArray(files)" })
-        public boolean cExtLoad(RubyBasicObject initFunctions, RubyBasicObject cFlags, RubyBasicObject files) {
+        public boolean cExtLoad(DynamicObject initFunctions, DynamicObject cFlags, DynamicObject files) {
             final CExtSubsystem subsystem = CExtManager.getSubsystem();
 
             if (subsystem == null) {
@@ -380,7 +381,7 @@ public abstract class TrufflePrimitiveNodes {
             return true;
         }
 
-        private String[] toStrings(RubyBasicObject array) {
+        private String[] toStrings(DynamicObject array) {
             assert RubyGuards.isRubyArray(array);
 
             final String[] strings = new String[ArrayNodes.getSize(array)];
@@ -428,7 +429,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject debugPrint(RubyBasicObject string) {
+        public DynamicObject debugPrint(DynamicObject string) {
             System.err.println(string.toString());
             return nil();
         }
@@ -444,7 +445,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject jrubyHomeDirectory() {
+        public DynamicObject jrubyHomeDirectory() {
             return createString(getContext().getRuntime().getJRubyHome());
         }
 
@@ -458,7 +459,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject hostOS() {
+        public DynamicObject hostOS() {
             return createString(RbConfigLibrary.getOSName());
         }
 
@@ -473,7 +474,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyProc(block)")
-        public Object atExit(boolean always, RubyBasicObject block) {
+        public Object atExit(boolean always, DynamicObject block) {
             getContext().getAtExitManager().add(block, always);
             return nil();
         }
@@ -487,7 +488,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyMethod(rubyMethod)")
-        public Object installRubiniusPrimitive(RubyBasicObject rubyMethod) {
+        public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
             String name = MethodNodes.getMethod(rubyMethod).getName();
             getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
@@ -531,7 +532,7 @@ public abstract class TrufflePrimitiveNodes {
 
         // We must not allow to synchronize on boxed primitives.
         @Specialization(guards = "isRubyProc(block)")
-        public Object synchronize(VirtualFrame frame, RubyBasicObject self, RubyBasicObject block) {
+        public Object synchronize(VirtualFrame frame, DynamicObject self, DynamicObject block) {
             synchronized (self) {
                 return yield(frame, block);
             }

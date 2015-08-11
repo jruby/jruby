@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.LongLocation;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
@@ -33,7 +33,7 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, long value) {
+    public void execute(DynamicObject object, long value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -43,7 +43,7 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.dynamicObject.getShape() == expectedLayout) {
+        if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
                     storageLocation.setLong(BasicObjectNodes.getDynamicObject(object), value, expectedLayout);
@@ -59,12 +59,12 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, int value) {
+    public void execute(DynamicObject object, int value) {
         execute(object, (long) value);
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         if (value instanceof Long) {
             execute(object, (long) value);
         } else if (value instanceof Integer) {

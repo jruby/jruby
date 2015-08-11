@@ -30,7 +30,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.concurrent.Callable;
@@ -95,8 +95,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (receiverObject instanceof RubyBasicObject) {
-                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                    if (receiverObject instanceof DynamicObject) {
+                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     }
                     else if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
@@ -123,7 +123,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final RubyBasicObject callerClass;
+        final DynamicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -169,13 +169,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private DispatchNode doRubyBasicObject(
+    private DispatchNode doDynamicObject(
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
             Object methodName,
             Object argumentsObjects) {
-        final RubyBasicObject callerClass;
+        final DynamicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -211,7 +211,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else if (RubyGuards.isRubyString(methodName)) {
             return methodName.toString();
         } else if (RubyGuards.isRubySymbol(methodName)) {
-            return SymbolNodes.getString((RubyBasicObject) methodName);
+            return SymbolNodes.getString((DynamicObject) methodName);
         } else {
             throw new UnsupportedOperationException();
         }

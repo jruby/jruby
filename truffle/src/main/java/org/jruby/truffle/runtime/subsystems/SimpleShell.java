@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 
@@ -82,7 +82,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((RubyBasicObject) e.getRubyException())), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
+                        for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((DynamicObject) e.getRubyException())), (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
                             System.console().writer().println(line);
                         }
                     }

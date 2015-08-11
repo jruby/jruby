@@ -31,19 +31,17 @@ public class RubyObjectType extends ObjectType {
 
         final RubyContext context = getContext();
 
-        final RubyBasicObject wrapped = new RubyBasicObject(object);
-
-        if (RubyGuards.isRubyString(wrapped)) {
-            return Helpers.decodeByteList(context.getRuntime(), StringNodes.getByteList(wrapped));
-        } else if (RubyGuards.isRubySymbol(wrapped)) {
-            return SymbolNodes.getString(wrapped);
-        } else if (RubyGuards.isRubyException(wrapped)) {
-            return ExceptionNodes.getMessage(wrapped) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, wrapped, ExceptionNodes.getBacktrace(wrapped)));
-        } else if (RubyGuards.isRubyModule(wrapped)) {
-            return ModuleNodes.getModel(wrapped).toString();
+        if (RubyGuards.isRubyString(object)) {
+            return Helpers.decodeByteList(context.getRuntime(), StringNodes.getByteList(object));
+        } else if (RubyGuards.isRubySymbol(object)) {
+            return SymbolNodes.getString(object);
+        } else if (RubyGuards.isRubyException(object)) {
+            return ExceptionNodes.getMessage(object) + " :\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, ExceptionNodes.getBacktrace(object)));
+        } else if (RubyGuards.isRubyModule(object)) {
+            return ModuleNodes.getModel(object).toString();
         } else {
-            return String.format("RubyBasicObject@%x<logicalClass=%s>", System.identityHashCode(wrapped), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(wrapped)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(object)).getName());
         }
     }
 

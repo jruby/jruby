@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
@@ -86,7 +86,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -101,7 +101,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -110,7 +110,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }

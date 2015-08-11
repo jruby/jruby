@@ -34,7 +34,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -83,7 +83,7 @@ public abstract class CmpIntNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public int cmpBignum(RubyBasicObject value, Object receiver, Object other) {
+    public int cmpBignum(DynamicObject value, Object receiver, Object other) {
         return BignumNodes.getBigIntegerValue(value).signum();
     }
 

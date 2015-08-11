@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -50,7 +50,7 @@ public class ReadLiteralConstantNode extends RubyNode {
              *
              * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
              * and we do not want to execute receiver twice. */
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
             throw e;
@@ -60,10 +60,10 @@ public class ReadLiteralConstantNode extends RubyNode {
         try {
             constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getTypeErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getTypeErrorClass()) {
                 // module is not a class/module
                 return nil();
-            } else if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
+            } else if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }

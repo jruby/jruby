@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToIntNode extends RubyNode {
@@ -66,7 +66,7 @@ public abstract class ToIntNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public RubyBasicObject coerceRubyBignum(RubyBasicObject value) {
+    public DynamicObject coerceRubyBignum(DynamicObject value) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
     }
@@ -86,7 +86,7 @@ public abstract class ToIntNode extends RubyNode {
     }
 
     @Specialization(guards = "!isRubyBignum(object)")
-    public Object coerceBasicObject(VirtualFrame frame, RubyBasicObject object) {
+    public Object coerceBasicObject(VirtualFrame frame, DynamicObject object) {
         return coerceObject(frame, object);
     }
 
@@ -101,7 +101,7 @@ public abstract class ToIntNode extends RubyNode {
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Integer", this));
             } else {

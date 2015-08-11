@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -61,7 +61,7 @@ public abstract class SplatCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization(guards = "isNil(nil)")
-    public RubyBasicObject splat(Object nil) {
+    public DynamicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
                 return createEmptyArray();
@@ -76,14 +76,14 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public RubyBasicObject splat(VirtualFrame frame, RubyBasicObject array) {
+    public DynamicObject splat(VirtualFrame frame, DynamicObject array) {
         // TODO(cs): is it necessary to dup here in all cases?
         // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
         return dup.executeDup(frame, array);
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
-    public RubyBasicObject splat(VirtualFrame frame, Object object) {
+    public DynamicObject splat(VirtualFrame frame, Object object) {
         final String method;
 
         if (useToAry) {
@@ -98,7 +98,7 @@ public abstract class SplatCastNode extends RubyNode {
             final Object array = toA.call(frame, object, method, null);
 
             if (RubyGuards.isRubyArray(array)) {
-                return (RubyBasicObject) array;
+                return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
                 return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);

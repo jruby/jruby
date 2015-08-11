@@ -17,7 +17,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.concurrent.Callable;
 
@@ -31,12 +31,12 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    protected boolean guard(RubyBasicObject block) {
+    protected boolean guard(DynamicObject block) {
         return false;
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, final RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, final DynamicObject block, Object self, DynamicObject modifiedBlock, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         assert block == null || RubyGuards.isRubyProc(block);

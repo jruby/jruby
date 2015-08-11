@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -47,7 +47,7 @@ public class OpenModuleNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         // TODO(CS): cast
-        final RubyBasicObject module = (RubyBasicObject) definingModule.execute(frame);
+        final DynamicObject module = (DynamicObject) definingModule.execute(frame);
 
         lexicalScope.setLiveModule(module);
         ModuleNodes.getModel(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);

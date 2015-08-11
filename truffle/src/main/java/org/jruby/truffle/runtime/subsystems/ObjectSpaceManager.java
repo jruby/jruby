@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.lang.ref.ReferenceQueue;
@@ -35,11 +35,11 @@ import java.util.*;
  */
 public class ObjectSpaceManager {
 
-    private static class FinalizerReference extends WeakReference<RubyBasicObject> {
+    private static class FinalizerReference extends WeakReference<DynamicObject> {
 
         public List<Object> finalizers = new LinkedList<>();
 
-        public FinalizerReference(RubyBasicObject object, ReferenceQueue<? super RubyBasicObject> queue) {
+        public FinalizerReference(DynamicObject object, ReferenceQueue<? super DynamicObject> queue) {
             super(object, queue);
         }
 
@@ -59,15 +59,15 @@ public class ObjectSpaceManager {
 
     private final RubyContext context;
 
-    private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
-    private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
-    private RubyBasicObject finalizerThread;
+    private final Map<DynamicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
+    private final ReferenceQueue<DynamicObject> finalizerQueue = new ReferenceQueue<>();
+    private DynamicObject finalizerThread;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
     }
 
-    public synchronized void defineFinalizer(RubyBasicObject object, Object callable) {
+    public synchronized void defineFinalizer(DynamicObject object, Object callable) {
         // Record the finalizer against the object
 
         FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -94,7 +94,7 @@ public class ObjectSpaceManager {
         }
     }
 
-    public synchronized void undefineFinalizer(RubyBasicObject object) {
+    public synchronized void undefineFinalizer(DynamicObject object) {
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
 
         if (finalizerReference != null) {
@@ -130,18 +130,18 @@ public class ObjectSpaceManager {
 
     public static interface ObjectGraphVisitor {
 
-        boolean visit(RubyBasicObject object);
+        boolean visit(DynamicObject object);
 
     }
 
     @TruffleBoundary
-    public Map<Long, RubyBasicObject> collectLiveObjects() {
-        final Map<Long, RubyBasicObject> liveObjects = new HashMap<>();
+    public Map<Long, DynamicObject> collectLiveObjects() {
+        final Map<Long, DynamicObject> liveObjects = new HashMap<>();
 
         final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {
 
             @Override
-            public boolean visit(RubyBasicObject object) {
+            public boolean visit(DynamicObject object) {
                 return liveObjects.put(BasicObjectNodes.verySlowGetObjectID(object), object) == null;
             }
 
@@ -150,7 +150,7 @@ public class ObjectSpaceManager {
         context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
 
             @Override
-            public void run(RubyBasicObject currentThread, Node currentNode) {
+            public void run(DynamicObject currentThread, Node currentNode) {
                 synchronized (liveObjects) {
                     BasicObjectNodes.visitObjectGraph(currentThread, visitor);
                     BasicObjectNodes.visitObjectGraph(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
@@ -191,8 +191,8 @@ public class ObjectSpaceManager {
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             Object value = frame.getValue(slot);
-            if (value instanceof RubyBasicObject) {
-                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) value), visitor);
+            if (value instanceof DynamicObject) {
+                BasicObjectNodes.visitObjectGraph(((DynamicObject) value), visitor);
             }
         }
     }

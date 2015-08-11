@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild("value")
 public abstract class AssertConstantNode extends RubyNode {
@@ -29,7 +29,7 @@ public abstract class AssertConstantNode extends RubyNode {
     private static volatile boolean[] sideEffect;
 
     @Specialization
-    public RubyBasicObject assertCompilationConstant(Object value) {
+    public DynamicObject assertCompilationConstant(Object value) {
         final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value)};
 
         sideEffect = compilationConstant;

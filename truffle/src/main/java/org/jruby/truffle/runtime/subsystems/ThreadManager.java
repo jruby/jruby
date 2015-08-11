@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Collections;
 import java.util.Set;
@@ -33,10 +33,10 @@ public class ThreadManager {
 
     private final RubyContext context;
 
-    private final RubyBasicObject rootThread;
-    private final ThreadLocal<RubyBasicObject> currentThread = new ThreadLocal<RubyBasicObject>();
+    private final DynamicObject rootThread;
+    private final ThreadLocal<DynamicObject> currentThread = new ThreadLocal<DynamicObject>();
 
-    private final Set<RubyBasicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyBasicObject, Boolean>());
+    private final Set<DynamicObject> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
 
     public ThreadManager(RubyContext context) {
         this.context = context;
@@ -49,7 +49,7 @@ public class ThreadManager {
         FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
     }
 
-    public RubyBasicObject getRootThread() {
+    public DynamicObject getRootThread() {
         return rootThread;
     }
 
@@ -73,7 +73,7 @@ public class ThreadManager {
         T result = null;
 
         do {
-            final RubyBasicObject runningThread = getCurrentThread();
+            final DynamicObject runningThread = getCurrentThread();
             ThreadNodes.setStatus(runningThread, Status.SLEEP);
 
             try {
@@ -91,23 +91,23 @@ public class ThreadManager {
         return result;
     }
 
-    public void initializeCurrentThread(RubyBasicObject thread) {
+    public void initializeCurrentThread(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         currentThread.set(thread);
     }
 
     @TruffleBoundary
-    public RubyBasicObject getCurrentThread() {
+    public DynamicObject getCurrentThread() {
         return currentThread.get();
     }
 
-    public synchronized void registerThread(RubyBasicObject thread) {
+    public synchronized void registerThread(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         initializeCurrentThread(thread);
         runningRubyThreads.add(thread);
     }
 
-    public synchronized void unregisterThread(RubyBasicObject thread) {
+    public synchronized void unregisterThread(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         runningRubyThreads.remove(thread);
         currentThread.set(null);
@@ -130,7 +130,7 @@ public class ThreadManager {
             try {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
-                    public synchronized void run(RubyBasicObject thread, Node currentNode) {
+                    public synchronized void run(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == ThreadNodes.getRootFiberJavaThread(thread)) {
                             ThreadNodes.shutdown(thread);
                         }
@@ -140,7 +140,7 @@ public class ThreadManager {
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((RubyBasicObject) e.getRubyException())), (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((DynamicObject) e.getRubyException())), (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
                     System.err.println(line);
                 }
             }

@@ -27,7 +27,7 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import com.oracle.truffle.api.CallTarget;
@@ -49,7 +49,7 @@ public abstract class MethodNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface MethodLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createMethodShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createMethod(DynamicObjectFactory factory, Object receiver, InternalMethod method);
 
@@ -63,15 +63,15 @@ public abstract class MethodNodes {
 
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
-    public static RubyBasicObject createMethod(RubyBasicObject rubyClass, Object receiver, InternalMethod method) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, METHOD_LAYOUT.createMethod(ModuleNodes.getModel(rubyClass).getFactory(), receiver, method));
+    public static DynamicObject createMethod(DynamicObject rubyClass, Object receiver, InternalMethod method) {
+        return BasicObjectNodes.createDynamicObject(rubyClass, METHOD_LAYOUT.createMethod(ModuleNodes.getModel(rubyClass).getFactory(), receiver, method));
     }
 
-    public static Object getReceiver(RubyBasicObject method) {
+    public static Object getReceiver(DynamicObject method) {
         return METHOD_LAYOUT.getReceiver(BasicObjectNodes.getDynamicObject(method));
     }
 
-    public static InternalMethod getMethod(RubyBasicObject method) {
+    public static InternalMethod getMethod(DynamicObject method) {
         return METHOD_LAYOUT.getMethod(BasicObjectNodes.getDynamicObject(method));
     }
 
@@ -93,12 +93,12 @@ public abstract class MethodNodes {
         }
 
         @Specialization(guards = "isRubyMethod(b)")
-        public boolean equal(VirtualFrame frame, RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             return areSame(frame, getReceiver(a), getReceiver(b)) && getMethod(a) == getMethod(b);
         }
 
         @Specialization(guards = "!isRubyMethod(b)")
-        public boolean equal(RubyBasicObject a, Object b) {
+        public boolean equal(DynamicObject a, Object b) {
             return false;
         }
 
@@ -112,7 +112,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public int arity(RubyBasicObject method) {
+        public int arity(DynamicObject method) {
             return getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
@@ -131,14 +131,14 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        protected Object call(VirtualFrame frame, RubyBasicObject method, Object[] arguments, Object block) {
+        protected Object call(VirtualFrame frame, DynamicObject method, Object[] arguments, Object block) {
             final InternalMethod internalMethod = getMethod(method);
             final Object[] frameArguments = packArguments(method, internalMethod, arguments, block);
 
             return callMethodNode.executeCallMethod(frame, internalMethod, frameArguments);
         }
 
-        private Object[] packArguments(RubyBasicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
+        private Object[] packArguments(DynamicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
             return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
@@ -157,7 +157,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject name(RubyBasicObject method) {
+        public DynamicObject name(DynamicObject method) {
             CompilerDirectives.transferToInterpreter();
 
             return getSymbol(getMethod(method).getName());
@@ -173,7 +173,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject owner(RubyBasicObject method) {
+        public DynamicObject owner(DynamicObject method) {
             return getMethod(method).getDeclaringModule();
         }
 
@@ -188,7 +188,7 @@ public abstract class MethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject parameters(RubyBasicObject method) {
+        public DynamicObject parameters(DynamicObject method) {
             final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
@@ -207,7 +207,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object receiver(RubyBasicObject method) {
+        public Object receiver(DynamicObject method) {
             return getReceiver(method);
         }
 
@@ -221,7 +221,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object sourceLocation(RubyBasicObject method) {
+        public Object sourceLocation(DynamicObject method) {
             CompilerDirectives.transferToInterpreter();
 
             SourceSection sourceSection = getMethod(method).getSharedMethodInfo().getSourceSection();
@@ -229,7 +229,7 @@ public abstract class MethodNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyBasicObject file = createString(sourceSection.getSource().getName());
+                DynamicObject file = createString(sourceSection.getSource().getName());
                 return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
                         file, sourceSection.getStartLine());
             }
@@ -248,8 +248,8 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject unbind(VirtualFrame frame, RubyBasicObject method) {
-            final RubyBasicObject receiverClass = classNode.executeGetClass(frame, getReceiver(method));
+        public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
+            final DynamicObject receiverClass = classNode.executeGetClass(frame, getReceiver(method));
             return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, getMethod(method));
         }
 
@@ -263,14 +263,14 @@ public abstract class MethodNodes {
         }
 
         @Specialization(guards = "methodObject == cachedMethodObject", limit = "getCacheLimit()")
-        public RubyBasicObject toProcCached(RubyBasicObject methodObject,
-                @Cached("methodObject") RubyBasicObject cachedMethodObject,
-                @Cached("toProcUncached(cachedMethodObject)") RubyBasicObject proc) {
+        public DynamicObject toProcCached(DynamicObject methodObject,
+                @Cached("methodObject") DynamicObject cachedMethodObject,
+                @Cached("toProcUncached(cachedMethodObject)") DynamicObject proc) {
             return proc;
         }
 
         @Specialization
-        public RubyBasicObject toProcUncached(RubyBasicObject methodObject) {
+        public DynamicObject toProcUncached(DynamicObject methodObject) {
             final CallTarget callTarget = method2proc(methodObject);
             final InternalMethod method = getMethod(methodObject);
 
@@ -288,7 +288,7 @@ public abstract class MethodNodes {
         }
 
         @TruffleBoundary
-        protected CallTarget method2proc(RubyBasicObject methodObject) {
+        protected CallTarget method2proc(DynamicObject methodObject) {
             // translate to something like:
             // lambda { |same args list| method.call(args) }
             // We need to preserve the method receiver and we want to have the same argument list

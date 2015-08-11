@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToFNode extends RubyNode {
@@ -66,7 +66,7 @@ public abstract class ToFNode extends RubyNode {
     }
 
     @Specialization
-    public double coerceRubyBasicObject(VirtualFrame frame, RubyBasicObject object) {
+    public double coerceDynamicObject(VirtualFrame frame, DynamicObject object) {
         return coerceObject(frame, object);
     }
 
@@ -81,7 +81,7 @@ public abstract class ToFNode extends RubyNode {
         try {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Float", this));
             } else {

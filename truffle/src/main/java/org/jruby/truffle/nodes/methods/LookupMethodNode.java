@@ -23,11 +23,11 @@ import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
- * Caches {@link ModuleOperations#lookupMethod(RubyBasicObject, String)}
+ * Caches {@link ModuleOperations#lookupMethod(DynamicObject, String)}
  * on an actual instance.
  */
 @NodeChildren({ @NodeChild("self"), @NodeChild("name") })
@@ -50,27 +50,27 @@ public abstract class LookupMethodNode extends RubyNode {
             assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
     protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
-            @Cached("metaClass(frame, self)") RubyBasicObject selfMetaClass,
+            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
             @Cached("name") String cachedName,
             @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
         return method;
     }
 
-    public Assumption getUnmodifiedAssumption(RubyBasicObject module) {
+    public Assumption getUnmodifiedAssumption(DynamicObject module) {
         return ModuleNodes.getModel(module).getUnmodifiedAssumption();
     }
 
     @Specialization
     protected InternalMethod lookupMethodUncached(VirtualFrame frame, Object self, String name) {
-        final RubyBasicObject selfMetaClass = metaClass(frame, self);
+        final DynamicObject selfMetaClass = metaClass(frame, self);
         return doLookup(selfMetaClass, name);
     }
 
-    protected RubyBasicObject metaClass(VirtualFrame frame, Object object) {
+    protected DynamicObject metaClass(VirtualFrame frame, Object object) {
         return metaClassNode.executeMetaClass(frame, object);
     }
 
-    protected InternalMethod doLookup(RubyBasicObject selfMetaClass, String name) {
+    protected InternalMethod doLookup(DynamicObject selfMetaClass, String name) {
         assert RubyGuards.isRubyClass(selfMetaClass);
         InternalMethod method = ModuleOperations.lookupMethod(selfMetaClass, name);
         // TODO (eregon, 26 June 2015): Is this OK for all usages?

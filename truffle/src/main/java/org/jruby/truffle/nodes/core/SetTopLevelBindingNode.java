@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class SetTopLevelBindingNode extends RubyNode {
 
@@ -24,7 +24,7 @@ public class SetTopLevelBindingNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyBasicObject binding = BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+        final DynamicObject binding = BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
         ModuleNodes.getModel(getContext().getCoreLibrary().getObjectClass()).setConstant(this, "TOPLEVEL_BINDING", binding);
         return nil();
     }

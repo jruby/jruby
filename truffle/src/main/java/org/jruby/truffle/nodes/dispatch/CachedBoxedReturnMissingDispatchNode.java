@@ -16,18 +16,18 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final RubyBasicObject expectedClass;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyBasicObject expectedClass,
+            DynamicObject expectedClass,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
@@ -40,8 +40,8 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                BasicObjectNodes.getMetaClass(((RubyBasicObject) receiver)) == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }

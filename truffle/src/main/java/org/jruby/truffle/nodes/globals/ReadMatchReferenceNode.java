@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.MatchDataNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -43,7 +43,7 @@ public class ReadMatchReferenceNode extends RubyNode {
             return nil();
         }
 
-        final RubyBasicObject matchData = (RubyBasicObject) match;
+        final DynamicObject matchData = (DynamicObject) match;
 
         if (index > 0) {
             final Object[] values = MatchDataNodes.getValues(matchData);

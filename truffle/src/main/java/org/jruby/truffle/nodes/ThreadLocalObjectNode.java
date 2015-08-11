@@ -13,7 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ThreadLocalObjectNode extends RubyNode {
 
@@ -22,12 +22,12 @@ public class ThreadLocalObjectNode extends RubyNode {
     }
 
     @Override
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
+    public DynamicObject executeDynamicObject(VirtualFrame frame) {
         return ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeRubyBasicObject(frame);
+        return executeDynamicObject(frame);
     }
 }

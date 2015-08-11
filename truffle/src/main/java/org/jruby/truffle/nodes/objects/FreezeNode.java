@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
@@ -57,17 +57,17 @@ public abstract class FreezeNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyBignum(object)")
-    public Object freezeBignum(RubyBasicObject object) {
+    public Object freezeBignum(DynamicObject object) {
         return object;
     }
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public Object freezeSymbol(RubyBasicObject symbol) {
+    public Object freezeSymbol(DynamicObject symbol) {
         return symbol;
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
-    public Object freeze(RubyBasicObject object) {
+    public Object freeze(DynamicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
             writeFrozenNode = insert(new WriteHeadObjectFieldNode(BasicObjectNodes.FROZEN_IDENTIFIER));

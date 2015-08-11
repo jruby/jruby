@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Represents writing a constant into some module.
@@ -49,7 +49,7 @@ public class WriteConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(receiverObject.toString(), "class/module", this));
         }
 
-        final RubyBasicObject module = (RubyBasicObject) receiverObject;
+        final DynamicObject module = (DynamicObject) receiverObject;
 
         ModuleNodes.getModel(module).setConstant(this, name, rhsValue);
 

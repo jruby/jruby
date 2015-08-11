@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
@@ -112,7 +112,7 @@ public class FeatureManager {
     private boolean requireFile(String feature, String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
-        final RubyBasicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
+        final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
 
         if (path.startsWith("uri:classloader:/")) {
             // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
@@ -183,7 +183,7 @@ public class FeatureManager {
             }
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-            final RubyBasicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
+            final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
             ArrayNodes.slowPush(loadedFeatures, pathString);
             try {
                 context.loadFile(path, currentNode);

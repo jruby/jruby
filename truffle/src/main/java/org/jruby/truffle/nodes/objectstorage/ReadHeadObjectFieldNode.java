@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ReadHeadObjectFieldNode extends Node {
 
@@ -23,23 +23,23 @@ public class ReadHeadObjectFieldNode extends Node {
         first = new UninitializedReadObjectFieldNode(name);
     }
 
-    public boolean executeBoolean(RubyBasicObject object) throws UnexpectedResultException {
+    public boolean executeBoolean(DynamicObject object) throws UnexpectedResultException {
         return first.executeBoolean(object);
     }
 
-    public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
+    public int executeInteger(DynamicObject object) throws UnexpectedResultException {
         return first.executeInteger(object);
     }
 
-    public long executeLong(RubyBasicObject object) throws UnexpectedResultException {
+    public long executeLong(DynamicObject object) throws UnexpectedResultException {
         return first.executeLong(object);
     }
 
-    public double executeDouble(RubyBasicObject object) throws UnexpectedResultException {
+    public double executeDouble(DynamicObject object) throws UnexpectedResultException {
         return first.executeDouble(object);
     }
 
-    public Object execute(RubyBasicObject object) {
+    public Object execute(DynamicObject object) {
         return first.execute(object);
     }
 
@@ -47,7 +47,7 @@ public class ReadHeadObjectFieldNode extends Node {
         return name;
     }
 
-    public boolean isSet(RubyBasicObject object) {
+    public boolean isSet(DynamicObject object) {
         return first.isSet(object);
     }
 

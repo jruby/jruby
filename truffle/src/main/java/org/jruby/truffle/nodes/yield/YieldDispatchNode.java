@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes.yield;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class YieldDispatchNode extends Node {
 
@@ -27,9 +27,9 @@ public abstract class YieldDispatchNode extends Node {
         return null;
     }
 
-    protected abstract boolean guard(RubyBasicObject block);
+    protected abstract boolean guard(DynamicObject block);
 
-    public abstract Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects);
+    public abstract Object dispatchWithSelfAndBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject modifiedBlock, Object... argumentsObjects);
 
     public RubyContext getContext() {
         return context;

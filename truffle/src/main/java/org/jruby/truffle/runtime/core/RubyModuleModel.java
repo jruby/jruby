@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
@@ -31,13 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RubyModuleModel implements ModuleChain {
 
-    public static void debugModuleChain(RubyBasicObject module) {
+    public static void debugModuleChain(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
         ModuleChain chain = ModuleNodes.getModel(module);
         while (chain != null) {
             System.err.print(chain.getClass());
             if (!(chain instanceof PrependMarker)) {
-                RubyBasicObject real = chain.getActualModule();
+                DynamicObject real = chain.getActualModule();
                 System.err.print(" " + ModuleNodes.getModel(real).getName());
             }
             System.err.println();
@@ -45,7 +46,7 @@ public class RubyModuleModel implements ModuleChain {
         }
     }
 
-    public RubyBasicObject rubyModuleObject;
+    public DynamicObject rubyModuleObject;
 
     // The context is stored here - objects can obtain it via their class (which is a module)
     private final RubyContext context;
@@ -54,7 +55,7 @@ public class RubyModuleModel implements ModuleChain {
     @CompilerDirectives.CompilationFinal
     public ModuleChain parentModule;
 
-    public final RubyBasicObject lexicalParent;
+    public final DynamicObject lexicalParent;
     public final String givenBaseName;
     /**
      * Full name, including named parent
@@ -71,20 +72,20 @@ public class RubyModuleModel implements ModuleChain {
      * Keep track of other modules that depend on the configuration of this module in some way. The
      * include subclasses and modules that include this module.
      */
-    private final Set<RubyBasicObject> dependents = Collections.newSetFromMap(new WeakHashMap<RubyBasicObject, Boolean>());
+    private final Set<DynamicObject> dependents = Collections.newSetFromMap(new WeakHashMap<DynamicObject, Boolean>());
     /**
      * Lexical dependent modules, to take care of changes to a module constants.
      */
-    private final Set<RubyBasicObject> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyBasicObject, Boolean>());
+    private final Set<DynamicObject> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<DynamicObject, Boolean>());
 
     // Only used for classes
 
     public final boolean isSingleton;
-    public final RubyBasicObject attached;
+    public final DynamicObject attached;
     public Allocator allocator;
     public DynamicObjectFactory factory;
 
-    public RubyModuleModel(RubyContext context, RubyBasicObject lexicalParent, String givenBaseName, boolean isSingleton, RubyBasicObject attached, Allocator allocator, DynamicObjectFactory factory) {
+    public RubyModuleModel(RubyContext context, DynamicObject lexicalParent, String givenBaseName, boolean isSingleton, DynamicObject attached, Allocator allocator, DynamicObjectFactory factory) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         assert attached == null || RubyGuards.isRubyModule(attached);
         this.context = context;
@@ -98,7 +99,7 @@ public class RubyModuleModel implements ModuleChain {
         this.factory = factory;
     }
 
-    public void getAdoptedByLexicalParent(RubyBasicObject lexicalParent, String name, Node currentNode) {
+    public void getAdoptedByLexicalParent(DynamicObject lexicalParent, String name, Node currentNode) {
         assert RubyGuards.isRubyModule(lexicalParent);
 
         ModuleNodes.getModel(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
@@ -106,8 +107,8 @@ public class RubyModuleModel implements ModuleChain {
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            final RubyBasicObject classClass = BasicObjectNodes.getLogicalClass(getLogicalClass());
-            final RubyBasicObject objectClass = ModuleNodes.getModel(ModuleNodes.getModel(classClass).getSuperClass()).getSuperClass();
+            final DynamicObject classClass = BasicObjectNodes.getLogicalClass(getLogicalClass());
+            final DynamicObject objectClass = ModuleNodes.getModel(ModuleNodes.getModel(classClass).getSuperClass()).getSuperClass();
 
             if (lexicalParent == objectClass) {
                 this.name = name;
@@ -125,7 +126,7 @@ public class RubyModuleModel implements ModuleChain {
         for (Map.Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
             if (RubyGuards.isRubyModule(constant.getValue())) {
-                RubyBasicObject module = (RubyBasicObject) constant.getValue();
+                DynamicObject module = (DynamicObject) constant.getValue();
                 if (!ModuleNodes.getModel(module).hasName()) {
                     ModuleNodes.getModel(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
                 }
@@ -134,7 +135,7 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void initCopy(RubyBasicObject from) {
+    public void initCopy(DynamicObject from) {
         assert RubyGuards.isRubyModule(from);
 
         // Do not copy name, the copy is an anonymous module
@@ -148,7 +149,7 @@ public class RubyModuleModel implements ModuleChain {
             this.parentModule = ModuleNodes.getModel(from).parentModule;
         }
 
-        for (RubyBasicObject ancestor : ModuleNodes.getModel(from).ancestors()) {
+        for (DynamicObject ancestor : ModuleNodes.getModel(from).ancestors()) {
             ModuleNodes.getModel(ancestor).addDependent(rubyModuleObject);
         }
 
@@ -178,12 +179,12 @@ public class RubyModuleModel implements ModuleChain {
         }
     }
 
-    public void insertAfter(RubyBasicObject module) {
+    public void insertAfter(DynamicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void include(Node currentNode, RubyBasicObject module) {
+    public void include(Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
         checkFrozen(currentNode);
@@ -195,8 +196,8 @@ public class RubyModuleModel implements ModuleChain {
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
         ModuleChain inclusionPoint = this;
-        Deque<RubyBasicObject> modulesToInclude = new ArrayDeque<>();
-        for (RubyBasicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
+        Deque<DynamicObject> modulesToInclude = new ArrayDeque<>();
+        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
                 if (isIncludedModuleBeforeSuperClass(ancestor)) {
                     // Include the modules at the appropriate inclusionPoint
@@ -221,16 +222,16 @@ public class RubyModuleModel implements ModuleChain {
         newVersion();
     }
 
-    public void performIncludes(ModuleChain inclusionPoint, Deque<RubyBasicObject> moduleAncestors) {
+    public void performIncludes(ModuleChain inclusionPoint, Deque<DynamicObject> moduleAncestors) {
         while (!moduleAncestors.isEmpty()) {
-            RubyBasicObject mod = moduleAncestors.pop();
+            DynamicObject mod = moduleAncestors.pop();
             assert RubyGuards.isRubyModule(mod);
             inclusionPoint.insertAfter(mod);
             ModuleNodes.getModel(mod).addDependent(rubyModuleObject);
         }
     }
 
-    public boolean isIncludedModuleBeforeSuperClass(RubyBasicObject module) {
+    public boolean isIncludedModuleBeforeSuperClass(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
         ModuleChain included = parentModule;
         while (included instanceof IncludedModule) {
@@ -243,7 +244,7 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void prepend(Node currentNode, RubyBasicObject module) {
+    public void prepend(Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
         checkFrozen(currentNode);
@@ -283,14 +284,14 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            ModuleNodes.getModel(((RubyBasicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+            ModuleNodes.getModel(((DynamicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(currentNode, name, value, false);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void setAutoloadConstant(Node currentNode, String name, RubyBasicObject filename) {
+    public void setAutoloadConstant(Node currentNode, String name, DynamicObject filename) {
         assert RubyGuards.isRubyString(filename);
         setConstantInternal(currentNode, name, filename, true);
     }
@@ -466,14 +467,14 @@ public class RubyModuleModel implements ModuleChain {
     }
 
     public void newVersion() {
-        newVersion(new HashSet<RubyBasicObject>(), false);
+        newVersion(new HashSet<DynamicObject>(), false);
     }
 
     public void newLexicalVersion() {
-        newVersion(new HashSet<RubyBasicObject>(), true);
+        newVersion(new HashSet<DynamicObject>(), true);
     }
 
-    public void newVersion(Set<RubyBasicObject> alreadyInvalidated, boolean considerLexicalDependents) {
+    public void newVersion(Set<DynamicObject> alreadyInvalidated, boolean considerLexicalDependents) {
         if (alreadyInvalidated.contains(rubyModuleObject))
             return;
 
@@ -481,23 +482,23 @@ public class RubyModuleModel implements ModuleChain {
         alreadyInvalidated.add(rubyModuleObject);
 
         // Make dependents new versions
-        for (RubyBasicObject dependent : dependents) {
+        for (DynamicObject dependent : dependents) {
             ModuleNodes.getModel(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
         }
 
         if (considerLexicalDependents) {
-            for (RubyBasicObject dependent : lexicalDependents) {
+            for (DynamicObject dependent : lexicalDependents) {
                 ModuleNodes.getModel(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
             }
         }
     }
 
-    public void addDependent(RubyBasicObject dependent) {
+    public void addDependent(DynamicObject dependent) {
         RubyGuards.isRubyModule(dependent);
         dependents.add(dependent);
     }
 
-    public void addLexicalDependent(RubyBasicObject lexicalChild) {
+    public void addLexicalDependent(DynamicObject lexicalChild) {
         assert RubyGuards.isRubyModule(lexicalChild);
         if (lexicalChild != rubyModuleObject)
             lexicalDependents.add(lexicalChild);
@@ -521,14 +522,14 @@ public class RubyModuleModel implements ModuleChain {
 
     public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         for (RubyConstant constant : constants.values()) {
-            if (constant.getValue() instanceof RubyBasicObject) {
-                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) constant.getValue()), visitor);
+            if (constant.getValue() instanceof DynamicObject) {
+                BasicObjectNodes.visitObjectGraph(((DynamicObject) constant.getValue()), visitor);
             }
         }
 
         for (Object classVariable : classVariables.values()) {
-            if (classVariable instanceof RubyBasicObject) {
-                BasicObjectNodes.visitObjectGraph(((RubyBasicObject) classVariable), visitor);
+            if (classVariable instanceof DynamicObject) {
+                BasicObjectNodes.visitObjectGraph(((DynamicObject) classVariable), visitor);
             }
         }
 
@@ -538,7 +539,7 @@ public class RubyModuleModel implements ModuleChain {
             }
         }
 
-        for (RubyBasicObject ancestor : ancestors()) {
+        for (DynamicObject ancestor : ancestors()) {
             BasicObjectNodes.visitObjectGraph(ancestor, visitor);
         }
     }
@@ -547,25 +548,25 @@ public class RubyModuleModel implements ModuleChain {
         return parentModule;
     }
 
-    public RubyBasicObject getActualModule() {
+    public DynamicObject getActualModule() {
         return rubyModuleObject;
     }
 
-    public Iterable<RubyBasicObject> ancestors() {
+    public Iterable<DynamicObject> ancestors() {
         final ModuleChain top = start;
-        return new Iterable<RubyBasicObject>() {
+        return new Iterable<DynamicObject>() {
             @Override
-            public Iterator<RubyBasicObject> iterator() {
+            public Iterator<DynamicObject> iterator() {
                 return new AncestorIterator(top);
             }
         };
     }
 
-    public Iterable<RubyBasicObject> parentAncestors() {
+    public Iterable<DynamicObject> parentAncestors() {
         final ModuleChain top = start;
-        return new Iterable<RubyBasicObject>() {
+        return new Iterable<DynamicObject>() {
             @Override
-            public Iterator<RubyBasicObject> iterator() {
+            public Iterator<DynamicObject> iterator() {
                 final AncestorIterator iterator = new AncestorIterator(top);
                 if (iterator.hasNext()) {
                     iterator.next();
@@ -578,18 +579,18 @@ public class RubyModuleModel implements ModuleChain {
     /**
      * Iterates over include'd and prepend'ed modules.
      */
-    public Iterable<RubyBasicObject> prependedAndIncludedModules() {
+    public Iterable<DynamicObject> prependedAndIncludedModules() {
         final ModuleChain top = start;
         final RubyModuleModel currentModule = this;
-        return new Iterable<RubyBasicObject>() {
+        return new Iterable<DynamicObject>() {
             @Override
-            public Iterator<RubyBasicObject> iterator() {
+            public Iterator<DynamicObject> iterator() {
                 return new IncludedModulesIterator(top, currentModule);
             }
         };
     }
 
-    public Collection<RubyBasicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
@@ -599,7 +600,7 @@ public class RubyModuleModel implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    public Collection<RubyBasicObject> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
@@ -609,7 +610,7 @@ public class RubyModuleModel implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    public Collection<RubyBasicObject> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(rubyModuleObject);
@@ -619,10 +620,10 @@ public class RubyModuleModel implements ModuleChain {
         return filterMethods(allMethods, filter);
     }
 
-    public Collection<RubyBasicObject> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
-        final Set<RubyBasicObject> filtered = new HashSet<>();
+        final Set<DynamicObject> filtered = new HashSet<>();
         for (InternalMethod method : methods.values()) {
             if (filter.filter(method)) {
                 filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));
@@ -632,11 +633,11 @@ public class RubyModuleModel implements ModuleChain {
         return filtered;
     }
 
-    public RubyBasicObject getLogicalClass() {
+    public DynamicObject getLogicalClass() {
         return BasicObjectNodes.getLogicalClass(rubyModuleObject);
     }
 
-    public void initialize(RubyBasicObject superclass) {
+    public void initialize(DynamicObject superclass) {
         assert isClass();
         assert RubyGuards.isRubyClass(superclass);
 
@@ -654,20 +655,20 @@ public class RubyModuleModel implements ModuleChain {
         ModuleNodes.getModel(rubyModuleObject).factory = factory;
     }
 
-    public RubyBasicObject ensureSingletonConsistency() {
+    public DynamicObject ensureSingletonConsistency() {
         assert isClass();
         createOneSingletonClass();
         return rubyModuleObject;
     }
 
-    public RubyBasicObject getSingletonClass() {
+    public DynamicObject getSingletonClass() {
         assert isClass();
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
         return ModuleNodes.getModel(createOneSingletonClass()).ensureSingletonConsistency();
     }
 
-    public RubyBasicObject createOneSingletonClass() {
+    public DynamicObject createOneSingletonClass() {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
@@ -675,7 +676,7 @@ public class RubyModuleModel implements ModuleChain {
             return BasicObjectNodes.getMetaClass(rubyModuleObject);
         }
 
-        final RubyBasicObject singletonSuperclass;
+        final DynamicObject singletonSuperclass;
         if (getSuperClass() == null) {
             singletonSuperclass = getLogicalClass();
         } else {
@@ -694,16 +695,16 @@ public class RubyModuleModel implements ModuleChain {
         return isSingleton;
     }
 
-    public RubyBasicObject getAttached() {
+    public DynamicObject getAttached() {
         assert isClass();
         return attached;
     }
 
-    public RubyBasicObject getSuperClass() {
+    public DynamicObject getSuperClass() {
         assert isClass();
         CompilerAsserts.neverPartOfCompilation();
 
-        for (RubyBasicObject ancestor : parentAncestors()) {
+        for (DynamicObject ancestor : parentAncestors()) {
             if (RubyGuards.isRubyClass(ancestor)) {
                 return ancestor;
             }

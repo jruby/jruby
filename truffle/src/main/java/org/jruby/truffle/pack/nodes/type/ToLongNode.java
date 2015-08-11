@@ -25,7 +25,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Convert a value to a {@code long}.
@@ -64,7 +64,7 @@ public abstract class ToLongNode extends PackNode {
     }
 
     @Specialization(guards = "isRubyBignum(object)")
-    public long toLong(VirtualFrame frame, RubyBasicObject object) {
+    public long toLong(VirtualFrame frame, DynamicObject object) {
         // A truncated value is exactly what we want
         return BignumNodes.getBigIntegerValue(object).longValue();
     }
@@ -93,7 +93,7 @@ public abstract class ToLongNode extends PackNode {
         }
 
         if (seenBignum && PackGuards.isRubyBignum(value)) {
-            return toLong(frame, (RubyBasicObject) value);
+            return toLong(frame, (DynamicObject) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -114,7 +114,7 @@ public abstract class ToLongNode extends PackNode {
 
         if (PackGuards.isRubyBignum(value)) {
             seenBignum = true;
-            return toLong(frame, (RubyBasicObject) value);
+            return toLong(frame, (DynamicObject) value);
         }
 
         // TODO CS 5-April-15 missing the (Object#to_int gives String) part

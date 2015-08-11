@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 
@@ -155,7 +155,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
-            final RubyBasicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
+            final DynamicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);

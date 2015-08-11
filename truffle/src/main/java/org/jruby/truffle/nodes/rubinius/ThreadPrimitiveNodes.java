@@ -17,7 +17,7 @@ import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
 import com.oracle.truffle.api.dsl.Specialization;
@@ -37,13 +37,13 @@ public class ThreadPrimitiveNodes {
         }
 
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
-        public RubyBasicObject raise(RubyBasicObject thread, final RubyBasicObject exception) {
+        public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
             getContext().getSafepointManager().pauseThreadAndExecuteLater(
                     ThreadNodes.getCurrentFiberJavaThread(thread),
                     this,
                     new SafepointAction() {
                         @Override
-                        public void run(RubyBasicObject currentThread, Node currentNode) {
+                        public void run(DynamicObject currentThread, Node currentNode) {
                             throw new RaiseException(exception);
                         }
                     });
@@ -60,7 +60,7 @@ public class ThreadPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyThread(thread)")
-        public int getPriority(RubyBasicObject thread) {
+        public int getPriority(DynamicObject thread) {
             final Thread javaThread = ThreadNodes.getFields(thread).thread;
             if (javaThread != null) {
                 int javaPriority = javaThread.getPriority();
@@ -78,7 +78,7 @@ public class ThreadPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyThread(thread)")
-        public int getPriority(RubyBasicObject thread, int rubyPriority) {
+        public int getPriority(DynamicObject thread, int rubyPriority) {
             if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
                 rubyPriority = RUBY_MIN_THREAD_PRIORITY;
             } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {

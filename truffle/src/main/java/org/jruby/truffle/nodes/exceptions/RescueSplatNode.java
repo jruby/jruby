@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of
@@ -34,15 +34,15 @@ public class RescueSplatNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
+    public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject handlingClasses = (RubyBasicObject) handlingClassesArray.execute(frame);
+        final DynamicObject handlingClasses = (DynamicObject) handlingClassesArray.execute(frame);
 
-        final RubyBasicObject exceptionRubyClass = BasicObjectNodes.getLogicalClass(exception);
+        final DynamicObject exceptionRubyClass = BasicObjectNodes.getLogicalClass(exception);
 
         for (Object handlingClass : ArrayNodes.slowToArray(handlingClasses)) {
-            if (ModuleOperations.assignableTo(exceptionRubyClass, (RubyBasicObject) handlingClass)) {
+            if (ModuleOperations.assignableTo(exceptionRubyClass, (DynamicObject) handlingClass)) {
                 return true;
             }
         }

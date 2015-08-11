@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.translator.WriteNode;
 
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
@@ -40,14 +40,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
                 final int value = rhs.executeInteger(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
@@ -60,14 +60,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
                 final long value = rhs.executeLong(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
@@ -80,14 +80,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
                 final double value = rhs.executeDouble(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
@@ -101,8 +101,8 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         final Object object = receiver.execute(frame);
         final Object value = rhs.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
-            writeNode.execute((RubyBasicObject) object, value);
+        if (object instanceof DynamicObject) {
+            writeNode.execute((DynamicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));

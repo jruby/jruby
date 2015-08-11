@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class TaintNode extends RubyNode {
@@ -53,12 +53,12 @@ public abstract class TaintNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public Object taintSymbol(RubyBasicObject symbol) {
+    public Object taintSymbol(DynamicObject symbol) {
         return frozen(symbol);
     }
 
     @Specialization(guards = "!isRubySymbol(object)")
-    public Object taint(RubyBasicObject object) {
+    public Object taint(DynamicObject object) {
         if (writeTaintNode == null) {
             CompilerDirectives.transferToInterpreter();
             writeTaintNode = insert(new WriteHeadObjectFieldNode(BasicObjectNodes.TAINTED_IDENTIFIER));

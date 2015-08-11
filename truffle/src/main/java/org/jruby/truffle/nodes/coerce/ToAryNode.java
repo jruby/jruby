@@ -21,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -34,12 +34,12 @@ public abstract class ToAryNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public RubyBasicObject coerceRubyArray(RubyBasicObject array) {
+    public DynamicObject coerceRubyArray(DynamicObject array) {
         return array;
     }
 
     @Specialization(guards = "!isRubyArray(object)")
-    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -50,7 +50,7 @@ public abstract class ToAryNode extends RubyNode {
         try {
             coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -60,7 +60,7 @@ public abstract class ToAryNode extends RubyNode {
             }
         }
         if (RubyGuards.isRubyArray(coerced)) {
-            return (RubyBasicObject) coerced;
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
 

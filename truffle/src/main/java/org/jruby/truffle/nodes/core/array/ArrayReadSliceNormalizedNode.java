@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Arrays;
 
@@ -34,21 +34,21 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeReadSlice(VirtualFrame frame, RubyBasicObject array, int index, int length);
+    public abstract Object executeReadSlice(VirtualFrame frame, DynamicObject array, int index, int length);
 
     // Index out of bounds or negative length always gives you nil
 
     @Specialization(
             guards={"isRubyArray(array)", "!indexInBounds(array, index)"}
     )
-    public RubyBasicObject readIndexOutOfBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readIndexOutOfBounds(DynamicObject array, int index, int length) {
         return nil();
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "!lengthPositive(length)"}
     )
-    public RubyBasicObject readNegativeLength(RubyBasicObject array, int index, int length) {
+    public DynamicObject readNegativeLength(DynamicObject array, int index, int length) {
         return nil();
     }
 
@@ -57,7 +57,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "isNullArray(array)"}
     )
-    public RubyBasicObject readNull(RubyBasicObject array, int index, int length) {
+    public DynamicObject readNull(DynamicObject array, int index, int length) {
         return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
     }
 
@@ -66,7 +66,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isIntArray(array)"}
     )
-    public RubyBasicObject readIntInBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readIntInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + length), length);
     }
@@ -74,7 +74,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isLongArray(array)"}
     )
-    public RubyBasicObject readLongInBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readLongInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + length), length);
     }
@@ -82,7 +82,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isDoubleArray(array)"}
     )
-    public RubyBasicObject readDoubleInBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readDoubleInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + length), length);
     }
@@ -90,7 +90,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "endInBounds(array, index, length)", "isObjectArray(array)"}
     )
-    public RubyBasicObject readObjectInBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readObjectInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
                 Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + length), length);
     }
@@ -100,7 +100,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isIntArray(array)"}
     )
-    public RubyBasicObject readIntOutOfBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readIntOutOfBounds(DynamicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
@@ -110,7 +110,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isLongArray(array)"}
     )
-    public RubyBasicObject readLongOutOfBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readLongOutOfBounds(DynamicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
@@ -120,7 +120,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isDoubleArray(array)"}
     )
-    public RubyBasicObject readDoubleOutOfBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readDoubleOutOfBounds(DynamicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
@@ -130,7 +130,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isObjectArray(array)"}
     )
-    public RubyBasicObject readObjectOutOfBounds(RubyBasicObject array, int index, int length) {
+    public DynamicObject readObjectOutOfBounds(DynamicObject array, int index, int length) {
         final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
@@ -139,7 +139,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     // Guards
 
-    protected static boolean indexInBounds(RubyBasicObject array, int index) {
+    protected static boolean indexInBounds(DynamicObject array, int index) {
         return index >= 0 && index <= ArrayNodes.getSize(array);
     }
 
@@ -147,7 +147,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
         return length >= 0;
     }
 
-    protected static boolean endInBounds(RubyBasicObject array, int index, int length) {
+    protected static boolean endInBounds(DynamicObject array, int index, int length) {
         return index + length < ArrayNodes.getSize(array);
     }
 

@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
@@ -33,7 +33,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
     private static final int BACKTRACE_MAX_VALUE_LENGTH = Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load();
 
     @Override
-    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         try {
             final List<Activation> activations = backtrace.getActivations();
 

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -31,14 +31,14 @@ public abstract class GeneralizeArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeGeneralize(VirtualFrame frame, RubyBasicObject array, int requiredCapacity);
+    public abstract Object executeGeneralize(VirtualFrame frame, DynamicObject array, int requiredCapacity);
 
     // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
 
     @Specialization(
             guards={"isRubyArray(array)", "isNullArray(array)"}
     )
-    public RubyBasicObject generalizeNull(RubyBasicObject array, int requiredCapacity) {
+    public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
         ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
         return array;
     }
@@ -46,7 +46,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
-    public RubyBasicObject generalizeInt(RubyBasicObject array, int requiredCapacity) {
+    public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
         final int[] intStore = (int[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
@@ -55,7 +55,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
-    public RubyBasicObject generalizeLong(RubyBasicObject array, int requiredCapacity) {
+    public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
         final long[] intStore = (long[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;
@@ -64,7 +64,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
-    public RubyBasicObject generalizeDouble(RubyBasicObject array, int requiredCapacity) {
+    public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
         final double[] intStore = (double[]) ArrayNodes.getStore(array);
         ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
         return array;

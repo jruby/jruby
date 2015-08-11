@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -32,14 +32,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
-    public RubyBasicObject getTailNull(RubyBasicObject array) {
+    public DynamicObject getTailNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject getTailIntegerFixnum(RubyBasicObject array) {
+    public DynamicObject getTailIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -50,7 +50,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject getTailLongFixnum(RubyBasicObject array) {
+    public DynamicObject getTailLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -61,7 +61,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject getTailFloat(RubyBasicObject array) {
+    public DynamicObject getTailFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {
@@ -72,7 +72,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject getTailObject(RubyBasicObject array) {
+    public DynamicObject getTailObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= ArrayNodes.getSize(array)) {

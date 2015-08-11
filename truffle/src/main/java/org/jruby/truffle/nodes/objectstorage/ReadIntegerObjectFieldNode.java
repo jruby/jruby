@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.IntLocation;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
@@ -29,7 +29,7 @@ public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
     }
 
     @Override
-    public int executeInteger(RubyBasicObject object) throws UnexpectedResultException {
+    public int executeInteger(DynamicObject object) throws UnexpectedResultException {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
@@ -37,7 +37,7 @@ public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
             return next.executeInteger(object);
         }
 
-        final boolean condition = object.dynamicObject.getShape() == objectLayout;
+        final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
             return storageLocation.getInt(BasicObjectNodes.getDynamicObject(object), objectLayout);
@@ -47,7 +47,7 @@ public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
     }
 
     @Override
-    public Object execute(RubyBasicObject object) {
+    public Object execute(DynamicObject object) {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
@@ -55,7 +55,7 @@ public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        final boolean condition = object.dynamicObject.getShape() == objectLayout;
+        final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
             return storageLocation.get(BasicObjectNodes.getDynamicObject(object), objectLayout);

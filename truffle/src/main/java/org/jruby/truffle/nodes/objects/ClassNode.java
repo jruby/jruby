@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Reads the class of an object.
@@ -28,35 +28,35 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyBasicObject executeGetClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeGetClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyBasicObject getClassTrue(boolean value) {
+    protected DynamicObject getClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyBasicObject getClassFalse(boolean value) {
+    protected DynamicObject getClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyBasicObject getClass(int value) {
+    protected DynamicObject getClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyBasicObject getClass(long value) {
+    protected DynamicObject getClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyBasicObject getClass(double value) {
+    protected DynamicObject getClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyBasicObject getClass(RubyBasicObject object) {
+    protected DynamicObject getClass(DynamicObject object) {
         return BasicObjectNodes.getLogicalClass(object);
     }
 

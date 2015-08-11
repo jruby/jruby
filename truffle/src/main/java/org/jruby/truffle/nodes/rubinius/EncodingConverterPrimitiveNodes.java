@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 /**
@@ -44,7 +44,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterAllocate(RubyBasicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
+        public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
             return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
         }
 
@@ -60,20 +60,20 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
-        public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyBasicObject source,
-                                                        RubyBasicObject target, int offset, int size, RubyBasicObject options) {
+        public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, DynamicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 
         @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
-        public Object primitiveConvertNilSource(RubyBasicObject encodingConverter, RubyBasicObject source,
-                                                        RubyBasicObject target, int offset, int size, int options) {
+        public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, int options) {
             return primitiveConvertHelper(encodingConverter, new ByteList(), source, target, offset, size, options);
         }
 
         @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
-        public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyBasicObject source,
-                                                        RubyBasicObject target, int offset, int size, int options) {
+        public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, int options) {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
@@ -84,8 +84,8 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @TruffleBoundary
-        private Object primitiveConvertHelper(RubyBasicObject encodingConverter, ByteList inBytes, RubyBasicObject source,
-                                              RubyBasicObject target, int offset, int size, int options) {
+        private Object primitiveConvertHelper(DynamicObject encodingConverter, ByteList inBytes, DynamicObject source,
+                                              DynamicObject target, int offset, int size, int options) {
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
             final boolean nonNullSource = source != nil();
@@ -176,7 +176,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject encodingConverterPutback(RubyBasicObject encodingConverter, int maxBytes) {
+        public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
             final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
@@ -186,7 +186,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject encodingConverterPutback(RubyBasicObject encodingConverter, NotProvided maxBytes) {
+        public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, NotProvided maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
             final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
@@ -194,7 +194,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             return putback(encodingConverter, ec.putbackable());
         }
 
-        private RubyBasicObject putback(RubyBasicObject encodingConverter, int n) {
+        private DynamicObject putback(DynamicObject encodingConverter, int n) {
             assert RubyGuards.isRubyEncodingConverter(encodingConverter);
 
             // Taken from org.jruby.RubyConverter#putback.
@@ -226,7 +226,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterLastError(VirtualFrame frame, RubyBasicObject encodingConverter) {
+        public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
             final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
@@ -252,7 +252,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             return ret;
         }
 
-        private RubyBasicObject eConvResultToSymbol(EConvResult result) {
+        private DynamicObject eConvResultToSymbol(EConvResult result) {
             switch(result) {
                 case InvalidByteSequence: return getSymbol("invalid_byte_sequence");
                 case UndefinedConversion: return getSymbol("undefined_conversion");
@@ -276,7 +276,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterLastError(RubyBasicObject encodingConverter) {
+        public Object encodingConverterLastError(DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
             final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);

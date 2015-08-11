@@ -51,7 +51,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.util.EnumSet;
@@ -70,15 +70,15 @@ public abstract class IOBufferPrimitiveNodes {
         String START_IDENTIFIER = "@start";
         String TOTAL_IDENTIFIER = "@total";
 
-        DynamicObjectFactory createIOBufferShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass, DynamicObject metaClass);
 
-        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, RubyBasicObject storage, int used, int start, int total);
+        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, DynamicObject storage, int used, int start, int total);
 
         boolean getWriteSynced(DynamicObject object);
         void setWriteSynced(DynamicObject object, boolean value);
 
-        RubyBasicObject getStorage(DynamicObject object);
-        void setStorage(DynamicObject object, RubyBasicObject value);
+        DynamicObject getStorage(DynamicObject object);
+        void setStorage(DynamicObject object, DynamicObject value);
 
         int getUsed(DynamicObject object);
         void setUsed(DynamicObject object, int value);
@@ -93,24 +93,24 @@ public abstract class IOBufferPrimitiveNodes {
 
     public static final IOBufferLayout IO_BUFFER_LAYOUT = IOBufferLayoutImpl.INSTANCE;
 
-    public static void setWriteSynced(RubyBasicObject io, boolean writeSynced) {
-        IO_BUFFER_LAYOUT.setWriteSynced(io.dynamicObject, writeSynced);
+    public static void setWriteSynced(DynamicObject io, boolean writeSynced) {
+        IO_BUFFER_LAYOUT.setWriteSynced(io, writeSynced);
     }
 
-    private static RubyBasicObject getStorage(RubyBasicObject io) {
-        return IO_BUFFER_LAYOUT.getStorage(io.dynamicObject);
+    private static DynamicObject getStorage(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getStorage(io);
     }
 
-    private static int getUsed(RubyBasicObject io) {
-        return IO_BUFFER_LAYOUT.getUsed(io.dynamicObject);
+    private static int getUsed(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getUsed(io);
     }
 
-    public static void setUsed(RubyBasicObject io, int used) {
-        IO_BUFFER_LAYOUT.setUsed(io.dynamicObject, used);
+    public static void setUsed(DynamicObject io, int used) {
+        IO_BUFFER_LAYOUT.setUsed(io, used);
     }
 
-    private static int getTotal(RubyBasicObject io) {
-        return IO_BUFFER_LAYOUT.getTotal(io.dynamicObject);
+    private static int getTotal(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getTotal(io);
     }
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
@@ -121,8 +121,8 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
-            return BasicObjectNodes.createRubyBasicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
+        public DynamicObject allocate(DynamicObject classToAllocate) {
+            return BasicObjectNodes.createDynamicObject(classToAllocate, IO_BUFFER_LAYOUT.createIOBuffer(
                     ModuleNodes.getModel(classToAllocate).getFactory(),
                     true,
                     ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
@@ -141,7 +141,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject string, int startPosition) {
+        public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
             setWriteSynced(ioBuffer, false);
 
             final ByteList byteList = StringNodes.getByteList(string);
@@ -173,7 +173,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public int fill(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject io) {
+        public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
             final int fd = IOPrimitiveNodes.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
@@ -233,7 +233,7 @@ public abstract class IOBufferPrimitiveNodes {
             return bytesRead;
         }
 
-        private int left(VirtualFrame frame, RubyBasicObject ioBuffer) {
+        private int left(VirtualFrame frame, DynamicObject ioBuffer) {
             final int total = getTotal(ioBuffer);
             final int used = getUsed(ioBuffer);
             return total - used;

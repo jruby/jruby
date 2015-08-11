@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class PointerNodes {
 
@@ -26,7 +26,7 @@ public abstract class PointerNodes {
     @Layout
     public interface PointerLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createPointerShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createPointerShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createPointer(DynamicObjectFactory factory, Pointer pointer);
 
@@ -41,24 +41,24 @@ public abstract class PointerNodes {
 
     public static class PointerAllocator implements Allocator {
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
             return createPointer(rubyClass, NULL_POINTER);
         }
     }
 
-    public static RubyBasicObject createPointer(RubyBasicObject rubyClass, Pointer pointer) {
+    public static DynamicObject createPointer(DynamicObject rubyClass, Pointer pointer) {
         if (pointer == null) {
             pointer = NULL_POINTER;
         }
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).getFactory(), pointer));
+        return BasicObjectNodes.createDynamicObject(rubyClass, POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).getFactory(), pointer));
     }
 
-    public static void setPointer(RubyBasicObject pointer, Pointer newPointer) {
+    public static void setPointer(DynamicObject pointer, Pointer newPointer) {
         POINTER_LAYOUT.setPointer(BasicObjectNodes.getDynamicObject(pointer), newPointer);
     }
 
-    public static Pointer getPointer(RubyBasicObject pointer) {
+    public static Pointer getPointer(DynamicObject pointer) {
         return POINTER_LAYOUT.getPointer(BasicObjectNodes.getDynamicObject(pointer));
     }
 

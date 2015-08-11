@@ -20,12 +20,12 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final RubyBasicObject expectedClass;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
 
     private final InternalMethod method;
@@ -36,7 +36,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyBasicObject expectedClass,
+            DynamicObject expectedClass,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
@@ -68,8 +68,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     @Override
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                BasicObjectNodes.getMetaClass(((RubyBasicObject) receiver)) == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override
@@ -97,7 +97,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -112,7 +112,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -121,7 +121,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }

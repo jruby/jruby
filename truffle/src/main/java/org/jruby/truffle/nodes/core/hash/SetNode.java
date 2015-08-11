@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
@@ -57,28 +57,28 @@ public abstract class SetNode extends RubyNode {
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public abstract Object executeSet(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity);
+    public abstract Object executeSet(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity);
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
-    public Object setNull(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
+    public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
         HashNodes.setStore(hash, PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value), 1, null, null);
         assert HashNodes.verifyStore(hash);
         return value;
     }
 
     @Specialization(guards = {"isNullHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setNullByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setNullByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setNull(frame, hash, (Object) key, value, byIdentity);
     }
 
     @Specialization(guards = {"isNullHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setNullNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setNullNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setNull(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 
     @ExplodeLoop
     @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
-    public Object setPackedArray(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
+    public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
         assert HashNodes.verifyStore(hash);
 
         final int hashed = hashNode.hash(frame, key);
@@ -123,12 +123,12 @@ public abstract class SetNode extends RubyNode {
     }
 
     @Specialization(guards = {"isPackedHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setPackedArray(frame, hash, key, value, byIdentity);
     }
 
     @Specialization(guards = {"isPackedHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setPackedArrayNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setPackedArray(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 
@@ -139,7 +139,7 @@ public abstract class SetNode extends RubyNode {
     private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
     @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
-    public Object setBuckets(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
+    public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
         assert HashNodes.verifyStore(hash);
 
         if (lookupEntryNode == null) {
@@ -192,12 +192,12 @@ public abstract class SetNode extends RubyNode {
     }
 
     @Specialization(guards = {"isBucketHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setBucketsByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setBucketsByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setBuckets(frame, hash, (Object) key, value, byIdentity);
     }
 
     @Specialization(guards = {"isBucketHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setBucketsNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setBucketsNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 

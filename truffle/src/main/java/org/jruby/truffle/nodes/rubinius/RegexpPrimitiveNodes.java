@@ -20,7 +20,7 @@ import org.joni.Regex;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
@@ -38,7 +38,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public boolean fixedEncoding(RubyBasicObject regexp) {
+        public boolean fixedEncoding(DynamicObject regexp) {
             return RegexpNodes.getOptions(regexp).isFixed();
         }
 
@@ -53,19 +53,19 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRegexpLiteral(regexp)", "isRubyString(pattern)"})
-        public RubyBasicObject initializeRegexpLiteral(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
+        public DynamicObject initializeRegexpLiteral(DynamicObject regexp, DynamicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().securityError("can't modify literal regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "isInitialized(regexp)", "isRubyString(pattern)"})
-        public RubyBasicObject initializeAlreadyInitialized(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
+        public DynamicObject initializeAlreadyInitialized(DynamicObject regexp, DynamicObject pattern, int options) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("already initialized regexp", this));
         }
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
-        public RubyBasicObject initialize(RubyBasicObject regexp, RubyBasicObject pattern, int options) {
+        public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
             RegexpNodes.initialize(regexp, this, StringNodes.getByteList(pattern), options);
             return regexp;
         }
@@ -81,12 +81,12 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = "isInitialized(regexp)")
-        public int options(RubyBasicObject regexp) {
+        public int options(DynamicObject regexp) {
             return RegexpNodes.getOptions(regexp).toOptions();
         }
 
         @Specialization(guards = "!isInitialized(regexp)")
-        public int optionsNotInitialized(RubyBasicObject regexp) {
+        public int optionsNotInitialized(DynamicObject regexp) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
@@ -101,7 +101,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject propagateLastMatch(RubyBasicObject regexpClass) {
+        public DynamicObject propagateLastMatch(DynamicObject regexpClass) {
             // TODO (nirvdrum 08-Jun-15): This method seems to exist just to fix Rubinius's broken frame-local scoping.  This assertion needs to be verified, however.
             return nil();
         }
@@ -117,13 +117,13 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization(guards = {"!isInitialized(regexp)", "isRubyString(string)"})
-        public Object searchRegionNotInitialized(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegionNotInitialized(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
         }
 
         @Specialization(guards = {"isRubyString(string)", "!isValidEncoding(string)"})
-        public Object searchRegionInvalidEncoding(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
                     String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
@@ -131,7 +131,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
-        public Object searchRegion(RubyBasicObject regexp, RubyBasicObject string, int start, int end, boolean forward) {
+        public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = StringNodes.getByteList(string);
             final ByteList bl = RegexpNodes.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
@@ -159,7 +159,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public Object setLastMatch(RubyBasicObject regexpClass, Object matchData) {
+        public Object setLastMatch(DynamicObject regexpClass, Object matchData) {
             BasicObjectNodes.setInstanceVariable(
                     ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
 
@@ -176,7 +176,7 @@ public abstract class RegexpPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject setBlockLastMatch(RubyBasicObject regexpClass) {
+        public DynamicObject setBlockLastMatch(DynamicObject regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
             return nil();
         }

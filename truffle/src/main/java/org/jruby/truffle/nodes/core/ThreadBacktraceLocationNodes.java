@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.EnumSet;
 
@@ -27,7 +27,7 @@ public class ThreadBacktraceLocationNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface ThreadBacktraceLocationLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createThreadBacktraceLocationShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createThreadBacktraceLocationShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createThreadBacktraceLocation(DynamicObjectFactory factory, Activation activation);
 
@@ -37,12 +37,12 @@ public class ThreadBacktraceLocationNodes {
 
     public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
 
-    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ModuleNodes.getModel(rubyClass).getFactory(), activation));
+    public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
+        return BasicObjectNodes.createDynamicObject(rubyClass, THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ModuleNodes.getModel(rubyClass).getFactory(), activation));
     }
 
-    protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {
-        return THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation.dynamicObject);
+    protected static Activation getActivation(DynamicObject threadBacktraceLocation) {
+        return THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
     }
 
     @CoreMethod(names = { "absolute_path", "path" })
@@ -55,7 +55,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject absolutePath(RubyBasicObject threadBacktraceLocation) {
+        public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -80,7 +80,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public int lineno(RubyBasicObject threadBacktraceLocation) {
+        public int lineno(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -99,7 +99,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject threadBacktraceLocation) {
+        public DynamicObject toS(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();

@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
@@ -87,7 +87,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public long objectID(RubyBasicObject object) {
+        public long objectID(DynamicObject object) {
             // TODO: CS 22-Mar-15 need to write this using nodes
             return BasicObjectNodes.verySlowGetObjectID(object);
         }

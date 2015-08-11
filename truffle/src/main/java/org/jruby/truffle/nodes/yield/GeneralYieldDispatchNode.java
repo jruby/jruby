@@ -17,7 +17,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.MEGAMORPHIC)
 public class GeneralYieldDispatchNode extends YieldDispatchNode {
@@ -30,12 +30,12 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    protected boolean guard(RubyBasicObject block) {
+    protected boolean guard(DynamicObject block) {
         return true;
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject modifiedBlock, Object... argumentsObjects) {
         return callNode.call(frame, ProcNodes.getCallTargetForBlocks(block),
                 RubyArguments.pack(ProcNodes.getMethod(block), ProcNodes.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
     }

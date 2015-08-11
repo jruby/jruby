@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToStrNode extends RubyNode {
@@ -34,21 +34,21 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract RubyBasicObject executeToStr(VirtualFrame frame, Object object);
+    public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);
 
     @Specialization(guards = "isRubyString(string)")
-    public RubyBasicObject coerceRubyString(RubyBasicObject string) {
+    public DynamicObject coerceRubyString(DynamicObject string) {
         return string;
     }
 
     @Specialization(guards = "!isRubyString(object)")
-    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
 
         try {
             coerced = toStrNode.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
@@ -57,7 +57,7 @@ public abstract class ToStrNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return (RubyBasicObject) coerced;
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));

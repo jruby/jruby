@@ -19,7 +19,7 @@ import org.jruby.RubyRandom;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 
@@ -37,7 +37,7 @@ public abstract class RandomPrimitiveNodes {
         }
 
         @Specialization
-        public long randomizerSeed(RubyBasicObject random) {
+        public long randomizerSeed(DynamicObject random) {
             return System.currentTimeMillis();
         }
 
@@ -51,7 +51,7 @@ public abstract class RandomPrimitiveNodes {
         }
 
         @Specialization
-        public double randomizerRandFloat(RubyBasicObject random) {
+        public double randomizerRandFloat(DynamicObject random) {
             return Math.random();
         }
 
@@ -65,12 +65,12 @@ public abstract class RandomPrimitiveNodes {
         }
 
         @Specialization
-        public long randomizerRandInt(RubyBasicObject random, int limit) {
+        public long randomizerRandInt(DynamicObject random, int limit) {
             return randomizerRandLong(random, (long) limit);
         }
 
         @Specialization
-        public long randomizerRandLong(RubyBasicObject random, long limit) {
+        public long randomizerRandLong(DynamicObject random, long limit) {
             return RandomPrimitiveHelper.randomInt(getContext().getRuntime(), limit);
         }
     }
@@ -84,7 +84,7 @@ public abstract class RandomPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject randomizerGenSeed(RubyBasicObject random) {
+        public DynamicObject randomizerGenSeed(DynamicObject random) {
             BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime());
             return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
         }

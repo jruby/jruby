@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.cli.Options;
 
 public class ExceptionTranslatingNode extends RubyNode {
@@ -87,7 +87,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    private RubyBasicObject translate(ArithmeticException exception) {
+    private DynamicObject translate(ArithmeticException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -95,7 +95,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         return getContext().getCoreLibrary().zeroDivisionError(this);
     }
 
-    private RubyBasicObject translate(UnsupportedSpecializationException exception) {
+    private DynamicObject translate(UnsupportedSpecializationException exception) {
         if (PRINT_JAVA_EXCEPTIONS) {
             exception.printStackTrace();
         }
@@ -110,14 +110,14 @@ public class ExceptionTranslatingNode extends RubyNode {
 
             if (value == null) {
                 builder.append("null");
-            } else if (value instanceof RubyBasicObject) {
-                builder.append(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(((RubyBasicObject) value))).getName());
+            } else if (value instanceof DynamicObject) {
+                builder.append(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");
 
                 if (RubyGuards.isRubyArray(value)) {
-                    final RubyBasicObject array = (RubyBasicObject) value;
+                    final DynamicObject array = (DynamicObject) value;
                     builder.append("[");
 
                     if (ArrayNodes.getStore(array) == null) {
@@ -130,7 +130,7 @@ public class ExceptionTranslatingNode extends RubyNode {
                     builder.append(ArrayNodes.getSize(array));
                     builder.append("]");
                 } else if (RubyGuards.isRubyHash(value)) {
-                    final Object store = HashNodes.getStore((RubyBasicObject) value);
+                    final Object store = HashNodes.getStore((DynamicObject) value);
 
                     if (store == null) {
                         builder.append("[null]");
@@ -160,7 +160,7 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
-    public RubyBasicObject translate(Throwable throwable) {
+    public DynamicObject translate(Throwable throwable) {
         if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
         }

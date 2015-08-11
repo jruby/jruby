@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
@@ -58,17 +58,17 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyBignum(object)")
-    public boolean isFrozenBignum(RubyBasicObject object) {
+    public boolean isFrozenBignum(DynamicObject object) {
         return true;
     }
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public boolean isFrozenSymbol(RubyBasicObject symbol) {
+    public boolean isFrozenSymbol(DynamicObject symbol) {
         return true;
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
-    public boolean isFrozen(RubyBasicObject object) {
+    public boolean isFrozen(DynamicObject object) {
         if (readFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
             readFrozenNode = insert(new ReadHeadObjectFieldNode(BasicObjectNodes.FROZEN_IDENTIFIER));

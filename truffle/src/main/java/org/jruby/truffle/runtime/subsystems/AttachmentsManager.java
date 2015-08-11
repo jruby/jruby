@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,14 +46,14 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final RubyBasicObject block) {
+    public synchronized void attach(String file, int line, final DynamicObject block) {
         assert RubyGuards.isRubyProc(block);
 
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final RubyBasicObject binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                final DynamicObject binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
                 ProcNodes.rootCall(block, binding);
             }
 

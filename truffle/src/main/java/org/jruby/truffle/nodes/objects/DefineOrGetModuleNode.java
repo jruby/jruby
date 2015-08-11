@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Define a new module, or get the existing one of the same name.
@@ -45,25 +45,25 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         // Look for a current definition of the module, or create a new one
 
-        RubyBasicObject lexicalParent = getLexicalParentModule(frame);
+        DynamicObject lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
-        RubyBasicObject definingModule;
+        DynamicObject definingModule;
 
         if (constant == null) {
             definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((RubyBasicObject) module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((DynamicObject) module).isOnlyAModule()) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
-            definingModule = (RubyBasicObject) module;
+            definingModule = (DynamicObject) module;
         }
 
         return definingModule;
     }
 
-    protected RubyBasicObject getLexicalParentModule(VirtualFrame frame) {
+    protected DynamicObject getLexicalParentModule(VirtualFrame frame) {
         final Object lexicalParent = lexicalParentModule.execute(frame);;
 
         if (!RubyGuards.isRubyModule(lexicalParent)) {
@@ -71,17 +71,17 @@ public class DefineOrGetModuleNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
         }
 
-        return (RubyBasicObject) lexicalParent;
+        return (DynamicObject) lexicalParent;
     }
 
     @TruffleBoundary
-    protected RubyConstant lookupForExistingModule(RubyBasicObject lexicalParent) {
+    protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
         RubyConstant constant = ModuleNodes.getModel(lexicalParent).getConstants().get(name);
 
-        final RubyBasicObject objectClass = getContext().getCoreLibrary().getObjectClass();
+        final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
-            for (RubyBasicObject included : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
+            for (DynamicObject included : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
                 constant = ModuleNodes.getModel(included).getConstants().get(name);
                 if (constant != null) {
                     break;
@@ -106,7 +106,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             // call or the recursive execute call.
             ModuleNodes.getModel(lexicalParent).removeConstant(this, name);
 
-            requireNode.require((RubyBasicObject) constant.getValue());
+            requireNode.require((DynamicObject) constant.getValue());
 
             return lookupForExistingModule(lexicalParent);
         }

@@ -13,12 +13,12 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
-    private final RubyBasicObject cachedNameAsSymbol;
+    private final DynamicObject cachedNameAsSymbol;
     private final boolean indirect;
 
     @Child protected DispatchNode next;
@@ -37,9 +37,9 @@ public abstract class CachedDispatchNode extends DispatchNode {
         this.cachedName = cachedName;
 
         if (RubyGuards.isRubySymbol(cachedName)) {
-            cachedNameAsSymbol = (RubyBasicObject) cachedName;
+            cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList((RubyBasicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbol(StringNodes.getByteList((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -69,13 +69,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            return (RubyGuards.isRubyString(methodName)) && StringNodes.getByteList((RubyBasicObject) cachedName).equal(StringNodes.getByteList((RubyBasicObject) methodName));
+            return (RubyGuards.isRubyString(methodName)) && StringNodes.getByteList((DynamicObject) cachedName).equal(StringNodes.getByteList((DynamicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    protected RubyBasicObject getCachedNameAsSymbol() {
+    protected DynamicObject getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
     }
 

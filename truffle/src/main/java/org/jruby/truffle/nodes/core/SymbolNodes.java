@@ -25,7 +25,7 @@ import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -37,7 +37,7 @@ public abstract class SymbolNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface SymbolLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createSymbolShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createSymbolShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createSymbol(DynamicObjectFactory factory, String string, ByteList byteList, int hashCode,
                                    int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
@@ -61,27 +61,27 @@ public abstract class SymbolNodes {
 
     public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 
-    public static String getString(RubyBasicObject symbol) {
+    public static String getString(DynamicObject symbol) {
         return SYMBOL_LAYOUT.getString(BasicObjectNodes.getDynamicObject(symbol));
     }
 
-    public static ByteList getByteList(RubyBasicObject symbol) {
+    public static ByteList getByteList(DynamicObject symbol) {
         return SYMBOL_LAYOUT.getByteList(BasicObjectNodes.getDynamicObject(symbol));
     }
 
-    public static int getHashCode(RubyBasicObject symbol) {
+    public static int getHashCode(DynamicObject symbol) {
         return SYMBOL_LAYOUT.getHashCode(BasicObjectNodes.getDynamicObject(symbol));
     }
 
-    public static int getCodeRange(RubyBasicObject symbol) {
+    public static int getCodeRange(DynamicObject symbol) {
         return SYMBOL_LAYOUT.getCodeRange(BasicObjectNodes.getDynamicObject(symbol));
     }
 
-    public static void setCodeRange(RubyBasicObject symbol, int codeRange) {
+    public static void setCodeRange(DynamicObject symbol, int codeRange) {
         SYMBOL_LAYOUT.setCodeRange(BasicObjectNodes.getDynamicObject(symbol), codeRange);
     }
 
-    public static SymbolCodeRangeableWrapper getCodeRangeable(RubyBasicObject symbol) {
+    public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
         SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(BasicObjectNodes.getDynamicObject(symbol));
 
         if (wrapper != null) {
@@ -104,7 +104,7 @@ public abstract class SymbolNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject allSymbols() {
+        public DynamicObject allSymbols() {
             return createArray(getContext().getSymbolTable().allSymbols().toArray());
         }
 
@@ -118,12 +118,12 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "isRubySymbol(b)")
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(DynamicObject a, DynamicObject b) {
             return a == b;
         }
 
         @Specialization(guards = "!isRubySymbol(b)")
-        public boolean equal(VirtualFrame frame, RubyBasicObject a, Object b) {
+        public boolean equal(VirtualFrame frame, DynamicObject a, Object b) {
             return false;
         }
 
@@ -137,7 +137,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject encoding(RubyBasicObject symbol) {
+        public DynamicObject encoding(DynamicObject symbol) {
             return EncodingNodes.getEncoding(getByteList(symbol).getEncoding());
         }
 
@@ -151,7 +151,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public int hash(RubyBasicObject symbol) {
+        public int hash(DynamicObject symbol) {
             return getHashCode(symbol);
         }
 
@@ -165,19 +165,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol")
-        public RubyBasicObject toProcCached(RubyBasicObject symbol,
-                                     @Cached("symbol") RubyBasicObject cachedSymbol,
-                                     @Cached("createProc(symbol)") RubyBasicObject cachedProc) {
+        public DynamicObject toProcCached(DynamicObject symbol,
+                                     @Cached("symbol") DynamicObject cachedSymbol,
+                                     @Cached("createProc(symbol)") DynamicObject cachedProc) {
             return cachedProc;
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toProcUncached(RubyBasicObject symbol) {
+        public DynamicObject toProcUncached(DynamicObject symbol) {
             return createProc(symbol);
         }
 
-        protected RubyBasicObject createProc(RubyBasicObject symbol) {
+        protected DynamicObject createProc(DynamicObject symbol) {
             final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -215,7 +215,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject symbol) {
+        public DynamicObject toS(DynamicObject symbol) {
             return createString(getByteList(symbol).dup());
         }
 

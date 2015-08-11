@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ReadClassVariableNode extends RubyNode {
 
@@ -32,7 +32,7 @@ public class ReadClassVariableNode extends RubyNode {
         this.lexicalScope = lexicalScope;
     }
 
-    public static RubyBasicObject resolveTargetModule(LexicalScope lexicalScope) {
+    public static DynamicObject resolveTargetModule(LexicalScope lexicalScope) {
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes
         while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && ModuleNodes.getModel((lexicalScope.getLiveModule())).isSingleton()) {
             lexicalScope = lexicalScope.getParent();
@@ -44,7 +44,7 @@ public class ReadClassVariableNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject module = resolveTargetModule(lexicalScope);
+        final DynamicObject module = resolveTargetModule(lexicalScope);
 
         assert RubyGuards.isRubyModule(module);
 
@@ -60,7 +60,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyBasicObject module = resolveTargetModule(lexicalScope);
+        final DynamicObject module = resolveTargetModule(lexicalScope);
 
         final Object value = ModuleOperations.lookupClassVariable(module, name);
 

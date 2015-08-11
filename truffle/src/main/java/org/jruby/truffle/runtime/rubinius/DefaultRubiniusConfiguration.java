@@ -43,7 +43,7 @@ import jnr.posix.FileStat;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -160,11 +160,11 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.socket.SOCK_STREAM", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
     }
 
-    protected static RubyBasicObject newBignum(RubyContext context, String value) {
+    protected static DynamicObject newBignum(RubyContext context, String value) {
         return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
     }
 
-    protected static RubyBasicObject string(RubyContext context, String value) {
+    protected static DynamicObject string(RubyContext context, String value) {
         return StringNodes.createString(context.getCoreLibrary().getStringClass(), value);
     }
 

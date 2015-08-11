@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rescues any exception where {@code $!.is_a?(StandardError)}.
@@ -30,7 +30,7 @@ public class RescueAnyNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
+    public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
         return isANode.executeIsA(frame, exception, getContext().getCoreLibrary().getStandardErrorClass());
     }
 

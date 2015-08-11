@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
@@ -31,7 +31,7 @@ public abstract class TimeNodes {
     @Layout
     public interface TimeLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createTimeShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createTimeShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createTime(DynamicObjectFactory factory, DateTime dateTime, Object offset);
 
@@ -51,24 +51,24 @@ public abstract class TimeNodes {
 
     private static final DateTime ZERO = new DateTime(0);
 
-    public static DateTime getDateTime(RubyBasicObject time) {
+    public static DateTime getDateTime(DynamicObject time) {
         return TIME_LAYOUT.getDateTime(BasicObjectNodes.getDynamicObject(time));
     }
 
-    public static void setDateTime(RubyBasicObject time, DateTime dateTime) {
+    public static void setDateTime(DynamicObject time, DateTime dateTime) {
         TIME_LAYOUT.setDateTime(BasicObjectNodes.getDynamicObject(time), dateTime);
     }
 
-    public static Object getOffset(RubyBasicObject time) {
+    public static Object getOffset(DynamicObject time) {
         return TIME_LAYOUT.getOffset(BasicObjectNodes.getDynamicObject(time));
     }
 
-    public static void setOffset(RubyBasicObject time, Object offset) {
+    public static void setOffset(DynamicObject time, Object offset) {
         TIME_LAYOUT.setOffset(BasicObjectNodes.getDynamicObject(time), offset);
     }
 
-    public static RubyBasicObject createRubyTime(RubyBasicObject timeClass, DateTime dateTime, Object offset) {
-        return BasicObjectNodes.createRubyBasicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).getFactory(), dateTime, offset));
+    public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
+        return BasicObjectNodes.createDynamicObject(timeClass, TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).getFactory(), dateTime, offset));
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.
@@ -80,7 +80,7 @@ public abstract class TimeNodes {
         }
 
         @Specialization(guards = "isRubyTime(from)")
-        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
+        public Object initializeCopy(DynamicObject self, DynamicObject from) {
             setDateTime(self, getDateTime(from));
             setOffset(self, getOffset(from));
             return self;
@@ -97,7 +97,7 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public boolean internalGMT(RubyBasicObject time) {
+        public boolean internalGMT(DynamicObject time) {
             return getOffset(time) == nil() &&
                     (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
                      getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
@@ -117,7 +117,7 @@ public abstract class TimeNodes {
 
         @TruffleBoundary
         @Specialization
-        public boolean internalSetGMT(RubyBasicObject time, boolean isGMT) {
+        public boolean internalSetGMT(DynamicObject time, boolean isGMT) {
             if (isGMT) {
                 setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
@@ -137,7 +137,7 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public Object internalOffset(RubyBasicObject time) {
+        public Object internalOffset(DynamicObject time) {
             return getOffset(time);
         }
     }
@@ -154,7 +154,7 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public Object internalSetOffset(RubyBasicObject time, Object offset) {
+        public Object internalSetOffset(DynamicObject time, Object offset) {
             setOffset(time, offset);
             return offset;
         }
@@ -163,7 +163,7 @@ public abstract class TimeNodes {
     public static class TimeAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
+        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
             return createRubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
         }
 

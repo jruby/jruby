@@ -19,14 +19,14 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
     @Child private ReadLiteralConstantNode envNode;
     
-    private final RubyBasicObject TZ;
+    private final DynamicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);

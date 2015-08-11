@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Arrays;
 
@@ -32,30 +32,30 @@ public abstract class ArrayDupNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyBasicObject executeDup(VirtualFrame frame, RubyBasicObject array);
+    public abstract DynamicObject executeDup(VirtualFrame frame, DynamicObject array);
 
     @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
-    public RubyBasicObject dupNull(RubyBasicObject from) {
+    public DynamicObject dupNull(DynamicObject from) {
         return createEmptyArray();
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
-    public RubyBasicObject dupIntegerFixnum(RubyBasicObject from) {
+    public DynamicObject dupIntegerFixnum(DynamicObject from) {
         return createArray(Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
-    public RubyBasicObject dupLongFixnum(RubyBasicObject from) {
+    public DynamicObject dupLongFixnum(DynamicObject from) {
         return createArray(Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
-    public RubyBasicObject dupFloat(RubyBasicObject from) {
+    public DynamicObject dupFloat(DynamicObject from) {
         return createArray(Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
-    public RubyBasicObject dupObject(RubyBasicObject from) {
+    public DynamicObject dupObject(DynamicObject from) {
         return createArray(Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
     }
 

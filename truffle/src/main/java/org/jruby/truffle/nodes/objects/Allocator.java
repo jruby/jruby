@@ -11,11 +11,11 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public interface Allocator {
 
     // TODO(CS): do we need all these parameters?
-    RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode);
+    DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode);
 
 }

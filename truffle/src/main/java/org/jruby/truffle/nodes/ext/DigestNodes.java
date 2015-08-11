@@ -17,7 +17,7 @@ import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
@@ -30,7 +30,7 @@ public abstract class DigestNodes {
     @org.jruby.truffle.om.dsl.api.Layout
     public interface DigestLayout extends BasicObjectNodes.BasicObjectLayout {
 
-        DynamicObjectFactory createDigestShape(RubyBasicObject logicalClass, RubyBasicObject metaClass);
+        DynamicObjectFactory createDigestShape(DynamicObject logicalClass, DynamicObject metaClass);
 
         DynamicObject createDigest(DynamicObjectFactory factory, MessageDigest digest);
 
@@ -58,7 +58,7 @@ public abstract class DigestNodes {
         }
     }
 
-    private static RubyBasicObject createDigest(RubyContext context, Algorithm algorithm) {
+    private static DynamicObject createDigest(RubyContext context, Algorithm algorithm) {
         final MessageDigest digest;
 
         try {
@@ -67,13 +67,13 @@ public abstract class DigestNodes {
             throw new RuntimeException(e);
         }
 
-        final RubyBasicObject rubyClass = context.getCoreLibrary().getDigestClass();
+        final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return BasicObjectNodes.createRubyBasicObject(rubyClass, DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).getFactory(), digest));
+        return BasicObjectNodes.createDynamicObject(rubyClass, DIGEST_LAYOUT.createDigest(ModuleNodes.getModel(rubyClass).getFactory(), digest));
     }
 
-    public static MessageDigest getDigest(RubyBasicObject digest) {
-        return DIGEST_LAYOUT.getDigest(digest.dynamicObject);
+    public static MessageDigest getDigest(DynamicObject digest) {
+        return DIGEST_LAYOUT.getDigest(digest);
     }
 
     @CoreMethod(names = "md5", onSingleton = true)
@@ -85,7 +85,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject md5() {
+        public DynamicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
         }
 
@@ -100,7 +100,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha1() {
+        public DynamicObject sha1() {
             return createDigest(getContext(), Algorithm.SHA1);
         }
 
@@ -115,7 +115,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha256() {
+        public DynamicObject sha256() {
             return createDigest(getContext(), Algorithm.SHA256);
         }
 
@@ -130,7 +130,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha384() {
+        public DynamicObject sha384() {
             return createDigest(getContext(), Algorithm.SHA384);
         }
 
@@ -145,7 +145,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha512() {
+        public DynamicObject sha512() {
             return createDigest(getContext(), Algorithm.SHA512);
         }
 
@@ -160,7 +160,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject update(RubyBasicObject digestObject, RubyBasicObject message) {
+        public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final ByteList bytes = StringNodes.getByteList(message);
             getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
@@ -177,7 +177,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject reset(RubyBasicObject digestObject) {
+        public DynamicObject reset(DynamicObject digestObject) {
             getDigest(digestObject).reset();
             return digestObject;
         }
@@ -193,7 +193,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject digest(RubyBasicObject digestObject) {
+        public DynamicObject digest(DynamicObject digestObject) {
             final MessageDigest digest = getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
@@ -220,7 +220,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public int digestLength(RubyBasicObject digestObject) {
+        public int digestLength(DynamicObject digestObject) {
             return getDigest(digestObject).getDigestLength();
         }
 
@@ -235,7 +235,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject bubblebabble(RubyBasicObject message) {
+        public DynamicObject bubblebabble(DynamicObject message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
