@@ -12,7 +12,7 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 # a gem to be used
 gem 'flickraw', '0.9.7'
 
-repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
             :id => 'rubygems-releases' )
 
 jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do

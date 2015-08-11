@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.literal.LiteralNode;
@@ -19,78 +16,38 @@ import org.jruby.truffle.runtime.ConstantReplacer;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
-public class ReadConstantNode extends RubyNode {
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 
-    private final String name;
-    @Child private GetConstantNode getConstantNode;
+public class ReadConstantNode extends RubyNode implements RestartableReadConstantNode {
 
-    public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, LexicalScope lexicalScope) {
+    @Child RubyNode moduleNode;
+    @Child RubyNode nameNode;
+
+    @Child LookupConstantNode lookupConstantNode;
+    @Child GetConstantNode getConstantNode;
+
+    public ReadConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, RubyNode nameNode) {
         super(context, sourceSection);
-
-        this.name = ConstantReplacer.replacementName(sourceSection, name);
-        this.getConstantNode =
-                GetConstantNodeGen.create(context, sourceSection, receiver, new LiteralNode(context, sourceSection, this.name),
-                        LookupConstantNodeGen.create(context, sourceSection, lexicalScope, null, null));
+        this.moduleNode = moduleNode;
+        this.nameNode = nameNode;
+        this.lookupConstantNode = LookupConstantNodeGen.create(context, sourceSection, null, null);
+        this.getConstantNode = GetConstantNodeGen.create(context, sourceSection, this, null, null, null);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return getConstantNode.execute(frame);
+        final Object module = moduleNode.execute(frame);
+        final String name = (String) nameNode.execute(frame);
+        return readConstant(frame, module, name);
     }
 
     @Override
-    public Object isDefined(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+    public Object readConstant(VirtualFrame frame, Object module, String name) {
+        final RubyConstant constant = lookupConstantNode.executeLookupConstant(frame, module, name);
 
-        RubyNode receiver = getConstantNode.getModule();
-        final RubyContext context = getContext();
-
-        if (name.equals("Encoding")) {
-            // Work-around so I don't have to load the iconv library - runners/formatters/junit.rb.
-            return createString("constant");
-        }
-
-        final Object receiverObject;
-        try {
-            receiverObject = receiver.execute(frame);
-        } catch (RaiseException e) {
-            /* If we are looking up a constant in a constant that is itself undefined, we return Nil
-             * rather than raising the error. Eg.. defined?(Defined::Undefined1::Undefined2).
-             *
-             * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
-             * and we do not want to execute receiver twice. */
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
-                return nil();
-            }
-            throw e;
-        }
-
-        final RubyConstant constant;
-        try {
-            constant = getConstantNode.getLookupConstantNode().executeLookupConstant(frame, receiverObject, name);
-        } catch (RaiseException e) {
-            if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getTypeErrorClass()) {
-                // module is not a class/module
-                return nil();
-            } else if (BasicObjectNodes.getLogicalClass(((RubyBasicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
-                // private constant
-                return nil();
-            }
-            throw e;
-        }
-
-        if (constant == null) {
-            return nil();
-        } else {
-            return createString("constant");
-        }
-    }
-
-    public String getName() {
-        return name;
+        return getConstantNode.executeGetConstant(frame, module, name, constant);
     }
 
 }

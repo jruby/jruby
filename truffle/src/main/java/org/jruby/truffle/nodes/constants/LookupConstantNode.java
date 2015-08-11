@@ -9,6 +9,15 @@
  */
 package org.jruby.truffle.nodes.constants;
 
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -33,20 +42,12 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 /**
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
- * The {@link LexicalScope} is constant here.
  */
 @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
 public abstract class LookupConstantNode extends RubyNode {
 
-    private final LexicalScope lexicalScope;
-
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
+    public LookupConstantNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.lexicalScope = lexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
@@ -102,11 +103,11 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     protected RubyConstant doLookup(RubyBasicObject module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
+        return ModuleOperations.lookupConstant(getContext(), module, name);
     }
 
     protected boolean isVisible(RubyBasicObject module, RubyConstant constant) {
-        return constant == null || constant.isVisibleTo(getContext(), lexicalScope, module);
+        return constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
     }
 
 }

@@ -7,13 +7,13 @@ properties( 'jruby.plugins.version' => '1.0.10',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',
-            # needed bundle plugin
+            # needed by felix-bundle-plugin
             'polyglot.dump.pom' => 'pom.xml' )
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-            :id => 'second-rubygems-releases' )
+model.repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases', :id => 'rubygems-releases' )
 
 jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
 

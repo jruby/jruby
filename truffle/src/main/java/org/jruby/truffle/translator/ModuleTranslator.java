@@ -17,8 +17,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
@@ -45,18 +43,11 @@ class ModuleTranslator extends BodyTranslator {
     public MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            body = new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil");
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

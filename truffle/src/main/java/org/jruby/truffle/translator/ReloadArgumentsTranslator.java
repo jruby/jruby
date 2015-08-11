@@ -109,7 +109,7 @@ public class ReloadArgumentsTranslator extends Translator {
     @Override
     protected RubyNode defaultVisit(org.jruby.ast.Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        return new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+        return nilNode(sourceSection);
     }
 
     @Override

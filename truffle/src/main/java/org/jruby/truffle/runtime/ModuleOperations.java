@@ -78,50 +78,39 @@ public abstract class ModuleOperations {
         return constants;
     }
 
-    /**
-     * @param lexicalScope The surrounding LexicalScope (as in Constant),
-     *                     or null if it is ignored (as in Mod::Constant or ::Constant)
-     * @param module The receiver of the constant lookup.
-     *               Must be identical to lexicalScope.getLiveModule() if lexicalScope != null.
-     */
     @TruffleBoundary
-    public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyBasicObject module, String name) {
+    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
-        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
-        assert RubyGuards.isRubyModule(module);
-
-        RubyConstant constant;
-
-        // Look in the current module
-        constant = ModuleNodes.getModel(module).getConstants().get(name);
-
-        if (constant != null) {
-            return constant;
-        }
+        final RubyBasicObject module = lexicalScope.getLiveModule();
 
         // Look in lexical scope
-        if (lexicalScope != null) {
-            if (lexicalScope != context.getRootLexicalScope()) {
-                // Already looked in the top lexical scope, which is module.
-                lexicalScope = lexicalScope.getParent();
+        while (lexicalScope != context.getRootLexicalScope()) {
+            RubyConstant constant = ModuleNodes.getModel(lexicalScope.getLiveModule()).getConstants().get(name);
+            if (constant != null) {
+                return constant;
             }
 
-            while (lexicalScope != context.getRootLexicalScope()) {
-                constant = ModuleNodes.getModel(lexicalScope.getLiveModule()).getConstants().get(name);
+            lexicalScope = lexicalScope.getParent();
+        }
 
-                if (constant != null) {
-                    return constant;
-                }
+        return lookupConstant(context, module, name);
+    }
 
-                lexicalScope = lexicalScope.getParent();
-            }
+    @TruffleBoundary
+    public static RubyConstant lookupConstant(RubyContext context, RubyBasicObject module, String name) {
+        CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
+
+        // Look in the current module
+        RubyConstant constant = ModuleNodes.getModel(module).getConstants().get(name);
+        if (constant != null) {
+            return constant;
         }
 
         // Look in ancestors
         for (RubyBasicObject ancestor : ModuleNodes.getModel(module).parentAncestors()) {
             constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
-
             if (constant != null) {
                 return constant;
             }
@@ -138,7 +127,6 @@ public abstract class ModuleOperations {
 
             for (RubyBasicObject ancestor : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
                 constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
-
                 if (constant != null) {
                     return constant;
                 }
@@ -185,7 +173,7 @@ public abstract class ModuleOperations {
         }
 
         if (inherit) {
-            return ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, name);
+            return ModuleOperations.lookupConstant(context, module, name);
         } else {
             return ModuleNodes.getModel(module).getConstants().get(name);
         }

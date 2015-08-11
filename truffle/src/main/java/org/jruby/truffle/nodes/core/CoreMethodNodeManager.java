@@ -79,7 +79,7 @@ public class CoreMethodNodeManager {
             module = objectClass;
 
             for (String moduleName : fullName.split("::")) {
-                final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
+                final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
 
                 if (constant == null) {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));

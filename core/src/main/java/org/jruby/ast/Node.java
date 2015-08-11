@@ -59,10 +59,19 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     // in IR, we can see that ArrayNode contains an assignment and emit its individual elements differently
     // so that the two values of a end up being different.
     protected boolean containsVariableAssignment;
+    protected boolean newline;
 
     public Node(ISourcePosition position, boolean containsAssignment) {
         this.position = position;
         this.containsVariableAssignment = containsAssignment;
+    }
+
+    public void setNewline() {
+        this.newline = true;
+    }
+
+    public boolean isNewline() {
+        return newline;
     }
 
     /**

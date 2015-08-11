@@ -9,13 +9,6 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -28,29 +21,35 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.util.IdUtil;
 
-@NodeChildren({
-        @NodeChild("module"), @NodeChild("name"),
-        @NodeChild(value = "lookupConstantNode", type = LookupConstantNode.class, executeWith = { "module", "name" })
-})
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+
+@NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant") })
 public abstract class GetConstantNode extends RubyNode {
 
-    public GetConstantNode(RubyContext context, SourceSection sourceSection) {
+    private final RestartableReadConstantNode readConstantNode;
+
+    public GetConstantNode(RubyContext context, SourceSection sourceSection, RestartableReadConstantNode readConstantNode) {
         super(context, sourceSection);
+        this.readConstantNode = readConstantNode;
     }
 
-    public abstract RubyNode getModule();
-    public abstract LookupConstantNode getLookupConstantNode();
+    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name, RubyConstant constant);
 
-    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name);
-
-    @Specialization(guards = { "isRubyModule(module)", "constant != null", "!constant.isAutoload()" })
+    @Specialization(guards = { "constant != null", "!constant.isAutoload()" })
     protected Object getConstant(RubyBasicObject module, String name, RubyConstant constant) {
         return constant.getValue();
     }
 
-    @Specialization(guards = { "isRubyModule(module)", "constant != null", "constant.isAutoload()" })
+    @Specialization(guards = { "constant != null", "constant.isAutoload()" })
     protected Object autoloadConstant(VirtualFrame frame, RubyBasicObject module, String name, RubyConstant constant,
-            @Cached("createRequireNode()") RequireNode requireNode) {
+            @Cached("createRequireNode()") RequireNode requireNode,
+            @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode) {
 
         final RubyBasicObject path = (RubyBasicObject) constant.getValue();
 
@@ -59,14 +58,14 @@ public abstract class GetConstantNode extends RubyNode {
         ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             requireNode.require(path);
-            return executeGetConstant(frame, module, name);
+            return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
             ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;
         }
     }
 
-    @Specialization(guards = {"isRubyModule(module)", "constant == null"})
+    @Specialization(guards = "constant == null")
     protected Object missingConstant(VirtualFrame frame, RubyBasicObject module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
@@ -80,6 +79,10 @@ public abstract class GetConstantNode extends RubyNode {
 
     protected RequireNode createRequireNode() {
         return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
+    }
+
+    protected RestartableReadConstantNode deepCopyReadConstantNode() {
+        return (RestartableReadConstantNode) readConstantNode.deepCopy();
     }
 
     protected boolean isValidConstantName(String name) {

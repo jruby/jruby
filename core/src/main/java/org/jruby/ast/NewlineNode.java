@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
+ * Note: This is a dead class but we leave it because people write against Visitor
+ * and we do not want those consumers to break.
  * A new (logical) source code line.
  * This is used to change the value of the ruby interpreter source and line values.
  * There is one such node for each logical line.  Logical line differs
@@ -50,6 +52,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class NewlineNode extends Node {
     private final Node nextNode;
 
+    @Deprecated
     public NewlineNode(ISourcePosition position, Node nextNode) {
         super(position, nextNode.containsVariableAssignment());
 

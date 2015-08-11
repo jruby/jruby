@@ -30,32 +30,36 @@ import java.net.URL;
 
 public class UriLikePathHelper {
     
-    private final ClassLoader classLoader;
+    private final GetResources loader;
 
-    public UriLikePathHelper(ClassLoader classLoader) {
-        this.classLoader = classLoader;
+    public UriLikePathHelper(GetResources loader) {
+        this.loader = loader;
     }
-    
+
     public URL getResource(String ref) {
-        URL url = classLoader.getResource( ref );
+        URL url = get( ref );
         if ( url == null && ref.startsWith( "/" ) ) {
-            url = classLoader.getResource( ref.substring( 1 ) );
+            url = get( ref.substring( 1 ) );
         }
         return url;
     }
-    
+
+    private URL get(String ref) {
+        return loader.getResource(ref);
+    }
+
     public String getUriLikePath() {
         return createUri("/.jrubydir");
     }
 
-    public String getUriLikePath(String ref) {
-        return createUri(ref);
+    public String getUriLikeGemPath() {
+        return createUri("/specifications/.jrubydir");
     }
-    
-    String createUri(String ref) {
+
+    private String createUri(String ref) {
         URL url = getResource( ref );
         if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + classLoader );
+            return null;
         }
         return "uri:" + url.toString().replaceFirst( ref + "$", "" );
     }
