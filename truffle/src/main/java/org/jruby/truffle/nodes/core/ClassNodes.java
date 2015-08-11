@@ -274,6 +274,7 @@ public abstract class ClassNodes {
         private RubyBasicObject initializeGeneralWithoutBlock(VirtualFrame frame, RubyBasicObject rubyClass, RubyBasicObject superclass) {
             assert RubyGuards.isRubyClass(rubyClass);
             assert RubyGuards.isRubyClass(superclass);
+
             ModuleNodes.getModel(rubyClass).initialize(superclass);
             triggerInheritedHook(frame, rubyClass, superclass);
 

@@ -645,7 +645,13 @@ public class RubyModuleModel implements ModuleChain {
 
         newVersion();
         ensureSingletonConsistency();
+
         ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
+
+        DynamicObjectFactory factory = ModuleNodes.getModel(superclass).getFactory();
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyModuleObject);
+        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyModuleObject);
+        ModuleNodes.getModel(rubyModuleObject).factory = factory;
     }
 
     public RubyBasicObject ensureSingletonConsistency() {
