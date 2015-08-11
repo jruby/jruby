@@ -281,6 +281,7 @@ public abstract class BigDecimalNodes {
         @Child private CallDispatchHeadNode modeCall;
         @Child private GetIntegerConstantNode getIntegerConstant;
         @Child private BooleanCastNode booleanCast;
+        @Child private ClassNodes.AllocateNode allocateNode;
 
         public CreateBigDecimalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -298,8 +299,13 @@ public abstract class BigDecimalNodes {
         public abstract DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf, int digits);
 
         public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(ClassNodesFactory.AllocateNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+
             DynamicObject rubyClass = (getBigDecimalClass());
-            return executeInitialize(frame, value, ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this));
+            return executeInitialize(frame, value, allocateNode.executeAllocate(frame, rubyClass));
         }
 
         public final DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf) {
