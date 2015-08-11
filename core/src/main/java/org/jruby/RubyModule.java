@@ -1462,14 +1462,21 @@ public class RubyModule extends RubyObject {
             return site.call(context, self, self, args, block);
         }
 
+        @Override
         public boolean equals(Object other) {
-            if (!(other instanceof RespondToMissingMethod)) return false;
+            if ( ! (other instanceof RespondToMissingMethod) ) return false;
 
-            RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
+            RespondToMissingMethod that = (RespondToMissingMethod) other;
 
-            return this.site.methodName.equals(rtmm.site.methodName) &&
-                    getImplementationClass() == rtmm.getImplementationClass();
+            return this.site.methodName.equals(that.site.methodName) &&
+                    getImplementationClass() == that.getImplementationClass();
         }
+
+        @Override
+        public int hashCode() {
+            return getImplementationClass().hashCode() + 7 * this.site.methodName.hashCode();
+        }
+
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
