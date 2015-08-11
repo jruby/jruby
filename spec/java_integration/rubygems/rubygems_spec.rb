@@ -1,9 +1,9 @@
-
 require File.dirname(__FILE__) + "/../spec_helper"
 
-require 'rubygems'
-
 describe "RubyGems extensions" do
+
+  before(:all) { require 'rubygems' }
+
   before :each do
     @path = Gem.path
     Gem.clear_paths
