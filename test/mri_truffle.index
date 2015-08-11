@@ -725,7 +725,7 @@ rexml/xpath/test_text.rb
 # ruby/test_iseq.rb
 # ruby/test_keyword.rb
 # ruby/test_lazy_enumerator.rb
-# ruby/test_not.rb
+ruby/test_not.rb
 # ruby/test_refinement.rb
 # ruby/test_rubyvm.rb
 # ruby/test_threadgroup.rb
