@@ -29,6 +29,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -181,9 +182,15 @@ public abstract class ClassNodes {
             return ArrayNodes.createEmptyArray(rubyClass);
         }
 
+        @Specialization(guards = "isStringClass(rubyClass)")
+        public DynamicObject allocateString(DynamicObject rubyClass) {
+            return StringNodes.createString(rubyClass, new ByteList());
+        }
+
         @Specialization(guards = {
                 "!isSingleton(rubyClass)",
-                "!isArrayClass(rubyClass)"
+                "!isArrayClass(rubyClass)",
+                "!isStringClass(rubyClass)"
         })
         public DynamicObject allocate(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
@@ -195,6 +202,10 @@ public abstract class ClassNodes {
 
         protected boolean isArrayClass(DynamicObject rubyClass) {
             return ArrayNodes.ARRAY_LAYOUT.isArray(ModuleNodes.getModel(rubyClass).factory.getShape().getObjectType());
+        }
+
+        protected boolean isStringClass(DynamicObject rubyClass) {
+            return StringNodes.STRING_LAYOUT.isString(ModuleNodes.getModel(rubyClass).factory.getShape().getObjectType());
         }
 
     }

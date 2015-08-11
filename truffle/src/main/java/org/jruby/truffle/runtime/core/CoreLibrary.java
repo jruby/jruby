@@ -348,7 +348,7 @@ public class CoreLibrary {
         longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
         ModuleNodes.getModel(regexpClass).factory = RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass);
-        stringClass = defineClass("String", new StringNodes.StringAllocator());
+        stringClass = defineClass("String");
         ModuleNodes.getModel(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         ModuleNodes.getModel(symbolClass).factory = SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass);

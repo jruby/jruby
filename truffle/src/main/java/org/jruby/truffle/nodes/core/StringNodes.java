@@ -2510,12 +2510,4 @@ public abstract class StringNodes {
         }
     }
 
-    public static class StringAllocator implements Allocator {
-
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createString(rubyClass, new ByteList());
-        }
-
-    }
 }
