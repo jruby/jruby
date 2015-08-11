@@ -24,14 +24,14 @@ describe "java package (and class)" do
     expect( Java::JavaLang::Integer.respond_to? :package_name ).to be false
     expect( Java::JavaLang.respond_to? :package_name ).to be true
     expect( Java::JavaLang.package_name ).to eql 'java.lang'
-    #expect( Java::Java.package_name ).to eql 'java'
-    #expect( Java::Javax.package_name ).to eql 'javax'
+    expect( Java::Java.package_name ).to eql 'java'
+    expect( Java::Javax.package_name ).to eql 'javax'
+    expect( Java::java.util.package_name ).to eql 'java.util'
+    expect( org.xml.package_name ).to eql 'org.xml'
+    expect( org.xml.sax.package_name ).to eql 'org.xml.sax'
     # TODO avoid Default package in favor of Java :
     #expect( Java.package_name ).to eql ''
-    #expect( Java::java.util.package_name ).to eql 'java.util'
-    #expect( org.xml.package_name ).to eql 'org.xml'
-    #expect( org.xml.sax.package_name ).to eql 'org.xml.sax'
-    #expect( Java::Default.package_name ).to eql ''
+    expect( Java::Default.package_name ).to eql ''
   end
 
   it 'respond to name (GH-2468)' do
