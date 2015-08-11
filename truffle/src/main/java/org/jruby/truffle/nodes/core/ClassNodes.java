@@ -169,13 +169,19 @@ public abstract class ClassNodes {
 
         public abstract DynamicObject executeAllocate(VirtualFrame frame, DynamicObject rubyClass);
 
-        @Specialization
+        @Specialization(guards = "isSingleton(rubyClass)")
+        public DynamicObject allocateSingleton(DynamicObject rubyClass) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+        }
+
+        @Specialization(guards = "!isSingleton(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
-            if (ModuleNodes.getModel(rubyClass).isSingleton()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
-            }
             return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
+        }
+
+        protected boolean isSingleton(DynamicObject rubyClass) {
+            return ModuleNodes.getModel(rubyClass).isSingleton();
         }
 
     }
