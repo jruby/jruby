@@ -44,6 +44,10 @@ describe "java package (and class)" do
     expect( org.xml.respond_to?(:name) ).to be true
     expect( org.xml.sax.respond_to?(:name) ).to be true
     expect( Java::Default.respond_to?(:name) ).to be true
+
+    if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
+      expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
+    end
   end
 
 end
