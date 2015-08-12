@@ -43,15 +43,22 @@ public abstract class MutexNodes {
 
     public static final MutexLayout MUTEX_LAYOUT = MutexLayoutImpl.INSTANCE;
 
-    public static class MutexAllocator implements Allocator {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return MUTEX_LAYOUT.createMutex(ModuleNodes.getModel(rubyClass).factory, new ReentrantLock());
-        }
-    }
-
     protected static ReentrantLock getLock(DynamicObject mutex) {
         return MUTEX_LAYOUT.getLock(mutex);
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return MUTEX_LAYOUT.createMutex(ModuleNodes.getModel(rubyClass).factory, new ReentrantLock());
+        }
+
     }
 
     @CoreMethod(names = "lock")

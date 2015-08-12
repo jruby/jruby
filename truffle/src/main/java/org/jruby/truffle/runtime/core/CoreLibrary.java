@@ -332,7 +332,7 @@ public class CoreLibrary {
         ModuleNodes.getModel(matchDataClass).factory = MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass);
         methodClass = defineClass("Method", NO_ALLOCATOR);
         ModuleNodes.getModel(methodClass).factory = MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass);
-        final DynamicObject mutexClass = defineClass("Mutex", new MutexNodes.MutexAllocator());
+        final DynamicObject mutexClass = defineClass("Mutex");
         ModuleNodes.getModel(mutexClass).factory = MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass);
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
         procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
