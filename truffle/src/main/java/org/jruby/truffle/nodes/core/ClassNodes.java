@@ -93,7 +93,7 @@ public abstract class ClassNodes {
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
-            assert ModuleNodes.getFields(rubyClass).isClass();
+            assert RubyGuards.isRubyClass(ModuleNodes.getFields(rubyClass).rubyModuleObject);
 
             ModuleNodes.getFields(rubyClass).parentModule = ModuleNodes.getFields(superclass).start;
             ModuleNodes.getFields(superclass).addDependent(ModuleNodes.getFields(rubyClass).rubyModuleObject);
@@ -136,7 +136,7 @@ public abstract class ClassNodes {
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
-            assert ModuleNodes.getFields(rubyClass).isClass();
+            assert RubyGuards.isRubyClass(ModuleNodes.getFields(rubyClass).rubyModuleObject);
 
             ModuleNodes.getFields(rubyClass).parentModule = ModuleNodes.getFields(superclass).start;
             ModuleNodes.getFields(superclass).addDependent(ModuleNodes.getFields(rubyClass).rubyModuleObject);

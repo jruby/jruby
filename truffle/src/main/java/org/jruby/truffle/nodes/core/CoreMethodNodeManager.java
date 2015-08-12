@@ -108,7 +108,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!ModuleNodes.getFields(module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(ModuleNodes.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields(module).rubyModuleObject))) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }

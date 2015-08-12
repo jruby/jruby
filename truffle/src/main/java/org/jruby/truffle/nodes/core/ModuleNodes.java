@@ -1262,7 +1262,7 @@ public abstract class ModuleNodes {
             final List<DynamicObject> modules = new ArrayList<>();
 
             for (DynamicObject included : getFields(module).ancestors()) {
-                if (getFields(included).isOnlyAModule() && included != module) {
+                if (RubyGuards.isRubyModule(getFields(included).rubyModuleObject) && !RubyGuards.isRubyClass(getFields(included).rubyModuleObject) && included != module) {
                     modules.add(included);
                 }
             }

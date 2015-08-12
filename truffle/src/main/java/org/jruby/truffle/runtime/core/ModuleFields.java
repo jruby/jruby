@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -151,17 +150,6 @@ public class ModuleFields implements ModuleChain {
         }
     }
 
-    /**
-     * If this instance is a module and not a class.
-     */
-    public boolean isOnlyAModule() {
-        return !isClass();
-    }
-
-    public boolean isClass() {
-        return RubyGuards.isRubyClass(rubyModuleObject);
-    }
-
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
     public void checkFrozen(Node currentNode) {
         if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), rubyModuleObject)) {
@@ -247,7 +235,7 @@ public class ModuleFields implements ModuleChain {
 
         ModuleChain mod = ModuleNodes.getFields(module).start;
         ModuleChain cur = start;
-        while (mod != null && !(RubyGuards.isRubyModule(mod) && ((ModuleFields) mod).isClass())) {
+        while (mod != null && !(RubyGuards.isRubyModule(mod) && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
@@ -383,7 +371,7 @@ public class ModuleFields implements ModuleChain {
         }
 
         // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (isOnlyAModule()) { // TODO: handle undefined methods
+        if (RubyGuards.isRubyModule(rubyModuleObject) && !RubyGuards.isRubyClass(rubyModuleObject)) { // TODO: handle undefined methods
             method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
 
             if (method != null && !method.isUndefined()) {

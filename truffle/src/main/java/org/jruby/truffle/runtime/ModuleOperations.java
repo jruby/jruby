@@ -118,7 +118,7 @@ public abstract class ModuleOperations {
         }
 
         // Look in Object and its included modules
-        if (ModuleNodes.getFields(module).isOnlyAModule()) {
+        if (RubyGuards.isRubyModule(ModuleNodes.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields(module).rubyModuleObject)) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
             constant = ModuleNodes.getFields(objectClass).getConstants().get(name);

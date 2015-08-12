@@ -54,7 +54,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getFields((DynamicObject) module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(module)) || !(RubyGuards.isRubyModule(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject))) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
             definingModule = (DynamicObject) module;
