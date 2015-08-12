@@ -39,13 +39,6 @@ public abstract class PointerNodes {
 
     public static final PointerLayout POINTER_LAYOUT = PointerLayoutImpl.INSTANCE;
 
-    public static class PointerAllocator implements Allocator {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createPointer(rubyClass, NULL_POINTER);
-        }
-    }
-
     public static DynamicObject createPointer(DynamicObject rubyClass, Pointer pointer) {
         if (pointer == null) {
             pointer = NULL_POINTER;

@@ -400,7 +400,7 @@ public class CoreLibrary {
 
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
-        rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer", new PointerNodes.PointerAllocator());
+        rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
         ModuleNodes.getModel(rubiniusFFIPointerClass).factory = PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass);
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");

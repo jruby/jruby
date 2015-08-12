@@ -26,6 +26,26 @@ import org.jruby.util.unsafe.UnsafeHolder;
 
 public abstract class PointerPrimitiveNodes {
 
+    /*
+     * :pointer_allocate is not a real Rubinius primitive, but Rubinius provides no implementaiton
+     * of Pointer#allocate, so we define this primitive and use it in our own code in the core
+     * library to define that method.
+     */
+
+    @RubiniusPrimitive(name = "pointer_allocate")
+    public static abstract class PointerAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject pointerClass) {
+            return PointerNodes.createPointer(pointerClass, PointerNodes.NULL_POINTER);
+        }
+
+    }
+
     @RubiniusPrimitive(name = "pointer_malloc")
     public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveNode {
 
