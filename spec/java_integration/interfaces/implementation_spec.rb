@@ -768,9 +768,10 @@ describe "A Ruby class implementing an interface" do
   end
 end
 
-# JRUBY-6590
-require 'delegate'
 describe "A class that extends a DelegateClass" do
+
+  before(:all) { require 'delegate' }
+
   it "can include a Java interface without error" do
     c1 = Class.new
     lambda do
