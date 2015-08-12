@@ -1445,17 +1445,6 @@ public class Java implements Library {
         return result;
     }
 
-    @Deprecated
-    private static void addToJavaPackageModule(RubyModule proxyClass, JavaClass javaClass) {
-        addToJavaPackageModule(proxyClass);
-    }
-
-    @Deprecated
-    private static RubyClass createProxyClass(final Ruby runtime,
-                                              final RubyClass baseType, final JavaClass javaClass, boolean invokeInherited) {
-        return createProxyClass(runtime, RubyClass.newClass(runtime, baseType), javaClass, invokeInherited);
-    }
-
     /**
      * @param iface
      * @return the sole un-implemented method for a functional-style interface or null
