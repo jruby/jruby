@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -98,17 +97,28 @@ public class JavaPackage extends RubyModule {
     }
 
     @JRubyMethod(name = "const_get", required = 1)
-    public IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
-        // we're skipping constant validation here
-        // return getConstant( name.asJavaString() );
-        return relativeJavaProxy(context.runtime, name);
+    public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
+        // skip constant validation and do not inherit or include object
+        IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
+        if ( constant != null ) return constant;
+        return relativeJavaProxy(context.runtime, name); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get", required = 2)
-    public IRubyObject const_get(final ThreadContext context,
+    public final IRubyObject const_get(final ThreadContext context,
         final IRubyObject name, final IRubyObject inherit) {
-        // boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
-        return const_get(context, name);
+        IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
+        if ( constant != null ) return constant;
+        return relativeJavaProxy(context.runtime, name);
+    }
+
+    @Override // so that e.g. java::util gets stored as expected
+    public final IRubyObject storeConstant(String name, IRubyObject value) {
+        // skip constant name validation
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value);
     }
 
     final CharSequence packageRelativeName(final CharSequence name) {
