@@ -326,7 +326,7 @@ public class CoreLibrary {
         fiberClass = defineClass("Fiber", new FiberNodes.FiberAllocator());
         ModuleNodes.getModel(fiberClass).factory = FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass);
         defineModule("FileTest");
-        hashClass = defineClass("Hash", new HashNodes.HashAllocator());
+        hashClass = defineClass("Hash");
         ModuleNodes.getModel(hashClass).factory = HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass);
         matchDataClass = defineClass("MatchData");
         ModuleNodes.getModel(matchDataClass).factory = MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass);

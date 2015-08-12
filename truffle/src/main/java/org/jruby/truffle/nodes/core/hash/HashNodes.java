@@ -336,6 +336,20 @@ public abstract class HashNodes {
         };
     }
 
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return HashNodes.createEmptyHash(rubyClass);
+        }
+
+    }
+
     @CoreMethod(names = "[]", constructor = true, rest = true)
     @ImportStatic(HashGuards.class)
     public abstract static class ConstructNode extends CoreMethodArrayArgumentsNode {
@@ -1628,12 +1642,4 @@ public abstract class HashNodes {
 
     }
 
-    public static class HashAllocator implements Allocator {
-
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createEmptyHash(rubyClass);
-        }
-
-    }
 }
