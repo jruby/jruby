@@ -360,7 +360,7 @@ public abstract class ArrayNodes {
     }
 
     public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
-        return ARRAY_LAYOUT.createArray(ModuleNodes.getModel(arrayClass).factory, store, size);
+        return ARRAY_LAYOUT.createArray(ModuleNodes.getFields(arrayClass).factory, store, size);
     }
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -1162,7 +1162,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(array)).getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1199,7 +1199,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(array)).getName(), this));
+                            getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;

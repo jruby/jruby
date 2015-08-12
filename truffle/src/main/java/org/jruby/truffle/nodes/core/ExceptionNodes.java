@@ -99,11 +99,11 @@ public abstract class ExceptionNodes {
     }
 
     public static DynamicObject createRubyException(DynamicObject rubyClass) {
-        return EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, null, null);
+        return EXCEPTION_LAYOUT.createException(ModuleNodes.getFields(rubyClass).factory, null, null);
     }
 
     public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
-        return EXCEPTION_LAYOUT.createException(ModuleNodes.getModel(rubyClass).factory, message, backtrace);
+        return EXCEPTION_LAYOUT.createException(ModuleNodes.getFields(rubyClass).factory, message, backtrace);
     }
 
     @CoreMethod(names = "initialize", optional = 1)

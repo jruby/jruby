@@ -14,7 +14,6 @@ import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -84,9 +83,9 @@ public class FeatureManager {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
+                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
             } else {
-                ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }

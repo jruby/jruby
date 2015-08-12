@@ -67,7 +67,7 @@ public abstract class SizedQueueNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).factory, null);
+            return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getFields(rubyClass).factory, null);
         }
 
     }

@@ -120,7 +120,7 @@ public abstract class IOBufferPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
             return IO_BUFFER_LAYOUT.createIOBuffer(
-                    ModuleNodes.getModel(classToAllocate).factory,
+                    ModuleNodes.getFields(classToAllocate).factory,
                         true,
                         ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                         0,

@@ -122,7 +122,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
             final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
-            return IO_LAYOUT.createIO(ModuleNodes.getModel(classToAllocate).factory, buffer, 0, 0, 0);
+            return IO_LAYOUT.createIO(ModuleNodes.getFields(classToAllocate).factory, buffer, 0, 0, 0);
         }
 
     }

@@ -41,7 +41,7 @@ public abstract class PointerNodes {
             pointer = NULL_POINTER;
         }
 
-        return POINTER_LAYOUT.createPointer(ModuleNodes.getModel(rubyClass).factory, pointer);
+        return POINTER_LAYOUT.createPointer(ModuleNodes.getFields(rubyClass).factory, pointer);
     }
 
     public static void setPointer(DynamicObject pointer, Pointer newPointer) {

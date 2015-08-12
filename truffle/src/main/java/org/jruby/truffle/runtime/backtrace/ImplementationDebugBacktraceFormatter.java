@@ -36,7 +36,7 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
             if (exception != null) {
                 assert RubyGuards.isRubyException(exception);
 
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(exception)).getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
             }
 
             for (Activation activation : activations) {

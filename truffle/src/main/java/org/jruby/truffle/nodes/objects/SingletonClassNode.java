@@ -83,7 +83,7 @@ public abstract class SingletonClassNode extends RubyNode {
     protected DynamicObject singletonClassClass(DynamicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
-        return ModuleNodes.getModel(rubyClass).getSingletonClass();
+        return ModuleNodes.getFields(rubyClass).getSingletonClass();
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
@@ -95,10 +95,10 @@ public abstract class SingletonClassNode extends RubyNode {
         CompilerAsserts.neverPartOfCompilation();
 
         if (RubyGuards.isRubyClass(object)) { // For the direct caller
-            return ModuleNodes.getModel(object).getSingletonClass();
+            return ModuleNodes.getFields(object).getSingletonClass();
         }
 
-        if (ModuleNodes.getModel(BasicObjectNodes.getMetaClass(object)).isSingleton()) {
+        if (ModuleNodes.getFields(BasicObjectNodes.getMetaClass(object)).isSingleton()) {
             return BasicObjectNodes.getMetaClass(object);
         }
 
@@ -110,7 +110,7 @@ public abstract class SingletonClassNode extends RubyNode {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getModel(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
+        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 

@@ -65,7 +65,7 @@ public abstract class TimeNodes {
     }
 
     public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
-        return TIME_LAYOUT.createTime(ModuleNodes.getModel(timeClass).factory, dateTime, offset);
+        return TIME_LAYOUT.createTime(ModuleNodes.getFields(timeClass).factory, dateTime, offset);
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.

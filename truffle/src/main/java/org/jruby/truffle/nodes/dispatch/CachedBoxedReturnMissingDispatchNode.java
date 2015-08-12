@@ -33,7 +33,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 

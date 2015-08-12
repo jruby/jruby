@@ -80,7 +80,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         final Object superClassObj = superClass.execute(frame);
 
         if (RubyGuards.isRubyClass(superClassObj)){
-            if (ModuleNodes.getModel((DynamicObject) superClassObj).isSingleton()) {
+            if (ModuleNodes.getFields((DynamicObject) superClassObj).isSingleton()) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
@@ -98,8 +98,8 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         assert RubyGuards.isRubyClass(superClassObject);
         assert RubyGuards.isRubyClass(definingClass);
 
-        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ModuleNodes.getModel(definingClass).getSuperClass() != superClassObject) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getModel(definingClass).getName(), this));
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ModuleNodes.getFields(definingClass).getSuperClass() != superClassObject) {
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getFields(definingClass).getName(), this));
         }
     }
 }

@@ -113,7 +113,7 @@ public class InternalMethod {
                 return true;
 
             case PROTECTED:
-                for (DynamicObject ancestor : ModuleNodes.getModel(callerClass).ancestors()) {
+                for (DynamicObject ancestor : ModuleNodes.getFields(callerClass).ancestors()) {
                     if (ancestor == declaringModule || BasicObjectNodes.getMetaClass(ancestor) == declaringModule) {
                         return true;
                     }

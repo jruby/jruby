@@ -302,7 +302,7 @@ public abstract class HashNodes {
     }
 
     public static DynamicObject createHash(DynamicObject hashClass, DynamicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        return HASH_LAYOUT.createHash(ModuleNodes.getModel(hashClass).factory, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false);
+        return HASH_LAYOUT.createHash(ModuleNodes.getFields(hashClass).factory, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false);
     }
 
     @TruffleBoundary

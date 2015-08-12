@@ -205,13 +205,13 @@ public abstract class FiberNodes {
     public static DynamicObject createRubyFiber(DynamicObject parent, DynamicObject rubyClass, String name) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, false);
         fields.name = name;
-        return FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).factory, fields);
+        return FIBER_LAYOUT.createFiber(ModuleNodes.getFields(rubyClass).factory, fields);
     }
 
     public static DynamicObject createRubyFiber(DynamicObject parent, FiberManager fiberManager, ThreadManager threadManager, DynamicObject rubyClass, String name, boolean isRootFiber) {
         final FiberFields fields = new FiberNodes.FiberFields(parent, isRootFiber);
         fields.name = name;
-        return FIBER_LAYOUT.createFiber(ModuleNodes.getModel(rubyClass).factory, fields);
+        return FIBER_LAYOUT.createFiber(ModuleNodes.getFields(rubyClass).factory, fields);
     }
 
     public interface FiberMessage {

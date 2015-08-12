@@ -111,7 +111,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof DynamicObject) {
-                builder.append(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
+                builder.append(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");

@@ -83,7 +83,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {
-            return DIR_LAYOUT.createDir(ModuleNodes.getModel(dirClass).factory, null, 0);
+            return DIR_LAYOUT.createDir(ModuleNodes.getFields(dirClass).factory, null, 0);
         }
 
     }

@@ -31,7 +31,7 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
         //assert RubyGuards.isRubyModule(other);
 
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
             if (ancestor == other) {
                 return true;
             }
@@ -64,11 +64,11 @@ public abstract class ModuleOperations {
         final Map<String, RubyConstant> constants = new HashMap<>();
 
         // Look in the current module
-        constants.putAll(ModuleNodes.getModel(module).getConstants());
+        constants.putAll(ModuleNodes.getFields(module).getConstants());
 
         // Look in ancestors
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).prependedAndIncludedModules()) {
-            for (Map.Entry<String, RubyConstant> constant : ModuleNodes.getModel(ancestor).getConstants().entrySet()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).prependedAndIncludedModules()) {
+            for (Map.Entry<String, RubyConstant> constant : ModuleNodes.getFields(ancestor).getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
                 }
@@ -86,7 +86,7 @@ public abstract class ModuleOperations {
 
         // Look in lexical scope
         while (lexicalScope != context.getRootLexicalScope()) {
-            RubyConstant constant = ModuleNodes.getModel(lexicalScope.getLiveModule()).getConstants().get(name);
+            RubyConstant constant = ModuleNodes.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
@@ -103,30 +103,30 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
 
         // Look in the current module
-        RubyConstant constant = ModuleNodes.getModel(module).getConstants().get(name);
+        RubyConstant constant = ModuleNodes.getFields(module).getConstants().get(name);
         if (constant != null) {
             return constant;
         }
 
         // Look in ancestors
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).parentAncestors()) {
-            constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).parentAncestors()) {
+            constant = ModuleNodes.getFields(ancestor).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
         }
 
         // Look in Object and its included modules
-        if (ModuleNodes.getModel(module).isOnlyAModule()) {
+        if (ModuleNodes.getFields(module).isOnlyAModule()) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
-            constant = ModuleNodes.getModel(objectClass).getConstants().get(name);
+            constant = ModuleNodes.getFields(objectClass).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
 
-            for (DynamicObject ancestor : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
-                constant = ModuleNodes.getModel(ancestor).getConstants().get(name);
+            for (DynamicObject ancestor : ModuleNodes.getFields(objectClass).prependedAndIncludedModules()) {
+                constant = ModuleNodes.getFields(ancestor).getConstants().get(name);
                 if (constant != null) {
                     return constant;
                 }
@@ -175,7 +175,7 @@ public abstract class ModuleOperations {
         if (inherit) {
             return ModuleOperations.lookupConstant(context, module, name);
         } else {
-            return ModuleNodes.getModel(module).getConstants().get(name);
+            return ModuleNodes.getFields(module).getConstants().get(name);
         }
     }
 
@@ -185,8 +185,8 @@ public abstract class ModuleOperations {
 
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
-            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
+            for (InternalMethod method : ModuleNodes.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -202,13 +202,13 @@ public abstract class ModuleOperations {
 
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getFields(ancestor).isSingleton()) {
                 break;
             }
 
-            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
+            for (InternalMethod method : ModuleNodes.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -224,15 +224,15 @@ public abstract class ModuleOperations {
 
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
-            for (InternalMethod method : ModuleNodes.getModel(ancestor).getMethods().values()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
+            for (InternalMethod method : ModuleNodes.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getModel(ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getFields(ancestor).isSingleton()) {
                 break;
             }
         }
@@ -258,8 +258,8 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
 
         // Look in ancestors
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).ancestors()) {
-            InternalMethod method = ModuleNodes.getModel(ancestor).getMethods().get(name);
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
+            InternalMethod method = ModuleNodes.getFields(ancestor).getMethods().get(name);
 
             if (method != null) {
                 return method;
@@ -282,18 +282,18 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyClass(objectMetaClass);
 
         boolean foundDeclaringModule = false;
-        for (DynamicObject module : ModuleNodes.getModel(objectMetaClass).ancestors()) {
+        for (DynamicObject module : ModuleNodes.getFields(objectMetaClass).ancestors()) {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                InternalMethod method = ModuleNodes.getModel(module).getMethods().get(name);
+                InternalMethod method = ModuleNodes.getFields(module).getMethods().get(name);
 
                 if (method != null) {
                     return method;
                 }
             }
         }
-        assert foundDeclaringModule : "Did not find the declaring module in "+ ModuleNodes.getModel(objectMetaClass).getName() +" ancestors";
+        assert foundDeclaringModule : "Did not find the declaring module in "+ ModuleNodes.getFields(objectMetaClass).getName() +" ancestors";
 
         return null;
     }
@@ -309,7 +309,7 @@ public abstract class ModuleOperations {
         classVariableLookup(module, new Function<DynamicObject, Object>() {
             @Override
             public Object apply(DynamicObject module) {
-                classVariables.putAll(ModuleNodes.getModel(module).getClassVariables());
+                classVariables.putAll(ModuleNodes.getFields(module).getClassVariables());
                 return null;
             }
         });
@@ -324,7 +324,7 @@ public abstract class ModuleOperations {
         return classVariableLookup(module, new Function<DynamicObject, Object>() {
             @Override
             public Object apply(DynamicObject module) {
-                return ModuleNodes.getModel(module).getClassVariables().get(name);
+                return ModuleNodes.getFields(module).getClassVariables().get(name);
             }
         });
     }
@@ -336,8 +336,8 @@ public abstract class ModuleOperations {
         DynamicObject found = classVariableLookup(module, new Function<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
-                if (ModuleNodes.getModel(module).getClassVariables().containsKey(name)) {
-                    ModuleNodes.getModel(module).setClassVariable(currentNode, name, value);
+                if (ModuleNodes.getFields(module).getClassVariables().containsKey(name)) {
+                    ModuleNodes.getFields(module).setClassVariable(currentNode, name, value);
                     return module;
                 } else {
                     return null;
@@ -347,7 +347,7 @@ public abstract class ModuleOperations {
 
         if (found == null) {
             // Not existing class variable - set in the current module
-            ModuleNodes.getModel(module).setClassVariable(currentNode, name, value);
+            ModuleNodes.getFields(module).setClassVariable(currentNode, name, value);
         }
     }
 
@@ -363,8 +363,8 @@ public abstract class ModuleOperations {
         // If singleton class, check attached module.
         if (RubyGuards.isRubyClass(module)) {
             DynamicObject klass = (DynamicObject) module;
-            if (ModuleNodes.getModel(klass).isSingleton() && ModuleNodes.getModel(klass).getAttached() != null) {
-                module = ModuleNodes.getModel(klass).getAttached();
+            if (ModuleNodes.getFields(klass).isSingleton() && ModuleNodes.getFields(klass).getAttached() != null) {
+                module = ModuleNodes.getFields(klass).getAttached();
 
                 result = action.apply(module);
                 if (result != null) {
@@ -374,7 +374,7 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-        for (DynamicObject ancestor : ModuleNodes.getModel(module).parentAncestors()) {
+        for (DynamicObject ancestor : ModuleNodes.getFields(module).parentAncestors()) {
             result = action.apply(ancestor);
             if (result != null) {
                 return result;

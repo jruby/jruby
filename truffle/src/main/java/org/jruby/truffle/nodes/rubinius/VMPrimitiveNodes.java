@@ -152,7 +152,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return createString(ModuleNodes.getModel(module).getName());
+            return createString(ModuleNodes.getFields(module).getName());
         }
 
     }
@@ -298,7 +298,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel((DynamicObject) object).isSingleton();
+            return RubyGuards.isRubyClass(object) && ModuleNodes.getFields((DynamicObject) object).isSingleton();
         }
 
     }

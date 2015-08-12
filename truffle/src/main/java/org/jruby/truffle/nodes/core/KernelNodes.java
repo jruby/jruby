@@ -426,8 +426,8 @@ public abstract class KernelNodes {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (ModuleNodes.getModel(BasicObjectNodes.getMetaClass(self)).isSingleton()) {
-                ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(BasicObjectNodes.getMetaClass(self));
+            if (ModuleNodes.getFields(BasicObjectNodes.getMetaClass(self)).isSingleton()) {
+                ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(BasicObjectNodes.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -1083,7 +1083,7 @@ public abstract class KernelNodes {
         }
 
         public Assumption getUnmodifiedAssumption(DynamicObject module) {
-            return ModuleNodes.getModel(module).getUnmodifiedAssumption();
+            return ModuleNodes.getFields(module).getUnmodifiedAssumption();
         }
 
         @Specialization(guards = "isRubyModule(module)")
@@ -1277,7 +1277,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization(guards = "!regular")
@@ -1334,7 +1334,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
 
     }
@@ -1389,7 +1389,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
 
     }
@@ -1419,7 +1419,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getModel(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
 
     }
@@ -1534,7 +1534,7 @@ public abstract class KernelNodes {
 
             if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                ModuleNodes.getModel(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
+                ModuleNodes.getFields(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
@@ -1754,13 +1754,13 @@ public abstract class KernelNodes {
         public DynamicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
-            if (!ModuleNodes.getModel(metaClass).isSingleton()) {
+            if (!ModuleNodes.getFields(metaClass).isSingleton()) {
                 return createEmptyArray();
             }
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getModel(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    ModuleNodes.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
     }
@@ -2111,7 +2111,7 @@ public abstract class KernelNodes {
         public DynamicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = ModuleNodes.getModel(classNode.executeGetClass(frame, self)).getName();
+            String className = ModuleNodes.getFields(classNode.executeGetClass(frame, self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2142,7 +2142,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
             }
 
             writeTaintNode.execute(object, false);

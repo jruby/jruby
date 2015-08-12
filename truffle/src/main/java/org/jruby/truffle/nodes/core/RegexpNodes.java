@@ -493,25 +493,25 @@ public abstract class RegexpNodes {
     }
 
     public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, RegexpOptions options) {
-        return REGEXP_LAYOUT.createRegexp(ModuleNodes.getModel(regexpClass).factory, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, options), regex, options, null);
+        return REGEXP_LAYOUT.createRegexp(ModuleNodes.getFields(regexpClass).factory, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, options), regex, options, null);
     }
 
     public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, int options) {
-        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getModel(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
+        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getFields(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
         RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, RegexpNodes.getOptions(regexp)), regex);
         return regexp;
     }
 
     public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
-        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getModel(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
+        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getFields(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
     public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source) {
-        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getModel(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
+        final DynamicObject regexp = REGEXP_LAYOUT.createRegexp(ModuleNodes.getFields(regexpClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
@@ -734,7 +734,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return REGEXP_LAYOUT.createRegexp(ModuleNodes.getModel(rubyClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
+            return REGEXP_LAYOUT.createRegexp(ModuleNodes.getFields(rubyClass).factory, null, null, RegexpOptions.NULL_OPTIONS, null);
         }
 
     }

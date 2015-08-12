@@ -93,8 +93,8 @@ public abstract class CmpIntNode extends RubyNode {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
-                        ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
-                        ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
+                        ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
+                        ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
         );
     }
 

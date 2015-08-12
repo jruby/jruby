@@ -39,9 +39,9 @@ public class RubyObjectType extends ObjectType {
             return ExceptionNodes.getMessage(object) + " :\n" +
                     Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, ExceptionNodes.getBacktrace(object)));
         } else if (RubyGuards.isRubyModule(object)) {
-            return ModuleNodes.getModel(object).toString();
+            return ModuleNodes.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
         }
     }
 

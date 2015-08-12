@@ -42,7 +42,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             if (exception != null) {
                 assert RubyGuards.isRubyException(exception);
 
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(exception)).getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
             }
 
             for (Activation activation : activations) {
@@ -84,7 +84,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
-            builder.append(ModuleNodes.getModel(method.getDeclaringModule()).getName());
+            builder.append(ModuleNodes.getFields(method.getDeclaringModule()).getName());
             builder.append("#");
             builder.append(method.getName());
         } else {

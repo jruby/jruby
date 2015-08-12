@@ -29,16 +29,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
-
 /**
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
@@ -71,7 +61,7 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     public Assumption getUnmodifiedAssumption(DynamicObject module) {
-        return ModuleNodes.getModel(module).getUnmodifiedAssumption();
+        return ModuleNodes.getFields(module).getUnmodifiedAssumption();
     }
 
     @TruffleBoundary

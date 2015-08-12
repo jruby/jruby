@@ -76,7 +76,7 @@ public class SymbolTable {
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
 
             final DynamicObject newSymbol = SymbolNodes.SYMBOL_LAYOUT.createSymbol(
-                    ModuleNodes.getModel(symbolClass).factory,
+                    ModuleNodes.getFields(symbolClass).factory,
                     storedBytes.toString(), storedBytes,
                     storedBytes.toString().hashCode(),
                     StringSupport.CR_UNKNOWN, null);

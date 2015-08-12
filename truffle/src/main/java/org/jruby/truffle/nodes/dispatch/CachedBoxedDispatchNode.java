@@ -45,7 +45,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         assert RubyGuards.isRubyClass(expectedClass);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -57,7 +57,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                        && ModuleNodes.getModel(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
+                        && ModuleNodes.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -138,7 +138,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                ModuleNodes.getModel(expectedClass).getName(), expectedClass.hashCode(),
+                ModuleNodes.getFields(expectedClass).getName(), expectedClass.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

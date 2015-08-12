@@ -54,7 +54,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
     }
 
     public Assumption getUnmodifiedAssumption(DynamicObject module) {
-        return ModuleNodes.getModel(module).getUnmodifiedAssumption();
+        return ModuleNodes.getFields(module).getUnmodifiedAssumption();
     }
 
     protected RubyConstant doLookup() {

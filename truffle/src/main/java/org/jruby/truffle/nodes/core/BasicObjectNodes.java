@@ -209,13 +209,13 @@ public abstract class BasicObjectNodes {
                 visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject)), visitor);
             }
         } else if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            ModuleNodes.getModel(rubyBasicObject).visitObjectGraphChildren(visitor);
+            ModuleNodes.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
         }
     }
 
     public static RubyContext getContext(DynamicObject rubyBasicObject) {
         if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            return ModuleNodes.getModel(rubyBasicObject).getContext();
+            return ModuleNodes.getFields(rubyBasicObject).getContext();
         } else {
             return getContext(getLogicalClass(rubyBasicObject));
         }
@@ -396,7 +396,7 @@ public abstract class BasicObjectNodes {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
                                 SymbolNodes.getString(name),
-                                ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
+                                ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
                                 this));
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.getString(name), self, this));
@@ -454,7 +454,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization(guards = "!isSingleton(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return ModuleNodes.getModel(rubyClass).factory.newInstance();
+            return ModuleNodes.getFields(rubyClass).factory.newInstance();
         }
 
         @Specialization(guards = "isSingleton(rubyClass)")
@@ -464,7 +464,7 @@ public abstract class BasicObjectNodes {
         }
 
         protected boolean isSingleton(DynamicObject rubyClass) {
-            return ModuleNodes.getModel(rubyClass).isSingleton();
+            return ModuleNodes.getFields(rubyClass).isSingleton();
         }
 
     }

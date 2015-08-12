@@ -37,14 +37,14 @@ public abstract class AliasNode extends RubyNode {
 
     @Specialization(guards = "isRubyModule(module)")
     public Object alias(DynamicObject module) {
-        ModuleNodes.getModel(module).alias(this, newName, oldName);
+        ModuleNodes.getFields(module).alias(this, newName, oldName);
         return module;
     }
 
     // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
     @Specialization(guards = "!isRubyModule(object)")
     public Object alias(VirtualFrame frame, Object object) {
-        ModuleNodes.getModel(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
+        ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
         return object;
     }
 

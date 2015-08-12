@@ -114,7 +114,7 @@ public abstract class EncodingNodes {
     }
 
     public static DynamicObject createRubyEncoding(DynamicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
-        return ENCODING_LAYOUT.createEncoding(ModuleNodes.getModel(encodingClass).factory, encoding, name, dummy);
+        return ENCODING_LAYOUT.createEncoding(ModuleNodes.getFields(encodingClass).factory, encoding, name, dummy);
     }
 
     @CoreMethod(names = "ascii_compatible?")

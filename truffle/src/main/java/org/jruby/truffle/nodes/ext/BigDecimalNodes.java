@@ -2146,7 +2146,7 @@ public abstract class BigDecimalNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).factory, BigDecimal.ZERO, Type.NORMAL);
+            return BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getFields(rubyClass).factory, BigDecimal.ZERO, Type.NORMAL);
         }
 
     }

@@ -55,12 +55,12 @@ public abstract class GetConstantNode extends RubyNode {
 
         // The autoload constant must only be removed if everything succeeds.
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        ModuleNodes.getModel(constant.getDeclaringModule()).removeConstant(this, name);
+        ModuleNodes.getFields(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             requireNode.require(path);
             return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
-            ModuleNodes.getModel(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
+            ModuleNodes.getFields(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;
         }
     }

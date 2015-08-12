@@ -545,7 +545,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).factory, false, nil(), nil());
+            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getFields(rubyClass).factory, false, nil(), nil());
         }
 
     }

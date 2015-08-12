@@ -12,9 +12,9 @@ package org.jruby.truffle.runtime.core;
 import org.jruby.truffle.runtime.ModuleChain;
 
 public class IncludedModulesIterator extends AncestorIterator {
-    private final RubyModuleModel currentModule;
+    private final ModuleFields currentModule;
 
-    public IncludedModulesIterator(ModuleChain top, RubyModuleModel currentModule) {
+    public IncludedModulesIterator(ModuleChain top, ModuleFields currentModule) {
         super(top instanceof PrependMarker ? top.getParentModule() : top);
         this.currentModule = currentModule;
     }

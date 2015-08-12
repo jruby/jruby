@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -141,14 +140,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (receiverObject instanceof Boolean) {
             final Assumption falseUnmodifiedAssumption =
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
 
             final InternalMethod falseMethod =
                     lookup(callerClass, false, methodNameString,
                             ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption =
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
 
             final InternalMethod trueMethod =
                     lookup(callerClass, true, methodNameString,
@@ -165,7 +164,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
         }
     }
 

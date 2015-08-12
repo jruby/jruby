@@ -51,7 +51,7 @@ public abstract class UnboundMethodNodes {
     public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 
     public static DynamicObject createUnboundMethod(DynamicObject rubyClass, DynamicObject origin, InternalMethod method) {
-        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getModel(rubyClass).factory, origin, method);
+        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ModuleNodes.getFields(rubyClass).factory, origin, method);
     }
 
     public static DynamicObject getOrigin(DynamicObject method) {
@@ -114,12 +114,12 @@ public abstract class UnboundMethodNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {
+                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getFields(declaringModule).isSingleton()) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + ModuleNodes.getModel(declaringModule).getName(), this));
+                            "bind argument must be an instance of " + ModuleNodes.getFields(declaringModule).getName(), this));
                 }
             }
 

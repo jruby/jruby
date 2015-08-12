@@ -49,7 +49,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
 
         if (indirect) {

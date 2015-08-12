@@ -60,7 +60,7 @@ public abstract class QueueNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).factory, new LinkedBlockingQueue());
+            return QUEUE_LAYOUT.createQueue(ModuleNodes.getFields(rubyClass).factory, new LinkedBlockingQueue());
         }
 
     }

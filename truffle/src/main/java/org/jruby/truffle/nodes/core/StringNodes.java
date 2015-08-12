@@ -280,7 +280,7 @@ public abstract class StringNodes {
 
     public static DynamicObject createString(DynamicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return STRING_LAYOUT.createString(ModuleNodes.getModel(stringClass).factory, bytes, StringSupport.CR_UNKNOWN, null);
+        return STRING_LAYOUT.createString(ModuleNodes.getFields(stringClass).factory, bytes, StringSupport.CR_UNKNOWN, null);
     }
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -292,7 +292,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return STRING_LAYOUT.createString(ModuleNodes.getModel(rubyClass).factory, new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return STRING_LAYOUT.createString(ModuleNodes.getFields(rubyClass).factory, new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -1407,7 +1407,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(ModuleNodes.getModel(BasicObjectNodes.getLogicalClass(self)).getName(), this));
+                        getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(self)).getName(), this));
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
