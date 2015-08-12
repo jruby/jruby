@@ -362,7 +362,7 @@ public class CoreLibrary {
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
         ModuleNodes.getModel(unboundMethodClass).factory = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
-        final DynamicObject ioClass = defineClass("IO", new IOPrimitiveNodes.IOAllocator());
+        final DynamicObject ioClass = defineClass("IO");
         ModuleNodes.getModel(ioClass).factory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass);
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         ModuleNodes.getModel(internalBufferClass).factory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass);

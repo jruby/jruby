@@ -99,13 +99,6 @@ public abstract class IOPrimitiveNodes {
 
     public static final IOLayout IO_LAYOUT = IOLayoutImpl.INSTANCE;
 
-    public static class IOAllocator implements Allocator {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return IO_LAYOUT.createIO(ModuleNodes.getModel(rubyClass).factory, context.getCoreLibrary().getNilObject(), 0, 0, 0);
-        }
-    }
-
     public static int getDescriptor(DynamicObject io) {
         return IO_LAYOUT.getDescriptor(io);
     }
