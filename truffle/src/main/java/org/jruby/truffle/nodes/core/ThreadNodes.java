@@ -20,7 +20,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;

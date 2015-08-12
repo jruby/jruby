@@ -165,14 +165,6 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
-    public final Allocator NO_ALLOCATOR = new Allocator() {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(typeError(String.format("allocator undefined for %s", ModuleNodes.getModel(rubyClass).getName()), currentNode));
-        }
-    };
-
     private DynamicObjectFactory integerFixnumRangeFactory;
     private DynamicObjectFactory longFixnumRangeFactory;
 
@@ -210,15 +202,15 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = ClassNodes.createClassClass(context, null);
+        classClass = ClassNodes.createClassClass(context);
 
-        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", null);
+        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject");
         ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
 
-        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ModuleNodes.getModel(basicObjectClass).allocator);
+        objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object");
         ModuleNodes.getModel(objectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
 
-        moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", null);
+        moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module");
         ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
 
         // Close the cycles
@@ -305,8 +297,8 @@ public class CoreLibrary {
 
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
-        floatClass = defineClass(numericClass, "Float", NO_ALLOCATOR);
-        integerClass = defineClass(numericClass, "Integer", NO_ALLOCATOR);
+        floatClass = defineClass(numericClass, "Float");
+        integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
         ModuleNodes.getModel(bignumClass).factory = BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass);
@@ -320,9 +312,9 @@ public class CoreLibrary {
         ModuleNodes.getModel(bindingClass).factory = BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass);
         dirClass = defineClass("Dir");
         ModuleNodes.getModel(dirClass).factory = DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass);
-        encodingClass = defineClass("Encoding", NO_ALLOCATOR);
+        encodingClass = defineClass("Encoding");
         ModuleNodes.getModel(encodingClass).factory = EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass);
-        falseClass = defineClass("FalseClass", NO_ALLOCATOR);
+        falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
         ModuleNodes.getModel(fiberClass).factory = FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass);
         defineModule("FileTest");
@@ -330,11 +322,11 @@ public class CoreLibrary {
         ModuleNodes.getModel(hashClass).factory = HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass);
         matchDataClass = defineClass("MatchData");
         ModuleNodes.getModel(matchDataClass).factory = MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass);
-        methodClass = defineClass("Method", NO_ALLOCATOR);
+        methodClass = defineClass("Method");
         ModuleNodes.getModel(methodClass).factory = MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass);
         final DynamicObject mutexClass = defineClass("Mutex");
         ModuleNodes.getModel(mutexClass).factory = MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass);
-        nilClass = defineClass("NilClass", NO_ALLOCATOR);
+        nilClass = defineClass("NilClass");
         procClass = defineClass("Proc");
         ModuleNodes.getModel(procClass).factory = ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass);
         processModule = defineModule("Process");
@@ -350,17 +342,17 @@ public class CoreLibrary {
         ModuleNodes.getModel(regexpClass).factory = RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass);
         stringClass = defineClass("String");
         ModuleNodes.getModel(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
-        symbolClass = defineClass("Symbol", NO_ALLOCATOR);
+        symbolClass = defineClass("Symbol");
         ModuleNodes.getModel(symbolClass).factory = SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass);
         threadClass = defineClass("Thread");
         ModuleNodes.getModel(threadClass).factory = ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass);
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
-        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
+        threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         ModuleNodes.getModel(threadBacktraceLocationClass).factory = ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass);
         timeClass = defineClass("Time");
         ModuleNodes.getModel(timeClass).factory = TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass);
-        trueClass = defineClass("TrueClass", NO_ALLOCATOR);
-        unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
+        trueClass = defineClass("TrueClass");
+        unboundMethodClass = defineClass("UnboundMethod");
         ModuleNodes.getModel(unboundMethodClass).factory = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
         final DynamicObject ioClass = defineClass("IO");
         ModuleNodes.getModel(ioClass).factory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass);
@@ -604,33 +596,18 @@ public class CoreLibrary {
     }
 
     private DynamicObject defineClass(String name) {
-        return defineClass(objectClass, name, ModuleNodes.getModel(objectClass).allocator);
-    }
-
-    private DynamicObject defineClass(String name, Allocator allocator) {
-        return defineClass(objectClass, name, allocator);
+        return defineClass(objectClass, name);
     }
 
     private DynamicObject defineClass(DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, objectClass, superclass, name, ModuleNodes.getModel(superclass).allocator);
-    }
-
-    private DynamicObject defineClass(DynamicObject superclass, String name, Allocator allocator) {
-        assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, objectClass, superclass, name, allocator);
+        return ClassNodes.createRubyClass(context, objectClass, superclass, name);
     }
 
     private DynamicObject defineClass(DynamicObject lexicalParent, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyModule(lexicalParent);
         assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, ModuleNodes.getModel(superclass).allocator);
-    }
-
-    private DynamicObject defineClass(DynamicObject lexicalParent, DynamicObject superclass, String name, Allocator allocator) {
-        assert RubyGuards.isRubyModule(lexicalParent);
-        assert RubyGuards.isRubyClass(superclass);
-        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name, allocator);
+        return ClassNodes.createRubyClass(context, lexicalParent, superclass, name);
     }
 
     private DynamicObject defineModule(String name) {

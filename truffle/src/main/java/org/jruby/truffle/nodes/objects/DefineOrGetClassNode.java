@@ -62,7 +62,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         DynamicObject superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name, ModuleNodes.getModel(superClassObject).allocator);
+            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name);
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (RubyGuards.isRubyClass(constant.getValue())) {

@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
@@ -20,16 +19,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyModuleModel;
-import org.jruby.util.ByteList;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -48,8 +43,8 @@ public abstract class ClassNodes {
     public static final ClassLayout CLASS_LAYOUT = ClassLayoutImpl.INSTANCE;
 
     /** Special constructor for class Class */
-    public static DynamicObject createClassClass(RubyContext context, Allocator allocator) {
-        final RubyModuleModel model = new RubyModuleModel(context, null, "Class", false, null, allocator, null);
+    public static DynamicObject createClassClass(RubyContext context) {
+        final RubyModuleModel model = new RubyModuleModel(context, null, "Class", false, null, null);
 
         final com.oracle.truffle.api.object.Layout temporaryLayout = com.oracle.truffle.api.object.Layout.createLayout();
 
@@ -65,7 +60,6 @@ public abstract class ClassNodes {
         ModuleNodes.MODULE_LAYOUT.setModel(rubyClass, model);
 
         model.name = model.givenBaseName;
-        model.allocator = allocator;
 
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
@@ -79,10 +73,10 @@ public abstract class ClassNodes {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public static DynamicObject createBootClass(DynamicObject classClass, DynamicObject superclass, String name, Allocator allocator) {
+    public static DynamicObject createBootClass(DynamicObject classClass, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        final RubyModuleModel model = new RubyModuleModel(BasicObjectNodes.getContext(classClass), null, name, false, null, allocator, null);
+        final RubyModuleModel model = new RubyModuleModel(BasicObjectNodes.getContext(classClass), null, name, false, null, null);
 
         final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).factory, model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
@@ -95,8 +89,6 @@ public abstract class ClassNodes {
         } else {
             ModuleNodes.getModel(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
         }
-
-        ModuleNodes.getModel(rubyClass).allocator = allocator;
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
@@ -117,18 +109,18 @@ public abstract class ClassNodes {
         // Allocator is null here, we cannot create instances of singleton classes.
         assert RubyGuards.isRubyClass(superclass);
         assert attached == null || RubyGuards.isRubyModule(attached);
-        return ModuleNodes.getModel(createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), null, superclass, name, true, attached, null)).ensureSingletonConsistency();
+        return ModuleNodes.getModel(createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), null, superclass, name, true, attached)).ensureSingletonConsistency();
     }
 
-    public static DynamicObject createRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name, Allocator allocator) {
-        final DynamicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null, allocator);
+    public static DynamicObject createRubyClass(RubyContext context, DynamicObject lexicalParent, DynamicObject superclass, String name) {
+        final DynamicObject rubyClass = createRubyClass(context, BasicObjectNodes.getLogicalClass(superclass), lexicalParent, superclass, name, false, null);
         ModuleNodes.getModel(rubyClass).ensureSingletonConsistency();
 
         return rubyClass;
     }
 
-    public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached, Allocator allocator) {
-        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached, allocator, null);
+    public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached) {
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, isSingleton, attached, null);
 
         final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getModel(classClass).factory, model);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
@@ -141,8 +133,6 @@ public abstract class ClassNodes {
         } else {
             ModuleNodes.getModel(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
         }
-
-        ModuleNodes.getModel(rubyClass).allocator = allocator;
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
@@ -161,32 +151,6 @@ public abstract class ClassNodes {
 
         return rubyClass;
     }
-
-    /*@CoreMethod(names = "allocate")
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public abstract DynamicObject executeAllocate(VirtualFrame frame, DynamicObject rubyClass);
-
-        @Specialization(guards = "isSingleton(rubyClass)")
-        public DynamicObject allocateSingleton(DynamicObject rubyClass) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
-        }
-
-        @Specialization(guards = "!isSingleton(rubyClass)")
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return ModuleNodes.getModel(rubyClass).allocator.allocate(BasicObjectNodes.getContext(rubyClass), rubyClass, this);
-        }
-
-        protected boolean isSingleton(DynamicObject rubyClass) {
-            return ModuleNodes.getModel(rubyClass).isSingleton();
-        }
-
-    }*/
 
     @CoreMethod(names = "new", needsBlock = true, rest = true)
     public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
@@ -336,7 +300,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyClass(getContext(), getContext().getCoreLibrary().getClassClass(), null, getContext().getCoreLibrary().getObjectClass(), null, false, null, null);
+            return createRubyClass(getContext(), getContext().getCoreLibrary().getClassClass(), null, getContext().getCoreLibrary().getObjectClass(), null, false, null);
         }
 
     }

@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -82,10 +81,9 @@ public class RubyModuleModel implements ModuleChain {
 
     public final boolean isSingleton;
     public final DynamicObject attached;
-    public Allocator allocator;
     public DynamicObjectFactory factory;
 
-    public RubyModuleModel(RubyContext context, DynamicObject lexicalParent, String givenBaseName, boolean isSingleton, DynamicObject attached, Allocator allocator, DynamicObjectFactory factory) {
+    public RubyModuleModel(RubyContext context, DynamicObject lexicalParent, String givenBaseName, boolean isSingleton, DynamicObject attached, DynamicObjectFactory factory) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
         assert attached == null || RubyGuards.isRubyModule(attached);
         this.context = context;
@@ -95,7 +93,6 @@ public class RubyModuleModel implements ModuleChain {
         start = new PrependMarker(this);
         this.isSingleton = isSingleton;
         this.attached = attached;
-        this.allocator = allocator;
         this.factory = factory;
     }
 
@@ -151,12 +148,6 @@ public class RubyModuleModel implements ModuleChain {
 
         for (DynamicObject ancestor : ModuleNodes.getModel(from).ancestors()) {
             ModuleNodes.getModel(ancestor).addDependent(rubyModuleObject);
-        }
-
-        if (isClass()) {
-            ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(from).allocator;
-            // isSingleton is false as we cannot copy a singleton class.
-            // and therefore attached is null.
         }
     }
 
@@ -647,8 +638,6 @@ public class RubyModuleModel implements ModuleChain {
         newVersion();
         ensureSingletonConsistency();
 
-        ModuleNodes.getModel(rubyModuleObject).allocator = ModuleNodes.getModel(superclass).allocator;
-
         DynamicObjectFactory factory = ModuleNodes.getModel(superclass).factory;
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyModuleObject);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyModuleObject);
@@ -684,7 +673,7 @@ public class RubyModuleModel implements ModuleChain {
         }
 
         String name = String.format("#<Class:%s>", getName());
-        BasicObjectNodes.setMetaClass(rubyModuleObject, ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject, null));
+        BasicObjectNodes.setMetaClass(rubyModuleObject, ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject));
 
         return BasicObjectNodes.getMetaClass(rubyModuleObject);
     }

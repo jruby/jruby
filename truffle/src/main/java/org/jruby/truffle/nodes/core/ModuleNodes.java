@@ -102,7 +102,7 @@ public abstract class ModuleNodes {
     }
 
     public static DynamicObject createRubyModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
-        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null, null, null);
+        final RubyModuleModel model = new RubyModuleModel(context, lexicalParent, name, false, null, null);
         final DynamicObject module = MODULE_LAYOUT.createModule(ModuleNodes.getModel(selfClass).factory, model);
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
