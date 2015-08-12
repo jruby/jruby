@@ -162,7 +162,7 @@ public abstract class ClassNodes {
         return rubyClass;
     }
 
-    @CoreMethod(names = "allocate")
+    /*@CoreMethod(names = "allocate")
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
@@ -186,7 +186,7 @@ public abstract class ClassNodes {
             return ModuleNodes.getModel(rubyClass).isSingleton();
         }
 
-    }
+    }*/
 
     @CoreMethod(names = "new", needsBlock = true, rest = true)
     public abstract static class NewNode extends CoreMethodArrayArgumentsNode {
@@ -327,11 +327,16 @@ public abstract class ClassNodes {
         }
     }
 
-    public static class ClassAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateConstructorNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createRubyClass(context, context.getCoreLibrary().getClassClass(), null, context.getCoreLibrary().getObjectClass(), null, false, null, null);
+        public AllocateConstructorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return createRubyClass(getContext(), getContext().getCoreLibrary().getClassClass(), null, getContext().getCoreLibrary().getObjectClass(), null, false, null, null);
         }
 
     }

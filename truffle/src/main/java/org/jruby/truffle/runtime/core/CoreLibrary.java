@@ -210,15 +210,15 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = ClassNodes.createClassClass(context, new ClassNodes.ClassAllocator());
+        classClass = ClassNodes.createClassClass(context, null);
 
-        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", new BasicObjectNodes.BasicObjectAllocator());
+        basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject", null);
         ModuleNodes.getModel(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
 
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object", ModuleNodes.getModel(basicObjectClass).allocator);
         ModuleNodes.getModel(objectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
 
-        moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", new ModuleNodes.ModuleAllocator());
+        moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module", null);
         ModuleNodes.getModel(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
 
         // Close the cycles
