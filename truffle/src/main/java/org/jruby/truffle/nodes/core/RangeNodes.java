@@ -538,11 +538,16 @@ public abstract class RangeNodes {
 
     }
 
-    public static class RangeAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).factory, false, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject());
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getModel(rubyClass).factory, false, nil(), nil());
         }
 
     }

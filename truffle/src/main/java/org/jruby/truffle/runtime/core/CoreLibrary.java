@@ -234,7 +234,7 @@ public class CoreLibrary {
         // Create Exception classes
 
         // Exception
-        exceptionClass = defineClass("Exception", new ExceptionNodes.ExceptionAllocator());
+        exceptionClass = defineClass("Exception");
         ModuleNodes.getModel(exceptionClass).factory = ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass);
 
         // NoMemoryError
@@ -342,7 +342,7 @@ public class CoreLibrary {
         ModuleNodes.getModel(queueClass).factory = QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass);
         DynamicObject sizedQueueClass = defineClass(queueClass, "SizedQueue");
         ModuleNodes.getModel(sizedQueueClass).factory = SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass);
-        rangeClass = defineClass("Range", new RangeNodes.RangeAllocator());
+        rangeClass = defineClass("Range");
         ModuleNodes.getModel(rangeClass).factory = RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass);
         integerFixnumRangeFactory = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRangeShape(rangeClass, rangeClass);
         longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
