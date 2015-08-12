@@ -43,7 +43,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
-import org.jruby.truffle.nodes.core.UnboundMethodNodes.BindNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -93,7 +92,7 @@ public abstract class ModuleNodes {
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
-        
+
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
@@ -108,7 +107,7 @@ public abstract class ModuleNodes {
         public boolean containsInstance(VirtualFrame frame, RubyBasicObject module, Object instance) {
             return includes(metaClassNode.executeMetaClass(frame, instance), module);
         }
-        
+
         @TruffleBoundary
         public boolean includes(RubyBasicObject metaClass, RubyBasicObject module) {
             assert RubyGuards.isRubyModule(metaClass);
@@ -894,7 +893,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, null, null);
+            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, null, null);
         }
 
         @CreateCast("name")
@@ -1770,7 +1769,7 @@ public abstract class ModuleNodes {
         public RubyNode coerceToString(RubyNode name) {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
-        
+
         @TruffleBoundary
         @Specialization
         public Object removeClassVariableString(RubyBasicObject module, String name) {
