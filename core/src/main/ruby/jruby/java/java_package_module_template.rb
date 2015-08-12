@@ -15,9 +15,13 @@ module JavaPackageModuleTemplate
     end
     private :method_missing
 
+    def name
+      name_pkg = JavaUtilities.get_proxy_or_package_under_package self, :name
+      name_pkg.nil? ? super : name_pkg
+    end
+
     def package_name
-      # strip off trailing .
-      @package_name[0..-2]
+      @package_name[0..-2] # strip off trailing .
     end
   end
 end

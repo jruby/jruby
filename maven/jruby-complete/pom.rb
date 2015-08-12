@@ -9,8 +9,12 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
+  plugin_repository( :id => 'rubygems-releases',
+                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
+
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
+              'jruby.home' => '${basedir}/../..',
               'main.basedir' => '${project.parent.parent.basedir}',
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home' )
 
@@ -32,7 +36,7 @@ project 'JRuby Complete' do
               :mainClass => 'org.jruby.Main'
             }
           },
-          :instructions => { 
+          :instructions => {
             'Export-Package' => 'org.jruby.*;version=${project.version}',
             'Import-Package' => '!org.jruby.*, *;resolution:=optional',
             'DynamicImport-Package' => 'javax.*',
@@ -50,7 +54,7 @@ project 'JRuby Complete' do
 
   plugin( :invoker )
 
-  # we have no sources and attach the sources and javadocs from jruby-core 
+  # we have no sources and attach the sources and javadocs from jruby-core
   # later in the build so IDE can use them
   plugin( :source, 'skipSource' =>  'true' )
 
@@ -107,7 +111,7 @@ project 'JRuby Complete' do
       end
     end
   end
-  
+
   profile :id => :jdk8 do
     activation do
       jdk '1.8'

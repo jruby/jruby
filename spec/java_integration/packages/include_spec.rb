@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-describe "A jar with dependecies" do
+describe "jar with dependecies" do
   it "carries its error messages along to Ruby exception when one of its classes is imported" do
     begin
       module Fixtures
