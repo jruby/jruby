@@ -5094,8 +5094,8 @@ public final class Ruby implements Constantizable {
     private final Random random;
 
     /** The runtime-local seed for hash randomization */
-    private long hashSeedK0;
-    private long hashSeedK1;
+    private final long hashSeedK0;
+    private final long hashSeedK1;
 
     private StaticScopeFactory staticScopeFactory;
 
