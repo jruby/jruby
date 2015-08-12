@@ -93,7 +93,7 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
-        return relativeJavaProxy(context.runtime, name);
+        return relativeJavaClassOrPackage(context, name, false);
     }
 
     @JRubyMethod(name = "const_get", required = 1)
@@ -101,7 +101,7 @@ public class JavaPackage extends RubyModule {
         // skip constant validation and do not inherit or include object
         IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
         if ( constant != null ) return constant;
-        return relativeJavaProxy(context.runtime, name); // e.g. javax.const_get(:script)
+        return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get", required = 2)
@@ -109,7 +109,7 @@ public class JavaPackage extends RubyModule {
         final IRubyObject name, final IRubyObject inherit) {
         IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
         if ( constant != null ) return constant;
-        return relativeJavaProxy(context.runtime, name);
+        return relativeJavaClassOrPackage(context, name, false);
     }
 
     @Override // so that e.g. java::util gets stored as expected
@@ -130,7 +130,12 @@ public class JavaPackage extends RubyModule {
         return fullName.append(name);
     }
 
-    private RubyModule relativeJavaProxy(final Ruby runtime, final IRubyObject name) {
+    private RubyModule relativeJavaClassOrPackage(final ThreadContext context,
+        final IRubyObject name, final boolean cacheMethod) {
+        return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), cacheMethod);
+    }
+
+    RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
         final JavaClass javaClass = JavaClass.forNameVerbose(runtime, fullName);
         return Java.getProxyClass(runtime, javaClass);

@@ -42,7 +42,7 @@ describe "java package" do
   end
 
   it "supports const_get with inherit argument" do
-    expect(java.util.const_get("Arrays", false)).to respond_to :asList
+    expect( java.util.const_get(:Arrays, false) ).to respond_to :asList
   end
 
   it "can be accessed using Java module and CamelCase" do
@@ -50,7 +50,20 @@ describe "java package" do
     expect(Java::ComBlahV8Something).to eq(com.blah.v8.something)
     expect(Java::X_Y_).to eq(Java::x_.y_)
   end
-end
+
+  it 'sub-packages work with const_get' do
+    java.const_get(:util)
+    pkg = java::util.const_get(:zip)
+    expect( pkg ).to be_a Module
+    expect( pkg ).to eql Java::JavaUtilZip
+
+    klass = java::util.const_get(:StringTokenizer)
+    expect( klass ).to be_a Class
+    expect( klass.name ).to eql 'Java::JavaUtil::StringTokenizer'
+
+    pkg = Java::JavaxSecurityAuth.const_get(:callback, true)
+    expect( pkg ).to eql Java::javax::security::auth::callback
+  end
 
 # for DefaultPackageClass
 $CLASSPATH << File.dirname(__FILE__) + "/../../../target/test-classes"
