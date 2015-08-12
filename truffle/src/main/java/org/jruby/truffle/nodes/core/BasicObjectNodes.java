@@ -452,9 +452,19 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "!isSingleton(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
             return ModuleNodes.getModel(rubyClass).factory.newInstance();
+        }
+
+        @Specialization(guards = "isSingleton(rubyClass)")
+        public DynamicObject allocateSingleton(DynamicObject rubyClass) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+        }
+
+        protected boolean isSingleton(DynamicObject rubyClass) {
+            return ModuleNodes.getModel(rubyClass).isSingleton();
         }
 
     }
