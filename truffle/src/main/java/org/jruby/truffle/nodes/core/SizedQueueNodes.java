@@ -60,11 +60,18 @@ public abstract class SizedQueueNodes {
 
     public static final SizedQueueLayout SIZED_QUEUE_LAYOUT = SizedQueueLayoutImpl.INSTANCE;
 
-    public static class SizedQueueAllocator implements Allocator {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
             return SIZED_QUEUE_LAYOUT.createSizedQueue(ModuleNodes.getModel(rubyClass).factory, null);
         }
+
     }
 
     @SuppressWarnings("unchecked")

@@ -53,11 +53,18 @@ public abstract class QueueNodes {
 
     public static final QueueLayout QUEUE_LAYOUT = QueueLayoutImpl.INSTANCE;
 
-    public static class QueueAllocator implements Allocator {
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
             return QUEUE_LAYOUT.createQueue(ModuleNodes.getModel(rubyClass).factory, new LinkedBlockingQueue());
         }
+
     }
 
     @SuppressWarnings("unchecked")

@@ -189,12 +189,18 @@ public abstract class EncodingConverterNodes {
         }
     }
 
-    public static class EncodingConverterAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
             return createEncodingConverter(rubyClass, null);
         }
 
     }
+
 }

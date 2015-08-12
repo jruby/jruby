@@ -159,11 +159,16 @@ public abstract class TimeNodes {
         }
     }
 
-    public static class TimeAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createRubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return createRubyTime(rubyClass, ZERO, getContext().getCoreLibrary().getNilObject());
         }
 
     }

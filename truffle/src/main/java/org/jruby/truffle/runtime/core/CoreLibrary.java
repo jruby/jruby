@@ -316,7 +316,7 @@ public class CoreLibrary {
 
         arrayClass = defineClass("Array");
         ModuleNodes.getModel(arrayClass).factory = ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass);
-        bindingClass = defineClass("Binding", new BindingNodes.BindingAllocator());
+        bindingClass = defineClass("Binding");
         ModuleNodes.getModel(bindingClass).factory = BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass);
         dirClass = defineClass("Dir");
         ModuleNodes.getModel(dirClass).factory = DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass);
@@ -335,18 +335,18 @@ public class CoreLibrary {
         final DynamicObject mutexClass = defineClass("Mutex");
         ModuleNodes.getModel(mutexClass).factory = MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass);
         nilClass = defineClass("NilClass", NO_ALLOCATOR);
-        procClass = defineClass("Proc", new ProcNodes.ProcAllocator());
+        procClass = defineClass("Proc");
         ModuleNodes.getModel(procClass).factory = ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass);
         processModule = defineModule("Process");
-        DynamicObject queueClass = defineClass("Queue", new QueueNodes.QueueAllocator());
+        DynamicObject queueClass = defineClass("Queue");
         ModuleNodes.getModel(queueClass).factory = QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass);
-        DynamicObject sizedQueueClass = defineClass(queueClass, "SizedQueue", new SizedQueueNodes.SizedQueueAllocator());
+        DynamicObject sizedQueueClass = defineClass(queueClass, "SizedQueue");
         ModuleNodes.getModel(sizedQueueClass).factory = SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass);
         rangeClass = defineClass("Range", new RangeNodes.RangeAllocator());
         ModuleNodes.getModel(rangeClass).factory = RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass);
         integerFixnumRangeFactory = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRangeShape(rangeClass, rangeClass);
         longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
-        regexpClass = defineClass("Regexp", new RegexpNodes.RegexpAllocator());
+        regexpClass = defineClass("Regexp");
         ModuleNodes.getModel(regexpClass).factory = RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass);
         stringClass = defineClass("String");
         ModuleNodes.getModel(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
@@ -357,7 +357,7 @@ public class CoreLibrary {
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
         ModuleNodes.getModel(threadBacktraceLocationClass).factory = ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass);
-        timeClass = defineClass("Time", new TimeNodes.TimeAllocator());
+        timeClass = defineClass("Time");
         ModuleNodes.getModel(timeClass).factory = TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass);
         trueClass = defineClass("TrueClass", NO_ALLOCATOR);
         unboundMethodClass = defineClass("UnboundMethod", NO_ALLOCATOR);
@@ -382,7 +382,7 @@ public class CoreLibrary {
 
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
-        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new EncodingConverterNodes.EncodingConverterAllocator());
+        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter");
         ModuleNodes.getModel(encodingConverterClass).factory = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass);
 
         truffleModule = defineModule("Truffle");
