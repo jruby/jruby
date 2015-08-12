@@ -281,7 +281,7 @@ public abstract class BigDecimalNodes {
         @Child private CallDispatchHeadNode modeCall;
         @Child private GetIntegerConstantNode getIntegerConstant;
         @Child private BooleanCastNode booleanCast;
-        @Child private ClassNodes.AllocateNode allocateNode;
+        @Child private CallDispatchHeadNode allocateNode;
 
         public CreateBigDecimalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -301,11 +301,11 @@ public abstract class BigDecimalNodes {
         public final DynamicObject executeCreate(VirtualFrame frame, Object value) {
             if (allocateNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                allocateNode = insert(ClassNodesFactory.AllocateNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+                allocateNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
 
             DynamicObject rubyClass = (getBigDecimalClass());
-            return executeInitialize(frame, value, allocateNode.executeAllocate(frame, rubyClass));
+            return executeInitialize(frame, value, (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null));
         }
 
         public final DynamicObject executeInitialize(VirtualFrame frame, Object value, DynamicObject alreadyAllocatedSelf) {
@@ -2139,10 +2139,15 @@ public abstract class BigDecimalNodes {
 
     }
 
-    public static class RubyBigDecimalAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
             return BIG_DECIMAL_LAYOUT.createBigDecimal(ModuleNodes.getModel(rubyClass).factory, BigDecimal.ZERO, Type.NORMAL);
         }
 

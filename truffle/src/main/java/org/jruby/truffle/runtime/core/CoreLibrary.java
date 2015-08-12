@@ -391,7 +391,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
-        bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal", new BigDecimalNodes.RubyBigDecimalAllocator());
+        bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         ModuleNodes.getModel(bigDecimalClass).factory = BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass);
 
         // Rubinius
