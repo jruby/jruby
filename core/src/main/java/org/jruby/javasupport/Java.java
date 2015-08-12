@@ -1270,6 +1270,7 @@ public class Java implements Library {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
@@ -1287,15 +1288,14 @@ public class Java implements Library {
         } else {
             implClassName = clazz.getName().replaceAll("::", "\\$\\$") + "_" + Math.abs(interfacesHashCode);
         }
-        Class proxyImplClass;
+        Class<? extends IRubyObject> proxyImplClass;
         try {
-            proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
-        } catch (ClassNotFoundException cnfe) {
+            proxyImplClass = (Class<? extends IRubyObject>) Class.forName(implClassName, true, runtime.getJRubyClassLoader());
+        }
+        catch (ClassNotFoundException cnfe) {
             // try to use super's reified class; otherwise, RubyObject (for now)
-            Class superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
-            if (superClass == null) {
-                superClass = RubyObject.class;
-            }
+            Class<? extends IRubyObject> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+            if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
