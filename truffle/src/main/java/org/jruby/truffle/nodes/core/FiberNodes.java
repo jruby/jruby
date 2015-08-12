@@ -365,11 +365,16 @@ public abstract class FiberNodes {
         private static final long serialVersionUID = 1522270454305076317L;
     }
 
-    public static class FiberAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            DynamicObject parent = context.getThreadManager().getCurrentThread();
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            DynamicObject parent = getContext().getThreadManager().getCurrentThread();
             return createRubyFiber(parent, rubyClass, null);
         }
 

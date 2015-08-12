@@ -574,11 +574,16 @@ public abstract class ThreadNodes {
 
     }
 
-    public static class ThreadAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public DynamicObject allocate(RubyContext context, DynamicObject rubyClass, Node currentNode) {
-            return createRubyThread(rubyClass, context.getThreadManager());
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return createRubyThread(rubyClass, getContext().getThreadManager());
         }
 
     }

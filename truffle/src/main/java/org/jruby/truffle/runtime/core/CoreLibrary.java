@@ -323,7 +323,7 @@ public class CoreLibrary {
         encodingClass = defineClass("Encoding", NO_ALLOCATOR);
         ModuleNodes.getModel(encodingClass).factory = EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass);
         falseClass = defineClass("FalseClass", NO_ALLOCATOR);
-        fiberClass = defineClass("Fiber", new FiberNodes.FiberAllocator());
+        fiberClass = defineClass("Fiber");
         ModuleNodes.getModel(fiberClass).factory = FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass);
         defineModule("FileTest");
         hashClass = defineClass("Hash");
@@ -352,7 +352,7 @@ public class CoreLibrary {
         ModuleNodes.getModel(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
         symbolClass = defineClass("Symbol", NO_ALLOCATOR);
         ModuleNodes.getModel(symbolClass).factory = SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass);
-        threadClass = defineClass("Thread", new ThreadNodes.ThreadAllocator());
+        threadClass = defineClass("Thread");
         ModuleNodes.getModel(threadClass).factory = ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass);
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location", NO_ALLOCATOR);
