@@ -1090,7 +1090,7 @@ public abstract class ModuleNodes {
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = method.getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getFields(declaringModule).isSingleton()) {
+                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.isSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "can't bind singleton method to a different class", this));
                 } else {
@@ -1223,7 +1223,7 @@ public abstract class ModuleNodes {
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
-            } else if (getFields(from).isSingleton()) {
+            } else if (ClassNodes.isSingleton(from)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy singleton class", this));
             }

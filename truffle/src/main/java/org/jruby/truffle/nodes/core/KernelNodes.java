@@ -426,7 +426,7 @@ public abstract class KernelNodes {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (ModuleNodes.getFields(BasicObjectNodes.getMetaClass(self)).isSingleton()) {
+            if (ClassNodes.isSingleton(BasicObjectNodes.getMetaClass(self))) {
                 ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(BasicObjectNodes.getMetaClass(self));
             }
 
@@ -1754,7 +1754,7 @@ public abstract class KernelNodes {
         public DynamicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
-            if (!ModuleNodes.getFields(metaClass).isSingleton()) {
+            if (!ClassNodes.isSingleton(metaClass)) {
                 return createEmptyArray();
             }
 

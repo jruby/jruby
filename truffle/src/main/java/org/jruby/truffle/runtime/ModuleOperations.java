@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.control.RaiseException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -204,7 +205,7 @@ public abstract class ModuleOperations {
 
         for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getFields(ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ClassNodes.isSingleton(ancestor)) {
                 break;
             }
 
@@ -232,7 +233,7 @@ public abstract class ModuleOperations {
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (RubyGuards.isRubyClass(ancestor) && !ModuleNodes.getFields(ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !ClassNodes.isSingleton(ancestor)) {
                 break;
             }
         }
@@ -363,8 +364,8 @@ public abstract class ModuleOperations {
         // If singleton class, check attached module.
         if (RubyGuards.isRubyClass(module)) {
             DynamicObject klass = (DynamicObject) module;
-            if (ModuleNodes.getFields(klass).isSingleton() && ModuleNodes.getFields(klass).getAttached() != null) {
-                module = ModuleNodes.getFields(klass).getAttached();
+            if (ClassNodes.isSingleton(klass) && ClassNodes.getAttached(klass) != null) {
+                module = ClassNodes.getAttached(klass);
 
                 result = action.apply(module);
                 if (result != null) {

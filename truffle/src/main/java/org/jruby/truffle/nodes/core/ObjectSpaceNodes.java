@@ -121,7 +121,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(DynamicObject object) {
-            return RubyGuards.isRubyClass(object) && ModuleNodes.getFields(object).isSingleton();
+            return RubyGuards.isRubyClass(object) && ClassNodes.isSingleton(object);
         }
 
     }

@@ -464,7 +464,7 @@ public abstract class BasicObjectNodes {
         }
 
         protected boolean isSingleton(DynamicObject rubyClass) {
-            return ModuleNodes.getFields(rubyClass).isSingleton();
+            return ClassNodes.isSingleton(rubyClass);
         }
 
     }

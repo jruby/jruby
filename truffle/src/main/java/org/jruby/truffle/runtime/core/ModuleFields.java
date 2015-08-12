@@ -105,7 +105,7 @@ public class ModuleFields implements ModuleChain {
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
             final DynamicObject classClass = BasicObjectNodes.getLogicalClass(getLogicalClass());
-            final DynamicObject objectClass = ModuleNodes.getFields(ModuleNodes.getFields(classClass).getSuperClass()).getSuperClass();
+            final DynamicObject objectClass = ClassNodes.getSuperClass(ClassNodes.getSuperClass(classClass));
 
             if (lexicalParent == objectClass) {
                 this.name = name;
@@ -626,80 +626,6 @@ public class ModuleFields implements ModuleChain {
 
     public DynamicObject getLogicalClass() {
         return BasicObjectNodes.getLogicalClass(rubyModuleObject);
-    }
-
-    public void initialize(DynamicObject superclass) {
-        assert isClass();
-        assert RubyGuards.isRubyClass(superclass);
-
-        parentModule = ModuleNodes.getFields(superclass).start;
-        ModuleNodes.getFields(superclass).addDependent(rubyModuleObject);
-
-        newVersion();
-        ensureSingletonConsistency();
-
-        DynamicObjectFactory factory = ModuleNodes.getFields(superclass).factory;
-        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyModuleObject);
-        factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyModuleObject);
-        ModuleNodes.getFields(rubyModuleObject).factory = factory;
-    }
-
-    public DynamicObject ensureSingletonConsistency() {
-        assert isClass();
-        createOneSingletonClass();
-        return rubyModuleObject;
-    }
-
-    public DynamicObject getSingletonClass() {
-        assert isClass();
-        // We also need to create the singleton class of a singleton class for proper lookup and consistency.
-        // See rb_singleton_class() documentation in MRI.
-        return ModuleNodes.getFields(createOneSingletonClass()).ensureSingletonConsistency();
-    }
-
-    public DynamicObject createOneSingletonClass() {
-        assert isClass();
-        CompilerAsserts.neverPartOfCompilation();
-
-        if (ModuleNodes.getFields(BasicObjectNodes.getMetaClass(rubyModuleObject)).isSingleton()) {
-            return BasicObjectNodes.getMetaClass(rubyModuleObject);
-        }
-
-        final DynamicObject singletonSuperclass;
-        if (getSuperClass() == null) {
-            singletonSuperclass = getLogicalClass();
-        } else {
-            singletonSuperclass = ModuleNodes.getFields(getSuperClass()).createOneSingletonClass();
-        }
-
-        String name = String.format("#<Class:%s>", getName());
-        BasicObjectNodes.setMetaClass(rubyModuleObject, ClassNodes.createRubyClass(getContext(), getLogicalClass(), null, singletonSuperclass, name, true, rubyModuleObject));
-
-        return BasicObjectNodes.getMetaClass(rubyModuleObject);
-    }
-
-
-    public boolean isSingleton() {
-        assert isClass();
-        return isSingleton;
-    }
-
-    public DynamicObject getAttached() {
-        assert isClass();
-        return attached;
-    }
-
-    public DynamicObject getSuperClass() {
-        assert isClass();
-        CompilerAsserts.neverPartOfCompilation();
-
-        for (DynamicObject ancestor : parentAncestors()) {
-            if (RubyGuards.isRubyClass(ancestor)) {
-                return ancestor;
-            }
-        }
-
-        return null;
     }
 
 }
