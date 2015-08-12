@@ -85,6 +85,7 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaObjectClass;
     private JavaClass objectJavaClass;
     private RubyClass javaClassClass;
+    private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
     private RubyClass javaProxyClass;
     private RubyClass arrayJavaProxyCreatorClass;
@@ -275,12 +276,19 @@ public class JavaSupportImpl extends JavaSupport {
         return javaClassClass = getJavaModule().getClass("JavaClass");
     }
 
+    public RubyClass getJavaPackageClass() {
+        RubyClass clazz;
+        if ((clazz = javaPackageClass) != null) return clazz;
+        return javaPackageClass = getJavaModule().getClass("JavaPackage");
+    }
+
     public RubyModule getJavaInterfaceTemplate() {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = runtime.getModule("JavaInterfaceTemplate");
     }
 
+    @Deprecated
     public RubyModule getPackageModuleTemplate() {
         RubyModule module;
         if ((module = packageModuleTemplate) != null) return module;

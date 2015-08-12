@@ -52,7 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jcodings.Encoding;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -115,10 +114,9 @@ public class Java implements Library {
 
     @Override
     public void load(Ruby runtime, boolean wrap) {
-        createJavaModule(runtime);
+        final RubyModule Java = createJavaModule(runtime);
 
-        RubyModule jpmt = runtime.defineModule("JavaPackageModuleTemplate");
-        jpmt.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, jpmt.getMetaClass().getSuperClass(), runtime.getKernel()));
+        JavaPackage.createJavaPackageClass(runtime, Java);
 
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
@@ -287,40 +285,6 @@ public class Java implements Library {
 
         nameClassMap.put("void", JavaClass.get(runtime, Void.TYPE));
         nameClassMap.put("Void", JavaClass.get(runtime, Void.class));
-    }
-
-    private static class JavaPackageClassProvider implements ClassProvider {
-
-        static final JavaPackageClassProvider INSTANCE = new JavaPackageClassProvider();
-
-        public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
-            // shouldn't happen, but if a superclass is specified, it's not ours
-            if ( superClazz != null ) return null;
-
-            String packageName = getPackageName(pkg);
-            // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ( packageName == null ) return null;
-
-            final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName + name);
-            return (RubyClass) get_proxy_class(runtime.getJavaSupport().getJavaUtilitiesModule(), javaClass);
-        }
-
-        public RubyModule defineModuleUnder(RubyModule pkg, String name) {
-            String packageName = getPackageName(pkg);
-            // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ( packageName == null ) return null;
-
-            final Ruby runtime = pkg.getRuntime();
-            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName + name);
-            return get_interface_module(runtime, javaClass);
-        }
-
-        private static String getPackageName(final RubyModule pkg) {
-            final IRubyObject package_name = pkg.getInstanceVariables().getInstanceVariable("@package_name");
-            return package_name == null ? null : package_name.asJavaString();
-        }
-
     }
 
     public static IRubyObject create_proxy_class(
@@ -742,14 +706,7 @@ public class Java implements Library {
     private static RubyModule createPackageModule(final Ruby runtime,
         final RubyModule parentModule, final String name, final String packageString) {
 
-        final RubyModule packageModule = (RubyModule) runtime.getJavaSupport().getPackageModuleTemplate().dup();
-
-        final String package_name = packageString.length() > 0 ? packageString + '.' : packageString;
-        packageModule.setInstanceVariable( "@package_name", runtime.newString(package_name) );
-
-        // this is where we'll get connected when classes are opened using
-        // package module syntax.
-        packageModule.addClassProvider( JavaPackageClassProvider.INSTANCE );
+        final RubyModule packageModule = JavaPackage.newPackage(runtime, packageString, parentModule);
 
         synchronized (parentModule) { // guard initializing in multiple threads
             final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
@@ -757,8 +714,8 @@ public class Java implements Library {
                 return (RubyModule) packageAlreadySet;
             }
             parentModule.setConstant(name.intern(), packageModule);
-            MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
-            metaClass.setAttached(packageModule);
+            //MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
+            //metaClass.setAttached(packageModule);
         }
         return packageModule;
     }
@@ -790,7 +747,7 @@ public class Java implements Library {
         return module == null ? runtime.getNil() : module;
     }
 
-    private static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
+    static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
         final RubyModule parentPackage, final String name, final boolean cacheMethod) {
         final Ruby runtime = context.runtime;
 
@@ -798,11 +755,7 @@ public class Java implements Library {
             throw runtime.newArgumentError("empty class or package name");
         }
 
-        IRubyObject package_name = parentPackage.getInstanceVariable("@package_name");
-        if ( package_name == null ) throw runtime.newArgumentError("invalid package module");
-
-        final String parentPackageName = package_name.asJavaString();
-        final String fullName = parentPackageName + name;
+        final String fullName = JavaPackage.buildPackageName(parentPackage, name).toString();
 
         final RubyModule result;
 
