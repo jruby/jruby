@@ -60,26 +60,16 @@ public abstract class RegexpNodes {
 
         boolean isRegexp(DynamicObject object);
 
-        @Nullable
         Regex getRegex(DynamicObject object);
-
-        @Nullable
         void setRegex(DynamicObject object, Regex value);
 
-        @Nullable
         ByteList getSource(DynamicObject object);
-
-        @Nullable
         void setSource(DynamicObject object, ByteList value);
 
         RegexpOptions getOptions(DynamicObject object);
-
         void setOptions(DynamicObject object, RegexpOptions value);
 
-        @Nullable
         Object getCachedNames(DynamicObject object);
-
-        @Nullable
         void setCachedNames(DynamicObject object, Object value);
 
     }

@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 /**
  * @see Layout
  */
-@Target({ElementType.METHOD, ElementType.PARAMETER})
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.CLASS)
 public @interface Nullable {
 }

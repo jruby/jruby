@@ -45,10 +45,7 @@ public abstract class EncodingConverterNodes {
 
         boolean isEncodingConverter(DynamicObject object);
 
-        @Nullable
         EConv getEconv(DynamicObject object);
-
-        @Nullable
         void setEconv(DynamicObject object, EConv econv);
 
     }

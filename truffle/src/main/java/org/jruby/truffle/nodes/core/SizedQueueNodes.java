@@ -46,12 +46,7 @@ public abstract class SizedQueueNodes {
 
         DynamicObject createSizedQueue(DynamicObjectFactory factory, @Nullable BlockingQueue queue);
 
-        boolean isSizedQueue(DynamicObject object);
-
-        @Nullable
         BlockingQueue getQueue(DynamicObject object);
-
-        @Nullable
         void setQueue(DynamicObject object, BlockingQueue queue);
 
     }

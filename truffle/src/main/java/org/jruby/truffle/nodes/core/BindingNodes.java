@@ -46,16 +46,10 @@ public abstract class BindingNodes {
 
         boolean isBinding(DynamicObject object);
 
-        @Nullable
         Object getSelf(DynamicObject object);
-
-        @Nullable
         void setSelf(DynamicObject object, Object self);
 
-        @Nullable
         MaterializedFrame getFrame(DynamicObject object);
-
-        @Nullable
         void setFrame(DynamicObject object, MaterializedFrame frame);
 
     }

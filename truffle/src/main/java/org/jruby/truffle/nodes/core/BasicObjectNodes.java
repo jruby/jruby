@@ -52,25 +52,13 @@ public abstract class BasicObjectNodes {
 
         boolean isBasicObject(Object object);
 
-        @Nullable
         DynamicObjectFactory setLogicalClass(DynamicObjectFactory factory, DynamicObject value);
-
-        @Nullable
         DynamicObject getLogicalClass(ObjectType objectType);
-
-        @Nullable
         DynamicObject getLogicalClass(DynamicObject object);
-
-        @Nullable
         void setLogicalClass(DynamicObject object, DynamicObject value);
 
-        @Nullable
         DynamicObjectFactory setMetaClass(DynamicObjectFactory factory, DynamicObject value);
-
-        @Nullable
         DynamicObject getMetaClass(DynamicObject object);
-
-        @Nullable
         void setMetaClass(DynamicObject object, DynamicObject value);
     }
 

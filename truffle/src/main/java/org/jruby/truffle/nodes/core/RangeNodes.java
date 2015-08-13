@@ -81,14 +81,10 @@ public abstract class RangeNodes {
 
         void setExcludedEnd(DynamicObject object, boolean value);
 
-        @Nullable
         Object getBegin(DynamicObject object);
-
         void setBegin(DynamicObject object, Object value);
 
-        @Nullable
         Object getEnd(DynamicObject object);
-
         void setEnd(DynamicObject object, Object value);
 
     }

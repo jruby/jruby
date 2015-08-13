@@ -40,16 +40,10 @@ public abstract class ExceptionNodes {
 
         boolean isException(DynamicObject object);
 
-        @Nullable
         Object getMessage(DynamicObject object);
-
-        @Nullable
         void setMessage(DynamicObject object, Object message);
 
-        @Nullable
         Backtrace getBacktrace(DynamicObject object);
-
-        @Nullable
         void setBacktrace(DynamicObject object, Backtrace backtrace);
 
     }

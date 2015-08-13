@@ -88,21 +88,15 @@ public abstract class StringNodes {
         DynamicObject createString(DynamicObjectFactory factory, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
         boolean isString(ObjectType objectType);
-
         boolean isString(DynamicObject dynamicObject);
 
         ByteList getByteList(DynamicObject object);
-
         void setByteList(DynamicObject object, ByteList byteList);
 
         int getCodeRange(DynamicObject object);
-
         void setCodeRange(DynamicObject object, int codeRange);
 
-        @Nullable
         StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-
-        @Nullable
         void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
 
     }

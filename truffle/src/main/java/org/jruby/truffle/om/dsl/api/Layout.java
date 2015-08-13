@@ -71,15 +71,12 @@ import java.lang.annotation.Target;
  * and attempting to set them to null in the constructor method or a setter
  * is an assertion failure.
  *
- * Properties can be marked as nullable by annotating them with
- * {@link Nullable}. All references to the property - constructor parameter,
- * getter and setter, must all have the {@link Nullable} annotation or none of
- * them. Properties with primitive types cannot be nullable.
+ * Properties can be marked as nullable by annotating the relevant constructor
+ * parameters with {@link Nullable}. Properties with primitive types cannot be
+ * nullable.
  *
  * <pre>
  * DynamicObject createWidget({@literal@}Nullable Object foo);
- * {@literal@}Nullable Object getFoo(DynamicObject object);
- * {@literal@}Nullable void setFoo(DynamicObject object, Object value);
  * </pre>
  *
  * <p><strong>Inheritance</strong></p>

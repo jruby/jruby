@@ -60,58 +60,30 @@ public abstract class ProcNodes {
 
         boolean isProc(DynamicObject object);
 
-        @Nullable
         Type getType(DynamicObject object);
 
-        @Nullable
-        void setType(DynamicObject object, Type value);
-
-        @Nullable
         SharedMethodInfo getSharedMethodInfo(DynamicObject object);
-
-        @Nullable
         void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
 
-        @Nullable
         CallTarget getCallTargetForBlocks(DynamicObject object);
-
-        @Nullable
         void setCallTargetForBlocks(DynamicObject object, CallTarget value);
 
-        @Nullable
         CallTarget getCallTargetForProcs(DynamicObject object);
-
-        @Nullable
         void setCallTargetForProcs(DynamicObject object, CallTarget value);
 
-        @Nullable
         CallTarget getCallTargetForLambdas(DynamicObject object);
-
-        @Nullable
         void setCallTargetForLambdas(DynamicObject object, CallTarget value);
 
-        @Nullable
         MaterializedFrame getDeclarationFrame(DynamicObject object);
-
-        @Nullable
         void setDeclarationFrame(DynamicObject object, MaterializedFrame value);
 
-        @Nullable
         InternalMethod getMethod(DynamicObject object);
-
-        @Nullable
         void setMethod(DynamicObject object, InternalMethod value);
 
-        @Nullable
         Object getSelf(DynamicObject object);
-
-        @Nullable
         void setSelf(DynamicObject object, Object value);
 
-        @Nullable
         DynamicObject getBlock(DynamicObject object);
-
-        @Nullable
         void setBlock(DynamicObject object, DynamicObject value);
 
     }

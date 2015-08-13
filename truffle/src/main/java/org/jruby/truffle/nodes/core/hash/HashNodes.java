@@ -72,46 +72,25 @@ public abstract class HashNodes {
 
         boolean isHash(DynamicObject object);
 
-        @Nullable
         DynamicObject getDefaultBlock(DynamicObject object);
-
-        @Nullable
         void setDefaultBlock(DynamicObject object, DynamicObject value);
 
-        @Nullable
         Object getDefaultValue(DynamicObject object);
-
-        @Nullable
         void setDefaultValue(DynamicObject object, Object value);
 
-        @Nullable
         Object getStore(DynamicObject object);
-
-        @Nullable
         void setStore(DynamicObject object, Object value);
 
-        @Nullable
         int getSize(DynamicObject object);
-
-        @Nullable
         void setSize(DynamicObject object, int value);
 
-        @Nullable
         Entry getFirstInSequence(DynamicObject object);
-
-        @Nullable
         void setFirstInSequence(DynamicObject object, Entry value);
 
-        @Nullable
         Entry getLastInSequence(DynamicObject object);
-
-        @Nullable
         void setLastInSequence(DynamicObject object, Entry value);
 
-        @Nullable
         boolean getCompareByIdentity(DynamicObject object);
-
-        @Nullable
         void setCompareByIdentity(DynamicObject object, boolean value);
 
     }

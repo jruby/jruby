@@ -77,17 +77,12 @@ public abstract class ArrayNodes {
         DynamicObject createArray(DynamicObjectFactory factory, @Nullable Object store, int size);
 
         boolean isArray(ObjectType objectType);
-
         boolean isArray(DynamicObject object);
 
-        @Nullable
         Object getStore(DynamicObject object);
-
-        @Nullable
         void setStore(DynamicObject object, Object value);
 
         int getSize(DynamicObject object);
-
         void setSize(DynamicObject object, int value);
 
     }

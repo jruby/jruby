@@ -219,7 +219,6 @@ public class LayoutParser {
         }
 
         setPropertyType(property, methodElement.getReturnType());
-        parseNullable(property, methodElement);
     }
 
     private void parseSetter(ExecutableElement methodElement) {
@@ -247,7 +246,6 @@ public class LayoutParser {
         }
 
         setPropertyType(property, methodElement.getParameters().get(1).asType());
-        parseNullable(property, methodElement);
     }
 
     private String titleToCamel(String name) {

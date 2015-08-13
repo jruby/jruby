@@ -46,13 +46,9 @@ public abstract class ClassNodes {
 
         boolean getIsSingleton(DynamicObject object);
 
-        @Nullable
         DynamicObject getAttached(DynamicObject object);
 
-        @Nullable
         DynamicObjectFactory getInstanceFactory(DynamicObject object);
-
-        @Nullable
         void setInstanceFactory(DynamicObject object, DynamicObjectFactory instanceFactory);
 
     }

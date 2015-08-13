@@ -62,10 +62,7 @@ public abstract class DirPrimitiveNodes {
 
         DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
 
-        @Nullable
         Object getContents(DynamicObject object);
-
-        @Nullable
         void setContents(DynamicObject object, Object value);
 
         int getPosition(DynamicObject object);

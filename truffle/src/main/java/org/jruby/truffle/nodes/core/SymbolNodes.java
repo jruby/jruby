@@ -51,10 +51,7 @@ public abstract class SymbolNodes {
         int getCodeRange(DynamicObject object);
         void setCodeRange(DynamicObject object, int codeRange);
 
-        @Nullable
         SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-
-        @Nullable
         void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);
 
     }
