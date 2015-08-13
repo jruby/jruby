@@ -71,7 +71,7 @@ public class JavaPackage extends RubyModule {
 
         // this is where we'll get connected when classes are opened using
         // package module syntax.
-        pkgModule.addClassProvider( JavaPackageClassProvider.INSTANCE );
+        pkgModule.addClassProvider( JavaClassProvider.INSTANCE );
         return pkgModule;
     }
 
@@ -159,9 +159,9 @@ public class JavaPackage extends RubyModule {
         return super.toJava(target);
     }
 
-    private static class JavaPackageClassProvider implements ClassProvider {
+    private static class JavaClassProvider implements ClassProvider {
 
-        static final JavaPackageClassProvider INSTANCE = new JavaPackageClassProvider();
+        static final JavaClassProvider INSTANCE = new JavaClassProvider();
 
         public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
@@ -171,7 +171,7 @@ public class JavaPackage extends RubyModule {
 
             final Ruby runtime = pkg.getRuntime();
             JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
-            return (RubyClass) Java.get_proxy_class(runtime.getJavaSupport().getJavaUtilitiesModule(), javaClass);
+            return (RubyClass) Java.getProxyClass(runtime, javaClass);
         }
 
         public RubyModule defineModuleUnder(RubyModule pkg, String name) {
@@ -179,7 +179,7 @@ public class JavaPackage extends RubyModule {
 
             final Ruby runtime = pkg.getRuntime();
             JavaClass javaClass = JavaClass.forNameVerbose(runtime, subPackageName);
-            return Java.get_interface_module(runtime, javaClass); // TODO
+            return Java.getInterfaceModule(runtime, javaClass);
         }
 
     }
