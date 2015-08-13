@@ -171,7 +171,7 @@ public class JavaPackage extends RubyModule {
         }
         return method_missing(context, args[0]);
     }
-
+    
     @Override
     @SuppressWarnings("unchecked")
     public Object toJava(final Class target) {
@@ -214,7 +214,7 @@ public class JavaPackage extends RubyModule {
      * discovery.
      *
      * Because this is in the hierarchy, it does mean any methods that are not Java
-     * packages or otherwise defined on the JavaPackageModuleTemplate module will
+     * packages or otherwise defined on the <code>Java::JavaPackage</code> will
      * be inaccessible.
      */
     static final class BlankSlateWrapper extends IncludedModuleWrapper {
@@ -227,23 +227,28 @@ public class JavaPackage extends RubyModule {
         protected DynamicMethod searchMethodCommon(final String name) {
             // this module is special and only searches itself;
 
+            // TODO implement a switch to allow for 'more-aligned' behavior
+
             // do not go to superclasses except for special methods :
             switch (name) {
-                // TODO implement a switch to allow for 'more-aligned' behavior
-                case "__constants__" :
-                    return superClass.searchMethodInner("constants");
-                case "__methods__" :
-                    return superClass.searchMethodInner("methods");
+                case "class" : case "singleton_class" :
+                case "object_id" : case "name" :
+                // these are handled already at the JavaPackage.class :
+                // case "const_get" : case "const_missing" : case "method_missing" :
+                case "const_set" :
+                case "inspect" : case "to_s" :
+                // these are handled bellow in switch (name.charAt(0))
+                // case "__method__" : case "__send__" : case "__id__" :
 
-                case "class" :
-                case "object_id" :
-                case "initialize_copy" :
-                case "singleton_method_added" :
-                case "const_missing" :
-                case "method_missing" :
-                case "inspect" :
-                case "to_s" :
+                //case "require" : case "load" :
+                case "throw" : case "catch" : //case "fail" : case "raise" :
+                //case "exit" : case "at_exit" :
                     return superClass.searchMethodInner(name);
+
+                case "__constants__" : // @Deprecated compatibility with 1.7
+                    return superClass.searchMethodInner("constants");
+                case "__methods__" : // @Deprecated compatibility with 1.7
+                    return superClass.searchMethodInner("methods");
             }
 
             final int last = name.length() - 1;
@@ -261,6 +266,13 @@ public class JavaPackage extends RubyModule {
                         return superClass.searchMethodInner(name);
                 }
             }
+
+            //if ( last >= 5 && (
+            //       name.indexOf("method") >= 0 || // method, instance_methods, singleton_methods ...
+            //       name.indexOf("variable") >= 0 || // class_variables, class_variable_get, instance_variables ...
+            //       name.indexOf("constant") >= 0 ) ) { // constants, :public_constant, :private_constant
+            //    return superClass.searchMethodInner(name);
+            //}
 
             return NullMethod.INSTANCE;
         }
