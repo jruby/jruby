@@ -664,7 +664,8 @@ public class Java implements Library {
             className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
 
-        if ( parentModule != null && IdUtil.isConstant(className) ) {
+        if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
+            ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
             if (parentModule.getConstantAt(className) == null) {
                 parentModule.setConstant(className, proxyClass);
             }
