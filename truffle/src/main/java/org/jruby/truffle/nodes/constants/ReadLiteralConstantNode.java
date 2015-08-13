@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import com.oracle.truffle.api.object.DynamicObject;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -28,7 +27,7 @@ public class ReadLiteralConstantNode extends RubyNode {
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = new ReadConstantNode(context, sourceSection, moduleNode, nameNode);
+        this.readConstantNode = new ReadConstantNode(context, sourceSection, false,  moduleNode, nameNode);
     }
 
     @Override

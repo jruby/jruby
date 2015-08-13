@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -33,11 +34,17 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
  * Caches {@link ModuleOperations#lookupConstant}
  * and checks visibility.
  */
-@NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+@NodeChildren({
+        @NodeChild(value = "module", type = RubyNode.class),
+        @NodeChild(value = "name", type = RubyNode.class)
+})
 public abstract class LookupConstantNode extends RubyNode {
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection) {
+    private final boolean ignoreVisibility;
+
+    public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility) {
         super(context, sourceSection);
+        this.ignoreVisibility = ignoreVisibility;
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
@@ -48,12 +55,12 @@ public abstract class LookupConstantNode extends RubyNode {
             "guardName(name, cachedName, sameNameProfile)"
     }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
     protected RubyConstant lookupConstant(VirtualFrame frame, DynamicObject module, String name,
-            @Cached("module") DynamicObject cachedModule,
-            @Cached("name") String cachedName,
-            @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
-            @Cached("isVisible(cachedModule, constant)") boolean isVisible,
-            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
-        if (!isVisible) {
+                                          @Cached("module") DynamicObject cachedModule,
+                                          @Cached("name") String cachedName,
+                                          @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
+                                          @Cached("isVisible(cachedModule, constant)") boolean isVisible,
+                                          @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+        if (!isVisible && !ignoreVisibility) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }
@@ -70,7 +77,7 @@ public abstract class LookupConstantNode extends RubyNode {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
 
-        if (!isVisible) {
+        if (!isVisible && !ignoreVisibility) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }

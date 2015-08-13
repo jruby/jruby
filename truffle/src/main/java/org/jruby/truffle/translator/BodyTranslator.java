@@ -1648,6 +1648,18 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/io.rb")) {
+            if (name.equals("@start") || name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
+                // Cast int-fitting longs back to int
+                return addNewlineIfNeeded(
+                        node,
+                        new WriteInstanceVariableNode(context, sourceSection, name, self,
+                                IntegerCastNodeGen.create(context, sourceSection, rhs),
+                                false));
+            }
+        }
+
         final RubyNode ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2805,9 +2817,9 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.Node argsNode = node.getArgsNode();
 
-        final boolean unsplat = argsNode instanceof org.jruby.ast.SplatNode;
+        final boolean unsplat = argsNode instanceof org.jruby.ast.SplatNode || argsNode instanceof org.jruby.ast.ArgsCatNode;
 
-        if (unsplat) {
+        if (argsNode instanceof org.jruby.ast.SplatNode) {
             argsNode = ((org.jruby.ast.SplatNode) argsNode).getValue();
         }
 

@@ -623,4 +623,18 @@ public abstract class ThreadNodes {
         }
     }
 
+    @CoreMethod(names = "list", onSingleton = true)
+    public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
+
+        public ListNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject list() {
+            final DynamicObject[] threads = getContext().getThreadManager().getThreads();
+            return createArray(threads, threads.length);
+        }
+    }
+
 }

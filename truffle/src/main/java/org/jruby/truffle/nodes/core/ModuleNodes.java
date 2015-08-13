@@ -117,7 +117,7 @@ public abstract class ModuleNodes {
     public abstract static class ContainsInstanceNode extends CoreMethodArrayArgumentsNode {
 
         @Child private MetaClassNode metaClassNode;
-        
+
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             metaClassNode = MetaClassNodeGen.create(context, sourceSection, null);
@@ -132,7 +132,7 @@ public abstract class ModuleNodes {
         public boolean containsInstance(VirtualFrame frame, DynamicObject module, Object instance) {
             return includes(metaClassNode.executeMetaClass(frame, instance), module);
         }
-        
+
         @TruffleBoundary
         public boolean includes(DynamicObject metaClass, DynamicObject module) {
             assert RubyGuards.isRubyModule(metaClass);
@@ -918,7 +918,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, null, null);
+            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, null, null);
         }
 
         @CreateCast("name")
@@ -1794,7 +1794,7 @@ public abstract class ModuleNodes {
         public RubyNode coerceToString(RubyNode name) {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
-        
+
         @TruffleBoundary
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {

@@ -125,6 +125,10 @@ public class ThreadManager {
         }
     }
 
+    public DynamicObject[] getThreads() {
+        return runningRubyThreads.toArray(new DynamicObject[runningRubyThreads.size()]);
+    }
+
     private void killOtherThreads() {
         while (true) {
             try {

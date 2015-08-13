@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.array;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -150,7 +151,7 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
-        @CompilationFinal private boolean hasAppendedIntegerArray = false;
+        private final ConditionProfile hasAppendedIntegerArray = ConditionProfile.createBinaryProfile();
 
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -199,26 +200,15 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (hasAppendedIntegerArray && otherStore instanceof int[]) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
-                return store;
-            }
-
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            if (otherStore instanceof int[]) {
-                hasAppendedIntegerArray = true;
+            if (hasAppendedIntegerArray.profile(otherStore instanceof int[])) {
                 System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
                 return store;
             }
 
             CompilerDirectives.transferToInterpreter();
 
-            replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-            final Object[] newStore = ArrayUtils.box((int[]) store);
-            System.arraycopy(otherStore, 0, newStore, index, ArrayNodes.getSize(array));
-
-            return newStore;
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((int[]) store), index, array);
         }
 
         @Override
@@ -258,6 +248,7 @@ public abstract class ArrayBuilderNode extends Node {
     public static class LongArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
+        private final ConditionProfile otherLongStoreProfile = ConditionProfile.createBinaryProfile();
 
         public LongArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -290,7 +281,21 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            throw new UnsupportedOperationException();
+            Object otherStore = ArrayNodes.getStore(array);
+
+            if (otherStore == null) {
+                return store;
+            }
+
+            if (otherLongStoreProfile.profile(otherStore instanceof long[])) {
+                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
+                return store;
+            }
+
+            CompilerDirectives.transferToInterpreter();
+
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((long[]) store), index, array);
         }
 
         @Override
@@ -322,6 +327,7 @@ public abstract class ArrayBuilderNode extends Node {
     public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
+        private final ConditionProfile otherDoubleStoreProfile = ConditionProfile.createBinaryProfile();
 
         public DoubleArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -361,8 +367,21 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
+            Object otherStore = ArrayNodes.getStore(array);
+
+            if (otherStore == null) {
+                return store;
+            }
+
+            if (otherDoubleStoreProfile.profile(otherStore instanceof double[])) {
+                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
+                return store;
+            }
+
             CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((double[]) store), index, array);
         }
 
         @Override
