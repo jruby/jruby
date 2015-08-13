@@ -58,11 +58,18 @@ import org.jruby.util.ClassProvider;
 public class JavaPackage extends RubyModule {
 
     static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass JavaPackage = Java.defineClassUnder("JavaPackage", runtime.getModule(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        JavaPackage.setReifiedClass(JavaPackage.class);
-        JavaPackage.makeMetaClass(runtime.getModule().getMetaClass());
+        RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
+        RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
+        JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
 
-        JavaPackage.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, JavaPackage.getMetaClass().getSuperClass(), runtime.getKernel()));
+        JavaPackage.setBaseName("JavaPackage");
+
+        JavaPackage.inherit(runtime.getModule());
+
+        JavaPackage.setParent(Java);
+        Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
+        // JavaPackage.setReifiedClass(JavaPackage.class);
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
@@ -70,10 +77,6 @@ public class JavaPackage extends RubyModule {
 
     static RubyModule newPackage(Ruby runtime, CharSequence name, RubyModule parent) {
         final JavaPackage pkgModule = new JavaPackage(runtime, name);
-        // NOTE: is this really necessary ?!?
-        //MetaClass metaClass = (MetaClass) pkgModule.makeMetaClass(pkgModule.getMetaClass());
-        //pkgModule.setMetaClass(metaClass);
-        //metaClass.setAttached(pkgModule);
         // intentionally do NOT set pkgModule.setParent(parent);
 
         // this is where we'll get connected when classes are opened using
