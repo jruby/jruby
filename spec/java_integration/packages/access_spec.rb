@@ -55,8 +55,8 @@ describe "java package" do
     java.const_get(:util)
     pkg = java::util.const_get(:zip)
     expect( pkg ).to be_a Module
-    expect( pkg ).to_not be_a Class
-    expect( pkg ).to eql Java::JavaUtilZip
+    expect( pkg.is_a?(Class) ).to be false
+    expect( pkg ).to equal Java::JavaUtilZip
 
     klass = java::util.const_get(:StringTokenizer)
     expect( klass ).to be_a Class
