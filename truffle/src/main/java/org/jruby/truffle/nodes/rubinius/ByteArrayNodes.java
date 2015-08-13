@@ -39,7 +39,7 @@ public abstract class ByteArrayNodes {
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
     public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
-        return BYTE_ARRAY_LAYOUT.createByteArray(ModuleNodes.getFields(rubyClass).factory, bytes);
+        return BYTE_ARRAY_LAYOUT.createByteArray(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), bytes);
     }
 
     public static ByteList getBytes(DynamicObject byteArray) {

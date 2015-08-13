@@ -53,7 +53,7 @@ public abstract class BignumNodes {
 
     public static DynamicObject createRubyBignum(DynamicObject rubyClass, BigInteger value) {
         assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return BIGNUM_LAYOUT.createBignum(ModuleNodes.getFields(rubyClass).factory, value);
+        return BIGNUM_LAYOUT.createBignum(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), value);
     }
 
     public static BigInteger getBigIntegerValue(DynamicObject bignum) {

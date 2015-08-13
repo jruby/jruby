@@ -454,7 +454,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization(guards = "!isSingleton(rubyClass)")
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return ModuleNodes.getFields(rubyClass).factory.newInstance();
+            return ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass).newInstance();
         }
 
         @Specialization(guards = "isSingleton(rubyClass)")

@@ -44,10 +44,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.ExceptionNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -120,7 +117,7 @@ public abstract class IOBufferPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
             return IO_BUFFER_LAYOUT.createIOBuffer(
-                    ModuleNodes.getFields(classToAllocate).factory,
+                    ClassNodes.CLASS_LAYOUT.getInstanceFactory(classToAllocate),
                         true,
                         ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                         0,

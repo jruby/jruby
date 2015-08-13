@@ -44,6 +44,7 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
@@ -83,7 +84,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {
-            return DIR_LAYOUT.createDir(ModuleNodes.getFields(dirClass).factory, null, 0);
+            return DIR_LAYOUT.createDir(ClassNodes.CLASS_LAYOUT.getInstanceFactory(dirClass), null, 0);
         }
 
     }

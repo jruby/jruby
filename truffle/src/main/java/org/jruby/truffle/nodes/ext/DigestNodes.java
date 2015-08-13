@@ -67,7 +67,7 @@ public abstract class DigestNodes {
 
         final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return DIGEST_LAYOUT.createDigest(ModuleNodes.getFields(rubyClass).factory, digest);
+        return DIGEST_LAYOUT.createDigest(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), digest);
     }
 
     public static MessageDigest getDigest(DynamicObject digest) {

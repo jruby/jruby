@@ -280,7 +280,7 @@ public abstract class StringNodes {
 
     public static DynamicObject createString(DynamicObject stringClass, ByteList bytes) {
         assert RubyGuards.isRubyClass(stringClass);
-        return STRING_LAYOUT.createString(ModuleNodes.getFields(stringClass).factory, bytes, StringSupport.CR_UNKNOWN, null);
+        return STRING_LAYOUT.createString(ClassNodes.CLASS_LAYOUT.getInstanceFactory(stringClass), bytes, StringSupport.CR_UNKNOWN, null);
     }
 
     @CoreMethod(names = "allocate", constructor = true)
@@ -292,7 +292,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return STRING_LAYOUT.createString(ModuleNodes.getFields(rubyClass).factory, new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return STRING_LAYOUT.createString(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }

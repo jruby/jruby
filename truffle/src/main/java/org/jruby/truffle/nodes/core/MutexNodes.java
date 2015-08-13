@@ -54,7 +54,7 @@ public abstract class MutexNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return MUTEX_LAYOUT.createMutex(ModuleNodes.getFields(rubyClass).factory, new ReentrantLock());
+            return MUTEX_LAYOUT.createMutex(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), new ReentrantLock());
         }
 
     }

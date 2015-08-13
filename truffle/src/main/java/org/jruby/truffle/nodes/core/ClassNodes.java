@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.ModuleFields;
@@ -35,9 +36,24 @@ public abstract class ClassNodes {
 
         DynamicObjectFactory createClassShape(DynamicObject logicalClass, DynamicObject metaClass);
 
-        DynamicObject createClass(DynamicObjectFactory factory, ModuleFields model);
+        DynamicObject createClass(DynamicObjectFactory factory,
+                                  ModuleFields model,
+                                  boolean isSingleton,
+                                  @Nullable DynamicObject attached,
+                                  @Nullable DynamicObjectFactory instanceFactory);
 
-        boolean isClass(DynamicObject dynamicObject);
+        boolean isClass(DynamicObject object);
+
+        boolean getIsSingleton(DynamicObject object);
+
+        @Nullable
+        DynamicObject getAttached(DynamicObject object);
+
+        @Nullable
+        DynamicObjectFactory getInstanceFactory(DynamicObject object);
+
+        @Nullable
+        void setInstanceFactory(DynamicObject object, DynamicObjectFactory instanceFactory);
 
     }
 
@@ -45,21 +61,21 @@ public abstract class ClassNodes {
 
     /** Special constructor for class Class */
     public static DynamicObject createClassClass(RubyContext context) {
-        final ModuleFields model = new ModuleFields(context, null, "Class", false, null, null);
+        final ModuleFields model = new ModuleFields(context, null, "Class");
 
         final com.oracle.truffle.api.object.Layout temporaryLayout = com.oracle.truffle.api.object.Layout.createLayout();
 
         final DynamicObject rubyClass = temporaryLayout.newInstance(temporaryLayout.createShape(new ObjectType()));
 
-        model.factory = ClassNodes.CLASS_LAYOUT.createClassShape(rubyClass, rubyClass);
-        model.rubyModuleObject = rubyClass;
+        final DynamicObjectFactory factory = ClassNodes.CLASS_LAYOUT.createClassShape(rubyClass, rubyClass);
 
-        rubyClass.setShapeAndGrow(rubyClass.getShape(), model.factory.getShape());
+        rubyClass.setShapeAndGrow(rubyClass.getShape(), factory.getShape());
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
 
+        model.rubyModuleObject = rubyClass;
+        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
         ModuleNodes.MODULE_LAYOUT.setFields(rubyClass, model);
-
         model.name = model.givenBaseName;
 
         assert RubyGuards.isRubyModule(rubyClass);
@@ -77,9 +93,9 @@ public abstract class ClassNodes {
     public static DynamicObject createBootClass(DynamicObject classClass, DynamicObject superclass, String name) {
         assert RubyGuards.isRubyClass(classClass);
         assert superclass == null || RubyGuards.isRubyClass(superclass);
-        final ModuleFields model = new ModuleFields(BasicObjectNodes.getContext(classClass), null, name, false, null, null);
+        final ModuleFields model = new ModuleFields(BasicObjectNodes.getContext(classClass), null, name);
 
-        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getFields(classClass).factory, model);
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(CLASS_LAYOUT.getInstanceFactory(classClass), model, false, null, null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -120,9 +136,9 @@ public abstract class ClassNodes {
     }
 
     public static DynamicObject createRubyClass(RubyContext context, DynamicObject classClass, DynamicObject lexicalParent, DynamicObject superclass, String name, boolean isSingleton, DynamicObject attached) {
-        final ModuleFields model = new ModuleFields(context, lexicalParent, name, isSingleton, attached, null);
+        final ModuleFields model = new ModuleFields(context, lexicalParent, name);
 
-        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(ModuleNodes.getFields(classClass).factory, model);
+        final DynamicObject rubyClass = CLASS_LAYOUT.createClass(CLASS_LAYOUT.getInstanceFactory(classClass), model, isSingleton, attached, null);
         assert RubyGuards.isRubyClass(rubyClass) : classClass.getShape().getObjectType().getClass();
         assert RubyGuards.isRubyModule(rubyClass) : classClass.getShape().getObjectType().getClass();
 
@@ -144,10 +160,10 @@ public abstract class ClassNodes {
             ModuleNodes.getFields(rubyClass).newVersion();
         }
 
-        DynamicObjectFactory factory = ModuleNodes.getFields(superclass).factory;
+        DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
-        ModuleNodes.getFields(rubyClass).factory = factory;
+        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
 
         return rubyClass;
     }
@@ -162,10 +178,10 @@ public abstract class ClassNodes {
         ModuleNodes.getFields(rubyClass).newVersion();
         ensureSingletonConsistency(rubyClass);
 
-        DynamicObjectFactory factory = ModuleNodes.getFields(superclass).factory;
+        DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
-        ModuleNodes.getFields(rubyClass).factory = factory;
+        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
     }
 
     public static DynamicObject ensureSingletonConsistency(DynamicObject rubyClass) {
@@ -201,11 +217,11 @@ public abstract class ClassNodes {
 
 
     public static boolean isSingleton(DynamicObject rubyClass) {
-        return ModuleNodes.getFields(rubyClass).isSingleton;
+        return CLASS_LAYOUT.getIsSingleton(rubyClass);
     }
 
     public static DynamicObject getAttached(DynamicObject rubyClass) {
-        return ModuleNodes.getFields(rubyClass).attached;
+        return CLASS_LAYOUT.getAttached(rubyClass);
     }
 
     public static DynamicObject getSuperClass(DynamicObject rubyClass) {

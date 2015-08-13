@@ -76,23 +76,13 @@ public class ModuleFields implements ModuleChain {
      */
     private final Set<DynamicObject> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<DynamicObject, Boolean>());
 
-    // Only used for classes
-
-    public final boolean isSingleton;
-    public final DynamicObject attached;
-    public DynamicObjectFactory factory;
-
-    public ModuleFields(RubyContext context, DynamicObject lexicalParent, String givenBaseName, boolean isSingleton, DynamicObject attached, DynamicObjectFactory factory) {
+    public ModuleFields(RubyContext context, DynamicObject lexicalParent, String givenBaseName) {
         assert lexicalParent == null || RubyGuards.isRubyModule(lexicalParent);
-        assert attached == null || RubyGuards.isRubyModule(attached);
         this.context = context;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
         this.unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
         start = new PrependMarker(this);
-        this.isSingleton = isSingleton;
-        this.attached = attached;
-        this.factory = factory;
     }
 
     public void getAdoptedByLexicalParent(DynamicObject lexicalParent, String name, Node currentNode) {

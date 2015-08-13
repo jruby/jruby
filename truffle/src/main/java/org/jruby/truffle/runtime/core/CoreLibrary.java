@@ -205,13 +205,13 @@ public class CoreLibrary {
         classClass = ClassNodes.createClassClass(context);
 
         basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject");
-        ModuleNodes.getFields(basicObjectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(basicObjectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass));
 
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object");
-        ModuleNodes.getFields(objectClass).factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(objectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass));
 
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module");
-        ModuleNodes.getFields(moduleClass).factory = ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(moduleClass, ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass));
 
         // Close the cycles
         ModuleNodes.getFields(classClass).parentModule = ModuleNodes.getFields(moduleClass).start;
@@ -227,7 +227,7 @@ public class CoreLibrary {
 
         // Exception
         exceptionClass = defineClass("Exception");
-        ModuleNodes.getFields(exceptionClass).factory = ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(exceptionClass, ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass));
 
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
@@ -301,63 +301,63 @@ public class CoreLibrary {
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
-        ModuleNodes.getFields(bignumClass).factory = BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bignumClass, BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass));
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
 
         arrayClass = defineClass("Array");
-        ModuleNodes.getFields(arrayClass).factory = ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(arrayClass, ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass));
         bindingClass = defineClass("Binding");
-        ModuleNodes.getFields(bindingClass).factory = BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bindingClass, BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass));
         dirClass = defineClass("Dir");
-        ModuleNodes.getFields(dirClass).factory = DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(dirClass, DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass));
         encodingClass = defineClass("Encoding");
-        ModuleNodes.getFields(encodingClass).factory = EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(encodingClass, EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass));
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
-        ModuleNodes.getFields(fiberClass).factory = FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(fiberClass, FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass));
         defineModule("FileTest");
         hashClass = defineClass("Hash");
-        ModuleNodes.getFields(hashClass).factory = HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(hashClass, HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass));
         matchDataClass = defineClass("MatchData");
-        ModuleNodes.getFields(matchDataClass).factory = MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(matchDataClass, MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass));
         methodClass = defineClass("Method");
-        ModuleNodes.getFields(methodClass).factory = MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(methodClass, MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass));
         final DynamicObject mutexClass = defineClass("Mutex");
-        ModuleNodes.getFields(mutexClass).factory = MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(mutexClass, MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass));
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc");
-        ModuleNodes.getFields(procClass).factory = ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(procClass, ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass));
         processModule = defineModule("Process");
         DynamicObject queueClass = defineClass("Queue");
-        ModuleNodes.getFields(queueClass).factory = QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(queueClass, QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass));
         DynamicObject sizedQueueClass = defineClass(queueClass, "SizedQueue");
-        ModuleNodes.getFields(sizedQueueClass).factory = SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(sizedQueueClass, SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass));
         rangeClass = defineClass("Range");
-        ModuleNodes.getFields(rangeClass).factory = RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass));
         integerFixnumRangeFactory = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRangeShape(rangeClass, rangeClass);
         longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp");
-        ModuleNodes.getFields(regexpClass).factory = RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(regexpClass, RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass));
         stringClass = defineClass("String");
-        ModuleNodes.getFields(stringClass).factory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(stringClass, StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass));
         symbolClass = defineClass("Symbol");
-        ModuleNodes.getFields(symbolClass).factory = SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(symbolClass, SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass));
         threadClass = defineClass("Thread");
-        ModuleNodes.getFields(threadClass).factory = ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(threadClass, ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass));
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
-        ModuleNodes.getFields(threadBacktraceLocationClass).factory = ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(threadBacktraceLocationClass, ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
         timeClass = defineClass("Time");
-        ModuleNodes.getFields(timeClass).factory = TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(timeClass, TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass));
         trueClass = defineClass("TrueClass");
         unboundMethodClass = defineClass("UnboundMethod");
-        ModuleNodes.getFields(unboundMethodClass).factory = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(unboundMethodClass, UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass));
         final DynamicObject ioClass = defineClass("IO");
-        ModuleNodes.getFields(ioClass).factory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(ioClass, IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
-        ModuleNodes.getFields(internalBufferClass).factory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(internalBufferClass, IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass));
 
         // Modules
 
@@ -375,7 +375,7 @@ public class CoreLibrary {
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
         encodingConverterClass = defineClass(encodingClass, objectClass, "Converter");
-        ModuleNodes.getFields(encodingConverterClass).factory = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(encodingConverterClass, EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass));
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
@@ -384,7 +384,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
-        ModuleNodes.getFields(bigDecimalClass).factory = BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bigDecimalClass, BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
         // Rubinius
 
@@ -393,14 +393,14 @@ public class CoreLibrary {
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
-        ModuleNodes.getFields(rubiniusFFIPointerClass).factory = PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(rubiniusFFIPointerClass, PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
-        ModuleNodes.getFields(byteArrayClass).factory = ByteArrayNodes.BYTE_ARRAY_LAYOUT.createByteArrayShape(byteArrayClass, byteArrayClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(byteArrayClass, ByteArrayNodes.BYTE_ARRAY_LAYOUT.createByteArrayShape(byteArrayClass, byteArrayClass));
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
@@ -416,18 +416,18 @@ public class CoreLibrary {
 
         // Create some key objects
 
-        mainObject = ModuleNodes.getFields(objectClass).factory.newInstance();
-        nilObject = ModuleNodes.getFields(nilClass).factory.newInstance();
+        mainObject = ClassNodes.CLASS_LAYOUT.getInstanceFactory(objectClass).newInstance();
+        nilObject = ClassNodes.CLASS_LAYOUT.getInstanceFactory(nilClass).newInstance();
         argv = ArrayNodes.createEmptyArray(arrayClass);
-        rubiniusUndefined = ModuleNodes.getFields(objectClass).factory.newInstance();
+        rubiniusUndefined = ClassNodes.CLASS_LAYOUT.getInstanceFactory(objectClass).newInstance();
 
-        globalVariablesObject = ModuleNodes.getFields(objectClass).factory.newInstance();
+        globalVariablesObject = ClassNodes.CLASS_LAYOUT.getInstanceFactory(objectClass).newInstance();
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        ModuleNodes.getFields(digestClass).factory = DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactory(digestClass, DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass));
 
         //final DynamicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
         //ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);

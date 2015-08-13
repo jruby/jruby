@@ -48,6 +48,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -122,7 +123,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
             final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
-            return IO_LAYOUT.createIO(ModuleNodes.getFields(classToAllocate).factory, buffer, 0, 0, 0);
+            return IO_LAYOUT.createIO(ClassNodes.CLASS_LAYOUT.getInstanceFactory(classToAllocate), buffer, 0, 0, 0);
         }
 
     }

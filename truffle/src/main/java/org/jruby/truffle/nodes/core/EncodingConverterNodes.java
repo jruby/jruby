@@ -64,7 +64,7 @@ public abstract class EncodingConverterNodes {
     }
 
     public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
-        return ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ModuleNodes.getFields(rubyClass).factory, econv);
+        return ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), econv);
     }
 
     @RubiniusOnly

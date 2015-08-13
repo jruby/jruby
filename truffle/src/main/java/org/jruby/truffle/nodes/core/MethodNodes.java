@@ -62,7 +62,7 @@ public abstract class MethodNodes {
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 
     public static DynamicObject createMethod(DynamicObject rubyClass, Object receiver, InternalMethod method) {
-        return METHOD_LAYOUT.createMethod(ModuleNodes.getFields(rubyClass).factory, receiver, method);
+        return METHOD_LAYOUT.createMethod(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), receiver, method);
     }
 
     public static Object getReceiver(DynamicObject method) {

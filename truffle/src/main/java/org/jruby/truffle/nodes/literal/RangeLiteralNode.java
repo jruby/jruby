@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.RangeNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -76,7 +77,7 @@ public abstract class RangeLiteralNode extends RubyNode {
 
         final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
 
-        return RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(ModuleNodes.getFields(rangeClass).factory, excludeEnd, begin, end);
+        return RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rangeClass), excludeEnd, begin, end);
     }
 
     protected boolean fitsIntoInteger(long value) {

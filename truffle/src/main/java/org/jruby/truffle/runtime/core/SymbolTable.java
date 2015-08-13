@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -76,7 +77,7 @@ public class SymbolTable {
             final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
 
             final DynamicObject newSymbol = SymbolNodes.SYMBOL_LAYOUT.createSymbol(
-                    ModuleNodes.getFields(symbolClass).factory,
+                    ClassNodes.CLASS_LAYOUT.getInstanceFactory(symbolClass),
                     storedBytes.toString(), storedBytes,
                     storedBytes.toString().hashCode(),
                     StringSupport.CR_UNKNOWN, null);
