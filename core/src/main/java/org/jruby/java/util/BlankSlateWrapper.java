@@ -19,6 +19,8 @@ import java.util.regex.Pattern;
  * Because this is in the hierarchy, it does mean any methods that are not Java
  * packages or otherwise defined on the JavaPackageModuleTemplate module will
  * be inaccessible.
+ *
+ * @deprecated no longer used - probably needs revamp if needed  to be re-usable
  */
 public class BlankSlateWrapper extends IncludedModuleWrapper {
     public BlankSlateWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
