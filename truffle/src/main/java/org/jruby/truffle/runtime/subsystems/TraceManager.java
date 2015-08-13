@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.ProcNodes;
@@ -23,10 +24,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -145,12 +143,34 @@ public class TraceManager {
         };
 
         instruments = new ArrayList<>();
-
         for (Probe probe : Probe.findProbesTaggedAs(StandardSyntaxTag.STATEMENT)) {
             final Instrument instrument = Instrument.create(listener, factory, null, "set_trace_func");
             instruments.add(instrument);
             probe.attach(instrument);
         }
+
+        Probe.addProbeListener(new ProbeListener() {
+            @Override
+            public void startASTProbing(Source source) {
+            }
+
+            @Override
+            public void newProbeInserted(Probe probe) {
+            }
+
+            @Override
+            public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
+                if (tag == StandardSyntaxTag.STATEMENT) {
+                    final Instrument instrument = Instrument.create(listener, factory, null, "set_trace_func");
+                    instruments.add(instrument);
+                    probe.attach(instrument);
+                }
+            }
+
+            @Override
+            public void endASTProbing(Source source) {
+            }
+        });
     }
 
 }
