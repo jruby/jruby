@@ -580,6 +580,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             return createRubyThread(rubyClass, getContext().getThreadManager());

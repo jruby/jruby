@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -26,6 +27,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.nodes.objects.GenericAllocatorNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
@@ -434,25 +436,10 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class AllocateNode extends GenericAllocatorNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        @Specialization(guards = "!isSingleton(rubyClass)")
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass).newInstance();
-        }
-
-        @Specialization(guards = "isSingleton(rubyClass)")
-        public DynamicObject allocateSingleton(DynamicObject rubyClass) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
-        }
-
-        protected boolean isSingleton(DynamicObject rubyClass) {
-            return ClassNodes.isSingleton(rubyClass);
         }
 
     }

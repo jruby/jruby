@@ -18,11 +18,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -223,6 +225,12 @@ public abstract class RubyNode extends Node {
 
     protected static int getCacheLimit() {
         return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+    }
+
+    // Helper methods for caching
+
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
+        return ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass);
     }
 
     // Instrumentation
