@@ -27,6 +27,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,8 +90,15 @@ public class TraceManager {
                     public Object executeRoot(Node node, VirtualFrame frame) {
                         if (!inTraceFuncProfile.profile(isInTraceFunc)) {
                             final Object self = RubyArguments.getSelf(frame.getArguments());
-                            final int id = 0;
                             final Object classname = self;
+
+                            final Object id;
+                            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+                            if (method != null) {
+                                id = context.getSymbol(method.getName());
+                            } else {
+                                id = context.getCoreLibrary().getNilObject();
+                            }
 
                             final RubyBinding binding = new RubyBinding(
                                     context.getCoreLibrary().getBindingClass(),
