@@ -31,14 +31,13 @@ import org.jruby.IncludedModuleWrapper;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -161,17 +160,20 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "method_missing", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
         if (args.length > 1) {
-            final Ruby runtime = context.runtime;
-            final int argsLen = args.length - 1;
-            RubyKernel.raise(context, this, new IRubyObject[] {
-                runtime.getArgumentError(),
-                runtime.newString("Java package '"+ packageName +"' does not have a method `"+
-                        args[0] +"' with "+ argsLen + (argsLen == 1 ? " argument" : " arguments"))
-            }, Block.NULL_BLOCK);
+            throw packageMethodArgumentMismatch(context.runtime, this, args[0].toString(), args.length - 1);
         }
         return method_missing(context, args[0]);
     }
     
+    static RaiseException packageMethodArgumentMismatch(final Ruby runtime, final RubyModule pkg,
+        final String method, final int argsLength) {
+        String packageName = ((JavaPackage) pkg).packageName;
+        return runtime.newArgumentError(
+                "Java package '"+ packageName +"' does not have a method `"+
+                method +"' with "+ argsLength + (argsLength == 1 ? " argument" : " arguments")
+        );
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Object toJava(final Class target) {

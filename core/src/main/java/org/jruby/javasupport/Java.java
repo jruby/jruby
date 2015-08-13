@@ -955,10 +955,7 @@ public class Java implements Library {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             if ( args.length != 0 ) {
-                IRubyObject packageName = parentPackage.callMethod("package_name");
-                throw context.runtime.newArgumentError(
-                    "Java package `" + packageName + "' does not have a method `" + name + "'"
-                );
+                throw JavaPackage.packageMethodArgumentMismatch(context.runtime, parentPackage, name, args.length);
             }
             return call(context, self, clazz, name);
         }
