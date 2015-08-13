@@ -428,14 +428,6 @@ public class CoreLibrary {
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(digestClass, DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass));
-
-        //final DynamicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
-        //ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
-        //ModuleNodes.getModel(rubiniusIOClass).factory = ioFactory;
-
-        //ioBufferClass = defineClass(rubiniusModule, basicObjectClass, "IOBuffer");
-        //ioBufferFactory = IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(ioBufferClass, ioBufferClass);
-        //ModuleNodes.getModel(ioBufferClass).factory = ioBufferFactory;
     }
 
     private void includeModules(DynamicObject comparableModule) {
