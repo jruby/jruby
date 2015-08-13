@@ -226,6 +226,9 @@ public class LayoutParser {
         assert methodElement.getParameters().size() == 2;
 
         final boolean isFactorySetter = methodElement.getParameters().get(0).asType().toString().equals(DynamicObjectFactory.class.getName());
+        final boolean isUnsafeSetter = methodElement.getSimpleName().toString().endsWith("Unsafe");
+
+        assert !(isFactorySetter && isUnsafeSetter);
 
         if (isFactorySetter) {
             assert methodElement.getParameters().get(0).getSimpleName().toString().equals("factory");
@@ -236,13 +239,22 @@ public class LayoutParser {
 
         assert methodElement.getParameters().get(1).getSimpleName().toString().equals("value");
 
-        final String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
+        String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
+
+        if (isUnsafeSetter) {
+            name = name.substring(0, name.length() - "Unsafe".length());
+        }
+
         final PropertyBuilder property = getProperty(name);
 
         if (isFactorySetter) {
             property.setHasFactorySetter(true);
         } else {
-            property.setHasSetter(true);
+            if (isUnsafeSetter) {
+                property.setHasUnsafeSetter(isUnsafeSetter);
+            } else {
+                property.setHasSetter(true);
+            }
         }
 
         setPropertyType(property, methodElement.getParameters().get(1).asType());

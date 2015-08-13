@@ -452,13 +452,24 @@ public class LayoutGenerator {
                 stream.println("    ");
             }
 
-            if (property.hasSetter()) {
+            assert !(property.hasSetter() && property.hasUnsafeSetter());
+
+            if (property.hasSetter() || property.hasUnsafeSetter()) {
                 if (property.isShapeProperty()) {
                     stream.println("    @TruffleBoundary");
                 }
 
                 stream.println("    @Override");
-                stream.printf("    public void %s(DynamicObject object, %s value) {\n", NameUtils.asSetter(property.getName()), property.getType());
+
+                final String methodNameSuffix;
+
+                if (property.hasUnsafeSetter()) {
+                    methodNameSuffix = "Unsafe";
+                } else {
+                    methodNameSuffix = "";
+                }
+
+                stream.printf("    public void %s%s(DynamicObject object, %s value) {\n", NameUtils.asSetter(property.getName()), methodNameSuffix, property.getType());
                 stream.printf("        assert is%s(object);\n", layout.getName());
 
 
@@ -473,11 +484,16 @@ public class LayoutGenerator {
                     }
 
                     stream.println("        ");
-                    stream.printf("        try {\n");
-                    stream.printf("            %s_PROPERTY.set(object, value, object.getShape());\n", NameUtils.identifierToConstant(property.getName()));
-                    stream.printf("        } catch (IncompatibleLocationException | FinalLocationException e) {\n");
-                    stream.printf("            throw new UnexpectedLayoutRefusalException(e);\n");
-                    stream.printf("        }\n");
+
+                    if (property.hasUnsafeSetter()) {
+                        stream.printf("        %s_PROPERTY.setInternal(object, value);\n", NameUtils.identifierToConstant(property.getName()));
+                    } else {
+                        stream.printf("        try {\n");
+                        stream.printf("            %s_PROPERTY.set(object, value, object.getShape());\n", NameUtils.identifierToConstant(property.getName()));
+                        stream.printf("        } catch (IncompatibleLocationException | FinalLocationException e) {\n");
+                        stream.printf("            throw new UnexpectedLayoutRefusalException(e);\n");
+                        stream.printf("        }\n");
+                    }
                 }
 
                 stream.println("    }");

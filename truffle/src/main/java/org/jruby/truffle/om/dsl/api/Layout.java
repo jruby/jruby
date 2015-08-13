@@ -46,6 +46,8 @@ import java.lang.annotation.Target;
  * {@link DynamicObject}. There should be as many parameters as there are
  * properties.
  *
+ * Setters are optional. A property without a setter is final.
+ *
  * <pre>
  * DynamicObject createRect(int x, int y, int width, int height);
  * </pre>
@@ -77,6 +79,22 @@ import java.lang.annotation.Target;
  *
  * <pre>
  * DynamicObject createWidget({@literal@}Nullable Object foo);
+ * </pre>
+ *
+ * <p><strong>Semi-Final Properties</strong></p>
+ *
+ * Properties without setters are final, and can be optimized more effectively
+ * by the compiler. Some properties need to be modified just once very soon
+ * after construction (such as closing a cycle). If you can guarantee that a
+ * final reference to the object will not be included in compiled code between
+ * construction and needing to set the property, you can define only an
+ * unsafe setter, which allows the property to be set while still treating it
+ * as final.
+ *
+ * Unsafe setters have 'Unsafe' after their name.
+ *
+ * <pre>
+ * void setWidthUnsafe(DynamicObject object, int value);
  * </pre>
  *
  * <p><strong>Inheritance</strong></p>
@@ -150,6 +168,8 @@ import java.lang.annotation.Target;
  * using the instance setter after creating the object.
  *
  * Finally, the getters can be used against an {@code ObjectType}.
+ *
+ * Shape properties cannot be semi-final.
  *
  * <p><strong>Object Type Superclass</strong></p>
  *

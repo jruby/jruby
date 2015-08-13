@@ -49,7 +49,7 @@ public abstract class ClassNodes {
         DynamicObject getAttached(DynamicObject object);
 
         DynamicObjectFactory getInstanceFactory(DynamicObject object);
-        void setInstanceFactory(DynamicObject object, DynamicObjectFactory instanceFactory);
+        void setInstanceFactoryUnsafe(DynamicObject object, DynamicObjectFactory instanceFactory);
 
     }
 
@@ -70,7 +70,7 @@ public abstract class ClassNodes {
         assert RubyGuards.isRubyClass(rubyClass);
 
         model.rubyModuleObject = rubyClass;
-        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
+        CLASS_LAYOUT.setInstanceFactoryUnsafe(rubyClass, factory);
         ModuleNodes.MODULE_LAYOUT.setFields(rubyClass, model);
         model.name = model.givenBaseName;
 
@@ -159,7 +159,7 @@ public abstract class ClassNodes {
         DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
-        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
+        CLASS_LAYOUT.setInstanceFactoryUnsafe(rubyClass, factory);
 
         return rubyClass;
     }
@@ -177,7 +177,7 @@ public abstract class ClassNodes {
         DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(factory, rubyClass);
         factory = BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(factory, rubyClass);
-        CLASS_LAYOUT.setInstanceFactory(rubyClass, factory);
+        CLASS_LAYOUT.setInstanceFactoryUnsafe(rubyClass, factory);
     }
 
     public static DynamicObject ensureSingletonConsistency(DynamicObject rubyClass) {

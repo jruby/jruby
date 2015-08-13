@@ -19,13 +19,14 @@ public class PropertyModel {
     private final boolean hasFactorySetter;
     private final boolean hasGetter;
     private final boolean hasSetter;
+    private final boolean hasUnsafeSetter;
     private final TypeMirror type;
     private final boolean nullable;
     private final boolean hasIdentifier;
     private final boolean isShapeProperty;
 
     public PropertyModel(String name, boolean hasObjectTypeGetter, boolean hasFactoryGetter, boolean hasFactorySetter,
-                         boolean hasGetter, boolean hasSetter,
+                         boolean hasGetter, boolean hasSetter, boolean hasUnsafeSetter,
                          TypeMirror type, boolean nullable, boolean hasIdentifier,
                          boolean isShapeProperty) {
         assert name != null;
@@ -41,6 +42,7 @@ public class PropertyModel {
         this.hasFactorySetter = hasFactorySetter;
         this.hasGetter = hasGetter;
         this.hasSetter = hasSetter;
+        this.hasUnsafeSetter = hasUnsafeSetter;
         this.type = type;
         this.nullable = nullable;
         this.hasIdentifier = hasIdentifier;
@@ -69,6 +71,10 @@ public class PropertyModel {
 
     public boolean hasSetter() {
         return hasSetter;
+    }
+
+    public boolean hasUnsafeSetter() {
+        return hasUnsafeSetter;
     }
 
     public TypeMirror getType() {

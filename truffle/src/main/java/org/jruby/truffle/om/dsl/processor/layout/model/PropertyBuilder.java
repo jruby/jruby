@@ -19,6 +19,7 @@ public class PropertyBuilder {
     private boolean hasFactorySetter;
     private boolean hasGetter;
     private boolean hasSetter;
+    private boolean hasUnsafeSetter;
     private TypeMirror type;
     private NullableState nullable = NullableState.DEFAULT;
     private boolean hasIdentifier;
@@ -36,7 +37,7 @@ public class PropertyBuilder {
         assert type != null;
 
         return new PropertyModel(name, hasObjectTypeGetter, hasFactoryGetter, hasFactorySetter,
-                hasGetter, hasSetter, type,
+                hasGetter, hasSetter, hasUnsafeSetter, type,
                 nullable == NullableState.NULLABLE, hasIdentifier, isShapeProperty);
     }
 
@@ -60,6 +61,10 @@ public class PropertyBuilder {
         this.hasSetter = hasSetter;
     }
 
+    public void setHasUnsafeSetter(boolean hasUnsafeSetter) {
+        this.hasUnsafeSetter = hasUnsafeSetter;
+    }
+
     public TypeMirror getType() {
         return type;
     }
@@ -74,10 +79,6 @@ public class PropertyBuilder {
 
     public void setNullable(NullableState nullable) {
         this.nullable = nullable;
-    }
-
-    public boolean isHasIdentifier() {
-        return hasIdentifier;
     }
 
     public void setHasIdentifier(boolean hasIdentifier) {

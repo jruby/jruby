@@ -205,13 +205,13 @@ public class CoreLibrary {
         classClass = ClassNodes.createClassClass(context);
 
         basicObjectClass = ClassNodes.createBootClass(classClass, null, "BasicObject");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(basicObjectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(basicObjectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(basicObjectClass, basicObjectClass));
 
         objectClass = ClassNodes.createBootClass(classClass, basicObjectClass, "Object");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(objectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(objectClass, BasicObjectNodes.BASIC_OBJECT_LAYOUT.createBasicObjectShape(objectClass, objectClass));
 
         moduleClass = ClassNodes.createBootClass(classClass, objectClass, "Module");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(moduleClass, ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(moduleClass, ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass));
 
         // Close the cycles
         ModuleNodes.getFields(classClass).parentModule = ModuleNodes.getFields(moduleClass).start;
@@ -227,7 +227,7 @@ public class CoreLibrary {
 
         // Exception
         exceptionClass = defineClass("Exception");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(exceptionClass, ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(exceptionClass, ExceptionNodes.EXCEPTION_LAYOUT.createExceptionShape(exceptionClass, exceptionClass));
 
         // NoMemoryError
         defineClass(exceptionClass, "NoMemoryError");
@@ -301,63 +301,63 @@ public class CoreLibrary {
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bignumClass, BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bignumClass, BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass));
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
 
         arrayClass = defineClass("Array");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(arrayClass, ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(arrayClass, ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass));
         bindingClass = defineClass("Binding");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bindingClass, BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bindingClass, BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass));
         dirClass = defineClass("Dir");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(dirClass, DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(dirClass, DirPrimitiveNodes.DIR_LAYOUT.createDirShape(dirClass, dirClass));
         encodingClass = defineClass("Encoding");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(encodingClass, EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(encodingClass, EncodingNodes.ENCODING_LAYOUT.createEncodingShape(encodingClass, encodingClass));
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(fiberClass, FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(fiberClass, FiberNodes.FIBER_LAYOUT.createFiberShape(fiberClass, fiberClass));
         defineModule("FileTest");
         hashClass = defineClass("Hash");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(hashClass, HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(hashClass, HashNodes.HASH_LAYOUT.createHashShape(hashClass, hashClass));
         matchDataClass = defineClass("MatchData");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(matchDataClass, MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(matchDataClass, MatchDataNodes.MATCH_DATA_LAYOUT.createMatchDataShape(matchDataClass, matchDataClass));
         methodClass = defineClass("Method");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(methodClass, MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(methodClass, MethodNodes.METHOD_LAYOUT.createMethodShape(methodClass, methodClass));
         final DynamicObject mutexClass = defineClass("Mutex");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(mutexClass, MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(mutexClass, MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass));
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(procClass, ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(procClass, ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass));
         processModule = defineModule("Process");
         DynamicObject queueClass = defineClass("Queue");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(queueClass, QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(queueClass, QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass));
         DynamicObject sizedQueueClass = defineClass(queueClass, "SizedQueue");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(sizedQueueClass, SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(sizedQueueClass, SizedQueueNodes.SIZED_QUEUE_LAYOUT.createSizedQueueShape(sizedQueueClass, sizedQueueClass));
         rangeClass = defineClass("Range");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(rangeClass, RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRangeShape(rangeClass, rangeClass));
         integerFixnumRangeFactory = RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRangeShape(rangeClass, rangeClass);
         longFixnumRangeFactory = RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRangeShape(rangeClass, rangeClass);
         regexpClass = defineClass("Regexp");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(regexpClass, RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(regexpClass, RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass));
         stringClass = defineClass("String");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(stringClass, StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(stringClass, StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass));
         symbolClass = defineClass("Symbol");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(symbolClass, SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(symbolClass, SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass));
         threadClass = defineClass("Thread");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(threadClass, ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(threadClass, ThreadNodes.THREAD_LAYOUT.createThreadShape(threadClass, threadClass));
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(threadBacktraceLocationClass, ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationNodes.THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
         timeClass = defineClass("Time");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(timeClass, TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(timeClass, TimeNodes.TIME_LAYOUT.createTimeShape(timeClass, timeClass));
         trueClass = defineClass("TrueClass");
         unboundMethodClass = defineClass("UnboundMethod");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(unboundMethodClass, UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(unboundMethodClass, UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.createUnboundMethodShape(unboundMethodClass, unboundMethodClass));
         final DynamicObject ioClass = defineClass("IO");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(ioClass, IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(ioClass, IOPrimitiveNodes.IO_LAYOUT.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(internalBufferClass, IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(internalBufferClass, IOBufferPrimitiveNodes.IO_BUFFER_LAYOUT.createIOBufferShape(internalBufferClass, internalBufferClass));
 
         // Modules
 
@@ -375,7 +375,7 @@ public class CoreLibrary {
         encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
         encodingConverterClass = defineClass(encodingClass, objectClass, "Converter");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(encodingConverterClass, EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(encodingConverterClass, EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.createEncodingConverterShape(encodingConverterClass, encodingConverterClass));
 
         truffleModule = defineModule("Truffle");
         defineModule(truffleModule, "Interop");
@@ -384,7 +384,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(bigDecimalClass, BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bigDecimalClass, BigDecimalNodes.BIG_DECIMAL_LAYOUT.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
         // Rubinius
 
@@ -393,14 +393,14 @@ public class CoreLibrary {
         rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
         defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
         rubiniusFFIPointerClass = defineClass(rubiniusFFIModule, objectClass, "Pointer");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(rubiniusFFIPointerClass, PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(rubiniusFFIPointerClass, PointerNodes.POINTER_LAYOUT.createPointerShape(rubiniusFFIPointerClass, rubiniusFFIPointerClass));
 
         rubiniusChannelClass = defineClass(rubiniusModule, objectClass, "Channel");
         rubiniusMirrorClass = defineClass(rubiniusModule, objectClass, "Mirror");
         defineModule(rubiniusModule, "Type");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(byteArrayClass, ByteArrayNodes.BYTE_ARRAY_LAYOUT.createByteArrayShape(byteArrayClass, byteArrayClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(byteArrayClass, ByteArrayNodes.BYTE_ARRAY_LAYOUT.createByteArrayShape(byteArrayClass, byteArrayClass));
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
@@ -427,7 +427,7 @@ public class CoreLibrary {
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
 
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactory(digestClass, DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass));
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(digestClass, DigestNodes.DIGEST_LAYOUT.createDigestShape(digestClass, digestClass));
 
         //final DynamicObject rubiniusIOClass = defineClass(rubiniusModule, basicObjectClass, "IO");
         //ioFactory = IOPrimitiveNodes.IO_LAYOUT.createIOShape(rubiniusIOClass, rubiniusIOClass);
