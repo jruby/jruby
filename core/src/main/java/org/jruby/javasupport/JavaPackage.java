@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import java.util.regex.Pattern;
-
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -226,27 +224,49 @@ public class JavaPackage extends RubyModule {
         }
 
         @Override
-        protected DynamicMethod searchMethodCommon(String name) {
+        protected DynamicMethod searchMethodCommon(final String name) {
             // this module is special and only searches itself;
 
             // do not go to superclasses except for special methods :
-            if (name.equals("__constants__")) {
-                return superClass.searchMethodInner("constants");
+            switch (name) {
+                // TODO implement a switch to allow for 'more-aligned' behavior
+                case "__constants__" :
+                    return superClass.searchMethodInner("constants");
+                case "__methods__" :
+                    return superClass.searchMethodInner("methods");
+
+                case "class" :
+                case "object_id" :
+                case "initialize_copy" :
+                case "singleton_method_added" :
+                case "const_missing" :
+                case "method_missing" :
+                case "inspect" :
+                case "to_s" :
+                    return superClass.searchMethodInner(name);
             }
-            if (name.equals("__methods__")) {
-                return superClass.searchMethodInner("methods");
-            }
-            if (KEEP.matcher(name).find()) {
-                return superClass.searchMethodInner(name);
+
+            final int last = name.length() - 1;
+            if ( last >= 0 ) {
+                switch (name.charAt(0)) {
+                    case '<' : case '>' : case '=' : // e.g. ==
+                        return superClass.searchMethodInner(name);
+                    case '_' : // e.g. __send__
+                        if ( last > 0 && name.charAt(1) == '_' ) {
+                            return superClass.searchMethodInner(name);
+                        }
+                }
+                switch (name.charAt(last)) {
+                    case '?' : case '!' : case '=' :
+                        return superClass.searchMethodInner(name);
+                }
             }
 
             return NullMethod.INSTANCE;
         }
 
-        private static final Pattern KEEP = Pattern.compile(
-            "^(__|<|>|=)|" +
-            "^(class|initialize_copy|singleton_method_added|const_missing|method_missing|inspect|to_s|object_id)$|" +
-            "(\\?|!|=)$");
+        @Override
+        public void addSubclass(RubyClass subclass) { /* noop */ }
 
     }
 
