@@ -337,7 +337,7 @@ public class LayoutGenerator {
         }
 
         stream.println("        assert factory != null;");
-        stream.printf("        assert factory.getShape().getObjectType() instanceof %sType;\n", layout.getName());
+        stream.printf("        assert creates%s(factory);\n", layout.getName());
 
         for (PropertyModel property : layout.getAllNonShapeProperties()) {
             stream.printf("        assert factory.getShape().hasProperty(%s_IDENTIFIER);\n", NameUtils.identifierToConstant(property.getName()));
