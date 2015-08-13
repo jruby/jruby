@@ -20,6 +20,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -91,9 +92,9 @@ public class TraceManager {
                             final Object classname = self;
 
                             final Object id;
-                            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
-                            if (method != null) {
-                                id = context.getSymbol(method.getName());
+
+                            if (node instanceof RubyCallNode) {
+                                id = context.getSymbol(((RubyCallNode) node).getName());
                             } else {
                                 id = context.getCoreLibrary().getNilObject();
                             }
