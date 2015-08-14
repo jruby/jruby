@@ -187,10 +187,6 @@ public class LayoutGenerator {
                 modifiers.add("LocationModifier.NonNull");
             }
 
-            if (!property.hasSetter()) {
-                modifiers.add("LocationModifier.Final");
-            }
-
             final String modifiersExpression;
 
             if (modifiers.isEmpty()) {
