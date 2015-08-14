@@ -185,6 +185,7 @@ public class CallableSelector {
                     final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
 
+                    // TODO still need to handle var-args better Class<?> lastType;
                     for ( int i = 0; i < msTypes.length; i++ ) {
                         final Class<?> msType = msTypes[i], cType = cTypes[i];
                         if ( msType != cType && msType.isAssignableFrom(cType) ) {
@@ -375,7 +376,19 @@ public class CallableSelector {
             incoming = retained.toArray( new ParameterTypes[retained.size()] );
         }
 
-        return retained;
+        // final step rule out argument length mismatch :
+        int j = 0; for ( int i = 0; i < retained.size(); i++ ) {
+            T callable = retained.get(i);
+            if ( callable.isVarArgs() ) {
+                if ( callable.getArity() > args.length - 1 ) continue;
+            }
+            else {
+                if ( callable.getArity() != args.length ) continue;
+            }
+            retained.set(j++, callable);
+        }
+
+        return j < retained.size() ? retained.subList(0, j) : retained;
     }
 
     private static int calcExactnessScore(final ParameterTypes callable, final IRubyObject[] args) {
