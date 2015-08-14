@@ -1197,8 +1197,12 @@ CLASSDEF
 
   # JRUBY-781
   def test_that_classes_beginning_with_small_letter_can_be_referenced
-    assert_equal Module, org.jruby.test.smallLetterClazz.class
+    assert_equal Java::JavaPackage, org.jruby.test.smallLetterClazz.class
+    assert org.jruby.test.smallLetterClazz.is_a?(Module)
+    assert ! org.jruby.test.smallLetterClazz.is_a?(Class)
+    
     assert_equal Class, org.jruby.test.smallLetterClass.class
+    assert ! org.jruby.test.smallLetterClass.is_a?(Java::JavaPackage)
   end
 
   # JRUBY-1076

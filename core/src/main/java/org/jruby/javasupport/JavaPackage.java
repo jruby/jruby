@@ -57,12 +57,11 @@ public class JavaPackage extends RubyModule {
     static RubyModule createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
         RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
         RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
+        JavaPackage.setMetaClass(runtime.getModule());
         JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
 
         JavaPackage.setBaseName("JavaPackage");
-
-        JavaPackage.inherit(runtime.getModule());
 
         JavaPackage.setParent(Java);
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
