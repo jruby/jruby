@@ -127,6 +127,28 @@ public class JavaPackage extends RubyModule {
         return constantTableStore(name, value);
     }
 
+    @Override // skip constant name assert
+    public final boolean hasConstant(String name) {
+        return constantTableContains(name);
+    }
+
+    @Override // skip constant name assert
+    public final IRubyObject fetchConstant(String name, boolean includePrivate) {
+        ConstantEntry entry = constantEntryFetch(name);
+        if (entry == null) return null;
+        if (entry.hidden && !includePrivate) {
+            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+        }
+        return entry.value;
+    }
+
+    @Override // skip constant name assert
+    public final IRubyObject deleteConstant(String name) {
+        assert name != null : "name is null";
+        ensureConstantsSettable();
+        return constantTableRemove(name);
+    }
+
     final CharSequence packageRelativeName(final CharSequence name) {
         final int length = packageName.length();
         final StringBuilder fullName = new StringBuilder(length + 1 + name.length());
