@@ -68,7 +68,7 @@ public class TraceManager {
 
         };
 
-        final AdvancedInstrumentRootFactory factory = new AdvancedInstrumentRootFactory() {
+        final AdvancedInstrumentRootFactory lineEventFactory = new AdvancedInstrumentRootFactory() {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
@@ -88,16 +88,9 @@ public class TraceManager {
                     @Override
                     public Object executeRoot(Node node, VirtualFrame frame) {
                         if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                            final Object self = RubyArguments.getSelf(frame.getArguments());
+                            final Object self = context.getCoreLibrary().getNilObject();
                             final Object classname = self;
-
-                            final Object id;
-
-                            if (node instanceof RubyCallNode) {
-                                id = context.getSymbol(((RubyCallNode) node).getName());
-                            } else {
-                                id = context.getCoreLibrary().getNilObject();
-                            }
+                            final Object id = context.getCoreLibrary().getNilObject();
 
                             final RubyBinding binding = new RubyBinding(
                                     context.getCoreLibrary().getBindingClass(),
@@ -145,7 +138,7 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
         for (Probe probe : Probe.findProbesTaggedAs(StandardSyntaxTag.STATEMENT)) {
-            final Instrument instrument = Instrument.create(listener, factory, null, "set_trace_func");
+            final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
             instruments.add(instrument);
             probe.attach(instrument);
         }
@@ -162,7 +155,7 @@ public class TraceManager {
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
                 if (tag == StandardSyntaxTag.STATEMENT) {
-                    final Instrument instrument = Instrument.create(listener, factory, null, "set_trace_func");
+                    final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
                     instruments.add(instrument);
                     probe.attach(instrument);
                 }
