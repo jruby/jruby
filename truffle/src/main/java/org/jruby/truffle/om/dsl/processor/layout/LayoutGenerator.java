@@ -32,6 +32,7 @@ public class LayoutGenerator {
         stream.println("import com.oracle.truffle.api.object.*;");
         stream.println("import org.jruby.truffle.om.dsl.api.UnexpectedLayoutRefusalException;");
         stream.println("import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;");
+        stream.println("import com.oracle.truffle.api.CompilerAsserts;");
         stream.printf("import %s;\n", layout.getInterfaceFullName());
 
         if (layout.getSuperLayout() != null) {
@@ -337,6 +338,7 @@ public class LayoutGenerator {
         }
 
         stream.println("        assert factory != null;");
+        stream.println("        CompilerAsserts.compilationConstant(factory);");
         stream.printf("        assert creates%s(factory);\n", layout.getName());
 
         for (PropertyModel property : layout.getAllNonShapeProperties()) {
