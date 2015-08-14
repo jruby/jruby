@@ -155,7 +155,7 @@ public class TraceManager {
 
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
-                if (tag == StandardSyntaxTag.STATEMENT) {
+                if (tag == RubySyntaxTag.LINE) {
                     final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
                     instruments.add(instrument);
                     probe.attach(instrument);
