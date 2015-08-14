@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.Ruby;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
@@ -31,6 +32,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TraceManager {
 
@@ -38,6 +41,7 @@ public class TraceManager {
 
     private Collection<Instrument> instruments;
     private boolean isInTraceFunc = false;
+    private final Map<SyntaxTag, AdvancedInstrumentRootFactory> eventFactories = new HashMap<>();
 
     public TraceManager(RubyContext context) {
         this.context = context;
@@ -137,11 +141,85 @@ public class TraceManager {
 
         };
 
+        final AdvancedInstrumentRootFactory callEventFactory = new AdvancedInstrumentRootFactory() {
+
+            @Override
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                final RubyBasicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "call");
+
+                return new AdvancedInstrumentRoot() {
+
+                    @Child private DirectCallNode callNode;
+
+                    private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+
+                    @Override
+                    public Object executeRoot(Node node, VirtualFrame frame) {
+                        if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                            // set_trace_func reports the file and line of the call site.
+                            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+                            final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                            final int line = sourceSection.getStartLine();
+
+                            final Object self = RubyArguments.getSelf(frame.getArguments());
+                            final Object classname = context.getCoreLibrary().getLogicalClass(self);
+                            final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
+
+                            final RubyBinding binding = new RubyBinding(
+                                    context.getCoreLibrary().getBindingClass(),
+                                    self,
+                                    frame.materialize());
+
+                            if (callNode == null) {
+                                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+
+                                if (callNode.isCallTargetCloningAllowed()) {
+                                    callNode.cloneCallTarget();
+                                }
+
+                                if (callNode.isInlinable()) {
+                                    callNode.forceInlining();
+                                }
+                            }
+
+                            isInTraceFunc = true;
+
+                            callNode.call(frame, RubyArguments.pack(
+                                    ProcNodes.getMethod(traceFunc),
+                                    ProcNodes.getDeclarationFrame(traceFunc),
+                                    ProcNodes.getSelfCapturedInScope(traceFunc),
+                                    ProcNodes.getBlockCapturedInScope(traceFunc),
+                                    new Object[]{event, file, line, id, binding, classname}));
+
+                            isInTraceFunc = false;
+                        }
+
+                        return null;
+                    }
+
+                    @Override
+                    public String instrumentationInfo() {
+                        return "set_trace_func";
+                    }
+
+                };
+            }
+
+        };
+
+        eventFactories.put(RubySyntaxTag.LINE, lineEventFactory);
+        eventFactories.put(RubySyntaxTag.CALL, callEventFactory);
+
         instruments = new ArrayList<>();
-        for (Probe probe : Probe.findProbesTaggedAs(RubySyntaxTag.LINE)) {
-            final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
-            instruments.add(instrument);
-            probe.attach(instrument);
+
+        for (Map.Entry<SyntaxTag, AdvancedInstrumentRootFactory> entry : eventFactories.entrySet()) {
+            for (Probe probe : Probe.findProbesTaggedAs(entry.getKey())) {
+                final Instrument instrument = Instrument.create(listener, entry.getValue(), null, "set_trace_func");
+                instruments.add(instrument);
+                probe.attach(instrument);
+            }
         }
 
         Probe.addProbeListener(new ProbeListener() {
@@ -155,8 +233,8 @@ public class TraceManager {
 
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
-                if (tag == RubySyntaxTag.LINE) {
-                    final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
+                if (eventFactories.containsKey(tag)) {
+                    final Instrument instrument = Instrument.create(listener, eventFactories.get(tag), null, "set_trace_func");
                     instruments.add(instrument);
                     probe.attach(instrument);
                 }
