@@ -14,6 +14,7 @@ import com.oracle.truffle.api.instrument.StandardSyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeVisitor;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubySyntaxTag;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
 
@@ -26,6 +27,7 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
             if (rubyNode.isAtNewline()) {
                 // Identify statements using "newline" nodes created by the JRuby parser.
                 rubyNode.probe().tagAs(StandardSyntaxTag.STATEMENT, null);
+                rubyNode.probe().tagAs(RubySyntaxTag.LINE, null);
             }
         }
         return true;

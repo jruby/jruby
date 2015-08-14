@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -137,7 +138,7 @@ public class TraceManager {
         };
 
         instruments = new ArrayList<>();
-        for (Probe probe : Probe.findProbesTaggedAs(StandardSyntaxTag.STATEMENT)) {
+        for (Probe probe : Probe.findProbesTaggedAs(RubySyntaxTag.LINE)) {
             final Instrument instrument = Instrument.create(listener, lineEventFactory, null, "set_trace_func");
             instruments.add(instrument);
             probe.attach(instrument);
