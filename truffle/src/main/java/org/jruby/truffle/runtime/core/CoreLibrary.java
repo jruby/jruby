@@ -101,6 +101,7 @@ public class CoreLibrary {
     private final DynamicObject numericClass;
     private final DynamicObject objectClass;
     private final DynamicObject procClass;
+    private final DynamicObjectFactory procFactory;
     private final DynamicObject processModule;
     private final DynamicObject rangeClass;
     private final DynamicObject rangeErrorClass;
@@ -332,7 +333,8 @@ public class CoreLibrary {
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(mutexClass, MutexNodes.MUTEX_LAYOUT.createMutexShape(mutexClass, mutexClass));
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(procClass, ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass));
+        procFactory = ProcNodes.PROC_LAYOUT.createProcShape(procClass, procClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(procClass, procFactory);
         processModule = defineModule("Process");
         DynamicObject queueClass = defineClass("Queue");
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(queueClass, QueueNodes.QUEUE_LAYOUT.createQueueShape(queueClass, queueClass));
@@ -1523,6 +1525,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getBignumFactory() {
         return bignumFactory;
+    }
+
+    public DynamicObjectFactory getProcFactory() {
+        return procFactory;
     }
 
 }
