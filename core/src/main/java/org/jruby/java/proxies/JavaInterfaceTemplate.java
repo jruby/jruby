@@ -37,7 +37,7 @@ public class JavaInterfaceTemplate {
         singleton.addReadAttribute(context, "java_class");
         singleton.defineAnnotatedMethods(JavaInterfaceTemplate.class);
 
-        JavaInterfaceTemplate.defineAnnotatedMethods(Java.JavaProxyClassMethods.class);
+        JavaInterfaceTemplate.defineAnnotatedMethods(JavaProxy.ClassMethods.class);
 
         return JavaInterfaceTemplate;
     }

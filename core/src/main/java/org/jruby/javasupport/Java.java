@@ -556,7 +556,7 @@ public class Java implements Library {
         else {
             proxyClass.setAllocator( superClass.getAllocator() );
         }
-        proxyClass.defineAnnotatedMethods( JavaProxyClassMethods.class );
+        proxyClass.defineAnnotatedMethods( JavaProxy.ClassMethods.class );
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
 
@@ -565,120 +565,8 @@ public class Java implements Library {
         return proxyClass;
     }
 
-    public static class JavaProxyClassMethods {
-        @JRubyMethod(meta = true)
-        public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName) {
-            String name = rubyName.asJavaString();
-
-            return getRubyMethod(context, proxyClass, name);
-        }
-
-        @JRubyMethod(meta = true)
-        public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName, IRubyObject argTypes) {
-            String name = rubyName.asJavaString();
-            RubyArray argTypesAry = argTypes.convertToArray();
-            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
-
-            return getRubyMethod(context, proxyClass, name, argTypesClasses);
-        }
-
-        @JRubyMethod(meta = true)
-        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName) {
-            String name = rubyName.asJavaString();
-            final Ruby runtime = context.runtime;
-
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
-            return method.invokeStaticDirect();
-        }
-
-        @JRubyMethod(meta = true)
-        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes) {
-            String name = rubyName.asJavaString();
-            RubyArray argTypesAry = argTypes.convertToArray();
-            final Ruby runtime = context.runtime;
-
-            if (argTypesAry.size() != 0) {
-                Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
-                throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
-            }
-
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
-            return method.invokeStaticDirect();
-        }
-
-        @JRubyMethod(meta = true)
-        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
-            String name = rubyName.asJavaString();
-            RubyArray argTypesAry = argTypes.convertToArray();
-            final Ruby runtime = context.runtime;
-
-            if (argTypesAry.size() != 1) {
-                throw JavaMethod.newArgSizeMismatchError(runtime, (Class) argTypesAry.eltInternal(0).toJava(Class.class));
-            }
-
-            Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
-
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypeClass));
-            return method.invokeStaticDirect(arg0.toJava(argTypeClass));
-        }
-
-        @JRubyMethod(required = 4, rest = true, meta = true)
-        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-            final Ruby runtime = context.runtime;
-
-            String name = args[0].asJavaString();
-            RubyArray argTypesAry = args[1].convertToArray();
-            int argsLen = args.length - 2;
-
-            if (argTypesAry.size() != argsLen) {
-                throw JavaMethod.newArgSizeMismatchError(runtime, (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]));
-            }
-
-            Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argsLen]);
-
-            Object[] argsAry = new Object[argsLen];
-            for (int i = 0; i < argsLen; i++) {
-                argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
-            }
-
-            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypesClasses));
-            return method.invokeStaticDirect(argsAry);
-        }
-
-        @JRubyMethod(meta = true, visibility = PRIVATE)
-        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName) {
-            return java_alias(context, clazz, newName, rubyName, context.runtime.newEmptyArray());
-        }
-
-        @JRubyMethod(meta = true, visibility = PRIVATE)
-        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
-            final Ruby runtime = context.runtime;
-            if ( ! ( clazz instanceof RubyClass ) ) {
-                throw runtime.newTypeError(clazz, runtime.getModule());
-            }
-            final RubyClass proxyClass = (RubyClass) clazz;
-
-            String name = rubyName.asJavaString();
-            String newNameStr = newName.asJavaString();
-            RubyArray argTypesAry = argTypes.convertToArray();
-            Class<?>[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
-
-            final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
-            final MethodInvoker invoker;
-
-            if ( Modifier.isStatic( method.getModifiers() ) ) {
-                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method);
-                // add alias to meta
-                proxyClass.getSingletonClass().addMethod(newNameStr, invoker);
-            }
-            else {
-                invoker = new InstanceMethodInvoker(proxyClass, method);
-                proxyClass.addMethod(newNameStr, invoker);
-            }
-
-            return context.nil;
-        }
-    }
+    @Deprecated
+    public static class JavaProxyClassMethods extends JavaProxy.ClassMethods {}
 
     public static class ByteArrayProxyMethods {
 
@@ -691,43 +579,6 @@ public class Java implements Library {
             return RubyString.newStringLight(context.runtime, bytes);
         }
 
-    }
-
-    private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
-        final Ruby runtime = context.runtime;
-        if ( ! ( clazz instanceof RubyModule ) ) {
-            throw runtime.newTypeError(clazz, runtime.getModule());
-        }
-        final RubyModule proxyClass = (RubyModule) clazz;
-
-        final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
-        final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
-
-        if ( Modifier.isStatic( method.getModifiers() ) ) {
-            MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method);
-            return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
-        }
-
-        MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method);
-        return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
-    }
-
-    private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
-        final String name, final Class... argTypes) {
-        final Class<?> clazz = JavaClass.getJavaClass(context, (RubyModule) proxyClass);
-        try {
-            return clazz.getMethod(name, argTypes);
-        }
-        catch (NoSuchMethodException nsme) {
-            String prettyName = name + CodegenUtils.prettyParams(argTypes);
-            String errorName = clazz.getName() + '.' + prettyName;
-            throw context.runtime.newNameError("Java method not found: " + errorName, name);
-        }
-    }
-
-    public static Method getMethodFromClass(final Ruby runtime, final IRubyObject proxyClass,
-        final String name, final Class... argTypes) {
-        return getMethodFromClass(runtime.getCurrentContext(), proxyClass, name, argTypes);
     }
 
     public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
