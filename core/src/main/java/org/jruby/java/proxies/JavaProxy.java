@@ -530,10 +530,7 @@ public class JavaProxy extends RubyObject {
             RubyArray argTypesAry = argTypes.convertToArray();
             final Ruby runtime = context.runtime;
 
-            if (argTypesAry.size() != 0) {
-                Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
-                throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
-            }
+            checkArgSizeMismatch(runtime, 0, argTypesAry);
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
             return method.invokeStaticDirect();
@@ -545,9 +542,7 @@ public class JavaProxy extends RubyObject {
             RubyArray argTypesAry = argTypes.convertToArray();
             final Ruby runtime = context.runtime;
 
-            if (argTypesAry.size() != 1) {
-                throw JavaMethod.newArgSizeMismatchError(runtime, (Class) argTypesAry.eltInternal(0).toJava(Class.class));
-            }
+            checkArgSizeMismatch(runtime, 1, argTypesAry);
 
             Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
 
@@ -561,21 +556,19 @@ public class JavaProxy extends RubyObject {
 
             String name = args[0].asJavaString();
             RubyArray argTypesAry = args[1].convertToArray();
-            int argsLen = args.length - 2;
+            final int argsLen = args.length - 2;
 
-            if (argTypesAry.size() != argsLen) {
-                throw JavaMethod.newArgSizeMismatchError(runtime, (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]));
-            }
+            checkArgSizeMismatch(runtime, argsLen, argTypesAry);
 
             Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argsLen]);
 
-            Object[] argsAry = new Object[argsLen];
-            for (int i = 0; i < argsLen; i++) {
-                argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
+            Object[] javaArgs = new Object[argsLen];
+            for ( int i = 0; i < argsLen; i++ ) {
+                javaArgs[i] = args[i + 2].toJava( argTypesClasses[i] );
             }
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypesClasses));
-            return method.invokeStaticDirect(argsAry);
+            return method.invokeStaticDirect(javaArgs);
         }
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
