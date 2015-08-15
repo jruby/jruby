@@ -147,7 +147,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,

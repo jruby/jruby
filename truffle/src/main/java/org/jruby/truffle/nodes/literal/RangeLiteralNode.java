@@ -22,6 +22,8 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.RangeNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
@@ -33,27 +35,26 @@ public abstract class RangeLiteralNode extends RubyNode {
     private final boolean excludeEnd;
 
     @Child private CallDispatchHeadNode cmpNode;
+    @Child private AllocateObjectNode allocateNode;
 
     public RangeLiteralNode(RubyContext context, SourceSection sourceSection, boolean excludeEnd) {
         super(context, sourceSection);
         this.excludeEnd = excludeEnd;
+        allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
     }
 
     @Specialization
     public DynamicObject intRange(int begin, int end) {
-        final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
         return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
     public DynamicObject longFittingIntRange(long begin, long end) {
-        final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
         return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
     public DynamicObject longRange(long begin, long end) {
-        final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
         return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRange(getContext().getCoreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
     }
 

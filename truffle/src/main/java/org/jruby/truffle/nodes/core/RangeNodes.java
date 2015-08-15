@@ -444,12 +444,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject toA(DynamicObject range) {
-            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range));
+            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range);
             int result;
-            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range)) {
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range);
             } else {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range) + 1;
             }
             final int length = result - begin;
 

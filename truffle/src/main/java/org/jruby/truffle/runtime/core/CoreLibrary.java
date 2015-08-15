@@ -68,6 +68,7 @@ public class CoreLibrary {
 
     private final DynamicObject argumentErrorClass;
     private final DynamicObject arrayClass;
+    private final DynamicObjectFactory arrayFactory;
     private final DynamicObject basicObjectClass;
     private final DynamicObject bignumClass;
     private final DynamicObject bindingClass;
@@ -165,8 +166,8 @@ public class CoreLibrary {
 
     private State state = State.INITIALIZING;
 
-    private DynamicObjectFactory integerFixnumRangeFactory;
-    private DynamicObjectFactory longFixnumRangeFactory;
+    private final DynamicObjectFactory integerFixnumRangeFactory;
+    private final DynamicObjectFactory longFixnumRangeFactory;
 
     private static class CoreLibraryNode extends RubyNode {
 
@@ -307,7 +308,8 @@ public class CoreLibrary {
         // Classes defined in Object
 
         arrayClass = defineClass("Array");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(arrayClass, ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass));
+        arrayFactory = ArrayNodes.ARRAY_LAYOUT.createArrayShape(arrayClass, arrayClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(arrayClass, arrayFactory);
         bindingClass = defineClass("Binding");
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bindingClass, BindingNodes.BINDING_LAYOUT.createBindingShape(bindingClass, bindingClass));
         dirClass = defineClass("Dir");
@@ -1511,5 +1513,9 @@ public class CoreLibrary {
 
     public DynamicObject getDigestClass() {
         return digestClass;
+    }
+
+    public DynamicObjectFactory getArrayFactory() {
+        return arrayFactory;
     }
 }

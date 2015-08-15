@@ -192,27 +192,27 @@ public abstract class RubyNode extends Node {
     }
 
     protected DynamicObject createEmptyArray() {
-        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
     protected DynamicObject createArray(Object... store) {
-        return createArray(store, store.length);
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
     }
 
     protected DynamicObject createArray(int[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
     protected DynamicObject createArray(long[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
     protected DynamicObject createArray(double[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
     protected DynamicObject createArray(Object[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
     protected POSIX posix() {
