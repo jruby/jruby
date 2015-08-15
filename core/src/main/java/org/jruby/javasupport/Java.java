@@ -499,18 +499,8 @@ public class Java implements Library {
         if (clazz.isArray()) {
             createProxyClass(runtime, proxy, clazz, true);
 
-            // FIXME: Organizationally this might be nicer in a specialized class
             if ( clazz.getComponentType() == byte.class ) {
-                final Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
-
-                // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
-                proxy.addMethod("to_s", new JavaMethodZero(proxy, PUBLIC) {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                        ByteList bytes = new ByteList((byte[]) ((ArrayJavaProxy) self).getObject(), ascii8bit);
-                        return RubyString.newStringLight(context.runtime, bytes);
-                    }
-                });
+                proxy.defineAnnotatedMethods( ByteArrayProxyMethods.class ); // to_s
             }
         }
         else if ( clazz.isPrimitive() ) {
@@ -552,7 +542,7 @@ public class Java implements Library {
     }
 
     private static RubyClass createProxyClass(final Ruby runtime,
-                                              final RubyClass proxyClass, final Class<?> javaClass, boolean invokeInherited) {
+        final RubyClass proxyClass, final Class<?> javaClass, boolean invokeInherited) {
 
         final RubyClass superClass = proxyClass.getSuperClass();
 
@@ -688,6 +678,19 @@ public class Java implements Library {
 
             return context.nil;
         }
+    }
+
+    public static class ByteArrayProxyMethods {
+
+        @JRubyMethod
+        public static IRubyObject to_s(ThreadContext context, IRubyObject self) {
+            final Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+
+            // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
+            ByteList bytes = new ByteList((byte[]) ((ArrayJavaProxy) self).getObject(), ascii8bit);
+            return RubyString.newStringLight(context.runtime, bytes);
+        }
+
     }
 
     private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
