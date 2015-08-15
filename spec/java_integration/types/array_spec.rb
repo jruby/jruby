@@ -231,6 +231,11 @@ describe "A Java primitive Array of type" do
       arr = [100, 101, 102].to_java :char
       arr.inspect.should =~ /^char\[d, e, f\]@[0-9a-f]+$/
     end
+
+    it "uses toString on to_s" do
+      arr = [100, 101, 102].to_java :char
+      arr.to_s.should =~ /\[C@[0-9a-f]+$/
+    end
   end
 
   describe "double" do
