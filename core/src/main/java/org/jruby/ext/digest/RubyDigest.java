@@ -49,32 +49,40 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyModule(name="Digest")
 public class RubyDigest {
-    private static Provider provider = null;
-    private static final Map<String, MessageDigest> CLONEABLE_DIGESTS = new HashMap<String, MessageDigest>();
+
+    private static final Map<String, MessageDigest> CLONEABLE_DIGESTS = new HashMap<String, MessageDigest>(8, 1);
     static {
         // standard digests from JCA specification; if we can retrieve and clone, save them
-        for (String name : new String[] {"MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"})
-        try {
-            MessageDigest digest = MessageDigest.getInstance(name);
-            digest.clone();
-            CLONEABLE_DIGESTS.put(name, digest);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // ignore; go to next iteration
+        for (String name : new String[] {"MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"}) {
+            try {
+                MessageDigest digest = MessageDigest.getInstance(name);
+                digest.clone();
+                CLONEABLE_DIGESTS.put(name, digest);
+            }
+            catch (Exception e) {
+                logger().debug(name + " not clonable", e);
+            }
         }
     }
+
+    private static Logger logger() { return LoggerFactory.getLogger("RubyDigest"); }
+
+    private static Provider provider = null;
 
     public static void createDigest(Ruby runtime) {
         // We're not setting the provider or anything, but it seems that BouncyCastle does some internal things in its
@@ -103,27 +111,29 @@ public class RubyDigest {
         cDigestBase.defineAnnotatedMethods(DigestBase.class);
     }
 
-    private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {
-        MessageDigest cloneable = CLONEABLE_DIGESTS.get(providerName);
+    private static MessageDigest createMessageDigest(final String name) throws NoSuchAlgorithmException {
+        MessageDigest cloneable = CLONEABLE_DIGESTS.get(name);
         if (cloneable != null) {
             try {
-                return (MessageDigest)cloneable.clone();
-            } catch (CloneNotSupportedException cnse) {
+                return (MessageDigest) cloneable.clone();
+            }
+            catch (CloneNotSupportedException e) {
                 // should never happen, since we tested it in static init
             }
         }
 
         // fall back on JCA mechanisms for getting a digest
-        if(provider != null) {
+        if (provider != null) {
             try {
-                return MessageDigest.getInstance(providerName, provider);
-            } catch(NoSuchAlgorithmException e) {
+                return MessageDigest.getInstance(name, provider);
+            }
+            catch (NoSuchAlgorithmException e) {
                 // bouncy castle doesn't support algorithm
             }
         }
 
         // fall back to default JCA providers
-        return MessageDigest.getInstance(providerName);
+        return MessageDigest.getInstance(name);
     }
 
     private final static byte[] digits = {
@@ -145,17 +155,22 @@ public class RubyDigest {
         return byteList;
     }
 
-    private static IRubyObject toHexString(Ruby runtime, byte[] val) {
+    private static RubyString toHexString(Ruby runtime, byte[] val) {
         return RubyString.newStringNoCopy(runtime, ByteList.plain(toHex(val)));
     }
 
-    @JRubyMethod(name = "hexencode", required = 1, meta = true)
+    @Deprecated
     public static IRubyObject s_hexencode(IRubyObject recv, IRubyObject arg) {
-        return toHexString(recv.getRuntime(), arg.convertToString().getBytes());
+        return hexencode(recv, arg);
+    }
+
+    @JRubyMethod(name = "hexencode", required = 1, meta = true)
+    public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
+        return toHexString(self.getRuntime(), arg.convertToString().getBytes());
     }
 
     @JRubyMethod(name = "bubblebabble", required = 1, meta = true)
-    public static IRubyObject bubblebabble(IRubyObject recv, IRubyObject arg) {
+    public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
         final ByteList bytes = arg.convertToString().getByteList();
         return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
     }
@@ -195,10 +210,10 @@ public class RubyDigest {
 
     public static void createDigestMD5(Ruby runtime) {
         runtime.getLoadService().require("digest");
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_MD5 = mDigest.defineClassUnder("MD5",cDigestBase,cDigestBase.getAllocator());
-        cDigest_MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
+        RubyModule Digest = runtime.getModule("Digest");
+        RubyClass Base = Digest.getClass("Base");
+        RubyClass MD5 = Digest.defineClassUnder("MD5", Base, Base.getAllocator());
+        MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
     }
 
     public static void createDigestRMD160(Ruby runtime) {
@@ -206,36 +221,38 @@ public class RubyDigest {
         if(provider == null) {
             throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_RMD160 = mDigest.defineClassUnder("RMD160",cDigestBase,cDigestBase.getAllocator());
-        cDigest_RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
+        RubyModule Digest = runtime.getModule("Digest");
+        RubyClass Base = Digest.getClass("Base");
+        RubyClass RMD160 = Digest.defineClassUnder("RMD160", Base, Base.getAllocator());
+        RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
     }
 
     public static void createDigestSHA1(Ruby runtime) {
         runtime.getLoadService().require("digest");
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_SHA1 = mDigest.defineClassUnder("SHA1",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
+        RubyModule Digest = runtime.getModule("Digest");
+        RubyClass Base = Digest.getClass("Base");
+        RubyClass SHA1 = Digest.defineClassUnder("SHA1", Base, Base.getAllocator());
+        SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
     }
 
     public static void createDigestSHA2(Ruby runtime) {
         runtime.getLoadService().require("digest");
         try {
-            createMessageDigest(runtime, "SHA-256");
-        } catch(NoSuchAlgorithmException e) {
-            throw runtime.newLoadError("SHA2 not supported");
+            createMessageDigest("SHA-256");
         }
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestBase = mDigest.getClass("Base");
-        RubyClass cDigest_SHA2_256 = mDigest.defineClassUnder("SHA256",cDigestBase,cDigestBase.getAllocator());
-        Metadata sha256Metadata = new Metadata("SHA-256", 64);
-        cDigest_SHA2_256.setInternalVariable("metadata", sha256Metadata);
-        RubyClass cDigest_SHA2_384 = mDigest.defineClassUnder("SHA384",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_384.setInternalVariable("metadata", new Metadata("SHA-384", 128));
-        RubyClass cDigest_SHA2_512 = mDigest.defineClassUnder("SHA512",cDigestBase,cDigestBase.getAllocator());
-        cDigest_SHA2_512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
+        catch (NoSuchAlgorithmException e) {
+            RaiseException ex = runtime.newLoadError("SHA2 not supported");
+            ex.initCause(e);
+            throw ex;
+        }
+        final RubyModule Digest = runtime.getModule("Digest");
+        final RubyClass Base = Digest.getClass("Base");
+        RubyClass SHA256 = Digest.defineClassUnder("SHA256", Base, Base.getAllocator());
+        SHA256.setInternalVariable("metadata", new Metadata("SHA-256", 64));
+        RubyClass SHA384 = Digest.defineClassUnder("SHA384", Base, Base.getAllocator());
+        SHA384.setInternalVariable("metadata", new Metadata("SHA-384", 128));
+        RubyClass SHA512 = Digest.defineClassUnder("SHA512", Base, Base.getAllocator());
+        SHA512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
     }
 
     @JRubyModule(name = "Digest::Instance")
@@ -300,7 +317,7 @@ public class RubyDigest {
 
         @JRubyMethod(optional = 1)
         public static IRubyObject digest(ThreadContext ctx, IRubyObject self, IRubyObject[] args) {
-            IRubyObject value = null;
+            final IRubyObject value;
             if (args != null && args.length > 0) {
                 self.callMethod(ctx, "reset");
                 self.callMethod(ctx, "update", args[0]);
@@ -428,15 +445,16 @@ public class RubyDigest {
         @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
         @Override
         public IRubyObject initialize_copy(IRubyObject obj) {
-            if(this == obj) {
-                return this;
-            }
-            ((RubyObject)obj).checkFrozen();
+            if (this == obj) return this;
 
-            String name = ((DigestBase)obj).algo.getAlgorithm();
+            DigestBase from = (DigestBase) obj;
+            from.checkFrozen();
+
             try {
-                algo = (MessageDigest)((DigestBase)obj).algo.clone();
-            } catch(CloneNotSupportedException e) {
+                this.algo = (MessageDigest) from.algo.clone();
+            }
+            catch (CloneNotSupportedException e) {
+                String name = from.algo.getAlgorithm();
                 throw getRuntime().newTypeError("Could not initialize copy of digest (" + name + ")");
             }
             return this;
@@ -483,8 +501,9 @@ public class RubyDigest {
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
-           this.algo = createMessageDigest(getRuntime(), metadata.getName());
+           this.algo = createMessageDigest(metadata.getName());
            this.blockLength = metadata.getBlockLength();
         }
+
     }
 }// RubyDigest
