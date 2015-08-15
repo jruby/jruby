@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
@@ -36,6 +37,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 @TypeSystemReference(RubyTypes.class)
@@ -213,6 +215,10 @@ public abstract class RubyNode extends Node {
 
     protected DynamicObject createArray(Object[] store, int size) {
         return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
+    }
+
+    protected DynamicObject createBignum(BigInteger value) {
+        return BignumNodes.BIGNUM_LAYOUT.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     protected POSIX posix() {

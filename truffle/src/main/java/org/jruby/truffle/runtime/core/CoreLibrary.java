@@ -71,6 +71,7 @@ public class CoreLibrary {
     private final DynamicObjectFactory arrayFactory;
     private final DynamicObject basicObjectClass;
     private final DynamicObject bignumClass;
+    private final DynamicObjectFactory bignumFactory;
     private final DynamicObject bindingClass;
     private final DynamicObject classClass;
     private final DynamicObject complexClass;
@@ -302,7 +303,8 @@ public class CoreLibrary {
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bignumClass, BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass));
+        bignumFactory = BignumNodes.BIGNUM_LAYOUT.createBignumShape(bignumClass, bignumClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(bignumClass, bignumFactory);
         rationalClass = defineClass(numericClass, "Rational");
 
         // Classes defined in Object
@@ -1518,4 +1520,9 @@ public class CoreLibrary {
     public DynamicObjectFactory getArrayFactory() {
         return arrayFactory;
     }
+
+    public DynamicObjectFactory getBignumFactory() {
+        return bignumFactory;
+    }
+
 }
