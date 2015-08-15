@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
@@ -21,14 +22,21 @@ import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 
-@NodeChild("classToAllocate")
+@NodeChildren({
+        @NodeChild("classToAllocate"),
+        @NodeChild("values")
+})
 public abstract class AllocateObjectNode extends RubyNode {
 
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public abstract DynamicObject executeAllocate(DynamicObject classToAllocate);
+    public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
+        return executeAllocateX(classToAllocate, values);
+    }
+
+    public abstract DynamicObject executeAllocateX(DynamicObject classToAllocate, Object[] values);
 
     @Specialization(guards = {
             "!isSingleton(classToAllocate)",
@@ -36,29 +44,26 @@ public abstract class AllocateObjectNode extends RubyNode {
     })
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
+            Object[] values,
             @Cached("classToAllocate") DynamicObject cachedClassToAllocate,
             @Cached("getInstanceFactory(classToAllocate)") DynamicObjectFactory factory) {
-        return newInstance(factory);
+        return factory.newInstance(values);
     }
 
     @CompilerDirectives.TruffleBoundary
     @Specialization(contains = "allocateCached", guards = "!isSingleton(classToAllocate)")
-    public DynamicObject allocateUncached(DynamicObject classToAllocate) {
-        return newInstance(getInstanceFactory(classToAllocate));
+    public DynamicObject allocateUncached(DynamicObject classToAllocate, Object values) {
+        return getInstanceFactory(classToAllocate).newInstance(values);
     }
 
     @Specialization(guards = "isSingleton(classToAllocate)")
-    public DynamicObject allocateSingleton(DynamicObject classToAllocate) {
+    public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object values) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {
         return ClassNodes.isSingleton(classToAllocate);
-    }
-
-    protected DynamicObject newInstance(DynamicObjectFactory instanceFactory) {
-        return instanceFactory.newInstance();
     }
 
 }
