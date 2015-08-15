@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -605,7 +606,7 @@ public class JavaProxy extends RubyObject {
             return context.nil;
         }
 
-        private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
+        private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
             final Ruby runtime = context.runtime;
             if ( ! ( clazz instanceof RubyModule ) ) {
                 throw runtime.newTypeError(clazz, runtime.getModule());
