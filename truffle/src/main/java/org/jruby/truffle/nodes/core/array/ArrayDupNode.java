@@ -28,35 +28,50 @@ import java.util.Arrays;
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayDupNode extends RubyNode {
 
+    @Child private AllocateArrayNode allocatorNode;
+
     public ArrayDupNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+        allocatorNode = AllocateArrayNodeGen.create(context, sourceSection, null);
     }
 
     public abstract DynamicObject executeDup(VirtualFrame frame, DynamicObject array);
 
     @Specialization(guards = {"isRubyArray(from)", "isNullArray(from)"})
     public DynamicObject dupNull(DynamicObject from) {
-        return createEmptyArray();
+        return allocatorNode.allocateEmptyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
     public DynamicObject dupIntegerFixnum(DynamicObject from) {
-        return createArray(Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return allocatorNode.allocateArray(
+                getContext().getCoreLibrary().getArrayClass(),
+                Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
+                ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
     public DynamicObject dupLongFixnum(DynamicObject from) {
-        return createArray(Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return allocatorNode.allocateArray(
+                getContext().getCoreLibrary().getArrayClass(),
+                Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
+                ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
     public DynamicObject dupFloat(DynamicObject from) {
-        return createArray(Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return allocatorNode.allocateArray(
+                getContext().getCoreLibrary().getArrayClass(),
+                Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
+                ArrayNodes.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
     public DynamicObject dupObject(DynamicObject from) {
-        return createArray(Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)), ArrayNodes.getSize(from));
+        return allocatorNode.allocateArray(
+                getContext().getCoreLibrary().getArrayClass(),
+                Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
+                ArrayNodes.getSize(from));
     }
 
 }

@@ -24,10 +24,12 @@ import java.util.Arrays;
 public abstract class ArrayLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] values;
+    @Child protected AllocateArrayNode allocatorNode;
 
     public ArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
         super(context, sourceSection);
         this.values = values;
+        allocatorNode = AllocateArrayNodeGen.create(context, sourceSection, null);
     }
 
     protected DynamicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
@@ -45,7 +47,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return (DynamicObject) ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
     }
 
     @Override
@@ -84,7 +86,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return createEmptyArray();
+            return allocatorNode.allocateEmptyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
     }
@@ -108,7 +110,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocatorNode.allocateArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,
@@ -178,7 +180,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocatorNode.allocateArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
         private DynamicObject makeGeneric(VirtualFrame frame,
@@ -209,7 +211,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return createArray(executedValues, values.length);
+            return allocatorNode.allocateArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
     }
