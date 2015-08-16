@@ -113,6 +113,7 @@ public class CoreLibrary {
     private final DynamicObject securityErrorClass;
     private final DynamicObject standardErrorClass;
     private final DynamicObject stringClass;
+    private final DynamicObjectFactory stringFactory;
     private final DynamicObject stringDataClass;
     private final DynamicObject symbolClass;
     private final DynamicObject syntaxErrorClass;
@@ -347,7 +348,8 @@ public class CoreLibrary {
         regexpClass = defineClass("Regexp");
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(regexpClass, RegexpNodes.REGEXP_LAYOUT.createRegexpShape(regexpClass, regexpClass));
         stringClass = defineClass("String");
-        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(stringClass, StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass));
+        stringFactory = StringNodes.STRING_LAYOUT.createStringShape(stringClass, stringClass);
+        ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(stringClass, stringFactory);
         symbolClass = defineClass("Symbol");
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(symbolClass, SymbolNodes.SYMBOL_LAYOUT.createSymbolShape(symbolClass, symbolClass));
         threadClass = defineClass("Thread");
@@ -1529,6 +1531,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getProcFactory() {
         return procFactory;
+    }
+
+    public DynamicObjectFactory getStringFactory() {
+        return stringFactory;
     }
 
 }

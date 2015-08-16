@@ -277,6 +277,10 @@ public abstract class StringNodes {
         return STRING_LAYOUT.createString(ClassNodes.CLASS_LAYOUT.getInstanceFactory(stringClass), bytes, StringSupport.CR_UNKNOWN, null);
     }
 
+    public static DynamicObject createString(DynamicObjectFactory stringFactory, ByteList bytes) {
+        return STRING_LAYOUT.createString(stringFactory, bytes, StringSupport.CR_UNKNOWN, null);
+    }
+
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 

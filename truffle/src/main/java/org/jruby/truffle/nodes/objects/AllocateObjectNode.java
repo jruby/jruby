@@ -39,25 +39,26 @@ public abstract class AllocateObjectNode extends RubyNode {
     public abstract DynamicObject executeAllocateX(DynamicObject classToAllocate, Object[] values);
 
     @Specialization(guards = {
-            "!isSingleton(classToAllocate)",
-            "cachedClassToAllocate == classToAllocate"
+            "cachedClassToAllocate == classToAllocate",
+            "!cachedIsSingleton"
     })
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
             Object[] values,
             @Cached("classToAllocate") DynamicObject cachedClassToAllocate,
+            @Cached("isSingleton(classToAllocate)") boolean cachedIsSingleton,
             @Cached("getInstanceFactory(classToAllocate)") DynamicObjectFactory factory) {
         return factory.newInstance(values);
     }
 
     @CompilerDirectives.TruffleBoundary
     @Specialization(contains = "allocateCached", guards = "!isSingleton(classToAllocate)")
-    public DynamicObject allocateUncached(DynamicObject classToAllocate, Object values) {
+    public DynamicObject allocateUncached(DynamicObject classToAllocate, Object[] values) {
         return getInstanceFactory(classToAllocate).newInstance(values);
     }
 
     @Specialization(guards = "isSingleton(classToAllocate)")
-    public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object values) {
+    public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
     }

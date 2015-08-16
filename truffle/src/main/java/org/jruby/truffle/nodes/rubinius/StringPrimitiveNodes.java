@@ -1140,6 +1140,7 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
+        @TruffleBoundary
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19.
@@ -1177,6 +1178,7 @@ public abstract class StringPrimitiveNodes {
             return makeSubstring(string, beg, len);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.

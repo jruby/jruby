@@ -1209,7 +1209,7 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(b)" })
         public Object divmod(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             final BigDecimal[] result = divmodBigDecimal(getBigDecimalValue(a), getBigDecimalValue(b));
-            return createArray(createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]));
+            return createArrayWith(createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]));
         }
 
         @Specialization(guards = {
@@ -1218,7 +1218,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(a)",
                 "!isNormalZero(b)" })
         public Object divmodZeroDividend(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return createArray(
+            return createArrayWith(
                     createBigDecimal(frame, BigDecimal.ZERO),
                     createBigDecimal(frame, BigDecimal.ZERO));
         }
@@ -1240,7 +1240,7 @@ public abstract class BigDecimalNodes {
             final Type bType = getBigDecimalType(b);
 
             if (aType == Type.NAN || bType == Type.NAN) {
-                return createArray(createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN));
+                return createArrayWith(createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN));
             }
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
@@ -1249,7 +1249,7 @@ public abstract class BigDecimalNodes {
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
-                return createArray(
+                return createArrayWith(
                         createBigDecimal(frame, BigDecimal.ZERO),
                         createBigDecimal(frame, BigDecimal.ZERO));
             }
@@ -1264,13 +1264,13 @@ public abstract class BigDecimalNodes {
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
 
-                return createArray(
+                return createArrayWith(
                         createBigDecimal(frame, type),
                         createBigDecimal(frame, Type.NAN));
             }
 
             if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                return createArray(createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a));
+                return createArrayWith(createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a));
             }
 
             throw new UnsupportedOperationException();

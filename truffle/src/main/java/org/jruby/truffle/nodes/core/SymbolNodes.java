@@ -102,7 +102,7 @@ public abstract class SymbolNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allSymbols() {
-            return createArray(getContext().getSymbolTable().allSymbols().toArray());
+            return createArrayWith(getContext().getSymbolTable().allSymbols().toArray());
         }
 
     }

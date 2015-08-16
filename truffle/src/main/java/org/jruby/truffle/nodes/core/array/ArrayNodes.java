@@ -2332,7 +2332,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+            return createArray(arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
         @Specialization(guards = {"isLongArray(array)", "isRubyProc(block)"})
@@ -2356,7 +2356,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+            return createArray(arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
         @Specialization(guards = {"isDoubleArray(array)", "isRubyProc(block)"})
@@ -2380,7 +2380,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+            return createArray(arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
 
         @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
@@ -2404,7 +2404,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, arraySize), arraySize);
+            return createArray(arrayBuilder.finish(mappedStore, arraySize), arraySize);
         }
     }
 
@@ -2440,7 +2440,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, (DynamicObject) array, n, yield(frame, block, store[n]));
+                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2469,7 +2469,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, (DynamicObject) array, n, yield(frame, block, store[n]));
+                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

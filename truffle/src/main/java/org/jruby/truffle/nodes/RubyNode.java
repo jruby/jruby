@@ -190,30 +190,18 @@ public abstract class RubyNode extends Node {
     }
 
     protected DynamicObject createString(ByteList bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+        return StringNodes.createString(getContext().getCoreLibrary().getStringFactory(), bytes);
     }
 
     protected DynamicObject createEmptyArray() {
         return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
-    protected DynamicObject createArray(Object... store) {
+    protected DynamicObject createArrayWith(Object... store) {
         return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
     }
 
-    protected DynamicObject createArray(int[] store, int size) {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
-    }
-
-    protected DynamicObject createArray(long[] store, int size) {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
-    }
-
-    protected DynamicObject createArray(double[] store, int size) {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
-    }
-
-    protected DynamicObject createArray(Object[] store, int size) {
+    protected DynamicObject createArray(Object store, int size) {
         return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 

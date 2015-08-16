@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -23,12 +24,15 @@ import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.cli.Options;
+
+import java.util.Arrays;
 
 public class ExceptionTranslatingNode extends RubyNode {
 
@@ -56,7 +60,13 @@ public class ExceptionTranslatingNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         try {
-            return child.execute(frame);
+            assert assertArgumentsShouldBeVisible(frame);
+
+            final Object result = child.execute(frame);
+
+            assert shouldObjectBeVisible(result) : "result@" + getEncapsulatingSourceSection().getShortDescription();
+
+            return result;
         } catch (StackOverflowError error) {
             // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
             CompilerDirectives.transferToInterpreter();
@@ -173,6 +183,36 @@ public class ExceptionTranslatingNode extends RubyNode {
             return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
         } else {
             return getContext().getCoreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
+        }
+    }
+    private boolean shouldObjectBeVisible(Object object) {
+        return object instanceof TruffleObject
+                || object instanceof Boolean
+                || object instanceof Integer
+                || object instanceof Long
+                || object instanceof Double;
+    }
+
+    private boolean assertArgumentsShouldBeVisible(VirtualFrame frame) {
+        final Object self = RubyArguments.getSelf(frame.getArguments());
+
+        assert shouldObjectBeVisible(self) : "self=" + (self == null ? "null" : self.getClass()) + "@" + getEncapsulatingSourceSection().getShortDescription();
+
+        final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+
+        for (int n = 0; n < arguments.length; n++) {
+            final Object argument = arguments[n];
+            assert shouldObjectBeVisible(argument) : "arg[" + n + "]=" + (argument == null ? "null" : argument.getClass() + "=" + toString(argument)) + "@" + getEncapsulatingSourceSection().getShortDescription();
+        }
+
+        return true;
+    }
+
+    private String toString(Object object) {
+        if (object instanceof Object[]) {
+            return Arrays.toString((Object[]) object);
+        } else {
+            return object.toString();
         }
     }
 

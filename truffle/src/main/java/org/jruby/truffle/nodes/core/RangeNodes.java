@@ -103,12 +103,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block) {
-            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range));
+            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range);
             int result;
-            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range)) {
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range);
             } else {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range) + 1;
             }
             final int exclusiveEnd = result;
             final int length = exclusiveEnd - begin;
@@ -131,7 +131,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(store, length), length);
+            return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
         }
 
     }

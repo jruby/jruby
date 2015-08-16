@@ -203,6 +203,7 @@ public abstract class BasicObjectNodes {
         }
     }
 
+    @CompilerDirectives.TruffleBoundary
     public static RubyContext getContext(DynamicObject rubyBasicObject) {
         if (RubyGuards.isRubyModule(rubyBasicObject)) {
             return ModuleNodes.getFields(rubyBasicObject).getContext();
