@@ -3,10 +3,8 @@ package org.jruby.java.proxies;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -15,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -23,6 +22,7 @@ import org.jruby.RubyHash.Visitor;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.java.invokers.InstanceFieldGetter;
@@ -40,15 +40,15 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
 
 public class JavaProxy extends RubyObject {
-    private static final boolean DEBUG = false;
 
-    private JavaObject javaObject;
+    private transient JavaObject javaObject;
     Object object;
 
     public JavaProxy(Ruby runtime, RubyClass klazz) {
@@ -80,8 +80,6 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object dataGetStruct() {
-        // for investigating and eliminating code that causes JavaObject to live
-        if (DEBUG) Thread.dumpStack();
         return getJavaObject();
     }
 
@@ -499,4 +497,147 @@ public class JavaProxy extends RubyObject {
 
     private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
     private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
+
+    public static class ClassMethods {
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName) {
+            String name = rubyName.asJavaString();
+
+            return getRubyMethod(context, proxyClass, name);
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName, IRubyObject argTypes) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
+
+            return getRubyMethod(context, proxyClass, name, argTypesClasses);
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName) {
+            String name = rubyName.asJavaString();
+            final Ruby runtime = context.runtime;
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
+            return method.invokeStaticDirect(context);
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            final Ruby runtime = context.runtime;
+
+            checkArgSizeMismatch(runtime, 0, argTypesAry);
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name));
+            return method.invokeStaticDirect(context);
+        }
+
+        @JRubyMethod(meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
+            String name = rubyName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            final Ruby runtime = context.runtime;
+
+            checkArgSizeMismatch(runtime, 1, argTypesAry);
+
+            Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypeClass));
+            return method.invokeStaticDirect(context, arg0.toJava(argTypeClass));
+        }
+
+        @JRubyMethod(required = 4, rest = true, meta = true)
+        public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            final Ruby runtime = context.runtime;
+
+            String name = args[0].asJavaString();
+            RubyArray argTypesAry = args[1].convertToArray();
+            final int argsLen = args.length - 2;
+
+            checkArgSizeMismatch(runtime, argsLen, argTypesAry);
+
+            Class[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argsLen]);
+
+            Object[] javaArgs = new Object[argsLen];
+            for ( int i = 0; i < argsLen; i++ ) {
+                javaArgs[i] = args[i + 2].toJava( argTypesClasses[i] );
+            }
+
+            JavaMethod method = new JavaMethod(runtime, getMethodFromClass(context, recv, name, argTypesClasses));
+            return method.invokeStaticDirect(context, javaArgs);
+        }
+
+        @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName) {
+            return java_alias(context, clazz, newName, rubyName, context.runtime.newEmptyArray());
+        }
+
+        @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
+            final Ruby runtime = context.runtime;
+            if ( ! ( clazz instanceof RubyClass ) ) {
+                throw runtime.newTypeError(clazz, runtime.getModule());
+            }
+            final RubyClass proxyClass = (RubyClass) clazz;
+
+            String name = rubyName.asJavaString();
+            String newNameStr = newName.asJavaString();
+            RubyArray argTypesAry = argTypes.convertToArray();
+            Class<?>[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
+
+            final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
+            final MethodInvoker invoker;
+
+            if ( Modifier.isStatic( method.getModifiers() ) ) {
+                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method);
+                // add alias to meta
+                proxyClass.getSingletonClass().addMethod(newNameStr, invoker);
+            }
+            else {
+                invoker = new InstanceMethodInvoker(proxyClass, method);
+                proxyClass.addMethod(newNameStr, invoker);
+            }
+
+            return context.nil;
+        }
+
+        private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
+            final Ruby runtime = context.runtime;
+            if ( ! ( clazz instanceof RubyModule ) ) {
+                throw runtime.newTypeError(clazz, runtime.getModule());
+            }
+            final RubyModule proxyClass = (RubyModule) clazz;
+
+            final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
+            final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
+
+            if ( Modifier.isStatic( method.getModifiers() ) ) {
+                MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method);
+                return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
+            }
+
+            MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method);
+            return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
+        }
+
+        private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
+            final String name, final Class... argTypes) {
+            final Class<?> clazz = JavaClass.getJavaClass(context, (RubyModule) proxyClass);
+            try {
+                return clazz.getMethod(name, argTypes);
+            }
+            catch (NoSuchMethodException nsme) {
+                String prettyName = name + CodegenUtils.prettyParams(argTypes);
+                String errorName = clazz.getName() + '.' + prettyName;
+                throw context.runtime.newNameError("Java method not found: " + errorName, name);
+            }
+        }
+
+    }
+
 }
