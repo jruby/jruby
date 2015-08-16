@@ -51,10 +51,10 @@ describe "an interface (Java 8+)" do
 
   it "exposes instance method via java_method" do
     method = Java::Java8Interface.java_method(:foo, [ java.lang.Object ])
-    expect(method.name).to eq("foo(java.lang.Object)") # default
+    expect(method.name).to eq(:"foo(java.lang.Object)") # default
     method = Java::Java8Interface.java_method(:bar)
-    expect(method.name).to eq("bar()") # abstract
-  end
+    expect(method.name).to eq(:"bar()") # abstract
+  end if RUBY_VERSION > '1.9'
 
   it "(default) java_method is callable" do
     method = Java::Java8Interface.java_method(:foo, [ java.lang.Object ])
