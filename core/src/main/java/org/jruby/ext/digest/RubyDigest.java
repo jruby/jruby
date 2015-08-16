@@ -83,23 +83,14 @@ public class RubyDigest {
 
     private static Logger logger() { return LoggerFactory.getLogger("RubyDigest"); }
 
+    private static final String PROVIDER = "org.bouncycastle.jce.provider.BouncyCastleProvider";
     private static Provider provider = null;
 
     public static void createDigest(Ruby runtime) {
-        // We're not setting the provider or anything, but it seems that BouncyCastle does some internal things in its
-        // provider's constructor which require it to be executed in a secure context.
-        // Ideally this hack should be removed. See JRUBY-3919 and this BC bug:
-        //   http://www.bouncycastle.org/jira/browse/BJA-227
-        provider = (Provider) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                try {
-                    return Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance();
-                } catch(Throwable t) {
-                    // provider is not available
-                    return null;
-                }
-            }
-        });
+        try {
+            provider = (Provider) Class.forName(PROVIDER).newInstance();
+        }
+        catch (Throwable t) { /* provider is not available */ }
 
         RubyModule mDigest = runtime.defineModule("Digest");
         mDigest.defineAnnotatedMethods(RubyDigest.class);
