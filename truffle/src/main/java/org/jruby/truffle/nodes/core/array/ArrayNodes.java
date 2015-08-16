@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
@@ -41,12 +42,11 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -54,7 +54,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
@@ -65,46 +64,30 @@ import java.util.Random;
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    public static class ArrayType extends BasicObjectType {
+    @Layout
+    public interface ArrayLayout {
+
+        DynamicObject createArray(Object store, int size);
+
+        boolean isArray(DynamicObject object);
+
+        Object getStore(DynamicObject object);
+
+        void setStore(DynamicObject object, Object store);
+
+        int getSize(DynamicObject object);
+
+        void setSize(DynamicObject object, int size);
 
     }
 
-    //public static final ArrayType ARRAY_TYPE = new ArrayType();
-
-    //private static final HiddenKey STORE_IDENTIFIER = new HiddenKey("store");
-    //private static final Property STORE_PROPERTY;
-
-    //private static final HiddenKey SIZE_IDENTIFIER = new HiddenKey("size");
-    //private static final Property SIZE_PROPERTY;
-
-    //private static final DynamicObjectFactory ARRAY_FACTORY;
-
-    static {
-        //final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        //STORE_PROPERTY = Property.create(STORE_IDENTIFIER, allocator.locationForType(Object.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        //SIZE_PROPERTY = Property.create(SIZE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.NonNull)), 0);
-
-        //final Shape shape = RubyBasicObject.LAYOUT.createShape(ARRAY_TYPE);
-                //.addProperty(STORE_PROPERTY)
-                //.addProperty(SIZE_PROPERTY);
-
-        //ARRAY_FACTORY = shape.createFactory();
-    }
+    public static final ArrayLayout ARRAY_LAYOUT = ArrayLayoutImpl.INSTANCE;
 
     public static Object getStore(RubyBasicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        //assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
-
-        //return STORE_PROPERTY.get(array.getDynamicObject(), true);
-        return ((RubyArray) array).store;
+        return ARRAY_LAYOUT.getStore(array.getDynamicObject());
     }
 
     public static void setStore(RubyBasicObject array, Object store, int size) {
-        assert RubyGuards.isRubyArray(array);
-        //assert array.getDynamicObject().getShape().hasProperty(STORE_IDENTIFIER);
-        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
-
         assert verifyStore(store, size);
 
         if (RANDOMIZE_STORAGE_ARRAY) {
@@ -112,41 +95,16 @@ public abstract class ArrayNodes {
             assert verifyStore(store, size);
         }
 
-        /*try {
-            STORE_PROPERTY.set(array.getDynamicObject(), store, array.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
-
-        try {
-            SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }*/
-
-        ((RubyArray) array).store = store;
-        ((RubyArray) array).size = size;
+        ARRAY_LAYOUT.setStore(array.getDynamicObject(), store);
+        setSize(array, size);
     }
 
     public static void setSize(RubyBasicObject array, int size) {
-        assert RubyGuards.isRubyArray(array);
-        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
-
-        /*try {
-            SIZE_PROPERTY.set(array.getDynamicObject(), size, array.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }*/
-
-        ((RubyArray) array).size = size;
+        ARRAY_LAYOUT.setSize(array.getDynamicObject(), size);
     }
 
     public static int getSize(RubyBasicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        //assert array.getDynamicObject().getShape().hasProperty(SIZE_IDENTIFIER);
-
-        //return (int) SIZE_PROPERTY.get(array.getDynamicObject(), true);
-        return ((RubyArray) array).size;
+        return ARRAY_LAYOUT.getSize(array.getDynamicObject());
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
@@ -392,7 +350,7 @@ public abstract class ArrayNodes {
 
     public static RubyBasicObject createGeneralArray(RubyBasicObject arrayClass, Object store, int size) {
         assert RubyGuards.isRubyClass(arrayClass);
-        return new RubyArray(arrayClass, store, size, RubyBasicObject.LAYOUT.newInstance(RubyBasicObject.EMPTY_SHAPE));
+        return new RubyBasicObject(arrayClass, ARRAY_LAYOUT.createArray(store, size));
     }
 
     @CoreMethod(names = "+", required = 1)

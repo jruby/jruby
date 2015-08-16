@@ -55,12 +55,28 @@ DO NOT MODIFIY - GENERATED CODE
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
+            <id>anno</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
               <goal>compile</goal>
             </goals>
             <configuration>
+              <annotationProcessors>
+                <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
+              </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
