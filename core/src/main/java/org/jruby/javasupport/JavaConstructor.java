@@ -186,6 +186,10 @@ public class JavaConstructor extends JavaCallable {
         return constructor.toGenericString();
     }
 
+    public Class<?> getDeclaringClass() {
+        return constructor.getDeclaringClass();
+    }
+
     public AccessibleObject accessibleObject() {
         return constructor;
     }
@@ -198,6 +202,11 @@ public class JavaConstructor extends JavaCallable {
     @JRubyMethod
     public IRubyObject return_type() {
         return getRuntime().getNil();
+    }
+
+    @JRubyMethod
+    public IRubyObject declaring_class() {
+        return JavaClass.get(getRuntime(), getDeclaringClass());
     }
 
     @JRubyMethod(rest = true)
