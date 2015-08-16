@@ -422,7 +422,7 @@ public class Bootstrap {
         MethodHandle mh = null;
         SmartBinder binder = null;
 
-        if (method instanceof NativeCallMethod) {
+        if (method instanceof NativeCallMethod && ((NativeCallMethod) method).getNativeCall() != null) {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 

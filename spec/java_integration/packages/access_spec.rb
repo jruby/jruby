@@ -1,9 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-# for DefaultPackageClass
-$CLASSPATH << File.dirname(__FILE__) + "/../../../target/test-classes"
-
-describe "A Java package" do
+describe "java package" do
   it 'is accessible directly when starting with java, javax, com, or org' do
     # Using static methods here for simplicity; avoiding construction.
     java.lang.should == JavaUtilities.get_package_module_dot_format("java.lang")
@@ -42,15 +39,19 @@ describe "A Java package" do
   end
 
   it "supports const_get" do
+    java.util.respond_to?(:const_get).should be true
     java.util.const_get("Arrays").should respond_to "asList"
   end
 
   it "supports const_get with inherit argument" do
-    java.util.const_get("Arrays", false).should respond_to "asList"
+    java.util.const_get("Arrays", false).should respond_to :asList
   end
 end
 
-describe "A class in the default package" do
+# for DefaultPackageClass
+$CLASSPATH << File.dirname(__FILE__) + "/../../../target/test-classes"
+
+describe "class in default package" do
   it "can be opened using Java::Foo syntax" do
     Java::DefaultPackageClass.new.foo.should == "foo"
     class Java::DefaultPackageClass

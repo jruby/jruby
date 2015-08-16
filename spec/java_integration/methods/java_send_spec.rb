@@ -32,6 +32,14 @@ describe "A Java object's java_send method" do
     str.to_s.should == '1234567890 str1 str2'
     str.java_send :append, [Java::char[], Java::int, Java::int], " str3".to_java.to_char_array, 0, 4
     str.to_s.should == '1234567890 str1 str2 str'
+
+    buf = java::lang::StringBuffer.new(' buf ')
+    begin
+      str.java_send :append, [Java::JavaLang::String], buf
+    rescue TypeError
+    else; fail end
+    str.java_send :append, [java.lang.CharSequence.java_class], buf
+    str.to_s.should == '1234567890 str1 str2 str buf '
   end
 
   it "works with package-level classes" do

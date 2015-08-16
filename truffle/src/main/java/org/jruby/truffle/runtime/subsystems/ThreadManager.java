@@ -124,6 +124,10 @@ public class ThreadManager {
         }
     }
 
+    public RubyBasicObject[] getThreads() {
+        return runningRubyThreads.toArray(new RubyBasicObject[runningRubyThreads.size()]);
+    }
+
     private void killOtherThreads() {
         while (true) {
             try {
