@@ -566,9 +566,6 @@ public class Java implements Library {
         return proxyClass;
     }
 
-    @Deprecated
-    public static class JavaProxyClassMethods extends JavaProxy.ClassMethods {}
-
     public static class ByteArrayProxyMethods {
 
         @JRubyMethod
