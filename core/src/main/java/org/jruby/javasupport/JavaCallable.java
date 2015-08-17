@@ -150,6 +150,12 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     protected final IRubyObject handleThrowable(final Throwable ex, final Member target) {
+        if ( ex instanceof RaiseException ) {
+            // RaiseException (from the Ruby side) is expected to already
+            // have its stack-trace rewritten - no need to do it again ...
+            throw (RaiseException) ex;
+        }
+
         if (REWRITE_JAVA_TRACE) {
             Helpers.rewriteStackTrace(getRuntime(), ex);
         }
