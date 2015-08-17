@@ -24,8 +24,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
@@ -33,7 +31,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -116,7 +114,7 @@ public class TranslatorDriver {
         }
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
-            lexicalScope = new LexicalScope(lexicalScope, (RubyBasicObject) module);
+            lexicalScope = new LexicalScope(lexicalScope, (DynamicObject) module);
         }
         parseEnvironment.resetLexicalScope(lexicalScope);
 
@@ -131,7 +129,7 @@ public class TranslatorDriver {
         final Object data = getData(context);
 
         if (data != null) {
-            ModuleNodes.getModel(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
+            ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
         }
 
         // Translate to Ruby Truffle nodes

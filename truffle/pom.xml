@@ -72,6 +72,21 @@ DO NOT MODIFIY - GENERATED CODE
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
+            <id>anno</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
+              </includes>
+              <compilerArgs>
+                <compilerArg>-J-ea</compilerArg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
@@ -79,6 +94,7 @@ DO NOT MODIFIY - GENERATED CODE
             </goals>
             <configuration>
               <annotationProcessors>
+                <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor</annotationProcessor>
               </annotationProcessors>
@@ -87,6 +103,7 @@ DO NOT MODIFIY - GENERATED CODE
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                <compilerArg>-J-ea</compilerArg>
               </compilerArgs>
             </configuration>
           </execution>

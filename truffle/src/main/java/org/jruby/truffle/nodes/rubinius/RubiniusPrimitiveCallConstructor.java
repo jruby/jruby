@@ -21,13 +21,13 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 
-    private final RubyBasicObject method;
+    private final DynamicObject method;
 
-    public RubiniusPrimitiveCallConstructor(RubyBasicObject method) {
+    public RubiniusPrimitiveCallConstructor(DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
         this.method = method;
     }

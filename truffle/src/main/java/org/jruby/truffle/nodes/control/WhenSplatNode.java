@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class WhenSplatNode extends RubyNode {
 
@@ -40,10 +40,10 @@ public class WhenSplatNode extends RubyNode {
 
         final Object caseExpression = readCaseExpression.execute(frame);
 
-        final RubyBasicObject array;
+        final DynamicObject array;
 
         try {
-            array = splat.executeRubyBasicObject(frame);
+            array = splat.executeDynamicObject(frame);
         } catch (UnexpectedResultException e) {
             throw new UnsupportedOperationException();
         }

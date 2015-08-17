@@ -21,7 +21,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -177,7 +177,7 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = SymbolNodes.getString(identifier).intern();
@@ -186,12 +186,12 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
+        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier));
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyBasicObject identifier) {
+        private static String slowPathToString(DynamicObject identifier) {
             assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
@@ -221,7 +221,7 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 this.identifier = SymbolNodes.getString(identifier).intern();
@@ -230,12 +230,12 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeign(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier, Object value) {
+        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier, Object value) {
             return ForeignAccess.execute(node, frame, receiver, slowPathToString(identifier), value);
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyBasicObject identifier) {
+        private static String slowPathToString(DynamicObject identifier) {
             assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
@@ -309,12 +309,12 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public Object export(VirtualFrame frame, RubyBasicObject name, TruffleObject object) {
+        public Object export(VirtualFrame frame, DynamicObject name, TruffleObject object) {
             getContext().exportObject(name, object);
             return object;
         }
 
-        protected static String rubyStringToString(RubyBasicObject rubyString) {
+        protected static String rubyStringToString(DynamicObject rubyString) {
         	return rubyString.toString();
         }
     }
@@ -328,7 +328,7 @@ public abstract class TruffleInteropNodes {
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public Object importObject(VirtualFrame frame, RubyBasicObject name) {
+        public Object importObject(VirtualFrame frame, DynamicObject name) {
             return getContext().importObject(name);
         }
 

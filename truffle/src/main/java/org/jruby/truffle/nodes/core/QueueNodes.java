@@ -15,22 +15,18 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -40,33 +36,38 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
 
-    private static class QueueType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface QueueLayout extends BasicObjectNodes.BasicObjectLayout {
+
+        DynamicObjectFactory createQueueShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createQueue(DynamicObjectFactory factory, LinkedBlockingQueue queue);
+
+        boolean isQueue(DynamicObject object);
+
+        LinkedBlockingQueue getQueue(DynamicObject object);
+
     }
 
-    public static final QueueType QUEUE_TYPE = new QueueType();
+    public static final QueueLayout QUEUE_LAYOUT = QueueLayoutImpl.INSTANCE;
 
-    private static final HiddenKey QUEUE_IDENTIFIER = new HiddenKey("queue");
-    private static final Property QUEUE_PROPERTY;
-    private static final DynamicObjectFactory QUEUE_FACTORY;
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        QUEUE_PROPERTY = Property.create(QUEUE_IDENTIFIER, allocator.locationForType(LinkedBlockingQueue.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(QUEUE_TYPE).addProperty(QUEUE_PROPERTY);
-        QUEUE_FACTORY = shape.createFactory();
-    }
-
-    public static class QueueAllocator implements Allocator {
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, QUEUE_FACTORY.newInstance(new LinkedBlockingQueue<Object>()));
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return QUEUE_LAYOUT.createQueue(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), new LinkedBlockingQueue());
+        }
+
     }
 
     @SuppressWarnings("unchecked")
-    private static BlockingQueue<Object> getQueue(RubyBasicObject queue) {
-        assert queue.getDynamicObject().getShape().hasProperty(QUEUE_IDENTIFIER);
-        return (BlockingQueue<Object>) QUEUE_PROPERTY.get(queue.getDynamicObject(), true);
+    private static BlockingQueue getQueue(DynamicObject queue) {
+        return QUEUE_LAYOUT.getQueue(queue);
     }
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
@@ -78,7 +79,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject push(RubyBasicObject self, final Object value) {
+        public DynamicObject push(DynamicObject self, final Object value) {
             final BlockingQueue<Object> queue = getQueue(self);
 
             queue.add(value);
@@ -105,7 +106,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization(guards = "!nonBlocking")
-        public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
+        public Object popBlocking(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
             return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
@@ -118,7 +119,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization(guards = "nonBlocking")
-        public Object popNonBlock(RubyBasicObject self, boolean nonBlocking) {
+        public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = getQueue(self);
 
             final Object value = queue.poll();
@@ -145,12 +146,12 @@ public abstract class QueueNodes {
         }
 
         @Specialization
-        public Object receiveTimeout(RubyBasicObject self, int duration) {
+        public Object receiveTimeout(DynamicObject self, int duration) {
             return receiveTimeout(self, (double) duration);
         }
 
         @Specialization
-        public Object receiveTimeout(RubyBasicObject self, double duration) {
+        public Object receiveTimeout(DynamicObject self, double duration) {
             final BlockingQueue<Object> queue = getQueue(self);
 
             final long durationInMillis = (long) (duration * 1000.0);
@@ -192,7 +193,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization
-        public boolean empty(RubyBasicObject self) {
+        public boolean empty(DynamicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
             return queue.isEmpty();
         }
@@ -208,7 +209,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization
-        public int size(RubyBasicObject self) {
+        public int size(DynamicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
             return queue.size();
         }
@@ -224,7 +225,7 @@ public abstract class QueueNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject clear(RubyBasicObject self) {
+        public DynamicObject clear(DynamicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
             queue.clear();
             return self;
@@ -241,7 +242,7 @@ public abstract class QueueNodes {
 
         @Specialization
         @TruffleBoundary
-        public Object marshal_dump(RubyBasicObject self) {
+        public Object marshal_dump(DynamicObject self) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDump(self, this));
         }
 
@@ -259,7 +260,7 @@ public abstract class QueueNodes {
 
         @SuppressWarnings("restriction")
         @Specialization
-        public int num_waiting(RubyBasicObject self) {
+        public int num_waiting(DynamicObject self) {
             final BlockingQueue<Object> queue = getQueue(self);
 
             final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;

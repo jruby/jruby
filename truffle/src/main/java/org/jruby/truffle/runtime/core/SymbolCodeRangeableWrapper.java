@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.util.ByteList;
@@ -18,9 +19,9 @@ import org.jruby.util.StringSupport;
 
 public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
-    private final RubyBasicObject symbol;
+    private final DynamicObject symbol;
 
-    public SymbolCodeRangeableWrapper(RubyBasicObject symbol) {
+    public SymbolCodeRangeableWrapper(DynamicObject symbol) {
         this.symbol = symbol;
     }
 

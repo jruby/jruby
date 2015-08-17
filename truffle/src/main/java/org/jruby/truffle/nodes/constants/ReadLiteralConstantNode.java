@@ -10,11 +10,12 @@
 package org.jruby.truffle.nodes.constants;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -48,7 +49,7 @@ public class ReadLiteralConstantNode extends RubyNode {
              *
              * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
              * and we do not want to execute receiver twice. */
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
             throw e;
@@ -58,10 +59,10 @@ public class ReadLiteralConstantNode extends RubyNode {
         try {
             constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getTypeErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getTypeErrorClass()) {
                 // module is not a class/module
                 return nil();
-            } else if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
+            } else if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }

@@ -9,16 +9,19 @@
  */
 package org.jruby.truffle.runtime;
 
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Either an IncludedModule, a RubyClass or a RubyModule.
  * Private interface, do not use outside RubyModule.
  */
 public interface ModuleChain {
+
     ModuleChain getParentModule();
 
-    RubyBasicObject getActualModule();
+    DynamicObject getActualModule();
 
-    void insertAfter(RubyBasicObject module);
+    void insertAfter(DynamicObject module);
+
 }

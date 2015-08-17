@@ -16,21 +16,25 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Arrays;
 
 public abstract class ArrayLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] values;
+    @Child protected AllocateObjectNode allocateNode;
 
     public ArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
         super(context, sourceSection);
         this.values = values;
+        allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
     }
 
-    protected RubyBasicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
+    protected DynamicObject makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {
         CompilerAsserts.neverPartOfCompilation();
 
         replace(new ObjectArrayLiteralNode(getContext(), getSourceSection(), values));
@@ -45,7 +49,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return (RubyBasicObject) ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
     }
 
     @Override
@@ -84,7 +88,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return createEmptyArray();
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), null, 0);
         }
 
     }
@@ -108,10 +112,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
-        private RubyBasicObject makeGeneric(VirtualFrame frame,
+        private DynamicObject makeGeneric(VirtualFrame frame,
                 final double[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
@@ -143,10 +147,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
-        private RubyBasicObject makeGeneric(VirtualFrame frame,
+        private DynamicObject makeGeneric(VirtualFrame frame,
                 final int[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
@@ -178,10 +182,10 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 }
             }
 
-            return createArray(executedValues, values.length);
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
-        private RubyBasicObject makeGeneric(VirtualFrame frame,
+        private DynamicObject makeGeneric(VirtualFrame frame,
                 final long[] executedValues, int n) {
             final Object[] executedObjects = new Object[n];
 
@@ -209,7 +213,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            return createArray(executedValues, values.length);
+            return allocateNode.allocate(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
         }
 
     }
@@ -231,7 +235,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final RubyBasicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+            final DynamicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
             final Object store = ArrayNodes.getStore(array);
 
             if (store == null) {

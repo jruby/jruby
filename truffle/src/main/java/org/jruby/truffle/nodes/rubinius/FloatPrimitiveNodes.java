@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Locale;
 
@@ -36,7 +36,7 @@ public abstract class FloatPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject dToA(double value) {
+        public DynamicObject dToA(double value) {
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {

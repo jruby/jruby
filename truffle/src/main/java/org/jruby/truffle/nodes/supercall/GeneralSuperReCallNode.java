@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import com.oracle.truffle.api.CompilerAsserts;
@@ -75,14 +75,14 @@ public class GeneralSuperReCallNode extends RubyNode {
             // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
             final Object restArg = superArguments[superArguments.length - 1];
             assert RubyGuards.isRubyArray(restArg);
-            final Object[] restArgs = ArrayNodes.slowToArray((RubyBasicObject) restArg);
+            final Object[] restArgs = ArrayNodes.slowToArray((DynamicObject) restArg);
             final int restArgIndex = reloadNodes.length - 1;
             superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
             ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
         }
 
         // Execute or inherit the block
-        final RubyBasicObject blockObject;
+        final DynamicObject blockObject;
         if (block != null) {
             blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
         } else {

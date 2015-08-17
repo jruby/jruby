@@ -38,7 +38,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
         for (RubyNode child : children) {
             try {
-                for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(child.executeRubyHash(frame))) {
+                for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(child.executeDynamicObject(frame))) {
                     keyValues.add(keyValue);
                 }
             } catch (UnexpectedResultException e) {

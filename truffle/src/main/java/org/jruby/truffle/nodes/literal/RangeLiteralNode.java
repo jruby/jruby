@@ -17,11 +17,17 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ClassNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.core.RangeNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.CoreLibrary;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
 public abstract class RangeLiteralNode extends RubyNode {
@@ -29,25 +35,27 @@ public abstract class RangeLiteralNode extends RubyNode {
     private final boolean excludeEnd;
 
     @Child private CallDispatchHeadNode cmpNode;
+    @Child private AllocateObjectNode allocateNode;
 
     public RangeLiteralNode(RubyContext context, SourceSection sourceSection, boolean excludeEnd) {
         super(context, sourceSection);
         this.excludeEnd = excludeEnd;
+        allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
     }
 
     @Specialization
-    public RubyBasicObject intRange(int begin, int end) {
-        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public DynamicObject intRange(int begin, int end) {
+        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
-    public RubyBasicObject longFittingIntRange(long begin, long end) {
-        return new RubyIntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
+    public DynamicObject longFittingIntRange(long begin, long end) {
+        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
-    public RubyBasicObject longRange(long begin, long end) {
-        return new RubyLongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public DynamicObject longRange(long begin, long end) {
+        return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.createLongFixnumRange(getContext().getCoreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
     }
 
     @Specialization(guards = { "!isIntOrLong(begin) || !isIntOrLong(end)" })
@@ -68,7 +76,9 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        return new RubyObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+
+        return RangeNodes.OBJECT_RANGE_LAYOUT.createObjectRange(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rangeClass), excludeEnd, begin, end);
     }
 
     protected boolean fitsIntoInteger(long value) {

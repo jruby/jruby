@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+        final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
         if (hash == null) {
             return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());

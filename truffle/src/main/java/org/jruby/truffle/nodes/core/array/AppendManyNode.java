@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Arrays;
 
@@ -32,32 +32,32 @@ public abstract class AppendManyNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyBasicObject executeAppendMany(RubyBasicObject array, int otherSize, Object other);
+    public abstract DynamicObject executeAppendMany(DynamicObject array, int otherSize, Object other);
 
     // Append into an empty array
 
     // TODO CS 12-May-15 differentiate between null and empty but possibly having enough space
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
-    public RubyBasicObject appendManyEmpty(RubyBasicObject array, int otherSize, int[] other) {
+    public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, int[] other) {
         ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
-    public RubyBasicObject appendManyEmpty(RubyBasicObject array, int otherSize, long[] other) {
+    public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, long[] other) {
         ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
-    public RubyBasicObject appendManyEmpty(RubyBasicObject array, int otherSize, double[] other) {
+    public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, double[] other) {
         ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
-    public RubyBasicObject appendManyEmpty(RubyBasicObject array, int otherSize, Object[] other) {
+    public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, Object[] other) {
         ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
         return array;
     }
@@ -65,7 +65,7 @@ public abstract class AppendManyNode extends RubyNode {
     // Append of the correct type
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject appendManySameType(RubyBasicObject array, int otherSize, int[] other,
+    public DynamicObject appendManySameType(DynamicObject array, int otherSize, int[] other,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManySameTypeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
@@ -73,7 +73,7 @@ public abstract class AppendManyNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject appendManySameType(RubyBasicObject array, int otherSize, long[] other,
+    public DynamicObject appendManySameType(DynamicObject array, int otherSize, long[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManySameTypeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
@@ -81,7 +81,7 @@ public abstract class AppendManyNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject appendManySameType(RubyBasicObject array, int otherSize, double[] other,
+    public DynamicObject appendManySameType(DynamicObject array, int otherSize, double[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManySameTypeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
@@ -89,14 +89,14 @@ public abstract class AppendManyNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject appendManySameType(RubyBasicObject array, int otherSize, Object[] other,
+    public DynamicObject appendManySameType(DynamicObject array, int otherSize, Object[] other,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManySameTypeGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
 
-    public void appendManySameTypeGeneric(RubyBasicObject array, ArrayMirror storeMirror,
+    public void appendManySameTypeGeneric(DynamicObject array, ArrayMirror storeMirror,
                                           int otherSize, ArrayMirror otherStoreMirror,
                                           ConditionProfile extendProfile) {
         final int oldSize = ArrayNodes.getSize(array);
@@ -117,27 +117,27 @@ public abstract class AppendManyNode extends RubyNode {
     // Append something else into an Object[]
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject appendManyBoxIntoObject(RubyBasicObject array, int otherSize, int[] other,
+    public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, int[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject appendManyBoxIntoObject(RubyBasicObject array, int otherSize, long[] other,
+    public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, long[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject appendManyBoxIntoObject(RubyBasicObject array, int otherSize, double[] other,
+    public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, double[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
         appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
         return array;
     }
 
-    public void appendManyBoxIntoObjectGeneric(RubyBasicObject array, int otherSize, ArrayMirror otherStoreMirror,
+    public void appendManyBoxIntoObjectGeneric(DynamicObject array, int otherSize, ArrayMirror otherStoreMirror,
                                           ConditionProfile extendProfile) {
         final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
@@ -158,7 +158,7 @@ public abstract class AppendManyNode extends RubyNode {
     // Append forcing a generalization from int[] to long[]
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject appendManyLongIntoInteger(RubyBasicObject array, int otherSize, long[] other) {
+    public DynamicObject appendManyLongIntoInteger(DynamicObject array, int otherSize, long[] other) {
         final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
 
@@ -174,55 +174,55 @@ public abstract class AppendManyNode extends RubyNode {
     // Append forcing a generalization to Object[]
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject appendManyGeneralizeIntegerDouble(RubyBasicObject array, int otherSize, double[] other) {
+    public DynamicObject appendManyGeneralizeIntegerDouble(DynamicObject array, int otherSize, double[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject appendManyGeneralizeIntegerDouble(RubyBasicObject array, int otherSize, Object[] other) {
+    public DynamicObject appendManyGeneralizeIntegerDouble(DynamicObject array, int otherSize, Object[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject appendManyGeneralizeLongDouble(RubyBasicObject array, int otherSize, double[] other) {
+    public DynamicObject appendManyGeneralizeLongDouble(DynamicObject array, int otherSize, double[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject appendManyGeneralizeLongDouble(RubyBasicObject array, int otherSize, Object[] other) {
+    public DynamicObject appendManyGeneralizeLongDouble(DynamicObject array, int otherSize, Object[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject appendManyGeneralizeDoubleInteger(RubyBasicObject array, int otherSize, int[] other) {
+    public DynamicObject appendManyGeneralizeDoubleInteger(DynamicObject array, int otherSize, int[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject appendManyGeneralizeDoubleLong(RubyBasicObject array, int otherSize, long[] other) {
+    public DynamicObject appendManyGeneralizeDoubleLong(DynamicObject array, int otherSize, long[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject appendManyGeneralizeDoubleObject(RubyBasicObject array, int otherSize, Object[] other) {
+    public DynamicObject appendManyGeneralizeDoubleObject(DynamicObject array, int otherSize, Object[] other) {
         appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)),
                 otherSize, ArrayMirror.reflect(other));
         return array;
     }
 
-    public void appendManyGeneralizeGeneric(RubyBasicObject array, ArrayMirror storeMirror, int otherSize, ArrayMirror otherStoreMirror) {
+    public void appendManyGeneralizeGeneric(DynamicObject array, ArrayMirror storeMirror, int otherSize, ArrayMirror otherStoreMirror) {
         final int oldSize = ArrayNodes.getSize(array);
         final int newSize = oldSize + otherSize;
         Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));

@@ -16,7 +16,7 @@ import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteObjectObjectFieldNode extends WriteObjectFieldChainNode {
@@ -33,7 +33,7 @@ public class WriteObjectObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -43,12 +43,12 @@ public class WriteObjectObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.getObjectLayout() == expectedLayout && storageLocation.canStore(value)) {
+        if (object.getShape() == expectedLayout && storageLocation.canStore(value)) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.set(object.getDynamicObject(), value, expectedLayout);
+                    storageLocation.set(object, value, expectedLayout);
                 } else {
-                    storageLocation.set(object.getDynamicObject(), value, expectedLayout, newLayout);
+                    storageLocation.set(object, value, expectedLayout, newLayout);
                 }
             } catch (IncompatibleLocationException e) {
                 throw new UnsupportedOperationException();

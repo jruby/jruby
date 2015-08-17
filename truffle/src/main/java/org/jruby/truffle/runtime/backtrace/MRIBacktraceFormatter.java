@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -20,7 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.List;
 public class MRIBacktraceFormatter implements BacktraceFormatter {
 
     @Override
-    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         try {
             final List<Activation> activations = backtrace == null ? new ArrayList<Activation>() : backtrace.getActivations();
 
@@ -38,7 +39,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                 if (exception != null) {
                     assert RubyGuards.isRubyException(exception);
 
-                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(exception.getLogicalClass()).getName()));
+                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
                 }
             } else {
                 lines.add(formatInLine(context, activations, exception));
@@ -54,7 +55,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(RubyContext context, List<Activation> activations, RubyBasicObject exception) {
+    private static String formatInLine(RubyContext context, List<Activation> activations, DynamicObject exception) {
         final StringBuilder builder = new StringBuilder();
 
         final Activation activation = activations.get(0);
@@ -97,7 +98,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             builder.append(": ");
             builder.append(message);
             builder.append(" (");
-            builder.append(ModuleNodes.getModel(exception.getLogicalClass()).getName());
+            builder.append(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName());
             builder.append(")");
         }
 

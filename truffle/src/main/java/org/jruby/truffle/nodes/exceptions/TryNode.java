@@ -10,12 +10,13 @@
 package org.jruby.truffle.nodes.exceptions;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RetryException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -79,11 +80,11 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject threadLocals = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-        RubyBasicObject.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
+        final DynamicObject threadLocals = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        BasicObjectNodes.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, (RubyBasicObject) exception.getRubyException())) {
+            if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
                 return rescue.execute(frame);
             }
         }

@@ -53,7 +53,7 @@ public class FixnumOrBignumNode extends RubyNode {
                 return longValue;
             }
         } else {
-            return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+            return createBignum(value);
         }
     }
 

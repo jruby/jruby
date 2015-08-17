@@ -24,7 +24,7 @@ import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -68,7 +68,7 @@ public class GeneralSuperCallNode extends RubyNode {
         }
 
         // Execute the block
-        final RubyBasicObject blockObject;
+        final DynamicObject blockObject;
         if (block != null) {
             blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
         } else {
@@ -78,7 +78,7 @@ public class GeneralSuperCallNode extends RubyNode {
         final Object[] argumentsArray;
         if (isSplatted) {
             // TODO(CS): need something better to splat the arguments array
-            argumentsArray = ArrayNodes.slowToArray((RubyBasicObject) argumentsObjects[0]);
+            argumentsArray = ArrayNodes.slowToArray((DynamicObject) argumentsObjects[0]);
         } else {
             argumentsArray = argumentsObjects;
         }

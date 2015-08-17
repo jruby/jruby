@@ -16,6 +16,8 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.Message;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +31,7 @@ public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(RubyBasicObject.class, new BasicForeignAccessFactory(context));
+        return ForeignAccess.create(DynamicObject.class, new BasicForeignAccessFactory(context));
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -18,7 +19,6 @@ import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 
@@ -27,7 +27,7 @@ public class LazyRubyRootNode extends RootNode {
     private final Source source;
 
     @CompilationFinal private RubyContext cachedContext;
-    @CompilationFinal private RubyBasicObject mainObject;
+    @CompilationFinal private DynamicObject mainObject;
 
     @Child private Node findContextNode;
     @Child private DirectCallNode callNode;

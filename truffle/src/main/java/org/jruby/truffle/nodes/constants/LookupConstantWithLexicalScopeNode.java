@@ -16,7 +16,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -36,7 +36,7 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
         this.name = name;
     }
 
-    public RubyBasicObject getModule() {
+    public DynamicObject getModule() {
         return lexicalScope.getLiveModule();
     }
 
@@ -53,8 +53,8 @@ public abstract class LookupConstantWithLexicalScopeNode extends RubyNode {
         return constant;
     }
 
-    public Assumption getUnmodifiedAssumption(RubyBasicObject module) {
-        return ModuleNodes.getModel(module).getUnmodifiedAssumption();
+    public Assumption getUnmodifiedAssumption(DynamicObject module) {
+        return ModuleNodes.getFields(module).getUnmodifiedAssumption();
     }
 
     protected RubyConstant doLookup() {

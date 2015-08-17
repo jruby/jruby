@@ -44,88 +44,67 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.ExceptionNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
 
 public abstract class IOBufferPrimitiveNodes {
 
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
 
-    private static final String WRITE_SYNCED_IDENTIFIER = "@write_synced";
-    private static final Property WRITE_SYNCED_PROPERTY;
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface IOBufferLayout extends BasicObjectNodes.BasicObjectLayout {
 
-    private static final String STORAGE_IDENTIFIER = "@storage";
-    private static final Property STORAGE_PROPERTY;
+        String WRITE_SYNCED_IDENTIFIER = "@write_synced";
+        String STORAGE_IDENTIFIER = "@storage";
+        String USED_IDENTIFIER = "@used";
+        String START_IDENTIFIER = "@start";
+        String TOTAL_IDENTIFIER = "@total";
 
-    private static final String USED_IDENTIFIER = "@used";
-    private static final Property USED_PROPERTY;
+        DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass, DynamicObject metaClass);
 
-    private static final String START_IDENTIFIER = "@start";
-    private static final Property START_PROPERTY;
+        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, DynamicObject storage, int used, int start, int total);
 
-    private static final String TOTAL_IDENTIFIER = "@total";
-    private static final Property TOTAL_PROPERTY;
+        boolean getWriteSynced(DynamicObject object);
+        void setWriteSynced(DynamicObject object, boolean value);
 
-    private static final DynamicObjectFactory IO_BUFFER_FACTORY;
+        DynamicObject getStorage(DynamicObject object);
+        void setStorage(DynamicObject object, DynamicObject value);
 
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        int getUsed(DynamicObject object);
+        void setUsed(DynamicObject object, int value);
 
-        WRITE_SYNCED_PROPERTY = Property.create(WRITE_SYNCED_IDENTIFIER, allocator.locationForType(boolean.class), 0);
-        STORAGE_PROPERTY = Property.create(STORAGE_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        USED_PROPERTY = Property.create(USED_IDENTIFIER, allocator.locationForType(int.class), 0);
-        START_PROPERTY = Property.create(START_IDENTIFIER, allocator.locationForType(int.class), 0);
-        TOTAL_PROPERTY = Property.create(TOTAL_IDENTIFIER, allocator.locationForType(int.class), 0);
+        int getStart(DynamicObject object);
+        void setStart(DynamicObject object, int value);
 
-        IO_BUFFER_FACTORY = RubyBasicObject.EMPTY_SHAPE
-                .addProperty(WRITE_SYNCED_PROPERTY)
-                .addProperty(STORAGE_PROPERTY)
-                .addProperty(USED_PROPERTY)
-                .addProperty(START_PROPERTY)
-                .addProperty(TOTAL_PROPERTY)
-                .createFactory();
+        int getTotal(DynamicObject object);
+        void setTotal(DynamicObject object, int value);
+
     }
 
-    public static void setWriteSynced(RubyBasicObject io, boolean writeSynced) {
-        assert io.getDynamicObject().getShape().hasProperty(WRITE_SYNCED_IDENTIFIER);
+    public static final IOBufferLayout IO_BUFFER_LAYOUT = IOBufferLayoutImpl.INSTANCE;
 
-        try {
-            WRITE_SYNCED_PROPERTY.set(io.getDynamicObject(), writeSynced, io.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
+    public static void setWriteSynced(DynamicObject io, boolean writeSynced) {
+        IO_BUFFER_LAYOUT.setWriteSynced(io, writeSynced);
     }
 
-    private static RubyBasicObject getStorage(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(STORAGE_IDENTIFIER);
-        return (RubyBasicObject) STORAGE_PROPERTY.get(io.getDynamicObject(), true);
+    private static DynamicObject getStorage(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getStorage(io);
     }
 
-    private static int getUsed(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
-        return (int) USED_PROPERTY.get(io.getDynamicObject(), true);
+    private static int getUsed(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getUsed(io);
     }
 
-    public static void setUsed(RubyBasicObject io, int used) {
-        assert io.getDynamicObject().getShape().hasProperty(USED_IDENTIFIER);
-
-        try {
-            USED_PROPERTY.set(io.getDynamicObject(), used, io.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
+    public static void setUsed(DynamicObject io, int used) {
+        IO_BUFFER_LAYOUT.setUsed(io, used);
     }
 
-    private static int getTotal(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(TOTAL_IDENTIFIER);
-        return (int) TOTAL_PROPERTY.get(io.getDynamicObject(), true);
+    private static int getTotal(DynamicObject io) {
+        return IO_BUFFER_LAYOUT.getTotal(io);
     }
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
@@ -136,13 +115,14 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(RubyBasicObject classToAllocate) {
-            return new RubyBasicObject(classToAllocate, IO_BUFFER_FACTORY.newInstance(
-                    true,
-                    ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
-                    0,
-                    0,
-                    IOBUFFER_SIZE));
+        public DynamicObject allocate(DynamicObject classToAllocate) {
+            return IO_BUFFER_LAYOUT.createIOBuffer(
+                    ClassNodes.CLASS_LAYOUT.getInstanceFactory(classToAllocate),
+                        true,
+                        ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
+                        0,
+                        0,
+                        IOBUFFER_SIZE);
         }
 
     }
@@ -155,7 +135,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public int unshift(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject string, int startPosition) {
+        public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
             setWriteSynced(ioBuffer, false);
 
             final ByteList byteList = StringNodes.getByteList(string);
@@ -187,7 +167,7 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         @Specialization
-        public int fill(VirtualFrame frame, RubyBasicObject ioBuffer, RubyBasicObject io) {
+        public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
             final int fd = IOPrimitiveNodes.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
@@ -247,7 +227,7 @@ public abstract class IOBufferPrimitiveNodes {
             return bytesRead;
         }
 
-        private int left(VirtualFrame frame, RubyBasicObject ioBuffer) {
+        private int left(VirtualFrame frame, DynamicObject ioBuffer) {
             final int total = getTotal(ioBuffer);
             final int used = getUsed(ioBuffer);
             return total - used;

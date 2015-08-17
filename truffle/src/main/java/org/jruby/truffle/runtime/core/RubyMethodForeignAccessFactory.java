@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,7 +29,7 @@ public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     public static ForeignAccess create(RubyContext context) {
-        return ForeignAccess.create(RubyBasicObject.class, new RubyMethodForeignAccessFactory(context));
+        return ForeignAccess.create(DynamicObject.class, new RubyMethodForeignAccessFactory(context));
     }
 
     @Override

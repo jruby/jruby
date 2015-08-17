@@ -15,16 +15,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.util.cli.Options;
 
@@ -47,7 +47,7 @@ public class TraceManager {
         this.context = context;
     }
 
-    public void setTraceFunc(final RubyBasicObject traceFunc) {
+    public void setTraceFunc(final DynamicObject traceFunc) {
         assert RubyGuards.isRubyProc(traceFunc);
 
         if (instruments != null) {
@@ -77,11 +77,11 @@ public class TraceManager {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final RubyBasicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
+                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
 
                 final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-                final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
                 final int line = sourceSection.getStartLine();
 
                 return new AdvancedInstrumentRoot() {
@@ -97,7 +97,7 @@ public class TraceManager {
                             final Object classname = self;
                             final Object id = context.getCoreLibrary().getNilObject();
 
-                            final RubyBinding binding = new RubyBinding(
+                            final DynamicObject binding = BindingNodes.createRubyBinding(
                                     context.getCoreLibrary().getBindingClass(),
                                     self,
                                     frame.materialize());
@@ -145,7 +145,7 @@ public class TraceManager {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final RubyBasicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "call");
+                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "call");
 
                 return new AdvancedInstrumentRoot() {
 
@@ -159,7 +159,7 @@ public class TraceManager {
                             // set_trace_func reports the file and line of the call site.
                             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
                             final String filename = sourceSection.getSource().getName();
-                            final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), filename);
+                            final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), filename);
 
                             if (! INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith("core:")) {
                                 return context.getCoreLibrary().getNilObject();
@@ -171,7 +171,7 @@ public class TraceManager {
                             final Object classname = context.getCoreLibrary().getLogicalClass(self);
                             final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
 
-                            final RubyBinding binding = new RubyBinding(
+                            final DynamicObject binding = BindingNodes.createRubyBinding(
                                     context.getCoreLibrary().getBindingClass(),
                                     self,
                                     frame.materialize());

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -20,7 +21,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
@@ -32,7 +33,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
     private static final int BACKTRACE_MAX_VALUE_LENGTH = Options.TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH.load();
 
     @Override
-    public String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace) {
+    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         try {
             final List<Activation> activations = backtrace.getActivations();
 
@@ -41,7 +42,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             if (exception != null) {
                 assert RubyGuards.isRubyException(exception);
 
-                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getModel(exception.getLogicalClass()).getName()));
+                lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
             }
 
             for (Activation activation : activations) {
@@ -83,7 +84,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         if (CoreSourceSection.isCoreSourceSection(sourceSection)) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
-            builder.append(ModuleNodes.getModel(method.getDeclaringModule()).getName());
+            builder.append(ModuleNodes.getFields(method.getDeclaringModule()).getName());
             builder.append("#");
             builder.append(method.getName());
         } else {

@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -38,11 +38,11 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object start();
     public abstract Object start(int length);
     public abstract Object ensure(Object store, int length);
-    public abstract Object appendArray(Object store, int index, RubyBasicObject array);
+    public abstract Object appendArray(Object store, int index, DynamicObject array);
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
-    public RubyBasicObject finishAndCreate(RubyBasicObject arrayClass, Object store, int length) {
+    public DynamicObject finishAndCreate(DynamicObject arrayClass, Object store, int length) {
         return ArrayNodes.createGeneralArray(arrayClass, finish(store, length), length);
     }
 
@@ -85,7 +85,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             CompilerDirectives.transferToInterpreter();
 
             for (Object value : ArrayNodes.slowToArray(array)) {
@@ -193,7 +193,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {
@@ -280,7 +280,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {
@@ -366,7 +366,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {
@@ -452,7 +452,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             Object otherStore = ArrayNodes.getStore(array);
 
             if (otherStore == null) {

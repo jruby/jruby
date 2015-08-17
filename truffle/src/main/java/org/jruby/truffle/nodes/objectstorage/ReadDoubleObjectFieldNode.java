@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DoubleLocation;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
@@ -28,7 +28,7 @@ public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
     }
 
     @Override
-    public double executeDouble(RubyBasicObject object) throws UnexpectedResultException {
+    public double executeDouble(DynamicObject object) throws UnexpectedResultException {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
@@ -36,17 +36,17 @@ public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
             return next.executeDouble(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.getDouble(object.getDynamicObject(), objectLayout);
+            return storageLocation.getDouble(object, objectLayout);
         } else {
             return next.executeDouble(object);
         }
     }
 
     @Override
-    public Object execute(RubyBasicObject object) {
+    public Object execute(DynamicObject object) {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
@@ -54,10 +54,10 @@ public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
             return next.execute(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
-            return storageLocation.get(object.getDynamicObject(), objectLayout);
+            return storageLocation.get(object, objectLayout);
         } else {
             return next.execute(object);
         }

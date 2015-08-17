@@ -9,12 +9,13 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.ModuleChain;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class AncestorIterator implements Iterator<RubyBasicObject> {
+public class AncestorIterator implements Iterator<DynamicObject> {
     ModuleChain module;
 
     public AncestorIterator(ModuleChain top) {
@@ -27,7 +28,7 @@ public class AncestorIterator implements Iterator<RubyBasicObject> {
     }
 
     @Override
-    public RubyBasicObject next() throws NoSuchElementException {
+    public DynamicObject next() throws NoSuchElementException {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }

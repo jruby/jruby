@@ -21,6 +21,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -52,12 +54,11 @@ import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyModuleModel;
+import org.jruby.truffle.runtime.core.ModuleFields;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -73,19 +74,43 @@ import java.util.Map.Entry;
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
 
+    @Layout
+    public interface ModuleLayout extends BasicObjectNodes.BasicObjectLayout {
+
+        DynamicObjectFactory createModuleShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createModule(DynamicObjectFactory factory, ModuleFields fields);
+
+        boolean isModule(DynamicObject object);
+
+        ModuleFields getFields(DynamicObject object);
+
+        void setFields(DynamicObject object, ModuleFields model);
+
+    }
+
+    public static final ModuleLayout MODULE_LAYOUT = ModuleLayoutImpl.INSTANCE;
+
     /**
      * The slot within a module definition method frame where we store the implicit state that is
      * the current visibility for new methods.
      */
     public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
-    public static RubyModuleModel getModel(RubyBasicObject module) {
-        assert RubyGuards.isRubyModule(module);
-        return ((RubyModule) module).model;
+    public static ModuleFields getFields(DynamicObject module) {
+        return MODULE_LAYOUT.getFields(module);
     }
 
-    public static RubyModule createRubyModule(RubyContext context, RubyBasicObject selfClass, RubyBasicObject lexicalParent, String name, Node currentNode) {
-        return new RubyModule(context, selfClass, lexicalParent, name, currentNode);
+    public static DynamicObject createRubyModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
+        final ModuleFields model = new ModuleFields(context, lexicalParent, name);
+        final DynamicObject module = MODULE_LAYOUT.createModule(ClassNodes.CLASS_LAYOUT.getInstanceFactory(selfClass), model);
+        model.rubyModuleObject = module;
+        if (lexicalParent == null) { // bootstrap or anonymous module
+            ModuleNodes.getFields(module).name = ModuleNodes.getFields(module).givenBaseName;
+        } else {
+            ModuleNodes.getFields(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+        }
+        return module;
     }
 
     @CoreMethod(names = "===", required = 1)
@@ -99,17 +124,17 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean containsInstance(RubyBasicObject module, RubyBasicObject instance) {
-            return includes(instance.getMetaClass(), module);
+        public boolean containsInstance(DynamicObject module, DynamicObject instance) {
+            return includes(BasicObjectNodes.getMetaClass(instance), module);
         }
 
-        @Specialization(guards = "!isRubyBasicObject(instance)")
-        public boolean containsInstance(VirtualFrame frame, RubyBasicObject module, Object instance) {
+        @Specialization(guards = "!isDynamicObject(instance)")
+        public boolean containsInstance(VirtualFrame frame, DynamicObject module, Object instance) {
             return includes(metaClassNode.executeMetaClass(frame, instance), module);
         }
 
         @TruffleBoundary
-        public boolean includes(RubyBasicObject metaClass, RubyBasicObject module) {
+        public boolean includes(DynamicObject metaClass, DynamicObject module) {
             assert RubyGuards.isRubyModule(metaClass);
             assert RubyGuards.isRubyModule(module);
             return ModuleOperations.includesModule(metaClass, module);
@@ -123,10 +148,10 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract Object executeIsSubclassOf(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other);
+        public abstract Object executeIsSubclassOf(VirtualFrame frame, DynamicObject self, DynamicObject other);
 
         @Specialization(guards = "isRubyModule(other)")
-        public Object isSubclassOf(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSubclassOf(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
             if (self == other) {
@@ -145,7 +170,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isRubyModule(other)")
-        public Object isSubclassOfOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSubclassOfOther(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -159,10 +184,10 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract Object executeIsSubclassOfOrEqualTo(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other);
+        public abstract Object executeIsSubclassOfOrEqualTo(VirtualFrame frame, DynamicObject self, DynamicObject other);
 
         @Specialization(guards = "isRubyModule(other)")
-        public Object isSubclassOfOrEqualTo(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSubclassOfOrEqualTo(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
             if (self == other || ModuleOperations.includesModule(self, other)) {
@@ -177,7 +202,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isRubyModule(other)")
-        public Object isSubclassOfOrEqualToOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSubclassOfOrEqualToOther(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -191,10 +216,10 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract Object executeIsSuperclassOf(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other);
+        public abstract Object executeIsSuperclassOf(VirtualFrame frame, DynamicObject self, DynamicObject other);
 
         @Specialization(guards = "isRubyModule(other)")
-        public Object isSuperclassOf(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSuperclassOf(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
             if (self == other) {
@@ -213,7 +238,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isRubyModule(other)")
-        public Object isSuperclassOfOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSuperclassOfOther(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -227,10 +252,10 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract Object executeIsSuperclassOfOrEqualTo(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other);
+        public abstract Object executeIsSuperclassOfOrEqualTo(VirtualFrame frame, DynamicObject self, DynamicObject other);
 
         @Specialization(guards = "isRubyModule(other)")
-        public Object isSuperclassOfOrEqualTo(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSuperclassOfOrEqualTo(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
             if (self == other || ModuleOperations.includesModule(other, self)) {
@@ -245,7 +270,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isRubyModule(other)")
-        public Object isSuperclassOfOrEqualToOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object isSuperclassOfOrEqualToOther(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -262,7 +287,7 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        private Object isSubclass(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        private Object isSubclass(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             if (subclassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
@@ -279,7 +304,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyModule(other)")
-        public Object compare(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object compare(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
             if (self == other) {
@@ -297,7 +322,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "!isRubyModule(other)")
-        public Object compareOther(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
+        public Object compareOther(VirtualFrame frame, DynamicObject self, DynamicObject other) {
             return nil();
         }
 
@@ -326,8 +351,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject aliasMethod(RubyBasicObject module, String newName, String oldName) {
-            getModel(module).alias(this, newName, oldName);
+        public DynamicObject aliasMethod(DynamicObject module, String newName, String oldName) {
+            getFields(module).alias(this, newName, oldName);
             return module;
         }
 
@@ -341,11 +366,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject ancestors(RubyBasicObject self) {
+        public DynamicObject ancestors(DynamicObject self) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyBasicObject> ancestors = new ArrayList<>();
-            for (RubyBasicObject module : getModel(self).ancestors()) {
+            final List<DynamicObject> ancestors = new ArrayList<>();
+            for (DynamicObject module : getFields(self).ancestors()) {
                 ancestors.add(module);
             }
 
@@ -364,12 +389,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyModule(target)")
-        public RubyBasicObject appendFeatures(RubyBasicObject features, RubyBasicObject target) {
+        public DynamicObject appendFeatures(DynamicObject features, DynamicObject target) {
             if (RubyGuards.isRubyClass(features)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            getModel(target).include(this, features);
+            getFields(target).include(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -387,10 +412,10 @@ public abstract class ModuleNodes {
             this.nameToJavaStringNode = NameToJavaStringNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract RubyBasicObject executeGenerateAccessor(VirtualFrame frame, RubyBasicObject module, Object name);
+        public abstract DynamicObject executeGenerateAccessor(VirtualFrame frame, DynamicObject module, Object name);
 
         @Specialization
-        public RubyBasicObject generateAccessor(VirtualFrame frame, RubyBasicObject module, Object nameObject) {
+        public DynamicObject generateAccessor(VirtualFrame frame, DynamicObject module, Object nameObject) {
             final String name = nameToJavaStringNode.executeToJavaString(frame, nameObject);
 
             CompilerDirectives.transferToInterpreter();
@@ -418,7 +443,7 @@ public abstract class ModuleNodes {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
-            getModel(module).addMethod(this, method);
+            getFields(module).addMethod(this, method);
             return nil();
         }
     }
@@ -436,7 +461,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject attr(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject attr(VirtualFrame frame, DynamicObject module, Object[] names) {
             final boolean setter;
             if (names.length == 2 && names[1] instanceof Boolean) {
                 setter = (boolean) names[1];
@@ -469,7 +494,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject attrAccessor(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject attrAccessor(VirtualFrame frame, DynamicObject module, Object[] names) {
             for (Object name : names) {
                 generateGetterNode.executeGenerateAccessor(frame, module, name);
                 generateSetterNode.executeGenerateAccessor(frame, module, name);
@@ -490,7 +515,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject attrReader(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject attrReader(VirtualFrame frame, DynamicObject module, Object[] names) {
             for (Object name : names) {
                 generateGetterNode.executeGenerateAccessor(frame, module, name);
             }
@@ -510,7 +535,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject attrWriter(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject attrWriter(VirtualFrame frame, DynamicObject module, Object[] names) {
             for (Object name : names) {
                 generateSetterNode.executeGenerateAccessor(frame, module, name);
             }
@@ -546,7 +571,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyString(filename)")
-        public RubyBasicObject autoload(RubyBasicObject module, String name, RubyBasicObject filename) {
+        public DynamicObject autoload(DynamicObject module, String name, DynamicObject filename) {
             if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), name, this));
@@ -557,11 +582,11 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(getModel(module).getConstants().get(name) != null)) {
+            if (alreadyLoaded.profile(getFields(module).getConstants().get(name) != null)) {
                 return nil();
             }
 
-            getModel(module).setAutoloadConstant(this, name, filename);
+            getFields(module).setAutoloadConstant(this, name, filename);
 
             return nil();
         }
@@ -575,16 +600,16 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubySymbol(name)")
-        public Object autoloadQuerySymbol(RubyBasicObject module, RubyBasicObject name) {
+        public Object autoloadQuerySymbol(DynamicObject module, DynamicObject name) {
             return autoloadQuery(module, SymbolNodes.getString(name));
         }
 
         @Specialization(guards = "isRubyString(name)")
-        public Object autoloadQueryString(RubyBasicObject module, RubyBasicObject name) {
+        public Object autoloadQueryString(DynamicObject module, DynamicObject name) {
             return autoloadQuery(module, name.toString());
         }
 
-        private Object autoloadQuery(RubyBasicObject module, String name) {
+        private Object autoloadQuery(DynamicObject module, String name) {
             final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), module, name);
 
             if ((constant == null) || ! constant.isAutoload()) {
@@ -606,7 +631,7 @@ public abstract class ModuleNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        protected RubyBasicObject toStr(VirtualFrame frame, Object object) {
+        protected DynamicObject toStr(VirtualFrame frame, Object object) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -615,31 +640,31 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyString(code)")
-        public Object classEval(RubyBasicObject module, RubyBasicObject code, NotProvided file, NotProvided line, NotProvided block) {
+        public Object classEval(DynamicObject module, DynamicObject code, NotProvided file, NotProvided line, NotProvided block) {
             return classEvalSource(module, code, "(eval)");
         }
 
         @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
-        public Object classEval(RubyBasicObject module, RubyBasicObject code, RubyBasicObject file, NotProvided line, NotProvided block) {
+        public Object classEval(DynamicObject module, DynamicObject code, DynamicObject file, NotProvided line, NotProvided block) {
             return classEvalSource(module, code, file.toString());
         }
 
         @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
-        public Object classEval(RubyBasicObject module, RubyBasicObject code, RubyBasicObject file, int line, NotProvided block) {
+        public Object classEval(DynamicObject module, DynamicObject code, DynamicObject file, int line, NotProvided block) {
             return classEvalSource(module, code, file.toString());
         }
 
         @Specialization(guards = "wasProvided(code)")
-        public Object classEval(VirtualFrame frame, RubyBasicObject module, Object code, NotProvided file, NotProvided line, NotProvided block) {
+        public Object classEval(VirtualFrame frame, DynamicObject module, Object code, NotProvided file, NotProvided line, NotProvided block) {
             return classEvalSource(module, toStr(frame, code), file.toString());
         }
 
         @Specialization(guards = {"isRubyString(code)", "wasProvided(file)"})
-        public Object classEval(VirtualFrame frame, RubyBasicObject module, RubyBasicObject code, Object file, NotProvided line, NotProvided block) {
+        public Object classEval(VirtualFrame frame, DynamicObject module, DynamicObject code, Object file, NotProvided line, NotProvided block) {
             return classEvalSource(module, code, toStr(frame, file).toString());
         }
 
-        private Object classEvalSource(RubyBasicObject module, RubyBasicObject code, String file) {
+        private Object classEvalSource(DynamicObject module, DynamicObject code, String file) {
             assert RubyGuards.isRubyString(code);
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
@@ -658,18 +683,18 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object classEval(VirtualFrame frame, RubyBasicObject self, NotProvided code, NotProvided file, NotProvided line, RubyBasicObject block) {
+        public Object classEval(VirtualFrame frame, DynamicObject self, NotProvided code, NotProvided file, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
         @Specialization
-        public Object classEval(RubyBasicObject self, NotProvided code, NotProvided file, NotProvided line, NotProvided block) {
+        public Object classEval(DynamicObject self, NotProvided code, NotProvided file, NotProvided line, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
         @Specialization(guards = {"wasProvided(code)", "isRubyProc(block)"})
-        public Object classEval(RubyBasicObject self, Object code, NotProvided file, NotProvided line, RubyBasicObject block) {
+        public Object classEval(DynamicObject self, Object code, NotProvided file, NotProvided line, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
         }
@@ -686,15 +711,15 @@ public abstract class ModuleNodes {
             yield = new YieldDispatchHeadNode(context);
         }
 
-        public abstract Object executeClassExec(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyBasicObject block);
+        public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object classExec(VirtualFrame frame, RubyBasicObject self, Object[] args, RubyBasicObject block) {
+        public Object classExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self, args);
         }
 
         @Specialization
-        public Object classExec(VirtualFrame frame, RubyBasicObject self, Object[] args, NotProvided block) {
+        public Object classExec(VirtualFrame frame, DynamicObject self, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().noBlockGiven(this));
         }
@@ -719,7 +744,7 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public boolean isClassVariableDefinedString(RubyBasicObject module, String name) {
+        public boolean isClassVariableDefinedString(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
@@ -747,7 +772,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         @TruffleBoundary
-        public Object getClassVariable(RubyBasicObject module, String name) {
+        public Object getClassVariable(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
             final Object value = ModuleOperations.lookupClassVariable(module, name);
@@ -781,7 +806,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         @TruffleBoundary
-        public Object setClassVariable(RubyBasicObject module, String name, Object value) {
+        public Object setClassVariable(DynamicObject module, String name, Object value) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
             ModuleOperations.setClassVariable(module, name, value, this);
@@ -799,10 +824,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject getClassVariables(RubyBasicObject module) {
+        public DynamicObject getClassVariables(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyBasicObject array = ArrayNodes.createEmptyArray(module.getContext().getCoreLibrary().getArrayClass());
+            final DynamicObject array = ArrayNodes.createEmptyArray(BasicObjectNodes.getContext(module).getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, getSymbol(variable));
@@ -828,16 +853,16 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject constants(RubyBasicObject module, boolean inherit) {
+        public DynamicObject constants(DynamicObject module, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyBasicObject> constantsArray = new ArrayList<>();
+            final List<DynamicObject> constantsArray = new ArrayList<>();
 
             final Map<String, RubyConstant> constants;
             if (inherit) {
                 constants = ModuleOperations.getAllConstants(module);
             } else {
-                constants = getModel(module).getConstants();
+                constants = getFields(module).getConstants();
             }
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
@@ -874,7 +899,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isConstDefined(RubyBasicObject module, String fullName, boolean inherit) {
+        public boolean isConstDefined(DynamicObject module, String fullName, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
             return ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this) != null;
         }
@@ -908,34 +933,34 @@ public abstract class ModuleNodes {
 
         // Symbol
         @Specialization(guards = {"inherit", "isRubySymbol(name)"})
-        public Object getConstant(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
+        public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
             return readConstantNode.readConstant(frame, module, SymbolNodes.getString(name));
         }
 
         @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
-        public Object getConstantNoInherit(RubyBasicObject module, RubyBasicObject name, boolean inherit) {
+        public Object getConstantNoInherit(DynamicObject module, DynamicObject name, boolean inherit) {
             return getConstantNoInherit(module, SymbolNodes.getString(name), this);
         }
 
         // String
         @Specialization(guards = { "inherit", "isRubyString(name)", "!isScoped(name)" })
-        public Object getConstantString(VirtualFrame frame, RubyBasicObject module, RubyBasicObject name, boolean inherit) {
+        public Object getConstantString(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
             return readConstantNode.readConstant(frame, module, name.toString());
         }
 
         @Specialization(guards = { "!inherit", "isRubyString(name)", "!isScoped(name)" })
-        public Object getConstantNoInheritString(RubyBasicObject module, RubyBasicObject name, boolean inherit) {
+        public Object getConstantNoInheritString(DynamicObject module, DynamicObject name, boolean inherit) {
             return getConstantNoInherit(module, name.toString(), this);
         }
 
         // Scoped String
         @Specialization(guards = {"isRubyString(fullName)", "isScoped(fullName)"})
-        public Object getConstantScoped(RubyBasicObject module, RubyBasicObject fullName, boolean inherit) {
+        public Object getConstantScoped(DynamicObject module, DynamicObject fullName, boolean inherit) {
             return getConstantScoped(module, fullName.toString(), inherit);
         }
 
         @TruffleBoundary
-        private Object getConstantNoInherit(RubyBasicObject module, String name, Node currentNode) {
+        private Object getConstantNoInherit(DynamicObject module, String name, Node currentNode) {
             final RubyConstant constant = ModuleOperations.lookupConstantWithInherit(getContext(), module, name, false, currentNode);
 
             if (constant == null) {
@@ -947,7 +972,7 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        private Object getConstantScoped(RubyBasicObject module, String fullName, boolean inherit) {
+        private Object getConstantScoped(DynamicObject module, String fullName, boolean inherit) {
             RubyConstant constant = ModuleOperations.lookupScopedConstant(getContext(), module, fullName, inherit, this);
             if (constant == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -958,7 +983,7 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        boolean isScoped(RubyBasicObject name) {
+        boolean isScoped(DynamicObject name) {
             assert RubyGuards.isRubyString(name);
             // TODO (eregon, 27 May 2015): Any way to make this efficient?
             return name.toString().contains("::");
@@ -983,7 +1008,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object methodMissing(RubyBasicObject module, String name) {
+        public Object methodMissing(DynamicObject module, String name) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
         }
 
@@ -1007,14 +1032,14 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object setConstant(RubyBasicObject module, String name, Object value) {
+        public Object setConstant(DynamicObject module, String name, Object value) {
             CompilerDirectives.transferToInterpreter();
 
             if (!IdUtil.isValidConstantName19(name)) {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
-            getModel(module).setConstant(this, name, value);
+            getFields(module).setConstant(this, name, value);
             return value;
         }
 
@@ -1040,52 +1065,52 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject defineMethod(RubyBasicObject module, String name, NotProvided proc, NotProvided block) {
+        public DynamicObject defineMethod(DynamicObject module, String name, NotProvided proc, NotProvided block) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("needs either proc or block", this));
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyProc(block)")
-        public RubyBasicObject defineMethodBlock(RubyBasicObject module, String name, NotProvided proc, RubyBasicObject block) {
+        public DynamicObject defineMethodBlock(DynamicObject module, String name, NotProvided proc, DynamicObject block) {
             return defineMethodProc(module, name, block, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyProc(proc)")
-        public RubyBasicObject defineMethodProc(RubyBasicObject module, String name, RubyBasicObject proc, NotProvided block) {
+        public DynamicObject defineMethodProc(DynamicObject module, String name, DynamicObject proc, NotProvided block) {
             return defineMethod(module, name, proc);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyMethod(methodObject)")
-        public RubyBasicObject defineMethodMethod(RubyBasicObject module, String name, RubyBasicObject methodObject, NotProvided block,
+        public DynamicObject defineMethodMethod(DynamicObject module, String name, DynamicObject methodObject, NotProvided block,
                 @Cached("createCanBindMethodToModuleNode()") CanBindMethodToModuleNode canBindMethodToModuleNode) {
             final InternalMethod method = MethodNodes.getMethod(methodObject);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
                 CompilerDirectives.transferToInterpreter();
-                final RubyBasicObject declaringModule = method.getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ModuleNodes.getModel(declaringModule).isSingleton()) {
+                final DynamicObject declaringModule = method.getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.isSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "can't bind singleton method to a different class", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "class must be a subclass of " + ModuleNodes.getModel(declaringModule).getName(), this));
+                            "class must be a subclass of " + ModuleNodes.getFields(declaringModule).getName(), this));
                 }
             }
 
-            getModel(module).addMethod(this, method.withName(name));
+            getFields(module).addMethod(this, method.withName(name));
             return getSymbol(name);
         }
 
         @Specialization(guards = "isRubyUnboundMethod(method)")
-        public RubyBasicObject defineMethod(VirtualFrame frame, RubyBasicObject module, String name, RubyBasicObject method, NotProvided block) {
+        public DynamicObject defineMethod(VirtualFrame frame, DynamicObject module, String name, DynamicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            final RubyBasicObject origin = UnboundMethodNodes.getOrigin(method);
+            final DynamicObject origin = UnboundMethodNodes.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + getModel(origin).getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + getFields(origin).getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
@@ -1093,7 +1118,7 @@ public abstract class ModuleNodes {
             return addMethod(module, name, UnboundMethodNodes.getMethod(method));
         }
 
-        private RubyBasicObject defineMethod(RubyBasicObject module, String name, RubyBasicObject proc) {
+        private DynamicObject defineMethod(DynamicObject module, String name, DynamicObject proc) {
             CompilerDirectives.transferToInterpreter();
 
             assert RubyGuards.isRubyProc(proc);
@@ -1105,14 +1130,14 @@ public abstract class ModuleNodes {
             return addMethod(module, name, modifiedMethod);
         }
 
-        private RubyBasicObject addMethod(RubyBasicObject module, String name, InternalMethod method) {
+        private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {
             method = method.withName(name);
 
             if (ModuleOperations.isMethodPrivateFromName(name)) {
                 method = method.withVisibility(Visibility.PRIVATE);
             }
 
-            getModel(module).addMethod(this, method);
+            getFields(module).addMethod(this, method);
             return getSymbol(name);
         }
 
@@ -1133,13 +1158,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject extendObject(VirtualFrame frame, RubyBasicObject module, RubyBasicObject object) {
+        public DynamicObject extendObject(VirtualFrame frame, DynamicObject module, DynamicObject object) {
             if (RubyGuards.isRubyClass(module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            getModel(singletonClassNode.executeSingletonClass(frame, object)).include(this, module);
+            getFields(singletonClassNode.executeSingletonClass(frame, object)).include(this, module);
             return module;
         }
 
@@ -1154,9 +1179,9 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        public abstract RubyBasicObject executeInitialize(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block);
+        public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, DynamicObject block);
 
-        void classEval(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block) {
+        void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             assert RubyGuards.isRubyModule(module);
             assert RubyGuards.isRubyProc(block);
 
@@ -1168,12 +1193,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject module, NotProvided block) {
+        public DynamicObject initialize(DynamicObject module, NotProvided block) {
             return module;
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public RubyBasicObject initialize(VirtualFrame frame, RubyBasicObject module, RubyBasicObject block) {
+        public DynamicObject initialize(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             classEval(frame, module, block);
             return module;
         }
@@ -1188,22 +1213,22 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = { "!isRubyClass(self)", "isRubyModule(from)", "!isRubyClass(from)" })
-        public Object initializeCopyModule(RubyBasicObject self, RubyBasicObject from) {
-            getModel(self).initCopy(from);
+        public Object initializeCopyModule(DynamicObject self, DynamicObject from) {
+            getFields(self).initCopy(from);
             return nil();
         }
 
         @Specialization(guards = {"isRubyClass(self)", "isRubyClass(from)"})
-        public Object initializeCopy(RubyBasicObject self, RubyBasicObject from) {
+        public Object initializeCopy(DynamicObject self, DynamicObject from) {
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
-            } else if (getModel(from).isSingleton()) {
+            } else if (ClassNodes.isSingleton(from)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy singleton class", this));
             }
 
-            getModel(self).initCopy(from);
+            getFields(self).initCopy(from);
             return nil();
         }
 
@@ -1217,7 +1242,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject included(Object subclass) {
+        public DynamicObject included(Object subclass) {
             return nil();
         }
 
@@ -1231,13 +1256,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject includedModules(RubyBasicObject module) {
+        public DynamicObject includedModules(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyBasicObject> modules = new ArrayList<>();
+            final List<DynamicObject> modules = new ArrayList<>();
 
-            for (RubyBasicObject included : getModel(module).ancestors()) {
-                if (getModel(included).isOnlyAModule() && included != module) {
+            for (DynamicObject included : getFields(module).ancestors()) {
+                if (RubyGuards.isRubyModule(getFields(included).rubyModuleObject) && !RubyGuards.isRubyClass(getFields(included).rubyModuleObject) && included != module) {
                     modules.add(included);
                 }
             }
@@ -1268,14 +1293,14 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isMethodDefined(RubyBasicObject module, String name, boolean inherit) {
+        public boolean isMethodDefined(DynamicObject module, String name, boolean inherit) {
             CompilerDirectives.transferToInterpreter();
 
             final InternalMethod method;
             if (inherit) {
                 method = ModuleOperations.lookupMethod(module, name);
             } else {
-                method = getModel(module).getMethods().get(name);
+                method = getFields(module).getMethods().get(name);
             }
 
             return method != null && !method.getVisibility().isPrivate();
@@ -1294,7 +1319,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject moduleFunction(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject moduleFunction(VirtualFrame frame, DynamicObject module, Object[] names) {
             if (RubyGuards.isRubyClass(module) && !getContext().getCoreLibrary().isLoadingRubyCore()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("module_function must be called for modules", this));
@@ -1313,14 +1338,14 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object name(RubyBasicObject module) {
+        public Object name(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            if (!getModel(module).hasPartialName()) {
+            if (!getFields(module).hasPartialName()) {
                 return nil();
             }
 
-            return createString(getModel(module).getName());
+            return createString(getFields(module).getName());
         }
     }
 
@@ -1332,17 +1357,17 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject nesting() {
+        public DynamicObject nesting() {
             CompilerDirectives.transferToInterpreter();
 
-            final List<RubyBasicObject> modules = new ArrayList<>();
+            final List<DynamicObject> modules = new ArrayList<>();
 
             InternalMethod method = RubyCallStack.getCallingMethod(getContext());
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
-            RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
+            DynamicObject object = getContext().getCoreLibrary().getObjectClass();
 
             while (lexicalScope != null) {
-                final RubyBasicObject enclosing = lexicalScope.getLiveModule();
+                final DynamicObject enclosing = lexicalScope.getLiveModule();
                 if (enclosing == object)
                     break;
                 modules.add(enclosing);
@@ -1363,10 +1388,10 @@ public abstract class ModuleNodes {
             setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PUBLIC, null, null);
         }
 
-        public abstract RubyBasicObject executePublic(VirtualFrame frame, RubyBasicObject module, Object[] args);
+        public abstract DynamicObject executePublic(VirtualFrame frame, DynamicObject module, Object[] args);
 
         @Specialization
-        public RubyBasicObject doPublic(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject doPublic(VirtualFrame frame, DynamicObject module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1385,8 +1410,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject publicClassMethod(VirtualFrame frame, RubyBasicObject module, Object[] names) {
-            final RubyBasicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+        public DynamicObject publicClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
+            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1406,10 +1431,10 @@ public abstract class ModuleNodes {
             setVisibilityNode = SetVisibilityNodeGen.create(context, sourceSection, Visibility.PRIVATE, null, null);
         }
 
-        public abstract RubyBasicObject executePrivate(VirtualFrame frame, RubyBasicObject module, Object[] args);
+        public abstract DynamicObject executePrivate(VirtualFrame frame, DynamicObject module, Object[] args);
 
         @Specialization
-        public RubyBasicObject doPrivate(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject doPrivate(VirtualFrame frame, DynamicObject module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1426,12 +1451,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(guards = "isRubyModule(target)")
-        public RubyBasicObject prependFeatures(RubyBasicObject features, RubyBasicObject target) {
+        public DynamicObject prependFeatures(DynamicObject features, DynamicObject target) {
             if (RubyGuards.isRubyClass(features)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
             }
-            getModel(target).prepend(this, features);
+            getFields(target).prepend(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -1450,8 +1475,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject privateClassMethod(VirtualFrame frame, RubyBasicObject module, Object[] names) {
-            final RubyBasicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+        public DynamicObject privateClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
+            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1478,7 +1503,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isPrivateMethodDefined(RubyBasicObject module, String name) {
+        public boolean isPrivateMethodDefined(DynamicObject module, String name) {
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility().isPrivate();
         }
@@ -1502,10 +1527,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject protectedInstanceMethods(RubyBasicObject module, boolean includeAncestors) {
+        public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getModel(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
 
@@ -1526,7 +1551,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isProtectedMethodDefined(RubyBasicObject module, String name) {
+        public boolean isProtectedMethodDefined(DynamicObject module, String name) {
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility().isProtected();
         }
@@ -1550,11 +1575,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject privateInstanceMethods(RubyBasicObject module, boolean includeAncestors) {
+        public DynamicObject privateInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getModel(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
 
@@ -1575,7 +1600,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject publicInstanceMethod(RubyBasicObject module, String name) {
+        public DynamicObject publicInstanceMethod(DynamicObject module, String name) {
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
@@ -1609,11 +1634,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject publicInstanceMethods(RubyBasicObject module, boolean includeAncestors) {
+        public DynamicObject publicInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getModel(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
 
@@ -1634,7 +1659,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public boolean isPublicMethodDefined(RubyBasicObject module, String name) {
+        public boolean isPublicMethodDefined(DynamicObject module, String name) {
             InternalMethod method = ModuleOperations.lookupMethod(module, name);
             return method != null && method.getVisibility() == Visibility.PUBLIC;
         }
@@ -1658,11 +1683,11 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject instanceMethods(RubyBasicObject module, boolean includeAncestors) {
+        public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getModel(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
 
@@ -1683,7 +1708,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject instanceMethod(RubyBasicObject module, String name) {
+        public DynamicObject instanceMethod(DynamicObject module, String name) {
             // TODO(CS, 11-Jan-15) cache this lookup
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
@@ -1708,10 +1733,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject privateConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+        public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                getModel(module).changeConstantVisibility(this, name, true);
+                getFields(module).changeConstantVisibility(this, name, true);
             }
             return module;
         }
@@ -1728,10 +1753,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject publicConstant(VirtualFrame frame, RubyBasicObject module, Object[] args) {
+        public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                getModel(module).changeConstantVisibility(this, name, false);
+                getFields(module).changeConstantVisibility(this, name, false);
             }
             return module;
         }
@@ -1748,7 +1773,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject doProtected(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject doProtected(VirtualFrame frame, DynamicObject module, Object[] names) {
             return setVisibilityNode.executeSetVisibility(frame, module, names);
         }
 
@@ -1772,9 +1797,9 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object removeClassVariableString(RubyBasicObject module, String name) {
+        public Object removeClassVariableString(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
-            return getModel(module).removeClassVariable(this, name);
+            return getFields(module).removeClassVariable(this, name);
         }
 
     }
@@ -1796,8 +1821,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        Object removeConstant(RubyBasicObject module, String name) {
-            RubyConstant oldConstant = getModel(module).removeConstant(this, name);
+        Object removeConstant(DynamicObject module, String name) {
+            RubyConstant oldConstant = getFields(module).removeConstant(this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
@@ -1823,19 +1848,19 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject removeMethods(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject removeMethods(VirtualFrame frame, DynamicObject module, Object[] names) {
             for (Object name : names) {
                 removeMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
             return module;
         }
 
-        private void removeMethod(VirtualFrame frame, RubyBasicObject module, String name) {
+        private void removeMethod(VirtualFrame frame, DynamicObject module, String name) {
             raiseIfFrozenNode.execute(frame);
 
             CompilerDirectives.transferToInterpreter();
-            if (getModel(module).getMethods().containsKey(name)) {
-                getModel(module).removeMethod(name);
+            if (getFields(module).getMethods().containsKey(name)) {
+                getFields(module).removeMethod(name);
                 methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1853,10 +1878,10 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject module) {
+        public DynamicObject toS(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            return createString(getModel(module).getName());
+            return createString(getFields(module).getName());
         }
 
     }
@@ -1876,20 +1901,20 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyBasicObject undefMethods(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject undefMethods(VirtualFrame frame, DynamicObject module, Object[] names) {
             for (Object name : names) {
                 undefMethod(frame, module, nameToJavaStringNode.executeToJavaString(frame, name));
             }
             return module;
         }
 
-        private void undefMethod(VirtualFrame frame, RubyBasicObject module, String name) {
+        private void undefMethod(VirtualFrame frame, DynamicObject module, String name) {
             raiseIfFrozenNode.execute(frame);
 
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method != null) {
-                getModel(module).undefMethod(this, method);
+                getFields(module).undefMethod(this, method);
                 methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1912,10 +1937,10 @@ public abstract class ModuleNodes {
             this.setMethodVisibilityNode = SetMethodVisibilityNodeGen.create(context, sourceSection, visibility, null, null);
         }
 
-        public abstract RubyBasicObject executeSetVisibility(VirtualFrame frame, RubyBasicObject module, Object[] arguments);
+        public abstract DynamicObject executeSetVisibility(VirtualFrame frame, DynamicObject module, Object[] arguments);
 
         @Specialization
-        public RubyBasicObject setVisibility(VirtualFrame frame, RubyBasicObject module, Object[] names) {
+        public DynamicObject setVisibility(VirtualFrame frame, DynamicObject module, Object[] names) {
             if (names.length == 0) {
                 setCurrentVisibility(visibility);
             } else {
@@ -1957,13 +1982,13 @@ public abstract class ModuleNodes {
             this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         }
 
-        public abstract RubyBasicObject executeSetMethodVisibility(VirtualFrame frame, RubyBasicObject module, Object name);
+        public abstract DynamicObject executeSetMethodVisibility(VirtualFrame frame, DynamicObject module, Object name);
 
         @Specialization
-        public RubyBasicObject setMethodVisibility(VirtualFrame frame, RubyBasicObject module, Object name) {
+        public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
-            final InternalMethod method = getModel(module).deepMethodSearch(methodName);
+            final InternalMethod method = getFields(module).deepMethodSearch(methodName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1977,10 +2002,10 @@ public abstract class ModuleNodes {
              * to this module.
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
-                getModel(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                getModel(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
+                getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
-                getModel(module).addMethod(this, method.withVisibility(visibility));
+                getFields(module).addMethod(this, method.withVisibility(visibility));
             }
 
             return module;
@@ -1988,12 +2013,18 @@ public abstract class ModuleNodes {
 
     }
 
-    public static class ModuleAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return createRubyModule(context, rubyClass, null, null, currentNode);
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return createRubyModule(getContext(), rubyClass, null, null, this);
         }
 
     }
+
 }

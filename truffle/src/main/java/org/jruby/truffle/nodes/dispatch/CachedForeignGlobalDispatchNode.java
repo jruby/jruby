@@ -17,7 +17,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
 
@@ -47,7 +47,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (receiverObject instanceof  RubyBasicObject) {
+        if (receiverObject instanceof  DynamicObject) {
             Object[] arguments = (Object[]) argumentsObjects;
             if (arguments.length == numberOfArguments) {
                 Object[] args = new Object[arguments.length + 2];

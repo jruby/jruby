@@ -13,7 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
@@ -25,13 +26,13 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final Shape currentShape = object.getDynamicObject().getShape();
+        final Shape currentShape = object.getShape();
 
         // If the current shape is obsolete, add a node to migrate
-        if (object.getDynamicObject().updateShape()) {
+        if (object.updateShape()) {
             final MigrateNode migrateNode = new MigrateNode(currentShape, this);
             replace(migrateNode);
             migrateNode.execute(object, value);
@@ -44,13 +45,13 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
         final Property currentProperty = currentShape.getProperty(name);
         final Property newProperty;
 
-        if (currentProperty != null && currentProperty.getLocation().canSet(object.getDynamicObject(), value)) {
+        if (currentProperty != null && currentProperty.getLocation().canSet(object, value)) {
             newShape = currentShape;
             newProperty = currentProperty;
-            newProperty.setSafe(object.getDynamicObject(), value, null);
+            newProperty.setSafe(object, value, null);
         } else {
-            RubyBasicObject.setInstanceVariable(object, name, value);
-            newShape = object.getDynamicObject().getShape();
+            BasicObjectNodes.setInstanceVariable(object, name, value);
+            newShape = object.getShape();
             newProperty = newShape.getProperty(name);
 
             if (newProperty == null) {

@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
 
@@ -25,7 +25,7 @@ public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
     }
 
     @Override
-    public boolean isSet(RubyBasicObject object) {
+    public boolean isSet(DynamicObject object) {
         try {
             objectLayout.getValidAssumption().check();
         } catch (InvalidAssumptionException e) {
@@ -33,7 +33,7 @@ public abstract class ReadObjectFieldChainNode extends ReadObjectFieldNode {
             return next.isSet(object);
         }
 
-        final boolean condition = object.getObjectLayout() == objectLayout;
+        final boolean condition = object.getShape() == objectLayout;
 
         if (condition) {
             return true;

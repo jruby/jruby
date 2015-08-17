@@ -52,14 +52,9 @@ import jnr.posix.Times;
 
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
@@ -68,8 +63,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -109,7 +103,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object doCatch(VirtualFrame frame, Object tag, RubyBasicObject block) {
+        public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -137,7 +131,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGCStart() {
+        public DynamicObject vmGCStart() {
             System.gc();
             return nil();
         }
@@ -152,8 +146,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGetModuleName(RubyBasicObject module) {
-            return createString(ModuleNodes.getModel(module).getName());
+        public DynamicObject vmGetModuleName(DynamicObject module) {
+            return createString(ModuleNodes.getFields(module).getName());
         }
 
     }
@@ -166,7 +160,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(username)")
-        public RubyBasicObject vmGetUserHome(RubyBasicObject username) {
+        public DynamicObject vmGetUserHome(DynamicObject username) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
             final Passwd passwd = getContext().getPosix().getpwnam(username.toString());
@@ -190,7 +184,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmObjectClass(VirtualFrame frame, Object object) {
+        public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
             return classNode.executeGetClass(frame, object);
         }
 
@@ -224,7 +218,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyModule(rubyClass)")
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyBasicObject rubyClass) {
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, DynamicObject rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
         }
 
@@ -271,7 +265,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyException(exception)")
-        public RubyBasicObject vmRaiseException(RubyBasicObject exception) {
+        public DynamicObject vmRaiseException(DynamicObject exception) {
             throw new RaiseException(exception);
         }
     }
@@ -299,7 +293,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return RubyGuards.isRubyClass(object) && ModuleNodes.getModel(((RubyClass) object)).isSingleton();
+            return RubyGuards.isRubyClass(object) && ClassNodes.isSingleton((DynamicObject) object);
         }
 
     }
@@ -341,7 +335,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject times() {
+        public DynamicObject times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
             Times tms = posix().times();
@@ -394,7 +388,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isRubyString(action)"})
-        public boolean watchSignal(RubyBasicObject signalName, RubyBasicObject action) {
+        public boolean watchSignal(DynamicObject signalName, DynamicObject action) {
             if (!action.toString().equals("DEFAULT")) {
                 throw new UnsupportedOperationException();
             }
@@ -406,7 +400,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isNil(nil)"})
-        public boolean watchSignal(RubyBasicObject signalName, Object nil) {
+        public boolean watchSignal(DynamicObject signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
@@ -414,7 +408,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isRubyProc(proc)"})
-        public boolean watchSignalProc(RubyBasicObject signalName, RubyBasicObject proc) {
+        public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
             Signal signal = new Signal(signalName.toString());
 
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
@@ -432,7 +426,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
-        public Object get(RubyBasicObject key) {
+        public Object get(DynamicObject key) {
             final Object value = getContext().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
@@ -453,14 +447,14 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(section)")
-        public RubyBasicObject getSection(RubyBasicObject section) {
-            final List<RubyBasicObject> sectionKeyValues = new ArrayList<>();
+        public DynamicObject getSection(DynamicObject section) {
+            final List<DynamicObject> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
                 Object value = getContext().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
-                    stringValue = BignumNodes.getBigIntegerValue((RubyBasicObject) value).toString();
+                    stringValue = BignumNodes.getBigIntegerValue((DynamicObject) value).toString();
                 } else {
                     // This toString() is fine as we only have boolean, int, long and RubyString in config.
                     stringValue = value.toString();
@@ -552,11 +546,10 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject setClass(RubyBasicObject object, RubyBasicObject newClass) {
-            // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in RubyBasicObject?
-            CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
-            object.unsafeChangeLogicalClass(newClass);
+        @Specialization(guards = "isRubyClass(newClass)")
+        public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
+            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(object, newClass);
+            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(object, newClass);
             return object;
         }
 

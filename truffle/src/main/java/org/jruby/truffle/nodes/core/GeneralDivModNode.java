@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 
@@ -38,35 +38,35 @@ public class GeneralDivModNode extends RubyNode {
         fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
     }
 
-    public RubyBasicObject execute(long a, long b) {
+    public DynamicObject execute(long a, long b) {
         return divMod(a, b);
     }
 
-    public RubyBasicObject execute(long a, BigInteger b) {
+    public DynamicObject execute(long a, BigInteger b) {
         return divMod(BigInteger.valueOf(a), b);
     }
 
-    public RubyBasicObject execute(long a, double b) {
+    public DynamicObject execute(long a, double b) {
         return divMod(a, b);
     }
 
-    public RubyBasicObject execute(BigInteger a, long b) {
+    public DynamicObject execute(BigInteger a, long b) {
         return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyBasicObject execute(BigInteger a, BigInteger b) {
+    public DynamicObject execute(BigInteger a, BigInteger b) {
         return divMod(a, b);
     }
 
-    public RubyBasicObject execute(double a, long b) {
+    public DynamicObject execute(double a, long b) {
         return divMod(a, b);
     }
 
-    public RubyBasicObject execute(double a, BigInteger b) {
+    public DynamicObject execute(double a, BigInteger b) {
         return divMod(a, b.doubleValue());
     }
 
-    public RubyBasicObject execute(double a, double b) {
+    public DynamicObject execute(double a, double b) {
         return divMod(a, b);
     }
 
@@ -76,7 +76,7 @@ public class GeneralDivModNode extends RubyNode {
      */
 
     @TruffleBoundary
-    private RubyBasicObject divMod(long a, long b) {
+    private DynamicObject divMod(long a, long b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -119,7 +119,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject divMod(double a, double b) {
+    private DynamicObject divMod(double a, double b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -144,7 +144,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject divMod(BigInteger a, BigInteger b) {
+    private DynamicObject divMod(BigInteger a, BigInteger b) {
         if (b.signum() == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -163,7 +163,7 @@ public class GeneralDivModNode extends RubyNode {
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
-    public RubyBasicObject create(BigInteger value) {
+    public DynamicObject create(BigInteger value) {
         return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
     }
 

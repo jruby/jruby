@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -25,7 +24,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.concurrent.Callable;
@@ -90,8 +89,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (receiverObject instanceof RubyBasicObject) {
-                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                    if (receiverObject instanceof DynamicObject) {
+                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     }
                     else if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
@@ -118,7 +117,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final RubyBasicObject callerClass;
+        final DynamicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -136,14 +135,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (receiverObject instanceof Boolean) {
             final Assumption falseUnmodifiedAssumption =
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
 
             final InternalMethod falseMethod =
                     lookup(callerClass, false, methodNameString,
                             ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption =
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
 
             final InternalMethod trueMethod =
                     lookup(callerClass, true, methodNameString,
@@ -160,17 +159,17 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    ModuleNodes.getModel(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
+                    ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
         }
     }
 
-    private DispatchNode doRubyBasicObject(
+    private DispatchNode doDynamicObject(
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
             Object methodName,
             Object argumentsObjects) {
-        final RubyBasicObject callerClass;
+        final DynamicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -201,7 +200,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else if (RubyGuards.isRubyString(methodName)) {
             return methodName.toString();
         } else if (RubyGuards.isRubySymbol(methodName)) {
-            return SymbolNodes.getString((RubyBasicObject) methodName);
+            return SymbolNodes.getString((DynamicObject) methodName);
         } else {
             throw new UnsupportedOperationException();
         }

@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.cli.Options;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
@@ -30,7 +30,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     @Child private DirectCallNode callNode;
     @Child private YieldDispatchNode next;
 
-    public CachedYieldDispatchNode(RubyContext context, RubyBasicObject block, YieldDispatchNode next) {
+    public CachedYieldDispatchNode(RubyContext context, DynamicObject block, YieldDispatchNode next) {
         super(context);
 
         assert RubyGuards.isRubyProc(block);
@@ -50,7 +50,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    protected boolean guard(RubyBasicObject block) {
+    protected boolean guard(DynamicObject block) {
         return ProcNodes.getCallTargetForBlocks(block) == callNode.getCallTarget();
     }
 
@@ -60,7 +60,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyBasicObject block, Object self, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject modifiedBlock, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
         assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
 

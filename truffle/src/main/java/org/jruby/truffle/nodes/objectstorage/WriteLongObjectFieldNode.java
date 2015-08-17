@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.LongLocation;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
@@ -32,7 +32,7 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, long value) {
+    public void execute(DynamicObject object, long value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -42,12 +42,12 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.getObjectLayout() == expectedLayout) {
+        if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.setLong(object.getDynamicObject(), value, expectedLayout);
+                    storageLocation.setLong(object, value, expectedLayout);
                 } else {
-                    storageLocation.setLong(object.getDynamicObject(), value, expectedLayout, newLayout);
+                    storageLocation.setLong(object, value, expectedLayout, newLayout);
                 }
             } catch (FinalLocationException e) {
                 replace(next, "!final").execute(object, value);
@@ -58,12 +58,12 @@ public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, int value) {
+    public void execute(DynamicObject object, int value) {
         execute(object, (long) value);
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         if (value instanceof Long) {
             execute(object, (long) value);
         } else if (value instanceof Integer) {

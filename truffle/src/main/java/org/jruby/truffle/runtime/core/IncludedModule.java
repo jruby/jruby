@@ -10,18 +10,21 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.ModuleChain;
 
 /**
  * A reference to an included RubyModule.
  */
 public class IncludedModule implements ModuleChain {
-    private final RubyBasicObject includedModule;
+    private final DynamicObject includedModule;
     @CompilerDirectives.CompilationFinal
     private ModuleChain parentModule;
 
-    public IncludedModule(RubyBasicObject includedModule, ModuleChain parentModule) {
+    public IncludedModule(DynamicObject includedModule, ModuleChain parentModule) {
         assert RubyGuards.isRubyModule(includedModule);
         this.includedModule = includedModule;
         this.parentModule = parentModule;
@@ -33,7 +36,7 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public RubyBasicObject getActualModule() {
+    public DynamicObject getActualModule() {
         return includedModule;
     }
 
@@ -43,7 +46,8 @@ public class IncludedModule implements ModuleChain {
     }
 
     @Override
-    public void insertAfter(RubyBasicObject module) {
+    public void insertAfter(DynamicObject module) {
         parentModule = new IncludedModule(module, parentModule);
     }
+
 }

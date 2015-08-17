@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Casts a value into a Ruby Float (double).
@@ -42,9 +42,9 @@ public abstract class NumericToFloatNode extends RubyNode {
         this.method = method;
     }
 
-    public abstract double executeDouble(VirtualFrame frame, RubyBasicObject value);
+    public abstract double executeDouble(VirtualFrame frame, DynamicObject value);
 
-    private Object callToFloat(VirtualFrame frame, RubyBasicObject value) {
+    private Object callToFloat(VirtualFrame frame, DynamicObject value) {
         if (toFloatCallNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             toFloatCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
@@ -53,7 +53,7 @@ public abstract class NumericToFloatNode extends RubyNode {
     }
 
     @Specialization(guards = "isNumeric(frame, value)")
-    protected double castNumeric(VirtualFrame frame, RubyBasicObject value) {
+    protected double castNumeric(VirtualFrame frame, DynamicObject value) {
         final Object result = callToFloat(frame, value);
 
         if (result instanceof Double) {

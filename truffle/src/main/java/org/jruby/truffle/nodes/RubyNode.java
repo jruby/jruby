@@ -18,11 +18,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
+import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.BindingNodes;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -30,11 +33,11 @@ import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyHash;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 @TypeSystemReference(RubyTypes.class)
@@ -122,23 +125,11 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    // If you try to make this RubyBasicObject things break in the DSL
-
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
+    public DynamicObject executeDynamicObject(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (RubyGuards.isRubyHash(value)) {
-            return (RubyHash) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyBasicObject) {
-            return (RubyBasicObject) value;
+        if (value instanceof DynamicObject) {
+            return (DynamicObject) value;
         } else {
             throw new UnexpectedResultException(value);
         }
@@ -166,64 +157,56 @@ public abstract class RubyNode extends Node {
 
     // Helpers methods for terseness
 
-    protected RubyBasicObject nil() {
+    protected DynamicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public RubyBasicObject getSymbol(String name) {
+    public DynamicObject getSymbol(String name) {
         return getContext().getSymbol(name);
     }
 
-    public RubyBasicObject getSymbol(ByteList name) {
+    public DynamicObject getSymbol(ByteList name) {
         return getContext().getSymbol(name);
     }
 
-    protected RubyBasicObject createEmptyString() {
+    protected DynamicObject createEmptyString() {
         return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
     }
 
-    protected RubyBasicObject createString(String string) {
+    protected DynamicObject createString(String string) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
     }
 
-    protected RubyBasicObject createString(String string, Encoding encoding) {
+    protected DynamicObject createString(String string, Encoding encoding) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string, encoding);
     }
 
-    protected RubyBasicObject createString(byte[] bytes) {
+    protected DynamicObject createString(byte[] bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
-    protected RubyBasicObject createString(ByteBuffer bytes) {
+    protected DynamicObject createString(ByteBuffer bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
-    protected RubyBasicObject createString(ByteList bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+    protected DynamicObject createString(ByteList bytes) {
+        return StringNodes.createString(getContext().getCoreLibrary().getStringFactory(), bytes);
     }
 
-    protected RubyBasicObject createEmptyArray() {
-        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
+    protected DynamicObject createEmptyArray() {
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
-    protected RubyBasicObject createArray(Object... store) {
-        return createArray(store, store.length);
+    protected DynamicObject createArrayWith(Object... store) {
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
     }
 
-    protected RubyBasicObject createArray(int[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+    protected DynamicObject createArray(Object store, int size) {
+        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
-    protected RubyBasicObject createArray(long[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
-    }
-
-    protected RubyBasicObject createArray(double[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
-    }
-
-    protected RubyBasicObject createArray(Object[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
+    protected DynamicObject createBignum(BigInteger value) {
+        return BignumNodes.BIGNUM_LAYOUT.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     protected POSIX posix() {
@@ -236,6 +219,12 @@ public abstract class RubyNode extends Node {
 
     protected static int getCacheLimit() {
         return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+    }
+
+    // Helper methods for caching
+
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
+        return ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass);
     }
 
     // Instrumentation
@@ -281,7 +270,7 @@ public abstract class RubyNode extends Node {
     protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
 
-        final RubyBasicObject binding = BindingNodes.createRubyBinding(
+        final DynamicObject binding = BindingNodes.createRubyBinding(
                 getContext().getCoreLibrary().getBindingClass(),
                 self,
                 evalFrame);

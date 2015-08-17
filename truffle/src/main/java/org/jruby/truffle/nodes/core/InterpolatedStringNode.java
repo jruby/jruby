@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * A list of expressions to build up into a string.
@@ -67,7 +67,7 @@ public final class InterpolatedStringNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject concat(Object[] strings) {
+    private DynamicObject concat(Object[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
         org.jruby.RubyString builder = null;
@@ -76,12 +76,12 @@ public final class InterpolatedStringNode extends RubyNode {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = getContext().toJRubyString((RubyBasicObject) string);
+                builder = getContext().toJRubyString((DynamicObject) string);
             } else {
                 try {
                     builder.append19(getContext().toJRuby(string));
                 } catch (org.jruby.exceptions.RaiseException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), StringNodes.getByteList((RubyBasicObject) string).getEncoding().getCharsetName(), this));
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), StringNodes.getByteList((DynamicObject) string).getEncoding().getCharsetName(), this));
                 }
             }
         }

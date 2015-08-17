@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 public class StringLiteralNode extends RubyNode {
@@ -30,8 +30,8 @@ public class StringLiteralNode extends RubyNode {
     }
 
     @Override
-    public RubyBasicObject execute(VirtualFrame frame) {
-        final RubyBasicObject string = createString(bytes.dup());
+    public DynamicObject execute(VirtualFrame frame) {
+        final DynamicObject string = createString(bytes.dup());
         StringNodes.setCodeRange(string, codeRange);
         return string;
     }

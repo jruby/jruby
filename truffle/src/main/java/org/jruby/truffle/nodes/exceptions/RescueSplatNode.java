@@ -13,11 +13,11 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of
@@ -34,15 +34,15 @@ public class RescueSplatNode extends RescueNode {
     }
 
     @Override
-    public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
+    public boolean canHandle(VirtualFrame frame, DynamicObject exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject handlingClasses = (RubyBasicObject) handlingClassesArray.execute(frame);
+        final DynamicObject handlingClasses = (DynamicObject) handlingClassesArray.execute(frame);
 
-        final RubyBasicObject exceptionRubyClass = exception.getLogicalClass();
+        final DynamicObject exceptionRubyClass = BasicObjectNodes.getLogicalClass(exception);
 
         for (Object handlingClass : ArrayNodes.slowToArray(handlingClasses)) {
-            if (ModuleOperations.assignableTo(exceptionRubyClass, (RubyClass) handlingClass)) {
+            if (ModuleOperations.assignableTo(exceptionRubyClass, (DynamicObject) handlingClass)) {
                 return true;
             }
         }

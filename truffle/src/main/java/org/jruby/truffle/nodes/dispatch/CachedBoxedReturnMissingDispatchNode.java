@@ -13,34 +13,35 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final RubyBasicObject expectedClass;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyBasicObject expectedClass,
+            DynamicObject expectedClass,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override
@@ -68,7 +69,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }

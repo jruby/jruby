@@ -19,7 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Map;
 
@@ -56,7 +56,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
                 return kwarg;
             }
         } else {
-            final RubyBasicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
             if (defaultProfile.profile(hash == null)) {
                 return defaultValue.execute(frame);
@@ -73,7 +73,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private Object lookupKeywordInHash(RubyBasicObject hash) {
+    private Object lookupKeywordInHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
         for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
