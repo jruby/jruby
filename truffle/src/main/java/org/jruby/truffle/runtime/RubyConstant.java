@@ -12,16 +12,16 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerAsserts;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class RubyConstant {
 
-    private final RubyBasicObject declaringModule;
+    private final DynamicObject declaringModule;
     private final Object value;
     private boolean isPrivate;
     private final boolean autoload;
 
-    public RubyConstant(RubyBasicObject declaringModule, Object value, boolean isPrivate, boolean autoload) {
+    public RubyConstant(DynamicObject declaringModule, Object value, boolean isPrivate, boolean autoload) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.declaringModule = declaringModule;
         this.value = value;
@@ -29,7 +29,7 @@ public class RubyConstant {
         this.autoload = autoload;
     }
 
-    public RubyBasicObject getDeclaringModule() {
+    public DynamicObject getDeclaringModule() {
         return declaringModule;
     }
 
@@ -45,7 +45,7 @@ public class RubyConstant {
         this.isPrivate = isPrivate;
     }
 
-    public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, RubyBasicObject module) {
+    public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, DynamicObject module) {
         CompilerAsserts.neverPartOfCompilation();
 
         assert RubyGuards.isRubyModule(module);
@@ -67,7 +67,7 @@ public class RubyConstant {
 
         // Look in ancestors
         if (RubyGuards.isRubyClass(module)) {
-            for (RubyBasicObject included : ModuleNodes.getModel(module).parentAncestors()) {
+            for (DynamicObject included : ModuleNodes.getFields(module).parentAncestors()) {
                 if (included == declaringModule) {
                     return true;
                 }

@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class MigrateNode extends WriteObjectFieldChainNode {
 
@@ -22,9 +22,9 @@ public class MigrateNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
-        if (object.getObjectLayout() == expectedShape) {
-            object.getDynamicObject().updateShape();
+    public void execute(DynamicObject object, Object value) {
+        if (object.getShape() == expectedShape) {
+            object.updateShape();
         }
 
         next.execute(object, value);

@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..
@@ -30,22 +30,22 @@ public abstract class EncodingPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject encodingGetObjectEncodingString(RubyBasicObject string) {
+        public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
             return EncodingNodes.getEncoding(StringNodes.getByteList(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
-        public RubyBasicObject encodingGetObjectEncodingSymbol(RubyBasicObject symbol) {
+        public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
             return EncodingNodes.getEncoding(SymbolNodes.getByteList(symbol).getEncoding());
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
-        public RubyBasicObject encodingGetObjectEncoding(RubyBasicObject encoding) {
+        public DynamicObject encodingGetObjectEncoding(DynamicObject encoding) {
             return encoding;
         }
 
         @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
-        public RubyBasicObject encodingGetObjectEncodingNil(RubyBasicObject object) {
+        public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();
         }

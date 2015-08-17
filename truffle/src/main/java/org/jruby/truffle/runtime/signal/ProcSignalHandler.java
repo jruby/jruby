@@ -14,7 +14,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -23,9 +23,9 @@ import sun.misc.SignalHandler;
 public class ProcSignalHandler implements SignalHandler {
 
     private final RubyContext context;
-    private final RubyBasicObject proc;
+    private final DynamicObject proc;
 
-    public ProcSignalHandler(RubyContext context, RubyBasicObject proc) {
+    public ProcSignalHandler(RubyContext context, DynamicObject proc) {
         assert RubyGuards.isRubyProc(proc);
 
         this.context = context;
@@ -37,7 +37,7 @@ public class ProcSignalHandler implements SignalHandler {
         Thread mainThread = ThreadNodes.getCurrentFiberJavaThread(context.getThreadManager().getRootThread());
         context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
-            public void run(RubyBasicObject thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 ProcNodes.rootCall(proc);
             }
         });

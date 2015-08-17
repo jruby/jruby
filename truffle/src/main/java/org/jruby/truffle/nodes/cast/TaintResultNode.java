@@ -23,7 +23,7 @@ import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class TaintResultNode extends RubyNode {
 
@@ -50,7 +50,7 @@ public class TaintResultNode extends RubyNode {
         this.isTaintedNode = IsTaintedNodeGen.create(getContext(), getSourceSection(), null);
     }
 
-    public Object maybeTaint(RubyBasicObject source, RubyBasicObject result) {
+    public Object maybeTaint(DynamicObject source, DynamicObject result) {
         if (taintProfile.profile(isTaintedNode.isTainted(source))) {
             if (taintNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -65,10 +65,10 @@ public class TaintResultNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyBasicObject result;
+        final DynamicObject result;
 
         try {
-            result = method.executeRubyBasicObject(frame);
+            result = method.executeDynamicObject(frame);
         } catch (DoNotTaint e) {
             return e.getResult();
         } catch (UnexpectedResultException e) {
@@ -77,7 +77,7 @@ public class TaintResultNode extends RubyNode {
 
         if (result != nil()) {
             if (taintFromSelf) {
-                maybeTaint((RubyBasicObject) RubyArguments.getSelf(frame.getArguments()), result);
+                maybeTaint((DynamicObject) RubyArguments.getSelf(frame.getArguments()), result);
             }
 
             // It's possible the taintFromParameter value was misconfigured by the user, but the far more likely
@@ -86,8 +86,8 @@ public class TaintResultNode extends RubyNode {
             if (taintFromParameter < RubyArguments.getUserArgumentsCount(frame.getArguments())) {
                 final Object argument = RubyArguments.getUserArgument(frame.getArguments(), taintFromParameter);
 
-                if (argument instanceof RubyBasicObject) {
-                    final RubyBasicObject taintSource = (RubyBasicObject) argument;
+                if (argument instanceof DynamicObject) {
+                    final DynamicObject taintSource = (DynamicObject) argument;
                     maybeTaint(taintSource, result);
                 }
             }

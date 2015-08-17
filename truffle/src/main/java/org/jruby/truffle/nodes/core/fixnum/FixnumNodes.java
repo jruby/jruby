@@ -26,7 +26,7 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 
@@ -92,7 +92,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+        public Object addCoerced(VirtualFrame frame, int a, DynamicObject b) {
             return ruby(frame, "redo_coerced :+, b", "b", b);
         }
 
@@ -112,12 +112,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object add(long a, RubyBasicObject b) {
+        public Object add(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).add(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object addCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+        public Object addCoerced(VirtualFrame frame, long a, DynamicObject b) {
             return ruby(frame, "redo_coerced :+, b", "b", b);
         }
 
@@ -141,7 +141,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+        public Object subCoerced(VirtualFrame frame, int a, DynamicObject b) {
             return ruby(frame, "redo_coerced :-, b", "b", b);
         }
 
@@ -161,12 +161,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object sub(long a, RubyBasicObject b) {
+        public Object sub(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).subtract(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+        public Object subCoerced(VirtualFrame frame, long a, DynamicObject b) {
             return ruby(frame, "redo_coerced :-, b", "b", b);
         }
 
@@ -190,7 +190,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+        public Object mulCoerced(VirtualFrame frame, int a, DynamicObject b) {
             return ruby(frame, "redo_coerced :*, b", "b", b);
         }
 
@@ -212,12 +212,12 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
-        public Object mul(long a, RubyBasicObject b) {
+        public Object mul(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+        public Object mulCoerced(VirtualFrame frame, long a, DynamicObject b) {
             return ruby(frame, "redo_coerced :*, b", "b", b);
         }
     }
@@ -297,7 +297,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+        public Object divCoerced(VirtualFrame frame, int a, DynamicObject b) {
             return ruby(frame, "redo_coerced :/, b", "b", b);
         }
 
@@ -365,12 +365,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public int div(long a, RubyBasicObject b) {
+        public int div(long a, DynamicObject b) {
             return 0;
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object divCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+        public Object divCoerced(VirtualFrame frame, long a, DynamicObject b) {
             return ruby(frame, "redo_coerced :/, b", "b", b);
         }
 
@@ -426,7 +426,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object mod(long a, RubyBasicObject b) {
+        public Object mod(long a, DynamicObject b) {
             CompilerDirectives.transferToInterpreter();
 
             // TODO(CS): why are we getting this case?
@@ -454,17 +454,17 @@ public abstract class FixnumNodes {
         }
 
         @Specialization
-        public RubyBasicObject divMod(long a, long b) {
+        public DynamicObject divMod(long a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyBasicObject divMod(long a, RubyBasicObject b) {
+        public DynamicObject divMod(long a, DynamicObject b) {
             return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
         }
 
         @Specialization
-        public RubyBasicObject divMod(long a, double b) {
+        public DynamicObject divMod(long a, double b) {
             return divModNode.execute(a, b);
         }
 
@@ -483,7 +483,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean less(int a, RubyBasicObject b) {
+        public boolean less(int a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
         }
 
@@ -498,7 +498,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean less(long a, RubyBasicObject b) {
+        public boolean less(long a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
         }
 
@@ -525,7 +525,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean lessEqual(int a, RubyBasicObject b) {
+        public boolean lessEqual(int a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
         }
 
@@ -540,7 +540,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean lessEqual(long a, RubyBasicObject b) {
+        public boolean lessEqual(long a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
         }
 
@@ -570,7 +570,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean equal(int a, RubyBasicObject b) {
+        public boolean equal(int a, DynamicObject b) {
             return false;
         }
 
@@ -585,7 +585,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean equal(long a, RubyBasicObject b) {
+        public boolean equal(long a, DynamicObject b) {
             return false;
         }
 
@@ -612,7 +612,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public int compare(int a, RubyBasicObject b) {
+        public int compare(int a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b));
         }
 
@@ -627,7 +627,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public int compare(long a, RubyBasicObject b) {
+        public int compare(long a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b));
         }
 
@@ -655,7 +655,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greaterEqual(int a, RubyBasicObject b) {
+        public boolean greaterEqual(int a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
         }
 
@@ -670,7 +670,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greaterEqual(long a, RubyBasicObject b) {
+        public boolean greaterEqual(long a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
         }
 
@@ -697,7 +697,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greater(int a, RubyBasicObject b) {
+        public boolean greater(int a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)
             ) > 0;
         }
@@ -713,7 +713,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greater(long a, RubyBasicObject b) {
+        public boolean greater(long a, DynamicObject b) {
             return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) > 0;
         }
 
@@ -764,7 +764,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object bitAnd(long a, RubyBasicObject b) {
+        public Object bitAnd(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).and(BignumNodes.getBigIntegerValue(b)));
         }
     }
@@ -787,7 +787,7 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object bitOr(long a, RubyBasicObject b) {
+        public Object bitOr(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).or(BignumNodes.getBigIntegerValue(b)));
         }
     }
@@ -810,12 +810,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object bitXOr(long a, RubyBasicObject b) {
+        public Object bitXOr(long a, DynamicObject b) {
             return fixnumOrBignum(BigInteger.valueOf(a).xor(BignumNodes.getBigIntegerValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object bitXOr(VirtualFrame frame, Object a, RubyBasicObject b) {
+        public Object bitXOr(VirtualFrame frame, Object a, DynamicObject b) {
             return ruby(frame, "a ^ Rubinius::Type.coerce_to_bitwise_operand(b)", "a", a, "b", b);
         }
 
@@ -999,12 +999,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public int rightShift(int a, RubyBasicObject b) {
+        public int rightShift(int a, DynamicObject b) {
             return 0;
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public int rightShift(long a, RubyBasicObject b) {
+        public int rightShift(long a, DynamicObject b) {
             return 0;
         }
 
@@ -1113,13 +1113,13 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject inspect(int n) {
+        public DynamicObject inspect(int n) {
             return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject inspect(long n) {
+        public DynamicObject inspect(long n) {
             return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
@@ -1167,19 +1167,19 @@ public abstract class FixnumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(int n, NotProvided base) {
+        public DynamicObject toS(int n, NotProvided base) {
             return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(long n, NotProvided base) {
+        public DynamicObject toS(long n, NotProvided base) {
             return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(long n, int base) {
+        public DynamicObject toS(long n, int base) {
             if (base < 2 || base > 36) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));

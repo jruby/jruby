@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Concatenate arrays.
@@ -37,7 +37,7 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @Override
-    public RubyBasicObject execute(VirtualFrame frame) {
+    public DynamicObject execute(VirtualFrame frame) {
         Object store = arrayBuilderNode.start();
         int length = 0;
         if (children.length == 1) {
@@ -48,11 +48,11 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @ExplodeLoop
-    private RubyBasicObject executeSingle(VirtualFrame frame, Object store, int length) {
+    private DynamicObject executeSingle(VirtualFrame frame, Object store, int length) {
         final Object childObject = children[0].execute(frame);
         if (RubyGuards.isRubyArray(childObject)) {
             appendArrayProfile.enter();
-            final RubyBasicObject childArray = (RubyBasicObject) childObject;
+            final DynamicObject childArray = (DynamicObject) childObject;
             store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
             store = arrayBuilderNode.appendArray(store, length, childArray);
             length += ArrayNodes.getSize(childArray);
@@ -66,13 +66,13 @@ public final class ArrayConcatNode extends RubyNode {
     }
 
     @ExplodeLoop
-    private RubyBasicObject executeRubyArray(VirtualFrame frame, Object store, int length) {
+    private DynamicObject executeRubyArray(VirtualFrame frame, Object store, int length) {
         for (int n = 0; n < children.length; n++) {
             final Object childObject = children[n].execute(frame);
 
             if (RubyGuards.isRubyArray(childObject)) {
                 appendArrayProfile.enter();
-                final RubyBasicObject childArray = (RubyBasicObject) childObject;
+                final DynamicObject childArray = (DynamicObject) childObject;
                 store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
                 store = arrayBuilderNode.appendArray(store, length, childArray);
                 length += ArrayNodes.getSize(childArray);

@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -32,10 +32,10 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeWrite(VirtualFrame frame, RubyBasicObject array, int index, Object value);
+    public abstract Object executeWrite(VirtualFrame frame, DynamicObject array, int index, Object value);
 
     @Specialization(guards = "isRubyArray(array)")
-    public Object write(VirtualFrame frame, RubyBasicObject array, int index, Object value) {
+    public Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
         if (writeNode == null) {
             CompilerDirectives.transferToInterpreter();
             writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));

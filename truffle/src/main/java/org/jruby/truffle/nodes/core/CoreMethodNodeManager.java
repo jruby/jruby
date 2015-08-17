@@ -29,7 +29,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -41,10 +41,10 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private final RubyBasicObject objectClass;
+    private final DynamicObject objectClass;
     private final SingletonClassNode singletonClassNode;
 
-    public CoreMethodNodeManager(RubyBasicObject objectClass, SingletonClassNode singletonClassNode) {
+    public CoreMethodNodeManager(DynamicObject objectClass, SingletonClassNode singletonClassNode) {
         assert RubyGuards.isRubyClass(objectClass);
         this.objectClass = objectClass;
         this.singletonClassNode = singletonClassNode;
@@ -63,14 +63,14 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private RubyBasicObject getSingletonClass(Object object) {
+    private DynamicObject getSingletonClass(Object object) {
         return singletonClassNode.executeSingletonClass(null, object);
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = objectClass.getContext();
+        final RubyContext context = BasicObjectNodes.getContext(objectClass);
 
-        RubyBasicObject module;
+        DynamicObject module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
@@ -85,7 +85,7 @@ public class CoreMethodNodeManager {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
                 }
 
-                module = (RubyBasicObject) constant.getValue();
+                module = (DynamicObject) constant.getValue();
             }
         }
 
@@ -108,7 +108,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!ModuleNodes.getModel(module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(ModuleNodes.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields(module).rubyModuleObject))) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
@@ -128,7 +128,7 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyBasicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+    private static void addMethod(DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
         assert RubyGuards.isRubyModule(module);
 
         for (String name : names) {
@@ -142,7 +142,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            ModuleNodes.getModel(module).addMethod(null, method.withVisibility(visibility).withName(name));
+            ModuleNodes.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 

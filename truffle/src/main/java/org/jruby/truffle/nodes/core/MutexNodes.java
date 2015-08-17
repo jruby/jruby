@@ -11,52 +11,52 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
-import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
 
-    private static class MutexType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface MutexLayout extends BasicObjectNodes.BasicObjectLayout {
+
+        DynamicObjectFactory createMutexShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createMutex(DynamicObjectFactory factory, ReentrantLock lock);
+
+        boolean isMutex(DynamicObject object);
+
+        ReentrantLock getLock(DynamicObject object);
+
     }
 
-    public static final MutexType MUTEX_TYPE = new MutexType();
+    public static final MutexLayout MUTEX_LAYOUT = MutexLayoutImpl.INSTANCE;
 
-    private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
-    private static final Property LOCK_PROPERTY;
-    private static final DynamicObjectFactory MUTEX_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(MUTEX_TYPE).addProperty(LOCK_PROPERTY);
-        MUTEX_FACTORY = shape.createFactory();
+    protected static ReentrantLock getLock(DynamicObject mutex) {
+        return MUTEX_LAYOUT.getLock(mutex);
     }
 
-    public static class MutexAllocator implements Allocator {
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyBasicObject rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, MUTEX_FACTORY.newInstance(new ReentrantLock()));
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
-    }
 
-    protected static ReentrantLock getLock(RubyBasicObject mutex) {
-        // mutex has the proper shape since Ruby disallow calling Mutex methods on non-Mutex instances.
-        assert mutex.getDynamicObject().getShape().hasProperty(LOCK_IDENTIFIER);
-        return (ReentrantLock) LOCK_PROPERTY.get(mutex.getDynamicObject(), true);
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return MUTEX_LAYOUT.createMutex(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), new ReentrantLock());
+        }
+
     }
 
     @CoreMethod(names = "lock")
@@ -67,16 +67,16 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public RubyBasicObject lock(RubyBasicObject mutex) {
+        public DynamicObject lock(DynamicObject mutex) {
             final ReentrantLock lock = getLock(mutex);
-            final RubyBasicObject thread = getContext().getThreadManager().getCurrentThread();
+            final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
 
             lock(lock, thread, this);
 
             return mutex;
         }
 
-        protected static void lock(final ReentrantLock lock, final RubyBasicObject thread, RubyNode currentNode) {
+        protected static void lock(final ReentrantLock lock, final DynamicObject thread, RubyNode currentNode) {
             assert RubyGuards.isRubyThread(thread);
 
             final RubyContext context = currentNode.getContext();
@@ -106,7 +106,7 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean isLocked(RubyBasicObject mutex) {
+        public boolean isLocked(DynamicObject mutex) {
             return getLock(mutex).isLocked();
         }
 
@@ -120,7 +120,7 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean isOwned(RubyBasicObject mutex) {
+        public boolean isOwned(DynamicObject mutex) {
             return getLock(mutex).isHeldByCurrentThread();
         }
 
@@ -134,7 +134,7 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean tryLock(RubyBasicObject mutex) {
+        public boolean tryLock(DynamicObject mutex) {
             final ReentrantLock lock = getLock(mutex);
 
             if (lock.isHeldByCurrentThread()) {
@@ -142,7 +142,7 @@ public abstract class MutexNodes {
             }
 
             if (lock.tryLock()) {
-                final RubyBasicObject thread = getContext().getThreadManager().getCurrentThread();
+                final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
                 ThreadNodes.acquiredLock(thread, lock);
                 return true;
             } else {
@@ -160,16 +160,16 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public RubyBasicObject unlock(RubyBasicObject mutex) {
+        public DynamicObject unlock(DynamicObject mutex) {
             final ReentrantLock lock = getLock(mutex);
-            final RubyBasicObject thread = getContext().getThreadManager().getCurrentThread();
+            final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
 
             unlock(lock, thread, this);
 
             return mutex;
         }
 
-        protected static void unlock(ReentrantLock lock, RubyBasicObject thread, RubyNode currentNode) {
+        protected static void unlock(ReentrantLock lock, DynamicObject thread, RubyNode currentNode) {
             assert RubyGuards.isRubyThread(thread);
 
             final RubyContext context = currentNode.getContext();
@@ -197,32 +197,32 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public long sleep(RubyBasicObject mutex, NotProvided duration) {
+        public long sleep(DynamicObject mutex, NotProvided duration) {
             return doSleepMillis(mutex, Long.MAX_VALUE);
         }
 
         @Specialization(guards = "isNil(duration)")
-        public long sleep(RubyBasicObject mutex, RubyBasicObject duration) {
+        public long sleep(DynamicObject mutex, DynamicObject duration) {
             return sleep(mutex, NotProvided.INSTANCE);
         }
 
         @Specialization
-        public long sleep(RubyBasicObject mutex, long duration) {
+        public long sleep(DynamicObject mutex, long duration) {
             return doSleepMillis(mutex, duration * 1000);
         }
 
         @Specialization
-        public long sleep(RubyBasicObject mutex, double duration) {
+        public long sleep(DynamicObject mutex, double duration) {
             return doSleepMillis(mutex, (long) (duration * 1000.0));
         }
 
-        public long doSleepMillis(RubyBasicObject mutex, long durationInMillis) {
+        public long doSleepMillis(DynamicObject mutex, long durationInMillis) {
             if (durationInMillis < 0) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
             }
 
             final ReentrantLock lock = getLock(mutex);
-            final RubyBasicObject thread = getContext().getThreadManager().getCurrentThread();
+            final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.

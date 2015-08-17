@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -52,7 +52,7 @@ public abstract class FormatIntegerNode extends PackNode {
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public ByteList format(RubyBasicObject value) {
+    public ByteList format(DynamicObject value) {
         final BigInteger bigInteger = BignumNodes.getBigIntegerValue(value);
 
         String formatted;

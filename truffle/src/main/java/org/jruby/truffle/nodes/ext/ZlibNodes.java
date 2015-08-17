@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.util.zip.CRC32;
@@ -45,7 +45,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, NotProvided initial) {
+        public long crc32(DynamicObject message, NotProvided initial) {
             final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
@@ -53,13 +53,13 @@ public abstract class ZlibNodes {
         }
 
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, int initial) {
+        public long crc32(DynamicObject message, int initial) {
             return crc32(message, (long) initial);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, long initial) {
+        public long crc32(DynamicObject message, long initial) {
             final ByteList bytes = StringNodes.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
@@ -68,7 +68,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(message)", "isRubyBignum(initial)"})
-        public long crc32(RubyBasicObject message, RubyBasicObject initial) {
+        public long crc32(DynamicObject message, DynamicObject initial) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
         }
 
@@ -85,7 +85,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject deflate(RubyBasicObject message, int level) {
+        public DynamicObject deflate(DynamicObject message, int level) {
             final Deflater deflater = new Deflater(level);
 
             final ByteList messageBytes = StringNodes.getByteList(message);
@@ -117,7 +117,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject inflate(RubyBasicObject message) {
+        public DynamicObject inflate(DynamicObject message) {
             final Inflater inflater = new Inflater();
 
             final ByteList messageBytes = StringNodes.getByteList(message);

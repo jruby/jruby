@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Symbol} class.
@@ -29,7 +29,7 @@ public abstract class SymbolPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(symbol)")
-        public boolean symbolIsConstant(RubyBasicObject symbol) {
+        public boolean symbolIsConstant(DynamicObject symbol) {
             final String string = symbol.toString();
             return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }

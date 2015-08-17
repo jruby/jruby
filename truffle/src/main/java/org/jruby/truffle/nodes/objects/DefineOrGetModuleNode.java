@@ -22,8 +22,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Define a new module, or get the existing one of the same name.
@@ -46,25 +45,25 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         // Look for a current definition of the module, or create a new one
 
-        RubyBasicObject lexicalParent = getLexicalParentModule(frame);
+        DynamicObject lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
-        RubyBasicObject definingModule;
+        DynamicObject definingModule;
 
         if (constant == null) {
             definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(RubyGuards.isRubyModule(module)) || !ModuleNodes.getModel((RubyBasicObject) module).isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(module)) || !(RubyGuards.isRubyModule(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject))) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
-            definingModule = (RubyModule) module;
+            definingModule = (DynamicObject) module;
         }
 
         return definingModule;
     }
 
-    protected RubyBasicObject getLexicalParentModule(VirtualFrame frame) {
+    protected DynamicObject getLexicalParentModule(VirtualFrame frame) {
         final Object lexicalParent = lexicalParentModule.execute(frame);;
 
         if (!RubyGuards.isRubyModule(lexicalParent)) {
@@ -72,18 +71,18 @@ public class DefineOrGetModuleNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(lexicalParent.toString(), "module", this));
         }
 
-        return (RubyBasicObject) lexicalParent;
+        return (DynamicObject) lexicalParent;
     }
 
     @TruffleBoundary
-    protected RubyConstant lookupForExistingModule(RubyBasicObject lexicalParent) {
-        RubyConstant constant = ModuleNodes.getModel(lexicalParent).getConstants().get(name);
+    protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
+        RubyConstant constant = ModuleNodes.getFields(lexicalParent).getConstants().get(name);
 
-        final RubyBasicObject objectClass = getContext().getCoreLibrary().getObjectClass();
+        final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
-            for (RubyBasicObject included : ModuleNodes.getModel(objectClass).prependedAndIncludedModules()) {
-                constant = ModuleNodes.getModel(included).getConstants().get(name);
+            for (DynamicObject included : ModuleNodes.getFields(objectClass).prependedAndIncludedModules()) {
+                constant = ModuleNodes.getFields(included).getConstants().get(name);
                 if (constant != null) {
                     break;
                 }
@@ -105,9 +104,9 @@ public class DefineOrGetModuleNode extends RubyNode {
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
-            ModuleNodes.getModel(lexicalParent).removeConstant(this, name);
+            ModuleNodes.getFields(lexicalParent).removeConstant(this, name);
 
-            requireNode.require((RubyBasicObject) constant.getValue());
+            requireNode.require((DynamicObject) constant.getValue());
 
             return lookupForExistingModule(lexicalParent);
         }

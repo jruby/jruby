@@ -10,6 +10,9 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.ClassNodes;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
@@ -27,26 +30,26 @@ public class SymbolTable {
     private final RubyContext context;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final WeakHashMap<ByteList, WeakReference<RubyBasicObject>> symbolsTable = new WeakHashMap<>();
+    private final WeakHashMap<ByteList, WeakReference<DynamicObject>> symbolsTable = new WeakHashMap<>();
 
     public SymbolTable(RubyContext context) {
         this.context = context;
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyBasicObject getSymbol(String string) {
+    public DynamicObject getSymbol(String string) {
         return getSymbol(ByteList.create(string));
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyBasicObject getSymbol(ByteList bytes) {
+    public DynamicObject getSymbol(ByteList bytes) {
         lock.readLock().lock();
 
         try {
-            final WeakReference<RubyBasicObject> symbolReference = symbolsTable.get(bytes);
+            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(bytes);
 
             if (symbolReference != null) {
-                final RubyBasicObject symbol = symbolReference.get();
+                final DynamicObject symbol = symbolReference.get();
 
                 if (symbol != null) {
                     return symbol;
@@ -59,10 +62,10 @@ public class SymbolTable {
         lock.writeLock().lock();
 
         try {
-            final WeakReference<RubyBasicObject> symbolReference = symbolsTable.get(bytes);
+            final WeakReference<DynamicObject> symbolReference = symbolsTable.get(bytes);
 
             if (symbolReference != null) {
-                final RubyBasicObject symbol = symbolReference.get();
+                final DynamicObject symbol = symbolReference.get();
 
                 if (symbol != null) {
                     return symbol;
@@ -71,12 +74,13 @@ public class SymbolTable {
 
             final ByteList storedBytes = bytes.dup();
 
-            final RubyBasicObject newSymbol = new RubyBasicObject(
-                    context.getCoreLibrary().getSymbolClass(),
-                    SymbolNodes.SYMBOL_FACTORY.newInstance(
-                            storedBytes.toString(), storedBytes,
-                            storedBytes.toString().hashCode(),
-                            StringSupport.CR_UNKNOWN, null));
+            final DynamicObject symbolClass = context.getCoreLibrary().getSymbolClass();
+
+            final DynamicObject newSymbol = SymbolNodes.SYMBOL_LAYOUT.createSymbol(
+                    ClassNodes.CLASS_LAYOUT.getInstanceFactory(symbolClass),
+                    storedBytes.toString(), storedBytes,
+                    storedBytes.toString().hashCode(),
+                    StringSupport.CR_UNKNOWN, null);
 
             symbolsTable.put(storedBytes, new WeakReference<>(newSymbol));
             return newSymbol;
@@ -86,8 +90,8 @@ public class SymbolTable {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Collection<RubyBasicObject> allSymbols() {
-        final Collection<WeakReference<RubyBasicObject>> symbolReferences;
+    public Collection<DynamicObject> allSymbols() {
+        final Collection<WeakReference<DynamicObject>> symbolReferences;
 
         lock.readLock().lock();
 
@@ -97,10 +101,10 @@ public class SymbolTable {
             lock.readLock().unlock();
         }
 
-        final Collection<RubyBasicObject> symbols = new ArrayList<>(symbolReferences.size());
+        final Collection<DynamicObject> symbols = new ArrayList<>(symbolReferences.size());
 
-        for (WeakReference<RubyBasicObject> reference : symbolReferences) {
-            final RubyBasicObject symbol = reference.get();
+        for (WeakReference<DynamicObject> reference : symbolReferences) {
+            final DynamicObject symbol = reference.get();
 
             if (symbol != null) {
                 symbols.add(symbol);

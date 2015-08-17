@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class WriteClassVariableNode extends RubyNode {
 
@@ -37,7 +37,7 @@ public class WriteClassVariableNode extends RubyNode {
 
         final Object rhsValue = rhs.execute(frame);
 
-        final RubyBasicObject module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
+        final DynamicObject module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
 
         ModuleOperations.setClassVariable(module, name, rhsValue, this);
 

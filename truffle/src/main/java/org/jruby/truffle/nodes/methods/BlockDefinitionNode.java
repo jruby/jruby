@@ -59,7 +59,7 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), type, sharedMethodInfo,
+        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), type, sharedMethodInfo,
                 callTargetForBlocks, callTargetForProcs, callTargetForLambdas,
                 frame.materialize(),
                 RubyArguments.getMethod(frame.getArguments()),

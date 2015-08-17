@@ -18,7 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -36,14 +36,14 @@ public abstract class ArraySliceNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
-    public RubyBasicObject sliceNull(RubyBasicObject array) {
+    public DynamicObject sliceNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
         return createEmptyArray();
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject sliceIntegerFixnum(RubyBasicObject array) {
+    public DynamicObject sliceIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -55,7 +55,7 @@ public abstract class ArraySliceNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject sliceLongFixnum(RubyBasicObject array) {
+    public DynamicObject sliceLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -67,7 +67,7 @@ public abstract class ArraySliceNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject sliceFloat(RubyBasicObject array) {
+    public DynamicObject sliceFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 
@@ -79,7 +79,7 @@ public abstract class ArraySliceNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject sliceObject(RubyBasicObject array) {
+    public DynamicObject sliceObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
         final int to = ArrayNodes.getSize(array) + this.to;
 

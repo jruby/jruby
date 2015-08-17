@@ -21,8 +21,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -37,7 +36,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         this.superClass = superClass;
     }
 
-    private void callInherited(VirtualFrame frame, RubyBasicObject superClass, RubyBasicObject subClass) {
+    private void callInherited(VirtualFrame frame, DynamicObject superClass, DynamicObject subClass) {
         assert RubyGuards.isRubyClass(superClass);
         assert RubyGuards.isRubyClass(subClass);
 
@@ -56,18 +55,18 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
         // Look for a current definition of the class, or create a new one
 
-        RubyBasicObject lexicalParent = getLexicalParentModule(frame);
+        DynamicObject lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(lexicalParent);
 
-        RubyBasicObject definingClass;
-        RubyBasicObject superClassObject = getRubySuperClass(frame, context);
+        DynamicObject definingClass;
+        DynamicObject superClassObject = getRubySuperClass(frame, context);
 
         if (constant == null) {
-            definingClass = new RubyClass(context, lexicalParent, superClassObject, name, ClassNodes.getAllocator(((RubyClass) superClassObject)));
+            definingClass = ClassNodes.createRubyClass(context, lexicalParent, superClassObject, name);
             callInherited(frame, superClassObject, definingClass);
         } else {
             if (RubyGuards.isRubyClass(constant.getValue())) {
-                definingClass = (RubyBasicObject) constant.getValue();
+                definingClass = (DynamicObject) constant.getValue();
                 checkSuperClassCompatibility(context, superClassObject, definingClass);
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.getValue().toString(), "class", this));
@@ -77,30 +76,30 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
         return definingClass;
     }
 
-    private RubyBasicObject getRubySuperClass(VirtualFrame frame, RubyContext context) {
+    private DynamicObject getRubySuperClass(VirtualFrame frame, RubyContext context) {
         final Object superClassObj = superClass.execute(frame);
 
         if (RubyGuards.isRubyClass(superClassObj)){
-            if (ModuleNodes.getModel(((RubyClass) superClassObj)).isSingleton()) {
+            if (ClassNodes.isSingleton((DynamicObject) superClassObj)) {
                 throw new RaiseException(context.getCoreLibrary().typeError("can't make subclass of virtual class", this));
             }
 
-            return (RubyClass) superClassObj;
+            return (DynamicObject) superClassObj;
         }
         throw new RaiseException(context.getCoreLibrary().typeError("superclass must be a Class", this));
     }
 
-    private boolean isBlankOrRootClass(RubyBasicObject rubyClass) {
+    private boolean isBlankOrRootClass(DynamicObject rubyClass) {
         assert RubyGuards.isRubyClass(rubyClass);
         return rubyClass == getContext().getCoreLibrary().getBasicObjectClass() || rubyClass == getContext().getCoreLibrary().getObjectClass();
     }
 
-    private void checkSuperClassCompatibility(RubyContext context, RubyBasicObject superClassObject, RubyBasicObject definingClass) {
+    private void checkSuperClassCompatibility(RubyContext context, DynamicObject superClassObject, DynamicObject definingClass) {
         assert RubyGuards.isRubyClass(superClassObject);
         assert RubyGuards.isRubyClass(definingClass);
 
-        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ModuleNodes.getModel(definingClass).getSuperClass() != superClassObject) {
-            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getModel(definingClass).getName(), this));
+        if (!isBlankOrRootClass(superClassObject) && !isBlankOrRootClass(definingClass) && ClassNodes.getSuperClass(definingClass) != superClassObject) {
+            throw new RaiseException(context.getCoreLibrary().typeError("superclass mismatch for class " + ModuleNodes.getFields(definingClass).getName(), this));
         }
     }
 }

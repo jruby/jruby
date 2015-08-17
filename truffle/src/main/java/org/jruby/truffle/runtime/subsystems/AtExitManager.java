@@ -15,7 +15,7 @@ import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Deque;
 import java.util.NoSuchElementException;
@@ -25,14 +25,14 @@ public class AtExitManager {
 
     private final RubyContext context;
 
-    private final Deque<RubyBasicObject> runOnExit = new ConcurrentLinkedDeque<>();
-    private final Deque<RubyBasicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> runOnExit = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
 
     public AtExitManager(RubyContext context) {
         this.context = context;
     }
 
-    public void add(RubyBasicObject block, boolean always) {
+    public void add(DynamicObject block, boolean always) {
         assert RubyGuards.isRubyProc(block);
 
         if (always) {
@@ -52,9 +52,9 @@ public class AtExitManager {
         }
     }
 
-    private void runExitHooks(Deque<RubyBasicObject> stack) {
+    private void runExitHooks(Deque<DynamicObject> stack) {
         while (true) {
-            RubyBasicObject block;
+            DynamicObject block;
             try {
                 block = stack.pop();
             } catch (NoSuchElementException e) {
@@ -66,7 +66,7 @@ public class AtExitManager {
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, (RubyBasicObject) rubyException, ExceptionNodes.getBacktrace((RubyBasicObject) rubyException))) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
                     System.err.println(line);
                 }
             } catch (Exception e) {

@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "main")
 public abstract class MainNodes {
@@ -31,8 +31,8 @@ public abstract class MainNodes {
         }
 
         @Specialization
-        public RubyBasicObject doPublic(VirtualFrame frame, Object[] args) {
-            final RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPublic(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return publicNode.executePublic(frame, object, args);
         }
     }
@@ -48,8 +48,8 @@ public abstract class MainNodes {
         }
 
         @Specialization
-        public RubyBasicObject doPrivate(VirtualFrame frame, Object[] args) {
-            final RubyBasicObject object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPrivate(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return privateNode.executePrivate(frame, object, args);
         }
     }

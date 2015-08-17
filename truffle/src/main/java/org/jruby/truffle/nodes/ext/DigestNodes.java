@@ -14,30 +14,29 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
-import org.jruby.truffle.nodes.core.CoreClass;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.EnumSet;
 
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
 
-    private static final HiddenKey DIGEST_IDENTIFIER = new HiddenKey("digest");
-    private static final Property DIGEST_PROPERTY;
-    private static final DynamicObjectFactory DIGEST_FACTORY;
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface DigestLayout extends BasicObjectNodes.BasicObjectLayout {
 
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        DIGEST_PROPERTY = Property.create(DIGEST_IDENTIFIER, allocator.locationForType(MessageDigest.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        DIGEST_FACTORY = RubyBasicObject.EMPTY_SHAPE.addProperty(DIGEST_PROPERTY).createFactory();
+        DynamicObjectFactory createDigestShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createDigest(DynamicObjectFactory factory, MessageDigest digest);
+
+        MessageDigest getDigest(DynamicObject object);
+
     }
+
+    public static final DigestLayout DIGEST_LAYOUT = DigestLayoutImpl.INSTANCE;
 
     private enum Algorithm {
         MD5("MD5"),
@@ -57,7 +56,7 @@ public abstract class DigestNodes {
         }
     }
 
-    private static RubyBasicObject createDigest(RubyContext context, Algorithm algorithm) {
+    private static DynamicObject createDigest(RubyContext context, Algorithm algorithm) {
         final MessageDigest digest;
 
         try {
@@ -66,15 +65,16 @@ public abstract class DigestNodes {
             throw new RuntimeException(e);
         }
 
-        return new RubyBasicObject(context.getCoreLibrary().getObjectClass(), DIGEST_FACTORY.newInstance(digest));
+        final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
+
+        return DIGEST_LAYOUT.createDigest(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), digest);
     }
 
-    public static MessageDigest getDigest(RubyBasicObject digest) {
-        assert digest.getDynamicObject().getShape().hasProperty(DIGEST_IDENTIFIER);
-        return (MessageDigest) DIGEST_PROPERTY.get(digest.getDynamicObject(), true);
+    public static MessageDigest getDigest(DynamicObject digest) {
+        return DIGEST_LAYOUT.getDigest(digest);
     }
 
-    @CoreMethod(names = "md5", isModuleFunction = true)
+    @CoreMethod(names = "md5", onSingleton = true)
     public abstract static class MD5Node extends CoreMethodArrayArgumentsNode {
 
         public MD5Node(RubyContext context, SourceSection sourceSection) {
@@ -83,13 +83,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject md5() {
+        public DynamicObject md5() {
             return createDigest(getContext(), Algorithm.MD5);
         }
 
     }
 
-    @CoreMethod(names = "sha1", isModuleFunction = true)
+    @CoreMethod(names = "sha1", onSingleton = true)
     public abstract static class SHA1Node extends CoreMethodArrayArgumentsNode {
 
         public SHA1Node(RubyContext context, SourceSection sourceSection) {
@@ -98,13 +98,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha1() {
+        public DynamicObject sha1() {
             return createDigest(getContext(), Algorithm.SHA1);
         }
 
     }
 
-    @CoreMethod(names = "sha256", isModuleFunction = true)
+    @CoreMethod(names = "sha256", onSingleton = true)
     public abstract static class SHA256Node extends CoreMethodArrayArgumentsNode {
 
         public SHA256Node(RubyContext context, SourceSection sourceSection) {
@@ -113,13 +113,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha256() {
+        public DynamicObject sha256() {
             return createDigest(getContext(), Algorithm.SHA256);
         }
 
     }
 
-    @CoreMethod(names = "sha384", isModuleFunction = true)
+    @CoreMethod(names = "sha384", onSingleton = true)
     public abstract static class SHA384Node extends CoreMethodArrayArgumentsNode {
 
         public SHA384Node(RubyContext context, SourceSection sourceSection) {
@@ -128,13 +128,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha384() {
+        public DynamicObject sha384() {
             return createDigest(getContext(), Algorithm.SHA384);
         }
 
     }
 
-    @CoreMethod(names = "sha512", isModuleFunction = true)
+    @CoreMethod(names = "sha512", onSingleton = true)
     public abstract static class SHA512Node extends CoreMethodArrayArgumentsNode {
 
         public SHA512Node(RubyContext context, SourceSection sourceSection) {
@@ -143,13 +143,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject sha512() {
+        public DynamicObject sha512() {
             return createDigest(getContext(), Algorithm.SHA512);
         }
 
     }
 
-    @CoreMethod(names = "update", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "update", onSingleton = true, required = 2)
     public abstract static class UpdateNode extends CoreMethodArrayArgumentsNode {
 
         public UpdateNode(RubyContext context, SourceSection sourceSection) {
@@ -158,7 +158,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject update(RubyBasicObject digestObject, RubyBasicObject message) {
+        public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final ByteList bytes = StringNodes.getByteList(message);
             getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
@@ -166,7 +166,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(names = "reset", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "reset", onSingleton = true, required = 1)
     public abstract static class ResetNode extends CoreMethodArrayArgumentsNode {
 
         public ResetNode(RubyContext context, SourceSection sourceSection) {
@@ -175,14 +175,14 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject reset(RubyBasicObject digestObject) {
+        public DynamicObject reset(DynamicObject digestObject) {
             getDigest(digestObject).reset();
             return digestObject;
         }
 
     }
 
-    @CoreMethod(names = "digest", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "digest", onSingleton = true, required = 1)
     public abstract static class DigestNode extends CoreMethodArrayArgumentsNode {
 
         public DigestNode(RubyContext context, SourceSection sourceSection) {
@@ -191,7 +191,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject digest(RubyBasicObject digestObject) {
+        public DynamicObject digest(DynamicObject digestObject) {
             final MessageDigest digest = getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
@@ -209,7 +209,7 @@ public abstract class DigestNodes {
 
     }
 
-    @CoreMethod(names = "digest_length", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "digest_length", onSingleton = true, required = 1)
     public abstract static class DigestLengthNode extends CoreMethodArrayArgumentsNode {
 
         public DigestLengthNode(RubyContext context, SourceSection sourceSection) {
@@ -218,13 +218,13 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization
-        public int digestLength(RubyBasicObject digestObject) {
+        public int digestLength(DynamicObject digestObject) {
             return getDigest(digestObject).getDigestLength();
         }
 
     }
 
-    @CoreMethod(names = "bubblebabble", isModuleFunction = true, required = 1)
+    @CoreMethod(names = "bubblebabble", onSingleton = true, required = 1)
     public abstract static class BubbleBabbleNode extends CoreMethodArrayArgumentsNode {
 
         public BubbleBabbleNode(RubyContext context, SourceSection sourceSection) {
@@ -233,7 +233,7 @@ public abstract class DigestNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject bubblebabble(RubyBasicObject message) {
+        public DynamicObject bubblebabble(DynamicObject message) {
             final ByteList byteList = StringNodes.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }

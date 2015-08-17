@@ -19,7 +19,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Arrays;
 
@@ -36,12 +36,12 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeEnsureCapacity(VirtualFrame frame, RubyBasicObject array, int requiredCapacity);
+    public abstract Object executeEnsureCapacity(VirtualFrame frame, DynamicObject array, int requiredCapacity);
 
     @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
-    public boolean ensureCapacityInt(RubyBasicObject array, int requiredCapacity) {
+    public boolean ensureCapacityInt(DynamicObject array, int requiredCapacity) {
         final int[] store = (int[]) ArrayNodes.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
@@ -55,7 +55,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
-    public boolean ensureCapacityLong(RubyBasicObject array, int requiredCapacity) {
+    public boolean ensureCapacityLong(DynamicObject array, int requiredCapacity) {
         final long[] store = (long[]) ArrayNodes.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
@@ -69,7 +69,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
-    public boolean ensureCapacityDouble(RubyBasicObject array, int requiredCapacity) {
+    public boolean ensureCapacityDouble(DynamicObject array, int requiredCapacity) {
         final double[] store = (double[]) ArrayNodes.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
@@ -83,7 +83,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isObjectArray(array)"}
     )
-    public boolean ensureCapacityObject(RubyBasicObject array, int requiredCapacity) {
+    public boolean ensureCapacityObject(DynamicObject array, int requiredCapacity) {
         final Object[] store = (Object[]) ArrayNodes.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {

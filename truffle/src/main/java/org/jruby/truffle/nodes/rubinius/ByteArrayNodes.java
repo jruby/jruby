@@ -13,47 +13,37 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.CoreClass;
-import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.object.BasicObjectType;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
+import org.jruby.truffle.om.dsl.api.Layout;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    public static class ByteArrayType extends BasicObjectType {
+    @Layout
+    public interface ByteArrayLayout extends BasicObjectNodes.BasicObjectLayout {
+
+        DynamicObjectFactory createByteArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes);
+
+        boolean isByteArray(DynamicObject object);
+
+        ByteList getBytes(DynamicObject object);
 
     }
 
-    public static final ByteArrayType BYTE_ARRAY_TYPE = new ByteArrayType();
+    public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 
-    private static final HiddenKey BYTES_IDENTIFIER = new HiddenKey("bytes");
-    public static final Property BYTES_PROPERTY;
-    private static final DynamicObjectFactory BYTE_ARRAY_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        BYTES_PROPERTY = Property.create(BYTES_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(BYTE_ARRAY_TYPE).addProperty(BYTES_PROPERTY);
-        BYTE_ARRAY_FACTORY = shape.createFactory();
+    public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
+        return BYTE_ARRAY_LAYOUT.createByteArray(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), bytes);
     }
 
-    public static RubyBasicObject createByteArray(RubyBasicObject rubyClass, ByteList bytes) {
-        return new RubyBasicObject(rubyClass, BYTE_ARRAY_FACTORY.newInstance(bytes));
-    }
-
-    public static ByteList getBytes(RubyBasicObject byteArray) {
-        assert RubyGuards.isRubiniusByteArray(byteArray);
-        assert byteArray.getDynamicObject().getShape().hasProperty(BYTES_IDENTIFIER);
-        return (ByteList) BYTES_PROPERTY.get(byteArray.getDynamicObject(), true);
+    public static ByteList getBytes(DynamicObject byteArray) {
+        return BYTE_ARRAY_LAYOUT.getBytes(byteArray);
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
@@ -64,7 +54,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int getByte(RubyBasicObject bytes, int index) {
+        public int getByte(DynamicObject bytes, int index) {
             return getBytes(bytes).get(index) & 0xff;
         }
 
@@ -78,7 +68,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject prepend(RubyBasicObject bytes, RubyBasicObject string) {
+        public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
             final int prependLength = StringNodes.getByteList(string).getUnsafeBytes().length;
             final int originalLength = getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
@@ -98,7 +88,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public Object setByte(RubyBasicObject bytes, int index, int value) {
+        public Object setByte(DynamicObject bytes, int index, int value) {
             if (index < 0 || index >= getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
@@ -118,7 +108,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int size(RubyBasicObject bytes) {
+        public int size(DynamicObject bytes) {
             return getBytes(bytes).getRealSize();
         }
 
@@ -132,7 +122,7 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object getByte(RubyBasicObject bytes, RubyBasicObject pattern, int start, int length) {
+        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
             final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
 
             if (index == -1) {

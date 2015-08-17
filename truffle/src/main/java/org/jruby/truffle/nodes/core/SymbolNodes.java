@@ -18,112 +18,68 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
+import org.jruby.truffle.om.dsl.api.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.truffle.runtime.object.BasicObjectType;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    public static class SymbolType extends BasicObjectType {
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface SymbolLayout extends BasicObjectNodes.BasicObjectLayout {
+
+        DynamicObjectFactory createSymbolShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createSymbol(DynamicObjectFactory factory, String string, ByteList byteList, int hashCode,
+                                   int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
+
+        boolean isSymbol(DynamicObject object);
+
+        String getString(DynamicObject object);
+        ByteList getByteList(DynamicObject object);
+        int getHashCode(DynamicObject object);
+
+        int getCodeRange(DynamicObject object);
+        void setCodeRange(DynamicObject object, int codeRange);
+
+        SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
+        void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);
 
     }
 
-    public static final SymbolType SYMBOL_TYPE = new SymbolType();
+    public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 
-    private static final HiddenKey STRING_IDENTIFIER = new HiddenKey("string");
-    private static final Property STRING_PROPERTY;
-
-    private static final HiddenKey BYTE_LIST_IDENTIFIER = new HiddenKey("byteList");
-    private static final Property BYTE_LIST_PROPERTY;
-
-    private static final HiddenKey HASH_CODE_IDENTIFIER = new HiddenKey("hashCode");
-    private static final Property HASH_CODE_PROPERTY;
-
-    private static final HiddenKey CODE_RANGE_IDENTIFIER = new HiddenKey("codeRange");
-    private static final Property CODE_RANGE_PROPERTY;
-
-    private static final HiddenKey CODE_RANGEABLE_WRAPPER_IDENTIFIER = new HiddenKey("codeRangeableWrapper");
-    private static final Property CODE_RANGEABLE_WRAPPER_PROPERTY;
-
-    public static final DynamicObjectFactory SYMBOL_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        STRING_PROPERTY = Property.create(STRING_IDENTIFIER, allocator.locationForType(String.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        BYTE_LIST_PROPERTY = Property.create(BYTE_LIST_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.NonNull, LocationModifier.Final)), 0);
-        HASH_CODE_PROPERTY = Property.create(HASH_CODE_IDENTIFIER, allocator.locationForType(int.class, EnumSet.of(LocationModifier.Final)), 0);
-        CODE_RANGE_PROPERTY = Property.create(CODE_RANGE_IDENTIFIER, allocator.locationForType(int.class), 0);
-        CODE_RANGEABLE_WRAPPER_PROPERTY = Property.create(CODE_RANGEABLE_WRAPPER_IDENTIFIER, allocator.locationForType(SymbolCodeRangeableWrapper.class), 0);
-
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(SYMBOL_TYPE)
-            .addProperty(STRING_PROPERTY)
-            .addProperty(BYTE_LIST_PROPERTY)
-            .addProperty(HASH_CODE_PROPERTY)
-            .addProperty(CODE_RANGE_PROPERTY)
-            .addProperty(CODE_RANGEABLE_WRAPPER_PROPERTY);
-
-        SYMBOL_FACTORY = shape.createFactory();
+    public static String getString(DynamicObject symbol) {
+        return SYMBOL_LAYOUT.getString(symbol);
     }
 
-    public static String getString(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(STRING_IDENTIFIER);
-
-        return (String) STRING_PROPERTY.get(symbol.getDynamicObject(), true);
+    public static ByteList getByteList(DynamicObject symbol) {
+        return SYMBOL_LAYOUT.getByteList(symbol);
     }
 
-    public static ByteList getByteList(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(BYTE_LIST_IDENTIFIER);
-
-        return (ByteList) BYTE_LIST_PROPERTY.get(symbol.getDynamicObject(), true);
+    public static int getHashCode(DynamicObject symbol) {
+        return SYMBOL_LAYOUT.getHashCode(symbol);
     }
 
-    public static int getHashCode(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(HASH_CODE_IDENTIFIER);
-
-        return (int) HASH_CODE_PROPERTY.get(symbol.getDynamicObject(), true);
+    public static int getCodeRange(DynamicObject symbol) {
+        return SYMBOL_LAYOUT.getCodeRange(symbol);
     }
 
-    public static int getCodeRange(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
-
-        return (int) CODE_RANGE_PROPERTY.get(symbol.getDynamicObject(), true);
+    public static void setCodeRange(DynamicObject symbol, int codeRange) {
+        SYMBOL_LAYOUT.setCodeRange(symbol, codeRange);
     }
 
-    public static void setCodeRange(RubyBasicObject symbol, int codeRange) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGE_IDENTIFIER);
-
-        try {
-            CODE_RANGE_PROPERTY.set(symbol.getDynamicObject(), codeRange, symbol.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public static SymbolCodeRangeableWrapper getCodeRangeable(RubyBasicObject symbol) {
-        assert RubyGuards.isRubySymbol(symbol);
-        assert symbol.getDynamicObject().getShape().hasProperty(CODE_RANGEABLE_WRAPPER_IDENTIFIER);
-
-        SymbolCodeRangeableWrapper wrapper = (SymbolCodeRangeableWrapper)
-                CODE_RANGEABLE_WRAPPER_PROPERTY.get(symbol.getDynamicObject(), true);
+    public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
+        SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(symbol);
 
         if (wrapper != null) {
             return wrapper;
@@ -131,11 +87,7 @@ public abstract class SymbolNodes {
 
         wrapper = new SymbolCodeRangeableWrapper(symbol);
 
-        try {
-            CODE_RANGEABLE_WRAPPER_PROPERTY.set(symbol.getDynamicObject(), wrapper, symbol.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException();
-        }
+        SYMBOL_LAYOUT.setCodeRangeableWrapper(symbol, wrapper);
 
         return wrapper;
     }
@@ -149,8 +101,8 @@ public abstract class SymbolNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject allSymbols() {
-            return createArray(getContext().getSymbolTable().allSymbols().toArray());
+        public DynamicObject allSymbols() {
+            return createArrayWith(getContext().getSymbolTable().allSymbols().toArray());
         }
 
     }
@@ -163,12 +115,12 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "isRubySymbol(b)")
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        public boolean equal(DynamicObject a, DynamicObject b) {
             return a == b;
         }
 
         @Specialization(guards = "!isRubySymbol(b)")
-        public boolean equal(VirtualFrame frame, RubyBasicObject a, Object b) {
+        public boolean equal(VirtualFrame frame, DynamicObject a, Object b) {
             return false;
         }
 
@@ -182,7 +134,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject encoding(RubyBasicObject symbol) {
+        public DynamicObject encoding(DynamicObject symbol) {
             return EncodingNodes.getEncoding(getByteList(symbol).getEncoding());
         }
 
@@ -196,7 +148,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public int hash(RubyBasicObject symbol) {
+        public int hash(DynamicObject symbol) {
             return getHashCode(symbol);
         }
 
@@ -210,19 +162,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol")
-        public RubyBasicObject toProcCached(RubyBasicObject symbol,
-                                     @Cached("symbol") RubyBasicObject cachedSymbol,
-                                     @Cached("createProc(symbol)") RubyBasicObject cachedProc) {
+        public DynamicObject toProcCached(DynamicObject symbol,
+                                     @Cached("symbol") DynamicObject cachedSymbol,
+                                     @Cached("createProc(symbol)") DynamicObject cachedProc) {
             return cachedProc;
         }
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toProcUncached(RubyBasicObject symbol) {
+        public DynamicObject toProcUncached(DynamicObject symbol) {
             return createProc(symbol);
         }
 
-        protected RubyBasicObject createProc(RubyBasicObject symbol) {
+        protected DynamicObject createProc(DynamicObject symbol) {
             final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -246,7 +198,7 @@ public abstract class SymbolNodes {
                     sharedMethodInfo,
                     callTarget, callTarget, callTarget,
                     null, null,
-                    symbol.getContext().getCoreLibrary().getNilObject(),
+                    BasicObjectNodes.getContext(symbol).getCoreLibrary().getNilObject(),
                     null);
         }
 
@@ -260,7 +212,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject symbol) {
+        public DynamicObject toS(DynamicObject symbol) {
             return createString(getByteList(symbol).dup());
         }
 

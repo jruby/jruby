@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
@@ -38,7 +38,7 @@ public class LookupEntryNode extends RubyNode {
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public HashLookupResult lookup(VirtualFrame frame, RubyBasicObject hash, Object key) {
+    public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         final int hashed = hashNode.hash(frame, key);
 
         final Entry[] entries = (Entry[]) HashNodes.getStore(hash);

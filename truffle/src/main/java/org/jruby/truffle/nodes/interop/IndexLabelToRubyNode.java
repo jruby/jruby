@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
 
@@ -33,7 +33,7 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject toString(String index) {
+    private DynamicObject toString(String index) {
         return createString(index);
     }
 }

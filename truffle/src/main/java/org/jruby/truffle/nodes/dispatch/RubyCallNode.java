@@ -32,7 +32,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -143,14 +143,14 @@ public class RubyCallNode extends RubyNode {
             argumentsObjects = executeArguments(frame);
         }
 
-        final RubyBasicObject blockObject = executeBlock(frame);
+        final DynamicObject blockObject = executeBlock(frame);
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private RubyBasicObject executeBlock(VirtualFrame frame) {
+    private DynamicObject executeBlock(VirtualFrame frame) {
         if (block != null) {
-            return (RubyBasicObject) block.execute(frame);
+            return (DynamicObject) block.execute(frame);
         } else {
             return null;
         }
@@ -196,7 +196,7 @@ public class RubyCallNode extends RubyNode {
             throw new UnsupportedOperationException(argument.getClass().toString());
         }
 
-        final RubyBasicObject array = (RubyBasicObject) argument;
+        final DynamicObject array = (DynamicObject) argument;
         final int size = ArrayNodes.getSize(array);
         final Object store = ArrayNodes.getStore(array);
 

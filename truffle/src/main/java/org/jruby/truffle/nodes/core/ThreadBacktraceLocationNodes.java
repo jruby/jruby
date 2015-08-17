@@ -16,31 +16,30 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-
-import java.util.EnumSet;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
-    private static final HiddenKey ACTIVATION_IDENTIFIER = new HiddenKey("activation");
-    private static final Property ACTIVATION_PROPERTY;
-    private static final DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
+    @org.jruby.truffle.om.dsl.api.Layout
+    public interface ThreadBacktraceLocationLayout extends BasicObjectNodes.BasicObjectLayout {
 
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(ACTIVATION_PROPERTY);
-        THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
+        DynamicObjectFactory createThreadBacktraceLocationShape(DynamicObject logicalClass, DynamicObject metaClass);
+
+        DynamicObject createThreadBacktraceLocation(DynamicObjectFactory factory, Activation activation);
+
+        Activation getActivation(DynamicObject object);
+
     }
 
-    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyBasicObject rubyClass, Activation activation) {
-        return new RubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_FACTORY.newInstance(activation));
+    public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
+
+    public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
+        return THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), activation);
     }
 
-    protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {
-        assert threadBacktraceLocation.getDynamicObject().getShape().hasProperty(ACTIVATION_IDENTIFIER);
-        return (Activation) ACTIVATION_PROPERTY.get(threadBacktraceLocation.getDynamicObject(), true);
+    protected static Activation getActivation(DynamicObject threadBacktraceLocation) {
+        return THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
     }
 
     @CoreMethod(names = { "absolute_path", "path" })
@@ -53,7 +52,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject absolutePath(RubyBasicObject threadBacktraceLocation) {
+        public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -78,7 +77,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public int lineno(RubyBasicObject threadBacktraceLocation) {
+        public int lineno(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
@@ -97,7 +96,7 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject threadBacktraceLocation) {
+        public DynamicObject toS(DynamicObject threadBacktraceLocation) {
             final Activation activation = getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();

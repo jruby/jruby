@@ -14,8 +14,9 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
@@ -26,7 +27,7 @@ public class InternalMethod {
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
 
-    private final RubyBasicObject declaringModule;
+    private final DynamicObject declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
 
@@ -34,7 +35,7 @@ public class InternalMethod {
     private final MaterializedFrame declarationFrame;
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
-                          RubyBasicObject declaringModule, Visibility visibility, boolean undefined,
+                          DynamicObject declaringModule, Visibility visibility, boolean undefined,
                           CallTarget callTarget, MaterializedFrame declarationFrame) {
         assert declaringModule == null || RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
@@ -50,7 +51,7 @@ public class InternalMethod {
         return sharedMethodInfo;
     }
 
-    public RubyBasicObject getDeclaringModule() {
+    public DynamicObject getDeclaringModule() {
         return declaringModule;
     }
 
@@ -74,7 +75,7 @@ public class InternalMethod {
         return callTarget;
     }
 
-    public InternalMethod withDeclaringModule(RubyBasicObject newDeclaringModule) {
+    public InternalMethod withDeclaringModule(DynamicObject newDeclaringModule) {
         assert RubyGuards.isRubyModule(newDeclaringModule);
 
         if (newDeclaringModule == declaringModule) {
@@ -104,7 +105,7 @@ public class InternalMethod {
         return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
-    public boolean isVisibleTo(Node currentNode, RubyBasicObject callerClass) {
+    public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
         assert RubyGuards.isRubyClass(callerClass);
 
         switch (visibility) {
@@ -112,8 +113,8 @@ public class InternalMethod {
                 return true;
 
             case PROTECTED:
-                for (RubyBasicObject ancestor : ModuleNodes.getModel(callerClass).ancestors()) {
-                    if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
+                for (DynamicObject ancestor : ModuleNodes.getFields(callerClass).ancestors()) {
+                    if (ancestor == declaringModule || BasicObjectNodes.getMetaClass(ancestor) == declaringModule) {
                         return true;
                     }
                 }

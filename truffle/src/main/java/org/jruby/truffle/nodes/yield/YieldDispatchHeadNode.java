@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class YieldDispatchHeadNode extends Node {
 
@@ -31,18 +31,18 @@ public class YieldDispatchHeadNode extends Node {
 
     }
 
-    public Object dispatch(VirtualFrame frame, RubyBasicObject block, Object... argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
         return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.getSelfCapturedInScope(block), ProcNodes.getBlockCapturedInScope(block), argumentsObjects);
     }
 
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyBasicObject block, RubyBasicObject modifiedBlock, Object... argumentsObjects) {
+    public Object dispatchWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
         assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
         return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.getSelfCapturedInScope(block), modifiedBlock, argumentsObjects);
     }
 
-    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, RubyBasicObject block, Object self, Object... argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
 
         // TODO: assumes this also changes the default definee.

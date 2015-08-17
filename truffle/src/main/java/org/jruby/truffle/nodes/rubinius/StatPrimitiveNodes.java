@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 public abstract class StatPrimitiveNodes {
@@ -35,7 +35,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public Object atime(VirtualFrame frame, RubyBasicObject rubyStat) {
+        public Object atime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).atime();
             return ruby(frame, "Time.at(time)", "time", time);
         }
@@ -50,7 +50,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public Object ctime(VirtualFrame frame, RubyBasicObject rubyStat) {
+        public Object ctime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).ctime();
             return ruby(frame, "Time.at(time)", "time", time);
         }
@@ -65,7 +65,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public Object mtime(VirtualFrame frame, RubyBasicObject rubyStat) {
+        public Object mtime(VirtualFrame frame, DynamicObject rubyStat) {
             final long time = getStat(rubyStat).mtime();
             return ruby(frame, "Time.at(time)", "time", time);
         }
@@ -80,7 +80,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public int nlink(RubyBasicObject rubyStat) {
+        public int nlink(DynamicObject rubyStat) {
             return getStat(rubyStat).nlink();
         }
 
@@ -94,7 +94,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long rdev(RubyBasicObject rubyStat) {
+        public long rdev(DynamicObject rubyStat) {
             return getStat(rubyStat).rdev();
         }
 
@@ -108,7 +108,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long blksize(RubyBasicObject rubyStat) {
+        public long blksize(DynamicObject rubyStat) {
             return getStat(rubyStat).blockSize();
         }
 
@@ -122,7 +122,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long blocks(RubyBasicObject rubyStat) {
+        public long blocks(DynamicObject rubyStat) {
             return getStat(rubyStat).blocks();
         }
 
@@ -136,7 +136,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long dev(RubyBasicObject rubyStat) {
+        public long dev(DynamicObject rubyStat) {
             return getStat(rubyStat).dev();
         }
 
@@ -150,7 +150,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long ino(RubyBasicObject rubyStat) {
+        public long ino(DynamicObject rubyStat) {
             return getStat(rubyStat).ino();
         }
 
@@ -168,7 +168,7 @@ public abstract class StatPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
-        public int stat(RubyBasicObject rubyStat, RubyBasicObject path) {
+        public int stat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
             final ByteList byteList = StringNodes.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
@@ -182,7 +182,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization(guards = "!isRubyString(path)")
-        public Object stat(RubyBasicObject rubyStat, Object path) {
+        public Object stat(DynamicObject rubyStat, Object path) {
             return null;
         }
 
@@ -200,7 +200,7 @@ public abstract class StatPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public int fstat(RubyBasicObject rubyStat, int fd) {
+        public int fstat(DynamicObject rubyStat, int fd) {
             final FileStat stat = posix().allocateStat();
             final int code = posix().fstat(fd, stat);
 
@@ -225,7 +225,7 @@ public abstract class StatPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(path)")
-        public int lstat(RubyBasicObject rubyStat, RubyBasicObject path) {
+        public int lstat(DynamicObject rubyStat, DynamicObject path) {
             final FileStat stat = posix().allocateStat();
             final int code = posix().lstat(path.toString(), stat);
 
@@ -237,7 +237,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization(guards = "!isRubyString(path)")
-        public Object stat(RubyBasicObject rubyStat, Object path) {
+        public Object stat(DynamicObject rubyStat, Object path) {
             return null;
         }
 
@@ -252,7 +252,7 @@ public abstract class StatPrimitiveNodes {
             readStatNode = new ReadHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        public FileStat getStat(RubyBasicObject rubyStat) {
+        public FileStat getStat(DynamicObject rubyStat) {
             return (FileStat) readStatNode.execute(rubyStat);
         }
 
@@ -266,7 +266,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public long size(RubyBasicObject rubyStat) {
+        public long size(DynamicObject rubyStat) {
             return getStat(rubyStat).st_size();
         }
 
@@ -280,7 +280,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public int mode(RubyBasicObject rubyStat) {
+        public int mode(DynamicObject rubyStat) {
             return getStat(rubyStat).mode();
         }
 
@@ -294,7 +294,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public int gid(RubyBasicObject rubyStat) {
+        public int gid(DynamicObject rubyStat) {
             return getStat(rubyStat).gid();
         }
 
@@ -308,7 +308,7 @@ public abstract class StatPrimitiveNodes {
         }
 
         @Specialization
-        public int uid(RubyBasicObject rubyStat) {
+        public int uid(DynamicObject rubyStat) {
             return getStat(rubyStat).uid();
         }
 

@@ -18,7 +18,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
@@ -44,7 +44,7 @@ public abstract class ToIntegerNode extends PackNode {
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public RubyBasicObject toInteger(VirtualFrame frame, RubyBasicObject value) {
+    public DynamicObject toInteger(VirtualFrame frame, DynamicObject value) {
         return value;
     }
 

@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.IntLocation;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
@@ -32,7 +32,7 @@ public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, int value) {
+    public void execute(DynamicObject object, int value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -42,12 +42,12 @@ public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.getObjectLayout() == expectedLayout) {
+        if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.setInt(object.getDynamicObject(), value, expectedLayout);
+                    storageLocation.setInt(object, value, expectedLayout);
                 } else {
-                    storageLocation.setInt(object.getDynamicObject(), value, expectedLayout, newLayout);
+                    storageLocation.setInt(object, value, expectedLayout, newLayout);
                 }
             } catch (FinalLocationException e) {
                 replace(next, "!final").execute(object, value);
@@ -58,7 +58,7 @@ public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         if (value instanceof Integer) {
             execute(object, (int) value);
         } else {

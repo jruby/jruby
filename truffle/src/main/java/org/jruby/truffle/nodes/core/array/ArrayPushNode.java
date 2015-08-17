@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class ArrayPushNode extends RubyNode {
 
@@ -35,9 +35,9 @@ public class ArrayPushNode extends RubyNode {
         final Object arrayObject = array.execute(frame);
         assert RubyGuards.isRubyArray(arrayObject);
 
-        final RubyBasicObject originalArray = (RubyBasicObject) arrayObject;
+        final DynamicObject originalArray = (DynamicObject) arrayObject;
 
-        final RubyBasicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
+        final DynamicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
         ArrayNodes.slowPush(newArray, pushed.execute(frame));
         return newArray;
     }

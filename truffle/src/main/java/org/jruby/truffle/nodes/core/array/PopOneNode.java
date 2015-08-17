@@ -17,7 +17,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeChildren({
         @NodeChild("array")
@@ -29,38 +29,38 @@ public abstract class PopOneNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executePopOne(RubyBasicObject array);
+    public abstract Object executePopOne(DynamicObject array);
 
     // Pop from an empty array
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
-    public RubyBasicObject popOneEmpty(RubyBasicObject array) {
+    public DynamicObject popOneEmpty(DynamicObject array) {
         return nil();
     }
 
     // Pop from a non-empty array
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isIntArray(array)"})
-    public Object popOneInteger(RubyBasicObject array) {
+    public Object popOneInteger(DynamicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isLongArray(array)"})
-    public Object popOneLong(RubyBasicObject array) {
+    public Object popOneLong(DynamicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isDoubleArray(array)"})
-    public Object popOneDouble(RubyBasicObject array) {
+    public Object popOneDouble(DynamicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isObjectArray(array)"})
-    public Object popOneObject(RubyBasicObject array) {
+    public Object popOneObject(DynamicObject array) {
         return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)));
     }
 
-    private Object popOneGeneric(RubyBasicObject array, ArrayMirror storeMirror) {
+    private Object popOneGeneric(DynamicObject array, ArrayMirror storeMirror) {
         final int size = ArrayNodes.getSize(array);
         final Object value = storeMirror.get(size - 1);
         ArrayNodes.setSize(array, size - 1);

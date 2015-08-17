@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
@@ -17,9 +18,9 @@ import org.jruby.util.CodeRangeable;
 
 public class StringCodeRangeableWrapper implements CodeRangeable {
 
-    private final RubyBasicObject string;
+    private final DynamicObject string;
 
-    public StringCodeRangeableWrapper(RubyBasicObject string) {
+    public StringCodeRangeableWrapper(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         this.string = string;
     }

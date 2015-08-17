@@ -15,7 +15,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
@@ -32,12 +32,12 @@ public abstract class BignumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject pow(RubyBasicObject a, int b) {
+        public DynamicObject pow(DynamicObject a, int b) {
             return pow(a, (long) b);
         }
 
         @Specialization
-        public RubyBasicObject pow(RubyBasicObject a, long b) {
+        public DynamicObject pow(DynamicObject a, long b) {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
@@ -48,12 +48,12 @@ public abstract class BignumPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public double pow(RubyBasicObject a, double b) {
+        public double pow(DynamicObject a, double b) {
             return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Void pow(RubyBasicObject a, RubyBasicObject b) {
+        public Void pow(DynamicObject a, DynamicObject b) {
             throw new UnsupportedOperationException();
         }
 

@@ -18,7 +18,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedUnboxedDispatchNode extends CachedDispatchNode {
@@ -50,7 +50,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (ModuleNodes.getModel(method.getDeclaringModule()).getName().equals("TruffleInterop")) {
+                if (ModuleNodes.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop")) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -61,7 +61,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                !(receiver instanceof RubyBasicObject) &&
+                !(receiver instanceof DynamicObject) &&
                 (receiver.getClass() == expectedClass);
     }
 
@@ -90,7 +90,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -104,7 +104,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                             RubyArguments.pack(
                                     method,
                                     method.getDeclarationFrame(),
-                                    receiverObject, (RubyBasicObject) blockObject,
+                                    receiverObject, (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -112,7 +112,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                             RubyArguments.pack(
                                     method,
                                     method.getDeclarationFrame(),
-                                    receiverObject, (RubyBasicObject) blockObject,
+                                    receiverObject, (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }

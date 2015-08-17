@@ -47,7 +47,7 @@ import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
@@ -198,7 +198,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Set the load path
 
-        final RubyBasicObject loadPath = (RubyBasicObject) coreLibrary.getGlobalVariablesObject().getInstanceVariable("$:");
+        final DynamicObject loadPath = (DynamicObject) BasicObjectNodes.getInstanceVariable(coreLibrary.getGlobalVariablesObject(), "$:");
 
         final String home = runtime.getInstanceConfig().getJRubyHome();
 
@@ -290,11 +290,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return symbolTable;
     }
 
-    public RubyBasicObject getSymbol(String name) {
+    public DynamicObject getSymbol(String name) {
         return symbolTable.getSymbol(name);
     }
 
-    public RubyBasicObject getSymbol(ByteList name) {
+    public DynamicObject getSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }
 
@@ -323,20 +323,20 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     @TruffleBoundary
-    public Object eval(String code, RubyBasicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(String code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBasicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, BindingNodes.getSelf(binding), BindingNodes.getFrame(binding), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBasicObject binding, boolean ownScopeForAssignments, Node currentNode) {
+    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
@@ -401,11 +401,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
         } else if (RubyGuards.isRubyString(object)) {
-            return toJRubyString((RubyBasicObject) object);
+            return toJRubyString((DynamicObject) object);
         } else if (RubyGuards.isRubyArray(object)) {
-            return toJRubyArray((RubyBasicObject) object);
+            return toJRubyArray((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
-            return toJRubyEncoding((RubyBasicObject) object);
+            return toJRubyEncoding((DynamicObject) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
@@ -421,22 +421,22 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return store;
     }
 
-    public org.jruby.RubyArray toJRubyArray(RubyBasicObject array) {
+    public org.jruby.RubyArray toJRubyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
         return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
     }
 
-    public IRubyObject toJRubyEncoding(RubyBasicObject encoding) {
+    public IRubyObject toJRubyEncoding(DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
         return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.getName(encoding)));
     }
 
-    public org.jruby.RubyString toJRubyString(RubyBasicObject string) {
+    public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
         final org.jruby.RubyString jrubyString = runtime.newString(StringNodes.getByteList(string).dup());
 
-        final Object tainted = RubyBasicObject.getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+        final Object tainted = BasicObjectNodes.getInstanceVariable2(string, BasicObjectNodes.TAINTED_IDENTIFIER);
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -483,7 +483,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
     }
 
-    public RubyBasicObject toTruffle(org.jruby.RubyArray array) {
+    public DynamicObject toTruffle(org.jruby.RubyArray array) {
         final Object[] store = new Object[array.size()];
 
         for (int n = 0; n < store.length; n++) {
@@ -493,17 +493,17 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return ArrayNodes.fromObjects(coreLibrary.getArrayClass(), store);
     }
 
-    public RubyBasicObject toTruffle(org.jruby.RubyString jrubyString) {
-        final RubyBasicObject truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
+    public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
+        final DynamicObject truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            RubyBasicObject.setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+            BasicObjectNodes.setInstanceVariable(truffleString, BasicObjectNodes.TAINTED_IDENTIFIER, true);
         }
 
         return truffleString;
     }
 
-    public RubyBasicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
+    public DynamicObject toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
@@ -616,7 +616,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        RubyBasicObject.setInstanceVariable(
+        BasicObjectNodes.setInstanceVariable(
                 coreLibrary.getGlobalVariablesObject(), "$0",
                 toTruffle(runtime.getGlobalVariables().get("$0")));
 

@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Casts an object to a Ruby Proc object.
@@ -33,17 +33,17 @@ public abstract class ProcCastNode extends RubyNode {
     }
 
     @Specialization(guards = "isNil(nil)")
-    public RubyBasicObject doNil(Object nil) {
+    public DynamicObject doNil(Object nil) {
         return nil();
     }
 
     @Specialization(guards = "isRubyProc(proc)")
-    public RubyBasicObject doRubyProc(RubyBasicObject proc) {
+    public DynamicObject doRubyProc(DynamicObject proc) {
         return proc;
     }
 
     @Specialization
-    public Object doObject(VirtualFrame frame, RubyBasicObject object) {
+    public Object doObject(VirtualFrame frame, DynamicObject object) {
         return toProc.call(frame, object, "to_proc", null);
     }
 

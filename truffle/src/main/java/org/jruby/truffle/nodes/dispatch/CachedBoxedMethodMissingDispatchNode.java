@@ -16,11 +16,12 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
@@ -29,7 +30,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
 
-    private final RubyBasicObject expectedClass;
+    private final DynamicObject expectedClass;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
 
@@ -40,7 +41,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyBasicObject expectedClass,
+            DynamicObject expectedClass,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
@@ -48,7 +49,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getModel(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
 
         if (indirect) {
@@ -78,8 +79,8 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override
@@ -107,7 +108,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -129,7 +130,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     modifiedArgumentsObjects));
                 } else {
                     return callNode.call(
@@ -138,7 +139,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     modifiedArgumentsObjects));
                 }
             }

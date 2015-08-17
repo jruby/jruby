@@ -10,20 +10,20 @@
 
 package org.jruby.truffle.nodes.core;
 
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.StringSupport;
 
 public class RegexpGuards {
 
-    public static boolean isInitialized(RubyBasicObject regexp) {
+    public static boolean isInitialized(DynamicObject regexp) {
         return RegexpNodes.getRegex(regexp) != null;
     }
 
-    public static boolean isRegexpLiteral(RubyBasicObject regexp) {
+    public static boolean isRegexpLiteral(DynamicObject regexp) {
         return RegexpNodes.getOptions(regexp).isLiteral();
     }
 
-    public static boolean isValidEncoding(RubyBasicObject string) {
+    public static boolean isValidEncoding(DynamicObject string) {
         return StringNodes.scanForCodeRange(string) != StringSupport.CR_BROKEN;
     }
 

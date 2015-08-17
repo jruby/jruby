@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.BooleanLocation;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteBooleanObjectFieldNode extends WriteObjectFieldChainNode {
@@ -32,7 +32,7 @@ public class WriteBooleanObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, boolean value) {
+    public void execute(DynamicObject object, boolean value) {
         try {
             expectedLayout.getValidAssumption().check();
             newLayout.getValidAssumption().check();
@@ -42,12 +42,12 @@ public class WriteBooleanObjectFieldNode extends WriteObjectFieldChainNode {
             return;
         }
 
-        if (object.getObjectLayout() == expectedLayout) {
+        if (object.getShape() == expectedLayout) {
             try {
                 if (newLayout == expectedLayout) {
-                    storageLocation.setBoolean(object.getDynamicObject(), value, expectedLayout);
+                    storageLocation.setBoolean(object, value, expectedLayout);
                 } else {
-                    storageLocation.setBoolean(object.getDynamicObject(), value, expectedLayout, newLayout);
+                    storageLocation.setBoolean(object, value, expectedLayout, newLayout);
                 }
             } catch (FinalLocationException e) {
                 replace(next, "!final").execute(object, value);
@@ -58,7 +58,7 @@ public class WriteBooleanObjectFieldNode extends WriteObjectFieldChainNode {
     }
 
     @Override
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         if (value instanceof Boolean) {
             execute(object, (boolean) value);
         } else {

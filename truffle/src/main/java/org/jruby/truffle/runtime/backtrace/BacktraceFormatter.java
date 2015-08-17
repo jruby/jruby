@@ -10,10 +10,10 @@
 package org.jruby.truffle.runtime.backtrace;
 
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public interface BacktraceFormatter {
 
-    String[] format(RubyContext context, RubyBasicObject exception, Backtrace backtrace);
+    String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace);
 
 }

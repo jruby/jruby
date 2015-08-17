@@ -17,11 +17,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -37,26 +38,26 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         toStr = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public abstract RubyBasicObject executeToSymbolOrString(VirtualFrame frame, Object name);
+    public abstract DynamicObject executeToSymbolOrString(VirtualFrame frame, Object name);
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public RubyBasicObject coerceRubySymbol(RubyBasicObject symbol) {
+    public DynamicObject coerceRubySymbol(DynamicObject symbol) {
         return symbol;
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public RubyBasicObject coerceRubyString(RubyBasicObject string) {
+    public DynamicObject coerceRubyString(DynamicObject string) {
         return string;
     }
 
     @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
-    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
 
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (((RubyBasicObject) e.getRubyException()).getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
@@ -65,7 +66,7 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         }
 
         if (RubyGuards.isRubyString(coerced)) {
-            return (RubyBasicObject) coerced;
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
