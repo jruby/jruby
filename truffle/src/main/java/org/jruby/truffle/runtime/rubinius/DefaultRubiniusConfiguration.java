@@ -37,13 +37,13 @@
  */
 package org.jruby.truffle.runtime.rubinius;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;

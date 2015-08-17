@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import org.jruby.truffle.nodes.RubyGuards;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 
 public class LexicalScope {
     public static final LexicalScope NONE = null;

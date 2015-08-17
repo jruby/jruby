@@ -16,13 +16,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.KeywordArgNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
@@ -32,11 +26,8 @@ import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
@@ -46,10 +37,6 @@ import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 class MethodTranslator extends BodyTranslator {
 

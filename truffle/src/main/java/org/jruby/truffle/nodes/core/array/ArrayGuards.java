@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.nodes.core.array;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 
 public class ArrayGuards {
 

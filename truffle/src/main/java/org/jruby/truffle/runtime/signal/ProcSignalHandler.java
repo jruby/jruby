@@ -10,11 +10,11 @@
 package org.jruby.truffle.runtime.signal;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;

@@ -16,11 +16,11 @@ import com.oracle.truffle.api.debug.DebugSupportProvider;
 import com.oracle.truffle.api.instrument.ToolSupportProvider;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
-
-import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.nodes.LazyRubyRootNode;
+
+import java.io.IOException;
 
 @TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = "application/x-ruby")
 public class RubyLanguage extends TruffleLanguage<RubyContext> {

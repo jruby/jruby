@@ -9,11 +9,6 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
-import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.ForeignAccess;
@@ -22,6 +17,10 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
+import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;
+import org.jruby.truffle.runtime.RubyContext;
 
 
 public final class CachedForeignDispatchNode extends CachedDispatchNode {

@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.sockets;
 
 import jnr.ffi.Pointer;
-import jnr.ffi.byref.IntByReference;
 
 public interface NativeSockets {
 

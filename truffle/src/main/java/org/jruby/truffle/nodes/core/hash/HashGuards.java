@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.nodes.core.hash;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.hash.Entry;
 
 public abstract class HashGuards {

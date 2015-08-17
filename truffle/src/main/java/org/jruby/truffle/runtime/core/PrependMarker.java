@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import org.jruby.truffle.runtime.ModuleChain;
 
 public class PrependMarker implements ModuleChain {

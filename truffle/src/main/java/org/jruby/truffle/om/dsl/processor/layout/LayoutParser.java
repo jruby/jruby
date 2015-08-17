@@ -14,7 +14,6 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
-import org.jruby.truffle.om.dsl.processor.OMProcessor;
 import org.jruby.truffle.om.dsl.processor.layout.model.*;
 
 import javax.lang.model.element.*;

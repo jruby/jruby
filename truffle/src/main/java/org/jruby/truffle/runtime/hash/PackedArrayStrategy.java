@@ -10,8 +10,8 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.util.cli.Options;
 
 import java.util.Iterator;

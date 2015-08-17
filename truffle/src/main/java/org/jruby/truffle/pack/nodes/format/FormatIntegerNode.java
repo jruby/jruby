@@ -13,11 +13,11 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

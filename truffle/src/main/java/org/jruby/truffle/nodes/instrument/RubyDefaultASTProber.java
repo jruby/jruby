@@ -10,15 +10,12 @@
 package org.jruby.truffle.nodes.instrument;
 
 import com.oracle.truffle.api.instrument.ASTProber;
-import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.instrument.StandardSyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeVisitor;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
-import org.jruby.truffle.nodes.objects.DefineOrGetClassNode;
-import org.jruby.truffle.nodes.objects.DefineOrGetModuleNode;
 import org.jruby.truffle.nodes.objects.OpenModuleNode;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 

@@ -9,16 +9,6 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
-
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -27,8 +17,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 
 /**
  * Caches {@link ModuleOperations#lookupConstant}
