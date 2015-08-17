@@ -18,17 +18,15 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.jruby.Ruby;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.dispatch.RubyCallNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +34,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TraceManager {
+
+    public static final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
 
     private final RubyContext context;
 
@@ -158,7 +158,13 @@ public class TraceManager {
                         if (!inTraceFuncProfile.profile(isInTraceFunc)) {
                             // set_trace_func reports the file and line of the call site.
                             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-                            final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                            final String filename = sourceSection.getSource().getName();
+                            final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), filename);
+
+                            if (! INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith("core:")) {
+                                return context.getCoreLibrary().getNilObject();
+                            }
+
                             final int line = sourceSection.getStartLine();
 
                             final Object self = RubyArguments.getSelf(frame.getArguments());
