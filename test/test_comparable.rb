@@ -82,4 +82,23 @@ class TestComparable < Test::Unit::TestCase
     assert(@d != 3)
     assert_raises(ArgumentError) { @d.between?(1, 3) }
   end
+
+  def test_cmp_non_comparables
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    # should not raise errors :
+    assert_equal nil, 0 <=> Time.now
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, nil <=> 42
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, '42' <=> nil
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+
+    require 'bigdecimal'
+    big = BigDecimal.new '-10000000000'
+    assert_equal nil, big <=> Time.now
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, big <=> nil
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+  end
+
 end
