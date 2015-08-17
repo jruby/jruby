@@ -44,7 +44,7 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                 // the context implied by the tag.  We need to tag at the RubyRootNode because the semantics of set_trace_func
                 // are such that the receiver must be resolved, so we have to push as far into the callee as we can to have
                 // a properly constructed frame.
-                else if (rubyNode.getParent() instanceof RubyRootNode) {
+                else if ((rubyNode.getParent() instanceof RubyRootNode) && !(rubyNode instanceof SetMethodDeclarationContext)) {
                     rubyNode.probe().tagAs(RubySyntaxTag.CALL, null);
                 }
 
