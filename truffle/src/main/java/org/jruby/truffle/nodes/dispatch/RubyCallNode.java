@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -33,6 +32,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -197,8 +197,8 @@ public class RubyCallNode extends RubyNode {
         }
 
         final DynamicObject array = (DynamicObject) argument;
-        final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array);
-        final Object store = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+        final int size = Layouts.ARRAY.getSize(array);
+        final Object store = Layouts.ARRAY.getStore(array);
 
         if (seenNullInUnsplat && store == null) {
             return new Object[]{};

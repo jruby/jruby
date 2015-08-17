@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.*;
 
@@ -135,18 +136,18 @@ public abstract class BucketsStrategy {
         assert HashGuards.isBucketHash(hash);
         assert HashNodes.verifyStore(hash);
 
-        final Entry[] buckets = (Entry[]) HashNodes.HASH_LAYOUT.getStore(hash);
+        final Entry[] buckets = (Entry[]) Layouts.HASH.getStore(hash);
 
         final Entry entry = new Entry(hashed, key, value);
 
-        if (HashNodes.HASH_LAYOUT.getFirstInSequence(hash) == null) {
-            HashNodes.HASH_LAYOUT.setFirstInSequence(hash, entry);
+        if (Layouts.HASH.getFirstInSequence(hash) == null) {
+            Layouts.HASH.setFirstInSequence(hash, entry);
         } else {
-            HashNodes.HASH_LAYOUT.getLastInSequence(hash).setNextInSequence(entry);
-            entry.setPreviousInSequence(HashNodes.HASH_LAYOUT.getLastInSequence(hash));
+            Layouts.HASH.getLastInSequence(hash).setNextInSequence(entry);
+            entry.setPreviousInSequence(Layouts.HASH.getLastInSequence(hash));
         }
 
-        HashNodes.HASH_LAYOUT.setLastInSequence(hash, entry);
+        Layouts.HASH.setLastInSequence(hash, entry);
 
         final int bucketIndex = BucketsStrategy.getBucketIndex(hashed, buckets.length);
 
@@ -162,7 +163,7 @@ public abstract class BucketsStrategy {
             previousInLookup.setNextInLookup(entry);
         }
 
-        HashNodes.HASH_LAYOUT.setSize(hash, HashNodes.HASH_LAYOUT.getSize(hash) + 1);
+        Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) + 1);
 
         assert HashNodes.verifyStore(hash);
     }
@@ -172,10 +173,10 @@ public abstract class BucketsStrategy {
         assert HashGuards.isBucketHash(hash);
         assert HashNodes.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.HASH_LAYOUT.getSize(hash)) * OVERALLOCATE_FACTOR;
+        final int bucketsCount = capacityGreaterThan(Layouts.HASH.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
-        Entry entry = HashNodes.HASH_LAYOUT.getFirstInSequence(hash);
+        Entry entry = Layouts.HASH.getFirstInSequence(hash);
 
         while (entry != null) {
             final int bucketIndex = getBucketIndex(entry.getHashed(), bucketsCount);
@@ -195,7 +196,7 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(hash, newEntries, HashNodes.HASH_LAYOUT.getSize(hash), HashNodes.HASH_LAYOUT.getFirstInSequence(hash), HashNodes.HASH_LAYOUT.getLastInSequence(hash));
+        HashNodes.setStore(hash, newEntries, Layouts.HASH.getSize(hash), Layouts.HASH.getFirstInSequence(hash), Layouts.HASH.getLastInSequence(hash));
 
         assert HashNodes.verifyStore(hash);
     }
@@ -268,12 +269,12 @@ public abstract class BucketsStrategy {
         assert RubyGuards.isRubyHash(to);
         assert HashNodes.verifyStore(to);
 
-        final Entry[] newEntries = new Entry[((Entry[]) HashNodes.HASH_LAYOUT.getStore(from)).length];
+        final Entry[] newEntries = new Entry[((Entry[]) Layouts.HASH.getStore(from)).length];
 
         Entry firstInSequence = null;
         Entry lastInSequence = null;
 
-        Entry entry = HashNodes.HASH_LAYOUT.getFirstInSequence(from);
+        Entry entry = Layouts.HASH.getFirstInSequence(from);
 
         while (entry != null) {
             final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
@@ -297,7 +298,7 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(to, newEntries, HashNodes.HASH_LAYOUT.getSize(from), firstInSequence, lastInSequence);
+        HashNodes.setStore(to, newEntries, Layouts.HASH.getSize(from), firstInSequence, lastInSequence);
     }
 
 }

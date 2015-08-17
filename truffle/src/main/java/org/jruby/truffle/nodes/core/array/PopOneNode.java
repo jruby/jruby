@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild("array")
@@ -42,28 +43,28 @@ public abstract class PopOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isIntArray(array)"})
     public Object popOneInteger(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isLongArray(array)"})
     public Object popOneLong(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isDoubleArray(array)"})
     public Object popOneDouble(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isObjectArray(array)"})
     public Object popOneObject(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)));
     }
 
     private Object popOneGeneric(DynamicObject array, ArrayMirror storeMirror) {
-        final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array);
+        final int size = Layouts.ARRAY.getSize(array);
         final Object value = storeMirror.get(size - 1);
-        ArrayNodes.ARRAY_LAYOUT.setSize(array, size - 1);
+        Layouts.ARRAY.setSize(array, size - 1);
         return value;
     }
 

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ArrayPushNode extends RubyNode {
 
@@ -37,7 +38,7 @@ public class ArrayPushNode extends RubyNode {
 
         final DynamicObject originalArray = (DynamicObject) arrayObject;
 
-        final DynamicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.ARRAY_LAYOUT.getSize(originalArray));
+        final DynamicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), Layouts.ARRAY.getSize(originalArray));
         ArrayNodes.slowPush(newArray, pushed.execute(frame));
         return newArray;
     }

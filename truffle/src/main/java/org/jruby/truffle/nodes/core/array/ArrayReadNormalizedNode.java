@@ -18,6 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -47,28 +48,28 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isIntArray(array)"}
     )
     public int readIntInBounds(DynamicObject array, int index) {
-        return ((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
+        return ((int[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isLongArray(array)"}
     )
     public long readLongInBounds(DynamicObject array, int index) {
-        return ((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
+        return ((long[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isDoubleArray(array)"}
     )
     public double readDoubleInBounds(DynamicObject array, int index) {
-        return ((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
+        return ((double[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isObjectArray(array)"}
     )
     public Object readObjectInBounds(DynamicObject array, int index) {
-        return ((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
+        return ((Object[]) Layouts.ARRAY.getStore(array))[index];
     }
 
     // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
@@ -83,7 +84,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Guards
 
     protected static boolean isInBounds(DynamicObject array, int index) {
-        return index >= 0 && index < ArrayNodes.ARRAY_LAYOUT.getSize(array);
+        return index >= 0 && index < Layouts.ARRAY.getSize(array);
     }
 
 }

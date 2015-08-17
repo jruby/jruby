@@ -54,8 +54,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.rubinius.IOLayout;
-import org.jruby.truffle.runtime.layouts.rubinius.IOLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
 import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
@@ -70,8 +69,6 @@ public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
 
-    public static final IOLayout IO_LAYOUT = IOLayoutImpl.INSTANCE;
-
     @RubiniusPrimitive(name = "io_allocate")
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -85,7 +82,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
             final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
-            return IO_LAYOUT.createIO(ClassNodes.CLASS_LAYOUT.getInstanceFactory(classToAllocate), buffer, 0, 0, 0);
+            return Layouts.IO.createIO(Layouts.CLASS.getInstanceFactory(classToAllocate), buffer, 0, 0, 0);
         }
 
     }
@@ -114,11 +111,11 @@ public abstract class IOPrimitiveNodes {
             newOpenFd(fds[0]);
             newOpenFd(fds[1]);
 
-            IO_LAYOUT.setDescriptor(lhs, fds[0]);
-            IO_LAYOUT.setMode(lhs, RDONLY);
+            Layouts.IO.setDescriptor(lhs, fds[0]);
+            Layouts.IO.setMode(lhs, RDONLY);
 
-            IO_LAYOUT.setDescriptor(rhs, fds[1]);
-            IO_LAYOUT.setMode(rhs, WRONLY);
+            Layouts.IO.setDescriptor(rhs, fds[1]);
+            Layouts.IO.setMode(rhs, WRONLY);
 
             return true;
         }
@@ -198,7 +195,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
-            final int fd = IO_LAYOUT.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
             return posix().ftruncate(fd, length);
         }
 
@@ -214,8 +211,8 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
-            final ByteList patternBytes = StringNodes.getByteList(pattern);
-            final ByteList pathBytes = StringNodes.getByteList(path);
+            final ByteList patternBytes = Layouts.STRING.getByteList(pattern);
+            final ByteList pathBytes = Layouts.STRING.getByteList(path);
             return Dir.fnmatch(patternBytes.getUnsafeBytes(),
                     patternBytes.getBegin(),
                     patternBytes.getBegin() + patternBytes.getRealSize(),
@@ -237,7 +234,7 @@ public abstract class IOPrimitiveNodes {
         @Specialization
         public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
             // TODO BJF 13-May-2015 Handle nil case
-            final int fd = IO_LAYOUT.getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
             if(fd == -1){
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
@@ -268,7 +265,7 @@ public abstract class IOPrimitiveNodes {
                 return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
             }
 
-            final int fd = IO_LAYOUT.getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
 
             final FDSet fdSet = fdSetFactory.create();
             fdSet.set(fd);
@@ -318,8 +315,8 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         private void performReopen(DynamicObject file, DynamicObject io) {
-            final int fd = IO_LAYOUT.getDescriptor(file);
-            final int fdOther = IO_LAYOUT.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(file);
+            final int fdOther = Layouts.IO.getDescriptor(io);
 
             final int result = posix().dup2(fd, fdOther);
             if (result == -1) {
@@ -332,7 +329,7 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            IO_LAYOUT.setMode(file, mode);
+            Layouts.IO.setMode(file, mode);
         }
 
         @Specialization
@@ -358,7 +355,7 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
-            int fd = IO_LAYOUT.getDescriptor(file);
+            int fd = Layouts.IO.getDescriptor(file);
             final String pathString = StringNodes.getString(path);
 
             int otherFd = posix().open(pathString, mode, 666);
@@ -371,7 +368,7 @@ public abstract class IOPrimitiveNodes {
             if (result == -1) {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
-                    IO_LAYOUT.setDescriptor(file, otherFd);
+                    Layouts.IO.setDescriptor(file, otherFd);
                     fd = otherFd;
                 } else {
                     if (otherFd > 0) {
@@ -391,7 +388,7 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            IO_LAYOUT.setMode(file, newMode);
+            Layouts.IO.setMode(file, newMode);
         }
 
         @Specialization(guards = "isRubyString(path)")
@@ -415,9 +412,9 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public int write(DynamicObject file, DynamicObject string) {
-            final int fd = IO_LAYOUT.getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = StringNodes.getByteList(string);
+            final ByteList byteList = Layouts.STRING.getByteList(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
                 getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
@@ -462,14 +459,14 @@ public abstract class IOPrimitiveNodes {
         public int close(VirtualFrame frame, DynamicObject io) {
             ensureOpenNode.call(frame, io, "ensure_open", null);
 
-            final int fd = IO_LAYOUT.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
 
             if (fd == -1) {
                 return 0;
             }
 
             int newDescriptor = -1;
-            IO_LAYOUT.setDescriptor(io, newDescriptor);
+            Layouts.IO.setDescriptor(io, newDescriptor);
 
             if (fd < 3) {
                 return 0;
@@ -496,7 +493,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
-            final int fd = IO_LAYOUT.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
             return posix().lseek(fd, amount, whence);
         }
 
@@ -512,7 +509,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public int accept(DynamicObject io) {
-            final int fd = IO_LAYOUT.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
 
             final int[] addressLength = {16};
             final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
@@ -544,7 +541,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization
         public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
-            final int fd = IO_LAYOUT.getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
 
@@ -652,7 +649,7 @@ public abstract class IOPrimitiveNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                fileDescriptors[n] = IO_LAYOUT.getDescriptor((DynamicObject) objects[n]);
+                fileDescriptors[n] = Layouts.IO.getDescriptor((DynamicObject) objects[n]);
             }
 
             return fileDescriptors;

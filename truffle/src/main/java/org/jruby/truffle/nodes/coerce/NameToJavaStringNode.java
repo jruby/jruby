@@ -19,11 +19,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -43,7 +43,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     @Specialization(guards = "isRubySymbol(symbol)")
     public String coerceRubySymbol(DynamicObject symbol) {
-        return SymbolNodes.SYMBOL_LAYOUT.getString(symbol);
+        return Layouts.SYMBOL.getString(symbol);
     }
 
     @Specialization(guards = "isRubyString(string)")

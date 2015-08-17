@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ArrayGuards {
 
@@ -18,34 +19,34 @@ public class ArrayGuards {
 
     public static boolean isNullArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getStore(array) == null;
+        return Layouts.ARRAY.getStore(array) == null;
     }
 
     public static boolean isIntArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof int[];
+        return Layouts.ARRAY.getStore(array) instanceof int[];
     }
 
     public static boolean isLongArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof long[];
+        return Layouts.ARRAY.getStore(array) instanceof long[];
     }
 
     public static boolean isDoubleArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof double[];
+        return Layouts.ARRAY.getStore(array) instanceof double[];
     }
 
     public static boolean isObjectArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof Object[];
+        return Layouts.ARRAY.getStore(array) instanceof Object[];
     }
 
     // Higher level properties
 
     public static boolean isEmptyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.ARRAY_LAYOUT.getSize(array) == 0;
+        return Layouts.ARRAY.getSize(array) == 0;
     }
 
 }

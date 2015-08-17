@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
 
@@ -236,7 +237,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
 
             final DynamicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
-            final Object store = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+            final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {
                 replace(new EmptyArrayLiteralNode(getContext(), getSourceSection(), values));

@@ -12,21 +12,18 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.runtime.layouts.rubinius.PointerLayout;
-import org.jruby.truffle.runtime.layouts.rubinius.PointerLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class PointerNodes {
 
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
-
-    public static final PointerLayout POINTER_LAYOUT = PointerLayoutImpl.INSTANCE;
 
     public static DynamicObject createPointer(DynamicObject rubyClass, Pointer pointer) {
         if (pointer == null) {
             pointer = NULL_POINTER;
         }
 
-        return POINTER_LAYOUT.createPointer(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), pointer);
+        return Layouts.POINTER.createPointer(Layouts.CLASS.getInstanceFactory(rubyClass), pointer);
     }
 
 }

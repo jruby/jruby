@@ -20,9 +20,9 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -96,8 +96,8 @@ public abstract class SingletonClassNode extends RubyNode {
             return ClassNodes.getSingletonClass(object);
         }
 
-        if (ClassNodes.CLASS_LAYOUT.getIsSingleton(BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object))) {
-            return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object);
+        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(object))) {
+            return Layouts.BASIC_OBJECT.getMetaClass(object);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -108,11 +108,11 @@ public abstract class SingletonClassNode extends RubyNode {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.MODULE_LAYOUT.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
+        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
-        BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(object, singletonClass);
+        Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
 
         return singletonClass;
     }

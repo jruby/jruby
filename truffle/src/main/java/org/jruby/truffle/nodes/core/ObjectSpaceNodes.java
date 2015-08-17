@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
@@ -63,20 +64,20 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
         public Object id2RefLargeFixnum(DynamicObject id) {
-            return BignumNodes.BIGNUM_LAYOUT.getValue(id).longValue();
+            return Layouts.BIGNUM.getValue(id).longValue();
         }
 
         @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
         public double id2RefFloat(DynamicObject id) {
-            return Double.longBitsToDouble(BignumNodes.BIGNUM_LAYOUT.getValue(id).longValue());
+            return Double.longBitsToDouble(Layouts.BIGNUM.getValue(id).longValue());
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {
-            return ObjectIDOperations.isLargeFixnumID(BignumNodes.BIGNUM_LAYOUT.getValue(id));
+            return ObjectIDOperations.isLargeFixnumID(Layouts.BIGNUM.getValue(id));
         }
 
         protected boolean isFloatID(DynamicObject id) {
-            return ObjectIDOperations.isFloatID(BignumNodes.BIGNUM_LAYOUT.getValue(id));
+            return ObjectIDOperations.isFloatID(Layouts.BIGNUM.getValue(id));
         }
 
     }
@@ -121,7 +122,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(DynamicObject object) {
-            return RubyGuards.isRubyClass(object) && ClassNodes.CLASS_LAYOUT.getIsSingleton(object);
+            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton(object);
         }
 
     }

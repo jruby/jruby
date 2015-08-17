@@ -11,14 +11,14 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {
 
     public static ByteList privatizeByteList(DynamicObject string) {
         if (RubyGuards.isRubyString(string)) {
-            return StringNodes.getByteList(string).dup();
+            return Layouts.STRING.getByteList(string).dup();
         } else {
             return null;
         }
@@ -26,7 +26,7 @@ public abstract class StringCachingGuards {
 
     public static boolean byteListsEqual(DynamicObject string, ByteList byteList) {
         if (RubyGuards.isRubyString(string)) {
-            return StringNodes.getByteList(string).equal(byteList);
+            return Layouts.STRING.getByteList(string).equal(byteList);
         } else {
             return false;
         }

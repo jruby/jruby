@@ -22,8 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.QueueLayout;
-import org.jruby.truffle.runtime.layouts.QueueLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -36,8 +35,6 @@ import java.util.concurrent.locks.ReentrantLock;
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
 
-    public static final QueueLayout QUEUE_LAYOUT = QueueLayoutImpl.INSTANCE;
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -47,7 +44,7 @@ public abstract class QueueNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return QUEUE_LAYOUT.createQueue(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), new LinkedBlockingQueue());
+            return Layouts.QUEUE.createQueue(Layouts.CLASS.getInstanceFactory(rubyClass), new LinkedBlockingQueue());
         }
 
     }
@@ -62,7 +59,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject push(DynamicObject self, final Object value) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             queue.add(value);
             return self;
@@ -89,7 +86,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization(guards = "!nonBlocking")
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
                 @Override
@@ -102,7 +99,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final Object value = queue.poll();
             if (value == null) {
@@ -134,7 +131,7 @@ public abstract class QueueNodes {
 
         @Specialization
         public Object receiveTimeout(DynamicObject self, double duration) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final long durationInMillis = (long) (duration * 1000.0);
             final long start = System.currentTimeMillis();
@@ -176,7 +173,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization
         public boolean empty(DynamicObject self) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             return queue.isEmpty();
         }
 
@@ -192,7 +189,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization
         public int size(DynamicObject self) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             return queue.size();
         }
 
@@ -208,7 +205,7 @@ public abstract class QueueNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject clear(DynamicObject self) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             queue.clear();
             return self;
         }
@@ -243,7 +240,7 @@ public abstract class QueueNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public int num_waiting(DynamicObject self) {
-            final BlockingQueue<Object> queue = QUEUE_LAYOUT.getQueue(self);
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);

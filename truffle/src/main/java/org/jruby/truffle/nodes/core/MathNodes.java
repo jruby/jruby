@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {
@@ -332,7 +333,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public DynamicObject frexp(DynamicObject a) {
-            return frexp(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue());
+            return frexp(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
@@ -487,17 +488,17 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, int b) {
-            return function(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, long b) {
-            return function(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, double b) {
-            return function(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -562,7 +563,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public DynamicObject lgamma(DynamicObject a) {
-            return lgamma(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue());
+            return lgamma(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
@@ -612,7 +613,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, NotProvided b) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue());
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
@@ -792,7 +793,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue());
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
@@ -845,7 +846,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public double function(int a, DynamicObject b) {
-            return doFunction(a, BignumNodes.BIGNUM_LAYOUT.getValue(b).doubleValue());
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization
@@ -865,7 +866,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(long a, DynamicObject b) {
-            return doFunction(a, BignumNodes.BIGNUM_LAYOUT.getValue(b).doubleValue());
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization
@@ -875,22 +876,22 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, int b) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, long b) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = {"isRubyBignum(a)", "isRubyBignum(b)"})
         public double function(DynamicObject a, DynamicObject b) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), BignumNodes.BIGNUM_LAYOUT.getValue(b).doubleValue());
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization(guards = "isRubyBignum(a)")
         public double function(DynamicObject a, double b) {
-            return doFunction(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -905,7 +906,7 @@ public abstract class MathNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public double function(double a, DynamicObject b) {
-            return doFunction(a, BignumNodes.BIGNUM_LAYOUT.getValue(b).doubleValue());
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization

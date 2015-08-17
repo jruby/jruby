@@ -15,8 +15,8 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class UndefNode extends RubyNode {
 
@@ -41,7 +41,7 @@ public class UndefNode extends RubyNode {
             throw new RuntimeException(e);
         }
 
-        ModuleNodes.MODULE_LAYOUT.getFields(moduleObject).undefMethod(this, name);
+        Layouts.MODULE.getFields(moduleObject).undefMethod(this, name);
     }
 
     @Override

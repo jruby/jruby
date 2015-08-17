@@ -15,8 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
@@ -113,8 +112,8 @@ public class InternalMethod {
                 return true;
 
             case PROTECTED:
-                for (DynamicObject ancestor : ModuleNodes.MODULE_LAYOUT.getFields(callerClass).ancestors()) {
-                    if (ancestor == declaringModule || BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(ancestor) == declaringModule) {
+                for (DynamicObject ancestor : Layouts.MODULE.getFields(callerClass).ancestors()) {
+                    if (ancestor == declaringModule || Layouts.BASIC_OBJECT.getMetaClass(ancestor) == declaringModule) {
                         return true;
                     }
                 }

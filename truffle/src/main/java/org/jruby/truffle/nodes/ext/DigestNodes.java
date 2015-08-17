@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.ext.DigestLayout;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.util.ByteList;
 
@@ -25,8 +25,6 @@ import java.security.NoSuchAlgorithmException;
 
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
-
-    public static final DigestLayout DIGEST_LAYOUT = DigestLayoutImpl.INSTANCE;
 
     private enum Algorithm {
         MD5("MD5"),
@@ -57,7 +55,7 @@ public abstract class DigestNodes {
 
         final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return DIGEST_LAYOUT.createDigest(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), digest);
+        return DigestLayoutImpl.INSTANCE.createDigest(Layouts.CLASS.getInstanceFactory(rubyClass), digest);
     }
 
     @CoreMethod(names = "md5", onSingleton = true)
@@ -145,8 +143,8 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
-            final ByteList bytes = StringNodes.getByteList(message);
-            DIGEST_LAYOUT.getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            final ByteList bytes = Layouts.STRING.getByteList(message);
+            DigestLayoutImpl.INSTANCE.getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
         }
 
@@ -162,7 +160,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
-            DIGEST_LAYOUT.getDigest(digestObject).reset();
+            DigestLayoutImpl.INSTANCE.getDigest(digestObject).reset();
             return digestObject;
         }
 
@@ -178,7 +176,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject digest(DynamicObject digestObject) {
-            final MessageDigest digest = DIGEST_LAYOUT.getDigest(digestObject);
+            final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
 
@@ -205,7 +203,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
-            return DIGEST_LAYOUT.getDigest(digestObject).getDigestLength();
+            return DigestLayoutImpl.INSTANCE.getDigest(digestObject).getDigestLength();
         }
 
     }
@@ -220,7 +218,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
-            final ByteList byteList = StringNodes.getByteList(message);
+            final ByteList byteList = Layouts.STRING.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 

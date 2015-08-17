@@ -52,8 +52,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.ModuleFields;
-import org.jruby.truffle.runtime.layouts.ModuleLayout;
-import org.jruby.truffle.runtime.layouts.ModuleLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -69,8 +68,6 @@ import java.util.Map.Entry;
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
 
-    public static final ModuleLayout MODULE_LAYOUT = ModuleLayoutImpl.INSTANCE;
-
     /**
      * The slot within a module definition method frame where we store the implicit state that is
      * the current visibility for new methods.
@@ -79,12 +76,12 @@ public abstract class ModuleNodes {
 
     public static DynamicObject createRubyModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
-        final DynamicObject module = MODULE_LAYOUT.createModule(ClassNodes.CLASS_LAYOUT.getInstanceFactory(selfClass), model);
+        final DynamicObject module = Layouts.MODULE.createModule(Layouts.CLASS.getInstanceFactory(selfClass), model);
         model.rubyModuleObject = module;
         if (lexicalParent == null) { // bootstrap or anonymous module
-            MODULE_LAYOUT.getFields(module).name = MODULE_LAYOUT.getFields(module).givenBaseName;
+            Layouts.MODULE.getFields(module).name = Layouts.MODULE.getFields(module).givenBaseName;
         } else {
-            MODULE_LAYOUT.getFields(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+            Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
         return module;
     }
@@ -101,7 +98,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean containsInstance(DynamicObject module, DynamicObject instance) {
-            return includes(BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(instance), module);
+            return includes(Layouts.BASIC_OBJECT.getMetaClass(instance), module);
         }
 
         @Specialization(guards = "!isDynamicObject(instance)")
@@ -328,7 +325,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public DynamicObject aliasMethod(DynamicObject module, String newName, String oldName) {
-            MODULE_LAYOUT.getFields(module).alias(this, newName, oldName);
+            Layouts.MODULE.getFields(module).alias(this, newName, oldName);
             return module;
         }
 
@@ -346,7 +343,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             final List<DynamicObject> ancestors = new ArrayList<>();
-            for (DynamicObject module : MODULE_LAYOUT.getFields(self).ancestors()) {
+            for (DynamicObject module : Layouts.MODULE.getFields(self).ancestors()) {
                 ancestors.add(module);
             }
 
@@ -370,7 +367,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            MODULE_LAYOUT.getFields(target).include(this, features);
+            Layouts.MODULE.getFields(target).include(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -419,7 +416,7 @@ public abstract class ModuleNodes {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
-            MODULE_LAYOUT.getFields(module).addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(this, method);
             return nil();
         }
     }
@@ -558,11 +555,11 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            if (alreadyLoaded.profile(MODULE_LAYOUT.getFields(module).getConstants().get(name) != null)) {
+            if (alreadyLoaded.profile(Layouts.MODULE.getFields(module).getConstants().get(name) != null)) {
                 return nil();
             }
 
-            MODULE_LAYOUT.getFields(module).setAutoloadConstant(this, name, filename);
+            Layouts.MODULE.getFields(module).setAutoloadConstant(this, name, filename);
 
             return nil();
         }
@@ -577,7 +574,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = "isRubySymbol(name)")
         public Object autoloadQuerySymbol(DynamicObject module, DynamicObject name) {
-            return autoloadQuery(module, SymbolNodes.SYMBOL_LAYOUT.getString(name));
+            return autoloadQuery(module, Layouts.SYMBOL.getString(name));
         }
 
         @Specialization(guards = "isRubyString(name)")
@@ -645,7 +642,7 @@ public abstract class ModuleNodes {
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
-            Encoding encoding = StringNodes.getByteList(code).getEncoding();
+            Encoding encoding = Layouts.STRING.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
@@ -838,7 +835,7 @@ public abstract class ModuleNodes {
             if (inherit) {
                 constants = ModuleOperations.getAllConstants(module);
             } else {
-                constants = MODULE_LAYOUT.getFields(module).getConstants();
+                constants = Layouts.MODULE.getFields(module).getConstants();
             }
 
             for (Entry<String, RubyConstant> constant : constants.entrySet()) {
@@ -910,12 +907,12 @@ public abstract class ModuleNodes {
         // Symbol
         @Specialization(guards = {"inherit", "isRubySymbol(name)"})
         public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
-            return readConstantNode.readConstant(frame, module, SymbolNodes.SYMBOL_LAYOUT.getString(name));
+            return readConstantNode.readConstant(frame, module, Layouts.SYMBOL.getString(name));
         }
 
         @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
         public Object getConstantNoInherit(DynamicObject module, DynamicObject name, boolean inherit) {
-            return getConstantNoInherit(module, SymbolNodes.SYMBOL_LAYOUT.getString(name), this);
+            return getConstantNoInherit(module, Layouts.SYMBOL.getString(name), this);
         }
 
         // String
@@ -1015,7 +1012,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
-            MODULE_LAYOUT.getFields(module).setConstant(this, name, value);
+            Layouts.MODULE.getFields(module).setConstant(this, name, value);
             return value;
         }
 
@@ -1061,21 +1058,21 @@ public abstract class ModuleNodes {
         @Specialization(guards = "isRubyMethod(methodObject)")
         public DynamicObject defineMethodMethod(DynamicObject module, String name, DynamicObject methodObject, NotProvided block,
                 @Cached("createCanBindMethodToModuleNode()") CanBindMethodToModuleNode canBindMethodToModuleNode) {
-            final InternalMethod method = MethodNodes.METHOD_LAYOUT.getMethod(methodObject);
+            final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
             if (!canBindMethodToModuleNode.executeCanBindMethodToModule(method, module)) {
                 CompilerDirectives.transferToInterpreter();
                 final DynamicObject declaringModule = method.getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.CLASS_LAYOUT.getIsSingleton(declaringModule)) {
+                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "can't bind singleton method to a different class", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "class must be a subclass of " + MODULE_LAYOUT.getFields(declaringModule).getName(), this));
+                            "class must be a subclass of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
 
-            MODULE_LAYOUT.getFields(module).addMethod(this, method.withName(name));
+            Layouts.MODULE.getFields(module).addMethod(this, method.withName(name));
             return getSymbol(name);
         }
 
@@ -1083,15 +1080,15 @@ public abstract class ModuleNodes {
         public DynamicObject defineMethod(VirtualFrame frame, DynamicObject module, String name, DynamicObject method, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject origin = UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.getOrigin(method);
+            final DynamicObject origin = Layouts.UNBOUND_METHOD.getOrigin(method);
             if (!ModuleOperations.canBindMethodTo(origin, module)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + MODULE_LAYOUT.getFields(origin).getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeError("bind argument must be a subclass of " + Layouts.MODULE.getFields(origin).getName(), this));
             }
 
             // TODO CS 5-Apr-15 TypeError if the method came from a singleton
 
-            return addMethod(module, name, UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.getMethod(method));
+            return addMethod(module, name, Layouts.UNBOUND_METHOD.getMethod(method));
         }
 
         private DynamicObject defineMethod(DynamicObject module, String name, DynamicObject proc) {
@@ -1099,9 +1096,9 @@ public abstract class ModuleNodes {
 
             assert RubyGuards.isRubyProc(proc);
 
-            final CallTarget modifiedCallTarget = ProcNodes.PROC_LAYOUT.getCallTargetForLambdas(proc);
-            final SharedMethodInfo info = ProcNodes.PROC_LAYOUT.getSharedMethodInfo(proc).withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, ProcNodes.PROC_LAYOUT.getDeclarationFrame(proc));
+            final CallTarget modifiedCallTarget = Layouts.PROC.getCallTargetForLambdas(proc);
+            final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, Layouts.PROC.getDeclarationFrame(proc));
 
             return addMethod(module, name, modifiedMethod);
         }
@@ -1113,7 +1110,7 @@ public abstract class ModuleNodes {
                 method = method.withVisibility(Visibility.PRIVATE);
             }
 
-            MODULE_LAYOUT.getFields(module).addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(this, method);
             return getSymbol(name);
         }
 
@@ -1140,7 +1137,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            MODULE_LAYOUT.getFields(singletonClassNode.executeSingletonClass(frame, object)).include(this, module);
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, object)).include(this, module);
             return module;
         }
 
@@ -1190,7 +1187,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = { "!isRubyClass(self)", "isRubyModule(from)", "!isRubyClass(from)" })
         public Object initializeCopyModule(DynamicObject self, DynamicObject from) {
-            MODULE_LAYOUT.getFields(self).initCopy(from);
+            Layouts.MODULE.getFields(self).initCopy(from);
             return nil();
         }
 
@@ -1199,12 +1196,12 @@ public abstract class ModuleNodes {
             if (from == getContext().getCoreLibrary().getBasicObjectClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy the root class", this));
-            } else if (ClassNodes.CLASS_LAYOUT.getIsSingleton(from)) {
+            } else if (Layouts.CLASS.getIsSingleton(from)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("can't copy singleton class", this));
             }
 
-            MODULE_LAYOUT.getFields(self).initCopy(from);
+            Layouts.MODULE.getFields(self).initCopy(from);
             return nil();
         }
 
@@ -1237,8 +1234,8 @@ public abstract class ModuleNodes {
 
             final List<DynamicObject> modules = new ArrayList<>();
 
-            for (DynamicObject included : MODULE_LAYOUT.getFields(module).ancestors()) {
-                if (RubyGuards.isRubyModule(MODULE_LAYOUT.getFields(included).rubyModuleObject) && !RubyGuards.isRubyClass(MODULE_LAYOUT.getFields(included).rubyModuleObject) && included != module) {
+            for (DynamicObject included : Layouts.MODULE.getFields(module).ancestors()) {
+                if (RubyGuards.isRubyModule(Layouts.MODULE.getFields(included).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(included).rubyModuleObject) && included != module) {
                     modules.add(included);
                 }
             }
@@ -1276,7 +1273,7 @@ public abstract class ModuleNodes {
             if (inherit) {
                 method = ModuleOperations.lookupMethod(module, name);
             } else {
-                method = MODULE_LAYOUT.getFields(module).getMethods().get(name);
+                method = Layouts.MODULE.getFields(module).getMethods().get(name);
             }
 
             return method != null && !method.getVisibility().isPrivate();
@@ -1317,11 +1314,11 @@ public abstract class ModuleNodes {
         public Object name(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            if (!MODULE_LAYOUT.getFields(module).hasPartialName()) {
+            if (!Layouts.MODULE.getFields(module).hasPartialName()) {
                 return nil();
             }
 
-            return createString(MODULE_LAYOUT.getFields(module).getName());
+            return createString(Layouts.MODULE.getFields(module).getName());
         }
     }
 
@@ -1432,7 +1429,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
             }
-            MODULE_LAYOUT.getFields(target).prepend(this, features);
+            Layouts.MODULE.getFields(target).prepend(this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -1506,7 +1503,7 @@ public abstract class ModuleNodes {
         public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    MODULE_LAYOUT.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
     }
 
@@ -1555,7 +1552,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    MODULE_LAYOUT.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
     }
 
@@ -1614,7 +1611,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    MODULE_LAYOUT.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
     }
 
@@ -1663,7 +1660,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
 
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    MODULE_LAYOUT.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
     }
 
@@ -1712,7 +1709,7 @@ public abstract class ModuleNodes {
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                MODULE_LAYOUT.getFields(module).changeConstantVisibility(this, name, true);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, true);
             }
             return module;
         }
@@ -1732,7 +1729,7 @@ public abstract class ModuleNodes {
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                MODULE_LAYOUT.getFields(module).changeConstantVisibility(this, name, false);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, false);
             }
             return module;
         }
@@ -1775,7 +1772,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
-            return MODULE_LAYOUT.getFields(module).removeClassVariable(this, name);
+            return Layouts.MODULE.getFields(module).removeClassVariable(this, name);
         }
 
     }
@@ -1798,7 +1795,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         Object removeConstant(DynamicObject module, String name) {
-            RubyConstant oldConstant = MODULE_LAYOUT.getFields(module).removeConstant(this, name);
+            RubyConstant oldConstant = Layouts.MODULE.getFields(module).removeConstant(this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
@@ -1835,8 +1832,8 @@ public abstract class ModuleNodes {
             raiseIfFrozenNode.execute(frame);
 
             CompilerDirectives.transferToInterpreter();
-            if (MODULE_LAYOUT.getFields(module).getMethods().containsKey(name)) {
-                MODULE_LAYOUT.getFields(module).removeMethod(name);
+            if (Layouts.MODULE.getFields(module).getMethods().containsKey(name)) {
+                Layouts.MODULE.getFields(module).removeMethod(name);
                 methodRemovedNode.call(frame, module, "method_removed", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1857,7 +1854,7 @@ public abstract class ModuleNodes {
         public DynamicObject toS(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            return createString(MODULE_LAYOUT.getFields(module).getName());
+            return createString(Layouts.MODULE.getFields(module).getName());
         }
 
     }
@@ -1890,7 +1887,7 @@ public abstract class ModuleNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method != null) {
-                MODULE_LAYOUT.getFields(module).undefMethod(this, method);
+                Layouts.MODULE.getFields(module).undefMethod(this, method);
                 methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1964,7 +1961,7 @@ public abstract class ModuleNodes {
         public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
-            final InternalMethod method = MODULE_LAYOUT.getFields(module).deepMethodSearch(methodName);
+            final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(methodName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1978,10 +1975,10 @@ public abstract class ModuleNodes {
              * to this module.
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
-                MODULE_LAYOUT.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                MODULE_LAYOUT.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
-                MODULE_LAYOUT.getFields(module).addMethod(this, method.withVisibility(visibility));
+                Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(visibility));
             }
 
             return module;

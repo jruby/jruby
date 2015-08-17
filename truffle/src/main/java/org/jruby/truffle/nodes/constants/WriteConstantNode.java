@@ -15,9 +15,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Represents writing a constant into some module.
@@ -51,7 +51,7 @@ public class WriteConstantNode extends RubyNode {
 
         final DynamicObject module = (DynamicObject) receiverObject;
 
-        ModuleNodes.MODULE_LAYOUT.getFields(module).setConstant(this, name, rhsValue);
+        Layouts.MODULE.getFields(module).setConstant(this, name, rhsValue);
 
         return rhsValue;
     }

@@ -29,12 +29,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -84,7 +83,7 @@ public abstract class CmpIntNode extends RubyNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public int cmpBignum(DynamicObject value, Object receiver, Object other) {
-        return BignumNodes.BIGNUM_LAYOUT.getValue(value).signum();
+        return Layouts.BIGNUM.getValue(value).signum();
     }
 
     @TruffleBoundary
@@ -93,8 +92,8 @@ public abstract class CmpIntNode extends RubyNode {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
-                        ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
-                        ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
+                        Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
+                        Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
         );
     }
 

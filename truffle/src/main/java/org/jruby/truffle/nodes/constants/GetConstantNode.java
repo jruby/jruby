@@ -20,12 +20,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.IdUtil;
 
 @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant") })
@@ -54,12 +54,12 @@ public abstract class GetConstantNode extends RubyNode {
 
         // The autoload constant must only be removed if everything succeeds.
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        ModuleNodes.MODULE_LAYOUT.getFields(constant.getDeclaringModule()).removeConstant(this, name);
+        Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             requireNode.require(path);
             return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
-            ModuleNodes.MODULE_LAYOUT.getFields(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
+            Layouts.MODULE.getFields(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;
         }
     }

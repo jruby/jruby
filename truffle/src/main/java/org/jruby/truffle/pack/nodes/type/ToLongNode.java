@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -26,6 +25,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.CantConvertException;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Convert a value to a {@code long}.
@@ -66,7 +66,7 @@ public abstract class ToLongNode extends PackNode {
     @Specialization(guards = "isRubyBignum(object)")
     public long toLong(VirtualFrame frame, DynamicObject object) {
         // A truncated value is exactly what we want
-        return BignumNodes.BIGNUM_LAYOUT.getValue(object).longValue();
+        return Layouts.BIGNUM.getValue(object).longValue();
     }
 
     @Specialization(guards = "isNil(nil)")

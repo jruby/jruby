@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -45,48 +46,48 @@ public abstract class ArraySliceNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject sliceIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
+        final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject sliceLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
+        final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject sliceFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
+        final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject sliceObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
+        final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
     }
 

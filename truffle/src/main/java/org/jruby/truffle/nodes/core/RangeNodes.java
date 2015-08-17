@@ -20,19 +20,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.*;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
-
-    public static final IntegerFixnumRangeLayout INTEGER_FIXNUM_RANGE_LAYOUT = IntegerFixnumRangeLayoutImpl.INSTANCE;
-
-    public static final LongFixnumRangeLayout LONG_FIXNUM_RANGE_LAYOUT = LongFixnumRangeLayoutImpl.INSTANCE;
-
-    public static final ObjectRangeLayout OBJECT_RANGE_LAYOUT = ObjectRangeLayoutImpl.INSTANCE;
 
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
@@ -46,12 +39,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block) {
-            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range);
+            final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             int result;
-            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range)) {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range);
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
             } else {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range) + 1;
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
             }
             final int exclusiveEnd = result;
             final int length = exclusiveEnd - begin;
@@ -74,7 +67,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(store, length), length);
         }
 
     }
@@ -89,17 +82,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
         public Object eachInt(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             int result;
-            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
             } else {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
             }
             final int exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (int n = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
+                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -118,17 +111,17 @@ public abstract class RangeNodes {
         @Specialization(guards = {"isLongFixnumRange(range)", "isRubyProc(block)"})
         public Object eachLong(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             long result;
-            if (LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+                result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
             } else {
-                result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
             }
             final long exclusiveEnd = result;
 
             int count = 0;
 
             try {
-                for (long n = LONG_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
+                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < exclusiveEnd; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -170,17 +163,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public boolean excludeEndInt(DynamicObject range) {
-            return INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public boolean excludeEndLong(DynamicObject range) {
-            return LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean excludeEndObject(DynamicObject range) {
-            return OBJECT_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getExcludedEnd(((DynamicObject) range));
         }
 
     }
@@ -194,17 +187,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int eachInt(DynamicObject range) {
-            return INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long eachLong(DynamicObject range) {
-            return LONG_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object eachObject(DynamicObject range) {
-            return OBJECT_RANGE_LAYOUT.getBegin(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getBegin(((DynamicObject) range));
         }
 
     }
@@ -223,9 +216,9 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public DynamicObject initialize(DynamicObject range, Object begin, Object end, boolean excludeEnd) {
-            OBJECT_RANGE_LAYOUT.setExcludedEnd(range, excludeEnd);
-            OBJECT_RANGE_LAYOUT.setBegin(range, begin);
-            OBJECT_RANGE_LAYOUT.setEnd(range, end);
+            Layouts.OBJECT_RANGE.setExcludedEnd(range, excludeEnd);
+            Layouts.OBJECT_RANGE.setBegin(range, begin);
+            Layouts.OBJECT_RANGE.setEnd(range, end);
             return range;
         }
 
@@ -240,17 +233,17 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public int lastInt(DynamicObject range) {
-            return INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            return Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public long lastLong(DynamicObject range) {
-            return LONG_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            return Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object lastObject(DynamicObject range) {
-            return OBJECT_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+            return Layouts.OBJECT_RANGE.getEnd(((DynamicObject) range));
         }
 
     }
@@ -268,12 +261,12 @@ public abstract class RangeNodes {
 
             try {
                 int result;
-                if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                    result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+                if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range));
                 } else {
-                    result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                    result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
                 }
-                for (int n = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)); n < result; n += step) {
+                for (int n = Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -295,12 +288,12 @@ public abstract class RangeNodes {
 
             try {
                 long result;
-                if (LONG_FIXNUM_RANGE_LAYOUT.getExcludedEnd(((DynamicObject) range))) {
-                    result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range));
+                if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range));
                 } else {
-                    result = LONG_FIXNUM_RANGE_LAYOUT.getEnd(((DynamicObject) range)) + 1;
+                    result = Layouts.LONG_FIXNUM_RANGE.getEnd(((DynamicObject) range)) + 1;
                 }
-                for (long n = LONG_FIXNUM_RANGE_LAYOUT.getBegin(((DynamicObject) range)); n < result; n += step) {
+                for (long n = Layouts.LONG_FIXNUM_RANGE.getBegin(((DynamicObject) range)); n < result; n += step) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -387,12 +380,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public DynamicObject toA(DynamicObject range) {
-            final int begin = INTEGER_FIXNUM_RANGE_LAYOUT.getBegin(range);
+            final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             int result;
-            if (INTEGER_FIXNUM_RANGE_LAYOUT.getExcludedEnd(range)) {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range);
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
             } else {
-                result = INTEGER_FIXNUM_RANGE_LAYOUT.getEnd(range) + 1;
+                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
             }
             final int length = result - begin;
 
@@ -429,7 +422,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setBegin(DynamicObject range, Object begin) {
-            OBJECT_RANGE_LAYOUT.setBegin(range, begin);
+            Layouts.OBJECT_RANGE.setBegin(range, begin);
             return begin;
         }
     }
@@ -447,7 +440,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public Object setEnd(DynamicObject range, Object end) {
-            OBJECT_RANGE_LAYOUT.setEnd(range, end);
+            Layouts.OBJECT_RANGE.setEnd(range, end);
             return end;
         }
     }
@@ -469,7 +462,7 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public boolean setExcludeEnd(DynamicObject range, boolean excludeEnd) {
-            OBJECT_RANGE_LAYOUT.setExcludedEnd(range, excludeEnd);
+            Layouts.OBJECT_RANGE.setExcludedEnd(range, excludeEnd);
             return excludeEnd;
         }
 
@@ -484,7 +477,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return OBJECT_RANGE_LAYOUT.createObjectRange(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), false, nil(), nil());
+            return Layouts.OBJECT_RANGE.createObjectRange(Layouts.CLASS.getInstanceFactory(rubyClass), false, nil(), nil());
         }
 
     }

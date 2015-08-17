@@ -22,15 +22,12 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
-import org.jruby.truffle.runtime.layouts.ExceptionLayout;
-import org.jruby.truffle.runtime.layouts.ExceptionLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.List;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
-
-    public static final ExceptionLayout EXCEPTION_LAYOUT = ExceptionLayoutImpl.INSTANCE;
 
     public static class BacktraceFormatter extends MRIBacktraceFormatter {
         @Override
@@ -45,8 +42,8 @@ public abstract class ExceptionNodes {
     public static DynamicObject asRubyStringArray(DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
 
-        assert EXCEPTION_LAYOUT.getBacktrace(exception) != null;
-        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, EXCEPTION_LAYOUT.getBacktrace(exception));
+        assert Layouts.EXCEPTION.getBacktrace(exception) != null;
+        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, Layouts.EXCEPTION.getBacktrace(exception));
 
         final Object[] array = new Object[lines.length];
 
@@ -58,15 +55,15 @@ public abstract class ExceptionNodes {
     }
 
     public static void setMessage(DynamicObject exception, Object message) {
-        EXCEPTION_LAYOUT.setMessage(exception, message);
+        Layouts.EXCEPTION.setMessage(exception, message);
     }
 
     public static DynamicObject createRubyException(DynamicObject rubyClass) {
-        return EXCEPTION_LAYOUT.createException(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), null, null);
+        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), null, null);
     }
 
     public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
-        return EXCEPTION_LAYOUT.createException(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), message, backtrace);
+        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
     }
 
     @CoreMethod(names = "initialize", optional = 1)
@@ -104,7 +101,7 @@ public abstract class ExceptionNodes {
         public Object backtrace(DynamicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {
                 return readCustomBacktrace.execute(exception);
-            } else if (EXCEPTION_LAYOUT.getBacktrace(exception) != null) {
+            } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
                 return asRubyStringArray(exception);
             } else {
                 return nil();
@@ -129,7 +126,7 @@ public abstract class ExceptionNodes {
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
-            EXCEPTION_LAYOUT.setBacktrace(exception, backtrace);
+            Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
 
@@ -144,7 +141,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public Object message(DynamicObject exception) {
-            return EXCEPTION_LAYOUT.getMessage(exception);
+            return Layouts.EXCEPTION.getMessage(exception);
         }
 
     }

@@ -18,9 +18,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild("classToAllocate"),
@@ -64,7 +64,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {
-        return ClassNodes.CLASS_LAYOUT.getIsSingleton(classToAllocate);
+        return Layouts.CLASS.getIsSingleton(classToAllocate);
     }
 
 }

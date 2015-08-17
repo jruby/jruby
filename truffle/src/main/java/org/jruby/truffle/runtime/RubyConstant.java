@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RubyConstant {
 
@@ -67,7 +67,7 @@ public class RubyConstant {
 
         // Look in ancestors
         if (RubyGuards.isRubyClass(module)) {
-            for (DynamicObject included : ModuleNodes.MODULE_LAYOUT.getFields(module).parentAncestors()) {
+            for (DynamicObject included : Layouts.MODULE.getFields(module).parentAncestors()) {
                 if (included == declaringModule) {
                     return true;
                 }

@@ -15,8 +15,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Reads the internal metaclass of an object.
@@ -57,7 +57,7 @@ public abstract class MetaClassNode extends RubyNode {
 
     @Specialization
     protected DynamicObject singletonClass(DynamicObject object) {
-        return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object);
+        return Layouts.BASIC_OBJECT.getMetaClass(object);
     }
 
 }

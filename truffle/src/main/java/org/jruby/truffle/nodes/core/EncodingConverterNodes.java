@@ -27,18 +27,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.EncodingConverterLayout;
-import org.jruby.truffle.runtime.layouts.EncodingConverterLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
 
-    public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
-
     public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
-        return ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), econv);
+        return Layouts.ENCODING_CONVERTER.createEncodingConverter(Layouts.CLASS.getInstanceFactory(rubyClass), econv);
     }
 
     @RubiniusOnly
@@ -89,7 +86,7 @@ public abstract class EncodingConverterNodes {
             econv.sourceEncoding = encs[0];
             econv.destinationEncoding = encs[1];
 
-            ENCODING_CONVERTER_LAYOUT.setEconv(self, econv);
+            Layouts.ENCODING_CONVERTER.setEconv(self, econv);
 
             return nil();
         }

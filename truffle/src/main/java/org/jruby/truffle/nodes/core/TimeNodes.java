@@ -19,22 +19,20 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.TimeLayout;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
-    public static final TimeLayout TIME_LAYOUT = TimeLayoutImpl.INSTANCE;
-
     private static final DateTime ZERO = new DateTime(0);
 
     public static DateTime getDateTime(DynamicObject time) {
-        return TIME_LAYOUT.getDateTime(time);
+        return Layouts.TIME.getDateTime(time);
     }
 
     public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
-        return TIME_LAYOUT.createTime(ClassNodes.CLASS_LAYOUT.getInstanceFactory(timeClass), dateTime, offset);
+        return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass), dateTime, offset);
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.
@@ -47,8 +45,8 @@ public abstract class TimeNodes {
 
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            TIME_LAYOUT.setDateTime(self, getDateTime(from));
-            TIME_LAYOUT.setOffset(self, TIME_LAYOUT.getOffset(from));
+            Layouts.TIME.setDateTime(self, getDateTime(from));
+            Layouts.TIME.setOffset(self, Layouts.TIME.getOffset(from));
             return self;
         }
 
@@ -64,7 +62,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public boolean internalGMT(DynamicObject time) {
-            return TIME_LAYOUT.getOffset(time) == nil() &&
+            return Layouts.TIME.getOffset(time) == nil() &&
                     (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
                      getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
         }
@@ -85,7 +83,7 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalSetGMT(DynamicObject time, boolean isGMT) {
             if (isGMT) {
-                TIME_LAYOUT.setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
+                Layouts.TIME.setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
                 // Do nothing I guess - we can't change it to another zone, as what zone would that be?
             }
@@ -104,7 +102,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public Object internalOffset(DynamicObject time) {
-            return TIME_LAYOUT.getOffset(time);
+            return Layouts.TIME.getOffset(time);
         }
     }
 
@@ -121,7 +119,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public Object internalSetOffset(DynamicObject time, Object offset) {
-            TIME_LAYOUT.setOffset(time, offset);
+            Layouts.TIME.setOffset(time, offset);
             return offset;
         }
     }

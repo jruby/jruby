@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -42,10 +43,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
+        if (index >= Layouts.ARRAY.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -53,10 +54,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
+        if (index >= Layouts.ARRAY.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -64,10 +65,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
+        if (index >= Layouts.ARRAY.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
@@ -75,10 +76,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
+        if (index >= Layouts.ARRAY.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 

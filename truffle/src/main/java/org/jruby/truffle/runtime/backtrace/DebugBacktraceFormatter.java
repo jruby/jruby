@@ -15,13 +15,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.ExceptionNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
@@ -42,7 +41,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
             if (exception != null) {
                 assert RubyGuards.isRubyException(exception);
 
-                lines.add(String.format("%s (%s)", ExceptionNodes.EXCEPTION_LAYOUT.getMessage(exception), ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
+                lines.add(String.format("%s (%s)", Layouts.EXCEPTION.getMessage(exception), Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
             }
 
             for (Activation activation : activations) {
@@ -84,7 +83,7 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
 
         if (sourceSection instanceof CoreSourceSection) {
             final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
-            builder.append(ModuleNodes.MODULE_LAYOUT.getFields(method.getDeclaringModule()).getName());
+            builder.append(Layouts.MODULE.getFields(method.getDeclaringModule()).getName());
             builder.append("#");
             builder.append(method.getName());
         } else {

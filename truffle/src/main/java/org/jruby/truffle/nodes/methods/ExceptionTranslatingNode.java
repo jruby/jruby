@@ -21,15 +21,13 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -121,7 +119,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof DynamicObject) {
-                builder.append(ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
+                builder.append(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");
@@ -130,17 +128,17 @@ public class ExceptionTranslatingNode extends RubyNode {
                     final DynamicObject array = (DynamicObject) value;
                     builder.append("[");
 
-                    if (ArrayNodes.ARRAY_LAYOUT.getStore(array) == null) {
+                    if (Layouts.ARRAY.getStore(array) == null) {
                         builder.append("null");
                     } else {
-                        builder.append(ArrayNodes.ARRAY_LAYOUT.getStore(array).getClass().getName());
+                        builder.append(Layouts.ARRAY.getStore(array).getClass().getName());
                     }
 
                     builder.append(",");
-                    builder.append(ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                    builder.append(Layouts.ARRAY.getSize(array));
                     builder.append("]");
                 } else if (RubyGuards.isRubyHash(value)) {
-                    final Object store = HashNodes.HASH_LAYOUT.getStore((DynamicObject) value);
+                    final Object store = Layouts.HASH.getStore((DynamicObject) value);
 
                     if (store == null) {
                         builder.append("[null]");

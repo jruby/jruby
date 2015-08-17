@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -149,14 +150,14 @@ public abstract class FixnumPrimitiveNodes {
             }
 
             if (a == -1) {
-                if (BignumNodes.BIGNUM_LAYOUT.getValue(b).testBit(0)) {
+                if (Layouts.BIGNUM.getValue(b).testBit(0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (BignumNodes.BIGNUM_LAYOUT.getValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 

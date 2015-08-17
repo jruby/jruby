@@ -20,8 +20,6 @@ import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Write;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -29,6 +27,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 
@@ -166,7 +165,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return RubyGuards.isRubyString(o) && StringNodes.getByteList((DynamicObject) o).length() == 1;
+            return RubyGuards.isRubyString(o) && Layouts.STRING.getByteList((DynamicObject) o).length() == 1;
         }
     }
 
@@ -179,7 +178,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return StringNodes.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
+            return Layouts.STRING.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
         }
     }
 
@@ -274,10 +273,10 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccessArguments.getReceiver(frame.getArguments()))) {
                 final DynamicObject string = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-                if (index >= StringNodes.getByteList(string).length()) {
+                if (index >= Layouts.STRING.getByteList(string).length()) {
                     return 0;
                 } else {
-                    return (byte) StringNodes.getByteList(string).get(index);
+                    return (byte) Layouts.STRING.getByteList(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -538,7 +537,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, DynamicObject name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.accessName = context.getSymbol(SymbolNodes.SYMBOL_LAYOUT.getString(name) + "=");
+            this.accessName = context.getSymbol(Layouts.SYMBOL.getString(name) + "=");
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;

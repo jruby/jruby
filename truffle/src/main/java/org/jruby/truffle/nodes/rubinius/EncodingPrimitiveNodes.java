@@ -13,9 +13,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.EncodingNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..
@@ -31,12 +30,12 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
-            return EncodingNodes.getEncoding(StringNodes.getByteList(string).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.STRING.getByteList(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
         public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(SymbolNodes.SYMBOL_LAYOUT.getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getByteList(symbol).getEncoding());
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")

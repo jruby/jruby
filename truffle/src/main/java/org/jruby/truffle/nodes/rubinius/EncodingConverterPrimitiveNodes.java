@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 /**
@@ -80,7 +81,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             StringNodes.modify(source);
             StringNodes.clearCodeRange(source);
 
-            return primitiveConvertHelper(encodingConverter, StringNodes.getByteList(source), source, target, offset, size, options);
+            return primitiveConvertHelper(encodingConverter, Layouts.STRING.getByteList(source), source, target, offset, size, options);
         }
 
         @TruffleBoundary
@@ -93,12 +94,12 @@ public abstract class EncodingConverterPrimitiveNodes {
             StringNodes.modify(target);
             StringNodes.clearCodeRange(target);
 
-            final ByteList outBytes = StringNodes.getByteList(target);
+            final ByteList outBytes = Layouts.STRING.getByteList(target);
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             final boolean changeOffset = (offset == 0);
             final boolean growOutputBuffer = (size == -1);
@@ -107,8 +108,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
                 if (nonNullSourceProfile.profile(nonNullSource)) {
-                    if (size < StringNodes.getByteList(source).getRealSize()) {
-                        size = StringNodes.getByteList(source).getRealSize();
+                    if (size < Layouts.STRING.getByteList(source).getRealSize()) {
+                        size = Layouts.STRING.getByteList(source).getRealSize();
                     }
                 }
             }
@@ -144,8 +145,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
                 if (nonNullSourceProfile.profile(nonNullSource)) {
-                    StringNodes.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                    StringNodes.getByteList(source).setBegin(inPtr.p);
+                    Layouts.STRING.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                    Layouts.STRING.getByteList(source).setBegin(inPtr.p);
                 }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
@@ -179,7 +180,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
             final int putbackable = ec.putbackable();
 
             return putback(encodingConverter, putbackable < maxBytes ? putbackable : maxBytes);
@@ -189,7 +190,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, NotProvided maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             return putback(encodingConverter, ec.putbackable());
         }
@@ -199,7 +200,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             final ByteList bytes = new ByteList(n);
             ec.putback(bytes.getUnsafeBytes(), bytes.getBegin(), n);
@@ -229,7 +230,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
             if (lastError.getResult() != EConvResult.InvalidByteSequence &&
@@ -279,7 +280,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public Object encodingConverterLastError(DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 

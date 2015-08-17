@@ -13,6 +13,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
@@ -27,7 +28,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        return StringNodes.STRING_LAYOUT.getCodeRange(string);
+        return Layouts.STRING.getCodeRange(string);
     }
 
     @Override
@@ -42,7 +43,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void setCodeRange(int newCodeRange) {
-        StringNodes.STRING_LAYOUT.setCodeRange(string, newCodeRange);
+        Layouts.STRING.setCodeRange(string, newCodeRange);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public ByteList getByteList() {
-        return StringNodes.getByteList(string);
+        return Layouts.STRING.getByteList(string);
     }
 
 }

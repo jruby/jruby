@@ -19,9 +19,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class TraceNode extends RubyNode {
 
@@ -65,7 +65,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.PROC_LAYOUT.getCallTargetForBlocks(traceFunc)));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
             } else {
                 callNode = null;
             }
@@ -85,7 +85,7 @@ public class TraceNode extends RubyNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(ProcNodes.PROC_LAYOUT.getMethod(traceFunc), ProcNodes.PROC_LAYOUT.getDeclarationFrame(traceFunc), ProcNodes.PROC_LAYOUT.getSelf(traceFunc), ProcNodes.PROC_LAYOUT.getBlock(traceFunc), args));
+                    callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(traceFunc), Layouts.PROC.getDeclarationFrame(traceFunc), Layouts.PROC.getSelf(traceFunc), Layouts.PROC.getBlock(traceFunc), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

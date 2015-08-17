@@ -24,16 +24,14 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 
@@ -194,19 +192,19 @@ public abstract class RubyNode extends Node {
     }
 
     protected DynamicObject createEmptyArray() {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
     protected DynamicObject createArrayWith(Object... store) {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
     }
 
     protected DynamicObject createArray(Object store, int size) {
-        return ArrayNodes.ARRAY_LAYOUT.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
 
     protected DynamicObject createBignum(BigInteger value) {
-        return BignumNodes.BIGNUM_LAYOUT.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
+        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     protected POSIX posix() {
@@ -224,7 +222,7 @@ public abstract class RubyNode extends Node {
     // Helper methods for caching
 
     protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
-        return ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass);
+        return Layouts.CLASS.getInstanceFactory(rubyClass);
     }
 
     // Instrumentation

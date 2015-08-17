@@ -16,6 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
@@ -194,14 +195,14 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            Object otherStore = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
             if (hasAppendedIntegerArray.profile(otherStore instanceof int[])) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
@@ -281,14 +282,14 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            Object otherStore = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
             if (otherLongStoreProfile.profile(otherStore instanceof long[])) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
@@ -367,14 +368,14 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            Object otherStore = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
             if (otherDoubleStoreProfile.profile(otherStore instanceof double[])) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
@@ -453,14 +454,14 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object appendArray(Object store, int index, DynamicObject array) {
-            Object otherStore = ArrayNodes.ARRAY_LAYOUT.getStore(array);
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
             if (hasAppendedObjectArray && otherStore instanceof Object[]) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
@@ -468,7 +469,7 @@ public abstract class ArrayBuilderNode extends Node {
                 final Object[] objectStore = (Object[]) store;
                 final int[] otherIntStore = (int[]) otherStore;
 
-                for (int n = 0; n < ArrayNodes.ARRAY_LAYOUT.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     objectStore[index + n] = otherIntStore[n];
                 }
 
@@ -479,7 +480,7 @@ public abstract class ArrayBuilderNode extends Node {
 
             if (otherStore instanceof int[]) {
                 hasAppendedIntArray = true;
-                for (int n = 0; n < ArrayNodes.ARRAY_LAYOUT.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((int[]) otherStore)[n];
                 }
 
@@ -487,7 +488,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof long[]) {
-                for (int n = 0; n < ArrayNodes.ARRAY_LAYOUT.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((long[]) otherStore)[n];
                 }
 
@@ -495,7 +496,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof double[]) {
-                for (int n = 0; n < ArrayNodes.ARRAY_LAYOUT.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((double[]) otherStore)[n];
                 }
 
@@ -504,11 +505,11 @@ public abstract class ArrayBuilderNode extends Node {
 
             if (otherStore instanceof Object[]) {
                 hasAppendedObjectArray = true;
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.ARRAY_LAYOUT.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
-            throw new UnsupportedOperationException(ArrayNodes.ARRAY_LAYOUT.getStore(array).getClass().getName());
+            throw new UnsupportedOperationException(Layouts.ARRAY.getStore(array).getClass().getName());
         }
 
         @Override
