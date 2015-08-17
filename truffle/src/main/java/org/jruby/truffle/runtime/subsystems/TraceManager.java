@@ -215,8 +215,77 @@ public class TraceManager {
 
         };
 
+        final AdvancedInstrumentRootFactory classEventFactory = new AdvancedInstrumentRootFactory() {
+
+            @Override
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                final RubyBasicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "class");
+
+                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
+
+                final RubyBasicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final int line = sourceSection.getStartLine();
+
+                return new AdvancedInstrumentRoot() {
+
+                    @Child private DirectCallNode callNode;
+
+                    private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+
+                    @Override
+                    public Object executeRoot(Node node, VirtualFrame frame) {
+                        if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                            final Object self = context.getCoreLibrary().getNilObject();
+                            final Object classname = context.getCoreLibrary().getNilObject();
+                            final Object id = context.getCoreLibrary().getNilObject();
+
+                            final RubyBinding binding = new RubyBinding(
+                                    context.getCoreLibrary().getBindingClass(),
+                                    self,
+                                    frame.materialize());
+
+                            if (callNode == null) {
+                                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+
+                                if (callNode.isCallTargetCloningAllowed()) {
+                                    callNode.cloneCallTarget();
+                                }
+
+                                if (callNode.isInlinable()) {
+                                    callNode.forceInlining();
+                                }
+                            }
+
+                            isInTraceFunc = true;
+
+                            callNode.call(frame, RubyArguments.pack(
+                                    ProcNodes.getMethod(traceFunc),
+                                    ProcNodes.getDeclarationFrame(traceFunc),
+                                    ProcNodes.getSelfCapturedInScope(traceFunc),
+                                    ProcNodes.getBlockCapturedInScope(traceFunc),
+                                    new Object[]{event, file, line, id, binding, classname}));
+
+                            isInTraceFunc = false;
+                        }
+
+                        return null;
+                    }
+
+                    @Override
+                    public String instrumentationInfo() {
+                        return "set_trace_func";
+                    }
+
+                };
+            }
+
+        };
+
         eventFactories.put(RubySyntaxTag.LINE, lineEventFactory);
         eventFactories.put(RubySyntaxTag.CALL, callEventFactory);
+        eventFactories.put(RubySyntaxTag.CLASS, classEventFactory);
 
         instruments = new ArrayList<>();
 

@@ -16,6 +16,10 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeVisitor;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
+import org.jruby.truffle.nodes.objects.DefineOrGetClassNode;
+import org.jruby.truffle.nodes.objects.DefineOrGetModuleNode;
+import org.jruby.truffle.nodes.objects.OpenModuleNode;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
@@ -32,12 +36,15 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                     rubyNode.probe().tagAs(RubySyntaxTag.LINE, null);
                 }
 
+                if (rubyNode instanceof OpenModuleNode) {
+                    rubyNode.probe().tagAs(RubySyntaxTag.CLASS, null);
+                }
                 // A RubyRootNode can't have a probe because it doesn't have a parent.  So, we do the next best thing and
                 // tag its immediate child.  The trace instrument will know to look at the parent (RubyRootNode) based upon
                 // the context implied by the tag.  We need to tag at the RubyRootNode because the semantics of set_trace_func
                 // are such that the receiver must be resolved, so we have to push as far into the callee as we can to have
                 // a properly constructed frame.
-                if (rubyNode.getParent() instanceof RubyRootNode) {
+                else if (rubyNode.getParent() instanceof RubyRootNode) {
                     rubyNode.probe().tagAs(RubySyntaxTag.CALL, null);
                 }
 
