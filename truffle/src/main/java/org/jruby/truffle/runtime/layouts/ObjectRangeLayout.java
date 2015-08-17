@@ -25,6 +25,7 @@ public interface ObjectRangeLayout extends BasicObjectLayout {
                                     @Nullable Object begin,
                                     @Nullable Object end);
 
+    boolean isObjectRange(Object object);
     boolean isObjectRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);

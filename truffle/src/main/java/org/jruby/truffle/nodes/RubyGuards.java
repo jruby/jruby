@@ -45,7 +45,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyBignum(Object value) {
-        return (value instanceof DynamicObject) && isRubyBignum((DynamicObject) value);
+        return Layouts.BIGNUM.isBignum(value);
     }
 
     public static boolean isRubyBignum(DynamicObject value) {
@@ -57,7 +57,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isIntegerFixnumRange(Object object) {
-        return (object instanceof DynamicObject) && isIntegerFixnumRange((DynamicObject) object);
+        return Layouts.INTEGER_FIXNUM_RANGE.isIntegerFixnumRange(object);
     }
 
     public static boolean isIntegerFixnumRange(DynamicObject object) {
@@ -65,7 +65,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isLongFixnumRange(Object object) {
-        return (object instanceof DynamicObject) && isLongFixnumRange((DynamicObject) object);
+        return Layouts.LONG_FIXNUM_RANGE.isLongFixnumRange(object);
     }
 
     public static boolean isLongFixnumRange(DynamicObject object) {
@@ -73,7 +73,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isObjectRange(Object object) {
-        return (object instanceof DynamicObject) && isObjectRange((DynamicObject) object);
+        return Layouts.OBJECT_RANGE.isObjectRange(object);
     }
 
     public static boolean isObjectRange(DynamicObject object) {
@@ -85,7 +85,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyArray(Object value) {
-        return (value instanceof DynamicObject) && isRubyArray((DynamicObject) value);
+        return Layouts.ARRAY.isArray(value);
     }
 
     public static boolean isRubyArray(DynamicObject value) {
@@ -97,7 +97,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyClass(Object value) {
-        return (value instanceof DynamicObject) && isRubyClass((DynamicObject) value);
+        return Layouts.CLASS.isClass(value);
     }
 
     public static boolean isRubyClass(DynamicObject value) {
@@ -105,7 +105,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyHash(Object value) {
-        return (value instanceof DynamicObject) && isRubyHash((DynamicObject) value);
+        return Layouts.HASH.isHash(value);
     }
 
     public static boolean isRubyHash(DynamicObject value) {
@@ -113,7 +113,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyModule(Object value) {
-        return (value instanceof DynamicObject) && isRubyModule((DynamicObject) value);
+        return Layouts.MODULE.isModule(value);
     }
 
     public static boolean isRubyModule(DynamicObject value) {
@@ -121,7 +121,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyRegexp(Object value) {
-        return (value instanceof DynamicObject) && isRubyRegexp((DynamicObject) value);
+        return Layouts.REGEXP.isRegexp(value);
     }
 
     public static boolean isRubyRegexp(DynamicObject value) {
@@ -129,7 +129,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyString(Object value) {
-        return (value instanceof DynamicObject) && isRubyString((DynamicObject) value);
+        return Layouts.STRING.isString(value);
     }
 
     public static boolean isRubyString(DynamicObject value) {
@@ -137,7 +137,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyEncoding(Object object) {
-        return (object instanceof DynamicObject) && isRubyEncoding((DynamicObject) object);
+        return Layouts.ENCODING.isEncoding(object);
     }
 
     public static boolean isRubyEncoding(DynamicObject object) {
@@ -145,7 +145,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubySymbol(Object value) {
-        return (value instanceof DynamicObject) && isRubySymbol((DynamicObject) value);
+        return Layouts.SYMBOL.isSymbol(value);
     }
 
     public static boolean isRubySymbol(DynamicObject value) {
@@ -153,7 +153,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMethod(Object value) {
-        return (value instanceof DynamicObject) && isRubyMethod((DynamicObject) value);
+        return Layouts.METHOD.isMethod(value);
     }
 
     public static boolean isRubyMethod(DynamicObject value) {
@@ -161,31 +161,19 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyUnboundMethod(Object value) {
-        return (value instanceof DynamicObject) && isRubyUnboundMethod((DynamicObject) value);
+        return Layouts.UNBOUND_METHOD.isUnboundMethod(value);
     }
 
     public static boolean isRubyUnboundMethod(DynamicObject value) {
         return Layouts.UNBOUND_METHOD.isUnboundMethod(value);
     }
 
-    public static boolean isRubyMutex(DynamicObject value) {
-        return Layouts.MUTEX.isMutex(value);
-    }
-
     public static boolean isDynamicObject(Object value) {
         return value instanceof DynamicObject;
     }
 
-    public static boolean isRubyPointer(Object value) {
-        return (value instanceof DynamicObject) && isRubyPointer((DynamicObject) value);
-    }
-
     public static boolean isRubyPointer(DynamicObject value) {
         return Layouts.POINTER.isPointer(value);
-    }
-
-    public static boolean isRubiniusByteArray(Object value) {
-        return (value instanceof DynamicObject) && isRubiniusByteArray((DynamicObject) value);
     }
 
     public static boolean isRubiniusByteArray(DynamicObject value) {
@@ -193,7 +181,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyProc(Object object) {
-        return (object instanceof DynamicObject) && isRubyProc((DynamicObject) object);
+        return Layouts.PROC.isProc(object);
     }
 
     public static boolean isRubyProc(DynamicObject object) {
@@ -208,24 +196,12 @@ public abstract class RubyGuards {
         return Layouts.TIME.isTime(object);
     }
 
-    public static boolean isRubyException(Object value) {
-        return (value instanceof DynamicObject) && isRubyException((DynamicObject) value);
-    }
-
     public static boolean isRubyException(DynamicObject object) {
         return Layouts.EXCEPTION.isException(object);
     }
 
-    public static boolean isRubyFiber(Object object) {
-        return (object instanceof DynamicObject) && isRubyFiber((DynamicObject) object);
-    }
-
     public static boolean isRubyFiber(DynamicObject object) {
         return Layouts.FIBER.isFiber(object);
-    }
-
-    public static boolean isRubyThread(Object object) {
-        return (object instanceof DynamicObject) && isRubyThread((DynamicObject) object);
     }
 
     public static boolean isRubyThread(DynamicObject object) {
@@ -233,7 +209,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyMatchData(Object object) {
-        return (object instanceof DynamicObject) && isRubyMatchData((DynamicObject) object);
+        return Layouts.MATCH_DATA.isMatchData(object);
     }
 
     public static boolean isRubyMatchData(DynamicObject object) {

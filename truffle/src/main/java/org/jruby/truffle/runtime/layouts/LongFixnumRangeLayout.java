@@ -24,6 +24,7 @@ public interface LongFixnumRangeLayout extends BasicObjectLayout {
                                         long begin,
                                         long end);
 
+    boolean isLongFixnumRange(Object object);
     boolean isLongFixnumRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);

@@ -24,6 +24,7 @@ public interface MethodLayout extends BasicObjectLayout {
                                InternalMethod method);
 
     boolean isMethod(DynamicObject object);
+    boolean isMethod(Object object);
 
     Object getReceiver(DynamicObject object);
 

@@ -28,6 +28,7 @@ public interface SymbolLayout extends BasicObjectLayout {
                                int codeRange,
                                @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
 
+    boolean isSymbol(Object object);
     boolean isSymbol(DynamicObject object);
 
     String getString(DynamicObject object);

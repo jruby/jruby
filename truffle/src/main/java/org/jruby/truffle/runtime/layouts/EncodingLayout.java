@@ -27,6 +27,7 @@ public interface EncodingLayout extends BasicObjectLayout {
                                  boolean dummy);
 
     boolean isEncoding(DynamicObject object);
+    boolean isEncoding(Object object);
 
     Encoding getEncoding(DynamicObject object);
 

@@ -24,6 +24,7 @@ public interface MatchDataLayout extends BasicObjectLayout {
                                   MatchDataNodes.MatchDataFields fields);
 
     boolean isMatchData(DynamicObject object);
+    boolean isMatchData(Object object);
 
     MatchDataNodes.MatchDataFields getFields(DynamicObject object);
 

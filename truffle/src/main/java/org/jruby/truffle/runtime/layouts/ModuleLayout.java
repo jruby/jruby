@@ -24,6 +24,7 @@ public interface ModuleLayout extends BasicObjectLayout {
                                ModuleFields fields);
 
     boolean isModule(DynamicObject object);
+    boolean isModule(Object object);
 
     ModuleFields getFields(DynamicObject object);
 

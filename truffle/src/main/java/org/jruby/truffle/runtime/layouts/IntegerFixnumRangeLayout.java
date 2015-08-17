@@ -24,6 +24,7 @@ public interface IntegerFixnumRangeLayout extends BasicObjectLayout {
                                            int begin,
                                            int end);
 
+    boolean isIntegerFixnumRange(Object object);
     boolean isIntegerFixnumRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);

@@ -24,6 +24,7 @@ public interface BignumLayout extends BasicObjectLayout {
     DynamicObject createBignum(DynamicObjectFactory factory,
                                BigInteger value);
 
+    boolean isBignum(Object object);
     boolean isBignum(DynamicObject object);
 
     BigInteger getValue(DynamicObject object);

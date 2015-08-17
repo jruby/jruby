@@ -29,6 +29,7 @@ public interface ClassLayout extends ModuleLayout {
                               @Nullable DynamicObjectFactory instanceFactory);
 
     boolean isClass(DynamicObject object);
+    boolean isClass(Object object);
 
     boolean getIsSingleton(DynamicObject object);
 

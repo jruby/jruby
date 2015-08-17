@@ -25,6 +25,7 @@ public interface UnboundMethodLayout extends BasicObjectLayout {
                                       InternalMethod method);
 
     boolean isUnboundMethod(DynamicObject object);
+    boolean isUnboundMethod(Object object);
 
     DynamicObject getOrigin(DynamicObject object);
 

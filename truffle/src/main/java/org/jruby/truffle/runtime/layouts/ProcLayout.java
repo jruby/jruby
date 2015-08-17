@@ -38,6 +38,7 @@ public interface ProcLayout extends BasicObjectLayout {
             @Nullable DynamicObject block);
 
     boolean isProc(DynamicObject object);
+    boolean isProc(Object object);
 
     ProcNodes.Type getType(DynamicObject object);
 

@@ -34,6 +34,7 @@ public interface HashLayout extends BasicObjectLayout {
 
     boolean isHash(ObjectType objectType);
     boolean isHash(DynamicObject object);
+    boolean isHash(Object object);
 
     DynamicObject getDefaultBlock(DynamicObject object);
     void setDefaultBlock(DynamicObject object, DynamicObject value);

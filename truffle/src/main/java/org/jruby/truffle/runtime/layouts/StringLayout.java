@@ -30,6 +30,7 @@ public interface StringLayout extends BasicObjectLayout {
 
     boolean isString(ObjectType objectType);
     boolean isString(DynamicObject dynamicObject);
+    boolean isString(Object dynamicObject);
 
     ByteList getByteList(DynamicObject object);
     void setByteList(DynamicObject object, ByteList byteList);

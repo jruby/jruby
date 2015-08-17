@@ -30,6 +30,7 @@ public interface RegexpLayout extends BasicObjectLayout {
                                @Nullable Object cachedNames);
 
     boolean isRegexp(DynamicObject object);
+    boolean isRegexp(Object object);
 
     Regex getRegex(DynamicObject object);
     void setRegex(DynamicObject object, Regex value);

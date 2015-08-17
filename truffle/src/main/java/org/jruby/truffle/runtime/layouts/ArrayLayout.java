@@ -27,6 +27,7 @@ public interface ArrayLayout extends BasicObjectLayout {
 
     boolean isArray(ObjectType objectType);
     boolean isArray(DynamicObject object);
+    boolean isArray(Object object);
 
     Object getStore(DynamicObject object);
     void setStore(DynamicObject object, Object value);
