@@ -396,13 +396,13 @@ public class RubyNumeric extends RubyObject {
 
     protected IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
         final Ruby runtime = context.runtime;
-        final IRubyObject $ex = runtime.getGlobalVariables().get("$!");
+        final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
         try {
             result = other.callMethod(context, "coerce", this);
         }
         catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
-            runtime.getGlobalVariables().set("$!", $ex);
+            context.setErrorInfo($ex); // restore $!
 
             if (error) {
                 throw runtime.newTypeError(
@@ -444,13 +444,13 @@ public class RubyNumeric extends RubyObject {
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
         final Ruby runtime = context.runtime;
-        final IRubyObject $ex = runtime.getGlobalVariables().get("$!");
+        final IRubyObject $ex = context.getErrorInfo();
         final IRubyObject result;
         try {
             result = coerceBody(context, other);
         }
         catch (RaiseException e) { // e.g. NoMethodError: undefined method `coerce'
-            runtime.getGlobalVariables().set("$!", $ex);
+            context.setErrorInfo($ex); // restore $!
 
             if (err) {
                 throw runtime.newTypeError(

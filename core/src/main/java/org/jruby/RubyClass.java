@@ -15,7 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -107,14 +107,14 @@ public class RubyClass extends RubyModule {
         classClass.index = ClassIndex.CLASS;
         classClass.setReifiedClass(RubyClass.class);
         classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
-        
+
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
         classClass.undefineMethod("extend_object");
-        
+
         classClass.defineAnnotatedMethods(RubyClass.class);
     }
-    
+
     public static final ObjectAllocator CLASS_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             RubyClass clazz = new RubyClass(runtime);
@@ -151,7 +151,7 @@ public class RubyClass extends RubyModule {
                 }
             }
         };
-        
+
         this.reifiedClass = cls;
     }
 
@@ -164,7 +164,7 @@ public class RubyClass extends RubyModule {
     public void setRubyClassAllocator(final Class cls) {
         try {
             final Constructor constructor = cls.getConstructor(Ruby.class, RubyClass.class);
-            
+
             this.allocator = new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                     try {
@@ -236,15 +236,15 @@ public class RubyClass extends RubyModule {
     public CallSite[] getBaseCallSites() {
         return baseCallSites;
     }
-    
+
     public CallSite[] getExtraCallSites() {
         return extraCallSites;
     }
-    
+
     public VariableTableManager getVariableTableManager() {
         return variableTableManager;
     }
-    
+
     public boolean hasObjectID() {
         return variableTableManager.hasObjectID();
     }
@@ -326,7 +326,7 @@ public class RubyClass extends RubyModule {
     public int getNativeTypeIndex() {
         return ClassIndex.CLASS;
     }
-    
+
     @Override
     public boolean isModule() {
         return false;
@@ -345,14 +345,14 @@ public class RubyClass extends RubyModule {
     /** boot_defclass
      * Create an initial Object meta class before Module and Kernel dependencies have
      * squirreled themselves together.
-     * 
+     *
      * @param runtime we need it
      * @return a half-baked meta class for object
      */
     public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
         RubyClass obj;
 
-        if (superClass == null ) {  // boot the Object class 
+        if (superClass == null ) {  // boot the Object class
             obj = new RubyClass(runtime);
             obj.marshal = DEFAULT_OBJECT_MARSHAL;
         } else {                    // boot the Module and Class classes
@@ -370,7 +370,7 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), objectSpace);
         this.runtime = runtime;
-        
+
         // Since this path is for included wrappers and singletons, use parent
         // class's realClass and varTableMgr. If the latter is null, create a
         // dummy, since we won't be using it anyway (we're above BasicObject
@@ -386,10 +386,10 @@ public class RubyClass extends RubyModule {
                 this.variableTableManager = new VariableTableManager(this);
             }
         }
-        
+
         setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
-    
+
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
      *  also used to bootstrap Object class
      */
@@ -400,9 +400,9 @@ public class RubyClass extends RubyModule {
         this.variableTableManager = new VariableTableManager(this);
         index = ClassIndex.CLASS;
     }
-    
+
     /** rb_class_boot (for plain Classes)
-     *  also used to bootstrap Module and Class classes 
+     *  also used to bootstrap Module and Class classes
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz) {
         this(runtime);
@@ -410,11 +410,11 @@ public class RubyClass extends RubyModule {
         marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
-        
-        infectBy(superClass);        
+
+        infectBy(superClass);
     }
-    
-    /** 
+
+    /**
      * A constructor which allows passing in an array of supplementary call sites.
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz, CallSite[] extraCallSites) {
@@ -422,13 +422,13 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClazz);
         this.marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
-        
+
         this.extraCallSites = extraCallSites;
-        
-        infectBy(superClass);        
+
+        infectBy(superClass);
     }
 
-    /** 
+    /**
      * Construct a new class with the given name scoped under Object (global)
      * and with Object as its immediate superclass.
      * Corresponds to rb_class_new in MRI.
@@ -436,20 +436,20 @@ public class RubyClass extends RubyModule {
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
         if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
-        return new RubyClass(runtime, superClass);        
+        return new RubyClass(runtime, superClass);
     }
 
-    /** 
+    /**
      * A variation on newClass that allow passing in an array of supplementary
      * call sites to improve dynamic invocation.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
         if (superClass == runtime.getClassClass()) throw runtime.newTypeError("can't make subclass of Class");
         if (superClass.isSingleton()) throw runtime.newTypeError("can't make subclass of virtual class");
-        return new RubyClass(runtime, superClass, extraCallSites);        
+        return new RubyClass(runtime, superClass, extraCallSites);
     }
 
-    /** 
+    /**
      * Construct a new class with the given name, allocator, parent class,
      * and containing class. If setParent is true, the class's parent will be
      * explicitly set to the provided parent (rather than the new class just
@@ -468,7 +468,7 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
-    /** 
+    /**
      * A variation on newClass that allows passing in an array of supplementary
      * call sites to improve dynamic invocation performance.
      */
@@ -494,22 +494,22 @@ public class RubyClass extends RubyModule {
 
             klass.setMetaClass(klass);
             klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
-            
+
             return klass;
         } else {
             return super.makeMetaClass(superClass);
         }
     }
-    
+
     @Deprecated
     public IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
         return invoke(context, self, name, args, callType, block);
     }
-    
+
     public boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return !method.isCallableFrom(caller, callType) && !name.equals("method_missing");
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -519,7 +519,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, block);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name, Block block) {
         DynamicMethod method = searchMethod(name);
         if (shouldCallMethodMissing(method)) {
@@ -527,7 +527,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, block);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
@@ -538,7 +538,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, args, block);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args, Block block) {
         assert args != null;
@@ -548,7 +548,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, args, block);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg, CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -558,7 +558,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg, block);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -567,7 +567,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg, block);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -577,7 +577,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, block);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -586,7 +586,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, block);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -596,7 +596,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, arg2, block);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         DynamicMethod method = searchMethod(name);
@@ -605,7 +605,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, arg2, block);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             CallType callType) {
         DynamicMethod method = searchMethod(name);
@@ -615,7 +615,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name) {
         DynamicMethod method = searchMethod(name);
         if (shouldCallMethodMissing(method)) {
@@ -692,16 +692,17 @@ public class RubyClass extends RubyModule {
             return null;
         }
         else {
+            final IRubyObject $ex = context.getErrorInfo();
             try {
                 return checkFuncallExec(context, self, method, args);
-            } catch (RaiseException e) {
-                // clear $!
-                context.setErrorInfo(context.nil);
+            }
+            catch (RaiseException e) {
+                context.setErrorInfo($ex); // restore $!
                 return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
             }
         }
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args, CallType callType) {
         assert args != null;
@@ -712,7 +713,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, args);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args) {
         assert args != null;
@@ -722,7 +723,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, args);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg, CallType callType) {
         DynamicMethod method = searchMethod(name);
@@ -732,7 +733,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg) {
         DynamicMethod method = searchMethod(name);
@@ -741,7 +742,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, CallType callType) {
         DynamicMethod method = searchMethod(name);
@@ -751,7 +752,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1) {
         DynamicMethod method = searchMethod(name);
@@ -760,7 +761,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1);
     }
-    
+
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType) {
         DynamicMethod method = searchMethod(name);
@@ -770,7 +771,7 @@ public class RubyClass extends RubyModule {
         }
         return method.call(context, self, this, name, arg0, arg1, arg2);
     }
-    
+
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         DynamicMethod method = searchMethod(name);
@@ -822,14 +823,14 @@ public class RubyClass extends RubyModule {
             }
         }
     }
-    
+
     private boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
     }
     private boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return method.isUndefined() || notVisibleAndNotMethodMissing(method, name, caller, callType);
     }
-    
+
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
         DynamicMethod method = getMetaClass().searchMethod("inherited");
 
@@ -879,7 +880,7 @@ public class RubyClass extends RubyModule {
     }
 
     /** rb_class_initialize
-     * 
+     *
      */
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     @Override
@@ -887,20 +888,20 @@ public class RubyClass extends RubyModule {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block, false);
     }
-        
+
     @JRubyMethod(compat = RUBY1_8, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
         return initializeCommon(context, (RubyClass)superObject, block, false);
     }
-        
+
     @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block, true);
     }
-        
+
     @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
@@ -929,17 +930,17 @@ public class RubyClass extends RubyModule {
     }
 
     /** rb_class_init_copy
-     * 
+     *
      */
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
         checkNotInitialized();
-        if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");        
-        
+        if (original instanceof MetaClass) throw runtime.newTypeError("can't copy singleton class");
+
         super.initialize_copy(original);
-        allocator = ((RubyClass)original).allocator; 
-        return this;        
+        allocator = ((RubyClass)original).allocator;
+        return this;
     }
 
     protected void setModuleSuperClass(RubyClass superClass) {
@@ -950,7 +951,7 @@ public class RubyClass extends RubyModule {
         // update superclass reference
         setSuperClass(superClass);
     }
-    
+
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
         Set<RubyClass> mySubclasses = subclasses;
         if (mySubclasses != null) {
@@ -983,7 +984,7 @@ public class RubyClass extends RubyModule {
             oldSubclasses.add(subclass);
         }
     }
-    
+
     /**
      * Remove a subclass from the weak set of subclasses.
      *
@@ -1048,17 +1049,17 @@ public class RubyClass extends RubyModule {
             }
         }
     }
-    
+
     public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
         // add this class's invalidators to the aggregate
         invalidators.add(methodInvalidator);
-        
+
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBooting()) cachedMethods.clear();
 
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
-        
+
         // cascade into subclasses
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> mySubclasses = subclasses;
@@ -1067,14 +1068,14 @@ public class RubyClass extends RubyModule {
             }
         }
     }
-    
+
     public Ruby getClassRuntime() {
         return runtime;
     }
 
     public final RubyClass getRealClass() {
         return realClass;
-    }    
+    }
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
@@ -1082,7 +1083,7 @@ public class RubyClass extends RubyModule {
     }
 
     /** rb_class_inherited (reversed semantics!)
-     * 
+     *
      */
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
@@ -1093,14 +1094,14 @@ public class RubyClass extends RubyModule {
     }
 
     /** Return the real super class of this class.
-     * 
+     *
      * rb_class_superclass
      *
-     */    
+     */
     @JRubyMethod(name = "superclass")
     public IRubyObject superclass(ThreadContext context) {
         RubyClass superClazz = superClass;
-        
+
         if (superClazz == null) {
             if (runtime.is1_9() && metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
             throw runtime.newTypeError("uninitialized class");
@@ -1117,33 +1118,33 @@ public class RubyClass extends RubyModule {
         }
     }
     /** rb_check_inheritable
-     * 
+     *
      */
     public static void checkInheritable(IRubyObject superClass) {
         if (!(superClass instanceof RubyClass)) {
-            throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)"); 
+            throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
         if (((RubyClass)superClass).isSingleton()) {
             throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
-        }        
+        }
     }
 
     public final ObjectMarshal getMarshal() {
         return marshal;
     }
-    
+
     public final void setMarshal(ObjectMarshal marshal) {
         this.marshal = marshal;
     }
-    
+
     public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
         getMarshal().marshalTo(runtime, obj, this, marshalStream);
     }
-    
+
     public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
         return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
     }
-    
+
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(clazz);
         output.writeString(MarshalStream.getPathFromClass(clazz));
@@ -1160,7 +1161,7 @@ public class RubyClass extends RubyModule {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject)obj;
-            
+
             marshalStream.registerLinkTarget(object);
             marshalStream.dumpVariables(object.getVariableList());
         }
@@ -1168,7 +1169,7 @@ public class RubyClass extends RubyModule {
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
             IRubyObject result = type.allocate();
-            
+
             unmarshalStream.registerLinkTarget(result);
 
             unmarshalStream.defaultVariablesUnmarshal(result);
@@ -1194,10 +1195,10 @@ public class RubyClass extends RubyModule {
         if (superClass == null || (realSuper = superClass.getRealClass()) == null) return false;
 
         Class reifiedSuper = realSuper.reifiedClass;
-        
+
         // if super has been reified or is a native class
         if (reifiedSuper != null) {
-            
+
             // super must be Object, BasicObject, or a reified user class
             return reifiedSuper == RubyObject.class ||
                     reifiedSuper == RubyBasicObject.class ||
@@ -1207,7 +1208,7 @@ public class RubyClass extends RubyModule {
             return realSuper.isReifiable();
         }
     }
-    
+
     public void reifyWithAncestors() {
         reifyWithAncestors(null, true);
     }
@@ -1217,7 +1218,7 @@ public class RubyClass extends RubyModule {
     public void reifyWithAncestors(boolean useChildLoader) {
         reifyWithAncestors(null, useChildLoader);
     }
-    
+
     /**
      * Reify this class, first reifying all its ancestors. This causes the
      * reified class and all ancestors' reified classes to come into existence,
@@ -1257,7 +1258,7 @@ public class RubyClass extends RubyModule {
     public synchronized void reify(String classDumpDir, boolean useChildLoader) {
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable()) return;
-        
+
         Class reifiedParent = RubyObject.class;
 
         // calculate an appropriate name, using "Anonymous####" if none is present
@@ -1267,7 +1268,7 @@ public class RubyClass extends RubyModule {
         } else {
             name = getName();
         }
-        
+
         String javaName = "rubyobj." + name.replaceAll("::", ".");
         String javaPath = "rubyobj/" + name.replaceAll("::", "/");
         ClassDefiningClassLoader parentCL;
@@ -1275,7 +1276,7 @@ public class RubyClass extends RubyModule {
         if (parentReified == null) {
             throw getClassRuntime().newTypeError("class " + getName() + " parent class is not yet reified");
         }
-        
+
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
             parentCL = (OneShotClassLoader)superClass.getRealClass().getReifiedClass().getClassLoader();
         } else {
@@ -1292,7 +1293,7 @@ public class RubyClass extends RubyModule {
 
         Class[] interfaces = Java.getInterfacesFromRubyClass(this);
         String[] interfaceNames = new String[interfaces.length + 1];
-        
+
         // mark this as a Reified class
         interfaceNames[0] = p(Reified.class);
 
@@ -1509,7 +1510,7 @@ public class RubyClass extends RubyModule {
                 m.astore(rubyIndex);
 
                 m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                
+
                 m.ldc(methodName); // method name
                 RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                 m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
@@ -1872,7 +1873,7 @@ public class RubyClass extends RubyModule {
                 // go ahead and call, method_missing might handle it
                 target.callMethod(context, "marshal_load", data);
                 return target;
-                
+
             }
         }
     }
@@ -1964,7 +1965,7 @@ public class RubyClass extends RubyModule {
 
     /** The "real" class, used by includes and singletons to locate the actual type of the object */
     private final RubyClass realClass;
-    
+
     /** Variable table manager for this class */
     private final VariableTableManager variableTableManager;
 }

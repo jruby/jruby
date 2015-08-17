@@ -1305,17 +1305,23 @@ public class RubyTime extends RubyObject {
 
             int offset = 0;
             if (offsetVar != null && offsetVar.respondsTo("to_int")) {
+                final IRubyObject $ex = runtime.getCurrentContext().getErrorInfo();
                 try {
                     offset = ((int) offsetVar.convertToInteger().getLongValue()) * 1000;
-                } catch (RaiseException typeError) {
+                }
+                catch (RaiseException typeError) {
+                    runtime.getCurrentContext().setErrorInfo($ex); // restore $!
                 }
             }
 
             String zone = "";
             if (zoneVar != null && zoneVar.respondsTo("to_str")) {
+                final IRubyObject $ex = runtime.getCurrentContext().getErrorInfo();
                 try {
                     zone = zoneVar.convertToString().toString();
-                } catch (RaiseException typeError) {
+                }
+                catch (RaiseException typeError) {
+                    runtime.getCurrentContext().setErrorInfo($ex); // restore $!
                 }
             }
 
