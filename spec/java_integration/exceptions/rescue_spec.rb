@@ -225,4 +225,28 @@ describe "Ruby exception raised through Java and back to Ruby" do
 
   end
 
+  SampleTask = Struct.new(:time) do
+    include Comparable
+
+    def <=>(that)
+      raise ArgumentError.new("unexpected #{self.inspect}") unless self.time
+      raise ArgumentError.new("unexpected #{that.inspect}") unless that.time
+      self.time <=> that.time
+    end
+  end
+
+  it 'does not swallow Ruby errors on compareTo' do
+    queue = java.util.PriorityQueue.new(10)
+    queue.add t2 = SampleTask.new(2)
+    queue.add t1 = SampleTask.new(1)
+    begin
+      queue.add SampleTask.new(nil)
+    rescue ArgumentError => e
+      expect( e.message ).to start_with 'unexpected #<struct SampleTask'
+    else
+      fail 'compareTo did not raise'
+    end
+    expect( queue.first ).to be t1
+  end
+
 end
