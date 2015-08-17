@@ -17,7 +17,7 @@ import com.oracle.truffle.api.instrument.SyntaxTag;
  */
 public enum RubySyntaxTag implements SyntaxTag {
 
-    LINE("line", "Execute code one a new line"),
+    LINE("line", "Execute code on a new line"),
 
     CLASS("class", "Start a class or module definition"),
 
