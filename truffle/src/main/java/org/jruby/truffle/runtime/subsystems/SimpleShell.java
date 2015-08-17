@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -23,7 +24,6 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 

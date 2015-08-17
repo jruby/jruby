@@ -9,9 +9,9 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.Collections;
 import java.util.Set;

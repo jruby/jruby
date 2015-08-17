@@ -16,6 +16,7 @@ import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.StandardInstrumentListener;
 import com.oracle.truffle.api.instrument.StandardSyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.LineToProbesMap;
@@ -24,7 +25,6 @@ import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;

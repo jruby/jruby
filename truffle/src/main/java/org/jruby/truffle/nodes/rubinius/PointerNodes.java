@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
-import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class PointerNodes {
 

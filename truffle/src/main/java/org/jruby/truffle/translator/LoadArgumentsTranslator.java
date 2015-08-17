@@ -26,8 +26,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;

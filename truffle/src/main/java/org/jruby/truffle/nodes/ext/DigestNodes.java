@@ -11,12 +11,12 @@ package org.jruby.truffle.nodes.ext;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;

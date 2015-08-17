@@ -11,17 +11,15 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.methods.Arity;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**

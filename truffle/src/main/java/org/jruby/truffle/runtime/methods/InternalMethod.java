@@ -12,11 +12,11 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,

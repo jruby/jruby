@@ -10,9 +10,9 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
-import com.oracle.truffle.api.object.DynamicObject;
 
 public class RubyConstant {
 

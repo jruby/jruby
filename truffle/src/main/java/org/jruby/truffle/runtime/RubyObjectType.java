@@ -19,7 +19,10 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.ArrayForeignAccessFactory;
+import org.jruby.truffle.runtime.core.BasicForeignAccessFactory;
+import org.jruby.truffle.runtime.core.HashForeignAccessFactory;
+import org.jruby.truffle.runtime.core.StringForeignAccessFactory;
 
 import java.util.Arrays;
 

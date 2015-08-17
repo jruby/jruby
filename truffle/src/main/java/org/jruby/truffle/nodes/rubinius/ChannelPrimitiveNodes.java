@@ -10,11 +10,10 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 public abstract class ChannelPrimitiveNodes {
 

@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;

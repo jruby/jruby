@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
@@ -19,7 +20,6 @@ import org.jruby.RubyRandom;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 

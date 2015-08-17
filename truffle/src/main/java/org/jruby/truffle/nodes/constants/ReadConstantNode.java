@@ -9,16 +9,11 @@
  */
 package org.jruby.truffle.nodes.constants;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.runtime.ConstantReplacer;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.RubyConstant;
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
 
 public class ReadConstantNode extends RubyNode implements RestartableReadConstantNode {
 

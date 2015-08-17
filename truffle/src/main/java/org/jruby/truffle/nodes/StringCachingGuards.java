@@ -10,8 +10,8 @@
 
 package org.jruby.truffle.nodes;
 
-import org.jruby.truffle.nodes.core.StringNodes;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.util.ByteList;
 
 public abstract class StringCachingGuards {

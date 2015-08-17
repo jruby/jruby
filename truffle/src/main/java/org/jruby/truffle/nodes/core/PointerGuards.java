@@ -11,8 +11,8 @@
 package org.jruby.truffle.nodes.core;
 
 
-import org.jruby.truffle.nodes.rubinius.PointerNodes;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.rubinius.PointerNodes;
 
 public class PointerGuards {
 

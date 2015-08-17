@@ -10,9 +10,9 @@
 package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.ExactMath;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import com.oracle.truffle.api.object.DynamicObject;
 
 import java.math.BigInteger;
 

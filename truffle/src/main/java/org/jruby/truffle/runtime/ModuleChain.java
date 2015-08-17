@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.DynamicObject;
 
 /**

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
-import com.oracle.truffle.api.object.DynamicObject;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {

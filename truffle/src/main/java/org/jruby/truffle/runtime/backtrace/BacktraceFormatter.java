@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import org.jruby.truffle.runtime.RubyContext;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.runtime.RubyContext;
 
 public interface BacktraceFormatter {
 

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -18,7 +19,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import com.oracle.truffle.api.object.DynamicObject;
 
 /**
  * Read the rest of arguments after a certain point into an array.

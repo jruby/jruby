@@ -14,8 +14,8 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.BooleanLocation;
-import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadBooleanObjectFieldNode extends ReadObjectFieldChainNode {

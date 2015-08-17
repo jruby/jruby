@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.exceptions;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
@@ -18,7 +19,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
-import com.oracle.truffle.api.object.DynamicObject;
 
 public class TopLevelRaiseHandler extends RubyNode {
 

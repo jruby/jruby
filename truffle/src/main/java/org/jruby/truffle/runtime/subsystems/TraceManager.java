@@ -10,9 +10,9 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.nodes.RubyGuards;
-import com.oracle.truffle.api.object.DynamicObject;
 
 public class TraceManager {
 

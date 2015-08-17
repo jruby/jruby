@@ -9,20 +9,16 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import static org.jruby.RubyThread.RUBY_MAX_THREAD_PRIORITY;
-import static org.jruby.RubyThread.RUBY_MIN_THREAD_PRIORITY;
-import static org.jruby.RubyThread.javaPriorityToRubyPriority;
-import static org.jruby.RubyThread.rubyPriorityToJavaPriority;
-
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.source.SourceSection;
+import static org.jruby.RubyThread.*;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Thread} class.
