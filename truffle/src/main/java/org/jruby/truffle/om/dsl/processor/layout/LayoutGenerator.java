@@ -172,8 +172,50 @@ public class LayoutGenerator {
 
         if (layout.getSuperLayout() == null) {
             stream.println("    protected static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);");
-            stream.println("    protected static final Shape.Allocator ALLOCATOR = LAYOUT.createAllocator();");
+            stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();\n", NameUtils.identifierToConstant(layout.getName()));
+        } else {
+            stream.printf("    protected static final Shape.Allocator %S_ALLOCATOR = LAYOUT.createAllocator();\n", NameUtils.identifierToConstant(layout.getName()));
             stream.println("    ");
+
+            if (layout.getSuperLayout().hasNonShapeProperties()) {
+                stream.println("    static {");
+
+                for (PropertyModel property : layout.getSuperLayout().getAllNonShapeProperties()) {
+                    final List<String> modifiers = new ArrayList<>();
+
+                    if (!property.isNullable()) {
+                        modifiers.add("LocationModifier.NonNull");
+                    }
+
+                    final String modifiersExpression;
+
+                    if (modifiers.isEmpty()) {
+                        modifiersExpression = "";
+                    } else {
+                        final StringBuilder modifiersExpressionBuilder = new StringBuilder();
+                        modifiersExpressionBuilder.append(", EnumSet.of(");
+
+                        for (String modifier : modifiers) {
+                            if (modifier != modifiers.get(0)) {
+                                modifiersExpressionBuilder.append(", ");
+                            }
+
+                            modifiersExpressionBuilder.append(modifier);
+                        }
+
+                        modifiersExpressionBuilder.append(")");
+                        modifiersExpression = modifiersExpressionBuilder.toString();
+                    }
+
+                    stream.printf("         %s_ALLOCATOR.locationForType(%s.class%s);\n",
+                            NameUtils.identifierToConstant(layout.getName()),
+                            property.getType(),
+                            modifiersExpression);
+                }
+
+                stream.println("    }");
+                stream.println("    ");
+            }
         }
 
         for (PropertyModel property : layout.getNonShapeProperties()) {
@@ -207,8 +249,10 @@ public class LayoutGenerator {
                 modifiersExpression  = modifiersExpressionBuilder.toString();
             }
 
-            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, ALLOCATOR.locationForType(%s.class%s), %s);\n",
-                    NameUtils.identifierToConstant(property.getName()), NameUtils.identifierToConstant(property.getName()),
+            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, %S_ALLOCATOR.locationForType(%s.class%s), %s);\n",
+                    NameUtils.identifierToConstant(property.getName()),
+                    NameUtils.identifierToConstant(property.getName()),
+                    NameUtils.identifierToConstant(layout.getName()),
                     property.getType(),
                     modifiersExpression,
                     "0");
