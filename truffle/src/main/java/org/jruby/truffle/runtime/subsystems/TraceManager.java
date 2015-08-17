@@ -84,59 +84,7 @@ public class TraceManager {
                 final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
                 final int line = sourceSection.getStartLine();
 
-                return new AdvancedInstrumentRoot() {
-
-                    @Child private DirectCallNode callNode;
-
-                    private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
-
-                    @Override
-                    public Object executeRoot(Node node, VirtualFrame frame) {
-                        if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                            final Object self = context.getCoreLibrary().getNilObject();
-                            final Object classname = self;
-                            final Object id = context.getCoreLibrary().getNilObject();
-
-                            final DynamicObject binding = BindingNodes.createRubyBinding(
-                                    context.getCoreLibrary().getBindingClass(),
-                                    self,
-                                    frame.materialize());
-
-                            if (callNode == null) {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
-
-                                if (callNode.isCallTargetCloningAllowed()) {
-                                    callNode.cloneCallTarget();
-                                }
-
-                                if (callNode.isInlinable()) {
-                                    callNode.forceInlining();
-                                }
-                            }
-
-                            isInTraceFunc = true;
-
-                            callNode.call(frame, RubyArguments.pack(
-                                    ProcNodes.getMethod(traceFunc),
-                                    ProcNodes.getDeclarationFrame(traceFunc),
-                                    ProcNodes.getSelfCapturedInScope(traceFunc),
-                                    ProcNodes.getBlockCapturedInScope(traceFunc),
-                                    new Object[]{event, file, line, id, binding, classname}));
-
-                            isInTraceFunc = false;
-                        }
-
-                        return null;
-                    }
-
-                    @Override
-                    public String instrumentationInfo() {
-                        return "set_trace_func";
-                    }
-
-                };
+                return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);
             }
 
         };
@@ -215,8 +163,25 @@ public class TraceManager {
 
         };
 
+        final AdvancedInstrumentRootFactory classEventFactory = new AdvancedInstrumentRootFactory() {
+
+            @Override
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "class");
+
+                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
+
+                final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final int line = sourceSection.getStartLine();
+
+                return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);
+            }
+
+        };
+
         eventFactories.put(RubySyntaxTag.LINE, lineEventFactory);
         eventFactories.put(RubySyntaxTag.CALL, callEventFactory);
+        eventFactories.put(RubySyntaxTag.CLASS, classEventFactory);
 
         instruments = new ArrayList<>();
 
@@ -250,6 +215,70 @@ public class TraceManager {
             public void endASTProbing(Source source) {
             }
         });
+    }
+
+    private final class BaseAdvancedIntrumentRoot extends AdvancedInstrumentRoot {
+        @Child private DirectCallNode callNode;
+
+        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+
+        private final DynamicObject traceFunc;
+        private final Object event;
+        private final Object file;
+        private final int line;
+
+        public BaseAdvancedIntrumentRoot(DynamicObject traceFunc, Object event, Object file, int line) {
+            this.traceFunc = traceFunc;
+            this.event = event;
+            this.file = file;
+            this.line = line;
+        }
+
+        @Override
+        public Object executeRoot(Node node, VirtualFrame frame) {
+            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                final Object self = context.getCoreLibrary().getNilObject();
+                final Object classname = context.getCoreLibrary().getNilObject();
+                final Object id = context.getCoreLibrary().getNilObject();
+
+                final DynamicObject binding = BindingNodes.createRubyBinding(
+                        context.getCoreLibrary().getBindingClass(),
+                        self,
+                        frame.materialize());
+
+                if (callNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                    callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+
+                    if (callNode.isCallTargetCloningAllowed()) {
+                        callNode.cloneCallTarget();
+                    }
+
+                    if (callNode.isInlinable()) {
+                        callNode.forceInlining();
+                    }
+                }
+
+                isInTraceFunc = true;
+
+                callNode.call(frame, RubyArguments.pack(
+                        ProcNodes.getMethod(traceFunc),
+                        ProcNodes.getDeclarationFrame(traceFunc),
+                        ProcNodes.getSelfCapturedInScope(traceFunc),
+                        ProcNodes.getBlockCapturedInScope(traceFunc),
+                        new Object[]{event, file, line, id, binding, classname}));
+
+                isInTraceFunc = false;
+            }
+
+            return null;
+        }
+
+        @Override
+        public String instrumentationInfo() {
+            return "set_trace_func";
+        }
     }
 
 }
