@@ -88,9 +88,13 @@ class TestComparable < Test::Unit::TestCase
     # should not raise errors :
     assert_equal nil, 0 <=> Time.now
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
-    assert_equal nil, nil <=> 42
+    assert_equal nil, nil <=> 42 if RUBY_VERSION > '1.9'
+    # 1.8.7 NoMethodError: undefined method `<=>' for nil:NilClass
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
     assert_equal nil, '42' <=> nil
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, Object.new <=> nil if RUBY_VERSION > '1.9'
+    # 1.8.7 NoMethodError: undefined method `<=>' for #<Object:0xceb431e>
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
 
     require 'bigdecimal'
@@ -98,6 +102,8 @@ class TestComparable < Test::Unit::TestCase
     assert_equal nil, big <=> Time.now
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
     assert_equal nil, big <=> nil
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, big <=> Object.new
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
   end
 
