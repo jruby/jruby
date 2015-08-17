@@ -22,8 +22,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
@@ -45,8 +43,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
@@ -58,6 +54,8 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
+import org.jruby.truffle.runtime.layouts.ArrayLayout;
+import org.jruby.truffle.runtime.layouts.ArrayLayoutImpl;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -70,24 +68,6 @@ import java.util.Random;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
-
-    @Layout
-    public interface ArrayLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createArray(DynamicObjectFactory factory, @Nullable Object store, int size);
-
-        boolean isArray(ObjectType objectType);
-        boolean isArray(DynamicObject object);
-
-        Object getStore(DynamicObject object);
-        void setStore(DynamicObject object, Object value);
-
-        int getSize(DynamicObject object);
-        void setSize(DynamicObject object, int value);
-
-    }
 
     public static final ArrayLayout ARRAY_LAYOUT = ArrayLayoutImpl.INSTANCE;
 

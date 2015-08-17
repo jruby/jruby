@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -23,10 +22,11 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.BignumLayout;
+import org.jruby.truffle.runtime.layouts.BignumLayoutImpl;
 
 import java.math.BigInteger;
 
@@ -35,19 +35,6 @@ public abstract class BignumNodes {
 
     public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
-    @Layout
-    public interface BignumLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createBignumShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createBignum(DynamicObjectFactory factory, BigInteger value);
-
-        boolean isBignum(DynamicObject object);
-
-        BigInteger getValue(DynamicObject object);
-
-    }
 
     public static final BignumLayout BIGNUM_LAYOUT = BignumLayoutImpl.INSTANCE;
 

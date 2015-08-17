@@ -16,78 +16,21 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.*;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @Layout
-    public interface IntegerFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createIntegerFixnumRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createIntegerFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, int begin, int end);
-
-        boolean isIntegerFixnumRange(DynamicObject object);
-
-        boolean getExcludedEnd(DynamicObject object);
-
-        int getBegin(DynamicObject object);
-
-        int getEnd(DynamicObject object);
-
-    }
-
     public static final IntegerFixnumRangeLayout INTEGER_FIXNUM_RANGE_LAYOUT = IntegerFixnumRangeLayoutImpl.INSTANCE;
 
-    @Layout
-    public interface LongFixnumRangeLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createLongFixnumRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createLongFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, long begin, long end);
-
-        boolean isLongFixnumRange(DynamicObject object);
-
-        boolean getExcludedEnd(DynamicObject object);
-
-        long getBegin(DynamicObject object);
-
-        long getEnd(DynamicObject object);
-
-    }
-
     public static final LongFixnumRangeLayout LONG_FIXNUM_RANGE_LAYOUT = LongFixnumRangeLayoutImpl.INSTANCE;
-
-    @Layout
-    public interface ObjectRangeLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createObjectRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createObjectRange(DynamicObjectFactory factory, boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
-
-        boolean isObjectRange(DynamicObject object);
-
-        boolean getExcludedEnd(DynamicObject object);
-
-        void setExcludedEnd(DynamicObject object, boolean value);
-
-        Object getBegin(DynamicObject object);
-        void setBegin(DynamicObject object, Object value);
-
-        Object getEnd(DynamicObject object);
-        void setEnd(DynamicObject object, Object value);
-
-    }
 
     public static final ObjectRangeLayout OBJECT_RANGE_LAYOUT = ObjectRangeLayoutImpl.INSTANCE;
 

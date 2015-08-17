@@ -28,65 +28,18 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.ProcLayout;
+import org.jruby.truffle.runtime.layouts.ProcLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.Memo;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
-
-    @Layout
-    public interface ProcLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createProcShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createProc(
-                DynamicObjectFactory factory,
-                @Nullable Type type,
-                @Nullable SharedMethodInfo sharedMethodInfo,
-                @Nullable CallTarget callTargetForBlocks,
-                @Nullable CallTarget callTargetForProcs,
-                @Nullable CallTarget callTargetForLambdas,
-                @Nullable MaterializedFrame declarationFrame,
-                @Nullable InternalMethod method,
-                @Nullable Object self,
-                @Nullable DynamicObject block);
-
-        boolean isProc(DynamicObject object);
-
-        Type getType(DynamicObject object);
-
-        SharedMethodInfo getSharedMethodInfo(DynamicObject object);
-        void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
-
-        CallTarget getCallTargetForBlocks(DynamicObject object);
-        void setCallTargetForBlocks(DynamicObject object, CallTarget value);
-
-        CallTarget getCallTargetForProcs(DynamicObject object);
-        void setCallTargetForProcs(DynamicObject object, CallTarget value);
-
-        CallTarget getCallTargetForLambdas(DynamicObject object);
-        void setCallTargetForLambdas(DynamicObject object, CallTarget value);
-
-        MaterializedFrame getDeclarationFrame(DynamicObject object);
-        void setDeclarationFrame(DynamicObject object, MaterializedFrame value);
-
-        InternalMethod getMethod(DynamicObject object);
-        void setMethod(DynamicObject object, InternalMethod value);
-
-        Object getSelf(DynamicObject object);
-        void setSelf(DynamicObject object, Object value);
-
-        DynamicObject getBlock(DynamicObject object);
-        void setBlock(DynamicObject object, DynamicObject value);
-
-    }
 
     public static final ProcLayout PROC_LAYOUT = ProcLayoutImpl.INSTANCE;
 

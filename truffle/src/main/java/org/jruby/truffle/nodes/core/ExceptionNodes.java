@@ -12,41 +12,23 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
+import org.jruby.truffle.runtime.layouts.ExceptionLayout;
+import org.jruby.truffle.runtime.layouts.ExceptionLayoutImpl;
 
 import java.util.List;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
-
-    @Layout
-    public interface ExceptionLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createExceptionShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createException(DynamicObjectFactory factory, @Nullable Object message, @Nullable Backtrace backtrace);
-
-        boolean isException(DynamicObject object);
-
-        Object getMessage(DynamicObject object);
-        void setMessage(DynamicObject object, Object message);
-
-        Backtrace getBacktrace(DynamicObject object);
-        void setBacktrace(DynamicObject object, Backtrace backtrace);
-
-    }
 
     public static final ExceptionLayout EXCEPTION_LAYOUT = ExceptionLayoutImpl.INSTANCE;
 

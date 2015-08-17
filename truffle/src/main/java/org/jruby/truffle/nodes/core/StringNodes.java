@@ -31,7 +31,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -62,12 +61,12 @@ import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
+import org.jruby.truffle.runtime.layouts.StringLayout;
+import org.jruby.truffle.runtime.layouts.StringLayoutImpl;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
@@ -77,27 +76,6 @@ import java.util.Arrays;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
-
-    @Layout
-    public interface StringLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createStringShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createString(DynamicObjectFactory factory, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
-
-        boolean isString(ObjectType objectType);
-        boolean isString(DynamicObject dynamicObject);
-
-        ByteList getByteList(DynamicObject object);
-        void setByteList(DynamicObject object, ByteList byteList);
-
-        int getCodeRange(DynamicObject object);
-        void setCodeRange(DynamicObject object, int codeRange);
-
-        StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-        void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
-
-    }
 
     public static final StringLayout STRING_LAYOUT = StringLayoutImpl.INSTANCE;
 

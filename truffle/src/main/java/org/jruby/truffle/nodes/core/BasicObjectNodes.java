@@ -28,10 +28,11 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
+import org.jruby.truffle.runtime.layouts.BasicObjectLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.LinkedHashMap;
@@ -44,25 +45,6 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
-
-    @org.jruby.truffle.om.dsl.api.Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
-    public interface BasicObjectLayout {
-
-        DynamicObjectFactory createBasicObjectShape(@Nullable DynamicObject logicalClass, @Nullable DynamicObject metaClass);
-
-        DynamicObject createBasicObject(DynamicObjectFactory factory);
-
-        boolean isBasicObject(Object object);
-
-        DynamicObjectFactory setLogicalClass(DynamicObjectFactory factory, DynamicObject value);
-        DynamicObject getLogicalClass(ObjectType objectType);
-        DynamicObject getLogicalClass(DynamicObject object);
-        void setLogicalClass(DynamicObject object, DynamicObject value);
-
-        DynamicObjectFactory setMetaClass(DynamicObjectFactory factory, DynamicObject value);
-        DynamicObject getMetaClass(DynamicObject object);
-        void setMetaClass(DynamicObject object, DynamicObject value);
-    }
 
     public static final BasicObjectLayout BASIC_OBJECT_LAYOUT = BasicObjectLayoutImpl.INSTANCE;
 

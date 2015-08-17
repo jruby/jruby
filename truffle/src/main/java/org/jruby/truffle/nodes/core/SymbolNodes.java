@@ -17,44 +17,22 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
+import org.jruby.truffle.runtime.layouts.SymbolLayout;
+import org.jruby.truffle.runtime.layouts.SymbolLayoutImpl;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface SymbolLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createSymbolShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createSymbol(DynamicObjectFactory factory, String string, ByteList byteList, int hashCode,
-                                   int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
-
-        boolean isSymbol(DynamicObject object);
-
-        String getString(DynamicObject object);
-        ByteList getByteList(DynamicObject object);
-        int getHashCode(DynamicObject object);
-
-        int getCodeRange(DynamicObject object);
-        void setCodeRange(DynamicObject object, int codeRange);
-
-        SymbolCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-        void setCodeRangeableWrapper(DynamicObject object, SymbolCodeRangeableWrapper codeRangeableWrapper);
-
-    }
 
     public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
 

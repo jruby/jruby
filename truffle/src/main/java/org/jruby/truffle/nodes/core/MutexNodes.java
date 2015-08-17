@@ -12,32 +12,20 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.MutexLayout;
+import org.jruby.truffle.runtime.layouts.MutexLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface MutexLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createMutexShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createMutex(DynamicObjectFactory factory, ReentrantLock lock);
-
-        boolean isMutex(DynamicObject object);
-
-        ReentrantLock getLock(DynamicObject object);
-
-    }
 
     public static final MutexLayout MUTEX_LAYOUT = MutexLayoutImpl.INSTANCE;
 

@@ -16,14 +16,14 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.SizedQueueLayout;
+import org.jruby.truffle.runtime.layouts.SizedQueueLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -38,18 +38,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @CoreClass(name = "SizedQueue")
 public abstract class SizedQueueNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface SizedQueueLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createSizedQueueShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createSizedQueue(DynamicObjectFactory factory, @Nullable BlockingQueue queue);
-
-        BlockingQueue getQueue(DynamicObject object);
-        void setQueue(DynamicObject object, BlockingQueue queue);
-
-    }
 
     public static final SizedQueueLayout SIZED_QUEUE_LAYOUT = SizedQueueLayoutImpl.INSTANCE;
 

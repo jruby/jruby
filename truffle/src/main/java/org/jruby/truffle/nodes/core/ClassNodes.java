@@ -22,36 +22,14 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.ModuleFields;
+import org.jruby.truffle.runtime.layouts.ClassLayout;
+import org.jruby.truffle.runtime.layouts.ClassLayoutImpl;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
-
-    @Layout
-    public interface ClassLayout extends ModuleNodes.ModuleLayout {
-
-        DynamicObjectFactory createClassShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createClass(DynamicObjectFactory factory,
-                                  ModuleFields model,
-                                  boolean isSingleton,
-                                  @Nullable DynamicObject attached,
-                                  @Nullable DynamicObjectFactory instanceFactory);
-
-        boolean isClass(DynamicObject object);
-
-        boolean getIsSingleton(DynamicObject object);
-
-        DynamicObject getAttached(DynamicObject object);
-
-        DynamicObjectFactory getInstanceFactory(DynamicObject object);
-        void setInstanceFactoryUnsafe(DynamicObject object, DynamicObjectFactory instanceFactory);
-
-    }
 
     public static final ClassLayout CLASS_LAYOUT = ClassLayoutImpl.INSTANCE;
 

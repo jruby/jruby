@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
@@ -36,10 +35,11 @@ import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.BigDecimalCoerceNodeGe
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.CreateBigDecimalNodeFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory.GetIntegerConstantNodeGen;
 import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayout;
+import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayoutImpl;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -53,23 +53,6 @@ import java.util.regex.Pattern;
 public abstract class BigDecimalNodes {
 
     // TODO (pitr 2015-jun-16): lazy setup when required, see https://github.com/jruby/jruby/pull/3048#discussion_r32413656
-
-    @Layout
-    public interface BigDecimalLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createBigDecimalShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createBigDecimal(DynamicObjectFactory factory, BigDecimal value, Type type);
-
-        boolean isBigDecimal(DynamicObject object);
-
-        BigDecimal getValue(DynamicObject object);
-        void setValue(DynamicObject object, BigDecimal value);
-
-        Type getType(DynamicObject object);
-        void setType(DynamicObject object, Type type);
-
-    }
 
     public static final BigDecimalLayout BIG_DECIMAL_LAYOUT = BigDecimalLayoutImpl.INSTANCE;
 

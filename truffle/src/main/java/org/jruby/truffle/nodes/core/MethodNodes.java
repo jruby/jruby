@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
@@ -38,25 +37,12 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.MethodLayout;
+import org.jruby.truffle.runtime.layouts.MethodLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface MethodLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createMethod(DynamicObjectFactory factory, Object receiver, InternalMethod method);
-
-        boolean isMethod(DynamicObject object);
-
-        Object getReceiver(DynamicObject object);
-
-        InternalMethod getMethod(DynamicObject object);
-
-    }
 
     public static final MethodLayout METHOD_LAYOUT = MethodLayoutImpl.INSTANCE;
 

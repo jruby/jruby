@@ -12,29 +12,16 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayout;
+import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayoutImpl;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
-
-    @Layout
-    public interface ByteArrayLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createByteArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes);
-
-        boolean isByteArray(DynamicObject object);
-
-        ByteList getBytes(DynamicObject object);
-
-    }
 
     public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
 

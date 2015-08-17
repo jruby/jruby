@@ -19,7 +19,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -34,11 +33,11 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.RegexpLayout;
+import org.jruby.truffle.runtime.layouts.RegexpLayoutImpl;
 import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
@@ -50,29 +49,6 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
-
-    @Layout
-    public interface RegexpLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createRegexpShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createRegexp(DynamicObjectFactory factory, @Nullable Regex regex, @Nullable ByteList source, RegexpOptions options, @Nullable Object cachedNames);
-
-        boolean isRegexp(DynamicObject object);
-
-        Regex getRegex(DynamicObject object);
-        void setRegex(DynamicObject object, Regex value);
-
-        ByteList getSource(DynamicObject object);
-        void setSource(DynamicObject object, ByteList value);
-
-        RegexpOptions getOptions(DynamicObject object);
-        void setOptions(DynamicObject object, RegexpOptions value);
-
-        Object getCachedNames(DynamicObject object);
-        void setCachedNames(DynamicObject object, Object value);
-
-    }
 
     public static final RegexpLayout REGEXP_LAYOUT = RegexpLayoutImpl.INSTANCE;
 

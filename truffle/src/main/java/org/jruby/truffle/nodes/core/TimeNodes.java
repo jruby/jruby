@@ -14,35 +14,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.TimeLayout;
+import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
-
-    @Layout
-    public interface TimeLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createTimeShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createTime(DynamicObjectFactory factory, DateTime dateTime, Object offset);
-
-        boolean isTime(DynamicObject object);
-
-        DateTime getDateTime(DynamicObject object);
-
-        void setDateTime(DynamicObject object, DateTime value);
-
-        Object getOffset(DynamicObject object);
-
-        void setOffset(DynamicObject object, Object value);
-
-    }
 
     public static final TimeLayout TIME_LAYOUT = TimeLayoutImpl.INSTANCE;
 

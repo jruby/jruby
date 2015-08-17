@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
@@ -29,24 +28,12 @@ import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.UnboundMethodLayout;
+import org.jruby.truffle.runtime.layouts.UnboundMethodLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface UnboundMethodLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createUnboundMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createUnboundMethod(DynamicObjectFactory factory, DynamicObject origin, InternalMethod method);
-
-        boolean isUnboundMethod(DynamicObject object);
-
-        DynamicObject getOrigin(DynamicObject object);
-        InternalMethod getMethod(DynamicObject object);
-
-    }
 
     public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
 

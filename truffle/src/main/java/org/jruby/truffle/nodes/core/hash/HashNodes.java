@@ -19,8 +19,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.object.ObjectType;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -32,8 +30,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -43,6 +39,8 @@ import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.layouts.HashLayout;
+import org.jruby.truffle.runtime.layouts.HashLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.Arrays;
@@ -52,48 +50,6 @@ import java.util.Map;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
-
-    @Layout
-    public interface HashLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createHashShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createHash(
-                DynamicObjectFactory factory,
-                @Nullable DynamicObject defaultBlock,
-                @Nullable Object defaultValue,
-                @Nullable Object store,
-                @Nullable int size,
-                @Nullable Entry firstInSequence,
-                @Nullable Entry lastInSequence,
-                @Nullable boolean compareByIdentity);
-
-        boolean isHash(ObjectType objectType);
-
-        boolean isHash(DynamicObject object);
-
-        DynamicObject getDefaultBlock(DynamicObject object);
-        void setDefaultBlock(DynamicObject object, DynamicObject value);
-
-        Object getDefaultValue(DynamicObject object);
-        void setDefaultValue(DynamicObject object, Object value);
-
-        Object getStore(DynamicObject object);
-        void setStore(DynamicObject object, Object value);
-
-        int getSize(DynamicObject object);
-        void setSize(DynamicObject object, int value);
-
-        Entry getFirstInSequence(DynamicObject object);
-        void setFirstInSequence(DynamicObject object, Entry value);
-
-        Entry getLastInSequence(DynamicObject object);
-        void setLastInSequence(DynamicObject object, Entry value);
-
-        boolean getCompareByIdentity(DynamicObject object);
-        void setCompareByIdentity(DynamicObject object, boolean value);
-
-    }
 
     public static final HashLayout HASH_LAYOUT = HashLayoutImpl.INSTANCE;
 

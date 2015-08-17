@@ -40,34 +40,17 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.rubinius.DirLayout;
+import org.jruby.truffle.runtime.layouts.rubinius.DirLayoutImpl;
 
 import java.io.File;
 
 public abstract class DirPrimitiveNodes {
-
-    @Layout
-    public interface DirLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createDirShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
-
-        Object getContents(DynamicObject object);
-        void setContents(DynamicObject object, Object value);
-
-        int getPosition(DynamicObject object);
-        void setPosition(DynamicObject object, int value);
-
-    }
 
     public static final DirLayout DIR_LAYOUT = DirLayoutImpl.INSTANCE;
 

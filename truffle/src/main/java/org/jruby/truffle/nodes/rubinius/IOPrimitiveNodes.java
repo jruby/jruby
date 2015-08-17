@@ -42,13 +42,11 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -56,6 +54,8 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.rubinius.IOLayout;
+import org.jruby.truffle.runtime.layouts.rubinius.IOLayoutImpl;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
 import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
@@ -69,31 +69,6 @@ import java.nio.ByteBuffer;
 public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface IOLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        String I_BUFFER_IDENTIFIER = "@ibuffer";
-        String LINE_NO_IDENTIFIER = "@lineno";
-        String DESCRIPTOR_IDENTIFIER = "@descriptor";
-        String MODE_IDENTIFIER = "@mode";
-
-        DynamicObjectFactory createIOShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createIO(DynamicObjectFactory factory, DynamicObject iBuffer, int lineNo, int descriptor, int mode);
-
-        DynamicObject getIBuffer(DynamicObject object);
-
-        int getLineNo(DynamicObject object);
-        void setLineNo(DynamicObject object, int value);
-
-        int getDescriptor(DynamicObject object);
-        void setDescriptor(DynamicObject object, int value);
-
-        int getMode(DynamicObject object);
-        void setMode(DynamicObject object, int value);
-
-    }
 
     public static final IOLayout IO_LAYOUT = IOLayoutImpl.INSTANCE;
 

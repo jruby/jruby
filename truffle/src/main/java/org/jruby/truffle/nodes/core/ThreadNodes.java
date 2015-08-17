@@ -15,17 +15,17 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
+import org.jruby.truffle.runtime.layouts.ThreadLayout;
+import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -39,19 +39,6 @@ import java.util.concurrent.locks.Lock;
 
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
-
-    @Layout
-    public interface ThreadLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createThreadShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createThread(DynamicObjectFactory factory, ThreadFields fields);
-
-        boolean isThread(DynamicObject object);
-
-        ThreadFields getFields(DynamicObject object);
-
-    }
 
     public static final ThreadLayout THREAD_LAYOUT = ThreadLayoutImpl.INSTANCE;
 

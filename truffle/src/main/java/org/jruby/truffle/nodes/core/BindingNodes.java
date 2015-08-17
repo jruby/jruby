@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -26,33 +25,16 @@ import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.BindingLayout;
+import org.jruby.truffle.runtime.layouts.BindingLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
-
-    @Layout
-    public interface BindingLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createBindingShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createBinding(DynamicObjectFactory factory, @Nullable Object self, @Nullable MaterializedFrame frame);
-
-        boolean isBinding(DynamicObject object);
-
-        Object getSelf(DynamicObject object);
-        void setSelf(DynamicObject object, Object self);
-
-        MaterializedFrame getFrame(DynamicObject object);
-        void setFrame(DynamicObject object, MaterializedFrame frame);
-
-    }
 
     public static final BindingLayout BINDING_LAYOUT = BindingLayoutImpl.INSTANCE;
 

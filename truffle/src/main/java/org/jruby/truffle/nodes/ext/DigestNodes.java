@@ -12,11 +12,12 @@ package org.jruby.truffle.nodes.ext;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.ext.DigestLayout;
+import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
@@ -24,17 +25,6 @@ import java.security.NoSuchAlgorithmException;
 
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface DigestLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createDigestShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createDigest(DynamicObjectFactory factory, MessageDigest digest);
-
-        MessageDigest getDigest(DynamicObject object);
-
-    }
 
     public static final DigestLayout DIGEST_LAYOUT = DigestLayoutImpl.INSTANCE;
 

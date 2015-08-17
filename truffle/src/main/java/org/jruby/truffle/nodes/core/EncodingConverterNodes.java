@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -27,28 +26,14 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.EncodingConverterLayout;
+import org.jruby.truffle.runtime.layouts.EncodingConverterLayoutImpl;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
-
-    @Layout
-    public interface EncodingConverterLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createEncodingConverterShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createEncodingConverter(DynamicObjectFactory factory, @Nullable EConv econv);
-
-        boolean isEncodingConverter(DynamicObject object);
-
-        EConv getEconv(DynamicObject object);
-        void setEconv(DynamicObject object, EConv econv);
-
-    }
 
     public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
 

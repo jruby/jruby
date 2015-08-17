@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -28,11 +27,12 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.MatchDataLayout;
+import org.jruby.truffle.runtime.layouts.MatchDataLayoutImpl;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
@@ -41,19 +41,6 @@ import java.util.Arrays;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
-
-    @Layout
-    public interface MatchDataLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createMatchDataShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createMatchData(DynamicObjectFactory factory, MatchDataFields fields);
-
-        boolean isMatchData(DynamicObject object);
-
-        MatchDataFields getFields(DynamicObject object);
-
-    }
 
     public static final MatchDataLayout MATCH_DATA_LAYOUT = MatchDataLayoutImpl.INSTANCE;
 

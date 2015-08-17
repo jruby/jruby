@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -26,9 +25,10 @@ import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.EncodingLayout;
+import org.jruby.truffle.runtime.layouts.EncodingLayoutImpl;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -38,23 +38,6 @@ import java.util.Map;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
-
-    @Layout
-    public interface EncodingLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createEncodingShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createEncoding(DynamicObjectFactory factory, Encoding encoding, ByteList name, boolean dummy);
-
-        boolean isEncoding(DynamicObject object);
-
-        Encoding getEncoding(DynamicObject object);
-
-        ByteList getName(DynamicObject object);
-
-        boolean getDummy(DynamicObject object);
-
-    }
 
     public static final EncodingLayout ENCODING_LAYOUT = EncodingLayoutImpl.INSTANCE;
 

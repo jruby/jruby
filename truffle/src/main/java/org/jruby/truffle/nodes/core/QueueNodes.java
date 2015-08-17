@@ -16,13 +16,14 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.QueueLayout;
+import org.jruby.truffle.runtime.layouts.QueueLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -34,19 +35,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface QueueLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createQueueShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createQueue(DynamicObjectFactory factory, LinkedBlockingQueue queue);
-
-        boolean isQueue(DynamicObject object);
-
-        LinkedBlockingQueue getQueue(DynamicObject object);
-
-    }
 
     public static final QueueLayout QUEUE_LAYOUT = QueueLayoutImpl.INSTANCE;
 

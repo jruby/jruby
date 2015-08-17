@@ -10,29 +10,14 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import jnr.ffi.Pointer;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.runtime.layouts.rubinius.PointerLayout;
+import org.jruby.truffle.runtime.layouts.rubinius.PointerLayoutImpl;
 
 public abstract class PointerNodes {
 
     public static final Pointer NULL_POINTER = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().newOpaquePointer(0);
-
-    @Layout
-    public interface PointerLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createPointerShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createPointer(DynamicObjectFactory factory, Pointer pointer);
-
-        boolean isPointer(DynamicObject object);
-
-        Pointer getPointer(DynamicObject object);
-        void setPointer(DynamicObject object, Pointer pointer);
-
-    }
 
     public static final PointerLayout POINTER_LAYOUT = PointerLayoutImpl.INSTANCE;
 

@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -49,11 +48,12 @@ import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.ModuleFields;
+import org.jruby.truffle.runtime.layouts.ModuleLayout;
+import org.jruby.truffle.runtime.layouts.ModuleLayoutImpl;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -68,21 +68,6 @@ import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
-
-    @Layout
-    public interface ModuleLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createModuleShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createModule(DynamicObjectFactory factory, ModuleFields fields);
-
-        boolean isModule(DynamicObject object);
-
-        ModuleFields getFields(DynamicObject object);
-
-        void setFields(DynamicObject object, ModuleFields model);
-
-    }
 
     public static final ModuleLayout MODULE_LAYOUT = ModuleLayoutImpl.INSTANCE;
 

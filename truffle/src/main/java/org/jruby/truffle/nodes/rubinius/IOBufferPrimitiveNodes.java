@@ -42,51 +42,21 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.rubinius.IOBufferLayout;
+import org.jruby.truffle.runtime.layouts.rubinius.IOBufferLayoutImpl;
 import org.jruby.util.ByteList;
 
 public abstract class IOBufferPrimitiveNodes {
 
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface IOBufferLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        String WRITE_SYNCED_IDENTIFIER = "@write_synced";
-        String STORAGE_IDENTIFIER = "@storage";
-        String USED_IDENTIFIER = "@used";
-        String START_IDENTIFIER = "@start";
-        String TOTAL_IDENTIFIER = "@total";
-
-        DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, DynamicObject storage, int used, int start, int total);
-
-        boolean getWriteSynced(DynamicObject object);
-        void setWriteSynced(DynamicObject object, boolean value);
-
-        DynamicObject getStorage(DynamicObject object);
-        void setStorage(DynamicObject object, DynamicObject value);
-
-        int getUsed(DynamicObject object);
-        void setUsed(DynamicObject object, int value);
-
-        int getStart(DynamicObject object);
-        void setStart(DynamicObject object, int value);
-
-        int getTotal(DynamicObject object);
-        void setTotal(DynamicObject object, int value);
-
-    }
 
     public static final IOBufferLayout IO_BUFFER_LAYOUT = IOBufferLayoutImpl.INSTANCE;
 

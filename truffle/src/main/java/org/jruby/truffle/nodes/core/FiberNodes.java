@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -22,10 +21,11 @@ import org.jruby.truffle.nodes.cast.SingleValueCastNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
+import org.jruby.truffle.runtime.layouts.FiberLayout;
+import org.jruby.truffle.runtime.layouts.FiberLayoutImpl;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
@@ -34,19 +34,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
-
-    @Layout
-    public interface FiberLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createFiberShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createFiber(DynamicObjectFactory factory, FiberFields fields);
-
-        boolean isFiber(DynamicObject object);
-
-        FiberFields getFields(DynamicObject object);
-
-    }
 
     public static final FiberLayout FIBER_LAYOUT = FiberLayoutImpl.INSTANCE;
 
