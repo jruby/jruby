@@ -33,18 +33,6 @@ public abstract class TimeNodes {
         return TIME_LAYOUT.getDateTime(time);
     }
 
-    public static void setDateTime(DynamicObject time, DateTime dateTime) {
-        TIME_LAYOUT.setDateTime(time, dateTime);
-    }
-
-    public static Object getOffset(DynamicObject time) {
-        return TIME_LAYOUT.getOffset(time);
-    }
-
-    public static void setOffset(DynamicObject time, Object offset) {
-        TIME_LAYOUT.setOffset(time, offset);
-    }
-
     public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
         return TIME_LAYOUT.createTime(ClassNodes.CLASS_LAYOUT.getInstanceFactory(timeClass), dateTime, offset);
     }
@@ -59,8 +47,8 @@ public abstract class TimeNodes {
 
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            setDateTime(self, getDateTime(from));
-            setOffset(self, getOffset(from));
+            TIME_LAYOUT.setDateTime(self, getDateTime(from));
+            TIME_LAYOUT.setOffset(self, TIME_LAYOUT.getOffset(from));
             return self;
         }
 
@@ -76,7 +64,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public boolean internalGMT(DynamicObject time) {
-            return getOffset(time) == nil() &&
+            return TIME_LAYOUT.getOffset(time) == nil() &&
                     (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
                      getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
         }
@@ -97,7 +85,7 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalSetGMT(DynamicObject time, boolean isGMT) {
             if (isGMT) {
-                setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
+                TIME_LAYOUT.setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
                 // Do nothing I guess - we can't change it to another zone, as what zone would that be?
             }
@@ -116,7 +104,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public Object internalOffset(DynamicObject time) {
-            return getOffset(time);
+            return TIME_LAYOUT.getOffset(time);
         }
     }
 
@@ -133,7 +121,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public Object internalSetOffset(DynamicObject time, Object offset) {
-            setOffset(time, offset);
+            TIME_LAYOUT.setOffset(time, offset);
             return offset;
         }
     }

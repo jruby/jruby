@@ -42,10 +42,10 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
     public boolean ensureCapacityInt(DynamicObject array, int requiredCapacity) {
-        final int[] store = (int[]) ArrayNodes.getStore(array);
+        final int[] store = (int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.getSize(array));
+            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.ARRAY_LAYOUT.getSize(array));
             return true;
         } else {
             return false;
@@ -56,10 +56,10 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
     public boolean ensureCapacityLong(DynamicObject array, int requiredCapacity) {
-        final long[] store = (long[]) ArrayNodes.getStore(array);
+        final long[] store = (long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.getSize(array));
+            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.ARRAY_LAYOUT.getSize(array));
             return true;
         } else {
             return false;
@@ -70,10 +70,10 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
     public boolean ensureCapacityDouble(DynamicObject array, int requiredCapacity) {
-        final double[] store = (double[]) ArrayNodes.getStore(array);
+        final double[] store = (double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.getSize(array));
+            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.ARRAY_LAYOUT.getSize(array));
             return true;
         } else {
             return false;
@@ -84,10 +84,10 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isObjectArray(array)"}
     )
     public boolean ensureCapacityObject(DynamicObject array, int requiredCapacity) {
-        final Object[] store = (Object[]) ArrayNodes.getStore(array);
+        final Object[] store = (Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.getSize(array));
+            ArrayNodes.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)), ArrayNodes.ARRAY_LAYOUT.getSize(array));
             return true;
         } else {
             return false;

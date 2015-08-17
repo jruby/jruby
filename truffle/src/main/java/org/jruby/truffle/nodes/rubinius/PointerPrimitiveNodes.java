@@ -74,7 +74,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
-            UnsafeHolder.U.freeMemory(PointerNodes.getPointer(pointer).address());
+            UnsafeHolder.U.freeMemory(PointerNodes.POINTER_LAYOUT.getPointer(pointer).address());
             return pointer;
         }
 
@@ -94,7 +94,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long setAddress(DynamicObject pointer, long address) {
-            PointerNodes.setPointer(pointer, getMemoryManager().newPointer(address));
+            PointerNodes.POINTER_LAYOUT.setPointer(pointer, getMemoryManager().newPointer(address));
             return address;
         }
 
@@ -114,7 +114,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject add(DynamicObject a, long b) {
-            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(a), getMemoryManager().newPointer(PointerNodes.getPointer(a).address() + b));
+            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(a), getMemoryManager().newPointer(PointerNodes.POINTER_LAYOUT.getPointer(a).address() + b));
         }
 
     }
@@ -128,7 +128,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isSigned(signed)")
         public int readInt(DynamicObject pointer, boolean signed) {
-            return PointerNodes.getPointer(pointer).getInt(0);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getInt(0);
         }
 
         protected boolean isSigned(boolean signed) {
@@ -147,7 +147,7 @@ public abstract class PointerPrimitiveNodes {
         @Specialization
         public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
-            PointerNodes.getPointer(pointer).get(0, bytes, 0, length);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).get(0, bytes, 0, length);
             return createString(bytes);
         }
 
@@ -178,25 +178,25 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_INT")
         public int setAtOffsetInt(DynamicObject pointer, int offset, int type, int value) {
-            PointerNodes.getPointer(pointer).putInt(offset, value);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).putInt(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_LONG")
         public long setAtOffsetLong(DynamicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLong(offset, value);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
         public long setAtOffsetULong(DynamicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLong(offset, value);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULL")
         public long setAtOffsetULL(DynamicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLongLong(offset, value);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).putLongLong(offset, value);
             return value;
         }
 
@@ -211,7 +211,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {
-            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(pointer), PointerNodes.getPointer(pointer).getPointer(0));
+            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(pointer), PointerNodes.POINTER_LAYOUT.getPointer(pointer).getPointer(0));
         }
 
     }
@@ -225,7 +225,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public long address(DynamicObject pointer) {
-            return PointerNodes.getPointer(pointer).address();
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).address();
         }
 
     }
@@ -240,53 +240,53 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "type == TYPE_CHAR")
         public int getAtOffsetChar(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getByte(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_UCHAR")
         public int getAtOffsetUChar(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getByte(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_INT")
         public int getAtOffsetInt(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getInt(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getInt(offset);
         }
 
         @Specialization(guards = "type == TYPE_SHORT")
         public int getAtOffsetShort(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getShort(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_USHORT")
         public int getAtOffsetUShort(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getShort(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_LONG")
         public long getAtOffsetLong(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLong(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
         public long getAtOffsetULong(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLong(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULL")
         public long getAtOffsetULL(DynamicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLongLong(offset);
+            return PointerNodes.POINTER_LAYOUT.getPointer(pointer).getLongLong(offset);
         }
 
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return createString(PointerNodes.getPointer(pointer).getString(offset));
+            return createString(PointerNodes.POINTER_LAYOUT.getPointer(pointer).getString(offset));
         }
 
         @Specialization(guards = "type == TYPE_PTR")
         public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
-            final Pointer readPointer = PointerNodes.getPointer(pointer).getPointer(offset);
+            final Pointer readPointer = PointerNodes.POINTER_LAYOUT.getPointer(pointer).getPointer(offset);
 
             if (readPointer == null) {
                 return nil();
@@ -308,7 +308,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
             final ByteList bytes = StringNodes.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
-            PointerNodes.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;
         }
 
@@ -330,7 +330,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public DynamicObject readStringToNull(DynamicObject pointer) {
-            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.getPointer(pointer).address()));
+            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.POINTER_LAYOUT.getPointer(pointer).address()));
         }
 
     }
@@ -344,7 +344,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject address(DynamicObject pointer, int value) {
-            PointerNodes.getPointer(pointer).putInt(0, value);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).putInt(0, value);
             return pointer;
         }
 

@@ -64,7 +64,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {
-        return ClassNodes.isSingleton(classToAllocate);
+        return ClassNodes.CLASS_LAYOUT.getIsSingleton(classToAllocate);
     }
 
 }

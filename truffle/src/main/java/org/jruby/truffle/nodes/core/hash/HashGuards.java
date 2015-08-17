@@ -19,7 +19,7 @@ public abstract class HashGuards {
 
     public static boolean isNullHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getStore(hash) == null;
+        return HashNodes.HASH_LAYOUT.getStore(hash) == null;
     }
 
     public static boolean isPackedHash(DynamicObject hash) {
@@ -30,29 +30,29 @@ public abstract class HashGuards {
 
     public static boolean isBucketHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getStore(hash) instanceof Entry[];
+        return HashNodes.HASH_LAYOUT.getStore(hash) instanceof Entry[];
     }
 
     // Higher level properties
 
     public static boolean isEmptyHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getSize(hash) == 0;
+        return HashNodes.HASH_LAYOUT.getSize(hash) == 0;
     }
 
     public static boolean isCompareByIdentity(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.isCompareByIdentity(hash);
+        return HashNodes.HASH_LAYOUT.getCompareByIdentity(hash);
     }
 
     public static boolean hasDefaultValue(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getDefaultValue(hash) != null;
+        return HashNodes.HASH_LAYOUT.getDefaultValue(hash) != null;
     }
 
     public static boolean hasDefaultBlock(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getDefaultBlock(hash) != null;
+        return HashNodes.HASH_LAYOUT.getDefaultBlock(hash) != null;
     }
 
 }

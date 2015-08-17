@@ -42,14 +42,14 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.BIGNUM_LAYOUT.getValue(a).pow((int) b));
             }
         }
 
         @TruffleBoundary
         @Specialization
         public double pow(DynamicObject a, double b) {
-            return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
+            return Math.pow(BignumNodes.BIGNUM_LAYOUT.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")

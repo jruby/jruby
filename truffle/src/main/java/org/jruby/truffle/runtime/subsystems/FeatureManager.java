@@ -83,9 +83,9 @@ public class FeatureManager {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
+                ModuleNodes.MODULE_LAYOUT.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
             } else {
-                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                ModuleNodes.MODULE_LAYOUT.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }
@@ -187,14 +187,14 @@ public class FeatureManager {
             try {
                 context.loadFile(path, currentNode);
             } catch (RaiseException e) {
-                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(loadedFeatures));
-                final int length = ArrayNodes.getSize(loadedFeatures);
+                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(loadedFeatures));
+                final int length = ArrayNodes.ARRAY_LAYOUT.getSize(loadedFeatures);
                 for (int i = length - 1; i >= 0; i--) {
                     if (mirror.get(i) == pathString) {
                         for (int j = length - 1; j > i; j--) {
                             mirror.set(i - 1, mirror.get(i));
                         }
-                        ArrayNodes.setSize(loadedFeatures, length - 1);
+                        ArrayNodes.ARRAY_LAYOUT.setSize(loadedFeatures, length - 1);
                         break;
                     }
                 }

@@ -66,7 +66,7 @@ public abstract class ToLongNode extends PackNode {
     @Specialization(guards = "isRubyBignum(object)")
     public long toLong(VirtualFrame frame, DynamicObject object) {
         // A truncated value is exactly what we want
-        return BignumNodes.getBigIntegerValue(object).longValue();
+        return BignumNodes.BIGNUM_LAYOUT.getValue(object).longValue();
     }
 
     @Specialization(guards = "isNil(nil)")

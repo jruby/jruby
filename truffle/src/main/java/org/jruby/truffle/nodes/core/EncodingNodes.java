@@ -63,7 +63,7 @@ public abstract class EncodingNodes {
     public static void storeEncoding(int encodingListIndex, DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
         encodingList[encodingListIndex] = encoding;
-        lookup.put(getName(encoding).toString().toLowerCase(Locale.ENGLISH), encoding);
+        lookup.put(ENCODING_LAYOUT.getName(encoding).toString().toLowerCase(Locale.ENGLISH), encoding);
     }
 
     @TruffleBoundary
@@ -74,18 +74,6 @@ public abstract class EncodingNodes {
 
     public static DynamicObject newEncoding(DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
         return createRubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
-    }
-
-    public static Encoding getEncoding(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getEncoding(encoding);
-    }
-
-    public static ByteList getName(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getName(encoding);
-    }
-
-    public static boolean isDummy(DynamicObject encoding) {
-        return ENCODING_LAYOUT.getDummy(encoding);
     }
 
     public static DynamicObject[] cloneEncodingList() {
@@ -110,7 +98,7 @@ public abstract class EncodingNodes {
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
-            return getEncoding(encoding).isAsciiCompatible();
+            return ENCODING_LAYOUT.getEncoding(encoding).isAsciiCompatible();
         }
     }
 
@@ -136,7 +124,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
         public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(getEncoding(first), getEncoding(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(ENCODING_LAYOUT.getEncoding(first), ENCODING_LAYOUT.getEncoding(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -148,7 +136,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyRegexp(second)"})
         public Object isCompatibleStringRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getByteList(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getByteList(first).getEncoding(), RegexpNodes.REGEXP_LAYOUT.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -160,7 +148,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubyString(second)"})
         public Object isCompatibleRegexpString(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), StringNodes.getByteList(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.REGEXP_LAYOUT.getRegex(first).getEncoding(), StringNodes.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -172,7 +160,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubyRegexp(second)"})
         public Object isCompatibleRegexpRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.REGEXP_LAYOUT.getRegex(first).getEncoding(), RegexpNodes.REGEXP_LAYOUT.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -184,7 +172,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
         public Object isCompatibleRegexpSymbol(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.getRegex(first).getEncoding(), SymbolNodes.getByteList(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(RegexpNodes.REGEXP_LAYOUT.getRegex(first).getEncoding(), SymbolNodes.SYMBOL_LAYOUT.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -196,7 +184,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
         public Object isCompatibleSymbolRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getByteList(first).getEncoding(), RegexpNodes.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.SYMBOL_LAYOUT.getByteList(first).getEncoding(), RegexpNodes.REGEXP_LAYOUT.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -232,7 +220,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
         public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getByteList(first).getEncoding(), getEncoding(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringNodes.getByteList(first).getEncoding(), ENCODING_LAYOUT.getEncoding(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -257,7 +245,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultExternalEncoding(getEncoding(encoding));
+            getContext().getRuntime().setDefaultExternalEncoding(ENCODING_LAYOUT.getEncoding(encoding));
 
             return encoding;
         }
@@ -267,7 +255,7 @@ public abstract class EncodingNodes {
             CompilerDirectives.transferToInterpreter();
 
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(getEncoding(rubyEncoding));
+            getContext().getRuntime().setDefaultExternalEncoding(ENCODING_LAYOUT.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
@@ -303,7 +291,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(getEncoding(encoding));
+            getContext().getRuntime().setDefaultInternalEncoding(ENCODING_LAYOUT.getEncoding(encoding));
 
             return encoding;
         }
@@ -327,7 +315,7 @@ public abstract class EncodingNodes {
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(getEncoding(getEncoding(encodingName.toString())));
+            getContext().getRuntime().setDefaultInternalEncoding(ENCODING_LAYOUT.getEncoding(getEncoding(encodingName.toString())));
 
             return encodingName;
         }
@@ -376,7 +364,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public boolean isDummy(DynamicObject encoding) {
-            return EncodingNodes.isDummy(encoding);
+            return ENCODING_LAYOUT.getDummy(encoding);
         }
     }
 
@@ -405,7 +393,7 @@ public abstract class EncodingNodes {
 
             final DynamicObject[] encodings = cloneEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, createString(getName(encodings[i])), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, createString(ENCODING_LAYOUT.getName(encodings[i])), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
 
@@ -459,7 +447,7 @@ public abstract class EncodingNodes {
             }
 
             for (int i = 0; i < encodings.length; i++) {
-                if (getEncoding(encodings[i]) == encoding) {
+                if (ENCODING_LAYOUT.getEncoding(encodings[i]) == encoding) {
                     return i;
                 }
             }
@@ -478,7 +466,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject encoding) {
-            final ByteList name = getName(encoding).dup();
+            final ByteList name = ENCODING_LAYOUT.getName(encoding).dup();
             name.setEncoding(ASCIIEncoding.INSTANCE);
             return createString(name);
         }

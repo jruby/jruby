@@ -60,10 +60,6 @@ public abstract class DigestNodes {
         return DIGEST_LAYOUT.createDigest(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), digest);
     }
 
-    public static MessageDigest getDigest(DynamicObject digest) {
-        return DIGEST_LAYOUT.getDigest(digest);
-    }
-
     @CoreMethod(names = "md5", onSingleton = true)
     public abstract static class MD5Node extends CoreMethodArrayArgumentsNode {
 
@@ -150,7 +146,7 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
             final ByteList bytes = StringNodes.getByteList(message);
-            getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            DIGEST_LAYOUT.getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
         }
 
@@ -166,7 +162,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
-            getDigest(digestObject).reset();
+            DIGEST_LAYOUT.getDigest(digestObject).reset();
             return digestObject;
         }
 
@@ -182,7 +178,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject digest(DynamicObject digestObject) {
-            final MessageDigest digest = getDigest(digestObject);
+            final MessageDigest digest = DIGEST_LAYOUT.getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
 
@@ -209,7 +205,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
-            return getDigest(digestObject).getDigestLength();
+            return DIGEST_LAYOUT.getDigest(digestObject).getDigestLength();
         }
 
     }

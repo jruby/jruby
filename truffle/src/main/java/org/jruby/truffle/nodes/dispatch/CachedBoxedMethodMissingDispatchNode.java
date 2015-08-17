@@ -49,7 +49,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.MODULE_LAYOUT.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
 
         if (indirect) {
@@ -80,7 +80,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override

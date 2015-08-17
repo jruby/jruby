@@ -34,7 +34,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public int getPrimitiveArity() {
-        return MethodNodes.getMethod(method).getSharedMethodInfo().getArity().getPreRequired();
+        return MethodNodes.METHOD_LAYOUT.getMethod(method).getSharedMethodInfo().getArity().getPreRequired();
     }
 
     @Override

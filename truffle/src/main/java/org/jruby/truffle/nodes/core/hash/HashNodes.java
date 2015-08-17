@@ -84,7 +84,7 @@ public abstract class HashNodes {
     }
 
     public static boolean verifyStore(DynamicObject hash) {
-        return verifyStore(getStore(hash), getSize(hash), getFirstInSequence(hash), getLastInSequence(hash));
+        return verifyStore(HASH_LAYOUT.getStore(hash), HASH_LAYOUT.getSize(hash), HASH_LAYOUT.getFirstInSequence(hash), HASH_LAYOUT.getLastInSequence(hash));
     }
 
     public static boolean verifyStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {
@@ -166,34 +166,6 @@ public abstract class HashNodes {
         return true;
     }
 
-    public static DynamicObject getDefaultBlock(DynamicObject hash) {
-        return HASH_LAYOUT.getDefaultBlock(hash);
-    }
-
-    public static void setDefaultBlock(DynamicObject hash, DynamicObject defaultBlock) {
-        HASH_LAYOUT.setDefaultBlock(hash, defaultBlock);
-    }
-
-    public static Object getDefaultValue(DynamicObject hash) {
-        return HASH_LAYOUT.getDefaultValue(hash);
-    }
-
-    public static void setDefaultValue(DynamicObject hash, Object defaultValue) {
-        HASH_LAYOUT.setDefaultValue(hash, defaultValue);
-    }
-
-    public static boolean isCompareByIdentity(DynamicObject hash) {
-        return HASH_LAYOUT.getCompareByIdentity(hash);
-    }
-
-    public static void setCompareByIdentity(DynamicObject hash, boolean compareByIdentity) {
-        HASH_LAYOUT.setCompareByIdentity(hash, compareByIdentity);
-    }
-
-    public static Object getStore(DynamicObject hash) {
-        return HASH_LAYOUT.getStore(hash);
-    }
-
     public static void setStore(DynamicObject hash, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         assert RubyGuards.isRubyHash(hash);
         assert verifyStore(store, size, firstInSequence, lastInSequence);
@@ -202,30 +174,6 @@ public abstract class HashNodes {
         HASH_LAYOUT.setFirstInSequence(hash, firstInSequence);
         HASH_LAYOUT.setLastInSequence(hash, lastInSequence);
 
-    }
-
-    public static int getSize(DynamicObject hash) {
-        return HASH_LAYOUT.getSize(hash);
-    }
-
-    public static void setSize(DynamicObject hash, int storeSize) {
-        HASH_LAYOUT.setSize(hash, storeSize);
-    }
-
-    public static Entry getFirstInSequence(DynamicObject hash) {
-        return HASH_LAYOUT.getFirstInSequence(hash);
-    }
-
-    public static void setFirstInSequence(DynamicObject hash, Entry firstInSequence) {
-        HASH_LAYOUT.setFirstInSequence(hash, firstInSequence);
-    }
-
-    public static Entry getLastInSequence(DynamicObject hash) {
-        return HASH_LAYOUT.getLastInSequence(hash);
-    }
-
-    public static void setLastInSequence(DynamicObject hash, Entry lastInSequence) {
-        HASH_LAYOUT.setLastInSequence(hash, lastInSequence);
     }
 
     public static DynamicObject createEmptyHash(DynamicObject hashClass) {
@@ -247,9 +195,9 @@ public abstract class HashNodes {
         if (HashGuards.isNullHash(hash)) {
             return Collections.emptyIterator();
         } if (HashGuards.isPackedHash(hash)) {
-            return PackedArrayStrategy.iterateKeyValues((Object[]) getStore(hash), getSize(hash));
+            return PackedArrayStrategy.iterateKeyValues((Object[]) HASH_LAYOUT.getStore(hash), HASH_LAYOUT.getSize(hash));
         } else if (HashGuards.isBucketHash(hash)) {
-            return BucketsStrategy.iterateKeyValues(getFirstInSequence(hash));
+            return BucketsStrategy.iterateKeyValues(HASH_LAYOUT.getFirstInSequence(hash));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -299,9 +247,9 @@ public abstract class HashNodes {
         public Object construct(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
             final DynamicObject array = (DynamicObject) args[0];
 
-            final Object[] store = (Object[]) ArrayNodes.getStore(array);
+            final Object[] store = (Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
-            final int size = ArrayNodes.getSize(array);
+            final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array);
             final Object[] newStore = PackedArrayStrategy.createStore();
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
@@ -314,15 +262,15 @@ public abstract class HashNodes {
 
                     final DynamicObject pairArray = (DynamicObject) pair;
 
-                    if (!(ArrayNodes.getStore(pairArray) instanceof Object[])) {
+                    if (!(ArrayNodes.ARRAY_LAYOUT.getStore(pairArray) instanceof Object[])) {
                         return constructFallback(frame, hashClass, args);
                     }
 
-                    if (ArrayNodes.getSize(pairArray) != 2) {
+                    if (ArrayNodes.ARRAY_LAYOUT.getSize(pairArray) != 2) {
                         return constructFallback(frame, hashClass, args);
                     }
 
-                    final Object[] pairStore = (Object[]) ArrayNodes.getStore(pairArray);
+                    final Object[] pairStore = (Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(pairArray);
 
                     final Object key = pairStore[0];
                     final Object value = pairStore[1];
@@ -354,11 +302,11 @@ public abstract class HashNodes {
 
             final DynamicObject array = (DynamicObject) arg;
 
-            if (!(ArrayNodes.getStore(array) instanceof Object[])) {
+            if (!(ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof Object[])) {
                 return false;
             }
 
-            final Object[] store = (Object[]) ArrayNodes.getStore(array);
+            final Object[] store = (Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
             if (store.length > PackedArrayStrategy.MAX_ENTRIES) {
                 return false;
@@ -412,15 +360,15 @@ public abstract class HashNodes {
         public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key) {
             final int hashed = hashNode.hash(frame, key);
 
-            final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int size = HASH_LAYOUT.getSize(hash);
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
                 if (n < size) {
                     if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                         final boolean equal;
 
-                        if (byIdentityProfile.profile(isCompareByIdentity(hash))) {
+                        if (byIdentityProfile.profile(HASH_LAYOUT.getCompareByIdentity(hash))) {
                             equal = equalNode.executeReferenceEqual(frame, key, PackedArrayStrategy.getKey(store, n));
                         } else {
                             equal = eqlNode.callBoolean(frame, key, "eql?", null, PackedArrayStrategy.getKey(store, n));
@@ -503,7 +451,7 @@ public abstract class HashNodes {
                 setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
-            return setNode.executeSet(frame, hash, key, value, isCompareByIdentity(hash));
+            return setNode.executeSet(frame, hash, key, value, HASH_LAYOUT.getCompareByIdentity(hash));
         }
 
     }
@@ -540,7 +488,7 @@ public abstract class HashNodes {
 
         @Specialization
         public DynamicObject compareByIdentity(DynamicObject hash) {
-            setCompareByIdentity(hash, true);
+            HASH_LAYOUT.setCompareByIdentity(hash, true);
             return hash;
         }
 
@@ -557,7 +505,7 @@ public abstract class HashNodes {
 
         @Specialization
         public boolean compareByIdentity(DynamicObject hash) {
-            return profile.profile(isCompareByIdentity(hash));
+            return profile.profile(HASH_LAYOUT.getCompareByIdentity(hash));
         }
 
     }
@@ -571,10 +519,10 @@ public abstract class HashNodes {
 
         @Specialization
         public Object defaultProc(DynamicObject hash) {
-            if (getDefaultBlock(hash) == null) {
+            if (HASH_LAYOUT.getDefaultBlock(hash) == null) {
                 return nil();
             } else {
-                return getDefaultBlock(hash);
+                return HASH_LAYOUT.getDefaultBlock(hash);
             }
         }
 
@@ -617,8 +565,8 @@ public abstract class HashNodes {
 
             final int hashed = hashNode.hash(frame, key);
 
-            final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int size = HASH_LAYOUT.getSize(hash);
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
                 if (n < size) {
@@ -626,7 +574,7 @@ public abstract class HashNodes {
                         if (eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(store, n), "eql?", null, key)) {
                             final Object value = PackedArrayStrategy.getValue(store, n);
                             PackedArrayStrategy.removeEntry(store, n);
-                            setSize(hash, size - 1);
+                            HASH_LAYOUT.setSize(hash, size - 1);
                             assert verifyStore(hash);
                             return value;
                         }
@@ -662,15 +610,15 @@ public abstract class HashNodes {
             // Remove from the sequence chain
 
             if (entry.getPreviousInSequence() == null) {
-                assert getFirstInSequence(hash) == entry;
-                setFirstInSequence(hash, entry.getNextInSequence());
+                assert HASH_LAYOUT.getFirstInSequence(hash) == entry;
+                HASH_LAYOUT.setFirstInSequence(hash, entry.getNextInSequence());
             } else {
-                assert getFirstInSequence(hash) != entry;
+                assert HASH_LAYOUT.getFirstInSequence(hash) != entry;
                 entry.getPreviousInSequence().setNextInSequence(entry.getNextInSequence());
             }
 
             if (entry.getNextInSequence() == null) {
-                setLastInSequence(hash, entry.getPreviousInSequence());
+                HASH_LAYOUT.setLastInSequence(hash, entry.getPreviousInSequence());
             } else {
                 entry.getNextInSequence().setPreviousInSequence(entry.getPreviousInSequence());
             }
@@ -678,12 +626,12 @@ public abstract class HashNodes {
             // Remove from the lookup chain
 
             if (hashLookupResult.getPreviousEntry() == null) {
-                ((Entry[]) getStore(hash))[hashLookupResult.getIndex()] = entry.getNextInLookup();
+                ((Entry[]) HASH_LAYOUT.getStore(hash))[hashLookupResult.getIndex()] = entry.getNextInLookup();
             } else {
                 hashLookupResult.getPreviousEntry().setNextInLookup(entry.getNextInLookup());
             }
 
-            setSize(hash, getSize(hash) - 1);
+            HASH_LAYOUT.setSize(hash, HASH_LAYOUT.getSize(hash) - 1);
 
             assert verifyStore(hash);
 
@@ -712,8 +660,8 @@ public abstract class HashNodes {
         public DynamicObject eachPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert verifyStore(hash);
 
-            final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int size = HASH_LAYOUT.getSize(hash);
 
             int count = 0;
 
@@ -740,7 +688,7 @@ public abstract class HashNodes {
         public DynamicObject eachBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert verifyStore(hash);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(hash))) {
                 yield(frame, block, createArray(new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
             }
 
@@ -775,7 +723,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isNullHash(hash)")
         public boolean emptyPackedArray(DynamicObject hash) {
-            return getSize(hash) == 0;
+            return HASH_LAYOUT.getSize(hash) == 0;
         }
 
     }
@@ -791,24 +739,24 @@ public abstract class HashNodes {
         @Specialization
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, NotProvided block) {
             setStore(hash, null, 0, null, null);
-            setDefaultValue(hash, null);
-            setDefaultBlock(hash, null);
+            HASH_LAYOUT.setDefaultValue(hash, null);
+            HASH_LAYOUT.setDefaultBlock(hash, null);
             return hash;
         }
 
         @Specialization(guards = "isRubyProc(block)")
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, DynamicObject block) {
             setStore(hash, null, 0, null, null);
-            setDefaultValue(hash, null);
-            setDefaultBlock(hash, block);
+            HASH_LAYOUT.setDefaultValue(hash, null);
+            HASH_LAYOUT.setDefaultBlock(hash, block);
             return hash;
         }
 
         @Specialization(guards = "wasProvided(defaultValue)")
         public DynamicObject initialize(DynamicObject hash, Object defaultValue, NotProvided block) {
             setStore(hash, null, 0, null, null);
-            setDefaultValue(hash, defaultValue);
-            setDefaultBlock(hash, null);
+            HASH_LAYOUT.setDefaultValue(hash, defaultValue);
+            HASH_LAYOUT.setDefaultBlock(hash, null);
             return hash;
         }
 
@@ -846,8 +794,8 @@ public abstract class HashNodes {
                 return self;
             }
 
-            final Object[] store = (Object[]) getStore(from);
-            setStore(self, PackedArrayStrategy.copyStore(store), getSize(from), null, null);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(from);
+            setStore(self, PackedArrayStrategy.copyStore(store), HASH_LAYOUT.getSize(from), null, null);
 
             copyOtherFields(self, from);
 
@@ -877,9 +825,9 @@ public abstract class HashNodes {
         }
         
         private void copyOtherFields(DynamicObject self, DynamicObject from) {
-            setDefaultBlock(self, getDefaultBlock(from));
-            setDefaultValue(self, getDefaultValue(from));
-            setCompareByIdentity(self, isCompareByIdentity(from));
+            HASH_LAYOUT.setDefaultBlock(self, HASH_LAYOUT.getDefaultBlock(from));
+            HASH_LAYOUT.setDefaultValue(self, HASH_LAYOUT.getDefaultValue(from));
+            HASH_LAYOUT.setCompareByIdentity(self, HASH_LAYOUT.getCompareByIdentity(from));
         }
 
     }
@@ -911,9 +859,9 @@ public abstract class HashNodes {
                 arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
             }
 
-            final Object[] store = (Object[]) getStore(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
 
-            final int length = getSize(hash);
+            final int length = HASH_LAYOUT.getSize(hash);
             Object resultStore = arrayBuilderNode.start(length);
 
             try {
@@ -942,13 +890,13 @@ public abstract class HashNodes {
                 arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
             }
 
-            final int length = getSize(hash);
+            final int length = HASH_LAYOUT.getSize(hash);
             Object store = arrayBuilderNode.start(length);
 
             int index = 0;
 
             try {
-                for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(getFirstInSequence(hash))) {
+                for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(hash))) {
                     arrayBuilderNode.appendValue(store, index, yield(frame, block, keyValue.getKey(), keyValue.getValue()));
                     index++;
                 }
@@ -991,7 +939,7 @@ public abstract class HashNodes {
                 "isNullHash(other)"
         })
         public DynamicObject mergeEmptyEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            return createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+            return createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), null, 0, null, null);
         }
 
         @Specialization(guards = {
@@ -1000,9 +948,9 @@ public abstract class HashNodes {
                 "isPackedHash(other)"
         })
         public DynamicObject mergeEmptyPacked(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final Object[] store = (Object[]) getStore(other);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(other);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
-            return createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(other), null, null);
+            return createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), copy, HASH_LAYOUT.getSize(other), null, null);
         }
 
         @Specialization(guards = {
@@ -1011,9 +959,9 @@ public abstract class HashNodes {
                 "isEmptyHash(other)"
         })
         public DynamicObject mergePackedEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final Object[] store = (Object[]) getStore(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
-            return createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), copy, getSize(hash), null, null);
+            return createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), copy, HASH_LAYOUT.getSize(hash), null, null);
         }
 
         @Specialization(guards = {
@@ -1022,7 +970,7 @@ public abstract class HashNodes {
                 "isBucketHash(other)"
         })
         public DynamicObject mergeEmptyBuckets(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), null, 0, null, null);
             BucketsStrategy.copyInto(other, merged);
             return merged;
         }
@@ -1033,7 +981,7 @@ public abstract class HashNodes {
                 "isEmptyHash(other)"
         })
         public DynamicObject mergeBucketsEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), null, 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), null, 0, null, null);
             BucketsStrategy.copyInto(hash, merged);
             return merged;
         }
@@ -1052,11 +1000,11 @@ public abstract class HashNodes {
             assert verifyStore(hash);
             assert verifyStore(other);
 
-            final Object[] storeA = (Object[]) getStore(hash);
-            final int storeASize = getSize(hash);
+            final Object[] storeA = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int storeASize = HASH_LAYOUT.getSize(hash);
 
-            final Object[] storeB = (Object[]) getStore(other);
-            final int storeBSize = getSize(other);
+            final Object[] storeB = (Object[]) HASH_LAYOUT.getStore(other);
+            final int storeBSize = HASH_LAYOUT.getSize(other);
 
             // Go through and figure out what gets merged from each hash
 
@@ -1091,7 +1039,7 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
+                return createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
             }
 
             // Cut off here
@@ -1127,7 +1075,7 @@ public abstract class HashNodes {
                     index++;
                 }
 
-                return createHash(BasicObjectNodes.getLogicalClass(hash), getDefaultBlock(hash), getDefaultValue(hash), merged, mergedSize, null, null);
+                return createHash(BasicObjectNodes.getLogicalClass(hash), HASH_LAYOUT.getDefaultBlock(hash), HASH_LAYOUT.getDefaultValue(hash), merged, mergedSize, null, null);
             }
 
             // Most complicated cases where things from both hashes, and it also needs to be promoted to buckets
@@ -1161,15 +1109,15 @@ public abstract class HashNodes {
                 "!isEmptyHash(other)"
         })
         public DynamicObject mergeBucketsBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
-            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+            final boolean isCompareByIdentity = HASH_LAYOUT.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(HASH_LAYOUT.getSize(hash) + HASH_LAYOUT.getSize(other))], 0, null, null);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(hash))) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(other))) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(other))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
@@ -1188,12 +1136,12 @@ public abstract class HashNodes {
                 "!isEmptyHash(other)"
         })
         public DynamicObject mergePackedBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
-            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+            final boolean isCompareByIdentity = HASH_LAYOUT.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(HASH_LAYOUT.getSize(hash) + HASH_LAYOUT.getSize(other))], 0, null, null);
 
-            final Object[] hashStore = (Object[]) getStore(hash);
-            final int hashSize = getSize(hash);
+            final Object[] hashStore = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int hashSize = HASH_LAYOUT.getSize(hash);
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
                 if (n < hashSize) {
@@ -1201,7 +1149,7 @@ public abstract class HashNodes {
                 }
             }
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(other))) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(other))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
@@ -1218,16 +1166,16 @@ public abstract class HashNodes {
                 "!isEmptyHash(other)"
         })
         public DynamicObject mergeBucketsPacked(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
-            final boolean isCompareByIdentity = isCompareByIdentity(hash);
+            final boolean isCompareByIdentity = HASH_LAYOUT.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(HASH_LAYOUT.getSize(hash) + HASH_LAYOUT.getSize(other))], 0, null, null);
 
-            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HashNodes.getFirstInSequence(hash))) {
+            for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(HASH_LAYOUT.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
-            final Object[] otherStore = (Object[]) getStore(other);
-            final int otherSize = getSize(other);
+            final Object[] otherStore = (Object[]) HASH_LAYOUT.getStore(other);
+            final int otherSize = HASH_LAYOUT.getSize(other);
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
                 if (n < otherSize) {
@@ -1246,7 +1194,7 @@ public abstract class HashNodes {
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
             CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(getSize(hash) + getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(HASH_LAYOUT.getSize(hash) + HASH_LAYOUT.getSize(other))], 0, null, null);
 
             int size = 0;
 
@@ -1275,7 +1223,7 @@ public abstract class HashNodes {
                 }
             }
 
-            setSize(merged, size);
+            HASH_LAYOUT.setSize(merged, size);
 
             assert verifyStore(hash);
 
@@ -1313,8 +1261,8 @@ public abstract class HashNodes {
         @Specialization
         public Object setDefault(VirtualFrame frame, DynamicObject hash, Object defaultValue) {
             ruby(frame, "Rubinius.check_frozen");
-            setDefaultValue(hash, defaultValue);
-            setDefaultBlock(hash, null);
+            HASH_LAYOUT.setDefaultValue(hash, defaultValue);
+            HASH_LAYOUT.setDefaultBlock(hash, null);
             return defaultValue;
         }
     }
@@ -1334,26 +1282,26 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isEmptyHash(hash)", "hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
         public Object shiftEmpyDefaultValue(DynamicObject hash) {
-            return getDefaultValue(hash);
+            return HASH_LAYOUT.getDefaultValue(hash);
         }
 
         @Specialization(guards = {"isEmptyHash(hash)", "!hasDefaultValue(hash)", "hasDefaultBlock(hash)"})
         public Object shiftEmptyDefaultProc(DynamicObject hash) {
-            return ProcNodes.rootCall(getDefaultBlock(hash), hash, nil());
+            return ProcNodes.rootCall(HASH_LAYOUT.getDefaultBlock(hash), hash, nil());
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})
         public DynamicObject shiftPackedArray(DynamicObject hash) {
             assert verifyStore(hash);
-            
-            final Object[] store = (Object[]) getStore(hash);
+
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
             
             final Object key = PackedArrayStrategy.getKey(store, 0);
             final Object value = PackedArrayStrategy.getValue(store, 0);
             
             PackedArrayStrategy.removeEntry(store, 0);
-            
-            setSize(hash, getSize(hash) - 1);
+
+            HASH_LAYOUT.setSize(hash, HASH_LAYOUT.getSize(hash) - 1);
 
             assert verifyStore(hash);
             
@@ -1364,21 +1312,21 @@ public abstract class HashNodes {
         public DynamicObject shiftBuckets(DynamicObject hash) {
             assert verifyStore(hash);
 
-            final Entry first = getFirstInSequence(hash);
+            final Entry first = HASH_LAYOUT.getFirstInSequence(hash);
             assert first.getPreviousInSequence() == null;
 
             final Object key = first.getKey();
             final Object value = first.getValue();
-            
-            setFirstInSequence(hash, first.getNextInSequence());
+
+            HASH_LAYOUT.setFirstInSequence(hash, first.getNextInSequence());
 
             if (first.getNextInSequence() != null) {
                 first.getNextInSequence().setPreviousInSequence(null);
-                setFirstInSequence(hash, first.getNextInSequence());
+                HASH_LAYOUT.setFirstInSequence(hash, first.getNextInSequence());
             }
 
-            if (getLastInSequence(hash) == first) {
-                setLastInSequence(hash, null);
+            if (HASH_LAYOUT.getLastInSequence(hash) == first) {
+                HASH_LAYOUT.setLastInSequence(hash, null);
             }
             
             /*
@@ -1388,8 +1336,8 @@ public abstract class HashNodes {
              * we haven't done a search here - we've just taken the first
              * result. For the moment we'll just do a manual search.
              */
-            
-            final Entry[] store = (Entry[]) getStore(hash);
+
+            final Entry[] store = (Entry[]) HASH_LAYOUT.getStore(hash);
             
             bucketLoop: for (int n = 0; n < store.length; n++) {
                 Entry previous = null;
@@ -1412,7 +1360,7 @@ public abstract class HashNodes {
             }
 
 
-            setSize(hash, getSize(hash) - 1);
+            HASH_LAYOUT.setSize(hash, HASH_LAYOUT.getSize(hash) - 1);
 
             assert verifyStore(hash);
 
@@ -1436,7 +1384,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isNullHash(hash)")
         public int sizePackedArray(DynamicObject hash) {
-            return getSize(hash);
+            return HASH_LAYOUT.getSize(hash);
         }
 
     }
@@ -1461,8 +1409,8 @@ public abstract class HashNodes {
         public DynamicObject rehashPackedArray(VirtualFrame frame, DynamicObject hash) {
             assert verifyStore(hash);
 
-            final Object[] store = (Object[]) getStore(hash);
-            final int size = getSize(hash);
+            final Object[] store = (Object[]) HASH_LAYOUT.getStore(hash);
+            final int size = HASH_LAYOUT.getSize(hash);
 
             for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
                 if (n < size) {
@@ -1480,10 +1428,10 @@ public abstract class HashNodes {
         public DynamicObject rehashBuckets(DynamicObject hash) {
             assert verifyStore(hash);
 
-            final Entry[] entries = (Entry[]) getStore(hash);
+            final Entry[] entries = (Entry[]) HASH_LAYOUT.getStore(hash);
             Arrays.fill(entries, null);
 
-            Entry entry = getFirstInSequence(hash);
+            Entry entry = HASH_LAYOUT.getFirstInSequence(hash);
 
             while (entry != null) {
                 final int index = BucketsStrategy.getBucketIndex(entry.getHashed(), entries.length);
@@ -1519,7 +1467,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object defaultValue(DynamicObject hash) {
-            final Object value = getDefaultValue(hash);
+            final Object value = HASH_LAYOUT.getDefaultValue(hash);
             
             if (value == null) {
                 return nil();
@@ -1542,7 +1490,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object setDefaultValue(DynamicObject hash, Object defaultValue) {
-            HashNodes.setDefaultValue(hash, defaultValue);
+            HASH_LAYOUT.setDefaultValue(hash, defaultValue);
             return defaultValue;
         }
         
@@ -1561,15 +1509,15 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isRubyProc(defaultProc)")
         public DynamicObject setDefaultProc(DynamicObject hash, DynamicObject defaultProc) {
-            setDefaultValue(hash, null);
-            setDefaultBlock(hash, defaultProc);
+            HASH_LAYOUT.setDefaultValue(hash, null);
+            HASH_LAYOUT.setDefaultBlock(hash, defaultProc);
             return defaultProc;
         }
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject setDefaultProc(DynamicObject hash, Object nil) {
-            setDefaultValue(hash, null);
-            setDefaultBlock(hash, null);
+            HASH_LAYOUT.setDefaultValue(hash, null);
+            HASH_LAYOUT.setDefaultBlock(hash, null);
             return nil();
         }
 

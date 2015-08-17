@@ -42,10 +42,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
         }
     }
 
@@ -53,10 +53,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
         }
     }
 
@@ -64,10 +64,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
         }
     }
 
@@ -75,10 +75,10 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, ArrayNodes.ARRAY_LAYOUT.getSize(array)), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
         }
     }
 

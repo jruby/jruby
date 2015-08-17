@@ -29,32 +29,11 @@ import org.jruby.truffle.runtime.layouts.SymbolLayout;
 import org.jruby.truffle.runtime.layouts.SymbolLayoutImpl;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.util.ByteList;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
     public static final SymbolLayout SYMBOL_LAYOUT = SymbolLayoutImpl.INSTANCE;
-
-    public static String getString(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getString(symbol);
-    }
-
-    public static ByteList getByteList(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getByteList(symbol);
-    }
-
-    public static int getHashCode(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getHashCode(symbol);
-    }
-
-    public static int getCodeRange(DynamicObject symbol) {
-        return SYMBOL_LAYOUT.getCodeRange(symbol);
-    }
-
-    public static void setCodeRange(DynamicObject symbol, int codeRange) {
-        SYMBOL_LAYOUT.setCodeRange(symbol, codeRange);
-    }
 
     public static SymbolCodeRangeableWrapper getCodeRangeable(DynamicObject symbol) {
         SymbolCodeRangeableWrapper wrapper = SYMBOL_LAYOUT.getCodeRangeableWrapper(symbol);
@@ -113,7 +92,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject encoding(DynamicObject symbol) {
-            return EncodingNodes.getEncoding(getByteList(symbol).getEncoding());
+            return EncodingNodes.getEncoding(SYMBOL_LAYOUT.getByteList(symbol).getEncoding());
         }
 
     }
@@ -127,7 +106,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int hash(DynamicObject symbol) {
-            return getHashCode(symbol);
+            return SYMBOL_LAYOUT.getHashCode(symbol);
         }
 
     }
@@ -157,7 +136,7 @@ public abstract class SymbolNodes {
                     .getCallNode().getEncapsulatingSourceSection();
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
-                    sourceSection, null, Arity.NO_ARGUMENTS, getString(symbol),
+                    sourceSection, null, Arity.NO_ARGUMENTS, SYMBOL_LAYOUT.getString(symbol),
                     true, null, false);
 
             final RubyRootNode rootNode = new RubyRootNode(
@@ -166,7 +145,7 @@ public abstract class SymbolNodes {
                     sharedMethodInfo,
                     SequenceNode.sequence(getContext(), sourceSection,
                             new CheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE),
-                            new SymbolProcNode(getContext(), sourceSection, getString(symbol))));
+                            new SymbolProcNode(getContext(), sourceSection, SYMBOL_LAYOUT.getString(symbol))));
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
@@ -191,7 +170,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
-            return createString(getByteList(symbol).dup());
+            return createString(SYMBOL_LAYOUT.getByteList(symbol).dup());
         }
 
     }

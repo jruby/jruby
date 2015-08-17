@@ -45,48 +45,48 @@ public abstract class ArraySliceNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject sliceIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.getSize(array) + this.to;
+        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject sliceLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.getSize(array) + this.to;
+        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject sliceFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.getSize(array) + this.to;
+        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject sliceObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
-        final int to = ArrayNodes.getSize(array) + this.to;
+        final int to = ArrayNodes.ARRAY_LAYOUT.getSize(array) + this.to;
 
         if (from >= to) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), from, to), to - from);
+            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), from, to), to - from);
         }
     }
 

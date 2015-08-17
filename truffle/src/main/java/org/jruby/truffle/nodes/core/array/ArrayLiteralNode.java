@@ -236,7 +236,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
 
             final DynamicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
-            final Object store = ArrayNodes.getStore(array);
+            final Object store = ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
             if (store == null) {
                 replace(new EmptyArrayLiteralNode(getContext(), getSourceSection(), values));

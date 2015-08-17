@@ -55,16 +55,6 @@ public abstract class SizedQueueNodes {
 
     }
 
-    @SuppressWarnings("unchecked")
-    private static BlockingQueue<Object> getQueue(DynamicObject sizedQueue) {
-        return SIZED_QUEUE_LAYOUT.getQueue(sizedQueue);
-    }
-
-    private static void setQueue(DynamicObject sizedQueue, BlockingQueue<Object> value) {
-        // TODO (eregon, 12 July 2015): CAS when swapping the queue?
-        SIZED_QUEUE_LAYOUT.setQueue(sizedQueue, value);
-    }
-
     @CoreMethod(names = "initialize", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
@@ -80,7 +70,7 @@ public abstract class SizedQueueNodes {
             }
 
             final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<Object>(capacity);
-            setQueue(self, blockingQueue);
+            SIZED_QUEUE_LAYOUT.setQueue(self, blockingQueue);
             return self;
         }
 
@@ -101,7 +91,7 @@ public abstract class SizedQueueNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("queue size must be positive", this));
             }
 
-            final BlockingQueue<Object> oldQueue = getQueue(self);
+            final BlockingQueue<Object> oldQueue = SIZED_QUEUE_LAYOUT.getQueue(self);
             final BlockingQueue<Object> newQueue = new ArrayBlockingQueue<Object>(newCapacity);
 
             // TODO (eregon, 12 July 2015): racy and what to do if the new capacity is lower?
@@ -109,7 +99,7 @@ public abstract class SizedQueueNodes {
             while ((element = oldQueue.poll()) != null) {
                 newQueue.add(element);
             }
-            setQueue(self, newQueue);
+            SIZED_QUEUE_LAYOUT.setQueue(self, newQueue);
 
             return newCapacity;
         }
@@ -126,7 +116,7 @@ public abstract class SizedQueueNodes {
         @TruffleBoundary
         @Specialization
         public int max(DynamicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             // TODO (eregon, 12 July 2015): We could be more accurate here and remember the capacity ourselves
             return queue.size() + queue.remainingCapacity();
@@ -153,7 +143,7 @@ public abstract class SizedQueueNodes {
 
         @Specialization(guards = "!nonBlocking")
         public DynamicObject pushBlocking(DynamicObject self, final Object value, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
                 @Override
@@ -169,7 +159,7 @@ public abstract class SizedQueueNodes {
         @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public DynamicObject pushNonBlock(DynamicObject self, final Object value, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             final boolean pushed = queue.offer(value);
             if (!pushed) {
@@ -200,7 +190,7 @@ public abstract class SizedQueueNodes {
 
         @Specialization(guards = "!nonBlocking")
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
                 @Override
@@ -213,7 +203,7 @@ public abstract class SizedQueueNodes {
         @TruffleBoundary
         @Specialization(guards = "nonBlocking")
         public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             final Object value = queue.poll();
             if (value == null) {
@@ -236,7 +226,7 @@ public abstract class SizedQueueNodes {
         @TruffleBoundary
         @Specialization
         public boolean empty(DynamicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
             return queue.isEmpty();
         }
 
@@ -251,7 +241,7 @@ public abstract class SizedQueueNodes {
 
         @Specialization
         public int size(DynamicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
             return queue.size();
         }
 
@@ -267,7 +257,7 @@ public abstract class SizedQueueNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject clear(DynamicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
             queue.clear();
             return self;
         }
@@ -288,7 +278,7 @@ public abstract class SizedQueueNodes {
         @SuppressWarnings("restriction")
         @Specialization
         public int num_waiting(DynamicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+            final BlockingQueue<Object> queue = SIZED_QUEUE_LAYOUT.getQueue(self);
 
             final ArrayBlockingQueue<Object> arrayBlockingQueue = (ArrayBlockingQueue<Object>) queue;
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(arrayBlockingQueue, LOCK_FIELD_OFFSET);

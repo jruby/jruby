@@ -96,8 +96,8 @@ public abstract class SingletonClassNode extends RubyNode {
             return ClassNodes.getSingletonClass(object);
         }
 
-        if (ClassNodes.isSingleton(BasicObjectNodes.getMetaClass(object))) {
-            return BasicObjectNodes.getMetaClass(object);
+        if (ClassNodes.CLASS_LAYOUT.getIsSingleton(BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object))) {
+            return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -108,11 +108,11 @@ public abstract class SingletonClassNode extends RubyNode {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
+        final String name = String.format("#<Class:#<%s:0x%x>>", ModuleNodes.MODULE_LAYOUT.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
-        BasicObjectNodes.setMetaClass(object, singletonClass);
+        BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(object, singletonClass);
 
         return singletonClass;
     }

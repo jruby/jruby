@@ -28,10 +28,6 @@ public class ThreadBacktraceLocationNodes {
         return THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), activation);
     }
 
-    protected static Activation getActivation(DynamicObject threadBacktraceLocation) {
-        return THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
-    }
-
     @CoreMethod(names = { "absolute_path", "path" })
     // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
@@ -43,7 +39,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -68,7 +64,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public int lineno(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -87,7 +83,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 

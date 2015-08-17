@@ -149,14 +149,14 @@ public abstract class FixnumPrimitiveNodes {
             }
 
             if (a == -1) {
-                if (BignumNodes.getBigIntegerValue(b).testBit(0)) {
+                if (BignumNodes.BIGNUM_LAYOUT.getValue(b).testBit(0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (BignumNodes.BIGNUM_LAYOUT.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 

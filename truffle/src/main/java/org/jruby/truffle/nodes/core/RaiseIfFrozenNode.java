@@ -35,7 +35,7 @@ public class RaiseIfFrozenNode extends RubyNode {
         if (isFrozenNode.executeIsFrozen(result)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(
-                    ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(result)).getName(), this));
+                    ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(result)).getName(), this));
         }
 
         return result;

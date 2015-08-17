@@ -29,12 +29,4 @@ public abstract class PointerNodes {
         return POINTER_LAYOUT.createPointer(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), pointer);
     }
 
-    public static void setPointer(DynamicObject pointer, Pointer newPointer) {
-        POINTER_LAYOUT.setPointer(pointer, newPointer);
-    }
-
-    public static Pointer getPointer(DynamicObject pointer) {
-        return POINTER_LAYOUT.getPointer(pointer);
-    }
-
 }

@@ -10,10 +10,7 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
-import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
@@ -33,13 +30,13 @@ public class YieldDispatchHeadNode extends Node {
 
     public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
-        return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.getSelfCapturedInScope(block), ProcNodes.getBlockCapturedInScope(block), argumentsObjects);
+        return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.PROC_LAYOUT.getSelf(block), ProcNodes.PROC_LAYOUT.getBlock(block), argumentsObjects);
     }
 
     public Object dispatchWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... argumentsObjects) {
         assert block == null || RubyGuards.isRubyProc(block);
         assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
-        return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.getSelfCapturedInScope(block), modifiedBlock, argumentsObjects);
+        return dispatch.dispatchWithSelfAndBlock(frame, block, ProcNodes.PROC_LAYOUT.getSelf(block), modifiedBlock, argumentsObjects);
     }
 
     public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
@@ -47,7 +44,7 @@ public class YieldDispatchHeadNode extends Node {
 
         // TODO: assumes this also changes the default definee.
 
-        Frame frame = ProcNodes.getDeclarationFrame(block);
+        Frame frame = ProcNodes.PROC_LAYOUT.getDeclarationFrame(block);
 
         if (frame != null) {
             FrameSlot slot = getVisibilitySlot(frame);
@@ -56,12 +53,12 @@ public class YieldDispatchHeadNode extends Node {
             try {
                 frame.setObject(slot, Visibility.PUBLIC);
 
-                return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, ProcNodes.getBlockCapturedInScope(block), argumentsObjects);
+                return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, ProcNodes.PROC_LAYOUT.getBlock(block), argumentsObjects);
             } finally {
                 frame.setObject(slot, oldVisibility);
             }
         } else {
-            return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, ProcNodes.getBlockCapturedInScope(block), argumentsObjects);
+            return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, ProcNodes.PROC_LAYOUT.getBlock(block), argumentsObjects);
         }
     }
 

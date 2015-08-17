@@ -47,28 +47,28 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isIntArray(array)"}
     )
     public int readIntInBounds(DynamicObject array, int index) {
-        return ((int[]) ArrayNodes.getStore(array))[index];
+        return ((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isLongArray(array)"}
     )
     public long readLongInBounds(DynamicObject array, int index) {
-        return ((long[]) ArrayNodes.getStore(array))[index];
+        return ((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isDoubleArray(array)"}
     )
     public double readDoubleInBounds(DynamicObject array, int index) {
-        return ((double[]) ArrayNodes.getStore(array))[index];
+        return ((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "isInBounds(array, index)", "isObjectArray(array)"}
     )
     public Object readObjectInBounds(DynamicObject array, int index) {
-        return ((Object[]) ArrayNodes.getStore(array))[index];
+        return ((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array))[index];
     }
 
     // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
@@ -83,7 +83,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     // Guards
 
     protected static boolean isInBounds(DynamicObject array, int index) {
-        return index >= 0 && index < ArrayNodes.getSize(array);
+        return index >= 0 && index < ArrayNodes.ARRAY_LAYOUT.getSize(array);
     }
 
 }

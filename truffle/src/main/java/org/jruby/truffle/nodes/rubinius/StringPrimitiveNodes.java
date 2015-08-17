@@ -507,7 +507,7 @@ public abstract class StringPrimitiveNodes {
 
         private Object propagate(DynamicObject string, DynamicObject ret) {
             StringNodes.getByteList(ret).setEncoding(StringNodes.getByteList(string).getEncoding());
-            StringNodes.setCodeRange(ret, StringNodes.getCodeRange(string));
+            StringNodes.STRING_LAYOUT.setCodeRange(ret, StringNodes.STRING_LAYOUT.getCodeRange(string));
             return maybeTaint(string, ret);
         }
 
@@ -532,7 +532,7 @@ public abstract class StringPrimitiveNodes {
         public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(new byte[]{(byte) code}, EncodingNodes.getEncoding(encoding)));
+                    new ByteList(new byte[]{(byte) code}, EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding)));
         }
 
         @TruffleBoundary
@@ -541,7 +541,7 @@ public abstract class StringPrimitiveNodes {
             final int length;
 
             try {
-                length = EncodingNodes.getEncoding(encoding).codeToMbcLength(code);
+                length = EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
@@ -553,7 +553,7 @@ public abstract class StringPrimitiveNodes {
             final byte[] bytes = new byte[length];
 
             try {
-                EncodingNodes.getEncoding(encoding).codeToMbc(code, bytes, 0);
+                EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
@@ -561,7 +561,7 @@ public abstract class StringPrimitiveNodes {
 
             return StringNodes.createString(
                     getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(bytes, EncodingNodes.getEncoding(encoding)));
+                    new ByteList(bytes, EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding)));
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -575,7 +575,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         protected boolean isSimple(int code, DynamicObject encoding) {
-            return EncodingNodes.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+            return EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
 
     }
@@ -1278,7 +1278,7 @@ public abstract class StringPrimitiveNodes {
         @Specialization(guards = "isRubiniusByteArray(bytes)")
         public DynamicObject stringFromByteArray(DynamicObject bytes, int start, int count) {
             // Data is copied here - can we do something COW?
-            final ByteList byteList = ByteArrayNodes.getBytes(bytes);
+            final ByteList byteList = ByteArrayNodes.BYTE_ARRAY_LAYOUT.getBytes(bytes);
             return createString(new ByteList(byteList, start, count));
         }
 

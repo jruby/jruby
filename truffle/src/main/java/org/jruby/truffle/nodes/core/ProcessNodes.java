@@ -105,7 +105,7 @@ public abstract class ProcessNodes {
             } else if (unit == floatSecondSymbol) {
                 return time / 1e9;
             } else {
-                throw new UnsupportedOperationException(SymbolNodes.getString(unit));
+                throw new UnsupportedOperationException(SymbolNodes.SYMBOL_LAYOUT.getString(unit));
             }
         }
 
@@ -140,7 +140,7 @@ public abstract class ProcessNodes {
             int self = posix().getpid();
 
             if (self == pid) {
-                Signal signal = new Signal(SymbolNodes.getString(signalName));
+                Signal signal = new Signal(SymbolNodes.SYMBOL_LAYOUT.getString(signalName));
 
                 SignalOperations.raise(signal);
                 return 1;

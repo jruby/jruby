@@ -37,7 +37,7 @@ public class ArrayPushNode extends RubyNode {
 
         final DynamicObject originalArray = (DynamicObject) arrayObject;
 
-        final DynamicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.getSize(originalArray));
+        final DynamicObject newArray = createArray(ArrayNodes.slowToArray(originalArray), ArrayNodes.ARRAY_LAYOUT.getSize(originalArray));
         ArrayNodes.slowPush(newArray, pushed.execute(frame));
         return newArray;
     }

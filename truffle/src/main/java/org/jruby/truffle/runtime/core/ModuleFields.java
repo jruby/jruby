@@ -31,12 +31,12 @@ public class ModuleFields implements ModuleChain {
 
     public static void debugModuleChain(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
-        ModuleChain chain = ModuleNodes.getFields(module);
+        ModuleChain chain = ModuleNodes.MODULE_LAYOUT.getFields(module);
         while (chain != null) {
             System.err.print(chain.getClass());
             if (!(chain instanceof PrependMarker)) {
                 DynamicObject real = chain.getActualModule();
-                System.err.print(" " + ModuleNodes.getFields(real).getName());
+                System.err.print(" " + ModuleNodes.MODULE_LAYOUT.getFields(real).getName());
             }
             System.err.println();
             chain = chain.getParentModule();
@@ -87,8 +87,8 @@ public class ModuleFields implements ModuleChain {
     public void getAdoptedByLexicalParent(DynamicObject lexicalParent, String name, Node currentNode) {
         assert RubyGuards.isRubyModule(lexicalParent);
 
-        ModuleNodes.getFields(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
-        ModuleNodes.getFields(lexicalParent).addLexicalDependent(rubyModuleObject);
+        ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
+        ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).addLexicalDependent(rubyModuleObject);
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
@@ -98,8 +98,8 @@ public class ModuleFields implements ModuleChain {
             if (lexicalParent == objectClass) {
                 this.name = name;
                 updateAnonymousChildrenModules();
-            } else if (ModuleNodes.getFields(lexicalParent).hasName()) {
-                this.name = ModuleNodes.getFields(lexicalParent).getName() + "::" + name;
+            } else if (ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).hasName()) {
+                this.name = ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).getName() + "::" + name;
                 updateAnonymousChildrenModules();
             }
             // else: Our lexicalParent is also an anonymous module
@@ -112,8 +112,8 @@ public class ModuleFields implements ModuleChain {
             RubyConstant constant = entry.getValue();
             if (RubyGuards.isRubyModule(constant.getValue())) {
                 DynamicObject module = (DynamicObject) constant.getValue();
-                if (!ModuleNodes.getFields(module).hasName()) {
-                    ModuleNodes.getFields(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
+                if (!ModuleNodes.MODULE_LAYOUT.getFields(module).hasName()) {
+                    ModuleNodes.MODULE_LAYOUT.getFields(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
                 }
             }
         }
@@ -124,18 +124,18 @@ public class ModuleFields implements ModuleChain {
         assert RubyGuards.isRubyModule(from);
 
         // Do not copy name, the copy is an anonymous module
-        this.methods.putAll(ModuleNodes.getFields(from).methods);
-        this.constants.putAll(ModuleNodes.getFields(from).constants);
-        this.classVariables.putAll(ModuleNodes.getFields(from).classVariables);
+        this.methods.putAll(ModuleNodes.MODULE_LAYOUT.getFields(from).methods);
+        this.constants.putAll(ModuleNodes.MODULE_LAYOUT.getFields(from).constants);
+        this.classVariables.putAll(ModuleNodes.MODULE_LAYOUT.getFields(from).classVariables);
 
-        if (ModuleNodes.getFields(from).start.getParentModule() != ModuleNodes.getFields(from)) {
-            this.parentModule = ModuleNodes.getFields(from).start.getParentModule();
+        if (ModuleNodes.MODULE_LAYOUT.getFields(from).start.getParentModule() != ModuleNodes.MODULE_LAYOUT.getFields(from)) {
+            this.parentModule = ModuleNodes.MODULE_LAYOUT.getFields(from).start.getParentModule();
         } else {
-            this.parentModule = ModuleNodes.getFields(from).parentModule;
+            this.parentModule = ModuleNodes.MODULE_LAYOUT.getFields(from).parentModule;
         }
 
-        for (DynamicObject ancestor : ModuleNodes.getFields(from).ancestors()) {
-            ModuleNodes.getFields(ancestor).addDependent(rubyModuleObject);
+        for (DynamicObject ancestor : ModuleNodes.MODULE_LAYOUT.getFields(from).ancestors()) {
+            ModuleNodes.MODULE_LAYOUT.getFields(ancestor).addDependent(rubyModuleObject);
         }
     }
 
@@ -143,7 +143,7 @@ public class ModuleFields implements ModuleChain {
     public void checkFrozen(Node currentNode) {
         if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getLogicalClass()).getName(), currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass()).getName(), currentNode));
         }
     }
 
@@ -165,7 +165,7 @@ public class ModuleFields implements ModuleChain {
         // We need to include the module ancestors in reverse order for a given inclusionPoint
         ModuleChain inclusionPoint = this;
         Deque<DynamicObject> modulesToInclude = new ArrayDeque<>();
-        for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
+        for (DynamicObject ancestor : ModuleNodes.MODULE_LAYOUT.getFields(module).ancestors()) {
             if (ModuleOperations.includesModule(rubyModuleObject, ancestor)) {
                 if (isIncludedModuleBeforeSuperClass(ancestor)) {
                     // Include the modules at the appropriate inclusionPoint
@@ -195,7 +195,7 @@ public class ModuleFields implements ModuleChain {
             DynamicObject mod = moduleAncestors.pop();
             assert RubyGuards.isRubyModule(mod);
             inclusionPoint.insertAfter(mod);
-            ModuleNodes.getFields(mod).addDependent(rubyModuleObject);
+            ModuleNodes.MODULE_LAYOUT.getFields(mod).addDependent(rubyModuleObject);
         }
     }
 
@@ -222,13 +222,13 @@ public class ModuleFields implements ModuleChain {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
         }
 
-        ModuleChain mod = ModuleNodes.getFields(module).start;
+        ModuleChain mod = ModuleNodes.MODULE_LAYOUT.getFields(module).start;
         ModuleChain cur = start;
         while (mod != null && !(RubyGuards.isRubyModule(mod) && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
-                    ModuleNodes.getFields(mod.getActualModule()).addDependent(rubyModuleObject);
+                    ModuleNodes.MODULE_LAYOUT.getFields(mod.getActualModule()).addDependent(rubyModuleObject);
                     cur = cur.getParentModule();
                 }
             }
@@ -252,7 +252,7 @@ public class ModuleFields implements ModuleChain {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            ModuleNodes.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+            ModuleNodes.MODULE_LAYOUT.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
         } else {
             setConstantInternal(currentNode, name, value, false);
         }
@@ -412,11 +412,11 @@ public class ModuleFields implements ModuleChain {
         } else {
             CompilerDirectives.transferToInterpreter();
             if (givenBaseName != null) {
-                return ModuleNodes.getFields(lexicalParent).getName() + "::" + givenBaseName;
+                return ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).getName() + "::" + givenBaseName;
             } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
                 return "#<cyclic>";
             } else {
-                return "#<" + ModuleNodes.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(BasicObjectNodes.verySlowGetObjectID(rubyModuleObject)) + ">";
+                return "#<" + ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(BasicObjectNodes.verySlowGetObjectID(rubyModuleObject)) + ">";
             }
         }
     }
@@ -451,12 +451,12 @@ public class ModuleFields implements ModuleChain {
 
         // Make dependents new versions
         for (DynamicObject dependent : dependents) {
-            ModuleNodes.getFields(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
+            ModuleNodes.MODULE_LAYOUT.getFields(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
         }
 
         if (considerLexicalDependents) {
             for (DynamicObject dependent : lexicalDependents) {
-                ModuleNodes.getFields(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
+                ModuleNodes.MODULE_LAYOUT.getFields(dependent).newVersion(alreadyInvalidated, considerLexicalDependents);
             }
         }
     }

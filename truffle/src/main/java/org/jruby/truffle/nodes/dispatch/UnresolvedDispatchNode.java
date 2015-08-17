@@ -139,14 +139,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (receiverObject instanceof Boolean) {
             final Assumption falseUnmodifiedAssumption =
-                    ModuleNodes.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+                    ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
 
             final InternalMethod falseMethod =
                     lookup(callerClass, false, methodNameString,
                             ignoreVisibility);
 
             final Assumption trueUnmodifiedAssumption =
-                    ModuleNodes.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+                    ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
 
             final InternalMethod trueMethod =
                     lookup(callerClass, true, methodNameString,
@@ -163,7 +163,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
+                    ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
         }
     }
 
@@ -209,7 +209,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else if (RubyGuards.isRubyString(methodName)) {
             return methodName.toString();
         } else if (RubyGuards.isRubySymbol(methodName)) {
-            return SymbolNodes.getString((DynamicObject) methodName);
+            return SymbolNodes.SYMBOL_LAYOUT.getString((DynamicObject) methodName);
         } else {
             throw new UnsupportedOperationException();
         }

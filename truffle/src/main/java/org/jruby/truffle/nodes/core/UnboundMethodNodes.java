@@ -41,14 +41,6 @@ public abstract class UnboundMethodNodes {
         return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), origin, method);
     }
 
-    public static DynamicObject getOrigin(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getOrigin(method);
-    }
-
-    public static InternalMethod getMethod(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getMethod(method);
-    }
-
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
@@ -58,7 +50,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization(guards = "isRubyUnboundMethod(other)")
         boolean equal(DynamicObject self, DynamicObject other) {
-            return getMethod(self) == getMethod(other) && getOrigin(self) == getOrigin(other);
+            return UNBOUND_METHOD_LAYOUT.getMethod(self) == UNBOUND_METHOD_LAYOUT.getMethod(other) && UNBOUND_METHOD_LAYOUT.getOrigin(self) == UNBOUND_METHOD_LAYOUT.getOrigin(other);
         }
 
         @Specialization(guards = "!isRubyUnboundMethod(other)")
@@ -77,7 +69,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public int arity(DynamicObject method) {
-            return getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
+            return UNBOUND_METHOD_LAYOUT.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -98,19 +90,19 @@ public abstract class UnboundMethodNodes {
         public DynamicObject bind(VirtualFrame frame, DynamicObject unboundMethod, Object object) {
             final DynamicObject objectMetaClass = metaClass(frame, object);
 
-            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(getMethod(unboundMethod), objectMetaClass)) {
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                final DynamicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.isSingleton(declaringModule)) {
+                final DynamicObject declaringModule = UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod).getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.CLASS_LAYOUT.getIsSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + ModuleNodes.getFields(declaringModule).getName(), this));
+                            "bind argument must be an instance of " + ModuleNodes.MODULE_LAYOUT.getFields(declaringModule).getName(), this));
                 }
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod));
         }
 
         protected DynamicObject metaClass(VirtualFrame frame, Object object) {
@@ -128,7 +120,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject name(DynamicObject unboundMethod) {
-            return getSymbol(getMethod(unboundMethod).getName());
+            return getSymbol(UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod).getName());
         }
 
     }
@@ -143,7 +135,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject origin(DynamicObject unboundMethod) {
-            return getOrigin(unboundMethod);
+            return UNBOUND_METHOD_LAYOUT.getOrigin(unboundMethod);
         }
 
     }
@@ -157,7 +149,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject owner(DynamicObject unboundMethod) {
-            return getMethod(unboundMethod).getDeclaringModule();
+            return UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod).getDeclaringModule();
         }
 
     }
@@ -172,7 +164,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+            final ArgsNode argsNode = UNBOUND_METHOD_LAYOUT.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
@@ -192,7 +184,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject unboundMethod) {
-            SourceSection sourceSection = getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
+            SourceSection sourceSection = UNBOUND_METHOD_LAYOUT.getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
                 return nil();

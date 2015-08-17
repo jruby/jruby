@@ -65,7 +65,7 @@ public abstract class WriteBERNode extends PackNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public Object doWrite(VirtualFrame frame, DynamicObject value) {
-        if (BignumNodes.getBigIntegerValue(value).signum() < 0) {
+        if (BignumNodes.BIGNUM_LAYOUT.getValue(value).signum() < 0) {
             CompilerDirectives.transferToInterpreter();
             throw new CantCompressNegativeException();
         }
@@ -87,7 +87,7 @@ public abstract class WriteBERNode extends PackNode {
 
         if (PackGuards.isRubyBignum(from)) {
             BigInteger big128 = BigInteger.valueOf(128);
-            from = BignumNodes.getBigIntegerValue((DynamicObject) from);
+            from = BignumNodes.BIGNUM_LAYOUT.getValue((DynamicObject) from);
             while (true) {
                 BigInteger bignum = (BigInteger)from;
                 BigInteger[] ary = bignum.divideAndRemainder(big128);

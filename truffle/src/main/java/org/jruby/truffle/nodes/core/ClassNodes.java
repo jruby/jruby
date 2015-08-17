@@ -54,7 +54,7 @@ public abstract class ClassNodes {
 
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
-        assert ModuleNodes.getFields(rubyClass) == model;
+        assert ModuleNodes.MODULE_LAYOUT.getFields(rubyClass) == model;
         assert BasicObjectNodes.getLogicalClass(rubyClass) == rubyClass;
 
         return rubyClass;
@@ -76,19 +76,19 @@ public abstract class ClassNodes {
         model.rubyModuleObject = rubyClass;
 
         if (model.lexicalParent == null) { // bootstrap or anonymous module
-            ModuleNodes.getFields(rubyClass).name = ModuleNodes.getFields(rubyClass).givenBaseName;
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).name = ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).givenBaseName;
         } else {
-            ModuleNodes.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
         }
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
-            assert RubyGuards.isRubyClass(ModuleNodes.getFields(rubyClass).rubyModuleObject);
+            assert RubyGuards.isRubyClass(ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).rubyModuleObject);
 
-            ModuleNodes.getFields(rubyClass).parentModule = ModuleNodes.getFields(superclass).start;
-            ModuleNodes.getFields(superclass).addDependent(ModuleNodes.getFields(rubyClass).rubyModuleObject);
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).parentModule = ModuleNodes.MODULE_LAYOUT.getFields(superclass).start;
+            ModuleNodes.MODULE_LAYOUT.getFields(superclass).addDependent(ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).rubyModuleObject);
 
-            ModuleNodes.getFields(rubyClass).newVersion();
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).newVersion();
         }
 
         return rubyClass;
@@ -119,19 +119,19 @@ public abstract class ClassNodes {
         model.rubyModuleObject = rubyClass;
 
         if (model.lexicalParent == null) { // bootstrap or anonymous module
-            ModuleNodes.getFields(rubyClass).name = ModuleNodes.getFields(rubyClass).givenBaseName;
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).name = ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).givenBaseName;
         } else {
-            ModuleNodes.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
         }
 
         if (superclass != null) {
             assert RubyGuards.isRubyClass(superclass);
-            assert RubyGuards.isRubyClass(ModuleNodes.getFields(rubyClass).rubyModuleObject);
+            assert RubyGuards.isRubyClass(ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).rubyModuleObject);
 
-            ModuleNodes.getFields(rubyClass).parentModule = ModuleNodes.getFields(superclass).start;
-            ModuleNodes.getFields(superclass).addDependent(ModuleNodes.getFields(rubyClass).rubyModuleObject);
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).parentModule = ModuleNodes.MODULE_LAYOUT.getFields(superclass).start;
+            ModuleNodes.MODULE_LAYOUT.getFields(superclass).addDependent(ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).rubyModuleObject);
 
-            ModuleNodes.getFields(rubyClass).newVersion();
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).newVersion();
         }
 
         DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
@@ -146,10 +146,10 @@ public abstract class ClassNodes {
     public static void initialize(DynamicObject rubyClass, DynamicObject superclass) {
         assert RubyGuards.isRubyClass(superclass);
 
-        ModuleNodes.getFields(rubyClass).parentModule = ModuleNodes.getFields(superclass).start;
-        ModuleNodes.getFields(superclass).addDependent(rubyClass);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).parentModule = ModuleNodes.MODULE_LAYOUT.getFields(superclass).start;
+        ModuleNodes.MODULE_LAYOUT.getFields(superclass).addDependent(rubyClass);
 
-        ModuleNodes.getFields(rubyClass).newVersion();
+        ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).newVersion();
         ensureSingletonConsistency(rubyClass);
 
         DynamicObjectFactory factory = CLASS_LAYOUT.getInstanceFactory(superclass);
@@ -172,8 +172,8 @@ public abstract class ClassNodes {
     public static DynamicObject createOneSingletonClass(DynamicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (isSingleton(BasicObjectNodes.getMetaClass(rubyClass))) {
-            return BasicObjectNodes.getMetaClass(rubyClass);
+        if (CLASS_LAYOUT.getIsSingleton(BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(rubyClass))) {
+            return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(rubyClass);
         }
 
         final DynamicObject singletonSuperclass;
@@ -183,25 +183,17 @@ public abstract class ClassNodes {
             singletonSuperclass = createOneSingletonClass(getSuperClass(rubyClass));
         }
 
-        String name = String.format("#<Class:%s>", ModuleNodes.getFields(rubyClass).getName());
-        BasicObjectNodes.setMetaClass(rubyClass, ClassNodes.createRubyClass(BasicObjectNodes.getContext(rubyClass), BasicObjectNodes.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass));
+        String name = String.format("#<Class:%s>", ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).getName());
+        BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(rubyClass, ClassNodes.createRubyClass(BasicObjectNodes.getContext(rubyClass), BasicObjectNodes.getLogicalClass(rubyClass), null, singletonSuperclass, name, true, rubyClass));
 
-        return BasicObjectNodes.getMetaClass(rubyClass);
+        return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(rubyClass);
     }
 
-
-    public static boolean isSingleton(DynamicObject rubyClass) {
-        return CLASS_LAYOUT.getIsSingleton(rubyClass);
-    }
-
-    public static DynamicObject getAttached(DynamicObject rubyClass) {
-        return CLASS_LAYOUT.getAttached(rubyClass);
-    }
 
     public static DynamicObject getSuperClass(DynamicObject rubyClass) {
         CompilerAsserts.neverPartOfCompilation();
 
-        for (DynamicObject ancestor : ModuleNodes.getFields(rubyClass).parentAncestors()) {
+        for (DynamicObject ancestor : ModuleNodes.MODULE_LAYOUT.getFields(rubyClass).parentAncestors()) {
             if (RubyGuards.isRubyClass(ancestor)) {
                 return ancestor;
             }

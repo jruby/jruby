@@ -57,12 +57,12 @@ public class ThreadPrimitiveNodes {
 
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread) {
-            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            final Thread javaThread = ThreadNodes.THREAD_LAYOUT.getFields(thread).thread;
             if (javaThread != null) {
                 int javaPriority = javaThread.getPriority();
                 return javaPriorityToRubyPriority(javaPriority);
             } else {
-                return ThreadNodes.getFields(thread).priority;
+                return ThreadNodes.THREAD_LAYOUT.getFields(thread).priority;
             }
         }
     }
@@ -82,11 +82,11 @@ public class ThreadPrimitiveNodes {
             }
 
             int javaPriority = rubyPriorityToJavaPriority(rubyPriority);
-            final Thread javaThread = ThreadNodes.getFields(thread).thread;
+            final Thread javaThread = ThreadNodes.THREAD_LAYOUT.getFields(thread).thread;
             if (javaThread != null) {
                 javaThread.setPriority(javaPriority);
             }
-            ThreadNodes.getFields(thread).priority = rubyPriority;
+            ThreadNodes.THREAD_LAYOUT.getFields(thread).priority = rubyPriority;
             return rubyPriority;
         }
     }

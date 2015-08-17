@@ -19,10 +19,7 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.ArrayForeignAccessFactory;
-import org.jruby.truffle.runtime.core.BasicForeignAccessFactory;
-import org.jruby.truffle.runtime.core.HashForeignAccessFactory;
-import org.jruby.truffle.runtime.core.StringForeignAccessFactory;
+import org.jruby.truffle.runtime.core.*;
 
 import java.util.Arrays;
 
@@ -37,14 +34,14 @@ public class RubyObjectType extends ObjectType {
         if (RubyGuards.isRubyString(object)) {
             return Helpers.decodeByteList(context.getRuntime(), StringNodes.getByteList(object));
         } else if (RubyGuards.isRubySymbol(object)) {
-            return SymbolNodes.getString(object);
+            return SymbolNodes.SYMBOL_LAYOUT.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
-            return ExceptionNodes.getMessage(object) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, ExceptionNodes.getBacktrace(object)));
+            return ExceptionNodes.EXCEPTION_LAYOUT.getMessage(object) + " :\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, ExceptionNodes.EXCEPTION_LAYOUT.getBacktrace(object)));
         } else if (RubyGuards.isRubyModule(object)) {
-            return ModuleNodes.getFields(object).toString();
+            return ModuleNodes.MODULE_LAYOUT.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
         }
     }
 

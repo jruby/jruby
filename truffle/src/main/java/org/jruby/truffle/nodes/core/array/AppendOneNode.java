@@ -64,33 +64,33 @@ public abstract class AppendOneNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, int value,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, long value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, double value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, Object value,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value, extendProfile);
         return array;
     }
 
     public void appendOneSameTypeGeneric(DynamicObject array, ArrayMirror storeMirror, Object value, ConditionProfile extendProfile) {
-        final int oldSize = ArrayNodes.getSize(array);
+        final int oldSize = ArrayNodes.ARRAY_LAYOUT.getSize(array);
         final int newSize = oldSize + 1;
 
         final ArrayMirror newStoreMirror;
@@ -109,10 +109,10 @@ public abstract class AppendOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendOneLongIntoInteger(DynamicObject array, long value) {
-        final int oldSize = ArrayNodes.getSize(array);
+        final int oldSize = ArrayNodes.ARRAY_LAYOUT.getSize(array);
         final int newSize = oldSize + 1;
 
-        final int[] oldStore = (int[]) ArrayNodes.getStore(array);
+        final int[] oldStore = (int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
         long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
 
         newStore[oldSize] = value;
@@ -124,24 +124,24 @@ public abstract class AppendOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)", "!isInteger(value)", "!isLong(value)"})
     public DynamicObject appendOneGeneralizeInteger(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)", "!isInteger(value)", "!isLong(value)"})
     public DynamicObject appendOneGeneralizeLong(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)", "!isDouble(value)"})
     public DynamicObject appendOneGeneralizeDouble(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)), value);
         return array;
     }
 
     public void appendOneGeneralizeGeneric(DynamicObject array, ArrayMirror storeMirror, Object value) {
-        final int oldSize = ArrayNodes.getSize(array);
+        final int oldSize = ArrayNodes.ARRAY_LAYOUT.getSize(array);
         final int newSize = oldSize + 1;
         Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
         newStore[oldSize] = value;

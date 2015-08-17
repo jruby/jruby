@@ -29,10 +29,6 @@ public abstract class ByteArrayNodes {
         return BYTE_ARRAY_LAYOUT.createByteArray(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), bytes);
     }
 
-    public static ByteList getBytes(DynamicObject byteArray) {
-        return BYTE_ARRAY_LAYOUT.getBytes(byteArray);
-    }
-
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
@@ -42,7 +38,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int getByte(DynamicObject bytes, int index) {
-            return getBytes(bytes).get(index) & 0xff;
+            return BYTE_ARRAY_LAYOUT.getBytes(bytes).get(index) & 0xff;
         }
 
     }
@@ -57,11 +53,11 @@ public abstract class ByteArrayNodes {
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
             final int prependLength = StringNodes.getByteList(string).getUnsafeBytes().length;
-            final int originalLength = getBytes(bytes).getUnsafeBytes().length;
+            final int originalLength = BYTE_ARRAY_LAYOUT.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
             System.arraycopy(StringNodes.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
-            System.arraycopy(getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
+            System.arraycopy(BYTE_ARRAY_LAYOUT.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
         }
 
@@ -76,13 +72,13 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public Object setByte(DynamicObject bytes, int index, int value) {
-            if (index < 0 || index >= getBytes(bytes).getRealSize()) {
+            if (index < 0 || index >= BYTE_ARRAY_LAYOUT.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
             }
 
-            getBytes(bytes).set(index, value);
-            return getBytes(bytes).get(index);
+            BYTE_ARRAY_LAYOUT.getBytes(bytes).set(index, value);
+            return BYTE_ARRAY_LAYOUT.getBytes(bytes).get(index);
         }
 
     }
@@ -96,7 +92,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int size(DynamicObject bytes) {
-            return getBytes(bytes).getRealSize();
+            return BYTE_ARRAY_LAYOUT.getBytes(bytes).getRealSize();
         }
 
     }
@@ -110,7 +106,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
+            final int index = new ByteList(BYTE_ARRAY_LAYOUT.getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
 
             if (index == -1) {
                 return nil();

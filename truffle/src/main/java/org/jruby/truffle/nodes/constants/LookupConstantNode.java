@@ -66,7 +66,7 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     public Assumption getUnmodifiedAssumption(DynamicObject module) {
-        return ModuleNodes.getFields(module).getUnmodifiedAssumption();
+        return ModuleNodes.MODULE_LAYOUT.getFields(module).getUnmodifiedAssumption();
     }
 
     @TruffleBoundary

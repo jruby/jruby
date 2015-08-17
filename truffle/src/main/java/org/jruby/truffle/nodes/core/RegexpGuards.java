@@ -16,11 +16,11 @@ import org.jruby.util.StringSupport;
 public class RegexpGuards {
 
     public static boolean isInitialized(DynamicObject regexp) {
-        return RegexpNodes.getRegex(regexp) != null;
+        return RegexpNodes.REGEXP_LAYOUT.getRegex(regexp) != null;
     }
 
     public static boolean isRegexpLiteral(DynamicObject regexp) {
-        return RegexpNodes.getOptions(regexp).isLiteral();
+        return RegexpNodes.REGEXP_LAYOUT.getOptions(regexp).isLiteral();
     }
 
     public static boolean isValidEncoding(DynamicObject string) {

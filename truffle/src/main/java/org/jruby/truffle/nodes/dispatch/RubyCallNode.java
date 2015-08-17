@@ -197,8 +197,8 @@ public class RubyCallNode extends RubyNode {
         }
 
         final DynamicObject array = (DynamicObject) argument;
-        final int size = ArrayNodes.getSize(array);
-        final Object store = ArrayNodes.getStore(array);
+        final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array);
+        final Object store = ArrayNodes.ARRAY_LAYOUT.getStore(array);
 
         if (seenNullInUnsplat && store == null) {
             return new Object[]{};

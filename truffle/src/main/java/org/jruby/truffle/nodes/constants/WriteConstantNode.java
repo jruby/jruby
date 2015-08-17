@@ -51,7 +51,7 @@ public class WriteConstantNode extends RubyNode {
 
         final DynamicObject module = (DynamicObject) receiverObject;
 
-        ModuleNodes.getFields(module).setConstant(this, name, rhsValue);
+        ModuleNodes.MODULE_LAYOUT.getFields(module).setConstant(this, name, rhsValue);
 
         return rhsValue;
     }

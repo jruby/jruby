@@ -34,7 +34,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     public static DynamicObject resolveTargetModule(LexicalScope lexicalScope) {
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes
-        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && ClassNodes.isSingleton((lexicalScope.getLiveModule()))) {
+        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && ClassNodes.CLASS_LAYOUT.getIsSingleton((lexicalScope.getLiveModule()))) {
             lexicalScope = lexicalScope.getParent();
         }
         return lexicalScope.getLiveModule();

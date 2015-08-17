@@ -121,7 +121,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof DynamicObject) {
-                builder.append(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
+                builder.append(ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");
@@ -130,17 +130,17 @@ public class ExceptionTranslatingNode extends RubyNode {
                     final DynamicObject array = (DynamicObject) value;
                     builder.append("[");
 
-                    if (ArrayNodes.getStore(array) == null) {
+                    if (ArrayNodes.ARRAY_LAYOUT.getStore(array) == null) {
                         builder.append("null");
                     } else {
-                        builder.append(ArrayNodes.getStore(array).getClass().getName());
+                        builder.append(ArrayNodes.ARRAY_LAYOUT.getStore(array).getClass().getName());
                     }
 
                     builder.append(",");
-                    builder.append(ArrayNodes.getSize(array));
+                    builder.append(ArrayNodes.ARRAY_LAYOUT.getSize(array));
                     builder.append("]");
                 } else if (RubyGuards.isRubyHash(value)) {
-                    final Object store = HashNodes.getStore((DynamicObject) value);
+                    final Object store = HashNodes.HASH_LAYOUT.getStore((DynamicObject) value);
 
                     if (store == null) {
                         builder.append("[null]");

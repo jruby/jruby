@@ -43,7 +43,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
 
     @Specialization(guards = "isRubySymbol(symbol)")
     public String coerceRubySymbol(DynamicObject symbol) {
-        return SymbolNodes.getString(symbol);
+        return SymbolNodes.SYMBOL_LAYOUT.getString(symbol);
     }
 
     @Specialization(guards = "isRubyString(string)")

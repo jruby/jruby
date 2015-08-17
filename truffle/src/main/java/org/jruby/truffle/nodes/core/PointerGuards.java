@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.rubinius.PointerNodes;
 public class PointerGuards {
 
     public static boolean isNullPointer(DynamicObject pointer) {
-        return PointerNodes.getPointer(pointer) == PointerNodes.NULL_POINTER;
+        return PointerNodes.POINTER_LAYOUT.getPointer(pointer) == PointerNodes.NULL_POINTER;
     }
 
 }

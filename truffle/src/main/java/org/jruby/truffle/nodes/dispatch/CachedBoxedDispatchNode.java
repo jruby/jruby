@@ -45,7 +45,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         assert RubyGuards.isRubyClass(expectedClass);
 
         this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = ModuleNodes.MODULE_LAYOUT.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -57,7 +57,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                 if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
                         || (method.getDeclaringModule() != null
-                        && ModuleNodes.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
+                        && ModuleNodes.MODULE_LAYOUT.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -69,7 +69,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override
@@ -138,7 +138,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                ModuleNodes.getFields(expectedClass).getName(), expectedClass.hashCode(),
+                ModuleNodes.MODULE_LAYOUT.getFields(expectedClass).getName(), expectedClass.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

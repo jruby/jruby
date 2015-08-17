@@ -107,7 +107,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!(RubyGuards.isRubyModule(ModuleNodes.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields(module).rubyModuleObject))) {
+            if (!(RubyGuards.isRubyModule(ModuleNodes.MODULE_LAYOUT.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.MODULE_LAYOUT.getFields(module).rubyModuleObject))) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
@@ -141,7 +141,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            ModuleNodes.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
+            ModuleNodes.MODULE_LAYOUT.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 

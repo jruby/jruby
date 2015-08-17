@@ -144,7 +144,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return createString(ModuleNodes.getFields(module).getName());
+            return createString(ModuleNodes.MODULE_LAYOUT.getFields(module).getName());
         }
 
     }
@@ -290,7 +290,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return RubyGuards.isRubyClass(object) && ClassNodes.isSingleton((DynamicObject) object);
+            return RubyGuards.isRubyClass(object) && ClassNodes.CLASS_LAYOUT.getIsSingleton((DynamicObject) object);
         }
 
     }
@@ -451,7 +451,7 @@ public abstract class VMPrimitiveNodes {
                 Object value = getContext().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
-                    stringValue = BignumNodes.getBigIntegerValue((DynamicObject) value).toString();
+                    stringValue = BignumNodes.BIGNUM_LAYOUT.getValue((DynamicObject) value).toString();
                 } else {
                     // This toString() is fine as we only have boolean, int, long and RubyString in config.
                     stringValue = value.toString();

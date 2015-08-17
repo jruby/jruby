@@ -135,18 +135,18 @@ public abstract class BucketsStrategy {
         assert HashGuards.isBucketHash(hash);
         assert HashNodes.verifyStore(hash);
 
-        final Entry[] buckets = (Entry[]) HashNodes.getStore(hash);
+        final Entry[] buckets = (Entry[]) HashNodes.HASH_LAYOUT.getStore(hash);
 
         final Entry entry = new Entry(hashed, key, value);
 
-        if (HashNodes.getFirstInSequence(hash) == null) {
-            HashNodes.setFirstInSequence(hash, entry);
+        if (HashNodes.HASH_LAYOUT.getFirstInSequence(hash) == null) {
+            HashNodes.HASH_LAYOUT.setFirstInSequence(hash, entry);
         } else {
-            HashNodes.getLastInSequence(hash).setNextInSequence(entry);
-            entry.setPreviousInSequence(HashNodes.getLastInSequence(hash));
+            HashNodes.HASH_LAYOUT.getLastInSequence(hash).setNextInSequence(entry);
+            entry.setPreviousInSequence(HashNodes.HASH_LAYOUT.getLastInSequence(hash));
         }
 
-        HashNodes.setLastInSequence(hash, entry);
+        HashNodes.HASH_LAYOUT.setLastInSequence(hash, entry);
 
         final int bucketIndex = BucketsStrategy.getBucketIndex(hashed, buckets.length);
 
@@ -162,7 +162,7 @@ public abstract class BucketsStrategy {
             previousInLookup.setNextInLookup(entry);
         }
 
-        HashNodes.setSize(hash, HashNodes.getSize(hash) + 1);
+        HashNodes.HASH_LAYOUT.setSize(hash, HashNodes.HASH_LAYOUT.getSize(hash) + 1);
 
         assert HashNodes.verifyStore(hash);
     }
@@ -172,10 +172,10 @@ public abstract class BucketsStrategy {
         assert HashGuards.isBucketHash(hash);
         assert HashNodes.verifyStore(hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * OVERALLOCATE_FACTOR;
+        final int bucketsCount = capacityGreaterThan(HashNodes.HASH_LAYOUT.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
-        Entry entry = HashNodes.getFirstInSequence(hash);
+        Entry entry = HashNodes.HASH_LAYOUT.getFirstInSequence(hash);
 
         while (entry != null) {
             final int bucketIndex = getBucketIndex(entry.getHashed(), bucketsCount);
@@ -195,7 +195,7 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(hash, newEntries, HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
+        HashNodes.setStore(hash, newEntries, HashNodes.HASH_LAYOUT.getSize(hash), HashNodes.HASH_LAYOUT.getFirstInSequence(hash), HashNodes.HASH_LAYOUT.getLastInSequence(hash));
 
         assert HashNodes.verifyStore(hash);
     }
@@ -268,12 +268,12 @@ public abstract class BucketsStrategy {
         assert RubyGuards.isRubyHash(to);
         assert HashNodes.verifyStore(to);
 
-        final Entry[] newEntries = new Entry[((Entry[]) HashNodes.getStore(from)).length];
+        final Entry[] newEntries = new Entry[((Entry[]) HashNodes.HASH_LAYOUT.getStore(from)).length];
 
         Entry firstInSequence = null;
         Entry lastInSequence = null;
 
-        Entry entry = HashNodes.getFirstInSequence(from);
+        Entry entry = HashNodes.HASH_LAYOUT.getFirstInSequence(from);
 
         while (entry != null) {
             final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
@@ -297,7 +297,7 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(to, newEntries, HashNodes.getSize(from), firstInSequence, lastInSequence);
+        HashNodes.setStore(to, newEntries, HashNodes.HASH_LAYOUT.getSize(from), firstInSequence, lastInSequence);
     }
 
 }

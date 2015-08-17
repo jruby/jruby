@@ -217,14 +217,14 @@ public class CoreLibrary {
         ClassNodes.CLASS_LAYOUT.setInstanceFactoryUnsafe(moduleClass, ModuleNodes.MODULE_LAYOUT.createModuleShape(moduleClass, moduleClass));
 
         // Close the cycles
-        ModuleNodes.getFields(classClass).parentModule = ModuleNodes.getFields(moduleClass).start;
-        ModuleNodes.getFields(moduleClass).addDependent(ModuleNodes.getFields(classClass).rubyModuleObject);
-        ModuleNodes.getFields(classClass).newVersion();
+        ModuleNodes.MODULE_LAYOUT.getFields(classClass).parentModule = ModuleNodes.MODULE_LAYOUT.getFields(moduleClass).start;
+        ModuleNodes.MODULE_LAYOUT.getFields(moduleClass).addDependent(ModuleNodes.MODULE_LAYOUT.getFields(classClass).rubyModuleObject);
+        ModuleNodes.MODULE_LAYOUT.getFields(classClass).newVersion();
 
-        ModuleNodes.getFields(classClass).getAdoptedByLexicalParent(objectClass, "Class", node);
-        ModuleNodes.getFields(basicObjectClass).getAdoptedByLexicalParent(objectClass, "BasicObject", node);
-        ModuleNodes.getFields(objectClass).getAdoptedByLexicalParent(objectClass, "Object", node);
-        ModuleNodes.getFields(moduleClass).getAdoptedByLexicalParent(objectClass, "Module", node);
+        ModuleNodes.MODULE_LAYOUT.getFields(classClass).getAdoptedByLexicalParent(objectClass, "Class", node);
+        ModuleNodes.MODULE_LAYOUT.getFields(basicObjectClass).getAdoptedByLexicalParent(objectClass, "BasicObject", node);
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).getAdoptedByLexicalParent(objectClass, "Object", node);
+        ModuleNodes.MODULE_LAYOUT.getFields(moduleClass).getAdoptedByLexicalParent(objectClass, "Module", node);
 
         // Create Exception classes
 
@@ -440,15 +440,15 @@ public class CoreLibrary {
     private void includeModules(DynamicObject comparableModule) {
         assert RubyGuards.isRubyModule(comparableModule);
 
-        ModuleNodes.getFields(objectClass).include(node, kernelModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).include(node, kernelModule);
 
-        ModuleNodes.getFields(numericClass).include(node, comparableModule);
-        ModuleNodes.getFields(symbolClass).include(node, comparableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(numericClass).include(node, comparableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(symbolClass).include(node, comparableModule);
 
-        ModuleNodes.getFields(arrayClass).include(node, enumerableModule);
-        ModuleNodes.getFields(dirClass).include(node, enumerableModule);
-        ModuleNodes.getFields(hashClass).include(node, enumerableModule);
-        ModuleNodes.getFields(rangeClass).include(node, enumerableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(arrayClass).include(node, enumerableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(dirClass).include(node, enumerableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(hashClass).include(node, enumerableModule);
+        ModuleNodes.MODULE_LAYOUT.getFields(rangeClass).include(node, enumerableModule);
     }
 
     /**
@@ -511,7 +511,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
         coreMethodNodeManager.allMethodInstalled();
 
-        basicObjectSendMethod = ModuleNodes.getFields(basicObjectClass).getMethods().get("__send__");
+        basicObjectSendMethod = ModuleNodes.MODULE_LAYOUT.getFields(basicObjectClass).getMethods().get("__send__");
         assert basicObjectSendMethod != null;
     }
 
@@ -542,44 +542,44 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_VERSION", StringNodes.createString(stringClass, Constants.RUBY_VERSION));
-        ModuleNodes.getFields(objectClass).setConstant(node, "JRUBY_VERSION", StringNodes.createString(stringClass, Constants.VERSION));
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_PATCHLEVEL", 0);
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_ENGINE", StringNodes.createString(stringClass, Constants.ENGINE + "+truffle"));
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_PLATFORM", StringNodes.createString(stringClass, Constants.PLATFORM));
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_RELEASE_DATE", StringNodes.createString(stringClass, Constants.COMPILE_DATE));
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_DESCRIPTION", StringNodes.createString(stringClass, OutputStrings.getVersionString()));
-        ModuleNodes.getFields(objectClass).setConstant(node, "RUBY_COPYRIGHT", StringNodes.createString(stringClass, OutputStrings.getCopyrightString()));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_VERSION", StringNodes.createString(stringClass, Constants.RUBY_VERSION));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "JRUBY_VERSION", StringNodes.createString(stringClass, Constants.VERSION));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_PATCHLEVEL", 0);
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_ENGINE", StringNodes.createString(stringClass, Constants.ENGINE + "+truffle"));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_PLATFORM", StringNodes.createString(stringClass, Constants.PLATFORM));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_RELEASE_DATE", StringNodes.createString(stringClass, Constants.COMPILE_DATE));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_DESCRIPTION", StringNodes.createString(stringClass, OutputStrings.getVersionString()));
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "RUBY_COPYRIGHT", StringNodes.createString(stringClass, OutputStrings.getCopyrightString()));
 
         // BasicObject knows itself
-        ModuleNodes.getFields(basicObjectClass).setConstant(node, "BasicObject", basicObjectClass);
+        ModuleNodes.MODULE_LAYOUT.getFields(basicObjectClass).setConstant(node, "BasicObject", basicObjectClass);
 
-        ModuleNodes.getFields(objectClass).setConstant(node, "ARGV", argv);
+        ModuleNodes.MODULE_LAYOUT.getFields(objectClass).setConstant(node, "ARGV", argv);
 
-        ModuleNodes.getFields(rubiniusModule).setConstant(node, "UNDEFINED", rubiniusUndefined);
-        ModuleNodes.getFields(rubiniusModule).setConstant(node, "LIBC", Platform.LIBC);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusModule).setConstant(node, "UNDEFINED", rubiniusUndefined);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusModule).setConstant(node, "LIBC", Platform.LIBC);
 
-        ModuleNodes.getFields(processModule).setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
-        ModuleNodes.getFields(processModule).setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+        ModuleNodes.MODULE_LAYOUT.getFields(processModule).setConstant(node, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        ModuleNodes.MODULE_LAYOUT.getFields(processModule).setConstant(node, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
 
         if (Platform.getPlatform().getOS() == OS_TYPE.LINUX) {
-            ModuleNodes.getFields(processModule).setConstant(node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME_ID);
+            ModuleNodes.MODULE_LAYOUT.getFields(processModule).setConstant(node, "CLOCK_THREAD_CPUTIME_ID", ProcessNodes.CLOCK_THREAD_CPUTIME_ID);
         }
 
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
-        ModuleNodes.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "INVALID_MASK", EConvFlags.INVALID_MASK);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
+        ModuleNodes.MODULE_LAYOUT.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
     }
 
     private void initializeSignalConstants() {
@@ -591,7 +591,7 @@ public class CoreLibrary {
             signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
         }
 
-        ModuleNodes.getFields(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
+        ModuleNodes.MODULE_LAYOUT.getFields(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
     }
 
     private DynamicObject defineClass(String name) {
@@ -629,7 +629,7 @@ public class CoreLibrary {
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
 
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (DynamicObject) rubyException, ExceptionNodes.EXCEPTION_LAYOUT.getBacktrace((DynamicObject) rubyException))) {
                 System.err.println(line);
             }
 
@@ -640,26 +640,26 @@ public class CoreLibrary {
     }
 
     private void initializeRubiniusFFI() {
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_INT", RubiniusTypes.TYPE_INT);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_LL", RubiniusTypes.TYPE_LL);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
-        ModuleNodes.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHAR", RubiniusTypes.TYPE_CHAR);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_UCHAR", RubiniusTypes.TYPE_UCHAR);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_BOOL", RubiniusTypes.TYPE_BOOL);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_SHORT", RubiniusTypes.TYPE_SHORT);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_USHORT", RubiniusTypes.TYPE_USHORT);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_INT", RubiniusTypes.TYPE_INT);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_UINT", RubiniusTypes.TYPE_UINT);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_LONG", RubiniusTypes.TYPE_LONG);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ULONG", RubiniusTypes.TYPE_ULONG);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_LL", RubiniusTypes.TYPE_LL);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ULL", RubiniusTypes.TYPE_ULL);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_FLOAT", RubiniusTypes.TYPE_FLOAT);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_DOUBLE", RubiniusTypes.TYPE_DOUBLE);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_PTR", RubiniusTypes.TYPE_PTR);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VOID", RubiniusTypes.TYPE_VOID);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_STRING", RubiniusTypes.TYPE_STRING);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_STRPTR", RubiniusTypes.TYPE_STRPTR);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
+        ModuleNodes.MODULE_LAYOUT.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
     }
 
     public void loadRubyCore(String fileName) {
@@ -701,7 +701,7 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                ModuleNodes.getFields(encodingClass).setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                ModuleNodes.MODULE_LAYOUT.getFields(encodingClass).setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
 
@@ -714,14 +714,14 @@ public class CoreLibrary {
 
             @Override
             public void defineConstant(int encodingListIndex, String constName) {
-                ModuleNodes.getFields(encodingClass).setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
+                ModuleNodes.MODULE_LAYOUT.getFields(encodingClass).setConstant(node, constName, EncodingNodes.getEncoding(encodingListIndex));
             }
         });
     }
 
     public DynamicObject getMetaClass(Object object) {
         if (object instanceof DynamicObject) {
-            return BasicObjectNodes.getMetaClass(((DynamicObject) object));
+            return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(((DynamicObject) object));
         } else if (object instanceof Boolean) {
             if ((boolean) object) {
                 return trueClass;
@@ -784,7 +784,7 @@ public class CoreLibrary {
         }
 
         if (RubyGuards.isRubyBignum(value)) {
-            return BignumNodes.getBigIntegerValue((DynamicObject) value).doubleValue();
+            return BignumNodes.BIGNUM_LAYOUT.getValue((DynamicObject) value).doubleValue();
         }
 
         if (value instanceof Double) {
@@ -846,7 +846,7 @@ public class CoreLibrary {
 
     public DynamicObject argumentErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = ModuleNodes.getFields(getLogicalClass(object)).getName();
+        String badClassName = ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(object)).getName();
         return argumentError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
@@ -919,15 +919,15 @@ public class CoreLibrary {
     public DynamicObject typeErrorCantConvertTo(Object from, DynamicObject to, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyClass(to);
-        String fromClass = ModuleNodes.getFields(getLogicalClass(from)).getName();
+        String fromClass = ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                fromClass, ModuleNodes.getFields(to).getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
+                fromClass, ModuleNodes.MODULE_LAYOUT.getFields(to).getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
     public DynamicObject typeErrorCantConvertInto(Object from, DynamicObject to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyClass(to);
-        return typeError(String.format("can't convert %s into %s", ModuleNodes.getFields(getLogicalClass(from)).getName(), ModuleNodes.getFields(to).getName()), currentNode);
+        return typeError(String.format("can't convert %s into %s", ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(from)).getName(), ModuleNodes.MODULE_LAYOUT.getFields(to).getName()), currentNode);
     }
 
     public DynamicObject typeErrorIsNotA(String value, String expectedType, Node currentNode) {
@@ -937,7 +937,7 @@ public class CoreLibrary {
 
     public DynamicObject typeErrorNoImplicitConversion(Object from, String to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("no implicit conversion of %s into %s", ModuleNodes.getFields(getLogicalClass(from)).getName(), to), currentNode);
+        return typeError(String.format("no implicit conversion of %s into %s", ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(from)).getName(), to), currentNode);
     }
 
     public DynamicObject typeErrorMustBe(String variable, String type, Node currentNode) {
@@ -947,13 +947,13 @@ public class CoreLibrary {
 
     public DynamicObject typeErrorBadCoercion(Object from, String to, String coercionMethod, Object coercedTo, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = ModuleNodes.getFields(getLogicalClass(from)).getName();
+        String badClassName = ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
                 badClassName,
                 to,
                 badClassName,
                 coercionMethod,
-                ModuleNodes.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
+                ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
     }
 
     public DynamicObject typeErrorCantCoerce(Object from, String to, Node currentNode) {
@@ -963,13 +963,13 @@ public class CoreLibrary {
 
     public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String logicalClass = ModuleNodes.getFields(getLogicalClass(object)).getName();
+        String logicalClass = ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(object)).getName();
         return typeError(String.format("can't dump %s", logicalClass), currentNode);
     }
 
     public DynamicObject typeErrorWrongArgumentType(Object object, String expectedType, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String badClassName = ModuleNodes.getFields(getLogicalClass(object)).getName();
+        String badClassName = ModuleNodes.MODULE_LAYOUT.getFields(getLogicalClass(object)).getName();
         return typeError(String.format("wrong argument type %s (expected %s)", badClassName, expectedType), currentNode);
     }
 
@@ -982,7 +982,7 @@ public class CoreLibrary {
 
     public DynamicObject nameErrorConstantNotDefined(DynamicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("constant %s::%s not defined", ModuleNodes.getFields(module).getName(), name), name, currentNode);
+        return nameError(String.format("constant %s::%s not defined", ModuleNodes.MODULE_LAYOUT.getFields(module).getName(), name), name, currentNode);
     }
 
     public DynamicObject nameErrorUninitializedConstant(DynamicObject module, String name, Node currentNode) {
@@ -992,7 +992,7 @@ public class CoreLibrary {
         if (module == objectClass) {
             message = String.format("uninitialized constant %s", name);
         } else {
-            message = String.format("uninitialized constant %s::%s", ModuleNodes.getFields(module).getName(), name);
+            message = String.format("uninitialized constant %s::%s", ModuleNodes.MODULE_LAYOUT.getFields(module).getName(), name);
         }
         return nameError(message, name, currentNode);
     }
@@ -1000,13 +1000,13 @@ public class CoreLibrary {
     public DynamicObject nameErrorUninitializedClassVariable(DynamicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("uninitialized class variable %s in %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("uninitialized class variable %s in %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject nameErrorPrivateConstant(DynamicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("private constant %s::%s referenced", ModuleNodes.getFields(module).getName(), name), name, currentNode);
+        return nameError(String.format("private constant %s::%s referenced", ModuleNodes.MODULE_LAYOUT.getFields(module).getName(), name), name, currentNode);
     }
 
     public DynamicObject nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
@@ -1027,17 +1027,17 @@ public class CoreLibrary {
     public DynamicObject nameErrorUndefinedMethod(String name, DynamicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("undefined method `%s' for %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("undefined method `%s' for %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject nameErrorMethodNotDefinedIn(DynamicObject module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' not defined in %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("method `%s' not defined in %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject nameErrorPrivateMethod(String name, DynamicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("method `%s' for %s is private", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("method `%s' for %s is private", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject nameErrorLocalVariableNotDefined(String name, DynamicObject binding, Node currentNode) {
@@ -1049,7 +1049,7 @@ public class CoreLibrary {
     public DynamicObject nameErrorClassVariableNotDefined(String name, DynamicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return nameError(String.format("class variable `%s' not defined for %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return nameError(String.format("class variable `%s' not defined for %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject noMethodError(String message, String name, Node currentNode) {
@@ -1072,15 +1072,15 @@ public class CoreLibrary {
     public DynamicObject noMethodErrorOnModule(String name, DynamicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return noMethodError(String.format("undefined method `%s' for %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject logicalClass = getLogicalClass(receiver);
-        String repr = ModuleNodes.getFields(logicalClass).getName();
+        String repr = ModuleNodes.MODULE_LAYOUT.getFields(logicalClass).getName();
         if (RubyGuards.isRubyModule(receiver)) {
-            repr = ModuleNodes.getFields(((DynamicObject) receiver)).getName() + ":" + repr;
+            repr = ModuleNodes.MODULE_LAYOUT.getFields(((DynamicObject) receiver)).getName() + ":" + repr;
         }
         return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }
@@ -1088,7 +1088,7 @@ public class CoreLibrary {
     public DynamicObject privateMethodError(String name, DynamicObject module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
-        return noMethodError(String.format("private method `%s' called for %s", name, ModuleNodes.getFields(module).getName()), name, currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, ModuleNodes.MODULE_LAYOUT.getFields(module).getName()), name, currentNode);
     }
 
     public DynamicObject loadError(String message, Node currentNode) {
@@ -1180,7 +1180,7 @@ public class CoreLibrary {
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyEncoding(encoding);
-        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingNodes.getEncoding(encoding)), currentNode);
+        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding)), currentNode);
     }
 
     public DynamicObject rangeError(String type, String value, String range, Node currentNode) {
@@ -1409,7 +1409,7 @@ public class CoreLibrary {
     }
 
     public DynamicObject getENV() {
-        return (DynamicObject) ModuleNodes.getFields(objectClass).getConstants().get("ENV").getValue();
+        return (DynamicObject) ModuleNodes.MODULE_LAYOUT.getFields(objectClass).getConstants().get("ENV").getValue();
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

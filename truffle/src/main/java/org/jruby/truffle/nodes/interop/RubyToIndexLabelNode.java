@@ -30,7 +30,7 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 
     @Specialization(guards = "isRubySymbol(index)")
     public Object doRubySymbol(DynamicObject index) {
-        return SymbolNodes.getString(index);
+        return SymbolNodes.SYMBOL_LAYOUT.getString(index);
     }
 
     @Specialization(guards = "!isRubySymbol(index)")

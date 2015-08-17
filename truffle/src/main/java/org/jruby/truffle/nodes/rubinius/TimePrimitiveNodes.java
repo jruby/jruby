@@ -64,7 +64,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public DynamicObject timeSDup(DynamicObject other) {
-            final DynamicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), TimeNodes.getOffset(other));
+            final DynamicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), TimeNodes.TIME_LAYOUT.getOffset(other));
             return time;
         }
 
@@ -302,7 +302,7 @@ public abstract class TimePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public long timeSetNSeconds(DynamicObject time, int nanoseconds) {
-            TimeNodes.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
+            TimeNodes.TIME_LAYOUT.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
             return nanoseconds;
         }
 
@@ -331,7 +331,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public Object timeUTCOffset(DynamicObject time) {
-            Object offset = TimeNodes.getOffset(time);
+            Object offset = TimeNodes.TIME_LAYOUT.getOffset(time);
             if (offset != nil()) {
                 return offset;
             } else {

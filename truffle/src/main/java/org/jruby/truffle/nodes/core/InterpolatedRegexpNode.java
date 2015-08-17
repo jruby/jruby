@@ -50,9 +50,9 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         if (options.isEncodingNone()) {
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                RegexpNodes.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getAscii8bitEncoding());
+                RegexpNodes.REGEXP_LAYOUT.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getAscii8bitEncoding());
             } else {
-                RegexpNodes.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getUSAsciiEncoding());
+                RegexpNodes.REGEXP_LAYOUT.getSource(regexp).setEncoding(getContext().getRuntime().getEncodingService().getUSAsciiEncoding());
             }
         }
 

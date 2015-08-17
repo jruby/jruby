@@ -2530,7 +2530,7 @@ public class BodyTranslator extends Translator {
         Regex regex = RegexpNodes.compile(currentNode, context, node.getValue(), node.getOptions());
 
         final DynamicObject regexp = RegexpNodes.createRubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue(), node.getOptions());
-        RegexpNodes.getOptions(regexp).setLiteral(true);
+        RegexpNodes.REGEXP_LAYOUT.getOptions(regexp).setLiteral(true);
 
         final LiteralNode literalNode = new LiteralNode(context, translate(node.getPosition()), regexp);
 

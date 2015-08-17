@@ -35,7 +35,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
         assert RubyGuards.isRubyProc(block);
 
-        callNode = Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(block));
+        callNode = Truffle.getRuntime().createDirectCallNode(ProcNodes.PROC_LAYOUT.getCallTargetForBlocks(block));
         insert(callNode);
 
         if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
@@ -51,7 +51,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     protected boolean guard(DynamicObject block) {
-        return ProcNodes.getCallTargetForBlocks(block) == callNode.getCallTarget();
+        return ProcNodes.PROC_LAYOUT.getCallTargetForBlocks(block) == callNode.getCallTarget();
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
 
         if (guard(block)) {
-            return callNode.call(frame, RubyArguments.pack(ProcNodes.getMethod(block), ProcNodes.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(ProcNodes.PROC_LAYOUT.getMethod(block), ProcNodes.PROC_LAYOUT.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
         } else {
             return next.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }

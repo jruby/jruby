@@ -57,7 +57,7 @@ public abstract class MetaClassNode extends RubyNode {
 
     @Specialization
     protected DynamicObject singletonClass(DynamicObject object) {
-        return BasicObjectNodes.getMetaClass(object);
+        return BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(object);
     }
 
 }

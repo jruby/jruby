@@ -82,7 +82,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((DynamicObject) e.getRubyException())), (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
+                        for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((DynamicObject) e.getRubyException())), (DynamicObject) rubyException, ExceptionNodes.EXCEPTION_LAYOUT.getBacktrace((DynamicObject) rubyException))) {
                             System.console().writer().println(line);
                         }
                     }

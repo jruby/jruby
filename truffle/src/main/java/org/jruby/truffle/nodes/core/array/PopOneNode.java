@@ -42,28 +42,28 @@ public abstract class PopOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isIntArray(array)"})
     public Object popOneInteger(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isLongArray(array)"})
     public Object popOneLong(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isDoubleArray(array)"})
     public Object popOneDouble(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
     }
 
     @Specialization(guards = {"isRubyArray(array)", "!isEmptyArray(array)", "isObjectArray(array)"})
     public Object popOneObject(DynamicObject array) {
-        return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.getStore(array)));
+        return popOneGeneric(array, ArrayMirror.reflect((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array)));
     }
 
     private Object popOneGeneric(DynamicObject array, ArrayMirror storeMirror) {
-        final int size = ArrayNodes.getSize(array);
+        final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array);
         final Object value = storeMirror.get(size - 1);
-        ArrayNodes.setSize(array, size - 1);
+        ArrayNodes.ARRAY_LAYOUT.setSize(array, size - 1);
         return value;
     }
 

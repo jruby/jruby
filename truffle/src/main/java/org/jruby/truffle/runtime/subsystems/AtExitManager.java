@@ -66,7 +66,7 @@ public class AtExitManager {
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, (DynamicObject) rubyException, ExceptionNodes.getBacktrace((DynamicObject) rubyException))) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, (DynamicObject) rubyException, ExceptionNodes.EXCEPTION_LAYOUT.getBacktrace((DynamicObject) rubyException))) {
                     System.err.println(line);
                 }
             } catch (Exception e) {

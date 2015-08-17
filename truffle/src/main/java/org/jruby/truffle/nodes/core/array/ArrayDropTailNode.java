@@ -42,10 +42,10 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public DynamicObject getHeadIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), 0, ArrayNodes.getSize(array) - index), ArrayNodes.getSize(array) - index);
+            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), 0, ArrayNodes.ARRAY_LAYOUT.getSize(array) - index), ArrayNodes.ARRAY_LAYOUT.getSize(array) - index);
         }
     }
 
@@ -53,11 +53,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public DynamicObject geHeadLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            final int size = ArrayNodes.getSize(array) - index;
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), 0, size), size);
+            final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array) - index;
+            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), 0, size), size);
         }
     }
 
@@ -65,11 +65,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public DynamicObject getHeadFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            final int size = ArrayNodes.getSize(array) - index;
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), 0, size), size);
+            final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array) - index;
+            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), 0, size), size);
         }
     }
 
@@ -77,11 +77,11 @@ public abstract class ArrayDropTailNode extends RubyNode {
     public DynamicObject getHeadObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
+        if (index >= ArrayNodes.ARRAY_LAYOUT.getSize(array)) {
             return createEmptyArray();
         } else {
-            final int size = ArrayNodes.getSize(array) - index;
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), 0, size), size);
+            final int size = ArrayNodes.ARRAY_LAYOUT.getSize(array) - index;
+            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), 0, size), size);
         }
     }
 

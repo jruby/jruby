@@ -332,7 +332,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, BindingNodes.getSelf(binding), BindingNodes.getFrame(binding), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, BindingNodes.BINDING_LAYOUT.getSelf(binding), BindingNodes.BINDING_LAYOUT.getFrame(binding), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
@@ -428,7 +428,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {
         assert RubyGuards.isRubyEncoding(encoding);
-        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.getName(encoding)));
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(EncodingNodes.ENCODING_LAYOUT.getName(encoding)));
     }
 
     public org.jruby.RubyString toJRubyString(DynamicObject string) {

@@ -382,7 +382,7 @@ public abstract class TrufflePrimitiveNodes {
         private String[] toStrings(DynamicObject array) {
             assert RubyGuards.isRubyArray(array);
 
-            final String[] strings = new String[ArrayNodes.getSize(array)];
+            final String[] strings = new String[ArrayNodes.ARRAY_LAYOUT.getSize(array)];
 
             int n = 0;
 
@@ -487,7 +487,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
-            String name = MethodNodes.getMethod(rubyMethod).getName();
+            String name = MethodNodes.METHOD_LAYOUT.getMethod(rubyMethod).getName();
             getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }

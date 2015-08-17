@@ -52,7 +52,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -72,7 +72,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -92,7 +92,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -105,7 +105,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
             writeNode.execute((DynamicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
 
         return value;

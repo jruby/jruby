@@ -68,7 +68,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public DynamicObject readIntInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + length), length);
+                Arrays.copyOfRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -76,7 +76,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public DynamicObject readLongInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + length), length);
+                Arrays.copyOfRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -84,7 +84,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public DynamicObject readDoubleInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + length), length);
+                Arrays.copyOfRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + length), length);
     }
 
     @Specialization(
@@ -92,7 +92,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     )
     public DynamicObject readObjectInBounds(DynamicObject array, int index, int length) {
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + length), length);
+                Arrays.copyOfRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + length), length);
     }
 
     // Reading beyond upper bounds on an array with actual storage needs clamping
@@ -101,46 +101,46 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isIntArray(array)"}
     )
     public DynamicObject readIntOutOfBounds(DynamicObject array, int index, int length) {
-        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.ARRAY_LAYOUT.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((int[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isLongArray(array)"}
     )
     public DynamicObject readLongOutOfBounds(DynamicObject array, int index, int length) {
-        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.ARRAY_LAYOUT.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((long[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isDoubleArray(array)"}
     )
     public DynamicObject readDoubleOutOfBounds(DynamicObject array, int index, int length) {
-        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.ARRAY_LAYOUT.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((double[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     @Specialization(
             guards={"isRubyArray(array)", "indexInBounds(array, index)", "lengthPositive(length)", "!endInBounds(array, index, length)", "isObjectArray(array)"}
     )
     public DynamicObject readObjectOutOfBounds(DynamicObject array, int index, int length) {
-        final int clampedLength = Math.min(ArrayNodes.getSize(array), index + length) - index;
+        final int clampedLength = Math.min(ArrayNodes.ARRAY_LAYOUT.getSize(array), index + length) - index;
 
         return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array),
-                Arrays.copyOfRange((Object[]) ArrayNodes.getStore(array), index, index + clampedLength), clampedLength);
+                Arrays.copyOfRange((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(array), index, index + clampedLength), clampedLength);
     }
 
     // Guards
 
     protected static boolean indexInBounds(DynamicObject array, int index) {
-        return index >= 0 && index <= ArrayNodes.getSize(array);
+        return index >= 0 && index <= ArrayNodes.ARRAY_LAYOUT.getSize(array);
     }
 
     protected static boolean lengthPositive(int length) {
@@ -148,7 +148,7 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
     }
 
     protected static boolean endInBounds(DynamicObject array, int index, int length) {
-        return index + length < ArrayNodes.getSize(array);
+        return index + length < ArrayNodes.ARRAY_LAYOUT.getSize(array);
     }
 
 }

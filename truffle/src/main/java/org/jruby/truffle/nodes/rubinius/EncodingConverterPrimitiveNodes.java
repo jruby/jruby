@@ -98,7 +98,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
 
             final boolean changeOffset = (offset == 0);
             final boolean growOutputBuffer = (size == -1);
@@ -179,7 +179,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
             final int putbackable = ec.putbackable();
 
             return putback(encodingConverter, putbackable < maxBytes ? putbackable : maxBytes);
@@ -189,7 +189,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, NotProvided maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
 
             return putback(encodingConverter, ec.putbackable());
         }
@@ -199,7 +199,7 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#putback.
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
 
             final ByteList bytes = new ByteList(n);
             ec.putback(bytes.getUnsafeBytes(), bytes.getBegin(), n);
@@ -229,7 +229,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
             final EConv.LastError lastError = ec.lastError;
 
             if (lastError.getResult() != EConvResult.InvalidByteSequence &&
@@ -279,7 +279,7 @@ public abstract class EncodingConverterPrimitiveNodes {
         public Object encodingConverterLastError(DynamicObject encodingConverter) {
             CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = EncodingConverterNodes.getEConv(encodingConverter);
+            final EConv ec = EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
 
             final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 

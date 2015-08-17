@@ -37,14 +37,6 @@ public abstract class EncodingConverterNodes {
 
     public static final EncodingConverterLayout ENCODING_CONVERTER_LAYOUT = EncodingConverterLayoutImpl.INSTANCE;
 
-    public static EConv getEConv(DynamicObject encodingConverter) {
-        return ENCODING_CONVERTER_LAYOUT.getEconv(encodingConverter);
-    }
-
-    public static void setEConv(DynamicObject encodingConverter, EConv econv) {
-        ENCODING_CONVERTER_LAYOUT.setEconv(encodingConverter, econv);
-    }
-
     public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
         return ENCODING_CONVERTER_LAYOUT.createEncodingConverter(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), econv);
     }
@@ -97,7 +89,7 @@ public abstract class EncodingConverterNodes {
             econv.sourceEncoding = encs[0];
             econv.destinationEncoding = encs[1];
 
-            setEConv(self, econv);
+            ENCODING_CONVERTER_LAYOUT.setEconv(self, econv);
 
             return nil();
         }

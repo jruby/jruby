@@ -60,26 +60,6 @@ public abstract class IOBufferPrimitiveNodes {
 
     public static final IOBufferLayout IO_BUFFER_LAYOUT = IOBufferLayoutImpl.INSTANCE;
 
-    public static void setWriteSynced(DynamicObject io, boolean writeSynced) {
-        IO_BUFFER_LAYOUT.setWriteSynced(io, writeSynced);
-    }
-
-    private static DynamicObject getStorage(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getStorage(io);
-    }
-
-    private static int getUsed(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getUsed(io);
-    }
-
-    public static void setUsed(DynamicObject io, int used) {
-        IO_BUFFER_LAYOUT.setUsed(io, used);
-    }
-
-    private static int getTotal(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getTotal(io);
-    }
-
     @RubiniusPrimitive(name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -109,23 +89,23 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
-            setWriteSynced(ioBuffer, false);
+            IO_BUFFER_LAYOUT.setWriteSynced(ioBuffer, false);
 
             final ByteList byteList = StringNodes.getByteList(string);
             int stringSize = byteList.realSize() - startPosition;
-            final int usedSpace = getUsed(ioBuffer);
+            final int usedSpace = IO_BUFFER_LAYOUT.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
             if (stringSize > availableSpace) {
                 stringSize = availableSpace;
             }
 
-            ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
+            ByteList storage = ByteArrayNodes.BYTE_ARRAY_LAYOUT.getBytes(IO_BUFFER_LAYOUT.getStorage(ioBuffer));
 
             // Data is copied here - can we do something COW?
             System.arraycopy(byteList.unsafeBytes(), byteList.begin() + startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
 
-            setUsed(ioBuffer, usedSpace + stringSize);
+            IO_BUFFER_LAYOUT.setUsed(ioBuffer, usedSpace + stringSize);
 
             return stringSize;
         }
@@ -141,7 +121,7 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
-            final int fd = IOPrimitiveNodes.getDescriptor(io);
+            final int fd = IOPrimitiveNodes.IO_LAYOUT.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
             final byte[] readBuffer = new byte[STACK_BUF_SZ];
@@ -160,11 +140,11 @@ public abstract class IOBufferPrimitiveNodes {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
                 }
-                final int used = getUsed(ioBuffer);
-                final ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
+                final int used = IO_BUFFER_LAYOUT.getUsed(ioBuffer);
+                final ByteList storage = ByteArrayNodes.BYTE_ARRAY_LAYOUT.getBytes(IO_BUFFER_LAYOUT.getStorage(ioBuffer));
                 System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
                 storage.setRealSize(used + bytesRead);
-                setUsed(ioBuffer, used + bytesRead);
+                IO_BUFFER_LAYOUT.setUsed(ioBuffer, used + bytesRead);
             }
 
             return bytesRead;
@@ -201,8 +181,8 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         private int left(VirtualFrame frame, DynamicObject ioBuffer) {
-            final int total = getTotal(ioBuffer);
-            final int used = getUsed(ioBuffer);
+            final int total = IO_BUFFER_LAYOUT.getTotal(ioBuffer);
+            final int used = IO_BUFFER_LAYOUT.getUsed(ioBuffer);
             return total - used;
         }
 

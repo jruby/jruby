@@ -25,7 +25,7 @@ public class SetTopLevelBindingNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final DynamicObject binding = BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
-        ModuleNodes.getFields(getContext().getCoreLibrary().getObjectClass()).setConstant(this, "TOPLEVEL_BINDING", binding);
+        ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getObjectClass()).setConstant(this, "TOPLEVEL_BINDING", binding);
         return nil();
     }
 

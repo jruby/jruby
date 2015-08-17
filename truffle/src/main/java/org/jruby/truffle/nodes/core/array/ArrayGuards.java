@@ -18,34 +18,34 @@ public class ArrayGuards {
 
     public static boolean isNullArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) == null;
+        return ArrayNodes.ARRAY_LAYOUT.getStore(array) == null;
     }
 
     public static boolean isIntArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof int[];
+        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof int[];
     }
 
     public static boolean isLongArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof long[];
+        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof long[];
     }
 
     public static boolean isDoubleArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof double[];
+        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof double[];
     }
 
     public static boolean isObjectArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof Object[];
+        return ArrayNodes.ARRAY_LAYOUT.getStore(array) instanceof Object[];
     }
 
     // Higher level properties
 
     public static boolean isEmptyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getSize(array) == 0;
+        return ArrayNodes.ARRAY_LAYOUT.getSize(array) == 0;
     }
 
 }

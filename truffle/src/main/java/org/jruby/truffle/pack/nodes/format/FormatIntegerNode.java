@@ -53,7 +53,7 @@ public abstract class FormatIntegerNode extends PackNode {
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
     public ByteList format(DynamicObject value) {
-        final BigInteger bigInteger = BignumNodes.getBigIntegerValue(value);
+        final BigInteger bigInteger = BignumNodes.BIGNUM_LAYOUT.getValue(value);
 
         String formatted;
 

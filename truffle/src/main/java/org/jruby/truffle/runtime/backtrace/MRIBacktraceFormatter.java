@@ -39,7 +39,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                 if (exception != null) {
                     assert RubyGuards.isRubyException(exception);
 
-                    lines.add(String.format("%s (%s)", ExceptionNodes.getMessage(exception), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
+                    lines.add(String.format("%s (%s)", ExceptionNodes.EXCEPTION_LAYOUT.getMessage(exception), ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
                 }
             } else {
                 lines.add(formatInLine(context, activations, exception));
@@ -89,16 +89,16 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                 if (RubyGuards.isRubyString(messageObject)) {
                     message = messageObject.toString();
                 } else {
-                    message = ExceptionNodes.getMessage(exception).toString();
+                    message = ExceptionNodes.EXCEPTION_LAYOUT.getMessage(exception).toString();
                 }
             } catch (RaiseException e) {
-                message = ExceptionNodes.getMessage(exception).toString();
+                message = ExceptionNodes.EXCEPTION_LAYOUT.getMessage(exception).toString();
             }
 
             builder.append(": ");
             builder.append(message);
             builder.append(" (");
-            builder.append(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(exception)).getName());
+            builder.append(ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(exception)).getName());
             builder.append(")");
         }
 

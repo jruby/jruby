@@ -41,25 +41,12 @@ public abstract class ExceptionNodes {
 
     public static final BacktraceFormatter BACKTRACE_FORMATTER = new BacktraceFormatter();
 
-    // TODO (eregon 16 Apr. 2015): MRI does a dynamic calls to "message"
-    public static Object getMessage(DynamicObject exception) {
-        return EXCEPTION_LAYOUT.getMessage(exception);
-    }
-
-    public static Backtrace getBacktrace(DynamicObject exception) {
-        return EXCEPTION_LAYOUT.getBacktrace(exception);
-    }
-
-    public static void setBacktrace(DynamicObject exception, Backtrace backtrace) {
-        EXCEPTION_LAYOUT.setBacktrace(exception, backtrace);
-    }
-
     @TruffleBoundary
     public static DynamicObject asRubyStringArray(DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
 
-        assert getBacktrace(exception) != null;
-        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, getBacktrace(exception));
+        assert EXCEPTION_LAYOUT.getBacktrace(exception) != null;
+        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, EXCEPTION_LAYOUT.getBacktrace(exception));
 
         final Object[] array = new Object[lines.length];
 
@@ -117,7 +104,7 @@ public abstract class ExceptionNodes {
         public Object backtrace(DynamicObject exception) {
             if (readCustomBacktrace.isSet(exception)) {
                 return readCustomBacktrace.execute(exception);
-            } else if (getBacktrace(exception) != null) {
+            } else if (EXCEPTION_LAYOUT.getBacktrace(exception) != null) {
                 return asRubyStringArray(exception);
             } else {
                 return nil();
@@ -142,7 +129,7 @@ public abstract class ExceptionNodes {
         @Specialization
         public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
-            setBacktrace(exception, backtrace);
+            EXCEPTION_LAYOUT.setBacktrace(exception, backtrace);
             return nil();
         }
 
@@ -157,7 +144,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public Object message(DynamicObject exception) {
-            return getMessage(exception);
+            return EXCEPTION_LAYOUT.getMessage(exception);
         }
 
     }

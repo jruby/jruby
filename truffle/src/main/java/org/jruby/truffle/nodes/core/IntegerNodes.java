@@ -148,7 +148,7 @@ public abstract class IntegerNodes {
         public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
                 @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 
-            for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.getBigIntegerValue(n)) < 0; i = i.add(BigInteger.ONE)) {
+            for (BigInteger i = BigInteger.ZERO; i.compareTo(BignumNodes.BIGNUM_LAYOUT.getValue(n)) < 0; i = i.add(BigInteger.ONE)) {
                 yield(frame, block, fixnumOrBignumNode.fixnumOrBignum(i));
             }
 

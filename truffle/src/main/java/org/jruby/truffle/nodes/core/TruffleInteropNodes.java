@@ -168,7 +168,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = SymbolNodes.SYMBOL_LAYOUT.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier);
         }
@@ -212,7 +212,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = SymbolNodes.SYMBOL_LAYOUT.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier, value);
         }

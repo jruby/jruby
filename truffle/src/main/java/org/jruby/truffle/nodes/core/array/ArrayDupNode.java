@@ -48,32 +48,32 @@ public abstract class ArrayDupNode extends RubyNode {
     public DynamicObject dupIntegerFixnum(DynamicObject from) {
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((int[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
-                ArrayNodes.getSize(from));
+                Arrays.copyOf((int[]) ArrayNodes.ARRAY_LAYOUT.getStore(from), ArrayNodes.ARRAY_LAYOUT.getSize(from)),
+                ArrayNodes.ARRAY_LAYOUT.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
     public DynamicObject dupLongFixnum(DynamicObject from) {
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((long[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
-                ArrayNodes.getSize(from));
+                Arrays.copyOf((long[]) ArrayNodes.ARRAY_LAYOUT.getStore(from), ArrayNodes.ARRAY_LAYOUT.getSize(from)),
+                ArrayNodes.ARRAY_LAYOUT.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
     public DynamicObject dupFloat(DynamicObject from) {
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((double[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
-                ArrayNodes.getSize(from));
+                Arrays.copyOf((double[]) ArrayNodes.ARRAY_LAYOUT.getStore(from), ArrayNodes.ARRAY_LAYOUT.getSize(from)),
+                ArrayNodes.ARRAY_LAYOUT.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
     public DynamicObject dupObject(DynamicObject from) {
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((Object[]) ArrayNodes.getStore(from), ArrayNodes.getSize(from)),
-                ArrayNodes.getSize(from));
+                Arrays.copyOf((Object[]) ArrayNodes.ARRAY_LAYOUT.getStore(from), ArrayNodes.ARRAY_LAYOUT.getSize(from)),
+                ArrayNodes.ARRAY_LAYOUT.getSize(from));
     }
 
 }

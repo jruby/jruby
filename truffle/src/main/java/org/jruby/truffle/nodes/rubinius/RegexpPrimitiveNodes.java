@@ -39,7 +39,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public boolean fixedEncoding(DynamicObject regexp) {
-            return RegexpNodes.getOptions(regexp).isFixed();
+            return RegexpNodes.REGEXP_LAYOUT.getOptions(regexp).isFixed();
         }
 
     }
@@ -82,7 +82,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = "isInitialized(regexp)")
         public int options(DynamicObject regexp) {
-            return RegexpNodes.getOptions(regexp).toOptions();
+            return RegexpNodes.REGEXP_LAYOUT.getOptions(regexp).toOptions();
         }
 
         @Specialization(guards = "!isInitialized(regexp)")
@@ -133,11 +133,11 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = StringNodes.getByteList(string);
-            final ByteList bl = RegexpNodes.getSource(regexp);
+            final ByteList bl = RegexpNodes.REGEXP_LAYOUT.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), RegexpNodes.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), RegexpNodes.REGEXP_LAYOUT.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {

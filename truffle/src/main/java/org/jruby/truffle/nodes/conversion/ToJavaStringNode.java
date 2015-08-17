@@ -33,7 +33,7 @@ public abstract class ToJavaStringNode extends RubyNode {
     @TruffleBoundary
     @Specialization(guards = "isRubySymbol(symbol)")
     protected String toJavaStringSymbol(DynamicObject symbol) {
-        return SymbolNodes.getString(symbol);
+        return SymbolNodes.SYMBOL_LAYOUT.getString(symbol);
     }
 
     @TruffleBoundary

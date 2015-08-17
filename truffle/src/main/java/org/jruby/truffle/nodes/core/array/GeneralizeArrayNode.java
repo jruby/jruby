@@ -39,7 +39,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)"}
     )
     public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
-        ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
+        ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.ARRAY_LAYOUT.getSize(array));
         return array;
     }
 
@@ -47,8 +47,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
-        final int[] intStore = (int[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final int[] intStore = (int[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.ARRAY_LAYOUT.getSize(array));
         return array;
     }
 
@@ -56,8 +56,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
-        final long[] intStore = (long[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final long[] intStore = (long[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.ARRAY_LAYOUT.getSize(array));
         return array;
     }
 
@@ -65,8 +65,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
-        final double[] intStore = (double[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final double[] intStore = (double[]) ArrayNodes.ARRAY_LAYOUT.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.ARRAY_LAYOUT.getSize(array));
         return array;
     }
 

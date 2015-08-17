@@ -99,14 +99,6 @@ public abstract class BasicObjectNodes {
         return receiver.getShape().hasProperty(name);
     }
 
-    public static DynamicObject getMetaClass(DynamicObject object) {
-        return BASIC_OBJECT_LAYOUT.getMetaClass(object);
-    }
-
-    public static void setMetaClass(DynamicObject object, DynamicObject metaClass) {
-        BASIC_OBJECT_LAYOUT.setMetaClass(object, metaClass);
-    }
-
     @CompilerDirectives.TruffleBoundary
     public static long verySlowGetObjectID(DynamicObject object) {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
@@ -133,7 +125,7 @@ public abstract class BasicObjectNodes {
 
     public static void visitObjectGraph(DynamicObject object, ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(object)) {
-            visitObjectGraph(getMetaClass(object), visitor);
+            visitObjectGraph(BASIC_OBJECT_LAYOUT.getMetaClass(object), visitor);
 
             for (Object instanceVariable : getInstanceVariables(object).values()) {
                 if (instanceVariable instanceof DynamicObject) {
@@ -163,11 +155,11 @@ public abstract class BasicObjectNodes {
                 }
             }
         } else if (RubyGuards.isRubyBinding(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(BindingNodes.getFrame(rubyBasicObject), visitor);
+            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(BindingNodes.BINDING_LAYOUT.getFrame(rubyBasicObject), visitor);
         } else if (RubyGuards.isRubyProc(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(ProcNodes.getDeclarationFrame(rubyBasicObject), visitor);
+            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(ProcNodes.PROC_LAYOUT.getDeclarationFrame(rubyBasicObject), visitor);
         } else if (RubyGuards.isRubyMatchData(rubyBasicObject)) {
-            for (Object object : MatchDataNodes.getFields(rubyBasicObject).values) {
+            for (Object object : MatchDataNodes.MATCH_DATA_LAYOUT.getFields(rubyBasicObject).values) {
                 if (object instanceof DynamicObject) {
                     visitObjectGraph(((DynamicObject) object), visitor);
                 }
@@ -181,14 +173,14 @@ public abstract class BasicObjectNodes {
                 visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject)), visitor);
             }
         } else if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            ModuleNodes.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
+            ModuleNodes.MODULE_LAYOUT.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
     public static RubyContext getContext(DynamicObject rubyBasicObject) {
         if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            return ModuleNodes.getFields(rubyBasicObject).getContext();
+            return ModuleNodes.MODULE_LAYOUT.getFields(rubyBasicObject).getContext();
         } else {
             return getContext(getLogicalClass(rubyBasicObject));
         }
@@ -368,11 +360,11 @@ public abstract class BasicObjectNodes {
             if (lastCallWasVCall()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
-                                SymbolNodes.getString(name),
-                                ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
+                                SymbolNodes.SYMBOL_LAYOUT.getString(name),
+                                ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
                                 this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.getString(name), self, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.SYMBOL_LAYOUT.getString(name), self, this));
             }
         }
 

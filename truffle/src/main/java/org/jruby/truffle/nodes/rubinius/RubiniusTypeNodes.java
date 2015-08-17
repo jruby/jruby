@@ -31,7 +31,7 @@ public abstract class RubiniusTypeNodes {
 
         @Specialization(guards = {"isRubyModule(module)", "isRubyProc(block)"})
         public DynamicObject eachAncestor(VirtualFrame frame, DynamicObject module, DynamicObject block) {
-            for (DynamicObject ancestor : ModuleNodes.getFields(module).ancestors()) {
+            for (DynamicObject ancestor : ModuleNodes.MODULE_LAYOUT.getFields(module).ancestors()) {
                 yield(frame, block, ancestor);
             }
             return nil();

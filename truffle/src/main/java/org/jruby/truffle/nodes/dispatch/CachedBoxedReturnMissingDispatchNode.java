@@ -33,7 +33,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedClass = expectedClass;
-        unmodifiedAssumption = ModuleNodes.getFields(expectedClass).getUnmodifiedAssumption();
+        unmodifiedAssumption = ModuleNodes.MODULE_LAYOUT.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 
@@ -41,7 +41,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                BasicObjectNodes.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                BasicObjectNodes.BASIC_OBJECT_LAYOUT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
     }
 
     @Override

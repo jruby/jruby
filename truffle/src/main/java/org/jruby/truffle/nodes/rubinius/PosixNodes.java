@@ -226,7 +226,7 @@ public abstract class PosixNodes {
         public int getGroups(int max, DynamicObject pointer) {
             final long[] groups = Platform.getPlatform().getGroups(null);
 
-            final Pointer pointerValue = PointerNodes.getPointer(pointer);
+            final Pointer pointerValue = PointerNodes.POINTER_LAYOUT.getPointer(pointer);
 
             for (int n = 0; n < groups.length && n < max; n++) {
                 // TODO CS 16-May-15 this is platform dependent
@@ -249,7 +249,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(pointer)")
         public int getrlimit(int resource, DynamicObject pointer) {
-            final int result = posix().getrlimit(resource, PointerNodes.getPointer(pointer));
+            final int result = posix().getrlimit(resource, PointerNodes.POINTER_LAYOUT.getPointer(pointer));
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -289,7 +289,7 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isRubyPointer(pointer)")
         public DynamicObject memset(DynamicObject pointer, int c, long length) {
-            PointerNodes.getPointer(pointer).setMemory(0, length, (byte) c);
+            PointerNodes.POINTER_LAYOUT.getPointer(pointer).setMemory(0, length, (byte) c);
             return pointer;
         }
 
@@ -323,7 +323,7 @@ public abstract class PosixNodes {
             final ByteList byteList = StringNodes.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 
-            final int result = posix().readlink(pathString, PointerNodes.getPointer(pointer), bufsize);
+            final int result = posix().readlink(pathString, PointerNodes.POINTER_LAYOUT.getPointer(pointer), bufsize);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -430,7 +430,7 @@ public abstract class PosixNodes {
             final ByteList byteList = StringNodes.getByteList(path);
             final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
-            final int result = posix().utimes(pathString, PointerNodes.getPointer(pointer));
+            final int result = posix().utimes(pathString, PointerNodes.POINTER_LAYOUT.getPointer(pointer));
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -574,7 +574,7 @@ public abstract class PosixNodes {
 
         @Specialization(guards = "isRubyPointer(pointer)")
         public int setrlimit(int resource, DynamicObject pointer) {
-            final int result = posix().setrlimit(resource, PointerNodes.getPointer(pointer));
+            final int result = posix().setrlimit(resource, PointerNodes.POINTER_LAYOUT.getPointer(pointer));
 
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
@@ -862,8 +862,8 @@ public abstract class PosixNodes {
             return nativeSockets().getaddrinfo(
                     StringNodes.getByteList(hostName),
                     StringNodes.getByteList(serviceName),
-                    PointerNodes.getPointer(hintsPointer),
-                    PointerNodes.getPointer(resultsPointer));
+                    PointerNodes.POINTER_LAYOUT.getPointer(hintsPointer),
+                    PointerNodes.POINTER_LAYOUT.getPointer(resultsPointer));
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -872,8 +872,8 @@ public abstract class PosixNodes {
             return nativeSockets().getaddrinfo(
                     StringNodes.getByteList(hostName),
                     null,
-                    PointerNodes.getPointer(hintsPointer),
-                    PointerNodes.getPointer(resultsPointer));
+                    PointerNodes.POINTER_LAYOUT.getPointer(hintsPointer),
+                    PointerNodes.POINTER_LAYOUT.getPointer(resultsPointer));
         }
 
     }
@@ -888,7 +888,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(address)")
         public int connect(int socket, DynamicObject address, int address_len) {
-            return nativeSockets().connect(socket, PointerNodes.getPointer(address), address_len);
+            return nativeSockets().connect(socket, PointerNodes.POINTER_LAYOUT.getPointer(address), address_len);
         }
 
     }
@@ -903,7 +903,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(addrInfo)")
         public DynamicObject freeaddrinfo(DynamicObject addrInfo) {
-            nativeSockets().freeaddrinfo(PointerNodes.getPointer(addrInfo));
+            nativeSockets().freeaddrinfo(PointerNodes.POINTER_LAYOUT.getPointer(addrInfo));
             return nil();
         }
 
@@ -920,11 +920,11 @@ public abstract class PosixNodes {
         @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
             return nativeSockets().getnameinfo(
-                    PointerNodes.getPointer(sa),
+                    PointerNodes.POINTER_LAYOUT.getPointer(sa),
                     salen,
-                    PointerNodes.getPointer(host),
+                    PointerNodes.POINTER_LAYOUT.getPointer(host),
                     hostlen,
-                    PointerNodes.getPointer(serv),
+                    PointerNodes.POINTER_LAYOUT.getPointer(serv),
                     servlen,
                     flags);
         }
@@ -956,7 +956,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(optionValue)")
         public int setsockopt(int socket, int level, int optionName, DynamicObject optionValue, int optionLength) {
-            return nativeSockets().setsockopt(socket, level, optionName, PointerNodes.getPointer(optionValue), optionLength);
+            return nativeSockets().setsockopt(socket, level, optionName, PointerNodes.POINTER_LAYOUT.getPointer(optionValue), optionLength);
         }
 
     }
@@ -971,7 +971,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(address)")
         public int bind(int socket, DynamicObject address, int addressLength) {
-            return nativeSockets().bind(socket, PointerNodes.getPointer(address), addressLength);
+            return nativeSockets().bind(socket, PointerNodes.POINTER_LAYOUT.getPointer(address), addressLength);
         }
 
     }
@@ -1001,7 +1001,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyPointer(name)")
         public int getHostName(DynamicObject name, int nameLength) {
-            return nativeSockets().gethostname(PointerNodes.getPointer(name), nameLength);
+            return nativeSockets().gethostname(PointerNodes.POINTER_LAYOUT.getPointer(name), nameLength);
         }
 
     }
@@ -1016,7 +1016,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getPeerName(int socket, DynamicObject address, DynamicObject addressLength) {
-            return nativeSockets().getpeername(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
+            return nativeSockets().getpeername(socket, PointerNodes.POINTER_LAYOUT.getPointer(address), PointerNodes.POINTER_LAYOUT.getPointer(addressLength));
         }
 
     }
@@ -1031,7 +1031,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(address)", "isRubyPointer(addressLength)"})
         public int getSockName(int socket, DynamicObject address, DynamicObject addressLength) {
-            return nativeSockets().getsockname(socket, PointerNodes.getPointer(address), PointerNodes.getPointer(addressLength));
+            return nativeSockets().getsockname(socket, PointerNodes.POINTER_LAYOUT.getPointer(address), PointerNodes.POINTER_LAYOUT.getPointer(addressLength));
         }
 
     }
@@ -1046,14 +1046,14 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = { "isRubyPointer(optval)", "isRubyPointer(optlen)" })
         public int getSockOptions(int sockfd, int level, int optname, DynamicObject optval, DynamicObject optlen) {
-            return nativeSockets().getsockopt(sockfd, level, optname, PointerNodes.getPointer(optval), PointerNodes.getPointer(optlen));
+            return nativeSockets().getsockopt(sockfd, level, optname, PointerNodes.POINTER_LAYOUT.getPointer(optval), PointerNodes.POINTER_LAYOUT.getPointer(optlen));
         }
 
         // This should probably done at a higher-level, but rubysl/socket does not handle it.
         @Specialization(guards = { "isRubySymbol(level)", "isRubySymbol(optname)", "isRubyPointer(optval)", "isRubyPointer(optlen)" })
         public int getSockOptionsSymbols(VirtualFrame frame, int sockfd, DynamicObject level, DynamicObject optname, DynamicObject optval, DynamicObject optlen) {
-            int levelInt = (int) ruby(frame, "Socket::SOL_" + SymbolNodes.getString(level));
-            int optnameInt = (int) ruby(frame, "Socket::SO_" + SymbolNodes.getString(optname));
+            int levelInt = (int) ruby(frame, "Socket::SOL_" + SymbolNodes.SYMBOL_LAYOUT.getString(level));
+            int optnameInt = (int) ruby(frame, "Socket::SO_" + SymbolNodes.SYMBOL_LAYOUT.getString(optname));
             return getSockOptions(sockfd, levelInt, optnameInt, optval, optlen);
         }
 

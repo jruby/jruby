@@ -84,7 +84,7 @@ public abstract class CmpIntNode extends RubyNode {
 
     @Specialization(guards = "isRubyBignum(value)")
     public int cmpBignum(DynamicObject value, Object receiver, Object other) {
-        return BignumNodes.getBigIntegerValue(value).signum();
+        return BignumNodes.BIGNUM_LAYOUT.getValue(value).signum();
     }
 
     @TruffleBoundary
@@ -93,8 +93,8 @@ public abstract class CmpIntNode extends RubyNode {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
-                        ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
-                        ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
+                        ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
+                        ModuleNodes.MODULE_LAYOUT.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
         );
     }
 

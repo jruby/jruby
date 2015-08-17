@@ -65,7 +65,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.PROC_LAYOUT.getCallTargetForBlocks(traceFunc)));
             } else {
                 callNode = null;
             }
@@ -85,7 +85,7 @@ public class TraceNode extends RubyNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(ProcNodes.getMethod(traceFunc), ProcNodes.getDeclarationFrame(traceFunc), ProcNodes.getSelfCapturedInScope(traceFunc), ProcNodes.getBlockCapturedInScope(traceFunc), args));
+                    callNode.call(frame, RubyArguments.pack(ProcNodes.PROC_LAYOUT.getMethod(traceFunc), ProcNodes.PROC_LAYOUT.getDeclarationFrame(traceFunc), ProcNodes.PROC_LAYOUT.getSelf(traceFunc), ProcNodes.PROC_LAYOUT.getBlock(traceFunc), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

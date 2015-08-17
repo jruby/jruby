@@ -54,7 +54,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             definingModule = ModuleNodes.createRubyModule(getContext(), getContext().getCoreLibrary().getModuleClass(), lexicalParent, name, this);
         } else {
             Object module = constant.getValue();
-            if (!(RubyGuards.isRubyModule(module)) || !(RubyGuards.isRubyModule(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.getFields((DynamicObject) module).rubyModuleObject))) {
+            if (!(RubyGuards.isRubyModule(module)) || !(RubyGuards.isRubyModule(ModuleNodes.MODULE_LAYOUT.getFields((DynamicObject) module).rubyModuleObject) && !RubyGuards.isRubyClass(ModuleNodes.MODULE_LAYOUT.getFields((DynamicObject) module).rubyModuleObject))) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorIsNotA(name, "module", this));
             }
             definingModule = (DynamicObject) module;
@@ -76,13 +76,13 @@ public class DefineOrGetModuleNode extends RubyNode {
 
     @TruffleBoundary
     protected RubyConstant lookupForExistingModule(DynamicObject lexicalParent) {
-        RubyConstant constant = ModuleNodes.getFields(lexicalParent).getConstants().get(name);
+        RubyConstant constant = ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).getConstants().get(name);
 
         final DynamicObject objectClass = getContext().getCoreLibrary().getObjectClass();
 
         if (constant == null && lexicalParent == objectClass) {
-            for (DynamicObject included : ModuleNodes.getFields(objectClass).prependedAndIncludedModules()) {
-                constant = ModuleNodes.getFields(included).getConstants().get(name);
+            for (DynamicObject included : ModuleNodes.MODULE_LAYOUT.getFields(objectClass).prependedAndIncludedModules()) {
+                constant = ModuleNodes.MODULE_LAYOUT.getFields(included).getConstants().get(name);
                 if (constant != null) {
                     break;
                 }
@@ -104,7 +104,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
             // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
             // call or the recursive execute call.
-            ModuleNodes.getFields(lexicalParent).removeConstant(this, name);
+            ModuleNodes.MODULE_LAYOUT.getFields(lexicalParent).removeConstant(this, name);
 
             requireNode.require((DynamicObject) constant.getValue());
 

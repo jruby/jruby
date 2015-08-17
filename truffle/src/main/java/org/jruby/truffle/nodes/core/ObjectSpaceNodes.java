@@ -63,20 +63,20 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
         public Object id2RefLargeFixnum(DynamicObject id) {
-            return BignumNodes.getBigIntegerValue(id).longValue();
+            return BignumNodes.BIGNUM_LAYOUT.getValue(id).longValue();
         }
 
         @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
         public double id2RefFloat(DynamicObject id) {
-            return Double.longBitsToDouble(BignumNodes.getBigIntegerValue(id).longValue());
+            return Double.longBitsToDouble(BignumNodes.BIGNUM_LAYOUT.getValue(id).longValue());
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {
-            return ObjectIDOperations.isLargeFixnumID(BignumNodes.getBigIntegerValue(id));
+            return ObjectIDOperations.isLargeFixnumID(BignumNodes.BIGNUM_LAYOUT.getValue(id));
         }
 
         protected boolean isFloatID(DynamicObject id) {
-            return ObjectIDOperations.isFloatID(BignumNodes.getBigIntegerValue(id));
+            return ObjectIDOperations.isFloatID(BignumNodes.BIGNUM_LAYOUT.getValue(id));
         }
 
     }
@@ -121,7 +121,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         private boolean isHidden(DynamicObject object) {
-            return RubyGuards.isRubyClass(object) && ClassNodes.isSingleton(object);
+            return RubyGuards.isRubyClass(object) && ClassNodes.CLASS_LAYOUT.getIsSingleton(object);
         }
 
     }

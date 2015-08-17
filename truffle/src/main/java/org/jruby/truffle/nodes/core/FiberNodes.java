@@ -37,10 +37,6 @@ public abstract class FiberNodes {
 
     public static final FiberLayout FIBER_LAYOUT = FiberLayoutImpl.INSTANCE;
 
-    public static FiberFields getFields(DynamicObject fiber) {
-        return FIBER_LAYOUT.getFields(fiber);
-    }
-
     public static DynamicObject newRootFiber(DynamicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
         assert RubyGuards.isRubyThread(thread);
         RubyContext context = BasicObjectNodes.getContext(thread);
@@ -50,14 +46,14 @@ public abstract class FiberNodes {
     public static void initialize(final DynamicObject fiber, final DynamicObject block) {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
-        getFields(fiber).name = "Ruby Fiber@" + ProcNodes.getSharedMethodInfo(block).getSourceSection().getShortDescription();
+        FIBER_LAYOUT.getFields(fiber).name = "Ruby Fiber@" + ProcNodes.PROC_LAYOUT.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 handleFiberExceptions(fiber, block);
             }
         });
-        thread.setName(getFields(fiber).name);
+        thread.setName(FIBER_LAYOUT.getFields(fiber).name);
         thread.start();
     }
 
@@ -75,16 +71,16 @@ public abstract class FiberNodes {
                         result = ProcNodes.rootCall(block, args);
                     } finally {
                         // Make sure that other fibers notice we are dead before they gain control back
-                        getFields(fiber).alive = false;
+                        FIBER_LAYOUT.getFields(fiber).alive = false;
                     }
-                    resume(fiber, getFields(fiber).lastResumedByFiber, true, result);
+                    resume(fiber, FIBER_LAYOUT.getFields(fiber).lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
-                    assert !getFields(fiber).isRootFiber;
+                    assert !FIBER_LAYOUT.getFields(fiber).isRootFiber;
                     // Naturally exit the Java thread on catching this
                 } catch (ReturnException e) {
-                    sendMessageTo(getFields(fiber).lastResumedByFiber, new FiberExceptionMessage(BasicObjectNodes.getContext(fiber).getCoreLibrary().unexpectedReturn(null)));
+                    sendMessageTo(FIBER_LAYOUT.getFields(fiber).lastResumedByFiber, new FiberExceptionMessage(BasicObjectNodes.getContext(fiber).getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    sendMessageTo(getFields(fiber).lastResumedByFiber, new FiberExceptionMessage((DynamicObject) e.getRubyException()));
+                    sendMessageTo(FIBER_LAYOUT.getFields(fiber).lastResumedByFiber, new FiberExceptionMessage((DynamicObject) e.getRubyException()));
                 }
             }
         });
@@ -104,24 +100,24 @@ public abstract class FiberNodes {
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void start(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
-        getFields(fiber).thread = Thread.currentThread();
-        BasicObjectNodes.getContext(fiber).getThreadManager().initializeCurrentThread(getFields(fiber).rubyThread);
-        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).registerFiber(fiber);
+        FIBER_LAYOUT.getFields(fiber).thread = Thread.currentThread();
+        BasicObjectNodes.getContext(fiber).getThreadManager().initializeCurrentThread(FIBER_LAYOUT.getFields(fiber).rubyThread);
+        ThreadNodes.getFiberManager(FIBER_LAYOUT.getFields(fiber).rubyThread).registerFiber(fiber);
         BasicObjectNodes.getContext(fiber).getSafepointManager().enterThread();
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public static void cleanup(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
-        getFields(fiber).alive = false;
+        FIBER_LAYOUT.getFields(fiber).alive = false;
         BasicObjectNodes.getContext(fiber).getSafepointManager().leaveThread();
-        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).unregisterFiber(fiber);
-        getFields(fiber).thread = null;
+        ThreadNodes.getFiberManager(FIBER_LAYOUT.getFields(fiber).rubyThread).unregisterFiber(fiber);
+        FIBER_LAYOUT.getFields(fiber).thread = null;
     }
 
     private static void sendMessageTo(DynamicObject fiber, FiberMessage message) {
         assert RubyGuards.isRubyFiber(fiber);
-        getFields(fiber).messageQueue.add(message);
+        FIBER_LAYOUT.getFields(fiber).messageQueue.add(message);
     }
 
     /**
@@ -135,11 +131,11 @@ public abstract class FiberNodes {
         final FiberMessage message = BasicObjectNodes.getContext(fiber).getThreadManager().runUntilResult(new ThreadManager.BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
-                return getFields(fiber).messageQueue.take();
+                return FIBER_LAYOUT.getFields(fiber).messageQueue.take();
             }
         });
 
-        ThreadNodes.getFiberManager(getFields(fiber).rubyThread).setCurrentFiber(fiber);
+        ThreadNodes.getFiberManager(FIBER_LAYOUT.getFields(fiber).rubyThread).setCurrentFiber(fiber);
 
         if (message instanceof FiberExitMessage) {
             throw new FiberExitException();
@@ -147,9 +143,9 @@ public abstract class FiberNodes {
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
             final FiberResumeMessage resumeMessage = (FiberResumeMessage) message;
-            assert BasicObjectNodes.getContext(fiber).getThreadManager().getCurrentThread() == getFields(resumeMessage.getSendingFiber()).rubyThread;
+            assert BasicObjectNodes.getContext(fiber).getThreadManager().getCurrentThread() == FIBER_LAYOUT.getFields(resumeMessage.getSendingFiber()).rubyThread;
             if (!(resumeMessage.isYield())) {
-                getFields(fiber).lastResumedByFiber = resumeMessage.getSendingFiber();
+                FIBER_LAYOUT.getFields(fiber).lastResumedByFiber = resumeMessage.getSendingFiber();
             }
             return resumeMessage.getArgs();
         } else {
@@ -180,13 +176,13 @@ public abstract class FiberNodes {
 
     public static void shutdown(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
-        assert !getFields(fiber).isRootFiber;
+        assert !FIBER_LAYOUT.getFields(fiber).isRootFiber;
         sendMessageTo(fiber, new FiberExitMessage());
     }
 
     public static boolean isAlive(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
-        return getFields(fiber).alive;
+        return FIBER_LAYOUT.getFields(fiber).alive;
     }
 
     public static DynamicObject createRubyFiber(DynamicObject parent, DynamicObject rubyClass, String name) {
@@ -231,7 +227,7 @@ public abstract class FiberNodes {
             }
 
             DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
-            if (getFields(fiber).rubyThread != currentThread) {
+            if (FIBER_LAYOUT.getFields(fiber).rubyThread != currentThread) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
@@ -291,9 +287,9 @@ public abstract class FiberNodes {
         public Object yield(VirtualFrame frame, Object[] args) {
             final DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
             final DynamicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
-            final DynamicObject fiberYieldedTo = getFields(yieldingFiber).lastResumedByFiber;
+            final DynamicObject fiberYieldedTo = FIBER_LAYOUT.getFields(yieldingFiber).lastResumedByFiber;
 
-            if (getFields(yieldingFiber).isRootFiber || fiberYieldedTo == null) {
+            if (FIBER_LAYOUT.getFields(yieldingFiber).isRootFiber || fiberYieldedTo == null) {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 

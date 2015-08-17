@@ -27,24 +27,24 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public String toString() {
-        return SymbolNodes.getString(symbol);
+        return SymbolNodes.SYMBOL_LAYOUT.getString(symbol);
     }
 
     @Override
     public int getCodeRange() {
-        return SymbolNodes.getCodeRange(symbol);
+        return SymbolNodes.SYMBOL_LAYOUT.getCodeRange(symbol);
     }
 
     @CompilerDirectives.TruffleBoundary
     @Override
     public int scanForCodeRange() {
-        final ByteList byteList = SymbolNodes.getByteList(symbol);
+        final ByteList byteList = SymbolNodes.SYMBOL_LAYOUT.getByteList(symbol);
 
-        int cr = SymbolNodes.getCodeRange(symbol);
+        int cr = SymbolNodes.SYMBOL_LAYOUT.getCodeRange(symbol);
 
         if (cr == StringSupport.CR_UNKNOWN) {
             cr = StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
-            SymbolNodes.setCodeRange(symbol, cr);
+            SymbolNodes.SYMBOL_LAYOUT.setCodeRange(symbol, cr);
         }
 
         return cr;
@@ -52,23 +52,23 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public boolean isCodeRangeValid() {
-        return SymbolNodes.getCodeRange(symbol) == StringSupport.CR_VALID;
+        return SymbolNodes.SYMBOL_LAYOUT.getCodeRange(symbol) == StringSupport.CR_VALID;
     }
 
     @Override
     public void setCodeRange(int codeRange) {
-        SymbolNodes.setCodeRange(symbol, codeRange);
+        SymbolNodes.SYMBOL_LAYOUT.setCodeRange(symbol, codeRange);
     }
 
     @Override
     public void clearCodeRange() {
-        SymbolNodes.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
+        SymbolNodes.SYMBOL_LAYOUT.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
     }
 
     @Override
     public void keepCodeRange() {
-        if (SymbolNodes.getCodeRange(symbol) == StringSupport.CR_BROKEN) {
-            SymbolNodes.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
+        if (SymbolNodes.SYMBOL_LAYOUT.getCodeRange(symbol) == StringSupport.CR_BROKEN) {
+            SymbolNodes.SYMBOL_LAYOUT.setCodeRange(symbol, StringSupport.CR_UNKNOWN);
         }
     }
 
@@ -90,12 +90,12 @@ public class SymbolCodeRangeableWrapper implements CodeRangeable {
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
-        return SymbolNodes.getByteList(symbol).getEncoding();
+        return SymbolNodes.SYMBOL_LAYOUT.getByteList(symbol).getEncoding();
     }
 
     @Override
     public ByteList getByteList() {
-        return SymbolNodes.getByteList(symbol);
+        return SymbolNodes.SYMBOL_LAYOUT.getByteList(symbol);
     }
 
 }

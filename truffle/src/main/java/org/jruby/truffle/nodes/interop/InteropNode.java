@@ -538,7 +538,7 @@ public abstract class InteropNode extends RubyNode {
         public ResolvedInteropWriteToSymbolNode(RubyContext context, SourceSection sourceSection, DynamicObject name, int labelIndex, int valueIndex) {
             super(context, sourceSection);
             this.name = name;
-            this.accessName = context.getSymbol(SymbolNodes.getString(name) + "=");
+            this.accessName = context.getSymbol(SymbolNodes.SYMBOL_LAYOUT.getString(name) + "=");
             this.head = new DispatchHeadNode(context, true, false, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
             this.labelIndex = labelIndex;
             this.valueIndex = valueIndex;

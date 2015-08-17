@@ -93,14 +93,6 @@ public abstract class StringNodes {
         return Helpers.decodeByteList(BasicObjectNodes.getContext(string).getRuntime(), getByteList(string));
     }
 
-    public static int getCodeRange(DynamicObject string) {
-        return STRING_LAYOUT.getCodeRange(string);
-    }
-
-    public static void setCodeRange(DynamicObject string, int codeRange) {
-        STRING_LAYOUT.setCodeRange(string, codeRange);
-    }
-
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
         StringCodeRangeableWrapper wrapper = STRING_LAYOUT.getCodeRangeableWrapper(string);
 
@@ -114,26 +106,26 @@ public abstract class StringNodes {
 
     @TruffleBoundary
     public static int scanForCodeRange(DynamicObject string) {
-        int cr = getCodeRange(string);
+        int cr = STRING_LAYOUT.getCodeRange(string);
 
         if (cr == StringSupport.CR_UNKNOWN) {
             cr = slowCodeRangeScan(string);
-            setCodeRange(string, cr);
+            STRING_LAYOUT.setCodeRange(string, cr);
         }
 
         return cr;
     }
 
     public static boolean isCodeRangeValid(DynamicObject string) {
-        return getCodeRange(string) == StringSupport.CR_VALID;
+        return STRING_LAYOUT.getCodeRange(string) == StringSupport.CR_VALID;
     }
 
     public static void clearCodeRange(DynamicObject string) {
-        setCodeRange(string, StringSupport.CR_UNKNOWN);
+        STRING_LAYOUT.setCodeRange(string, StringSupport.CR_UNKNOWN);
     }
 
     public static void keepCodeRange(DynamicObject string) {
-        if (getCodeRange(string) == StringSupport.CR_BROKEN) {
+        if (STRING_LAYOUT.getCodeRange(string) == StringSupport.CR_BROKEN) {
             clearCodeRange(string);
         }
     }
@@ -333,7 +325,7 @@ public abstract class StringNodes {
 
             outputBytes.setEncoding(inputBytes.getEncoding());
             final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
-            setCodeRange(ret, getCodeRange(string));
+            STRING_LAYOUT.setCodeRange(ret, STRING_LAYOUT.getCodeRange(string));
 
             return ret;
         }
@@ -512,20 +504,20 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyBignum(other)")
         public DynamicObject concatBignum(DynamicObject string, DynamicObject other) {
-            if (BignumNodes.getBigIntegerValue(other).signum() < 0) {
+            if (BignumNodes.BIGNUM_LAYOUT.getValue(other).signum() < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
                         getContext().getCoreLibrary().rangeError("bignum out of char range", this));
             }
 
-            return concatNumeric(string, BignumNodes.getBigIntegerValue(other).intValue());
+            return concatNumeric(string, BignumNodes.BIGNUM_LAYOUT.getValue(other).intValue());
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject concatString(DynamicObject string, DynamicObject other) {
-            final int codeRange = getCodeRange(other);
+            final int codeRange = STRING_LAYOUT.getCodeRange(other);
             final int[] ptr_cr_ret = { codeRange };
 
             try {
@@ -539,7 +531,7 @@ public abstract class StringNodes {
                 throw e;
             }
 
-            setCodeRange(other, ptr_cr_ret[0]);
+            STRING_LAYOUT.setCodeRange(other, ptr_cr_ret[0]);
 
             return string;
         }
@@ -907,7 +899,7 @@ public abstract class StringNodes {
 
             getByteList(string).view(0, newLength);
 
-            if (getCodeRange(string) != StringSupport.CR_7BIT) {
+            if (STRING_LAYOUT.getCodeRange(string) != StringSupport.CR_7BIT) {
                 clearCodeRange(string);
             }
 
@@ -1285,7 +1277,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject encoding) {
-            StringNodes.forceEncoding(string, EncodingNodes.getEncoding(encoding));
+            StringNodes.forceEncoding(string, EncodingNodes.ENCODING_LAYOUT.getEncoding(encoding));
             return string;
         }
 
@@ -1381,12 +1373,12 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(self)).getName(), this));
+                        getContext().getCoreLibrary().frozenError(ModuleNodes.MODULE_LAYOUT.getFields(BasicObjectNodes.getLogicalClass(self)).getName(), this));
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
             setByteList(self, getByteList(from).dup());
-            setCodeRange(self, getCodeRange(from));
+            STRING_LAYOUT.setCodeRange(self, STRING_LAYOUT.getCodeRange(from));
 
             return self;
         }
@@ -1417,7 +1409,7 @@ public abstract class StringNodes {
 
             getByteList(self).replace(getByteList(from).bytes());
             getByteList(self).setEncoding(getByteList(from).getEncoding());
-            setCodeRange(self, getCodeRange(from));
+            STRING_LAYOUT.setCodeRange(self, STRING_LAYOUT.getCodeRange(from));
 
             return self;
         }
@@ -1599,7 +1591,7 @@ public abstract class StringNodes {
 
             getByteList(string).replace(getByteList(other).bytes());
             getByteList(string).setEncoding(getByteList(other).getEncoding());
-            setCodeRange(string, getCodeRange(other));
+            STRING_LAYOUT.setCodeRange(string, STRING_LAYOUT.getCodeRange(other));
 
             return string;
         }
@@ -1744,7 +1736,7 @@ public abstract class StringNodes {
 
             final DynamicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
             getByteList(result).setEncoding(getByteList(string).getEncoding());
-            setCodeRange(result, StringSupport.CR_7BIT);
+            STRING_LAYOUT.setCodeRange(result, StringSupport.CR_7BIT);
 
             return result;
         }
@@ -1768,7 +1760,7 @@ public abstract class StringNodes {
 
             final DynamicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
             getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
-            setCodeRange(result, StringSupport.CR_7BIT);
+            STRING_LAYOUT.setCodeRange(result, StringSupport.CR_7BIT);
 
             return result;
         }
@@ -2156,8 +2148,9 @@ public abstract class StringNodes {
             }
 
             getByteList(string).setUnsafeBytes(obytes);
-            if (getCodeRange(string) == StringSupport.CR_UNKNOWN) {
-                setCodeRange(string, single ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+            if (STRING_LAYOUT.getCodeRange(string) == StringSupport.CR_UNKNOWN) {
+                int codeRange = single ? StringSupport.CR_7BIT : StringSupport.CR_VALID;
+                STRING_LAYOUT.setCodeRange(string, codeRange);
             }
 
             return string;
