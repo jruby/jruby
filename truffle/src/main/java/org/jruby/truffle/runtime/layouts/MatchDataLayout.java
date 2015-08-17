@@ -17,9 +17,11 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface MatchDataLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createMatchDataShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createMatchDataShape(DynamicObject logicalClass,
+                                              DynamicObject metaClass);
 
-    DynamicObject createMatchData(DynamicObjectFactory factory, MatchDataNodes.MatchDataFields fields);
+    DynamicObject createMatchData(DynamicObjectFactory factory,
+                                  MatchDataNodes.MatchDataFields fields);
 
     boolean isMatchData(DynamicObject object);
 

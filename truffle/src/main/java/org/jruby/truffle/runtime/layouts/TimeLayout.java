@@ -17,18 +17,19 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface TimeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createTimeShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createTimeShape(DynamicObject logicalClass,
+                                         DynamicObject metaClass);
 
-    DynamicObject createTime(DynamicObjectFactory factory, DateTime dateTime, Object offset);
+    DynamicObject createTime(DynamicObjectFactory factory,
+                             DateTime dateTime,
+                             Object offset);
 
     boolean isTime(DynamicObject object);
 
     DateTime getDateTime(DynamicObject object);
-
     void setDateTime(DynamicObject object, DateTime value);
 
     Object getOffset(DynamicObject object);
-
     void setOffset(DynamicObject object, Object value);
 
 }

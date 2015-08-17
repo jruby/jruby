@@ -18,9 +18,11 @@ import java.math.BigInteger;
 @Layout
 public interface BignumLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createBignumShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createBignumShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createBignum(DynamicObjectFactory factory, BigInteger value);
+    DynamicObject createBignum(DynamicObjectFactory factory,
+                               BigInteger value);
 
     boolean isBignum(DynamicObject object);
 

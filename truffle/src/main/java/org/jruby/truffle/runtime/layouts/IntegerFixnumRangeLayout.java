@@ -16,9 +16,13 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface IntegerFixnumRangeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createIntegerFixnumRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createIntegerFixnumRangeShape(DynamicObject logicalClass,
+                                                       DynamicObject metaClass);
 
-    DynamicObject createIntegerFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, int begin, int end);
+    DynamicObject createIntegerFixnumRange(DynamicObjectFactory factory,
+                                           boolean excludedEnd,
+                                           int begin,
+                                           int end);
 
     boolean isIntegerFixnumRange(DynamicObject object);
 

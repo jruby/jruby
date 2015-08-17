@@ -22,7 +22,8 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 @Layout
 public interface ProcLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createProcShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createProcShape(DynamicObject logicalClass,
+                                         DynamicObject metaClass);
 
     DynamicObject createProc(
             DynamicObjectFactory factory,
@@ -41,35 +42,27 @@ public interface ProcLayout extends BasicObjectLayout {
     ProcNodes.Type getType(DynamicObject object);
 
     SharedMethodInfo getSharedMethodInfo(DynamicObject object);
-
     void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
 
     CallTarget getCallTargetForBlocks(DynamicObject object);
-
     void setCallTargetForBlocks(DynamicObject object, CallTarget value);
 
     CallTarget getCallTargetForProcs(DynamicObject object);
-
     void setCallTargetForProcs(DynamicObject object, CallTarget value);
 
     CallTarget getCallTargetForLambdas(DynamicObject object);
-
     void setCallTargetForLambdas(DynamicObject object, CallTarget value);
 
     MaterializedFrame getDeclarationFrame(DynamicObject object);
-
     void setDeclarationFrame(DynamicObject object, MaterializedFrame value);
 
     InternalMethod getMethod(DynamicObject object);
-
     void setMethod(DynamicObject object, InternalMethod value);
 
     Object getSelf(DynamicObject object);
-
     void setSelf(DynamicObject object, Object value);
 
     DynamicObject getBlock(DynamicObject object);
-
     void setBlock(DynamicObject object, DynamicObject value);
 
 }

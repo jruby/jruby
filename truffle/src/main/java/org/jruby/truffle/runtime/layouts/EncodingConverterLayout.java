@@ -18,14 +18,15 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 @Layout
 public interface EncodingConverterLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createEncodingConverterShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createEncodingConverterShape(DynamicObject logicalClass,
+                                                      DynamicObject metaClass);
 
-    DynamicObject createEncodingConverter(DynamicObjectFactory factory, @Nullable EConv econv);
+    DynamicObject createEncodingConverter(DynamicObjectFactory factory,
+                                          @Nullable EConv econv);
 
     boolean isEncodingConverter(DynamicObject object);
 
     EConv getEconv(DynamicObject object);
-
     void setEconv(DynamicObject object, EConv econv);
 
 }

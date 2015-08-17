@@ -17,9 +17,11 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface FiberLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createFiberShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createFiberShape(DynamicObject logicalClass,
+                                          DynamicObject metaClass);
 
-    DynamicObject createFiber(DynamicObjectFactory factory, FiberNodes.FiberFields fields);
+    DynamicObject createFiber(DynamicObjectFactory factory,
+                              FiberNodes.FiberFields fields);
 
     boolean isFiber(DynamicObject object);
 

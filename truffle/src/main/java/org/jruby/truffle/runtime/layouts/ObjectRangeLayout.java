@@ -17,22 +17,23 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 @Layout
 public interface ObjectRangeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createObjectRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createObjectRangeShape(DynamicObject logicalClass,
+                                                DynamicObject metaClass);
 
-    DynamicObject createObjectRange(DynamicObjectFactory factory, boolean excludedEnd, @Nullable Object begin, @Nullable Object end);
+    DynamicObject createObjectRange(DynamicObjectFactory factory,
+                                    boolean excludedEnd,
+                                    @Nullable Object begin,
+                                    @Nullable Object end);
 
     boolean isObjectRange(DynamicObject object);
 
     boolean getExcludedEnd(DynamicObject object);
-
     void setExcludedEnd(DynamicObject object, boolean value);
 
     Object getBegin(DynamicObject object);
-
     void setBegin(DynamicObject object, Object value);
 
     Object getEnd(DynamicObject object);
-
     void setEnd(DynamicObject object, Object value);
 
 }

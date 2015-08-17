@@ -18,9 +18,11 @@ import java.util.concurrent.BlockingQueue;
 @org.jruby.truffle.om.dsl.api.Layout
 public interface SizedQueueLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createSizedQueueShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createSizedQueueShape(DynamicObject logicalClass,
+                                               DynamicObject metaClass);
 
-    DynamicObject createSizedQueue(DynamicObjectFactory factory, @Nullable BlockingQueue queue);
+    DynamicObject createSizedQueue(DynamicObjectFactory factory,
+                                   @Nullable BlockingQueue queue);
 
     BlockingQueue getQueue(DynamicObject object);
 

@@ -18,18 +18,19 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 @Layout
 public interface BindingLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createBindingShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createBindingShape(DynamicObject logicalClass,
+                                            DynamicObject metaClass);
 
-    DynamicObject createBinding(DynamicObjectFactory factory, @Nullable Object self, @Nullable MaterializedFrame frame);
+    DynamicObject createBinding(DynamicObjectFactory factory,
+                                @Nullable Object self,
+                                @Nullable MaterializedFrame frame);
 
     boolean isBinding(DynamicObject object);
 
     Object getSelf(DynamicObject object);
-
     void setSelf(DynamicObject object, Object self);
 
     MaterializedFrame getFrame(DynamicObject object);
-
     void setFrame(DynamicObject object, MaterializedFrame frame);
 
 }

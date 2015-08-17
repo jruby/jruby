@@ -18,9 +18,11 @@ import org.jruby.util.ByteList;
 @Layout
 public interface ByteArrayLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createByteArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createByteArrayShape(DynamicObject logicalClass,
+                                              DynamicObject metaClass);
 
-    DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes);
+    DynamicObject createByteArray(DynamicObjectFactory factory,
+                                  ByteList bytes);
 
     boolean isByteArray(DynamicObject object);
 

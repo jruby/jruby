@@ -20,24 +20,24 @@ import org.jruby.util.ByteList;
 @Layout
 public interface StringLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createStringShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createStringShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createString(DynamicObjectFactory factory, ByteList byteList, int codeRange, @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
+    DynamicObject createString(DynamicObjectFactory factory,
+                               ByteList byteList,
+                               int codeRange,
+                               @Nullable StringCodeRangeableWrapper codeRangeableWrapper);
 
     boolean isString(ObjectType objectType);
-
     boolean isString(DynamicObject dynamicObject);
 
     ByteList getByteList(DynamicObject object);
-
     void setByteList(DynamicObject object, ByteList byteList);
 
     int getCodeRange(DynamicObject object);
-
     void setCodeRange(DynamicObject object, int codeRange);
 
     StringCodeRangeableWrapper getCodeRangeableWrapper(DynamicObject object);
-
     void setCodeRangeableWrapper(DynamicObject object, StringCodeRangeableWrapper codeRangeableWrapper);
 
 }

@@ -18,9 +18,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Layout
 public interface QueueLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createQueueShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createQueueShape(DynamicObject logicalClass,
+                                          DynamicObject metaClass);
 
-    DynamicObject createQueue(DynamicObjectFactory factory, LinkedBlockingQueue queue);
+    DynamicObject createQueue(DynamicObjectFactory factory,
+                              LinkedBlockingQueue queue);
 
     boolean isQueue(DynamicObject object);
 

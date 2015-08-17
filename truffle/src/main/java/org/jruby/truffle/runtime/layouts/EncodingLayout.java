@@ -18,9 +18,13 @@ import org.jruby.util.ByteList;
 @Layout
 public interface EncodingLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createEncodingShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createEncodingShape(DynamicObject logicalClass,
+                                             DynamicObject metaClass);
 
-    DynamicObject createEncoding(DynamicObjectFactory factory, Encoding encoding, ByteList name, boolean dummy);
+    DynamicObject createEncoding(DynamicObjectFactory factory,
+                                 Encoding encoding,
+                                 ByteList name,
+                                 boolean dummy);
 
     boolean isEncoding(DynamicObject object);
 

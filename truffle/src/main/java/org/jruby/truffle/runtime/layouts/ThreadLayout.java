@@ -17,9 +17,11 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface ThreadLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createThreadShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createThreadShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createThread(DynamicObjectFactory factory, ThreadNodes.ThreadFields fields);
+    DynamicObject createThread(DynamicObjectFactory factory,
+                               ThreadNodes.ThreadFields fields);
 
     boolean isThread(DynamicObject object);
 

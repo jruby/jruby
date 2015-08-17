@@ -19,7 +19,8 @@ import org.jruby.truffle.runtime.core.ModuleFields;
 @Layout
 public interface ClassLayout extends ModuleLayout {
 
-    DynamicObjectFactory createClassShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createClassShape(DynamicObject logicalClass,
+                                          DynamicObject metaClass);
 
     DynamicObject createClass(DynamicObjectFactory factory,
                               ModuleFields model,
@@ -34,7 +35,6 @@ public interface ClassLayout extends ModuleLayout {
     DynamicObject getAttached(DynamicObject object);
 
     DynamicObjectFactory getInstanceFactory(DynamicObject object);
-
     void setInstanceFactoryUnsafe(DynamicObject object, DynamicObjectFactory instanceFactory);
 
 }

@@ -19,9 +19,11 @@ import java.security.MessageDigest;
 @Layout
 public interface DigestLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createDigestShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createDigestShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createDigest(DynamicObjectFactory factory, MessageDigest digest);
+    DynamicObject createDigest(DynamicObjectFactory factory,
+                               MessageDigest digest);
 
     MessageDigest getDigest(DynamicObject object);
 

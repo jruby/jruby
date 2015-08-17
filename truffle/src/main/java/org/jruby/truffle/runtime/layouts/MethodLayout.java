@@ -16,9 +16,12 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 @org.jruby.truffle.om.dsl.api.Layout
 public interface MethodLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createMethodShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createMethod(DynamicObjectFactory factory, Object receiver, InternalMethod method);
+    DynamicObject createMethod(DynamicObjectFactory factory,
+                               Object receiver,
+                               InternalMethod method);
 
     boolean isMethod(DynamicObject object);
 

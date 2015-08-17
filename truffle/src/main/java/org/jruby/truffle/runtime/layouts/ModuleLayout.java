@@ -17,9 +17,11 @@ import org.jruby.truffle.runtime.core.ModuleFields;
 @Layout
 public interface ModuleLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createModuleShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createModuleShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createModule(DynamicObjectFactory factory, ModuleFields fields);
+    DynamicObject createModule(DynamicObjectFactory factory,
+                               ModuleFields fields);
 
     boolean isModule(DynamicObject object);
 

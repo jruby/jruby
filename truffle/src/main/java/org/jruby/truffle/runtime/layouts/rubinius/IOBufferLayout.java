@@ -22,28 +22,29 @@ public interface IOBufferLayout extends BasicObjectLayout {
     String START_IDENTIFIER = "@start";
     String TOTAL_IDENTIFIER = "@total";
 
-    DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass,
+                                             DynamicObject metaClass);
 
-    DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, DynamicObject storage, int used, int start, int total);
+    DynamicObject createIOBuffer(DynamicObjectFactory factory,
+                                 boolean writeSynced,
+                                 DynamicObject storage,
+                                 int used,
+                                 int start,
+                                 int total);
 
     boolean getWriteSynced(DynamicObject object);
-
     void setWriteSynced(DynamicObject object, boolean value);
 
     DynamicObject getStorage(DynamicObject object);
-
     void setStorage(DynamicObject object, DynamicObject value);
 
     int getUsed(DynamicObject object);
-
     void setUsed(DynamicObject object, int value);
 
     int getStart(DynamicObject object);
-
     void setStart(DynamicObject object, int value);
 
     int getTotal(DynamicObject object);
-
     void setTotal(DynamicObject object, int value);
 
 }

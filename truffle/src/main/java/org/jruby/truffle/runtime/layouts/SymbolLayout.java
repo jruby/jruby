@@ -18,10 +18,15 @@ import org.jruby.util.ByteList;
 @org.jruby.truffle.om.dsl.api.Layout
 public interface SymbolLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createSymbolShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createSymbolShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createSymbol(DynamicObjectFactory factory, String string, ByteList byteList, int hashCode,
-                               int codeRange, @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
+    DynamicObject createSymbol(DynamicObjectFactory factory,
+                               String string,
+                               ByteList byteList,
+                               int hashCode,
+                               int codeRange,
+                               @Nullable SymbolCodeRangeableWrapper codeRangeableWrapper);
 
     boolean isSymbol(DynamicObject object);
 

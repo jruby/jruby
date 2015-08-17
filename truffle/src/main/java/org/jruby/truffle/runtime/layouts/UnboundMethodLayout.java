@@ -17,9 +17,12 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 @Layout
 public interface UnboundMethodLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createUnboundMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createUnboundMethodShape(DynamicObject logicalClass,
+                                                  DynamicObject metaClass);
 
-    DynamicObject createUnboundMethod(DynamicObjectFactory factory, DynamicObject origin, InternalMethod method);
+    DynamicObject createUnboundMethod(DynamicObjectFactory factory,
+                                      DynamicObject origin,
+                                      InternalMethod method);
 
     boolean isUnboundMethod(DynamicObject object);
 

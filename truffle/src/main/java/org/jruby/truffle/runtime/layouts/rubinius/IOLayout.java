@@ -21,22 +21,24 @@ public interface IOLayout extends BasicObjectLayout {
     String DESCRIPTOR_IDENTIFIER = "@descriptor";
     String MODE_IDENTIFIER = "@mode";
 
-    DynamicObjectFactory createIOShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createIOShape(DynamicObject logicalClass,
+                                       DynamicObject metaClass);
 
-    DynamicObject createIO(DynamicObjectFactory factory, DynamicObject iBuffer, int lineNo, int descriptor, int mode);
+    DynamicObject createIO(DynamicObjectFactory factory,
+                           DynamicObject iBuffer,
+                           int lineNo,
+                           int descriptor,
+                           int mode);
 
     DynamicObject getIBuffer(DynamicObject object);
 
     int getLineNo(DynamicObject object);
-
     void setLineNo(DynamicObject object, int value);
 
     int getDescriptor(DynamicObject object);
-
     void setDescriptor(DynamicObject object, int value);
 
     int getMode(DynamicObject object);
-
     void setMode(DynamicObject object, int value);
 
 }

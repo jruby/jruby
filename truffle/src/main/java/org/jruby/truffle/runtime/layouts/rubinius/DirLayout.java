@@ -18,16 +18,17 @@ import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
 @Layout
 public interface DirLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createDirShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createDirShape(DynamicObject logicalClass,
+                                        DynamicObject metaClass);
 
-    DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
+    DynamicObject createDir(DynamicObjectFactory factory,
+                            @Nullable Object contents,
+                            int position);
 
     Object getContents(DynamicObject object);
-
     void setContents(DynamicObject object, Object value);
 
     int getPosition(DynamicObject object);
-
     void setPosition(DynamicObject object, int value);
 
 }

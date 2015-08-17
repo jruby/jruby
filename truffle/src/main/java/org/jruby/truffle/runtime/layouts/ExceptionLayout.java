@@ -18,18 +18,19 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 @Layout
 public interface ExceptionLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createExceptionShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createExceptionShape(DynamicObject logicalClass,
+                                              DynamicObject metaClass);
 
-    DynamicObject createException(DynamicObjectFactory factory, @Nullable Object message, @Nullable Backtrace backtrace);
+    DynamicObject createException(DynamicObjectFactory factory,
+                                  @Nullable Object message,
+                                  @Nullable Backtrace backtrace);
 
     boolean isException(DynamicObject object);
 
     Object getMessage(DynamicObject object);
-
     void setMessage(DynamicObject object, Object message);
 
     Backtrace getBacktrace(DynamicObject object);
-
     void setBacktrace(DynamicObject object, Backtrace backtrace);
 
 }

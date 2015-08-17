@@ -16,9 +16,13 @@ import org.jruby.truffle.om.dsl.api.Layout;
 @Layout
 public interface LongFixnumRangeLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createLongFixnumRangeShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createLongFixnumRangeShape(DynamicObject logicalClass,
+                                                    DynamicObject metaClass);
 
-    DynamicObject createLongFixnumRange(DynamicObjectFactory factory, boolean excludedEnd, long begin, long end);
+    DynamicObject createLongFixnumRange(DynamicObjectFactory factory,
+                                        boolean excludedEnd,
+                                        long begin,
+                                        long end);
 
     boolean isLongFixnumRange(DynamicObject object);
 

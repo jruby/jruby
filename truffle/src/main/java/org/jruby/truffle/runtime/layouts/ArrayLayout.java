@@ -18,20 +18,20 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 @Layout
 public interface ArrayLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createArrayShape(DynamicObject logicalClass,
+                                          DynamicObject metaClass);
 
-    DynamicObject createArray(DynamicObjectFactory factory, @Nullable Object store, int size);
+    DynamicObject createArray(DynamicObjectFactory factory,
+                              @Nullable Object store,
+                              int size);
 
     boolean isArray(ObjectType objectType);
-
     boolean isArray(DynamicObject object);
 
     Object getStore(DynamicObject object);
-
     void setStore(DynamicObject object, Object value);
 
     int getSize(DynamicObject object);
-
     void setSize(DynamicObject object, int value);
 
 }

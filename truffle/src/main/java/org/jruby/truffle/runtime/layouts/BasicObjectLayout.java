@@ -12,28 +12,25 @@ package org.jruby.truffle.runtime.layouts;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
+import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 
-@org.jruby.truffle.om.dsl.api.Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
+@Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
 public interface BasicObjectLayout {
 
-    DynamicObjectFactory createBasicObjectShape(@Nullable DynamicObject logicalClass, @Nullable DynamicObject metaClass);
+    DynamicObjectFactory createBasicObjectShape(@Nullable DynamicObject logicalClass,
+                                                @Nullable DynamicObject metaClass);
 
     DynamicObject createBasicObject(DynamicObjectFactory factory);
 
     boolean isBasicObject(Object object);
 
     DynamicObjectFactory setLogicalClass(DynamicObjectFactory factory, DynamicObject value);
-
     DynamicObject getLogicalClass(ObjectType objectType);
-
     DynamicObject getLogicalClass(DynamicObject object);
-
     void setLogicalClass(DynamicObject object, DynamicObject value);
 
     DynamicObjectFactory setMetaClass(DynamicObjectFactory factory, DynamicObject value);
-
     DynamicObject getMetaClass(DynamicObject object);
-
     void setMetaClass(DynamicObject object, DynamicObject value);
 }

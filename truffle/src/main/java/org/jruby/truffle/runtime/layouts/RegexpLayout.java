@@ -20,26 +20,27 @@ import org.jruby.util.RegexpOptions;
 @Layout
 public interface RegexpLayout extends BasicObjectLayout {
 
-    DynamicObjectFactory createRegexpShape(DynamicObject logicalClass, DynamicObject metaClass);
+    DynamicObjectFactory createRegexpShape(DynamicObject logicalClass,
+                                           DynamicObject metaClass);
 
-    DynamicObject createRegexp(DynamicObjectFactory factory, @Nullable Regex regex, @Nullable ByteList source, RegexpOptions options, @Nullable Object cachedNames);
+    DynamicObject createRegexp(DynamicObjectFactory factory,
+                               @Nullable Regex regex,
+                               @Nullable ByteList source,
+                               RegexpOptions options,
+                               @Nullable Object cachedNames);
 
     boolean isRegexp(DynamicObject object);
 
     Regex getRegex(DynamicObject object);
-
     void setRegex(DynamicObject object, Regex value);
 
     ByteList getSource(DynamicObject object);
-
     void setSource(DynamicObject object, ByteList value);
 
     RegexpOptions getOptions(DynamicObject object);
-
     void setOptions(DynamicObject object, RegexpOptions value);
 
     Object getCachedNames(DynamicObject object);
-
     void setCachedNames(DynamicObject object, Object value);
 
 }
