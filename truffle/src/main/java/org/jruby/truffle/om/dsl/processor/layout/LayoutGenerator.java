@@ -209,7 +209,7 @@ public class LayoutGenerator {
 
                     stream.printf("         %s_ALLOCATOR.locationForType(%s.class%s);\n",
                             NameUtils.identifierToConstant(layout.getName()),
-                            property.getType(),
+                            NameUtils.typeWithoutParameters(property.getType().toString()),
                             modifiersExpression);
                 }
 
@@ -249,13 +249,12 @@ public class LayoutGenerator {
                 modifiersExpression  = modifiersExpressionBuilder.toString();
             }
 
-            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, %S_ALLOCATOR.locationForType(%s.class%s), %s);\n",
+            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, %S_ALLOCATOR.locationForType(%s.class%s), 0);\n",
                     NameUtils.identifierToConstant(property.getName()),
                     NameUtils.identifierToConstant(property.getName()),
                     NameUtils.identifierToConstant(layout.getName()),
-                    property.getType(),
-                    modifiersExpression,
-                    "0");
+                    NameUtils.typeWithoutParameters(property.getType().toString()),
+                    modifiersExpression);
 
             stream.println("    ");
         }

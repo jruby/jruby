@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.om.dsl.processor.layout.model;
 
+import javax.lang.model.type.TypeMirror;
+
 public abstract class NameUtils {
 
     public static String identifierToConstant(String name) {
@@ -52,4 +54,7 @@ public abstract class NameUtils {
         return getSet + name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
+    public static String typeWithoutParameters(String type) {
+        return type.replaceAll("<\\w+(\\.\\w+)*>", "");
+    }
 }

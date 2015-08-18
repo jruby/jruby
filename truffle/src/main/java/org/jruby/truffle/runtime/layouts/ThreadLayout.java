@@ -11,8 +11,15 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.runtime.subsystems.FiberManager;
+
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Lock;
 
 @Layout
 public interface ThreadLayout extends BasicObjectLayout {
@@ -21,9 +28,34 @@ public interface ThreadLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createThread(DynamicObjectFactory factory,
+                               @Nullable FiberManager fiberManager,
+                               @Nullable String name,
+                               CountDownLatch finishedLatch,
+                               DynamicObject threadLocals,
+                               List<Lock> ownedLocks,
+                               boolean abortOnException,
+                               InterruptMode interruptMode,
                                ThreadNodes.ThreadFields fields);
 
     boolean isThread(DynamicObject object);
+
+    FiberManager getFiberManager(DynamicObject object);
+    void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
+
+    String getName(DynamicObject object);
+    void setName(DynamicObject object, String name);
+
+    CountDownLatch getFinishedLatch(DynamicObject object);
+
+    DynamicObject getThreadLocals(DynamicObject object);
+
+    List<Lock> getOwnedLocks(DynamicObject object);
+
+    boolean getAbortOnException(DynamicObject object);
+    void setAbortOnException(DynamicObject object, boolean abortOnException);
+
+    InterruptMode getInterruptMode(DynamicObject object);
+    void setInterruptMode(DynamicObject object, InterruptMode interruptMode);
 
     ThreadNodes.ThreadFields getFields(DynamicObject object);
 
