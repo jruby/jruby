@@ -355,7 +355,7 @@ public class CoreLibrary {
         symbolClass = defineClass("Symbol");
         Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass));
         threadClass = defineClass("Thread");
-        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, ThreadLayoutImpl.INSTANCE.createThreadShape(threadClass, threadClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));

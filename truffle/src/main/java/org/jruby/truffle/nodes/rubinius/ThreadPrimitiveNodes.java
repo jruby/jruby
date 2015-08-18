@@ -16,7 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
 import static org.jruby.RubyThread.*;
@@ -58,12 +58,12 @@ public class ThreadPrimitiveNodes {
 
         @Specialization(guards = "isRubyThread(thread)")
         public int getPriority(DynamicObject thread) {
-            final Thread javaThread = ThreadLayoutImpl.INSTANCE.getFields(thread).thread;
+            final Thread javaThread = Layouts.THREAD.getFields(thread).thread;
             if (javaThread != null) {
                 int javaPriority = javaThread.getPriority();
                 return javaPriorityToRubyPriority(javaPriority);
             } else {
-                return ThreadLayoutImpl.INSTANCE.getFields(thread).priority;
+                return Layouts.THREAD.getFields(thread).priority;
             }
         }
     }
@@ -83,11 +83,11 @@ public class ThreadPrimitiveNodes {
             }
 
             int javaPriority = rubyPriorityToJavaPriority(rubyPriority);
-            final Thread javaThread = ThreadLayoutImpl.INSTANCE.getFields(thread).thread;
+            final Thread javaThread = Layouts.THREAD.getFields(thread).thread;
             if (javaThread != null) {
                 javaThread.setPriority(javaPriority);
             }
-            ThreadLayoutImpl.INSTANCE.getFields(thread).priority = rubyPriority;
+            Layouts.THREAD.getFields(thread).priority = rubyPriority;
             return rubyPriority;
         }
     }

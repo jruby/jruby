@@ -47,6 +47,7 @@ public abstract class Layouts {
     public static final SizedQueueLayout SIZED_QUEUE = SizedQueueLayoutImpl.INSTANCE;
     public static final StringLayout STRING = StringLayoutImpl.INSTANCE;
     public static final SymbolLayout SYMBOL = SymbolLayoutImpl.INSTANCE;
+    public static final ThreadLayout THREAD = ThreadLayoutImpl.INSTANCE;
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
 
