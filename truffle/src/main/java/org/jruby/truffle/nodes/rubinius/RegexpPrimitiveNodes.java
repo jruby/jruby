@@ -159,10 +159,10 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object setLastMatch(DynamicObject regexpClass, Object matchData) {
-            BasicObjectNodes.setInstanceVariable(
-                    ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~", matchData);
+            Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread()).define("$~", matchData, 0);
 
             return matchData;
         }

@@ -41,110 +41,41 @@ import java.util.Arrays;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    public static DynamicObject createRubyMatchData(DynamicObject rubyClass, DynamicObject source, DynamicObject regexp, Region region, Object[] values, DynamicObject pre, DynamicObject post, DynamicObject global, int begin, int end) {
-        return Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(rubyClass), new MatchDataFields(source, regexp, region, values, pre, post, global, begin, end));
-    }
-
-    public static Object[] getValues(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Arrays.copyOf(Layouts.MATCH_DATA.getFields(matchData).values, Layouts.MATCH_DATA.getFields(matchData).values.length);
-    }
-
     public static Object[] getCaptures(DynamicObject matchData) {
         assert RubyGuards.isRubyMatchData(matchData);
         // There should always be at least one value because the entire matched string must be in the values array.
         // Thus, there is no risk of an ArrayIndexOutOfBoundsException here.
-        return ArrayUtils.extractRange(Layouts.MATCH_DATA.getFields(matchData).values, 1, Layouts.MATCH_DATA.getFields(matchData).values.length);
+        return ArrayUtils.extractRange(Layouts.MATCH_DATA.getValues(matchData), 1, Layouts.MATCH_DATA.getValues(matchData).length);
     }
 
     public static Object begin(DynamicObject matchData, int index) {
         assert RubyGuards.isRubyMatchData(matchData);
-        final int b = (Layouts.MATCH_DATA.getFields(matchData).region == null) ? Layouts.MATCH_DATA.getFields(matchData).begin : Layouts.MATCH_DATA.getFields(matchData).region.beg[index];
+        final int b = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getBegin(matchData) : Layouts.MATCH_DATA.getRegion(matchData).beg[index];
 
         if (b < 0) {
-            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
         }
 
         updateCharOffset(matchData);
 
-        return Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[index];
+        return Layouts.MATCH_DATA.getCharOffsets(matchData).beg[index];
     }
 
     public static Object end(DynamicObject matchData, int index) {
         assert RubyGuards.isRubyMatchData(matchData);
-        int e = (Layouts.MATCH_DATA.getFields(matchData).region == null) ? Layouts.MATCH_DATA.getFields(matchData).end : Layouts.MATCH_DATA.getFields(matchData).region.end[index];
+        int e = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getEnd(matchData) : Layouts.MATCH_DATA.getRegion(matchData).end[index];
 
         if (e < 0) {
-            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
         }
 
-        final CodeRangeable sourceWrapped = StringNodes.getCodeRangeable(Layouts.MATCH_DATA.getFields(matchData).source);
+        final CodeRangeable sourceWrapped = StringNodes.getCodeRangeable(Layouts.MATCH_DATA.getSource(matchData));
         if (!StringSupport.isSingleByteOptimizable(sourceWrapped, sourceWrapped.getByteList().getEncoding())) {
             updateCharOffset(matchData);
-            e = Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[index];
+            e = Layouts.MATCH_DATA.getCharOffsets(matchData).end[index];
         }
 
         return e;
-    }
-
-    public static int getNumberOfRegions(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).region.numRegs;
-    }
-
-    public static int getBackrefNumber(DynamicObject matchData, ByteList value) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getFields(matchData).regexp).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getFields(matchData).region);
-    }
-
-    public static DynamicObject getPre(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).pre;
-    }
-
-    public static DynamicObject getPost(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).post;
-    }
-
-    public static DynamicObject getGlobal(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).global;
-    }
-
-    public static Region getRegion(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).region;
-    }
-
-    public static DynamicObject getSource(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).source;
-    }
-
-    public static DynamicObject getRegexp(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).regexp;
-    }
-
-    public static Object getFullTuple(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).fullTuple;
-    }
-
-    public static void setFullTuple(DynamicObject matchData, Object fullTuple) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        Layouts.MATCH_DATA.getFields(matchData).fullTuple = fullTuple;
-    }
-
-    public static int getFullBegin(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).begin;
-    }
-
-    public static int getFullEnd(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        return Layouts.MATCH_DATA.getFields(matchData).end;
     }
 
     public static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
@@ -166,57 +97,57 @@ public abstract class MatchDataNodes {
 
     public static void updateCharOffsetOnlyOneReg(DynamicObject matchData, ByteList value, Encoding encoding) {
         assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated) return;
+        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
 
-        if (Layouts.MATCH_DATA.getFields(matchData).charOffsets == null || Layouts.MATCH_DATA.getFields(matchData).charOffsets.numRegs < 1)
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets = new Region(1);
+        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < 1)
+            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(1));
 
         if (encoding.maxLength() == 1) {
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[0] = Layouts.MATCH_DATA.getFields(matchData).begin;
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[0] = Layouts.MATCH_DATA.getFields(matchData).end;
-            Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated = true;
+            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getBegin(matchData);
+            Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = Layouts.MATCH_DATA.getEnd(matchData);
+            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
             return;
         }
 
         Pair[] pairs = new Pair[2];
-        if (Layouts.MATCH_DATA.getFields(matchData).begin >= 0) {
+        if (Layouts.MATCH_DATA.getBegin(matchData) >= 0) {
             pairs[0] = new Pair();
-            pairs[0].bytePos = Layouts.MATCH_DATA.getFields(matchData).begin;
+            pairs[0].bytePos = Layouts.MATCH_DATA.getBegin(matchData);
             pairs[1] = new Pair();
-            pairs[1].bytePos = Layouts.MATCH_DATA.getFields(matchData).end;
+            pairs[1].bytePos = Layouts.MATCH_DATA.getEnd(matchData);
         }
 
         updatePairs(value, encoding, pairs);
 
-        if (Layouts.MATCH_DATA.getFields(matchData).begin < 0) {
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[0] = Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[0] = -1;
+        if (Layouts.MATCH_DATA.getBegin(matchData) < 0) {
+            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = -1;
             return;
         }
         Pair key = new Pair();
-        key.bytePos = Layouts.MATCH_DATA.getFields(matchData).begin;
-        Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        key.bytePos = Layouts.MATCH_DATA.getFields(matchData).end;
-        Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        key.bytePos = Layouts.MATCH_DATA.getBegin(matchData);
+        Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        key.bytePos = Layouts.MATCH_DATA.getEnd(matchData);
+        Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
 
-        Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated = true;
+        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
     }
 
     public static void updateCharOffsetManyRegs(DynamicObject matchData, ByteList value, Encoding encoding) {
         assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated) return;
+        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
 
-        final Region regs = Layouts.MATCH_DATA.getFields(matchData).region;
+        final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
 
-        if (Layouts.MATCH_DATA.getFields(matchData).charOffsets == null || Layouts.MATCH_DATA.getFields(matchData).charOffsets.numRegs < numRegs)
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets = new Region(numRegs);
+        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < numRegs)
+            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(numRegs));
 
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
-                Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[i] = regs.beg[i];
-                Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[i] = regs.end[i];
+                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = regs.beg[i];
+                Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = regs.end[i];
             }
-            Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated = true;
+            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
             return;
         }
 
@@ -235,32 +166,32 @@ public abstract class MatchDataNodes {
         Pair key = new Pair();
         for (int i = 0; i < regs.numRegs; i++) {
             if (regs.beg[i] < 0) {
-                Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[i] = Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[i] = -1;
+                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = -1;
                 continue;
             }
             key.bytePos = regs.beg[i];
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
             key.bytePos = regs.end[i];
-            Layouts.MATCH_DATA.getFields(matchData).charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
         }
 
-        Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated = true;
+        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
     }
 
     public static void updateCharOffset(DynamicObject matchData) {
         assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated) return;
+        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
 
-        ByteList value = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getFields(matchData).source);
+        ByteList value = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getSource(matchData));
         Encoding enc = value.getEncoding();
 
-        if (Layouts.MATCH_DATA.getFields(matchData).region == null) {
+        if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
             updateCharOffsetOnlyOneReg(matchData, value, enc);
         } else {
             updateCharOffsetManyRegs(matchData, value, enc);
         }
 
-        Layouts.MATCH_DATA.getFields(matchData).charOffsetUpdated = true;
+        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
     }
 
     @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
@@ -276,7 +207,7 @@ public abstract class MatchDataNodes {
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
             CompilerDirectives.transferToInterpreter();
 
-            final Object[] values = getValues(matchData);
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
@@ -290,7 +221,7 @@ public abstract class MatchDataNodes {
         public Object getIndex(DynamicObject matchData, int index, int length) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
-            final Object[] values = getValues(matchData);
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
             return createArray(store, length);
@@ -301,7 +232,8 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = getBackrefNumber(matchData, Layouts.SYMBOL.getByteList(index));
+                ByteList value = Layouts.SYMBOL.getByteList(index);
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             } catch (final ValueException e) {
@@ -317,7 +249,8 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             try {
-                final int i = getBackrefNumber(matchData, Layouts.STRING.getByteList(index));
+                ByteList value = Layouts.STRING.getByteList(index);
+                final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
             }
@@ -343,7 +276,7 @@ public abstract class MatchDataNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
-            final Object[] values = getValues(matchData);
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
             final int end = ArrayNodes.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
             final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
@@ -368,7 +301,7 @@ public abstract class MatchDataNodes {
         public Object begin(DynamicObject matchData, int index) {
             CompilerDirectives.transferToInterpreter();
 
-            if (badIndexProfile.profile((index < 0) || (index >= getNumberOfRegions(matchData)))) {
+            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -409,7 +342,7 @@ public abstract class MatchDataNodes {
         public Object end(DynamicObject matchData, int index) {
             CompilerDirectives.transferToInterpreter();
 
-            if (badIndexProfile.profile((index < 0) || (index >= getNumberOfRegions(matchData)))) {
+            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -433,8 +366,8 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object full(VirtualFrame frame, DynamicObject matchData) {
-            if (getFullTuple(matchData) != null) {
-                return getFullTuple(matchData);
+            if (Layouts.MATCH_DATA.getFullTuple(matchData) != null) {
+                return Layouts.MATCH_DATA.getFullTuple(matchData);
             }
 
             if (newTupleNode == null) {
@@ -445,9 +378,9 @@ public abstract class MatchDataNodes {
             final Object fullTuple = newTupleNode.call(frame,
                     getContext().getCoreLibrary().getTupleClass(),
                     "create",
-                    null, getFullBegin(matchData), getFullEnd(matchData));
+                    null, Layouts.MATCH_DATA.getBegin(matchData), Layouts.MATCH_DATA.getEnd(matchData));
 
-            setFullTuple(matchData, fullTuple);
+            Layouts.MATCH_DATA.setFullTuple(matchData, fullTuple);
 
             return fullTuple;
         }
@@ -462,7 +395,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public int length(DynamicObject matchData) {
-            return getValues(matchData).length;
+            return Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length).length;
         }
 
     }
@@ -479,7 +412,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object preMatch(DynamicObject matchData) {
-            return taintResultNode.maybeTaint(getSource(matchData), getPre(matchData));
+            return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
         }
 
     }
@@ -496,7 +429,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object postMatch(DynamicObject matchData) {
-            return taintResultNode.maybeTaint(getSource(matchData), getPost(matchData));
+            return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
         }
 
     }
@@ -512,7 +445,7 @@ public abstract class MatchDataNodes {
         public DynamicObject toA(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), getValues(matchData));
+            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length));
         }
     }
 
@@ -527,7 +460,7 @@ public abstract class MatchDataNodes {
         public DynamicObject toS(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            final ByteList bytes = Layouts.STRING.getByteList(getGlobal(matchData)).dup();
+            final ByteList bytes = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
             return createString(bytes);
         }
     }
@@ -541,7 +474,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
-            return getRegexp(matchData);
+            return Layouts.MATCH_DATA.getRegexp(matchData);
         }
     }
 
@@ -555,7 +488,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
-            return getSource(matchData);
+            return Layouts.MATCH_DATA.getSource(matchData);
         }
     }
 
@@ -568,29 +501,4 @@ public abstract class MatchDataNodes {
         }
     }
 
-    public static class MatchDataFields {
-        public final DynamicObject source; // Class
-        public final DynamicObject regexp; // Regexp
-        public final Region region;
-        public final Object[] values;
-        public final DynamicObject pre; // String
-        public final DynamicObject post; // String
-        public final DynamicObject global; // String
-        public boolean charOffsetUpdated;
-        public Region charOffsets;
-        public final int begin, end;
-        public Object fullTuple;
-
-        public MatchDataFields(DynamicObject source, DynamicObject regexp, Region region, Object[] values, DynamicObject pre, DynamicObject post, DynamicObject global, int begin, int end) {
-            this.source = source;
-            this.regexp = regexp;
-            this.region = region;
-            this.values = values;
-            this.pre = pre;
-            this.post = post;
-            this.global = global;
-            this.begin = begin;
-            this.end = end;
-        }
-    }
 }

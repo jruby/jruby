@@ -134,7 +134,7 @@ describe "A Ruby-level exception" do
   end
 end
 
-describe "A native exception wrapped by another" do  
+describe "A native exception wrapped by another" do
   it "gets the first available message from the causes' chain" do
     begin
       ThrowExceptionInInitializer.new.test
@@ -197,8 +197,9 @@ describe "A Ruby subclass of a Java exception" do
   end
 end
 
-describe "A ruby exception raised through java and back to ruby" do
-  it "its class and message is preserved" do
+describe "Ruby exception raised through Java and back to Ruby" do
+
+  it "preserves its class and message" do
     begin
       ExceptionRunner.new.do_it_now do
         raise "it comes from ruby"
@@ -208,19 +209,44 @@ describe "A ruby exception raised through java and back to ruby" do
       e.message.should == "it comes from ruby"
     end
   end
-end
 
-describe "A ruby exception raised through java and back " +
-         "to ruby via a different thread" do
-  it "its class and message is preserved" do
-    begin
-      ExceptionRunner.new.do_it_threaded do
-        raise "it comes from ruby"
+  context "(via a different thread)"  do
+
+    it "preserves its class and message" do
+      begin
+        ExceptionRunner.new.do_it_threaded do
+          raise "it comes from ruby"
+        end
+        fail
+      rescue RuntimeError => e
+        e.message.should == "it comes from ruby"
       end
-      fail
-    rescue RuntimeError => e
-      e.message.should == "it comes from ruby"
+    end
+
+  end
+
+  SampleTask = Struct.new(:time) do
+    include Comparable
+
+    def <=>(that)
+      raise ArgumentError.new("unexpected #{self.inspect}") unless self.time
+      raise ArgumentError.new("unexpected #{that.inspect}") unless that.time
+      self.time <=> that.time
     end
   end
-end
 
+  it 'does not swallow Ruby errors on compareTo' do
+    queue = java.util.PriorityQueue.new(10)
+    queue.add t2 = SampleTask.new(2)
+    queue.add t1 = SampleTask.new(1)
+    begin
+      queue.add SampleTask.new(nil)
+    rescue ArgumentError => e
+      expect( e.message ).to start_with 'unexpected #<struct SampleTask'
+    else
+      fail 'compareTo did not raise'
+    end
+    expect( queue.first ).to be t1
+  end
+
+end

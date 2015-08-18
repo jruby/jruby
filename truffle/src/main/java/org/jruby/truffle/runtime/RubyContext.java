@@ -200,7 +200,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // Set the load path
 
-        final DynamicObject loadPath = (DynamicObject) BasicObjectNodes.getInstanceVariable(coreLibrary.getGlobalVariablesObject(), "$:");
+        DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
+        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
 
         final String home = runtime.getInstanceConfig().getJRubyHome();
 
@@ -438,7 +439,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final org.jruby.RubyString jrubyString = runtime.newString(Layouts.STRING.getByteList(string).dup());
 
-        final Object tainted = BasicObjectNodes.getInstanceVariable2(string, BasicObjectNodes.TAINTED_IDENTIFIER);
+        final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().getNilObject());
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);
@@ -499,7 +500,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final DynamicObject truffleString = StringNodes.createString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
-            BasicObjectNodes.setInstanceVariable(truffleString, BasicObjectNodes.TAINTED_IDENTIFIER, true);
+            truffleString.define(Layouts.TAINTED_IDENTIFIER, true, 0);
         }
 
         return truffleString;
@@ -602,9 +603,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
-        BasicObjectNodes.setInstanceVariable(
-                coreLibrary.getGlobalVariablesObject(), "$0",
-                toTruffle(runtime.getGlobalVariables().get("$0")));
+        coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
 
         final String inputFile = rootNode.getPosition().getFile();
         final Source source;

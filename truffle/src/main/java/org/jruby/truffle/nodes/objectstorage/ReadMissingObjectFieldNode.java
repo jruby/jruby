@@ -14,7 +14,7 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
@@ -33,7 +33,7 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
         }
 
         if (object.getShape() == objectLayout) {
-            return BasicObjectNodes.getContext(object).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getCoreLibrary().getNilObject();
         } else {
             return next.execute(object);
         }

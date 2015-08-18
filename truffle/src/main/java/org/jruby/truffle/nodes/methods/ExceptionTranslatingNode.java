@@ -20,7 +20,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -119,7 +118,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             if (value == null) {
                 builder.append("null");
             } else if (value instanceof DynamicObject) {
-                builder.append(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(((DynamicObject) value))).getName());
+                builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) value))).getName());
                 builder.append("(");
                 builder.append(value.getClass().getName());
                 builder.append(")");

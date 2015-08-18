@@ -11,8 +11,18 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import org.jruby.RubyThread;
+import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.om.dsl.api.Volatile;
+import org.jruby.truffle.runtime.subsystems.FiberManager;
+
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 
 @Layout
 public interface ThreadLayout extends BasicObjectLayout {
@@ -21,10 +31,55 @@ public interface ThreadLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createThread(DynamicObjectFactory factory,
-                               ThreadNodes.ThreadFields fields);
+                               @Nullable FiberManager fiberManager,
+                               @Nullable String name,
+                               CountDownLatch finishedLatch,
+                               DynamicObject threadLocals,
+                               List<Lock> ownedLocks,
+                               boolean abortOnException,
+                               InterruptMode interruptMode,
+                               @Nullable @Volatile Thread thread,
+                               @Volatile RubyThread.Status status,
+                               @Nullable @Volatile Object exception,
+                               @Nullable @Volatile Object value,
+                               AtomicBoolean wakeUp,
+                               @Volatile int priority);
 
     boolean isThread(DynamicObject object);
 
-    ThreadNodes.ThreadFields getFields(DynamicObject object);
+    FiberManager getFiberManager(DynamicObject object);
+    void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
+
+    String getName(DynamicObject object);
+    void setName(DynamicObject object, String name);
+
+    CountDownLatch getFinishedLatch(DynamicObject object);
+
+    DynamicObject getThreadLocals(DynamicObject object);
+
+    List<Lock> getOwnedLocks(DynamicObject object);
+
+    boolean getAbortOnException(DynamicObject object);
+    void setAbortOnException(DynamicObject object, boolean abortOnException);
+
+    InterruptMode getInterruptMode(DynamicObject object);
+    void setInterruptMode(DynamicObject object, InterruptMode interruptMode);
+
+    Thread getThread(DynamicObject object);
+    void setThread(DynamicObject object, Thread thread);
+
+    RubyThread.Status getStatus(DynamicObject object);
+    void setStatus(DynamicObject object, RubyThread.Status status);
+
+    Object getException(DynamicObject object);
+    void setException(DynamicObject object, Object exception);
+
+    Object getValue(DynamicObject object);
+    void setValue(DynamicObject object, Object value);
+
+    AtomicBoolean getWakeUp(DynamicObject object);
+
+    int getPriority(DynamicObject object);
+    void setPriority(DynamicObject object, int value);
 
 }

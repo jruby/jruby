@@ -205,7 +205,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyThread(DynamicObject object) {
-        return ThreadLayoutImpl.INSTANCE.isThread(object);
+        return Layouts.THREAD.isThread(object);
     }
 
     public static boolean isRubyMatchData(Object object) {

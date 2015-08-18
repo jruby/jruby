@@ -16,13 +16,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+import org.jruby.truffle.runtime.object.ObjectGraph;
+import org.jruby.truffle.runtime.object.ObjectGraphVisitor;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,7 +93,7 @@ public class ModuleFields implements ModuleChain {
 
         if (this.name == null) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-            final DynamicObject classClass = BasicObjectNodes.getLogicalClass(getLogicalClass());
+            final DynamicObject classClass = Layouts.BASIC_OBJECT.getLogicalClass(getLogicalClass());
             final DynamicObject objectClass = ClassNodes.getSuperClass(ClassNodes.getSuperClass(classClass));
 
             if (lexicalParent == objectClass) {
@@ -416,7 +417,7 @@ public class ModuleFields implements ModuleChain {
             } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
                 return "#<cyclic>";
             } else {
-                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(BasicObjectNodes.verySlowGetObjectID(rubyModuleObject)) + ">";
+                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(rubyModuleObject)) + ">";
             }
         }
     }
@@ -486,30 +487,6 @@ public class ModuleFields implements ModuleChain {
 
     public Map<String, Object> getClassVariables() {
         return classVariables;
-    }
-
-    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        for (RubyConstant constant : constants.values()) {
-            if (constant.getValue() instanceof DynamicObject) {
-                BasicObjectNodes.visitObjectGraph(((DynamicObject) constant.getValue()), visitor);
-            }
-        }
-
-        for (Object classVariable : classVariables.values()) {
-            if (classVariable instanceof DynamicObject) {
-                BasicObjectNodes.visitObjectGraph(((DynamicObject) classVariable), visitor);
-            }
-        }
-
-        for (InternalMethod method : methods.values()) {
-            if (method.getDeclarationFrame() != null) {
-                getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
-            }
-        }
-
-        for (DynamicObject ancestor : ancestors()) {
-            BasicObjectNodes.visitObjectGraph(ancestor, visitor);
-        }
     }
 
     public ModuleChain getParentModule() {
@@ -602,7 +579,7 @@ public class ModuleFields implements ModuleChain {
     }
 
     public DynamicObject getLogicalClass() {
-        return BasicObjectNodes.getLogicalClass(rubyModuleObject);
+        return Layouts.BASIC_OBJECT.getLogicalClass(rubyModuleObject);
     }
 
 }

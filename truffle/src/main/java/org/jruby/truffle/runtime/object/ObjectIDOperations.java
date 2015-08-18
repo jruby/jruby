@@ -9,10 +9,13 @@
  */
 package org.jruby.truffle.runtime.object;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -103,4 +106,17 @@ public abstract class ObjectIDOperations {
         return big;
     }
 
+    @CompilerDirectives.TruffleBoundary
+    public static long verySlowGetObjectID(DynamicObject object) {
+        // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
+        Property property = object.getShape().getProperty(Layouts.OBJECT_ID_IDENTIFIER);
+
+        if (property != null) {
+            return (long) property.get(object, false);
+        }
+
+        final long objectID = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getNextObjectID();
+        object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+        return objectID;
+    }
 }

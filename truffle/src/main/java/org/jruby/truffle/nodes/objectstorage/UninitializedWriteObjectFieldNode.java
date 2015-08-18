@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.*;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
@@ -49,7 +48,7 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
             newProperty = currentProperty;
             newProperty.setSafe(object, value, null);
         } else {
-            BasicObjectNodes.setInstanceVariable(object, name, value);
+            object.define(name, value, 0);
             newShape = object.getShape();
             newProperty = newShape.getProperty(name);
 

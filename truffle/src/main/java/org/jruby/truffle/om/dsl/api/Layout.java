@@ -69,7 +69,7 @@ import java.lang.annotation.Target;
  *
  * <p><strong>Nullability</strong></p>
  *
- * Properties can are non-nullable by default - they cannot contain null values
+ * Properties are non-nullable by default - they cannot contain null values
  * and attempting to set them to null in the constructor method or a setter
  * is an assertion failure.
  *
@@ -79,6 +79,17 @@ import java.lang.annotation.Target;
  *
  * <pre>
  * DynamicObject createWidget({@literal@}Nullable Object foo);
+ * </pre>
+ *
+ * <p><strong>Volatility</strong></p>
+ *
+ * Properties can have volatile semantics on read and write operations by
+ * annotating the relevant constructor parameters with {@link Volatile}.
+ *
+ * Volatile is not supported for shape properties.
+ *
+ * <pre>
+ * DynamicObject createWidget({@literal@}Volatile Object foo);
  * </pre>
  *
  * <p><strong>Semi-Final Properties</strong></p>

@@ -27,8 +27,8 @@ public class FiberManager {
     private DynamicObject currentFiber;
     private final Set<DynamicObject> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
 
-    public FiberManager(DynamicObject rubyThread, ThreadManager threadManager) {
-        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, threadManager);
+    public FiberManager(DynamicObject rubyThread) {
+        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(rubyThread)).getContext().getThreadManager());
         this.currentFiber = rootFiber;
     }
 
@@ -57,7 +57,7 @@ public class FiberManager {
 
     public void shutdown() {
         for (DynamicObject fiber : runningFibers) {
-            if (!Layouts.FIBER.getFields(fiber).isRootFiber) {
+            if (!Layouts.FIBER.getRootFiber(fiber)) {
                 FiberNodes.shutdown(fiber);
             }
         }

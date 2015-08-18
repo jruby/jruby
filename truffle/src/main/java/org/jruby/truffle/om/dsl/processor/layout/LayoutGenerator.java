@@ -13,6 +13,7 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
+import javax.lang.model.type.TypeKind;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class LayoutGenerator {
         stream.println("import org.jruby.truffle.om.dsl.api.UnexpectedLayoutRefusalException;");
         stream.println("import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;");
         stream.println("import com.oracle.truffle.api.CompilerAsserts;");
+        stream.println("import java.util.concurrent.atomic.*;");
         stream.printf("import %s;\n", layout.getInterfaceFullName());
 
         if (layout.getSuperLayout() != null) {
@@ -207,9 +209,23 @@ public class LayoutGenerator {
                         modifiersExpression = modifiersExpressionBuilder.toString();
                     }
 
+                    final String locationType;
+
+                    if (property.isVolatile()) {
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            locationType = "AtomicInteger";
+                        } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                            locationType = "AtomicBoolean";
+                        } else {
+                            locationType = "AtomicReference";
+                        }
+                    } else {
+                        locationType = NameUtils.typeWithoutParameters(property.getType().toString());
+                    }
+
                     stream.printf("         %s_ALLOCATOR.locationForType(%s.class%s);\n",
                             NameUtils.identifierToConstant(layout.getName()),
-                            property.getType(),
+                            locationType,
                             modifiersExpression);
                 }
 
@@ -249,13 +265,26 @@ public class LayoutGenerator {
                 modifiersExpression  = modifiersExpressionBuilder.toString();
             }
 
-            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, %S_ALLOCATOR.locationForType(%s.class%s), %s);\n",
+            final String locationType;
+
+            if (property.isVolatile()) {
+                if (property.getType().getKind() == TypeKind.INT) {
+                    locationType = "AtomicInteger";
+                } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                    locationType = "AtomicBoolean";
+                } else {
+                    locationType = "AtomicReference";
+                }
+            } else {
+                locationType = NameUtils.typeWithoutParameters(property.getType().toString());
+            }
+
+            stream.printf("    protected static final Property %S_PROPERTY = Property.create(%s_IDENTIFIER, %S_ALLOCATOR.locationForType(%s.class%s), 0);\n",
                     NameUtils.identifierToConstant(property.getName()),
                     NameUtils.identifierToConstant(property.getName()),
                     NameUtils.identifierToConstant(layout.getName()),
-                    property.getType(),
-                    modifiersExpression,
-                    "0");
+                    locationType,
+                    modifiersExpression);
 
             stream.println("    ");
         }
@@ -414,7 +443,17 @@ public class LayoutGenerator {
                 stream.println("        return factory.newInstance(");
 
                 for (PropertyModel property : layout.getAllNonShapeProperties()) {
-                    stream.printf("            %s", property.getName());
+                    if (property.isVolatile()) {
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("            new AtomicInteger(%s)", property.getName());
+                        } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                            stream.printf("            new AtomicBoolean(%s)", property.getName());
+                        } else {
+                            stream.printf("            new AtomicReference(%s)", property.getName());
+                        }
+                    } else {
+                        stream.printf("            %s", property.getName());
+                    }
 
                     if (property == layout.getAllProperties().get(layout.getAllProperties().size() - 1)) {
                         stream.println(");");
@@ -468,7 +507,17 @@ public class LayoutGenerator {
                 stream.println("        return factory.newInstance(");
 
                 for (PropertyModel property : layout.getAllNonShapeProperties()) {
-                    stream.printf("            %s", property.getName());
+                    if (property.isVolatile()) {
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("            new AtomicInteger(%s)", property.getName());
+                        } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                            stream.printf("            new AtomicBoolean(%s)", property.getName());
+                        } else {
+                            stream.printf("            new AtomicReference(%s)", property.getName());
+                        }
+                    } else {
+                        stream.printf("            %s", property.getName());
+                    }
 
                     if (property == layout.getAllProperties().get(layout.getAllProperties().size() - 1)) {
                         stream.println(");");
@@ -550,7 +599,18 @@ public class LayoutGenerator {
                 } else {
                     stream.printf("        assert object.getShape().hasProperty(%s_IDENTIFIER);\n", NameUtils.identifierToConstant(property.getName()));
                     stream.println("        ");
-                    stream.printf("        return (%s) %s_PROPERTY.get(object, true);\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+
+                    if (property.isVolatile()) {
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("        return ((AtomicInteger) %s_PROPERTY.get(object, true)).get();\n", NameUtils.identifierToConstant(property.getName()));
+                        } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                            stream.printf("        return ((AtomicBoolean) %s_PROPERTY.get(object, true)).get();\n", NameUtils.identifierToConstant(property.getName()));
+                        } else {
+                            stream.printf("        return (%s) ((AtomicReference) %s_PROPERTY.get(object, true)).get();\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                        }
+                    } else {
+                        stream.printf("        return (%s) %s_PROPERTY.get(object, true);\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                    }
                 }
 
                 stream.println("    }");
@@ -603,6 +663,14 @@ public class LayoutGenerator {
 
                     if (property.hasUnsafeSetter()) {
                         stream.printf("        %s_PROPERTY.setInternal(object, value);\n", NameUtils.identifierToConstant(property.getName()));
+                    } else if (property.isVolatile()) {
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("        ((AtomicInteger) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        } else if (property.getType().getKind() == TypeKind.BOOLEAN) {
+                            stream.printf("        ((AtomicBoolean) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        } else {
+                            stream.printf("        ((AtomicReference) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        }
                     } else {
                         stream.printf("        try {\n");
                         stream.printf("            %s_PROPERTY.set(object, value, object.getShape());\n", NameUtils.identifierToConstant(property.getName()));
@@ -626,14 +694,6 @@ public class LayoutGenerator {
         }
 
         stream.println("}");
-    }
-
-    private void iterateProperties(PropertyIteratorAction action) {
-        iterateProperties(layout.getProperties(), action);
-    }
-
-    private void iterateAllProperties(PropertyIteratorAction action) {
-        iterateProperties(layout.getAllProperties(), action);
     }
 
     private void iterateProperties(List<PropertyModel> properties, PropertyIteratorAction action) {

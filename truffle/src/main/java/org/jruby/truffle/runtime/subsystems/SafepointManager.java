@@ -18,8 +18,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ThreadNodes;
+import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;
 import java.util.Set;
@@ -76,8 +77,8 @@ public class SafepointManager {
             assumption.check();
         } catch (InvalidAssumptionException e) {
             final DynamicObject thread = context.getThreadManager().getCurrentThread();
-            final boolean interruptible = (ThreadNodes.getInterruptMode(thread) == ThreadNodes.InterruptMode.IMMEDIATE) ||
-                    (fromBlockingCall && ThreadNodes.getInterruptMode(thread) == ThreadNodes.InterruptMode.ON_BLOCKING);
+            final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
+                    (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
             if (!interruptible) {
                 return; // interrupt me later
             }
@@ -114,7 +115,7 @@ public class SafepointManager {
         phaser.arriveAndAwaitAdvance();
 
         try {
-            if (!deferred && thread != null && ThreadNodes.getStatus(thread) != Status.ABORTING) {
+            if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
                 action.run(thread, currentNode);
             }
         } finally {

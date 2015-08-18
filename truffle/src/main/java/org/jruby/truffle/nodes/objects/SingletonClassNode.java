@@ -18,11 +18,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -101,14 +101,14 @@ public abstract class SingletonClassNode extends RubyNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-        final DynamicObject logicalClass = BasicObjectNodes.getLogicalClass(object);
+        final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
 
         DynamicObject attached = null;
         if (RubyGuards.isRubyModule(object)) {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), BasicObjectNodes.verySlowGetObjectID(object));
+        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), ObjectIDOperations.verySlowGetObjectID(object));
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 

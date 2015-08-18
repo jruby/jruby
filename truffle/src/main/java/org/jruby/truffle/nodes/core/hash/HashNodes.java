@@ -936,7 +936,7 @@ public abstract class HashNodes {
                 "isNullHash(other)"
         })
         public DynamicObject mergeEmptyEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            return createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
+            return createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
         }
 
         @Specialization(guards = {
@@ -947,7 +947,7 @@ public abstract class HashNodes {
         public DynamicObject mergeEmptyPacked(DynamicObject hash, DynamicObject other, NotProvided block) {
             final Object[] store = (Object[]) Layouts.HASH.getStore(other);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
-            return createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(other), null, null);
+            return createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(other), null, null);
         }
 
         @Specialization(guards = {
@@ -958,7 +958,7 @@ public abstract class HashNodes {
         public DynamicObject mergePackedEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(store);
-            return createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(hash), null, null);
+            return createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(hash), null, null);
         }
 
         @Specialization(guards = {
@@ -967,7 +967,7 @@ public abstract class HashNodes {
                 "isBucketHash(other)"
         })
         public DynamicObject mergeEmptyBuckets(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
             BucketsStrategy.copyInto(other, merged);
             return merged;
         }
@@ -978,7 +978,7 @@ public abstract class HashNodes {
                 "isEmptyHash(other)"
         })
         public DynamicObject mergeBucketsEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null);
             BucketsStrategy.copyInto(hash, merged);
             return merged;
         }
@@ -1036,7 +1036,7 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
+                return createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), PackedArrayStrategy.copyStore(storeB), storeBSize, null, null);
             }
 
             // Cut off here
@@ -1072,14 +1072,14 @@ public abstract class HashNodes {
                     index++;
                 }
 
-                return createHash(BasicObjectNodes.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), merged, mergedSize, null, null);
+                return createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), merged, mergedSize, null, null);
             }
 
             // Most complicated cases where things from both hashes, and it also needs to be promoted to buckets
 
             promoteProfile.enter();
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(mergedSize)], 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(mergedSize)], 0, null, null);
 
             for (int n = 0; n < storeASize; n++) {
                 if (mergeFromA[n]) {
@@ -1108,7 +1108,7 @@ public abstract class HashNodes {
         public DynamicObject mergeBucketsBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
@@ -1135,7 +1135,7 @@ public abstract class HashNodes {
         public DynamicObject mergePackedBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
 
             final Object[] hashStore = (Object[]) Layouts.HASH.getStore(hash);
             final int hashSize = Layouts.HASH.getSize(hash);
@@ -1165,7 +1165,7 @@ public abstract class HashNodes {
         public DynamicObject mergeBucketsPacked(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
@@ -1191,7 +1191,7 @@ public abstract class HashNodes {
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
             CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
 
-            final DynamicObject merged = createHash(BasicObjectNodes.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
+            final DynamicObject merged = createHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null);
 
             int size = 0;
 

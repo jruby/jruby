@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.PointerGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -115,7 +114,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject add(DynamicObject a, long b) {
-            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
+            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
         }
 
     }
@@ -212,7 +211,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization
         public DynamicObject readPointer(DynamicObject pointer) {
-            return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(pointer), Layouts.POINTER.getPointer(pointer).getPointer(0));
+            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), Layouts.POINTER.getPointer(pointer).getPointer(0));
         }
 
     }
@@ -292,7 +291,7 @@ public abstract class PointerPrimitiveNodes {
             if (readPointer == null) {
                 return nil();
             } else {
-                return PointerNodes.createPointer(BasicObjectNodes.getLogicalClass(pointer), readPointer);
+                return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), readPointer);
             }
         }
 

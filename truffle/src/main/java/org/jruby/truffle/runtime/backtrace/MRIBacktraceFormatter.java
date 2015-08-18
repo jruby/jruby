@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.backtrace;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,7 +36,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
                 if (exception != null) {
                     assert RubyGuards.isRubyException(exception);
 
-                    lines.add(String.format("%s (%s)", Layouts.EXCEPTION.getMessage(exception), Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(exception)).getName()));
+                    lines.add(String.format("%s (%s)", Layouts.EXCEPTION.getMessage(exception), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName()));
                 }
             } else {
                 lines.add(formatInLine(context, activations, exception));
@@ -96,7 +95,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             builder.append(": ");
             builder.append(message);
             builder.append(" (");
-            builder.append(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(exception)).getName());
+            builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName());
             builder.append(")");
         }
 

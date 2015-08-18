@@ -84,7 +84,7 @@ public class ObjectSpaceManager {
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
 
-            finalizerThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
+            finalizerThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
             ThreadNodes.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
@@ -125,75 +125,6 @@ public class ObjectSpaceManager {
             }
         } catch (RaiseException e) {
             // MRI seems to silently ignore exceptions in finalizers
-        }
-    }
-
-    public static interface ObjectGraphVisitor {
-
-        boolean visit(DynamicObject object);
-
-    }
-
-    @TruffleBoundary
-    public Map<Long, DynamicObject> collectLiveObjects() {
-        final Map<Long, DynamicObject> liveObjects = new HashMap<>();
-
-        final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {
-
-            @Override
-            public boolean visit(DynamicObject object) {
-                return liveObjects.put(BasicObjectNodes.verySlowGetObjectID(object), object) == null;
-            }
-
-        };
-
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
-
-            @Override
-            public void run(DynamicObject currentThread, Node currentNode) {
-                synchronized (liveObjects) {
-                    BasicObjectNodes.visitObjectGraph(currentThread, visitor);
-                    BasicObjectNodes.visitObjectGraph(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
-
-                    // Needs to be called from the corresponding Java thread or it will not use the correct call stack.
-                    visitCallStack(visitor);
-                }
-            }
-
-        });
-
-        return Collections.unmodifiableMap(liveObjects);
-    }
-
-    private void visitCallStack(final ObjectGraphVisitor visitor) {
-        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        if (currentFrame != null) {
-            visitFrameInstance(currentFrame, visitor);
-        }
-
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-            @Override
-            public Void visitFrame(FrameInstance frameInstance) {
-                visitFrameInstance(frameInstance, visitor);
-                return null;
-            }
-        });
-    }
-
-    public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
-        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true), visitor);
-    }
-
-    public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
-        if (frame == null) {
-            return;
-        }
-
-        for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-            Object value = frame.getValue(slot);
-            if (value instanceof DynamicObject) {
-                BasicObjectNodes.visitObjectGraph(((DynamicObject) value), visitor);
-            }
         }
     }
 

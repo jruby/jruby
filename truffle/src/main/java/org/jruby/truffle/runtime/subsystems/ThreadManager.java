@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -40,13 +39,13 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass(), this);
-        ThreadNodes.setName(rootThread, "main");
+        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
+        Layouts.THREAD.setName(rootThread, "main");
     }
 
     public void initialize() {
         ThreadNodes.start(rootThread);
-        FiberNodes.start(ThreadNodes.getRootFiber(rootThread));
+        FiberNodes.start(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
     }
 
     public DynamicObject getRootThread() {
@@ -74,13 +73,13 @@ public class ThreadManager {
 
         do {
             final DynamicObject runningThread = getCurrentThread();
-            ThreadNodes.setStatus(runningThread, Status.SLEEP);
+            Layouts.THREAD.setStatus(runningThread, Status.SLEEP);
 
             try {
                 try {
                     result = action.block();
                 } finally {
-                    ThreadNodes.setStatus(runningThread, Status.RUN);
+                    Layouts.THREAD.setStatus(runningThread, Status.RUN);
                 }
             } catch (InterruptedException e) {
                 // We were interrupted, possibly by the SafepointManager.
@@ -119,8 +118,8 @@ public class ThreadManager {
                 killOtherThreads();
             }
         } finally {
-            ThreadNodes.getFiberManager(rootThread).shutdown();
-            FiberNodes.cleanup(ThreadNodes.getRootFiber(rootThread));
+            Layouts.THREAD.getFiberManager(rootThread).shutdown();
+            FiberNodes.cleanup(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
             ThreadNodes.cleanup(rootThread);
         }
     }
@@ -135,7 +134,7 @@ public class ThreadManager {
                 context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
                     @Override
                     public synchronized void run(DynamicObject thread, Node currentNode) {
-                        if (thread != rootThread && Thread.currentThread() == ThreadNodes.getRootFiberJavaThread(thread)) {
+                        if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
                             ThreadNodes.shutdown(thread);
                         }
                     }
@@ -144,7 +143,7 @@ public class ThreadManager {
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
 
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(BasicObjectNodes.getContext(((DynamicObject) e.getRubyException())), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
+                for (String line : Backtrace.DISPLAY_FORMATTER.format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
                     System.err.println(line);
                 }
             }

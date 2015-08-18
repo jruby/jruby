@@ -53,7 +53,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyString(source);
 
         final ByteList bytes = new ByteList(Layouts.STRING.getByteList(source), start, length);
-        final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(source), bytes);
+        final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(source), bytes);
 
         Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(source));
 
@@ -91,7 +91,7 @@ public abstract class RegexpNodes {
 
         final ByteList bl = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, StringNodes.getCodeRangeable(source), true);
-        final ByteList preprocessed = RegexpSupport.preprocess(BasicObjectNodes.getContext(regexp).getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+        final ByteList preprocessed = RegexpSupport.preprocess(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringNodes.getCodeRangeable(source), true));
         final Matcher matcher = r.matcher(stringBytes);
@@ -106,13 +106,13 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyString(source);
 
         final ByteList bytes = Layouts.STRING.getByteList(source);
-        final RubyContext context = BasicObjectNodes.getContext(regexp);
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
-        final Frame frame = RubyCallStack.getCallerFrame(BasicObjectNodes.getContext(regexp)).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
-        final DynamicObject nil = BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+        final DynamicObject nil = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
 
         if (match == -1) {
             setThread(regexp, "$~", nil);
@@ -121,11 +121,11 @@ public abstract class RegexpNodes {
                 for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                     final NameEntry e = i.next();
                     final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
-                    setFrame(frame, name, BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject());
+                    setFrame(frame, name, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject());
                 }
             }
 
-            return BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
         }
 
         final Region region = matcher.getEagerRegion();
@@ -141,13 +141,13 @@ public abstract class RegexpNodes {
                 if (start > -1 && end > -1) {
                     groupString = makeString(source, start, end - start);
                 } else {
-                    groupString = BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+                    groupString = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 }
 
                 values[n] = groupString;
             } else {
                 if (start == -1 || end == -1) {
-                    values[n] = BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+                    values[n] = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 } else {
                     values[n] = makeString(source, start, end - start);
                 }
@@ -158,13 +158,13 @@ public abstract class RegexpNodes {
         final DynamicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
         final DynamicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final DynamicObject matchObject = MatchDataNodes.createRubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
+        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), false, null, null);
 
         if (operator) {
             if (values.length > 0) {
                 int nonNil = values.length - 1;
 
-                while (values[nonNil] == BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject()) {
+                while (values[nonNil] == Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject()) {
                     nonNil--;
                 }
             }
@@ -183,14 +183,14 @@ public abstract class RegexpNodes {
                 // Copied from jruby/RubyRegexp - see copyright notice there
 
                 if (nth >= region.numRegs || (nth < 0 && (nth+=region.numRegs) <= 0)) {
-                    value = BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+                    value = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 } else {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
                         value = makeString(source, start, end - start);
                     } else {
-                        value = BasicObjectNodes.getContext(regexp).getCoreLibrary().getNilObject();
+                        value = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                     }
                 }
 
@@ -208,7 +208,7 @@ public abstract class RegexpNodes {
     public static void setThread(DynamicObject regexp, String name, Object value) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert value != null;
-        BasicObjectNodes.setInstanceVariable(ThreadNodes.getThreadLocals(BasicObjectNodes.getContext(regexp).getThreadManager().getCurrentThread()), name, value);
+        Layouts.THREAD.getThreadLocals(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getThreadManager().getCurrentThread()).define(name, value, 0);
     }
 
     @TruffleBoundary
@@ -216,7 +216,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
-        final RubyContext context = BasicObjectNodes.getContext(regexp);
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
         final byte[] stringBytes = Layouts.STRING.getByteList(string).bytes();
 
@@ -262,7 +262,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
-        final RubyContext context = BasicObjectNodes.getContext(regexp);
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
         final ByteList bytes = Layouts.STRING.getByteList(string);
         final byte[] byteArray = bytes.bytes();
@@ -434,7 +434,7 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         setSource(regexp, setSource);
         setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
-        setRegex(regexp, compile(currentNode, BasicObjectNodes.getContext(regexp), setSource, Layouts.REGEXP.getOptions(regexp)));
+        setRegex(regexp, compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext(), setSource, Layouts.REGEXP.getOptions(regexp)));
     }
 
     public static void initialize(DynamicObject regexp, Regex setRegex, ByteList setSource) {
@@ -444,13 +444,13 @@ public abstract class RegexpNodes {
     }
 
     public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, RegexpOptions options) {
-        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, options), regex, options, null);
+        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), RegexpNodes.compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexpClass)).getContext(), regex, options), regex, options, null);
     }
 
     public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, int options) {
         final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
-        RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, BasicObjectNodes.getContext(regexpClass), regex, Layouts.REGEXP.getOptions(regexp)), regex);
+        RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexpClass)).getContext(), regex, Layouts.REGEXP.getOptions(regexp)), regex);
         return regexp;
     }
 
@@ -550,8 +550,8 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions((DynamicObject) matchResult) > 0
-                && MatchDataNodes.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
+            if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
+                && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
             }
             return nil();
@@ -574,7 +574,7 @@ public abstract class RegexpNodes {
 
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
-            return quoteString(StringNodes.createString(BasicObjectNodes.getContext(raw).getCoreLibrary().getStringClass(), Layouts.SYMBOL.getString(raw)));
+            return quoteString(StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(raw)).getContext().getCoreLibrary().getStringClass(), Layouts.SYMBOL.getString(raw)));
         }
 
     }

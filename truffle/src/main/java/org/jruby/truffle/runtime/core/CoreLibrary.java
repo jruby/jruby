@@ -47,9 +47,7 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
-import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
-import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
@@ -357,7 +355,7 @@ public class CoreLibrary {
         symbolClass = defineClass("Symbol");
         Layouts.CLASS.setInstanceFactoryUnsafe(symbolClass, Layouts.SYMBOL.createSymbolShape(symbolClass, symbolClass));
         threadClass = defineClass("Thread");
-        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, ThreadLayoutImpl.INSTANCE.createThreadShape(threadClass, threadClass));
+        Layouts.CLASS.setInstanceFactoryUnsafe(threadClass, Layouts.THREAD.createThreadShape(threadClass, threadClass));
         threadBacktraceClass = defineClass(threadClass, objectClass, "Backtrace");
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
@@ -523,25 +521,25 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         DynamicObject globals = globalVariablesObject;
 
-        BasicObjectNodes.setInstanceVariable(globals, "$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass));
-        BasicObjectNodes.setInstanceVariable(globals, "$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass));
-        BasicObjectNodes.setInstanceVariable(globals, "$:", BasicObjectNodes.getInstanceVariable(globals, "$LOAD_PATH"));
-        BasicObjectNodes.setInstanceVariable(globals, "$\"", BasicObjectNodes.getInstanceVariable(globals, "$LOADED_FEATURES"));
-        BasicObjectNodes.setInstanceVariable(globals, "$,", nilObject);
-        BasicObjectNodes.setInstanceVariable(globals, "$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")));
+        globals.define("$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass), 0);
+        globals.define("$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass), 0);
+        globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
+        globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
+        globals.define("$,", nilObject, 0);
+        globals.define("$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")), 0);
 
-        BasicObjectNodes.setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
+        globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
 
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
-        BasicObjectNodes.setInstanceVariable(globals, "$VERBOSE", value);
+        globals.define("$VERBOSE", value, 0);
 
         final DynamicObject defaultRecordSeparator = StringNodes.createString(stringClass, CLI_RECORD_SEPARATOR);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        BasicObjectNodes.setInstanceVariable(globals, "$/", defaultRecordSeparator);
+        globals.define("$/", defaultRecordSeparator, 0);
 
-        BasicObjectNodes.setInstanceVariable(globals, "$SAFE", 0);
+        globals.define("$SAFE", 0, 0);
     }
 
     private void initializeConstants() {
@@ -749,7 +747,7 @@ public class CoreLibrary {
 
     public DynamicObject getLogicalClass(Object object) {
         if (object instanceof DynamicObject) {
-            return BasicObjectNodes.getLogicalClass(((DynamicObject) object));
+            return Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) object));
         } else if (object instanceof Boolean) {
             if ((boolean) object) {
                 return trueClass;
@@ -981,7 +979,7 @@ public class CoreLibrary {
     public DynamicObject nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
-        BasicObjectNodes.setInstanceVariable(nameError, "@name", context.getSymbolTable().getSymbol(name));
+        nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return nameError;
     }
 
@@ -1060,7 +1058,7 @@ public class CoreLibrary {
     public DynamicObject noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
-        BasicObjectNodes.setInstanceVariable(noMethodError, "@name", context.getSymbolTable().getSymbol(name));
+        noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return noMethodError;
     }
 
@@ -1070,7 +1068,7 @@ public class CoreLibrary {
         DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(),
                 StringNodes.createString(context.getCoreLibrary().getStringClass(), message),
                 RubyCallStack.getBacktrace(currentNode));
-        BasicObjectNodes.setInstanceVariable(noMethodError, "@name", nilObject);
+        noMethodError.define("@name", nilObject, 0);
         return noMethodError;
     }
 
@@ -1398,11 +1396,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) BasicObjectNodes.getInstanceVariable(globalVariablesObject, "$LOAD_PATH");
+        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globalVariablesObject)).getContext().getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) BasicObjectNodes.getInstanceVariable(globalVariablesObject, "$LOADED_FEATURES");
+        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globalVariablesObject)).getContext().getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getMainObject() {

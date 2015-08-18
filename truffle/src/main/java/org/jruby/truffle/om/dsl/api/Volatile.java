@@ -7,10 +7,17 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.om.dsl.processor.layout.model;
+package org.jruby.truffle.om.dsl.api;
 
-public enum NullableState {
-    DEFAULT,
-    NOT_NULLABLE,
-    NULLABLE
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * @see Layout
+ */
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.CLASS)
+public @interface Volatile {
 }

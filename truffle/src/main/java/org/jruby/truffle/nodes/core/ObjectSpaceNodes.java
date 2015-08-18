@@ -23,7 +23,11 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraph;
+import org.jruby.truffle.runtime.object.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
+import org.jruby.truffle.runtime.object.StopVisitingObjectsException;
+import org.jruby.util.Memo;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -42,7 +46,7 @@ public abstract class ObjectSpaceNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object id2Ref(long id) {
+        public Object id2Ref(final long id) {
             if (id == ObjectIDOperations.NIL) {
                 return nil();
             } else if (id == ObjectIDOperations.TRUE) {
@@ -52,13 +56,23 @@ public abstract class ObjectSpaceNodes {
             } else if (ObjectIDOperations.isSmallFixnumID(id)) {
                 return ObjectIDOperations.toFixnum(id);
             } else {
-                final Object object = getContext().getObjectSpaceManager().collectLiveObjects().get(id);
+                final Memo<Object> result = new Memo<Object>(nil());
 
-                if (object == null) {
-                    return nil();
-                } else {
-                    return object;
-                }
+                new ObjectGraph(getContext()).visitObjects(new ObjectGraphVisitor() {
+
+                    @Override
+                    public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
+                        if (ObjectIDOperations.verySlowGetObjectID(object) == id) {
+                            result.set(object);
+                            throw new StopVisitingObjectsException();
+                        }
+
+                        return true;
+                    }
+
+                });
+
+                return result.get();
             }
         }
 
@@ -89,13 +103,14 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyProc(block)")
         public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
-            for (DynamicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+            for (DynamicObject object : new ObjectGraph(getContext()).getObjects()) {
                 if (!isHidden(object)) {
                     yield(frame, block, object);
                     count++;
@@ -111,8 +126,8 @@ public abstract class ObjectSpaceNodes {
 
             int count = 0;
 
-            for (DynamicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
-                if (!isHidden(object) && ModuleOperations.assignableTo(BasicObjectNodes.getLogicalClass(object), ofClass)) {
+            for (DynamicObject object : new ObjectGraph(getContext()).getObjects()) {
+                if (!isHidden(object) && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }

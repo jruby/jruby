@@ -1151,21 +1151,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return 0 if equal,
      *         &lt; 0 if this is less than other,
      *         &gt; 0 if this is greater than other
-     * @throws IllegalArgumentException if the objects cannot be compared.
      */
     @Override
     public int compareTo(IRubyObject other) {
-        IRubyObject oldExc = getRuntime().getGlobalVariables().get("$!");
-        try {
-            IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
-                    this, OP_CMP, other);
+        final Ruby runtime = getRuntime();
 
-            // if RubyBasicObject#op_cmp is used, the result may be nil
-            if (!cmp.isNil()) {
-                return (int) cmp.convertToInteger().getLongValue();
-            }
-        } catch (RaiseException ex) {
-            getRuntime().getGlobalVariables().set("$!", oldExc);
+        IRubyObject cmp = invokedynamic(runtime.getCurrentContext(), this, OP_CMP, other);
+
+        // if RubyBasicObject#op_cmp is used, the result may be nil (not comparable)
+        if ( ! cmp.isNil() ) {
+            return (int) cmp.convertToInteger().getLongValue();
         }
 
         /* We used to raise an error if two IRubyObject were not comparable, but
@@ -1935,11 +1930,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         if (this == other || invokedynamic(context, this, OP_EQUAL, other).isTrue()){
-            return RubyFixnum.zero(runtime);
+            return RubyFixnum.zero(context.runtime);
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_obj_init_copy
