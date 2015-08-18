@@ -2225,11 +2225,15 @@ public class IRBuilder {
             activeRescuers.peek());
 
         ensureBodyBuildStack.push(ebi);
-        // Restore $! if we the exception was rescued
+
+        // Restore $! if we had a non-empty rescue node
         if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
-            addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            if (ensurerNode == null) {
+                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
             ebi.savedGlobalException = savedGlobalException;
         }
+
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
@@ -2251,6 +2255,8 @@ public class IRBuilder {
         // Clone the ensure body and jump to the end.
         // Don't bother if the protected body ended in a return
         // OR if we are really processing a rescue node
+        //
+        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
         if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
@@ -2266,8 +2272,14 @@ public class IRBuilder {
         addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
+        // Emit code to conditionally restore $!
+        Variable ret = createTemporaryVariable();
+        addInstr(new RuntimeHelperCall(ret, RESTORE_PERLY_EXC, new Operand[]{exc, savedGlobalException} ));
+
         // Now emit the ensure body's stashed instructions
-        ebi.emitBody(this);
+        if (ensurerNode != null) {
+            ebi.emitBody(this);
+        }
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
