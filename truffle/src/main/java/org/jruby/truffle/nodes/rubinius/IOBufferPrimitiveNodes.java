@@ -42,73 +42,20 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 public abstract class IOBufferPrimitiveNodes {
 
     private static final int IOBUFFER_SIZE = 32768;
     private static final int STACK_BUF_SZ = 8192;
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface IOBufferLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        String WRITE_SYNCED_IDENTIFIER = "@write_synced";
-        String STORAGE_IDENTIFIER = "@storage";
-        String USED_IDENTIFIER = "@used";
-        String START_IDENTIFIER = "@start";
-        String TOTAL_IDENTIFIER = "@total";
-
-        DynamicObjectFactory createIOBufferShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createIOBuffer(DynamicObjectFactory factory, boolean writeSynced, DynamicObject storage, int used, int start, int total);
-
-        boolean getWriteSynced(DynamicObject object);
-        void setWriteSynced(DynamicObject object, boolean value);
-
-        DynamicObject getStorage(DynamicObject object);
-        void setStorage(DynamicObject object, DynamicObject value);
-
-        int getUsed(DynamicObject object);
-        void setUsed(DynamicObject object, int value);
-
-        int getStart(DynamicObject object);
-        void setStart(DynamicObject object, int value);
-
-        int getTotal(DynamicObject object);
-        void setTotal(DynamicObject object, int value);
-
-    }
-
-    public static final IOBufferLayout IO_BUFFER_LAYOUT = IOBufferLayoutImpl.INSTANCE;
-
-    public static void setWriteSynced(DynamicObject io, boolean writeSynced) {
-        IO_BUFFER_LAYOUT.setWriteSynced(io, writeSynced);
-    }
-
-    private static DynamicObject getStorage(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getStorage(io);
-    }
-
-    private static int getUsed(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getUsed(io);
-    }
-
-    public static void setUsed(DynamicObject io, int used) {
-        IO_BUFFER_LAYOUT.setUsed(io, used);
-    }
-
-    private static int getTotal(DynamicObject io) {
-        return IO_BUFFER_LAYOUT.getTotal(io);
-    }
 
     @RubiniusPrimitive(name = "iobuffer_allocate")
     public static abstract class IOBufferAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -119,8 +66,8 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject classToAllocate) {
-            return IO_BUFFER_LAYOUT.createIOBuffer(
-                    ClassNodes.CLASS_LAYOUT.getInstanceFactory(classToAllocate),
+            return Layouts.IO_BUFFER.createIOBuffer(
+                    Layouts.CLASS.getInstanceFactory(classToAllocate),
                         true,
                         ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                         0,
@@ -139,23 +86,23 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
-            setWriteSynced(ioBuffer, false);
+            Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
 
-            final ByteList byteList = StringNodes.getByteList(string);
+            final ByteList byteList = Layouts.STRING.getByteList(string);
             int stringSize = byteList.realSize() - startPosition;
-            final int usedSpace = getUsed(ioBuffer);
+            final int usedSpace = Layouts.IO_BUFFER.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;
 
             if (stringSize > availableSpace) {
                 stringSize = availableSpace;
             }
 
-            ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
+            ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
 
             // Data is copied here - can we do something COW?
             System.arraycopy(byteList.unsafeBytes(), byteList.begin() + startPosition, storage.getUnsafeBytes(), storage.begin() + usedSpace, stringSize);
 
-            setUsed(ioBuffer, usedSpace + stringSize);
+            Layouts.IO_BUFFER.setUsed(ioBuffer, usedSpace + stringSize);
 
             return stringSize;
         }
@@ -171,7 +118,7 @@ public abstract class IOBufferPrimitiveNodes {
 
         @Specialization
         public int fill(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject io) {
-            final int fd = IOPrimitiveNodes.getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
 
             // TODO CS 21-Apr-15 allocating this buffer for each read is crazy
             final byte[] readBuffer = new byte[STACK_BUF_SZ];
@@ -190,11 +137,11 @@ public abstract class IOBufferPrimitiveNodes {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().internalError("IO buffer overrun", this));
                 }
-                final int used = getUsed(ioBuffer);
-                final ByteList storage = ByteArrayNodes.getBytes(getStorage(ioBuffer));
+                final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
+                final ByteList storage = Layouts.BYTE_ARRAY.getBytes(Layouts.IO_BUFFER.getStorage(ioBuffer));
                 System.arraycopy(readBuffer, 0, storage.getUnsafeBytes(), storage.getBegin() + used, bytesRead);
                 storage.setRealSize(used + bytesRead);
-                setUsed(ioBuffer, used + bytesRead);
+                Layouts.IO_BUFFER.setUsed(ioBuffer, used + bytesRead);
             }
 
             return bytesRead;
@@ -231,8 +178,8 @@ public abstract class IOBufferPrimitiveNodes {
         }
 
         private int left(VirtualFrame frame, DynamicObject ioBuffer) {
-            final int total = getTotal(ioBuffer);
-            final int used = getUsed(ioBuffer);
+            final int total = Layouts.IO_BUFFER.getTotal(ioBuffer);
+            final int used = Layouts.IO_BUFFER.getUsed(ioBuffer);
             return total - used;
         }
 

@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -20,6 +19,7 @@ import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
@@ -83,9 +83,9 @@ public class FeatureManager {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
             } else {
-                ModuleNodes.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }
@@ -187,14 +187,14 @@ public class FeatureManager {
             try {
                 context.loadFile(path, currentNode);
             } catch (RaiseException e) {
-                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) ArrayNodes.getStore(loadedFeatures));
-                final int length = ArrayNodes.getSize(loadedFeatures);
+                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
+                final int length = Layouts.ARRAY.getSize(loadedFeatures);
                 for (int i = length - 1; i >= 0; i--) {
                     if (mirror.get(i) == pathString) {
                         for (int j = length - 1; j > i; j--) {
                             mirror.set(i - 1, mirror.get(i));
                         }
-                        ArrayNodes.setSize(loadedFeatures, length - 1);
+                        Layouts.ARRAY.setSize(loadedFeatures, length - 1);
                         break;
                     }
                 }

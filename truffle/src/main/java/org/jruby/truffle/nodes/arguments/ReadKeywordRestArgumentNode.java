@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +78,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(keyValue);
         }
 
-        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), entries, HashNodes.isCompareByIdentity(hash));
+        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), entries, Layouts.HASH.getCompareByIdentity(hash));
     }
 
 }

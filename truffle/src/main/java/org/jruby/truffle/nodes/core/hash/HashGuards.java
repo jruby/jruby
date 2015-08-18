@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.hash;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.hash.Entry;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class HashGuards {
 
@@ -19,7 +20,7 @@ public abstract class HashGuards {
 
     public static boolean isNullHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getStore(hash) == null;
+        return Layouts.HASH.getStore(hash) == null;
     }
 
     public static boolean isPackedHash(DynamicObject hash) {
@@ -30,29 +31,29 @@ public abstract class HashGuards {
 
     public static boolean isBucketHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getStore(hash) instanceof Entry[];
+        return Layouts.HASH.getStore(hash) instanceof Entry[];
     }
 
     // Higher level properties
 
     public static boolean isEmptyHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getSize(hash) == 0;
+        return Layouts.HASH.getSize(hash) == 0;
     }
 
     public static boolean isCompareByIdentity(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.isCompareByIdentity(hash);
+        return Layouts.HASH.getCompareByIdentity(hash);
     }
 
     public static boolean hasDefaultValue(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getDefaultValue(hash) != null;
+        return Layouts.HASH.getDefaultValue(hash) != null;
     }
 
     public static boolean hasDefaultBlock(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
-        return HashNodes.getDefaultBlock(hash) != null;
+        return Layouts.HASH.getDefaultBlock(hash) != null;
     }
 
 }

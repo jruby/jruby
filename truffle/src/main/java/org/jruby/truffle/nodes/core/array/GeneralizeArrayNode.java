@@ -19,6 +19,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -39,7 +40,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)"}
     )
     public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
-        ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
+        ArrayNodes.setStore(array, new Object[requiredCapacity], Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -47,8 +48,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
-        final int[] intStore = (int[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final int[] intStore = (int[]) Layouts.ARRAY.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -56,8 +57,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
-        final long[] intStore = (long[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final long[] intStore = (long[]) Layouts.ARRAY.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -65,8 +66,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
-        final double[] intStore = (double[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+        final double[] intStore = (double[]) Layouts.ARRAY.getStore(array);
+        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), Layouts.ARRAY.getSize(array));
         return array;
     }
 

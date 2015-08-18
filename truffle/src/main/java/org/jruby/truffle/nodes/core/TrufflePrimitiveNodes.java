@@ -32,6 +32,7 @@ import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
@@ -195,7 +196,7 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = StringNodes.getByteList(string);
+            final ByteList byteList = Layouts.STRING.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
@@ -382,7 +383,7 @@ public abstract class TrufflePrimitiveNodes {
         private String[] toStrings(DynamicObject array) {
             assert RubyGuards.isRubyArray(array);
 
-            final String[] strings = new String[ArrayNodes.getSize(array)];
+            final String[] strings = new String[Layouts.ARRAY.getSize(array)];
 
             int n = 0;
 
@@ -487,7 +488,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization(guards = "isRubyMethod(rubyMethod)")
         public Object installRubiniusPrimitive(DynamicObject rubyMethod) {
-            String name = MethodNodes.getMethod(rubyMethod).getName();
+            String name = Layouts.METHOD.getMethod(rubyMethod).getName();
             getContext().getRubiniusPrimitiveManager().installPrimitive(name, rubyMethod);
             return nil();
         }

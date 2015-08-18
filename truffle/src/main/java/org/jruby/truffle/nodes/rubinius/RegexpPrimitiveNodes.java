@@ -21,6 +21,7 @@ import org.joni.Regex;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
 
@@ -39,7 +40,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public boolean fixedEncoding(DynamicObject regexp) {
-            return RegexpNodes.getOptions(regexp).isFixed();
+            return Layouts.REGEXP.getOptions(regexp).isFixed();
         }
 
     }
@@ -66,7 +67,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
-            RegexpNodes.initialize(regexp, this, StringNodes.getByteList(pattern), options);
+            RegexpNodes.initialize(regexp, this, Layouts.STRING.getByteList(pattern), options);
             return regexp;
         }
 
@@ -82,7 +83,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = "isInitialized(regexp)")
         public int options(DynamicObject regexp) {
-            return RegexpNodes.getOptions(regexp).toOptions();
+            return Layouts.REGEXP.getOptions(regexp).toOptions();
         }
 
         @Specialization(guards = "!isInitialized(regexp)")
@@ -126,18 +127,18 @@ public abstract class RegexpPrimitiveNodes {
         public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("invalid byte sequence in %s", StringNodes.getByteList(string).getEncoding()), this));
+                    String.format("invalid byte sequence in %s", Layouts.STRING.getByteList(string).getEncoding()), this));
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
-            final ByteList stringBl = StringNodes.getByteList(string);
-            final ByteList bl = RegexpNodes.getSource(regexp);
+            final ByteList stringBl = Layouts.STRING.getByteList(string);
+            final ByteList bl = Layouts.REGEXP.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), RegexpNodes.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {

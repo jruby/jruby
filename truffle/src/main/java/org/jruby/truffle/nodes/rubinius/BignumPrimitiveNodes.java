@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
@@ -42,14 +43,14 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 
         @TruffleBoundary
         @Specialization
         public double pow(DynamicObject a, double b) {
-            return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
+            return Math.pow(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")

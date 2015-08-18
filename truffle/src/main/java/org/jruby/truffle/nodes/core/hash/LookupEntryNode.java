@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class LookupEntryNode extends RubyNode {
 
@@ -41,14 +42,14 @@ public class LookupEntryNode extends RubyNode {
     public HashLookupResult lookup(VirtualFrame frame, DynamicObject hash, Object key) {
         final int hashed = hashNode.hash(frame, key);
 
-        final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
+        final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
         final int index = BucketsStrategy.getBucketIndex(hashed, entries.length);
         Entry entry = entries[index];
 
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (byIdentityProfile.profile(HashNodes.isCompareByIdentity(hash))) {
+            if (byIdentityProfile.profile(Layouts.HASH.getCompareByIdentity(hash))) {
                 if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
                     return new HashLookupResult(hashed, index, previousEntry, entry);
                 }

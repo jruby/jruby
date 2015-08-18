@@ -40,36 +40,16 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.File;
 
 public abstract class DirPrimitiveNodes {
-
-    @Layout
-    public interface DirLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createDirShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createDir(DynamicObjectFactory factory, @Nullable Object contents, int position);
-
-        Object getContents(DynamicObject object);
-        void setContents(DynamicObject object, Object value);
-
-        int getPosition(DynamicObject object);
-        void setPosition(DynamicObject object, int value);
-
-    }
-
-    public static final DirLayout DIR_LAYOUT = DirLayoutImpl.INSTANCE;
 
     @RubiniusPrimitive(name = "dir_allocate")
     public static abstract class DirAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -80,7 +60,7 @@ public abstract class DirPrimitiveNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject dirClass) {
-            return DIR_LAYOUT.createDir(ClassNodes.CLASS_LAYOUT.getInstanceFactory(dirClass), null, 0);
+            return Layouts.DIR.createDir(Layouts.CLASS.getInstanceFactory(dirClass), null, 0);
         }
 
     }
@@ -109,8 +89,8 @@ public abstract class DirPrimitiveNodes {
                 throw new UnsupportedOperationException();
             }
 
-            DIR_LAYOUT.setContents(dir, contents);
-            DIR_LAYOUT.setPosition(dir, -2); // -2 for . and then ..
+            Layouts.DIR.setContents(dir, contents);
+            Layouts.DIR.setPosition(dir, -2); // -2 for . and then ..
 
             return nil();
         }
@@ -134,16 +114,16 @@ public abstract class DirPrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public Object read(DynamicObject dir) {
-            final int position = DIR_LAYOUT.getPosition(dir);
+            final int position = Layouts.DIR.getPosition(dir);
 
-            DIR_LAYOUT.setPosition(dir, position + 1);
+            Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
                 return createString(".");
             } else if (position == -1) {
                 return createString("..");
             } else {
-                final String[] contents = (String[]) DIR_LAYOUT.getContents(dir);
+                final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 
                 if (position < contents.length) {
                     return createString(contents[position]);
@@ -168,13 +148,13 @@ public abstract class DirPrimitiveNodes {
         public Object control(DynamicObject dir, int kind, int position) {
             switch (kind) {
                 case 0:
-                    DIR_LAYOUT.setPosition(dir, position);
+                    Layouts.DIR.setPosition(dir, position);
                     return true;
                 case 1:
-                    DIR_LAYOUT.setPosition(dir, -2);
+                    Layouts.DIR.setPosition(dir, -2);
                     return true;
                 case 2:
-                    return DIR_LAYOUT.getPosition(dir);
+                    return Layouts.DIR.getPosition(dir);
 
             }
             return nil();

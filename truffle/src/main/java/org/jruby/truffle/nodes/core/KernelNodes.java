@@ -59,6 +59,7 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.MethodFilter;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
@@ -138,7 +139,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(resultBuilder.toString(), EncodingNodes.getEncoding(EncodingNodes.getEncoding("UTF-8")));
+            return createString(resultBuilder.toString(), Layouts.ENCODING.getEncoding(EncodingNodes.getEncoding("UTF-8")));
         }
 
     }
@@ -425,8 +426,8 @@ public abstract class KernelNodes {
             final DynamicObject newObject = copyNode.executeCopy(frame, self);
 
             // Copy the singleton class if any.
-            if (ClassNodes.isSingleton(BasicObjectNodes.getMetaClass(self))) {
-                ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(BasicObjectNodes.getMetaClass(self));
+            if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self))) {
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -529,8 +530,8 @@ public abstract class KernelNodes {
         ) {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
-            final Object callerSelf = BindingNodes.getSelf(callerBinding);
-            final MaterializedFrame parentFrame = BindingNodes.getFrame(callerBinding);
+            final Object callerSelf = Layouts.BINDING.getSelf(callerBinding);
+            final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
@@ -554,7 +555,7 @@ public abstract class KernelNodes {
         }, contains = "evalNoBindingCached")
         public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided binding,
                                             NotProvided filename, NotProvided lineNumber) {
-            return getContext().eval(StringNodes.getByteList(source), getCallerBinding(frame), true, this);
+            return getContext().eval(Layouts.STRING.getByteList(source), getCallerBinding(frame), true, this);
         }
 
         @Specialization(guards = {
@@ -573,7 +574,7 @@ public abstract class KernelNodes {
         })
         public Object evalBinding(DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber) {
-            return getContext().eval(StringNodes.getByteList(source), binding, false, this);
+            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
         }
 
         @TruffleBoundary
@@ -583,7 +584,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)"})
         public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                           NotProvided lineNumber) {
-            return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
+            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
         }
 
         @TruffleBoundary
@@ -593,7 +594,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)"})
         public Object evalBindingFilenameLine(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber) {
-            return getContext().eval(StringNodes.getByteList(source), binding, false, filename.toString(), this);
+            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
         }
 
         @TruffleBoundary
@@ -609,7 +610,7 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(sourceText);
 
             final DynamicObject callerBinding = getCallerBinding(frame);
-            final MaterializedFrame parentFrame = BindingNodes.getFrame(callerBinding);
+            final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
 
             final Source source = Source.fromText(sourceText.toString(), "(eval)");
 
@@ -968,7 +969,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public boolean isInstanceVariableDefinedSymbol(DynamicObject object, DynamicObject name) {
-            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this));
+            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
         }
 
     }
@@ -989,7 +990,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, SymbolNodes.getString(name));
+            return instanceVariableGet(object, Layouts.SYMBOL.getString(name));
         }
 
         private Object instanceVariableGet(DynamicObject object, String name) {
@@ -1017,7 +1018,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
-            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), SymbolNodes.getString(name), this), value);
+            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value);
             return value;
         }
 
@@ -1082,7 +1083,7 @@ public abstract class KernelNodes {
         }
 
         public Assumption getUnmodifiedAssumption(DynamicObject module) {
-            return ModuleNodes.getFields(module).getUnmodifiedAssumption();
+            return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
         }
 
         @Specialization(guards = "isRubyModule(module)")
@@ -1132,14 +1133,14 @@ public abstract class KernelNodes {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
-                    ProcNodes.getSharedMethodInfo(block),
-                    ProcNodes.getCallTargetForLambdas(block),
-                    ProcNodes.getCallTargetForLambdas(block),
-                    ProcNodes.getCallTargetForLambdas(block),
-                    ProcNodes.getDeclarationFrame(block),
-                    ProcNodes.getMethod(block),
-                    ProcNodes.getSelfCapturedInScope(block),
-                    ProcNodes.getBlockCapturedInScope(block));
+                    Layouts.PROC.getSharedMethodInfo(block),
+                    Layouts.PROC.getCallTargetForLambdas(block),
+                    Layouts.PROC.getCallTargetForLambdas(block),
+                    Layouts.PROC.getCallTargetForLambdas(block),
+                    Layouts.PROC.getDeclarationFrame(block),
+                    Layouts.PROC.getMethod(block),
+                    Layouts.PROC.getSelf(block),
+                    Layouts.PROC.getBlock(block));
         }
     }
 
@@ -1276,7 +1277,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
         @Specialization(guards = "!regular")
@@ -1333,7 +1334,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
+                    Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray());
         }
 
     }
@@ -1352,14 +1353,14 @@ public abstract class KernelNodes {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.PROC,
-                    ProcNodes.getSharedMethodInfo(block),
-                    ProcNodes.getCallTargetForProcs(block),
-                    ProcNodes.getCallTargetForProcs(block),
-                    ProcNodes.getCallTargetForLambdas(block),
-                    ProcNodes.getDeclarationFrame(block),
-                    ProcNodes.getMethod(block),
-                    ProcNodes.getSelfCapturedInScope(block),
-                    ProcNodes.getBlockCapturedInScope(block));
+                    Layouts.PROC.getSharedMethodInfo(block),
+                    Layouts.PROC.getCallTargetForProcs(block),
+                    Layouts.PROC.getCallTargetForProcs(block),
+                    Layouts.PROC.getCallTargetForLambdas(block),
+                    Layouts.PROC.getDeclarationFrame(block),
+                    Layouts.PROC.getMethod(block),
+                    Layouts.PROC.getSelf(block),
+                    Layouts.PROC.getBlock(block));
         }
     }
 
@@ -1388,7 +1389,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
+                    Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray());
         }
 
     }
@@ -1418,7 +1419,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
+                    Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray());
         }
 
     }
@@ -1533,7 +1534,7 @@ public abstract class KernelNodes {
 
             if (feature.equals("openssl") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
                     .getEncapsulatingSourceSection().getSource().getName().endsWith("securerandom.rb")) {
-                ModuleNodes.getFields(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
+                Layouts.MODULE.getFields(getContext().getCoreLibrary().getObjectClass()).getConstants().remove("OpenSSL");
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature, this));
             }
 
@@ -1753,13 +1754,13 @@ public abstract class KernelNodes {
         public DynamicObject singletonMethods(VirtualFrame frame, Object self, boolean includeAncestors) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
-            if (!ClassNodes.isSingleton(metaClass)) {
+            if (!Layouts.CLASS.getIsSingleton(metaClass)) {
                 return createEmptyArray();
             }
 
             CompilerDirectives.transferToInterpreter();
             return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ModuleNodes.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
+                    Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray());
         }
 
     }
@@ -1915,7 +1916,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(StringNodes.getByteList(format), result);
+            return finishFormat(Layouts.STRING.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -1974,7 +1975,7 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new FormatParser(getContext()).parse(StringNodes.getByteList(format));
+                return new FormatParser(getContext()).parse(Layouts.STRING.getByteList(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
@@ -2085,7 +2086,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyBignum(value)")
         public String toHexString(DynamicObject value) {
-            return BignumNodes.getBigIntegerValue(value).toString(16);
+            return Layouts.BIGNUM.getValue(value).toString(16);
         }
 
     }
@@ -2110,7 +2111,7 @@ public abstract class KernelNodes {
         public DynamicObject toS(VirtualFrame frame, Object self) {
             CompilerDirectives.transferToInterpreter();
 
-            String className = ModuleNodes.getFields(classNode.executeGetClass(frame, self)).getName();
+            String className = Layouts.MODULE.getFields(classNode.executeGetClass(frame, self)).getName();
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
@@ -2141,7 +2142,7 @@ public abstract class KernelNodes {
 
             if (isFrozenNode.executeIsFrozen(object)) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError(ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
+                throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
             }
 
             writeTaintNode.execute(object, false);

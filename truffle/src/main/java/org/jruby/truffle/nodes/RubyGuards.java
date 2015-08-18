@@ -11,14 +11,12 @@ package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
-import org.jruby.truffle.nodes.ext.BigDecimalNodes;
-import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
-import org.jruby.truffle.nodes.rubinius.PointerNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
+import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
+import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayoutImpl;
 
 public abstract class RubyGuards {
 
@@ -43,43 +41,43 @@ public abstract class RubyGuards {
     // Ruby types
 
     public static boolean isRubyBasicObject(Object object) {
-        return BasicObjectNodes.BASIC_OBJECT_LAYOUT.isBasicObject(object);
+        return Layouts.BASIC_OBJECT.isBasicObject(object);
     }
 
     public static boolean isRubyBignum(Object value) {
-        return (value instanceof DynamicObject) && isRubyBignum((DynamicObject) value);
+        return Layouts.BIGNUM.isBignum(value);
     }
 
     public static boolean isRubyBignum(DynamicObject value) {
-        return BignumNodes.BIGNUM_LAYOUT.isBignum(value);
+        return Layouts.BIGNUM.isBignum(value);
     }
 
     public static boolean isRubyBigDecimal(DynamicObject value) {
-        return BigDecimalNodes.BIG_DECIMAL_LAYOUT.isBigDecimal(value);
+        return Layouts.BIG_DECIMAL.isBigDecimal(value);
     }
 
     public static boolean isIntegerFixnumRange(Object object) {
-        return (object instanceof DynamicObject) && isIntegerFixnumRange((DynamicObject) object);
+        return Layouts.INTEGER_FIXNUM_RANGE.isIntegerFixnumRange(object);
     }
 
     public static boolean isIntegerFixnumRange(DynamicObject object) {
-        return RangeNodes.INTEGER_FIXNUM_RANGE_LAYOUT.isIntegerFixnumRange(object);
+        return Layouts.INTEGER_FIXNUM_RANGE.isIntegerFixnumRange(object);
     }
 
     public static boolean isLongFixnumRange(Object object) {
-        return (object instanceof DynamicObject) && isLongFixnumRange((DynamicObject) object);
+        return Layouts.LONG_FIXNUM_RANGE.isLongFixnumRange(object);
     }
 
     public static boolean isLongFixnumRange(DynamicObject object) {
-        return RangeNodes.LONG_FIXNUM_RANGE_LAYOUT.isLongFixnumRange(object);
+        return Layouts.LONG_FIXNUM_RANGE.isLongFixnumRange(object);
     }
 
     public static boolean isObjectRange(Object object) {
-        return (object instanceof DynamicObject) && isObjectRange((DynamicObject) object);
+        return Layouts.OBJECT_RANGE.isObjectRange(object);
     }
 
     public static boolean isObjectRange(DynamicObject object) {
-        return RangeNodes.OBJECT_RANGE_LAYOUT.isObjectRange(object);
+        return Layouts.OBJECT_RANGE.isObjectRange(object);
     }
 
     public static boolean isRubyRange(Object value) {
@@ -87,159 +85,135 @@ public abstract class RubyGuards {
     }
 
     public static boolean isRubyArray(Object value) {
-        return (value instanceof DynamicObject) && isRubyArray((DynamicObject) value);
+        return Layouts.ARRAY.isArray(value);
     }
 
     public static boolean isRubyArray(DynamicObject value) {
-        return ArrayNodes.ARRAY_LAYOUT.isArray(value);
+        return Layouts.ARRAY.isArray(value);
     }
 
     public static boolean isRubyBinding(DynamicObject object) {
-        return BindingNodes.BINDING_LAYOUT.isBinding(object);
+        return Layouts.BINDING.isBinding(object);
     }
 
     public static boolean isRubyClass(Object value) {
-        return (value instanceof DynamicObject) && isRubyClass((DynamicObject) value);
+        return Layouts.CLASS.isClass(value);
     }
 
     public static boolean isRubyClass(DynamicObject value) {
-        return ClassNodes.CLASS_LAYOUT.isClass(value);
+        return Layouts.CLASS.isClass(value);
     }
 
     public static boolean isRubyHash(Object value) {
-        return (value instanceof DynamicObject) && isRubyHash((DynamicObject) value);
+        return Layouts.HASH.isHash(value);
     }
 
     public static boolean isRubyHash(DynamicObject value) {
-        return HashNodes.HASH_LAYOUT.isHash(value);
+        return Layouts.HASH.isHash(value);
     }
 
     public static boolean isRubyModule(Object value) {
-        return (value instanceof DynamicObject) && isRubyModule((DynamicObject) value);
+        return Layouts.MODULE.isModule(value);
     }
 
     public static boolean isRubyModule(DynamicObject value) {
-        return ModuleNodes.MODULE_LAYOUT.isModule(value);
+        return Layouts.MODULE.isModule(value);
     }
 
     public static boolean isRubyRegexp(Object value) {
-        return (value instanceof DynamicObject) && isRubyRegexp((DynamicObject) value);
+        return Layouts.REGEXP.isRegexp(value);
     }
 
     public static boolean isRubyRegexp(DynamicObject value) {
-        return RegexpNodes.REGEXP_LAYOUT.isRegexp(value);
+        return Layouts.REGEXP.isRegexp(value);
     }
 
     public static boolean isRubyString(Object value) {
-        return (value instanceof DynamicObject) && isRubyString((DynamicObject) value);
+        return Layouts.STRING.isString(value);
     }
 
     public static boolean isRubyString(DynamicObject value) {
-        return StringNodes.STRING_LAYOUT.isString(value);
+        return Layouts.STRING.isString(value);
     }
 
     public static boolean isRubyEncoding(Object object) {
-        return (object instanceof DynamicObject) && isRubyEncoding((DynamicObject) object);
+        return Layouts.ENCODING.isEncoding(object);
     }
 
     public static boolean isRubyEncoding(DynamicObject object) {
-        return EncodingNodes.ENCODING_LAYOUT.isEncoding(object);
+        return Layouts.ENCODING.isEncoding(object);
     }
 
     public static boolean isRubySymbol(Object value) {
-        return (value instanceof DynamicObject) && isRubySymbol((DynamicObject) value);
+        return Layouts.SYMBOL.isSymbol(value);
     }
 
     public static boolean isRubySymbol(DynamicObject value) {
-        return SymbolNodes.SYMBOL_LAYOUT.isSymbol(value);
+        return Layouts.SYMBOL.isSymbol(value);
     }
 
     public static boolean isRubyMethod(Object value) {
-        return (value instanceof DynamicObject) && isRubyMethod((DynamicObject) value);
+        return Layouts.METHOD.isMethod(value);
     }
 
     public static boolean isRubyMethod(DynamicObject value) {
-        return MethodNodes.METHOD_LAYOUT.isMethod(value);
+        return Layouts.METHOD.isMethod(value);
     }
 
     public static boolean isRubyUnboundMethod(Object value) {
-        return (value instanceof DynamicObject) && isRubyUnboundMethod((DynamicObject) value);
+        return Layouts.UNBOUND_METHOD.isUnboundMethod(value);
     }
 
     public static boolean isRubyUnboundMethod(DynamicObject value) {
-        return UnboundMethodNodes.UNBOUND_METHOD_LAYOUT.isUnboundMethod(value);
-    }
-
-    public static boolean isRubyMutex(DynamicObject value) {
-        return MutexNodes.MUTEX_LAYOUT.isMutex(value);
+        return Layouts.UNBOUND_METHOD.isUnboundMethod(value);
     }
 
     public static boolean isDynamicObject(Object value) {
         return value instanceof DynamicObject;
     }
 
-    public static boolean isRubyPointer(Object value) {
-        return (value instanceof DynamicObject) && isRubyPointer((DynamicObject) value);
-    }
-
     public static boolean isRubyPointer(DynamicObject value) {
-        return PointerNodes.POINTER_LAYOUT.isPointer(value);
-    }
-
-    public static boolean isRubiniusByteArray(Object value) {
-        return (value instanceof DynamicObject) && isRubiniusByteArray((DynamicObject) value);
+        return Layouts.POINTER.isPointer(value);
     }
 
     public static boolean isRubiniusByteArray(DynamicObject value) {
-        return ByteArrayNodes.BYTE_ARRAY_LAYOUT.isByteArray(value);
+        return Layouts.BYTE_ARRAY.isByteArray(value);
     }
 
     public static boolean isRubyProc(Object object) {
-        return (object instanceof DynamicObject) && isRubyProc((DynamicObject) object);
+        return Layouts.PROC.isProc(object);
     }
 
     public static boolean isRubyProc(DynamicObject object) {
-        return ProcNodes.PROC_LAYOUT.isProc(object);
+        return Layouts.PROC.isProc(object);
     }
 
     public static boolean isRubyEncodingConverter(DynamicObject encodingConverter) {
-        return EncodingConverterNodes.ENCODING_CONVERTER_LAYOUT.isEncodingConverter(encodingConverter);
+        return Layouts.ENCODING_CONVERTER.isEncodingConverter(encodingConverter);
     }
 
     public static boolean isRubyTime(DynamicObject object) {
-        return TimeNodes.TIME_LAYOUT.isTime(object);
-    }
-
-    public static boolean isRubyException(Object value) {
-        return (value instanceof DynamicObject) && isRubyException((DynamicObject) value);
+        return Layouts.TIME.isTime(object);
     }
 
     public static boolean isRubyException(DynamicObject object) {
-        return ExceptionNodes.EXCEPTION_LAYOUT.isException(object);
-    }
-
-    public static boolean isRubyFiber(Object object) {
-        return (object instanceof DynamicObject) && isRubyFiber((DynamicObject) object);
+        return Layouts.EXCEPTION.isException(object);
     }
 
     public static boolean isRubyFiber(DynamicObject object) {
-        return FiberNodes.FIBER_LAYOUT.isFiber(object);
-    }
-
-    public static boolean isRubyThread(Object object) {
-        return (object instanceof DynamicObject) && isRubyThread((DynamicObject) object);
+        return Layouts.FIBER.isFiber(object);
     }
 
     public static boolean isRubyThread(DynamicObject object) {
-        return ThreadNodes.THREAD_LAYOUT.isThread(object);
+        return ThreadLayoutImpl.INSTANCE.isThread(object);
     }
 
     public static boolean isRubyMatchData(Object object) {
-        return (object instanceof DynamicObject) && isRubyMatchData((DynamicObject) object);
+        return Layouts.MATCH_DATA.isMatchData(object);
     }
 
     public static boolean isRubyMatchData(DynamicObject object) {
-        return MatchDataNodes.MATCH_DATA_LAYOUT.isMatchData(object);
+        return Layouts.MATCH_DATA.isMatchData(object);
     }
 
     // Internal types

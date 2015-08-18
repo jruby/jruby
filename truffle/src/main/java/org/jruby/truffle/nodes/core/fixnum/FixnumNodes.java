@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -113,7 +114,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object add(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).add(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).add(Layouts.BIGNUM.getValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -162,7 +163,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object sub(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).subtract(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).subtract(Layouts.BIGNUM.getValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -213,7 +214,7 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
         public Object mul(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).multiply(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).multiply(Layouts.BIGNUM.getValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
@@ -431,11 +432,11 @@ public abstract class FixnumNodes {
 
             // TODO(CS): why are we getting this case?
 
-            long mod = BigInteger.valueOf(a).mod(BignumNodes.getBigIntegerValue(b)).longValue();
+            long mod = BigInteger.valueOf(a).mod(Layouts.BIGNUM.getValue(b)).longValue();
 
-            if (mod < 0 && BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(BignumNodes.getBigIntegerValue(b)));
+                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 
             return mod;
@@ -460,7 +461,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject divMod(long a, DynamicObject b) {
-            return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
+            return divModNode.execute(a, Layouts.BIGNUM.getValue(b));
         }
 
         @Specialization
@@ -484,7 +485,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean less(int a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) < 0;
         }
 
         @Specialization
@@ -499,7 +500,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean less(long a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) < 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) < 0;
         }
 
         @Specialization(guards = {
@@ -526,7 +527,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean lessEqual(int a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) <= 0;
         }
 
         @Specialization
@@ -541,7 +542,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean lessEqual(long a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) <= 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) <= 0;
         }
 
         @Specialization(guards = {
@@ -613,7 +614,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public int compare(int a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b));
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b));
         }
 
         @Specialization
@@ -628,7 +629,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public int compare(long a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b));
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b));
         }
 
         @Specialization(guards = {
@@ -656,7 +657,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greaterEqual(int a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) >= 0;
         }
 
         @Specialization
@@ -671,7 +672,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greaterEqual(long a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) >= 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) >= 0;
         }
 
         @Specialization(guards = {
@@ -698,7 +699,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greater(int a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)
             ) > 0;
         }
 
@@ -714,7 +715,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public boolean greater(long a, DynamicObject b) {
-            return BigInteger.valueOf(a).compareTo(BignumNodes.getBigIntegerValue(b)) > 0;
+            return BigInteger.valueOf(a).compareTo(Layouts.BIGNUM.getValue(b)) > 0;
         }
 
         @Specialization(guards = {
@@ -765,7 +766,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitAnd(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).and(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).and(Layouts.BIGNUM.getValue(b)));
         }
     }
 
@@ -788,7 +789,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitOr(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).or(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).or(Layouts.BIGNUM.getValue(b)));
         }
     }
 
@@ -811,7 +812,7 @@ public abstract class FixnumNodes {
 
         @Specialization(guards = "isRubyBignum(b)")
         public Object bitXOr(long a, DynamicObject b) {
-            return fixnumOrBignum(BigInteger.valueOf(a).xor(BignumNodes.getBigIntegerValue(b)));
+            return fixnumOrBignum(BigInteger.valueOf(a).xor(Layouts.BIGNUM.getValue(b)));
         }
 
         @Specialization(guards = "!isRubyBignum(b)")

@@ -17,6 +17,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Concatenate arrays.
@@ -53,9 +54,9 @@ public final class ArrayConcatNode extends RubyNode {
         if (RubyGuards.isRubyArray(childObject)) {
             appendArrayProfile.enter();
             final DynamicObject childArray = (DynamicObject) childObject;
-            store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
+            store = arrayBuilderNode.ensure(store, length + Layouts.ARRAY.getSize(childArray));
             store = arrayBuilderNode.appendArray(store, length, childArray);
-            length += ArrayNodes.getSize(childArray);
+            length += Layouts.ARRAY.getSize(childArray);
         } else {
             appendObjectProfile.enter();
             store = arrayBuilderNode.ensure(store, length + 1);
@@ -73,9 +74,9 @@ public final class ArrayConcatNode extends RubyNode {
             if (RubyGuards.isRubyArray(childObject)) {
                 appendArrayProfile.enter();
                 final DynamicObject childArray = (DynamicObject) childObject;
-                store = arrayBuilderNode.ensure(store, length + ArrayNodes.getSize(childArray));
+                store = arrayBuilderNode.ensure(store, length + Layouts.ARRAY.getSize(childArray));
                 store = arrayBuilderNode.appendArray(store, length, childArray);
-                length += ArrayNodes.getSize(childArray);
+                length += Layouts.ARRAY.getSize(childArray);
             } else {
                 appendObjectProfile.enter();
                 store = arrayBuilderNode.ensure(store, length + 1);

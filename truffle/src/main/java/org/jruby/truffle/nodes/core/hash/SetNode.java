@@ -30,6 +30,7 @@ import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashLookupResult;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @ImportStatic(HashGuards.class)
 @NodeChildren({
@@ -83,8 +84,8 @@ public abstract class SetNode extends RubyNode {
 
         final int hashed = hashNode.hash(frame, key);
 
-        final Object[] store = (Object[]) HashNodes.getStore(hash);
-        final int size = HashNodes.getSize(hash);
+        final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+        final int size = Layouts.HASH.getSize(hash);
 
         for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
             if (n < size) {
@@ -110,7 +111,7 @@ public abstract class SetNode extends RubyNode {
 
         if (strategyProfile.profile(size + 1 <= PackedArrayStrategy.MAX_ENTRIES)) {
             PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
-            HashNodes.setSize(hash, size + 1);
+            Layouts.HASH.setSize(hash, size + 1);
             return value;
         } else {
             PackedArrayStrategy.promoteToBuckets(hash, store, size);
@@ -152,7 +153,7 @@ public abstract class SetNode extends RubyNode {
         final Entry entry = result.getEntry();
 
         if (foundProfile.profile(entry == null)) {
-            final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
+            final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
 
             final Entry newEntry = new Entry(result.getHashed(), key, value);
 
@@ -162,20 +163,20 @@ public abstract class SetNode extends RubyNode {
                 result.getPreviousEntry().setNextInLookup(newEntry);
             }
 
-            final Entry lastInSequence = HashNodes.getLastInSequence(hash);
+            final Entry lastInSequence = Layouts.HASH.getLastInSequence(hash);
 
             if (appendingProfile.profile(lastInSequence == null)) {
-                HashNodes.setFirstInSequence(hash, newEntry);
+                Layouts.HASH.setFirstInSequence(hash, newEntry);
             } else {
                 lastInSequence.setNextInSequence(newEntry);
                 newEntry.setPreviousInSequence(lastInSequence);
             }
 
-            HashNodes.setLastInSequence(hash, newEntry);
+            Layouts.HASH.setLastInSequence(hash, newEntry);
 
-            final int newSize = HashNodes.getSize(hash) + 1;
+            final int newSize = Layouts.HASH.getSize(hash) + 1;
 
-            HashNodes.setSize(hash, newSize);
+            Layouts.HASH.setSize(hash, newSize);
 
             // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
 

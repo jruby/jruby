@@ -59,6 +59,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
@@ -144,7 +145,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return createString(ModuleNodes.getFields(module).getName());
+            return createString(Layouts.MODULE.getFields(module).getName());
         }
 
     }
@@ -290,7 +291,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return RubyGuards.isRubyClass(object) && ClassNodes.isSingleton((DynamicObject) object);
+            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton((DynamicObject) object);
         }
 
     }
@@ -451,7 +452,7 @@ public abstract class VMPrimitiveNodes {
                 Object value = getContext().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
-                    stringValue = BignumNodes.getBigIntegerValue((DynamicObject) value).toString();
+                    stringValue = Layouts.BIGNUM.getValue((DynamicObject) value).toString();
                 } else {
                     // This toString() is fine as we only have boolean, int, long and RubyString in config.
                     stringValue = value.toString();
@@ -545,8 +546,8 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization(guards = "isRubyClass(newClass)")
         public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
-            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setLogicalClass(object, newClass);
-            BasicObjectNodes.BASIC_OBJECT_LAYOUT.setMetaClass(object, newClass);
+            Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
+            Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
             return object;
         }
 

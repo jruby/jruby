@@ -12,33 +12,17 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface ThreadBacktraceLocationLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createThreadBacktraceLocationShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createThreadBacktraceLocation(DynamicObjectFactory factory, Activation activation);
-
-        Activation getActivation(DynamicObject object);
-
-    }
-
-    public static final ThreadBacktraceLocationLayout THREAD_BACKTRACE_LOCATION_LAYOUT = ThreadBacktraceLocationLayoutImpl.INSTANCE;
-
     public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
-        return THREAD_BACKTRACE_LOCATION_LAYOUT.createThreadBacktraceLocation(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), activation);
-    }
-
-    protected static Activation getActivation(DynamicObject threadBacktraceLocation) {
-        return THREAD_BACKTRACE_LOCATION_LAYOUT.getActivation(threadBacktraceLocation);
+        return ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(rubyClass), activation);
     }
 
     @CoreMethod(names = { "absolute_path", "path" })
@@ -52,7 +36,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -77,7 +61,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public int lineno(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -96,7 +80,7 @@ public class ThreadBacktraceLocationNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 

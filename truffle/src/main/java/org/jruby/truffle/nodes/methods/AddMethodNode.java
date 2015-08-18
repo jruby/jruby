@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class AddMethodNode extends RubyNode {
@@ -59,10 +60,10 @@ public class AddMethodNode extends RubyNode {
         final InternalMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
-            ModuleNodes.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-            ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
-            ModuleNodes.getFields(module).addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(this, method);
         }
 
         return getSymbol(method.getName());

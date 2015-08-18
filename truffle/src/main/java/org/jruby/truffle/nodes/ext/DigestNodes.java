@@ -12,11 +12,12 @@ package org.jruby.truffle.nodes.ext;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ext.digest.BubbleBabble;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.util.ByteList;
 
 import java.security.MessageDigest;
@@ -24,19 +25,6 @@ import java.security.NoSuchAlgorithmException;
 
 @CoreClass(name = "Truffle::Digest")
 public abstract class DigestNodes {
-
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface DigestLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createDigestShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createDigest(DynamicObjectFactory factory, MessageDigest digest);
-
-        MessageDigest getDigest(DynamicObject object);
-
-    }
-
-    public static final DigestLayout DIGEST_LAYOUT = DigestLayoutImpl.INSTANCE;
 
     private enum Algorithm {
         MD5("MD5"),
@@ -67,11 +55,7 @@ public abstract class DigestNodes {
 
         final DynamicObject rubyClass = context.getCoreLibrary().getDigestClass();
 
-        return DIGEST_LAYOUT.createDigest(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), digest);
-    }
-
-    public static MessageDigest getDigest(DynamicObject digest) {
-        return DIGEST_LAYOUT.getDigest(digest);
+        return DigestLayoutImpl.INSTANCE.createDigest(Layouts.CLASS.getInstanceFactory(rubyClass), digest);
     }
 
     @CoreMethod(names = "md5", onSingleton = true)
@@ -159,8 +143,8 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject update(DynamicObject digestObject, DynamicObject message) {
-            final ByteList bytes = StringNodes.getByteList(message);
-            getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            final ByteList bytes = Layouts.STRING.getByteList(message);
+            DigestLayoutImpl.INSTANCE.getDigest(digestObject).update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
             return digestObject;
         }
 
@@ -176,7 +160,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject reset(DynamicObject digestObject) {
-            getDigest(digestObject).reset();
+            DigestLayoutImpl.INSTANCE.getDigest(digestObject).reset();
             return digestObject;
         }
 
@@ -192,7 +176,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject digest(DynamicObject digestObject) {
-            final MessageDigest digest = getDigest(digestObject);
+            final MessageDigest digest = DigestLayoutImpl.INSTANCE.getDigest(digestObject);
 
             // TODO CS 18-May-15 this cloning isn't ideal for the key operation
 
@@ -219,7 +203,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization
         public int digestLength(DynamicObject digestObject) {
-            return getDigest(digestObject).getDigestLength();
+            return DigestLayoutImpl.INSTANCE.getDigest(digestObject).getDigestLength();
         }
 
     }
@@ -234,7 +218,7 @@ public abstract class DigestNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
-            final ByteList byteList = StringNodes.getByteList(message);
+            final ByteList byteList = Layouts.STRING.getByteList(message);
             return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 

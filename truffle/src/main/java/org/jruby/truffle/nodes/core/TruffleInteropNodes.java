@@ -22,6 +22,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -180,7 +181,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
             return ForeignAccess.execute(node, frame, receiver, this.identifier);
         }
@@ -224,7 +225,7 @@ public abstract class TruffleInteropNodes {
         public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
             return ForeignAccess.execute(node, frame, receiver, this.identifier, value);
         }

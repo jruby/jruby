@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -28,37 +27,14 @@ import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
-    @org.jruby.truffle.om.dsl.api.Layout
-    public interface UnboundMethodLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createUnboundMethodShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createUnboundMethod(DynamicObjectFactory factory, DynamicObject origin, InternalMethod method);
-
-        boolean isUnboundMethod(DynamicObject object);
-
-        DynamicObject getOrigin(DynamicObject object);
-        InternalMethod getMethod(DynamicObject object);
-
-    }
-
-    public static final UnboundMethodLayout UNBOUND_METHOD_LAYOUT = UnboundMethodLayoutImpl.INSTANCE;
-
     public static DynamicObject createUnboundMethod(DynamicObject rubyClass, DynamicObject origin, InternalMethod method) {
-        return UNBOUND_METHOD_LAYOUT.createUnboundMethod(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), origin, method);
-    }
-
-    public static DynamicObject getOrigin(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getOrigin(method);
-    }
-
-    public static InternalMethod getMethod(DynamicObject method) {
-        return UNBOUND_METHOD_LAYOUT.getMethod(method);
+        return Layouts.UNBOUND_METHOD.createUnboundMethod(Layouts.CLASS.getInstanceFactory(rubyClass), origin, method);
     }
 
     @CoreMethod(names = "==", required = 1)
@@ -70,7 +46,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization(guards = "isRubyUnboundMethod(other)")
         boolean equal(DynamicObject self, DynamicObject other) {
-            return getMethod(self) == getMethod(other) && getOrigin(self) == getOrigin(other);
+            return Layouts.UNBOUND_METHOD.getMethod(self) == Layouts.UNBOUND_METHOD.getMethod(other) && Layouts.UNBOUND_METHOD.getOrigin(self) == Layouts.UNBOUND_METHOD.getOrigin(other);
         }
 
         @Specialization(guards = "!isRubyUnboundMethod(other)")
@@ -89,7 +65,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public int arity(DynamicObject method) {
-            return getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
+            return Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -110,19 +86,19 @@ public abstract class UnboundMethodNodes {
         public DynamicObject bind(VirtualFrame frame, DynamicObject unboundMethod, Object object) {
             final DynamicObject objectMetaClass = metaClass(frame, object);
 
-            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(getMethod(unboundMethod), objectMetaClass)) {
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                final DynamicObject declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (RubyGuards.isRubyClass(declaringModule) && ClassNodes.isSingleton(declaringModule)) {
+                final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + ModuleNodes.getFields(declaringModule).getName(), this));
+                            "bind argument must be an instance of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
+            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
         }
 
         protected DynamicObject metaClass(VirtualFrame frame, Object object) {
@@ -140,7 +116,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject name(DynamicObject unboundMethod) {
-            return getSymbol(getMethod(unboundMethod).getName());
+            return getSymbol(Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getName());
         }
 
     }
@@ -155,7 +131,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject origin(DynamicObject unboundMethod) {
-            return getOrigin(unboundMethod);
+            return Layouts.UNBOUND_METHOD.getOrigin(unboundMethod);
         }
 
     }
@@ -169,7 +145,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public DynamicObject owner(DynamicObject unboundMethod) {
-            return getMethod(unboundMethod).getDeclaringModule();
+            return Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
         }
 
     }
@@ -184,7 +160,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+            final ArgsNode argsNode = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
@@ -204,7 +180,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public Object sourceLocation(DynamicObject unboundMethod) {
-            SourceSection sourceSection = getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
+            SourceSection sourceSection = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection.getSource() == null) {
                 return nil();

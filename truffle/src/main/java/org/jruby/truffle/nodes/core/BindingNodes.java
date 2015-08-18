@@ -18,7 +18,6 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
@@ -26,55 +25,22 @@ import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
-import org.jruby.truffle.om.dsl.api.Layout;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
-
-    @Layout
-    public interface BindingLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createBindingShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createBinding(DynamicObjectFactory factory, @Nullable Object self, @Nullable MaterializedFrame frame);
-
-        boolean isBinding(DynamicObject object);
-
-        Object getSelf(DynamicObject object);
-        void setSelf(DynamicObject object, Object self);
-
-        MaterializedFrame getFrame(DynamicObject object);
-        void setFrame(DynamicObject object, MaterializedFrame frame);
-
-    }
-
-    public static final BindingLayout BINDING_LAYOUT = BindingLayoutImpl.INSTANCE;
 
     public static DynamicObject createRubyBinding(DynamicObject bindingClass) {
         return createRubyBinding(bindingClass, null, null);
     }
 
     public static DynamicObject createRubyBinding(DynamicObject bindingClass, Object self, MaterializedFrame frame) {
-        return BINDING_LAYOUT.createBinding(ClassNodes.CLASS_LAYOUT.getInstanceFactory(bindingClass), self, frame);
-    }
-
-    public static void setSelfAndFrame(DynamicObject binding, Object self, MaterializedFrame frame) {
-        BINDING_LAYOUT.setSelf(binding, self);
-        BINDING_LAYOUT.setFrame(binding, frame);
-    }
-
-    public static Object getSelf(DynamicObject binding) {
-        return BINDING_LAYOUT.getSelf(binding);
-    }
-
-    public static MaterializedFrame getFrame(DynamicObject binding) {
-        return BINDING_LAYOUT.getFrame(binding);
+        return Layouts.BINDING.createBinding(Layouts.CLASS.getInstanceFactory(bindingClass), self, frame);
     }
 
     @CoreMethod(names = "initialize_copy", required = 1)
@@ -90,16 +56,17 @@ public abstract class BindingNodes {
                 return self;
             }
 
-            final Object[] arguments = getFrame(from).getArguments();
+            final Object[] arguments = Layouts.BINDING.getFrame(from).getArguments();
             final InternalMethod method = RubyArguments.getMethod(arguments);
             final Object boundSelf = RubyArguments.getSelf(arguments);
             final DynamicObject boundBlock = RubyArguments.getBlock(arguments);
             final Object[] userArguments = RubyArguments.extractUserArguments(arguments);
 
-            final Object[] copiedArguments = RubyArguments.pack(method, getFrame(from), boundSelf, boundBlock, userArguments);
+            final Object[] copiedArguments = RubyArguments.pack(method, Layouts.BINDING.getFrame(from), boundSelf, boundBlock, userArguments);
             final MaterializedFrame copiedFrame = Truffle.getRuntime().createMaterializedFrame(copiedArguments);
 
-            setSelfAndFrame(self, getSelf(from), copiedFrame);
+            Layouts.BINDING.setSelf(self, Layouts.BINDING.getSelf(from));
+            Layouts.BINDING.setFrame(self, copiedFrame);
 
             return self;
         }
@@ -130,20 +97,20 @@ public abstract class BindingNodes {
                                              @Cached("createReadNode(cachedFrameSlot)") ReadFrameSlotNode readLocalVariableNode) {
             if (cachedFrameSlot == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             } else {
-                return readLocalVariableNode.executeRead(getFrame(binding));
+                return readLocalVariableNode.executeRead(Layouts.BINDING.getFrame(binding));
             }
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
         public Object localVariableGetUncached(DynamicObject binding, DynamicObject symbol) {
-            final MaterializedFrame frame = getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             }
 
             return frame.getValue(frameSlot);
@@ -152,11 +119,11 @@ public abstract class BindingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
         public Object localVariableGetLastLine(DynamicObject binding, DynamicObject symbol) {
-            final MaterializedFrame frame = getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
 
             if (frameSlot == null) {
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(SymbolNodes.getString(symbol), binding, this));
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
             }
 
             final Object value = frame.getValue(frameSlot);
@@ -169,16 +136,16 @@ public abstract class BindingNodes {
 
         protected FrameDescriptor getFrameDescriptor(DynamicObject binding) {
             assert RubyGuards.isRubyBinding(binding);
-            return getFrame(binding).getFrameDescriptor();
+            return Layouts.BINDING.getFrame(binding).getFrameDescriptor();
         }
 
         protected FrameSlot findFrameSlot(DynamicObject binding, DynamicObject symbol) {
             assert RubyGuards.isRubyBinding(binding);
             assert RubyGuards.isRubySymbol(symbol);
 
-            final String symbolString = SymbolNodes.getString(symbol);
+            final String symbolString = Layouts.SYMBOL.getString(symbol);
 
-            MaterializedFrame frame = getFrame(binding);
+            MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 
             while (frame != null) {
                 final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbolString);
@@ -227,14 +194,14 @@ public abstract class BindingNodes {
                                              @Cached("symbol") DynamicObject cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
                                              @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteFrameSlotNode writeLocalVariableNode) {
-            return writeLocalVariableNode.executeWrite(getFrame(binding), value);
+            return writeLocalVariableNode.executeWrite(Layouts.BINDING.getFrame(binding), value);
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
         public Object localVariableSetUncached(DynamicObject binding, DynamicObject symbol, Object value) {
-            final MaterializedFrame frame = getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
             frame.setObject(frameSlot, value);
             return value;
         }
@@ -242,24 +209,24 @@ public abstract class BindingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubySymbol(symbol)", "isLastLine(symbol)"})
         public Object localVariableSetLastLine(DynamicObject binding, DynamicObject symbol, Object value) {
-            final MaterializedFrame frame = getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(SymbolNodes.getString(symbol));
+            final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
+            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
             frame.setObject(frameSlot, ThreadLocalObject.wrap(getContext(), value));
             return value;
         }
 
         protected FrameDescriptor getFrameDescriptor(DynamicObject binding) {
             assert RubyGuards.isRubyBinding(binding);
-            return getFrame(binding).getFrameDescriptor();
+            return Layouts.BINDING.getFrame(binding).getFrameDescriptor();
         }
 
         protected FrameSlot findFrameSlot(DynamicObject binding, DynamicObject symbol) {
             assert RubyGuards.isRubyBinding(binding);
             assert RubyGuards.isRubySymbol(symbol);
 
-            final String symbolString = SymbolNodes.getString(symbol);
+            final String symbolString = Layouts.SYMBOL.getString(symbol);
 
-            MaterializedFrame frame = getFrame(binding);
+            MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 
             while (frame != null) {
                 final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(symbolString);
@@ -271,7 +238,7 @@ public abstract class BindingNodes {
                 frame = RubyArguments.getDeclarationFrame(frame.getArguments());
             }
 
-            return getFrame(binding).getFrameDescriptor().addFrameSlot(symbolString);
+            return Layouts.BINDING.getFrame(binding).getFrameDescriptor().addFrameSlot(symbolString);
         }
 
         protected WriteFrameSlotNode createWriteNode(FrameSlot frameSlot) {
@@ -295,7 +262,7 @@ public abstract class BindingNodes {
         public DynamicObject localVariables(DynamicObject binding) {
             final DynamicObject array = createEmptyArray();
 
-            MaterializedFrame frame = getFrame(binding);
+            MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 
             while (frame != null) {
                 for (Object name : frame.getFrameDescriptor().getIdentifiers()) {

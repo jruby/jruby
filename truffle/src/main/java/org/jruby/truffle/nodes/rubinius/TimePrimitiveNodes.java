@@ -19,11 +19,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 import org.jruby.util.RubyDateFormatter;
 
 /**
@@ -64,7 +65,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public DynamicObject timeSDup(DynamicObject other) {
-            final DynamicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), TimeNodes.getOffset(other));
+            final DynamicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), Layouts.TIME.getOffset(other));
             return time;
         }
 
@@ -202,7 +203,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return createString(rdf.formatToByteList(rdf.compilePattern(StringNodes.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
+            return createString(rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
         }
 
     }
@@ -302,7 +303,7 @@ public abstract class TimePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public long timeSetNSeconds(DynamicObject time, int nanoseconds) {
-            TimeNodes.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
+            Layouts.TIME.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
             return nanoseconds;
         }
 
@@ -331,7 +332,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public Object timeUTCOffset(DynamicObject time) {
-            Object offset = TimeNodes.getOffset(time);
+            Object offset = Layouts.TIME.getOffset(time);
             if (offset != nil()) {
                 return offset;
             } else {

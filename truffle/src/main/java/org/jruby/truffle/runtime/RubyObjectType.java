@@ -16,10 +16,9 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
 
@@ -32,28 +31,28 @@ public class RubyObjectType extends ObjectType {
         final RubyContext context = getContext();
 
         if (RubyGuards.isRubyString(object)) {
-            return Helpers.decodeByteList(context.getRuntime(), StringNodes.getByteList(object));
+            return Helpers.decodeByteList(context.getRuntime(), Layouts.STRING.getByteList(object));
         } else if (RubyGuards.isRubySymbol(object)) {
-            return SymbolNodes.getString(object);
+            return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
-            return ExceptionNodes.getMessage(object) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, ExceptionNodes.getBacktrace(object)));
+            return Layouts.EXCEPTION.getMessage(object) + " :\n" +
+                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, Layouts.EXCEPTION.getBacktrace(object)));
         } else if (RubyGuards.isRubyModule(object)) {
-            return ModuleNodes.getFields(object).toString();
+            return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), ModuleNodes.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
         }
     }
 
     @Override
     public ForeignAccess getForeignAccessFactory() {
-        if (MethodNodes.METHOD_LAYOUT.isMethod(this)) {
+        if (Layouts.METHOD.isMethod(this)) {
             return RubyMethodForeignAccessFactory.create(getContext());
-        } else if (ArrayNodes.ARRAY_LAYOUT.isArray(this)) {
+        } else if (Layouts.ARRAY.isArray(this)) {
             return ArrayForeignAccessFactory.create(getContext());
-        } else if (HashNodes.HASH_LAYOUT.isHash(this)) {
+        } else if (Layouts.HASH.isHash(this)) {
             return HashForeignAccessFactory.create(getContext());
-        } else if (StringNodes.STRING_LAYOUT.isString(this)) {
+        } else if (Layouts.STRING.isString(this)) {
             return StringForeignAccessFactory.create(getContext());
         } else {
             return BasicForeignAccessFactory.create(getContext());
@@ -61,7 +60,7 @@ public class RubyObjectType extends ObjectType {
     }
 
     private RubyContext getContext() {
-        return BasicObjectNodes.getContext(BasicObjectNodes.BASIC_OBJECT_LAYOUT.getLogicalClass(this));
+        return BasicObjectNodes.getContext(Layouts.BASIC_OBJECT.getLogicalClass(this));
     }
 
 }

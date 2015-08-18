@@ -15,11 +15,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ReadClassVariableNode extends RubyNode {
 
@@ -34,7 +34,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     public static DynamicObject resolveTargetModule(LexicalScope lexicalScope) {
         // MRI logic: ignore lexical scopes (cref) referring to singleton classes
-        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && ClassNodes.isSingleton((lexicalScope.getLiveModule()))) {
+        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && Layouts.CLASS.getIsSingleton((lexicalScope.getLiveModule()))) {
             lexicalScope = lexicalScope.getParent();
         }
         return lexicalScope.getLiveModule();

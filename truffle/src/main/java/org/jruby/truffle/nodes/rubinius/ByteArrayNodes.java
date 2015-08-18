@@ -12,38 +12,19 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayoutImpl;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    @Layout
-    public interface ByteArrayLayout extends BasicObjectNodes.BasicObjectLayout {
-
-        DynamicObjectFactory createByteArrayShape(DynamicObject logicalClass, DynamicObject metaClass);
-
-        DynamicObject createByteArray(DynamicObjectFactory factory, ByteList bytes);
-
-        boolean isByteArray(DynamicObject object);
-
-        ByteList getBytes(DynamicObject object);
-
-    }
-
-    public static final ByteArrayLayout BYTE_ARRAY_LAYOUT = ByteArrayLayoutImpl.INSTANCE;
-
     public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
-        return BYTE_ARRAY_LAYOUT.createByteArray(ClassNodes.CLASS_LAYOUT.getInstanceFactory(rubyClass), bytes);
-    }
-
-    public static ByteList getBytes(DynamicObject byteArray) {
-        return BYTE_ARRAY_LAYOUT.getBytes(byteArray);
+        return Layouts.BYTE_ARRAY.createByteArray(Layouts.CLASS.getInstanceFactory(rubyClass), bytes);
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
@@ -55,7 +36,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int getByte(DynamicObject bytes, int index) {
-            return getBytes(bytes).get(index) & 0xff;
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index) & 0xff;
         }
 
     }
@@ -69,12 +50,12 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
-            final int prependLength = StringNodes.getByteList(string).getUnsafeBytes().length;
-            final int originalLength = getBytes(bytes).getUnsafeBytes().length;
+            final int prependLength = Layouts.STRING.getByteList(string).getUnsafeBytes().length;
+            final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(StringNodes.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
-            System.arraycopy(getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
+            System.arraycopy(Layouts.STRING.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
         }
 
@@ -89,13 +70,13 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public Object setByte(DynamicObject bytes, int index, int value) {
-            if (index < 0 || index >= getBytes(bytes).getRealSize()) {
+            if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
             }
 
-            getBytes(bytes).set(index, value);
-            return getBytes(bytes).get(index);
+            Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index);
         }
 
     }
@@ -109,7 +90,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization
         public int size(DynamicObject bytes) {
-            return getBytes(bytes).getRealSize();
+            return Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize();
         }
 
     }
@@ -123,7 +104,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(Layouts.STRING.getByteList(pattern));
 
             if (index == -1) {
                 return nil();

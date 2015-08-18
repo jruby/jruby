@@ -25,6 +25,7 @@ import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ public class AttachmentsManager {
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                            callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(block)));
+                            callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(block)));
 
                             if (callNode.isCallTargetCloningAllowed()) {
                                 callNode.cloneCallTarget();
@@ -91,10 +92,10 @@ public class AttachmentsManager {
                         }
 
                         callNode.call(frame, RubyArguments.pack(
-                                ProcNodes.getMethod(block),
-                                ProcNodes.getDeclarationFrame(block),
-                                ProcNodes.getSelfCapturedInScope(block),
-                                ProcNodes.getBlockCapturedInScope(block),
+                                Layouts.PROC.getMethod(block),
+                                Layouts.PROC.getDeclarationFrame(block),
+                                Layouts.PROC.getSelf(block),
+                                Layouts.PROC.getBlock(block),
                                 new Object[]{binding}));
 
                         return null;

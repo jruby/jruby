@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class TraceManager {
                             if (callNode == null) {
                                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
 
                                 if (callNode.isCallTargetCloningAllowed()) {
                                     callNode.cloneCallTarget();
@@ -141,10 +142,10 @@ public class TraceManager {
                             isInTraceFunc = true;
 
                             callNode.call(frame, RubyArguments.pack(
-                                    ProcNodes.getMethod(traceFunc),
-                                    ProcNodes.getDeclarationFrame(traceFunc),
-                                    ProcNodes.getSelfCapturedInScope(traceFunc),
-                                    ProcNodes.getBlockCapturedInScope(traceFunc),
+                                    Layouts.PROC.getMethod(traceFunc),
+                                    Layouts.PROC.getDeclarationFrame(traceFunc),
+                                    Layouts.PROC.getSelf(traceFunc),
+                                    Layouts.PROC.getBlock(traceFunc),
                                     new Object[]{event, file, line, id, binding, classname}));
 
                             isInTraceFunc = false;
@@ -249,7 +250,7 @@ public class TraceManager {
                 if (callNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                    callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+                    callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
 
                     if (callNode.isCallTargetCloningAllowed()) {
                         callNode.cloneCallTarget();
@@ -263,10 +264,10 @@ public class TraceManager {
                 isInTraceFunc = true;
 
                 callNode.call(frame, RubyArguments.pack(
-                        ProcNodes.getMethod(traceFunc),
-                        ProcNodes.getDeclarationFrame(traceFunc),
-                        ProcNodes.getSelfCapturedInScope(traceFunc),
-                        ProcNodes.getBlockCapturedInScope(traceFunc),
+                        Layouts.PROC.getMethod(traceFunc),
+                        Layouts.PROC.getDeclarationFrame(traceFunc),
+                        Layouts.PROC.getSelf(traceFunc),
+                        Layouts.PROC.getBlock(traceFunc),
                         new Object[]{event, file, line, id, binding, classname}));
 
                 isInTraceFunc = false;

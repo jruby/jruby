@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.DefaultValueNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import sun.misc.Signal;
 
@@ -105,7 +106,7 @@ public abstract class ProcessNodes {
             } else if (unit == floatSecondSymbol) {
                 return time / 1e9;
             } else {
-                throw new UnsupportedOperationException(SymbolNodes.getString(unit));
+                throw new UnsupportedOperationException(Layouts.SYMBOL.getString(unit));
             }
         }
 
@@ -140,7 +141,7 @@ public abstract class ProcessNodes {
             int self = posix().getpid();
 
             if (self == pid) {
-                Signal signal = new Signal(SymbolNodes.getString(signalName));
+                Signal signal = new Signal(Layouts.SYMBOL.getString(signalName));
 
                 SignalOperations.raise(signal);
                 return 1;

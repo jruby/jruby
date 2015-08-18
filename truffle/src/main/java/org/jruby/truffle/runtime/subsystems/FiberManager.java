@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;
 import java.util.Set;
@@ -56,7 +57,7 @@ public class FiberManager {
 
     public void shutdown() {
         for (DynamicObject fiber : runningFibers) {
-            if (!FiberNodes.getFields(fiber).isRootFiber) {
+            if (!Layouts.FIBER.getFields(fiber).isRootFiber) {
                 FiberNodes.shutdown(fiber);
             }
         }

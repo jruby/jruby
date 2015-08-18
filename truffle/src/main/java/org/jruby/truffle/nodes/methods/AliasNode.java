@@ -15,10 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
@@ -37,14 +37,14 @@ public abstract class AliasNode extends RubyNode {
 
     @Specialization(guards = "isRubyModule(module)")
     public Object alias(DynamicObject module) {
-        ModuleNodes.getFields(module).alias(this, newName, oldName);
+        Layouts.MODULE.getFields(module).alias(this, newName, oldName);
         return module;
     }
 
     // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
     @Specialization(guards = "!isRubyModule(object)")
     public Object alias(VirtualFrame frame, Object object) {
-        ModuleNodes.getFields(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
+        Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
         return object;
     }
 

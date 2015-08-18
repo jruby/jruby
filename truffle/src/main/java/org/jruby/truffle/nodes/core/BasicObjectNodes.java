@@ -28,10 +28,10 @@ import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.LinkedHashMap;
@@ -44,27 +44,6 @@ public abstract class BasicObjectNodes {
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
     public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
-
-    @org.jruby.truffle.om.dsl.api.Layout(objectTypeSuperclass = "org.jruby.truffle.runtime.RubyObjectType")
-    public interface BasicObjectLayout {
-
-        DynamicObjectFactory createBasicObjectShape(@Nullable DynamicObject logicalClass, @Nullable DynamicObject metaClass);
-
-        DynamicObject createBasicObject(DynamicObjectFactory factory);
-
-        boolean isBasicObject(Object object);
-
-        DynamicObjectFactory setLogicalClass(DynamicObjectFactory factory, DynamicObject value);
-        DynamicObject getLogicalClass(ObjectType objectType);
-        DynamicObject getLogicalClass(DynamicObject object);
-        void setLogicalClass(DynamicObject object, DynamicObject value);
-
-        DynamicObjectFactory setMetaClass(DynamicObjectFactory factory, DynamicObject value);
-        DynamicObject getMetaClass(DynamicObject object);
-        void setMetaClass(DynamicObject object, DynamicObject value);
-    }
-
-    public static final BasicObjectLayout BASIC_OBJECT_LAYOUT = BasicObjectLayoutImpl.INSTANCE;
 
     @CompilerDirectives.TruffleBoundary
     public static void setInstanceVariable(DynamicObject receiver, Object name, Object value) {
@@ -117,14 +96,6 @@ public abstract class BasicObjectNodes {
         return receiver.getShape().hasProperty(name);
     }
 
-    public static DynamicObject getMetaClass(DynamicObject object) {
-        return BASIC_OBJECT_LAYOUT.getMetaClass(object);
-    }
-
-    public static void setMetaClass(DynamicObject object, DynamicObject metaClass) {
-        BASIC_OBJECT_LAYOUT.setMetaClass(object, metaClass);
-    }
-
     @CompilerDirectives.TruffleBoundary
     public static long verySlowGetObjectID(DynamicObject object) {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
@@ -151,7 +122,7 @@ public abstract class BasicObjectNodes {
 
     public static void visitObjectGraph(DynamicObject object, ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(object)) {
-            visitObjectGraph(getMetaClass(object), visitor);
+            visitObjectGraph(Layouts.BASIC_OBJECT.getMetaClass(object), visitor);
 
             for (Object instanceVariable : getInstanceVariables(object).values()) {
                 if (instanceVariable instanceof DynamicObject) {
@@ -181,39 +152,39 @@ public abstract class BasicObjectNodes {
                 }
             }
         } else if (RubyGuards.isRubyBinding(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(BindingNodes.getFrame(rubyBasicObject), visitor);
+            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(Layouts.BINDING.getFrame(rubyBasicObject), visitor);
         } else if (RubyGuards.isRubyProc(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(ProcNodes.getDeclarationFrame(rubyBasicObject), visitor);
+            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(Layouts.PROC.getDeclarationFrame(rubyBasicObject), visitor);
         } else if (RubyGuards.isRubyMatchData(rubyBasicObject)) {
-            for (Object object : MatchDataNodes.getFields(rubyBasicObject).values) {
+            for (Object object : Layouts.MATCH_DATA.getFields(rubyBasicObject).values) {
                 if (object instanceof DynamicObject) {
                     visitObjectGraph(((DynamicObject) object), visitor);
                 }
             }
         } else if (RubyGuards.isObjectRange(rubyBasicObject)) {
-            if (RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(rubyBasicObject) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getBegin(rubyBasicObject)), visitor);
+            if (Layouts.OBJECT_RANGE.getBegin(rubyBasicObject) instanceof DynamicObject) {
+                visitObjectGraph(((DynamicObject) Layouts.OBJECT_RANGE.getBegin(rubyBasicObject)), visitor);
             }
 
-            if (RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) RangeNodes.OBJECT_RANGE_LAYOUT.getEnd(rubyBasicObject)), visitor);
+            if (Layouts.OBJECT_RANGE.getEnd(rubyBasicObject) instanceof DynamicObject) {
+                visitObjectGraph(((DynamicObject) Layouts.OBJECT_RANGE.getEnd(rubyBasicObject)), visitor);
             }
         } else if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            ModuleNodes.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
+            Layouts.MODULE.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
     public static RubyContext getContext(DynamicObject rubyBasicObject) {
         if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            return ModuleNodes.getFields(rubyBasicObject).getContext();
+            return Layouts.MODULE.getFields(rubyBasicObject).getContext();
         } else {
             return getContext(getLogicalClass(rubyBasicObject));
         }
     }
 
     public static DynamicObject getLogicalClass(DynamicObject rubyBasicObject) {
-        return BASIC_OBJECT_LAYOUT.getLogicalClass(rubyBasicObject);
+        return Layouts.BASIC_OBJECT.getLogicalClass(rubyBasicObject);
     }
 
     @CoreMethod(names = "!")
@@ -321,7 +292,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().instanceEval(StringNodes.getByteList(string), receiver, this);
+            return getContext().instanceEval(Layouts.STRING.getByteList(string), receiver, this);
         }
 
         @Specialization(guards = "isRubyProc(block)")
@@ -386,11 +357,11 @@ public abstract class BasicObjectNodes {
             if (lastCallWasVCall()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
-                                SymbolNodes.getString(name),
-                                ModuleNodes.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
+                                Layouts.SYMBOL.getString(name),
+                                Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
                                 this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(SymbolNodes.getString(name), self, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(Layouts.SYMBOL.getString(name), self, this));
             }
         }
 

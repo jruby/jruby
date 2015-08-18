@@ -16,12 +16,12 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.NodeArrayToObjectArrayNode;
 import org.jruby.truffle.nodes.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.nodes.arguments.ReadBlockNode;
-import org.jruby.truffle.nodes.core.MethodNodes;
 import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 
@@ -34,7 +34,7 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public int getPrimitiveArity() {
-        return MethodNodes.getMethod(method).getSharedMethodInfo().getArity().getPreRequired();
+        return Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArity().getPreRequired();
     }
 
     @Override
