@@ -105,6 +105,51 @@ class TestComparable < Test::Unit::TestCase
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
     assert_equal nil, big <=> Object.new
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
+
+    # Symbol only includes Comparable on 1.9
+    assert_equal nil, :sym <=> nil if RUBY_VERSION > '1.9'
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal nil, :sym <=> 42 if RUBY_VERSION > '1.9'
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0,   :sym <=> :sym if RUBY_VERSION > '1.9'
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert (:zym <=> :sym) > 0 if RUBY_VERSION > '1.9'
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+  end
+
+  def test_compareTo_non_comparables
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    # should not raise errors :
+    # TODO: RubyFixnum#compareTo breaks the contract of not-throwing
+    # with: TypeError: can't convert nil into Integer
+    #assert_equal 0, invokeCompareTo(0, Time.now)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0, invokeCompareTo(nil, 42)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0, invokeCompareTo(Object.new, nil)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+
+    require 'bigdecimal'
+    big = BigDecimal.new '-10000000000'
+    assert_equal 0, invokeCompareTo(big, Time.now)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0, invokeCompareTo(big, Object.new)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+
+    assert_equal 0, invokeCompareTo(:sym, nil)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0, invokeCompareTo(:sym, 42)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert_equal 0, invokeCompareTo(:sym, :sym)
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+    assert invokeCompareTo(:zym, :sym) > 0
+    assert $!.nil?, "$! not nil but: #{$!.inspect}"
+  end
+
+  private
+
+  def invokeCompareTo(o1, o2)
+    Java::DefaultPackageClass.compareTo(o1, o2)
   end
 
 end
