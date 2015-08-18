@@ -376,6 +376,7 @@ public class JavaInterfaceTemplate {
         else {
             methodNames = args.clone();
             Arrays.sort(methodNames); // binarySearch needs a sorted array
+            // RubySymbol implements a Java compareTo thus will allways work
         }
 
         RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject());
@@ -390,7 +391,7 @@ public class JavaInterfaceTemplate {
 
     private static class BlockInterfaceImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
-        private final IRubyObject[] methodNames; // RubySymbol[] (or RubyString[] on 1.8)
+        private final IRubyObject[] methodNames; // RubySymbol[]
         private final Block implBlock;
 
         BlockInterfaceImpl(final RubyClass implClass, final Block implBlock, final IRubyObject[] methodNames) {

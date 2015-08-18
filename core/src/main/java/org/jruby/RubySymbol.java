@@ -21,7 +21,7 @@
  * Copyright (C) 2006 Derek Berner <derek.berner@state.nm.us>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -79,9 +79,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
-    
+
     /**
-     * 
+     *
      * @param runtime
      * @param internedSymbol the String value of the new Symbol. This <em>must</em>
      *                       have been previously interned
@@ -131,18 +131,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         if (runtime.is1_9()) {
             symbolClass.includeModule(runtime.getComparable());
         }
-        
+
         return symbolClass;
     }
-    
+
     @Override
     public int getNativeTypeIndex() {
         return ClassIndex.SYMBOL;
     }
 
     /** rb_to_id
-     * 
-     * @return a String representation of the symbol 
+     *
+     * @return a String representation of the symbol
      */
     @Override
     public String asJavaString() {
@@ -168,7 +168,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     }
 
     /** short circuit for Symbol key comparison
-     * 
+     *
      */
     @Override
     public final boolean eql(IRubyObject other) {
@@ -188,14 +188,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public static RubySymbol getSymbolLong(Ruby runtime, long id) {
         return runtime.getSymbolTable().lookup(id);
     }
-    
+
     /* Symbol class methods.
-     * 
+     *
      */
-    
+
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
         if (!(name instanceof RubyString)) return newSymbol(runtime, name.asJavaString());
-        
+
         return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList());
     }
 
@@ -243,7 +243,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         return inspect(context.runtime);
     }
     private final IRubyObject inspect(Ruby runtime) {
-        final ByteList bytes = isSymbolName(symbol) ? symbolBytes : 
+        final ByteList bytes = isSymbolName(symbol) ? symbolBytes :
                 ((RubyString)RubyString.newString(runtime, symbolBytes).dump()).getByteList();
 
         ByteList result = new ByteList(bytes.getRealSize() + 1);
@@ -268,7 +268,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         result.append((byte)':');
         result.append(symbolBytes);
 
-        RubyString str = RubyString.newString(runtime, result); 
+        RubyString str = RubyString.newString(runtime, result);
         // TODO: 1.9 rb_enc_symname_p
         Encoding resenc = runtime.getDefaultInternalEncoding();
         if (resenc == null) {
@@ -278,12 +278,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         if (isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol)) {
             return str;
         }
-    
+
         str = (RubyString)str.inspect19();
         ByteList bytes = str.getByteList();
         bytes.set(0, ':');
         bytes.set(1, '"');
-        
+
         return str;
     }
 
@@ -291,12 +291,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public IRubyObject to_s() {
         return to_s(getRuntime());
     }
-    
+
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         return to_s(context.runtime);
     }
-    
+
     private final IRubyObject to_s(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
@@ -304,7 +304,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public IRubyObject id2name() {
         return to_s(getRuntime());
     }
-    
+
     @JRubyMethod(name = "id2name")
     public IRubyObject id2name(ThreadContext context) {
         return to_s(context);
@@ -332,7 +332,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public RubyFixnum hash(ThreadContext context) {
         return context.runtime.newFixnum(hashCode());
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
@@ -341,12 +341,24 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public int getId() {
         return id;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other == this;
     }
-    
+
+    /**
+     * @see RubyBasicObject#compareTo(IRubyObject)
+     */
+    @Override
+    public int compareTo(final IRubyObject that) {
+        // NOTE: we're expecting RubySymbol to always be Java sortable
+        if ( that instanceof RubySymbol ) {
+            return this.symbol.compareTo( ((RubySymbol) that).symbol );
+        }
+        return 0; // our <=> contract is to return 0 on non-comparables
+    }
+
     @JRubyMethod(name = "to_sym")
     public IRubyObject to_sym() {
         return this;
@@ -380,7 +392,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        
+
         return !(other instanceof RubySymbol) ? runtime.getNil() :
                 newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime));
     }
@@ -388,7 +400,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_9)
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
-        
+
         return !(other instanceof RubySymbol) ? runtime.getNil() :
                 newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
     }
@@ -422,28 +434,28 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject upcase(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
+
         return newSymbol(runtime, rubyStringFromString(runtime).upcase19(context).toString());
     }
 
     @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
+
         return newSymbol(runtime, rubyStringFromString(runtime).downcase19(context).toString());
     }
 
     @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
     public IRubyObject capitalize(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
+
         return newSymbol(runtime, rubyStringFromString(runtime).capitalize19(context).toString());
     }
 
     @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject swapcase(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
+
         return newSymbol(runtime, rubyStringFromString(runtime).swapcase19(context).toString());
     }
 
@@ -451,7 +463,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public IRubyObject encoding(ThreadContext context) {
         return context.runtime.getEncodingService().getEncoding(symbolBytes.getEncoding());
     }
-    
+
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
@@ -481,7 +493,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                     Binding binding, Block.Type type, Block block) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), block);
             }
-            
+
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
                 return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false), Block.NULL_BLOCK);
@@ -523,27 +535,27 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                                 new Block(body, context.currentBinding()),
                                 Block.Type.PROC);
     }
-    
+
     private static boolean isIdentStart(char c) {
         return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
-    
+
     private static boolean isIdentChar(char c) {
         return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_' || !(c < 128));
     }
-    
+
     private static boolean isIdentifier(String s) {
         if (s == null || s.length() <= 0 || !isIdentStart(s.charAt(0))) return false;
 
         for (int i = 1; i < s.length(); i++) {
             if (!isIdentChar(s.charAt(i))) return false;
         }
-        
+
         return true;
     }
-    
+
     /**
-     * is_special_global_name from parse.c.  
+     * is_special_global_name from parse.c.
      * @param s
      * @return
      */
@@ -551,21 +563,21 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         if (s == null || s.length() <= 0) return false;
 
         int length = s.length();
-           
-        switch (s.charAt(0)) {        
-        case '~': case '*': case '$': case '?': case '!': case '@': case '/': case '\\':        
-        case ';': case ',': case '.': case '=': case ':': case '<': case '>': case '\"':        
+
+        switch (s.charAt(0)) {
+        case '~': case '*': case '$': case '?': case '!': case '@': case '/': case '\\':
+        case ';': case ',': case '.': case '=': case ':': case '<': case '>': case '\"':
         case '&': case '`': case '\'': case '+': case '0':
-            return length == 1;            
+            return length == 1;
         case '-':
             return (length == 1 || (length == 2 && isIdentChar(s.charAt(1))));
-            
+
         default:
             for (int i = 0; i < length; i++) {
                 if (!Character.isDigit(s.charAt(i))) return false;
             }
         }
-        
+
         return true;
     }
 
@@ -578,12 +590,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);
-            
+
             if (!enc.isPrint(c)) return false;
-            
+
             p += codeLength(runtime, enc, c);
         }
-        
+
         return true;
     }
 
@@ -592,8 +604,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         int length = s.length();
         char c = s.charAt(0);
-        
-        return isSymbolNameCommon(s, c, length) || 
+
+        return isSymbolNameCommon(s, c, length) ||
                 (c == '!' && (length == 1 ||
                              (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')))) ||
                 isSymbolLocal(s, c, length);
@@ -604,11 +616,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         int length = s.length();
         char c = s.charAt(0);
-        
+
         return isSymbolNameCommon(s, c, length) || isSymbolLocal(s, c, length);
     }
 
-    private static boolean isSymbolNameCommon(String s, char c, int length) {        
+    private static boolean isSymbolNameCommon(String s, char c, int length) {
         switch (c) {
         case '$':
             if (length > 1 && isSpecialGlobalName(s.substring(1))) return true;
@@ -662,7 +674,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         return false;
     }
-    
+
     @JRubyMethod(name = "all_symbols", meta = true)
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
         return context.runtime.getSymbolTable().all_symbols();
@@ -674,9 +686,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubySymbol result = newSymbol(input.getRuntime(), RubyString.byteListToString(input.unmarshalString()));
-        
+
         input.registerLinkTarget(result);
-        
+
         return result;
     }
 
@@ -699,7 +711,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         static final int DEFAULT_INITIAL_CAPACITY = 2048; // *must* be power of 2!
         static final int MAXIMUM_CAPACITY = 1 << 30;
         static final float DEFAULT_LOAD_FACTOR = 0.75f;
-        
+
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
         private final ConcurrentHashMap<ByteList, RubySymbol> bytelistTable = new ConcurrentHashMap<ByteList, RubySymbol>(100, 0.75f, Runtime.getRuntime().availableProcessors());
@@ -707,14 +719,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         private int threshold;
         private final float loadFactor;
         private final Ruby runtime;
-        
+
         public SymbolTable(Ruby runtime) {
             this.runtime = runtime;
             this.loadFactor = DEFAULT_LOAD_FACTOR;
             this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
             this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
         }
-        
+
         // note all fields are final -- rehash creates new entries when necessary.
         // as documented in java.util.concurrent.ConcurrentHashMap.java, that will
         // statistically affect only a small percentage (< 20%) of entries for a given rehash.
@@ -723,7 +735,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             final String name;
             final RubySymbol symbol;
             final SymbolEntry next;
-            
+
             SymbolEntry(int hash, String name, RubySymbol symbol, SymbolEntry next) {
                 this.hash = hash;
                 this.name = name;
@@ -735,11 +747,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         public RubySymbol getSymbol(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
-            
+
             for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
-            
+
             return createSymbol(name, symbolBytesFromString(runtime, name), hash, table);
         }
 
@@ -750,7 +762,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             String name = bytes.toString();
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
-            
+
             for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) {
                     symbol = e.symbol;
@@ -761,7 +773,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             if (symbol == null) {
                 symbol = createSymbol(name, bytes, hash, table);
             }
-            
+
             bytelistTable.put(bytes, symbol);
 
             return symbol;
@@ -769,11 +781,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
         public RubySymbol fastGetSymbol(String internedName) {
             SymbolEntry[] table = symbolTable;
-            
+
             for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
                 if (isSymbolMatch(internedName, e)) return e.symbol;
             }
-            
+
             return fastCreateSymbol(internedName, table);
         }
 
@@ -793,9 +805,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
-                int index;                
+                int index;
                 int potentialNewSize = size + 1;
-                
+
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
@@ -821,7 +833,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 int index;
                 int hash;
                 int potentialNewSize = size + 1;
-                
+
                 table = potentialNewSize > threshold ? rehash() : symbolTable;
 
                 // try lookup again under lock
@@ -838,22 +850,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
                 lock.unlock();
             }
         }
-        
+
         // backwards-compatibility, but threadsafe now
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table;
-            
+
             for (SymbolEntry e = (table = symbolTable)[hash & (table.length - 1)]; e != null; e = e.next) {
                 if (hash == e.hash && name.equals(e.name)) return e.symbol;
             }
 
             return null;
         }
-        
+
         public RubySymbol lookup(long id) {
             SymbolEntry[] table = symbolTable;
-            
+
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
                     if (id == e.symbol.id) return e.symbol;
@@ -862,11 +874,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
 
             return null;
         }
-        
+
         public RubyArray all_symbols() {
             SymbolEntry[] table = this.symbolTable;
             RubyArray array = runtime.newArray(this.size);
-            
+
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
                     array.append(e.symbol);
@@ -874,20 +886,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
             }
             return array;
         }
-        
+
         // not so backwards-compatible here, but no one should have been
         // calling this anyway.
         @Deprecated
         public void store(RubySymbol symbol) {
             throw new UnsupportedOperationException();
         }
-        
+
         private SymbolEntry[] rehash() {
             SymbolEntry[] oldTable = symbolTable;
             int oldCapacity = oldTable.length;
-            
+
             if (oldCapacity >= MAXIMUM_CAPACITY) return oldTable;
-            
+
             int newCapacity = oldCapacity << 1;
             SymbolEntry[] newTable = new SymbolEntry[newCapacity];
             threshold = (int)(newCapacity * loadFactor);
@@ -941,18 +953,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
     public Encoding getMarshalEncoding() {
         return symbolBytes.getEncoding();
     }
-    
+
     /**
      * Properly stringify an object for the current "raw bytes" representation
      * of a symbol.
-     * 
+     *
      * Symbols are represented internally as a Java string, but decoded using
      * raw bytes in ISO-8859-1 representation. This means they do not in their
      * normal String form represent a readable Java string, but it does allow
      * differently-encoded strings to map to different symbol objects.
-     * 
+     *
      * See #736
-     * 
+     *
      * @param object the object to symbolify
      * @return the symbol string associated with the object's string representation
      */
