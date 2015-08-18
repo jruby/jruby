@@ -34,7 +34,7 @@ public class ProcSignalHandler implements SignalHandler {
 
     @Override
     public void handle(Signal signal) {
-        Thread mainThread = Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber())).thread;
+        Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
         context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
             public void run(DynamicObject thread, Node currentNode) {

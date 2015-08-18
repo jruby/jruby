@@ -57,7 +57,7 @@ public class FiberManager {
 
     public void shutdown() {
         for (DynamicObject fiber : runningFibers) {
-            if (!Layouts.FIBER.getFields(fiber).isRootFiber) {
+            if (!Layouts.FIBER.getRootFiber(fiber)) {
                 FiberNodes.shutdown(fiber);
             }
         }

@@ -108,7 +108,7 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    Thread mainThread = Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber())).thread;
+                    Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
                     context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, final Node currentNode) {

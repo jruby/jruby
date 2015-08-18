@@ -35,7 +35,7 @@ public class ThreadPrimitiveNodes {
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
             getContext().getSafepointManager().pauseThreadAndExecuteLater(
-                    Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(thread).getCurrentFiber())).thread,
+                    Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(thread).getCurrentFiber())),
                     this,
                     new SafepointAction() {
                         @Override
