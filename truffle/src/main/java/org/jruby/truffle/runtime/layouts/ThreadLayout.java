@@ -15,6 +15,7 @@ import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.om.dsl.api.Volatile;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public interface ThreadLayout extends BasicObjectLayout {
                                List<Lock> ownedLocks,
                                boolean abortOnException,
                                InterruptMode interruptMode,
+                               @Nullable @Volatile Thread thread,
                                ThreadNodes.ThreadFields fields);
 
     boolean isThread(DynamicObject object);
@@ -56,6 +58,9 @@ public interface ThreadLayout extends BasicObjectLayout {
 
     InterruptMode getInterruptMode(DynamicObject object);
     void setInterruptMode(DynamicObject object, InterruptMode interruptMode);
+
+    Thread getThread(DynamicObject object);
+    void setThread(DynamicObject object, Thread thread);
 
     ThreadNodes.ThreadFields getFields(DynamicObject object);
 

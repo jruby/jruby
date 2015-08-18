@@ -22,12 +22,13 @@ public class PropertyModel {
     private final boolean hasUnsafeSetter;
     private final TypeMirror type;
     private final boolean nullable;
+    private final boolean volatileSemantics;
     private final boolean hasIdentifier;
     private final boolean isShapeProperty;
 
     public PropertyModel(String name, boolean hasObjectTypeGetter, boolean hasFactoryGetter, boolean hasFactorySetter,
                          boolean hasGetter, boolean hasSetter, boolean hasUnsafeSetter,
-                         TypeMirror type, boolean nullable, boolean hasIdentifier,
+                         TypeMirror type, boolean nullable, boolean volatileSemantics, boolean hasIdentifier,
                          boolean isShapeProperty) {
         assert name != null;
         assert type != null;
@@ -35,6 +36,9 @@ public class PropertyModel {
         if (hasFactoryGetter || hasFactorySetter || hasObjectTypeGetter) {
             assert isShapeProperty;
         }
+
+        assert !(volatileSemantics && isShapeProperty);
+        assert !(volatileSemantics && hasUnsafeSetter);
 
         this.name = name;
         this.hasObjectTypeGetter = hasObjectTypeGetter;
@@ -45,6 +49,7 @@ public class PropertyModel {
         this.hasUnsafeSetter = hasUnsafeSetter;
         this.type = type;
         this.nullable = nullable;
+        this.volatileSemantics = volatileSemantics;
         this.hasIdentifier = hasIdentifier;
         this.isShapeProperty = isShapeProperty;
     }
@@ -83,6 +88,10 @@ public class PropertyModel {
 
     public boolean isNullable() {
         return nullable;
+    }
+
+    public boolean isVolatile() {
+        return volatileSemantics;
     }
 
     public boolean hasIdentifier() {

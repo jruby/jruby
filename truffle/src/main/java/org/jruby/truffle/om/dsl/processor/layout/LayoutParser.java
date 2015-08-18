@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
+import org.jruby.truffle.om.dsl.api.Volatile;
 import org.jruby.truffle.om.dsl.processor.layout.model.*;
 
 import javax.lang.model.element.*;
@@ -119,7 +120,7 @@ public class LayoutParser {
             constructorProperties.add(name);
             final PropertyBuilder property = getProperty(name);
             setPropertyType(property, element.asType());
-            parseNullable(property, element);
+            parseConstructorParameterAnnotations(property, element);
             property.setIsShapeProperty(true);
             hasShapeProperties = true;
         }
@@ -144,7 +145,7 @@ public class LayoutParser {
             constructorProperties.add(name);
             final PropertyBuilder property = getProperty(name);
             setPropertyType(property, element.asType());
-            parseNullable(property, element);
+            parseConstructorParameterAnnotations(property, element);
         }
     }
 
@@ -263,19 +264,13 @@ public class LayoutParser {
         return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
-    private void parseNullable(PropertyBuilder property, Element element) {
+    private void parseConstructorParameterAnnotations(PropertyBuilder property, Element element) {
         if (element.getAnnotation(Nullable.class) != null) {
-            if (property.isNullable() == NullableState.DEFAULT) {
-                property.setNullable(NullableState.NULLABLE);
-            } else {
-                assert property.isNullable() == NullableState.NULLABLE;
-            }
-        } else {
-            if (property.isNullable() == NullableState.DEFAULT) {
-                property.setNullable(NullableState.NOT_NULLABLE);
-            } else {
-                assert property.isNullable() == NullableState.NOT_NULLABLE;
-            }
+            property.setNullable(true);
+        }
+
+        if (element.getAnnotation(Volatile.class) != null) {
+            property.setVolatile(true);
         }
     }
 
