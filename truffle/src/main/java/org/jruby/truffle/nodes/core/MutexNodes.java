@@ -71,7 +71,7 @@ public abstract class MutexNodes {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();
-                    ThreadNodes.acquiredLock(thread, lock);
+                    Layouts.THREAD.getOwnedLocks(thread).add(lock);
                     return SUCCESS;
                 }
             });
@@ -124,7 +124,7 @@ public abstract class MutexNodes {
 
             if (lock.tryLock()) {
                 final DynamicObject thread = getContext().getThreadManager().getCurrentThread();
-                ThreadNodes.acquiredLock(thread, lock);
+                Layouts.THREAD.getOwnedLocks(thread).add(lock);
                 return true;
             } else {
                 return false;
@@ -165,7 +165,7 @@ public abstract class MutexNodes {
                 }
             }
 
-            ThreadNodes.releasedLock(thread, lock);
+            Layouts.THREAD.getOwnedLocks(thread).remove(lock);
         }
 
     }
@@ -210,7 +210,7 @@ public abstract class MutexNodes {
             // Here we do it before unlocking for providing nice semantics for
             // thread1: mutex.sleep
             // thread2: mutex.synchronize { <ensured that thread1 is sleeping and thread1.wakeup will wake it up> }
-            ThreadNodes.shouldWakeUp(thread);
+            Layouts.THREAD.getWakeUp(thread).getAndSet(false);
 
             UnlockNode.unlock(lock, thread, this);
             try {

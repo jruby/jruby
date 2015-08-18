@@ -208,7 +208,7 @@ public abstract class RegexpNodes {
     public static void setThread(DynamicObject regexp, String name, Object value) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert value != null;
-        ThreadNodes.getThreadLocals(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getThreadManager().getCurrentThread()).define(name, value, 0);
+        Layouts.THREAD.getThreadLocals(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getThreadManager().getCurrentThread()).define(name, value, 0);
     }
 
     @TruffleBoundary

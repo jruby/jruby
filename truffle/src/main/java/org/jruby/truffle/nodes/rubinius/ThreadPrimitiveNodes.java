@@ -13,7 +13,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -36,7 +35,7 @@ public class ThreadPrimitiveNodes {
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
             getContext().getSafepointManager().pauseThreadAndExecuteLater(
-                    ThreadNodes.getCurrentFiberJavaThread(thread),
+                    Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(thread).getCurrentFiber())).thread,
                     this,
                     new SafepointAction() {
                         @Override

@@ -76,7 +76,7 @@ public abstract class ThreadNodes {
 
         start(thread);
         try {
-            DynamicObject fiber = getRootFiber(thread);
+            DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
             FiberNodes.run(fiber, task);
         } catch (ThreadExitException e) {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
@@ -106,7 +106,10 @@ public abstract class ThreadNodes {
 
         Layouts.THREAD.setStatus(thread, Status.DEAD);
         Layouts.THREAD.setThread(thread, null);
-        releaseOwnedLocks(thread);
+        assert RubyGuards.isRubyThread(thread);
+        for (Lock lock : Layouts.THREAD.getOwnedLocks(thread)) {
+            lock.unlock();
+        }
         Layouts.THREAD.getFinishedLatch(thread).countDown();
     }
 
@@ -114,16 +117,6 @@ public abstract class ThreadNodes {
         assert RubyGuards.isRubyThread(thread);
         Layouts.THREAD.getFiberManager(thread).shutdown();
         throw new ThreadExitException();
-    }
-
-    public static Thread getRootFiberJavaThread(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getThread(thread);
-    }
-
-    public static Thread getCurrentFiberJavaThread(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(thread).getCurrentFiber())).thread;
     }
 
     public static void join(final DynamicObject thread) {
@@ -164,105 +157,6 @@ public abstract class ThreadNodes {
         return joined;
     }
 
-    public static void wakeup(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.getWakeUp(thread).set(true);
-        Thread t = Layouts.THREAD.getThread(thread);
-        if (t != null) {
-            t.interrupt();
-        }
-    }
-
-    public static Object getValue(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getValue(thread);
-    }
-
-    public static Object getException(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getException(thread);
-    }
-
-    public static String getName(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getName(thread);
-    }
-
-    public static void setName(DynamicObject thread, String name) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.setName(thread, name);
-    }
-
-    public static FiberManager getFiberManager(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getFiberManager(thread);
-    }
-
-    public static DynamicObject getRootFiber(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getFiberManager(thread).getRootFiber();
-    }
-
-    public static boolean isAbortOnException(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getAbortOnException(thread);
-    }
-
-    public static void setAbortOnException(DynamicObject thread, boolean abortOnException) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.setAbortOnException(thread, abortOnException);
-    }
-
-    public static InterruptMode getInterruptMode(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getInterruptMode(thread);
-    }
-
-    public static void setInterruptMode(DynamicObject thread, InterruptMode interruptMode) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.setInterruptMode(thread, interruptMode);
-    }
-
-    /** Return whether Thread#{run,wakeup} was called and clears the wakeup flag.
-     * @param thread*/
-    public static boolean shouldWakeUp(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getWakeUp(thread).getAndSet(false);
-    }
-
-    public static void acquiredLock(DynamicObject thread, Lock lock) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.getOwnedLocks(thread).add(lock);
-    }
-
-    public static void releasedLock(DynamicObject thread, Lock lock) {
-        assert RubyGuards.isRubyThread(thread);
-        // TODO: this is O(ownedLocks.length).
-        Layouts.THREAD.getOwnedLocks(thread).remove(lock);
-    }
-
-    public static void releaseOwnedLocks(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        for (Lock lock : Layouts.THREAD.getOwnedLocks(thread)) {
-            lock.unlock();
-        }
-    }
-
-    public static Status getStatus(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getStatus(thread);
-    }
-
-    public static void setStatus(DynamicObject thread, Status status) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.setStatus(thread, status);
-    }
-
-    public static DynamicObject getThreadLocals(DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getThreadLocals(thread);
-    }
-
     @CoreMethod(names = "alive?")
     public abstract static class AliveNode extends CoreMethodArrayArgumentsNode {
 
@@ -272,7 +166,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean alive(DynamicObject thread) {
-            return getStatus(thread) != Status.ABORTING && getStatus(thread) != Status.DEAD;
+            return Layouts.THREAD.getStatus(thread) != Status.ABORTING && Layouts.THREAD.getStatus(thread) != Status.DEAD;
         }
 
     }
@@ -300,7 +194,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
-            final Thread toKill = getRootFiberJavaThread(rubyThread);
+            final Thread toKill = Layouts.THREAD.getThread(rubyThread);
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
@@ -331,12 +225,12 @@ public abstract class ThreadNodes {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
 
-            final InterruptMode oldInterruptMode = getInterruptMode(self);
-            setInterruptMode(self, newInterruptMode);
+            final InterruptMode oldInterruptMode = Layouts.THREAD.getInterruptMode(self);
+            Layouts.THREAD.setInterruptMode(self, newInterruptMode);
             try {
                 return yield(frame, block);
             } finally {
-                setInterruptMode(self, oldInterruptMode);
+                Layouts.THREAD.setInterruptMode(self, oldInterruptMode);
             }
         }
 
@@ -450,15 +344,15 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(DynamicObject self) {
             // TODO: slightly hackish
-            if (getStatus(self) == Status.DEAD) {
-                if (getException(self) != null) {
+            if (Layouts.THREAD.getStatus(self) == Status.DEAD) {
+                if (Layouts.THREAD.getException(self) != null) {
                     return nil();
                 } else {
                     return false;
                 }
             }
 
-            return createString(getStatus(self).bytes);
+            return createString(Layouts.THREAD.getStatus(self).bytes);
         }
 
     }
@@ -472,7 +366,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(DynamicObject self) {
-            return getStatus(self) == Status.DEAD || getStatus(self) == Status.SLEEP;
+            return Layouts.THREAD.getStatus(self) == Status.DEAD || Layouts.THREAD.getStatus(self) == Status.SLEEP;
         }
 
     }
@@ -487,7 +381,7 @@ public abstract class ThreadNodes {
         @Specialization
         public Object value(DynamicObject self) {
             join(self);
-            return getValue(self);
+            return Layouts.THREAD.getValue(self);
         }
 
     }
@@ -501,13 +395,17 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
-            if (getStatus(thread) == Status.DEAD) {
+            if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().threadError("killed thread", this));
             }
 
             // TODO: should only interrupt sleep
-            ThreadNodes.wakeup(thread);
+            Layouts.THREAD.getWakeUp(thread).set(true);
+            Thread t = Layouts.THREAD.getThread(thread);
+            if (t != null) {
+                t.interrupt();
+            }
 
             return thread;
         }
@@ -523,7 +421,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean abortOnException(DynamicObject self) {
-            return isAbortOnException(self);
+            return Layouts.THREAD.getAbortOnException(self);
         }
 
     }
@@ -537,7 +435,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject setAbortOnException(DynamicObject self, boolean abortOnException) {
-            ThreadNodes.setAbortOnException(self, abortOnException);
+            Layouts.THREAD.setAbortOnException(self, abortOnException);
             return nil();
         }
 

@@ -162,7 +162,7 @@ public abstract class RegexpPrimitiveNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object setLastMatch(DynamicObject regexpClass, Object matchData) {
-            ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()).define("$~", matchData, 0);
+            Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread()).define("$~", matchData, 0);
 
             return matchData;
         }

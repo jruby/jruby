@@ -16,11 +16,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RetryException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
@@ -78,7 +78,7 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final DynamicObject threadLocals = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
         threadLocals.define("$!", exception.getRubyException(), 0);
 
         for (RescueNode rescue : rescueParts) {

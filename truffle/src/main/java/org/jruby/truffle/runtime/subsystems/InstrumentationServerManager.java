@@ -16,10 +16,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -108,7 +108,7 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    Thread mainThread = ThreadNodes.getCurrentFiberJavaThread(context.getThreadManager().getRootThread());
+                    Thread mainThread = Layouts.FIBER.getFields((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber())).thread;
                     context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, final Node currentNode) {

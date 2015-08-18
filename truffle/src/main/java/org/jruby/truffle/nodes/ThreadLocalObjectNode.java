@@ -12,8 +12,8 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ThreadLocalObjectNode extends RubyNode {
 
@@ -23,7 +23,7 @@ public class ThreadLocalObjectNode extends RubyNode {
 
     @Override
     public DynamicObject executeDynamicObject(VirtualFrame frame) {
-        return ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        return Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
     }
 
     @Override

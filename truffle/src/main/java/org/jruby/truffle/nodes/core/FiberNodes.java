@@ -99,7 +99,7 @@ public abstract class FiberNodes {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.getFields(fiber).thread = Thread.currentThread();
         Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getThreadManager().initializeCurrentThread(Layouts.FIBER.getFields(fiber).rubyThread);
-        ThreadNodes.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).registerFiber(fiber);
+        Layouts.THREAD.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).registerFiber(fiber);
         Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getSafepointManager().enterThread();
     }
 
@@ -108,7 +108,7 @@ public abstract class FiberNodes {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.getFields(fiber).alive = false;
         Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getSafepointManager().leaveThread();
-        ThreadNodes.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).unregisterFiber(fiber);
+        Layouts.THREAD.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).unregisterFiber(fiber);
         Layouts.FIBER.getFields(fiber).thread = null;
     }
 
@@ -132,7 +132,7 @@ public abstract class FiberNodes {
             }
         });
 
-        ThreadNodes.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).setCurrentFiber(fiber);
+        Layouts.THREAD.getFiberManager(Layouts.FIBER.getFields(fiber).rubyThread).setCurrentFiber(fiber);
 
         if (message instanceof FiberExitMessage) {
             throw new FiberExitException();
@@ -229,7 +229,7 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
 
-            final DynamicObject sendingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
+            final DynamicObject sendingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
 
             return singleValue(frame, transferControlTo(sendingFiber, fiber, isYield, args));
         }
@@ -283,7 +283,7 @@ public abstract class FiberNodes {
         @Specialization
         public Object yield(VirtualFrame frame, Object[] args) {
             final DynamicObject currentThread = getContext().getThreadManager().getCurrentThread();
-            final DynamicObject yieldingFiber = ThreadNodes.getFiberManager(currentThread).getCurrentFiber();
+            final DynamicObject yieldingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
             final DynamicObject fiberYieldedTo = Layouts.FIBER.getFields(yieldingFiber).lastResumedByFiber;
 
             if (Layouts.FIBER.getFields(yieldingFiber).isRootFiber || fiberYieldedTo == null) {
