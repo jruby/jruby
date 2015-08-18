@@ -158,7 +158,7 @@ public abstract class RegexpNodes {
         final DynamicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
         final DynamicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final DynamicObject matchObject = MatchDataNodes.createRubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
+        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), false, null, null);
 
         if (operator) {
             if (values.length > 0) {
@@ -550,8 +550,8 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(string)")
         public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (RubyGuards.isRubyMatchData(matchResult) && MatchDataNodes.getNumberOfRegions((DynamicObject) matchResult) > 0
-                && MatchDataNodes.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
+            if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
+                && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
             }
             return nil();

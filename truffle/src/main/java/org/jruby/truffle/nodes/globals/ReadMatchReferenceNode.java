@@ -14,9 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.MatchDataNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+
+import java.util.Arrays;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -45,7 +46,7 @@ public class ReadMatchReferenceNode extends RubyNode {
         final DynamicObject matchData = (DynamicObject) match;
 
         if (index > 0) {
-            final Object[] values = MatchDataNodes.getValues(matchData);
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
 
             if (index >= values.length) {
                 return nil();
@@ -53,13 +54,13 @@ public class ReadMatchReferenceNode extends RubyNode {
                 return values[index];
             }
         } else if (index == PRE) {
-            return MatchDataNodes.getPre(matchData);
+            return Layouts.MATCH_DATA.getPre(matchData);
         } else if (index == POST) {
-            return MatchDataNodes.getPost(matchData);
+            return Layouts.MATCH_DATA.getPost(matchData);
         } else if (index == GLOBAL) {
-            return MatchDataNodes.getGlobal(matchData);
+            return Layouts.MATCH_DATA.getGlobal(matchData);
         } else if (index == HIGHEST) {
-            final Object[] values = MatchDataNodes.getValues(matchData);
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
 
             for (int n = values.length - 1; n >= 0; n--)
                 if (values[n] != nil()) {

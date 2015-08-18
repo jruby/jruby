@@ -11,8 +11,9 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import org.jruby.truffle.nodes.core.MatchDataNodes;
+import org.joni.Region;
 import org.jruby.truffle.om.dsl.api.Layout;
+import org.jruby.truffle.om.dsl.api.Nullable;
 
 @Layout
 public interface MatchDataLayout extends BasicObjectLayout {
@@ -21,11 +22,39 @@ public interface MatchDataLayout extends BasicObjectLayout {
                                               DynamicObject metaClass);
 
     DynamicObject createMatchData(DynamicObjectFactory factory,
-                                  MatchDataNodes.MatchDataFields fields);
+                                  DynamicObject source,
+                                  DynamicObject regexp,
+                                  Region region,
+                                  Object[] values,
+                                  DynamicObject pre,
+                                  DynamicObject post,
+                                  DynamicObject global,
+                                  int begin,
+                                  int end,
+                                  boolean charOffsetUpdated,
+                                  @Nullable Region charOffsets,
+                                  @Nullable Object fullTuple);
 
     boolean isMatchData(DynamicObject object);
     boolean isMatchData(Object object);
 
-    MatchDataNodes.MatchDataFields getFields(DynamicObject object);
+    DynamicObject getSource(DynamicObject object);
+    DynamicObject getRegexp(DynamicObject object);
+    Region getRegion(DynamicObject object);
+    Object[] getValues(DynamicObject object);
+    DynamicObject getPre(DynamicObject object);
+    DynamicObject getPost(DynamicObject object);
+    DynamicObject getGlobal(DynamicObject object);
+    int getBegin(DynamicObject object);
+    int getEnd(DynamicObject object);
+
+    boolean getCharOffsetUpdated(DynamicObject object);
+    void setCharOffsetUpdated(DynamicObject object, boolean charOffsetUpdated);
+
+    Region getCharOffsets(DynamicObject object);
+    void setCharOffsets(DynamicObject object, Region charOffsets);
+
+    Object getFullTuple(DynamicObject object);
+    void setFullTuple(DynamicObject object, Object fullTuple);
 
 }
