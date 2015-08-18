@@ -1310,7 +1310,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         try {
             fptr.checkWritable(context);
 
-            str.setFrozen(true);
+            str = str.convertToString().dupFrozen();
 
             if (fptr.wbuf.len != 0) {
                 runtime.getWarnings().warn("syswrite for buffered IO");
