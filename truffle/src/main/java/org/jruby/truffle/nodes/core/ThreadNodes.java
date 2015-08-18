@@ -40,7 +40,7 @@ public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(DynamicObject rubyClass) {
         final DynamicObject objectClass = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(rubyClass)).getContext().getCoreLibrary().getObjectClass();
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass)), new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new ThreadNodes.ThreadFields());
+        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass)), new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new AtomicBoolean(false), 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(object));
         return object;
     }
@@ -166,7 +166,7 @@ public abstract class ThreadNodes {
 
     public static void wakeup(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        Layouts.THREAD.getFields(thread).wakeUp.set(true);
+        Layouts.THREAD.getWakeUp(thread).set(true);
         Thread t = Layouts.THREAD.getThread(thread);
         if (t != null) {
             t.interrupt();
@@ -227,7 +227,7 @@ public abstract class ThreadNodes {
      * @param thread*/
     public static boolean shouldWakeUp(DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
-        return Layouts.THREAD.getFields(thread).wakeUp.getAndSet(false);
+        return Layouts.THREAD.getWakeUp(thread).getAndSet(false);
     }
 
     public static void acquiredLock(DynamicObject thread, Lock lock) {
@@ -556,11 +556,6 @@ public abstract class ThreadNodes {
             return createRubyThread(rubyClass);
         }
 
-    }
-
-    public static class ThreadFields {
-        public volatile AtomicBoolean wakeUp = new AtomicBoolean(false);
-        public volatile int priority = 0;
     }
 
     @CoreMethod(names = "list", onSingleton = true)

@@ -63,7 +63,7 @@ public class ThreadPrimitiveNodes {
                 int javaPriority = javaThread.getPriority();
                 return javaPriorityToRubyPriority(javaPriority);
             } else {
-                return Layouts.THREAD.getFields(thread).priority;
+                return Layouts.THREAD.getPriority(thread);
             }
         }
     }
@@ -87,7 +87,7 @@ public class ThreadPrimitiveNodes {
             if (javaThread != null) {
                 javaThread.setPriority(javaPriority);
             }
-            Layouts.THREAD.getFields(thread).priority = rubyPriority;
+            Layouts.THREAD.setPriority(thread, rubyPriority);
             return rubyPriority;
         }
     }

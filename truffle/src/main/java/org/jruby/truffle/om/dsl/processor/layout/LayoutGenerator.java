@@ -13,6 +13,7 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
+import javax.lang.model.type.TypeKind;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -211,7 +212,11 @@ public class LayoutGenerator {
                     final String locationType;
 
                     if (property.isVolatile()) {
-                        locationType = "AtomicReference";
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            locationType = "AtomicInteger";
+                        } else {
+                            locationType = "AtomicReference";
+                        }
                     } else {
                         locationType = NameUtils.typeWithoutParameters(property.getType().toString());
                     }
@@ -261,7 +266,11 @@ public class LayoutGenerator {
             final String locationType;
 
             if (property.isVolatile()) {
-                locationType = "AtomicReference";
+                if (property.getType().getKind() == TypeKind.INT) {
+                    locationType = "AtomicInteger";
+                } else {
+                    locationType = "AtomicReference";
+                }
             } else {
                 locationType = NameUtils.typeWithoutParameters(property.getType().toString());
             }
@@ -431,7 +440,11 @@ public class LayoutGenerator {
 
                 for (PropertyModel property : layout.getAllNonShapeProperties()) {
                     if (property.isVolatile()) {
-                        stream.printf("            new AtomicReference(%s)", property.getName());
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("            new AtomicInteger(%s)", property.getName());
+                        } else {
+                            stream.printf("            new AtomicReference(%s)", property.getName());
+                        }
                     } else {
                         stream.printf("            %s", property.getName());
                     }
@@ -489,7 +502,11 @@ public class LayoutGenerator {
 
                 for (PropertyModel property : layout.getAllNonShapeProperties()) {
                     if (property.isVolatile()) {
-                        stream.printf("            new AtomicReference(%s)", property.getName());
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("            new AtomicInteger(%s)", property.getName());
+                        } else {
+                            stream.printf("            new AtomicReference(%s)", property.getName());
+                        }
                     } else {
                         stream.printf("            %s", property.getName());
                     }
@@ -576,7 +593,11 @@ public class LayoutGenerator {
                     stream.println("        ");
 
                     if (property.isVolatile()) {
-                        stream.printf("        return (%s) ((AtomicReference) %s_PROPERTY.get(object, true)).get();\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("        return ((AtomicInteger) %s_PROPERTY.get(object, true)).get();\n", NameUtils.identifierToConstant(property.getName()));
+                        } else {
+                            stream.printf("        return (%s) ((AtomicReference) %s_PROPERTY.get(object, true)).get();\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
+                        }
                     } else {
                         stream.printf("        return (%s) %s_PROPERTY.get(object, true);\n", property.getType(), NameUtils.identifierToConstant(property.getName()));
                     }
@@ -633,7 +654,11 @@ public class LayoutGenerator {
                     if (property.hasUnsafeSetter()) {
                         stream.printf("        %s_PROPERTY.setInternal(object, value);\n", NameUtils.identifierToConstant(property.getName()));
                     } else if (property.isVolatile()) {
-                        stream.printf("        ((AtomicReference) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        if (property.getType().getKind() == TypeKind.INT) {
+                            stream.printf("        ((AtomicInteger) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        } else {
+                            stream.printf("        ((AtomicReference) %s_PROPERTY.get(object, true)).set(value);\n", NameUtils.identifierToConstant(property.getName()));
+                        }
                     } else {
                         stream.printf("        try {\n");
                         stream.printf("            %s_PROPERTY.set(object, value, object.getShape());\n", NameUtils.identifierToConstant(property.getName()));

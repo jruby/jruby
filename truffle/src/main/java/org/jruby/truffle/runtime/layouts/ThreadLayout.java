@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.subsystems.FiberManager;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 @Layout
@@ -41,7 +42,8 @@ public interface ThreadLayout extends BasicObjectLayout {
                                @Volatile RubyThread.Status status,
                                @Nullable @Volatile Object exception,
                                @Nullable @Volatile Object value,
-                               ThreadNodes.ThreadFields fields);
+                               AtomicBoolean wakeUp,
+                               @Volatile int priority);
 
     boolean isThread(DynamicObject object);
 
@@ -75,6 +77,9 @@ public interface ThreadLayout extends BasicObjectLayout {
     Object getValue(DynamicObject object);
     void setValue(DynamicObject object, Object value);
 
-    ThreadNodes.ThreadFields getFields(DynamicObject object);
+    AtomicBoolean getWakeUp(DynamicObject object);
+
+    int getPriority(DynamicObject object);
+    void setPriority(DynamicObject object, int value);
 
 }
