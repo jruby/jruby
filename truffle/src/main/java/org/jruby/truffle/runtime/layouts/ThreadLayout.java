@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import org.jruby.RubyThread;
 import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
@@ -37,6 +38,9 @@ public interface ThreadLayout extends BasicObjectLayout {
                                boolean abortOnException,
                                InterruptMode interruptMode,
                                @Nullable @Volatile Thread thread,
+                               @Volatile RubyThread.Status status,
+                               @Nullable @Volatile Object exception,
+                               @Nullable @Volatile Object value,
                                ThreadNodes.ThreadFields fields);
 
     boolean isThread(DynamicObject object);
@@ -61,6 +65,15 @@ public interface ThreadLayout extends BasicObjectLayout {
 
     Thread getThread(DynamicObject object);
     void setThread(DynamicObject object, Thread thread);
+
+    RubyThread.Status getStatus(DynamicObject object);
+    void setStatus(DynamicObject object, RubyThread.Status status);
+
+    Object getException(DynamicObject object);
+    void setException(DynamicObject object, Object exception);
+
+    Object getValue(DynamicObject object);
+    void setValue(DynamicObject object, Object value);
 
     ThreadNodes.ThreadFields getFields(DynamicObject object);
 
