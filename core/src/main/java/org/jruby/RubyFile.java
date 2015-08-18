@@ -263,12 +263,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int lockMode = RubyNumeric.num2int(lockingConstant);
         
         Channel channel = descriptor.getChannel();
-        
+
         FileDescriptor fd = ChannelDescriptor.getDescriptorFromChannel(channel);
         int real_fd = JavaLibCHelper.getfdFromDescriptor(fd);
         
-        if (real_fd != -1) {
-            // we have a real fd...try native flocking
+        if (real_fd != -1 && !Platform.IS_SOLARIS) {
+            // we have a real fd and not on Solaris...try native flocking
+            // see jruby/jruby#3254 and jnr/jnr-posix#60
             try {
                 int result = runtime.getPosix().flock(real_fd, lockMode);
                 if (result < 0) {
