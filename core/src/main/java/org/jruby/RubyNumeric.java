@@ -483,15 +483,17 @@ public class RubyNumeric extends RubyObject {
     }
 
     private static RubyArray coerceResult(final Ruby runtime, final IRubyObject result, final boolean err) {
-        if ( ! (result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
-            if ( err ) throw runtime.newTypeError("coerce must return [x, y]");
+        if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2 ) {
+            if (err) throw runtime.newTypeError("coerce must return [x, y]");
+
+            if (!result.isNil()) {
+                RubyWarnings warnings = runtime.getWarnings();
+                warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
+                warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
+            }
             return null;
         }
-        else if ( ! result.isNil() ) {
-            RubyWarnings warnings = runtime.getWarnings();
-            warnings.warn("Bad return value for #coerce, called by numerical comparison operators.");
-            warnings.warn("#coerce must return [x, y]. The next release will raise an error for this.");
-        }
+
         return (RubyArray) result;
     }
 
