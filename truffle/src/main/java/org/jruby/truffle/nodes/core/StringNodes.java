@@ -79,7 +79,7 @@ public abstract class StringNodes {
     // Since ByteList.toString does not decode properly
     @TruffleBoundary
     public static String getString(DynamicObject string) {
-        return Helpers.decodeByteList(BasicObjectNodes.getContext(string).getRuntime(), Layouts.STRING.getByteList(string));
+        return Helpers.decodeByteList(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime(), Layouts.STRING.getByteList(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
@@ -141,7 +141,7 @@ public abstract class StringNodes {
 
         // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
         if (encoding == null) {
-            throw BasicObjectNodes.getContext(string).getRuntime().newEncodingCompatibilityError(
+            throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
                             Layouts.STRING.getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));
@@ -194,7 +194,7 @@ public abstract class StringNodes {
 
         if (encoding == null) {
             throw new RaiseException(
-                    BasicObjectNodes.getContext(string).getCoreLibrary().encodingCompatibilityErrorIncompatible(
+                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
                             Layouts.STRING.getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString(),
                             node)
@@ -313,7 +313,7 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
-            final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
+            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
             Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(string));
 
             return ret;
@@ -421,7 +421,7 @@ public abstract class StringNodes {
 
                     return compare(a, coerced);
                 } catch (RaiseException e) {
-                    if (BasicObjectNodes.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getTypeErrorClass()) {
+                    if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getTypeErrorClass()) {
                         return nil();
                     } else {
                         throw e;
@@ -642,7 +642,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(Layouts.STRING.getByteList(string).getEncoding());
-                    return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), byteList);
+                    return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), byteList);
                 }
 
                 end = normalizeIndex(stringLength, end);
@@ -1095,7 +1095,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject downcase(DynamicObject string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), newByteList);
+            return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), newByteList);
         }
     }
 
@@ -1215,7 +1215,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), substringBytes);
+            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), substringBytes);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1362,7 +1362,7 @@ public abstract class StringNodes {
             if (isFrozenNode.executeIsFrozen(self)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
-                        getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(self)).getName(), this));
+                        getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getName(), this));
             }
 
             // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
@@ -1723,7 +1723,7 @@ public abstract class StringNodes {
 
             ByteList outputBytes = dumpCommon(string);
 
-            final DynamicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
+            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
             Layouts.STRING.getByteList(result).setEncoding(Layouts.STRING.getByteList(string).getEncoding());
             Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1747,7 +1747,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final DynamicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), outputBytes);
+            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
             Layouts.STRING.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
             Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1927,9 +1927,9 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject succ(DynamicObject string) {
             if (length(string) > 0) {
-                return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), Layouts.STRING.getByteList(string)));
+                return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), Layouts.STRING.getByteList(string)));
             } else {
-                return StringNodes.createEmptyString(BasicObjectNodes.getLogicalClass(string));
+                return StringNodes.createEmptyString(Layouts.BASIC_OBJECT.getLogicalClass(string));
             }
         }
     }
@@ -2058,7 +2058,7 @@ public abstract class StringNodes {
         }
 
         public boolean isStringSubclass(DynamicObject string) {
-            return BasicObjectNodes.getLogicalClass(string) != getContext().getCoreLibrary().getStringClass();
+            return Layouts.BASIC_OBJECT.getLogicalClass(string) != getContext().getCoreLibrary().getStringClass();
         }
 
     }
@@ -2260,7 +2260,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject upcase(DynamicObject string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return StringNodes.createString(BasicObjectNodes.getLogicalClass(string), byteListString);
+            return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), byteListString);
         }
 
     }

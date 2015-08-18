@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -72,10 +73,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -390,10 +388,19 @@ public abstract class KernelNodes {
 
         @Specialization
         public DynamicObject copy(VirtualFrame frame, DynamicObject self) {
-            final DynamicObject rubyClass = BasicObjectNodes.getLogicalClass(self);
+            final DynamicObject rubyClass = Layouts.BASIC_OBJECT.getLogicalClass(self);
             final DynamicObject newObject = (DynamicObject) allocateNode.call(frame, rubyClass, "allocate", null);
-            BasicObjectNodes.setInstanceVariables(newObject, BasicObjectNodes.getInstanceVariables(self));
+            copyInstanceVariables(self, newObject);
             return newObject;
+        }
+
+        @TruffleBoundary
+        private void copyInstanceVariables(DynamicObject from, DynamicObject to) {
+            for (Property property : from.getShape().getProperties()) {
+                if (property.getKey() instanceof String) {
+                    to.define(property.getKey(), property.get(from, from.getShape()), 0);
+                }
+            }
         }
 
     }
@@ -909,7 +916,7 @@ public abstract class KernelNodes {
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
             CompilerDirectives.transferToInterpreter();
 
-            if (BasicObjectNodes.getLogicalClass(self) != BasicObjectNodes.getLogicalClass(from)) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(self) != Layouts.BASIC_OBJECT.getLogicalClass(from)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("initialize_copy should take same class object", this));
             }
@@ -963,13 +970,13 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public boolean isInstanceVariableDefinedString(DynamicObject object, DynamicObject name) {
-            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public boolean isInstanceVariableDefinedSymbol(DynamicObject object, DynamicObject name) {
-            return BasicObjectNodes.isFieldDefined(object, RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
+            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
         }
 
     }
@@ -994,7 +1001,7 @@ public abstract class KernelNodes {
         }
 
         private Object instanceVariableGet(DynamicObject object, String name) {
-            return BasicObjectNodes.getInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name, this));
+            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getCoreLibrary().getNilObject());
         }
 
     }
@@ -1011,14 +1018,14 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
         public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
-            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
+            object.define(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value, 0);
             return value;
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubySymbol(name)")
         public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
-            BasicObjectNodes.setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value);
+            object.define(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value, 0);
             return value;
         }
 
@@ -1031,11 +1038,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject instanceVariables(DynamicObject self) {
-            CompilerDirectives.transferToInterpreter();
-
-            final Object[] instanceVariableNames = BasicObjectNodes.getFieldNames(self);
+            List<Object> keys = self.getShape().getKeyList();
+            final Object[] instanceVariableNames = keys.toArray(new Object[keys.size()]);
 
             Arrays.sort(instanceVariableNames);
 
@@ -2131,7 +2138,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = new WriteHeadObjectFieldNode(BasicObjectNodes.TAINTED_IDENTIFIER);
+            writeTaintNode = new WriteHeadObjectFieldNode(Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization

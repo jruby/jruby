@@ -72,7 +72,7 @@ public abstract class ArrayNodes {
         assert verifyStore(store, size);
 
         if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(BasicObjectNodes.getContext(array), store, size);
+            store = randomizeStorageStrategy(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getContext(), store, size);
             assert verifyStore(store, size);
         }
 
@@ -101,7 +101,7 @@ public abstract class ArrayNodes {
     }
 
     public static DynamicObject fromObjects(DynamicObject arrayClass, Object... objects) {
-        return createGeneralArray(arrayClass, storeFromObjects(BasicObjectNodes.getContext(arrayClass), objects), objects.length);
+        return createGeneralArray(arrayClass, storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
     }
 
     private static Object storeFromObjects(RubyContext context, Object... objects) {
@@ -470,7 +470,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
+            return ArrayNodes.createEmptyArray(Layouts.BASIC_OBJECT.getLogicalClass(array));
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -488,7 +488,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
+            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongArray(array)")
@@ -506,7 +506,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
+            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isDoubleArray(array)")
@@ -524,7 +524,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
+            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -542,7 +542,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(BasicObjectNodes.getLogicalClass(array), newStore, newStoreLength);
+            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -634,7 +634,7 @@ public abstract class ArrayNodes {
                 final int exclusiveEnd = clampExclusiveIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return ArrayNodes.createEmptyArray(BasicObjectNodes.getLogicalClass(array));
+                    return ArrayNodes.createEmptyArray(Layouts.BASIC_OBJECT.getLogicalClass(array));
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
@@ -1127,7 +1127,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(array)).getName(), this));
+                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;
@@ -1164,7 +1164,7 @@ public abstract class ArrayNodes {
                     if (isFrozenNode.executeIsFrozen(array)) {
                         CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(
-                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(array)).getName(), this));
+                            getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getName(), this));
                     }
                     found = store[n];
                     continue;

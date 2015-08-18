@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
@@ -89,7 +88,7 @@ public abstract class ObjectPrimitiveNodes {
         @Specialization
         public long objectID(DynamicObject object) {
             // TODO: CS 22-Mar-15 need to write this using nodes
-            return BasicObjectNodes.verySlowGetObjectID(object);
+            return ObjectIDOperations.verySlowGetObjectID(object);
         }
 
         protected boolean isSmallFixnum(long fixnum) {

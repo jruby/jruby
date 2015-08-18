@@ -152,7 +152,7 @@ public abstract class SymbolNodes {
                     sharedMethodInfo,
                     callTarget, callTarget, callTarget,
                     null, null,
-                    BasicObjectNodes.getContext(symbol).getCoreLibrary().getNilObject(),
+                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(symbol)).getContext().getCoreLibrary().getNilObject(),
                     null);
         }
 

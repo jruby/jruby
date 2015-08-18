@@ -16,7 +16,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -80,7 +79,7 @@ public class TryNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         final DynamicObject threadLocals = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-        BasicObjectNodes.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
+        threadLocals.define("$!", exception.getRubyException(), 0);
 
         for (RescueNode rescue : rescueParts) {
             if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {

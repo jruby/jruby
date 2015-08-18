@@ -14,10 +14,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.MatchDataNodes;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -33,11 +33,11 @@ public class ReadMatchReferenceNode extends RubyNode {
         this.index = index;
     }
 
+    @CompilerDirectives.TruffleBoundary
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        final Object match = BasicObjectNodes.getInstanceVariable(ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread()), "$~");
+        DynamicObject receiver = ThreadNodes.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final Object match = receiver.get("$~", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
 
         if (match == null || match == nil()) {
             return nil();

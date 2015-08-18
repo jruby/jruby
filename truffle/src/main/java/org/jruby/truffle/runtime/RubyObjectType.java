@@ -15,7 +15,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -40,7 +39,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
-            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), Layouts.MODULE.getFields(BasicObjectNodes.getLogicalClass(object)).getName());
+            return String.format("DynamicObject@%x<logicalClass=%s>", System.identityHashCode(object), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getName());
         }
     }
 
@@ -60,7 +59,7 @@ public class RubyObjectType extends ObjectType {
     }
 
     private RubyContext getContext() {
-        return BasicObjectNodes.getContext(Layouts.BASIC_OBJECT.getLogicalClass(this));
+        return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(Layouts.BASIC_OBJECT.getLogicalClass(this))).getContext();
     }
 
 }

@@ -800,7 +800,7 @@ public abstract class ModuleNodes {
         public DynamicObject getClassVariables(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject array = ArrayNodes.createEmptyArray(BasicObjectNodes.getContext(module).getCoreLibrary().getArrayClass());
+            final DynamicObject array = ArrayNodes.createEmptyArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(module)).getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayNodes.slowPush(array, getSymbol(variable));

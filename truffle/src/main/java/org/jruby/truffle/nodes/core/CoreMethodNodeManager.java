@@ -68,7 +68,7 @@ public class CoreMethodNodeManager {
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = BasicObjectNodes.getContext(objectClass);
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(objectClass)).getContext();
 
         DynamicObject module;
         String fullName = methodDetails.getClassAnnotation().name();

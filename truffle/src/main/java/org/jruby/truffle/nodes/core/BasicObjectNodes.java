@@ -21,8 +21,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
@@ -32,7 +30,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,152 +37,6 @@ import java.util.Map;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
-
-    public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
-    public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
-    public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
-
-    @CompilerDirectives.TruffleBoundary
-    public static void setInstanceVariable(DynamicObject receiver, Object name, Object value) {
-        Shape shape = receiver.getShape();
-        Property property = shape.getProperty(name);
-        if (property != null) {
-            property.setGeneric(receiver, value, null);
-        } else {
-            receiver.define(name, value, 0);
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static void setInstanceVariables(DynamicObject receiver, Map<Object, Object> instanceVariables) {
-        for (Map.Entry<Object, Object> entry : instanceVariables.entrySet()) {
-            setInstanceVariable(receiver, entry.getKey(), entry.getValue());
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static Object getInstanceVariable2(DynamicObject receiver, Object name) {
-        Shape shape = receiver.getShape();
-        Property property = shape.getProperty(name);
-        if (property != null) {
-            return property.get(receiver, false);
-        } else {
-            return getContext(receiver).getCoreLibrary().getNilObject();
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static Map<Object, Object> getInstanceVariables(DynamicObject receiver) {
-        Shape shape = receiver.getShape();
-        Map<Object, Object> vars = new LinkedHashMap<>();
-        List<Property> properties = shape.getPropertyList();
-        for (Property property : properties) {
-            vars.put((String) property.getKey(), property.get(receiver, false));
-        }
-        return vars;
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static Object[] getFieldNames(DynamicObject receiver) {
-        List<Object> keys = receiver.getShape().getKeyList();
-        return keys.toArray(new Object[keys.size()]);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static boolean isFieldDefined(DynamicObject receiver, String name) {
-        return receiver.getShape().hasProperty(name);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static long verySlowGetObjectID(DynamicObject object) {
-        // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
-        Property property = object.getShape().getProperty(OBJECT_ID_IDENTIFIER);
-
-        if (property != null) {
-            return (long) property.get(object, false);
-        }
-
-        final long objectID = getContext(object).getNextObjectID();
-        object.define(OBJECT_ID_IDENTIFIER, objectID, 0);
-        return objectID;
-    }
-
-    public static Object getInstanceVariable(DynamicObject object, String name) {
-        final Object value = getInstanceVariable2(object, name);
-
-        if (value == null) {
-            return getContext(object).getCoreLibrary().getNilObject();
-        } else {
-            return value;
-        }
-    }
-
-    public static void visitObjectGraph(DynamicObject object, ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        if (visitor.visit(object)) {
-            visitObjectGraph(Layouts.BASIC_OBJECT.getMetaClass(object), visitor);
-
-            for (Object instanceVariable : getInstanceVariables(object).values()) {
-                if (instanceVariable instanceof DynamicObject) {
-                    visitObjectGraph(((DynamicObject) instanceVariable), visitor);
-                }
-            }
-
-            visitObjectGraphChildren(object, visitor);
-        }
-    }
-
-    public static void visitObjectGraphChildren(DynamicObject rubyBasicObject, ObjectSpaceManager.ObjectGraphVisitor visitor) {
-        if (RubyGuards.isRubyArray(rubyBasicObject)) {
-            for (Object object : ArrayNodes.slowToArray(rubyBasicObject)) {
-                if (object instanceof DynamicObject) {
-                    visitObjectGraph(((DynamicObject) object), visitor);
-                }
-            }
-        } else if (RubyGuards.isRubyHash(rubyBasicObject)) {
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(rubyBasicObject)) {
-                if (keyValue.getKey() instanceof DynamicObject) {
-                    visitObjectGraph(((DynamicObject) keyValue.getKey()), visitor);
-                }
-
-                if (keyValue.getValue() instanceof DynamicObject) {
-                    visitObjectGraph(((DynamicObject) keyValue.getValue()), visitor);
-                }
-            }
-        } else if (RubyGuards.isRubyBinding(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(Layouts.BINDING.getFrame(rubyBasicObject), visitor);
-        } else if (RubyGuards.isRubyProc(rubyBasicObject)) {
-            getContext(rubyBasicObject).getObjectSpaceManager().visitFrame(Layouts.PROC.getDeclarationFrame(rubyBasicObject), visitor);
-        } else if (RubyGuards.isRubyMatchData(rubyBasicObject)) {
-            for (Object object : Layouts.MATCH_DATA.getFields(rubyBasicObject).values) {
-                if (object instanceof DynamicObject) {
-                    visitObjectGraph(((DynamicObject) object), visitor);
-                }
-            }
-        } else if (RubyGuards.isObjectRange(rubyBasicObject)) {
-            if (Layouts.OBJECT_RANGE.getBegin(rubyBasicObject) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) Layouts.OBJECT_RANGE.getBegin(rubyBasicObject)), visitor);
-            }
-
-            if (Layouts.OBJECT_RANGE.getEnd(rubyBasicObject) instanceof DynamicObject) {
-                visitObjectGraph(((DynamicObject) Layouts.OBJECT_RANGE.getEnd(rubyBasicObject)), visitor);
-            }
-        } else if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            Layouts.MODULE.getFields(rubyBasicObject).visitObjectGraphChildren(visitor);
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static RubyContext getContext(DynamicObject rubyBasicObject) {
-        if (RubyGuards.isRubyModule(rubyBasicObject)) {
-            return Layouts.MODULE.getFields(rubyBasicObject).getContext();
-        } else {
-            return getContext(getLogicalClass(rubyBasicObject));
-        }
-    }
-
-    public static DynamicObject getLogicalClass(DynamicObject rubyBasicObject) {
-        return Layouts.BASIC_OBJECT.getLogicalClass(rubyBasicObject);
-    }
 
     @CoreMethod(names = "!")
     public abstract static class NotNode extends UnaryCoreMethodNode {

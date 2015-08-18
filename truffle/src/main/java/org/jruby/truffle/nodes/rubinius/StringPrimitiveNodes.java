@@ -183,7 +183,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = new ByteList(Layouts.STRING.getByteList(source), index, length);
             bytes.setEncoding(Layouts.STRING.getByteList(source).getEncoding());
 
-            final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(source), bytes);
+            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(source), bytes);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -233,7 +233,7 @@ public abstract class StringPrimitiveNodes {
                 length = bytes.length() - normalizedIndex;
             }
 
-            final DynamicObject result = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length));
+            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length));
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -475,7 +475,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, 1));
+            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1));
 
             return propagate(string, ret);
         }
@@ -499,9 +499,9 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, clen));
+                ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen));
             } else {
-                ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(byteList, offset, 1));
+                ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1));
             }
 
             return propagate(string, ret);
@@ -1261,7 +1261,7 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = StringNodes.createString(BasicObjectNodes.getLogicalClass(string), new ByteList(Layouts.STRING.getByteList(string), beg, len));
+            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(Layouts.STRING.getByteList(string), beg, len));
             Layouts.STRING.getByteList(ret).setEncoding(Layouts.STRING.getByteList(string).getEncoding());
             taintResultNode.maybeTaint(string, ret);
 

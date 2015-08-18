@@ -62,7 +62,7 @@ public abstract class MatchDataNodes {
         final int b = (Layouts.MATCH_DATA.getFields(matchData).region == null) ? Layouts.MATCH_DATA.getFields(matchData).begin : Layouts.MATCH_DATA.getFields(matchData).region.beg[index];
 
         if (b < 0) {
-            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
         }
 
         updateCharOffset(matchData);
@@ -75,7 +75,7 @@ public abstract class MatchDataNodes {
         int e = (Layouts.MATCH_DATA.getFields(matchData).region == null) ? Layouts.MATCH_DATA.getFields(matchData).end : Layouts.MATCH_DATA.getFields(matchData).region.end[index];
 
         if (e < 0) {
-            return BasicObjectNodes.getContext(matchData).getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
         }
 
         final CodeRangeable sourceWrapped = StringNodes.getCodeRangeable(Layouts.MATCH_DATA.getFields(matchData).source);
@@ -592,5 +592,6 @@ public abstract class MatchDataNodes {
             this.begin = begin;
             this.end = end;
         }
+
     }
 }

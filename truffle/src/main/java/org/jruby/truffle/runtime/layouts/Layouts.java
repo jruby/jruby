@@ -9,11 +9,14 @@
  */
 package org.jruby.truffle.runtime.layouts;
 
+import com.oracle.truffle.api.object.HiddenKey;
 import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayout;
 import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayoutImpl;
 import org.jruby.truffle.runtime.layouts.rubinius.*;
 
 public abstract class Layouts {
+
+    // Generated layouts
 
     public static final ArrayLayout ARRAY = ArrayLayoutImpl.INSTANCE;
     public static final BasicObjectLayout BASIC_OBJECT = BasicObjectLayoutImpl.INSTANCE;
@@ -47,4 +50,9 @@ public abstract class Layouts {
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
 
+    // Other standard identifiers
+
+    public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
+    public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
+    public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 }

@@ -41,7 +41,7 @@ import java.util.concurrent.locks.Lock;
 public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(DynamicObject rubyClass, ThreadManager manager) {
-        final DynamicObject objectClass = BasicObjectNodes.getContext(rubyClass).getCoreLibrary().getObjectClass();
+        final DynamicObject objectClass = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(rubyClass)).getContext().getCoreLibrary().getObjectClass();
         final ThreadFields fields = new ThreadNodes.ThreadFields(manager, null, Layouts.CLASS.getInstanceFactory(objectClass).newInstance());
         final DynamicObject object = ThreadLayoutImpl.INSTANCE.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), fields);
         fields.fiberManager = new FiberManager(object, manager);

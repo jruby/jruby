@@ -43,15 +43,15 @@ public abstract class ExceptionNodes {
         assert RubyGuards.isRubyException(exception);
 
         assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-        final String[] lines = BACKTRACE_FORMATTER.format(BasicObjectNodes.getContext(exception), exception, Layouts.EXCEPTION.getBacktrace(exception));
+        final String[] lines = BACKTRACE_FORMATTER.format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
 
         final Object[] array = new Object[lines.length];
 
         for (int n = 0;n < lines.length; n++) {
-            array[n] = StringNodes.createString(BasicObjectNodes.getContext(exception).getCoreLibrary().getStringClass(), lines[n]);
+            array[n] = StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass(), lines[n]);
         }
 
-        return ArrayNodes.fromObjects(BasicObjectNodes.getContext(exception).getCoreLibrary().getArrayClass(), array);
+        return ArrayNodes.fromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayClass(), array);
     }
 
     public static void setMessage(DynamicObject exception, Object message) {
