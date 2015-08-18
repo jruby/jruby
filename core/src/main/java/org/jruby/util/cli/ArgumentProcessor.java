@@ -714,7 +714,9 @@ public class ArgumentProcessor {
         }
     }
 
-    private void checkProperties() {
+    private static final Set<String> KNOWN_PROPERTIES;
+
+    static {
         final Set<String> propertyNames = new HashSet<>();
         propertyNames.addAll(Options.getPropertyNames());
         propertyNames.add("jruby.home");
@@ -726,10 +728,15 @@ public class ArgumentProcessor {
         propertyNames.add("jruby.compat.version");
         propertyNames.add("jruby.reflection");
         propertyNames.add("jruby.thread.pool.enabled");
+        propertyNames.add("jruby.memory.max");
+        propertyNames.add("jruby.stack.max");
+        KNOWN_PROPERTIES = propertyNames;
+    }
 
+    private void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {
-                if (!propertyNames.contains(propertyName)) {
+                if (!KNOWN_PROPERTIES.contains(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }
             }
