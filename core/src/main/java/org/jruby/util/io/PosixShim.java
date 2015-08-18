@@ -173,7 +173,9 @@ public class PosixShim {
 
         int real_fd = fd.realFileno;
 
-        if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD) {
+        if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD && !Platform.IS_SOLARIS) {
+            // we have a real fd and not on Solaris...try native flocking
+            // see jruby/jruby#3254 and jnr/jnr-posix#60
             int result = posix.flock(real_fd, lockMode);
             if (result < 0) {
                 errno = Errno.valueOf(posix.errno());
