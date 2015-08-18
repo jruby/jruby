@@ -6,7 +6,7 @@ describe 'Rational' do
 
   describe '#to_s' do
     it "returns a string with US-ASCII encoding" do
-      subject.to_s.encoding.should == Encoding::US_ASCII
+      expect(subject.to_s.encoding).to eq(Encoding::US_ASCII)
     end
   end
 end

@@ -17,9 +17,9 @@ describe "JRUBY-5610: TCPServer#accept_nonblock" do
 
       client = client = TCPSocket.open('127.0.0.1', port)
 
-      lambda do
+      expect do
         server.accept_nonblock
-      end.should_not raise_error
+      end.not_to raise_error
     ensure
       client.close if client
       server.close if server

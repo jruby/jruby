@@ -8,10 +8,10 @@ describe "JRUBY-6141: Matchdata#captures" do
   end
 
   it "returns first value from Regexp.last_match after all String#scan iterations" do
-    @firstmatch.captures[0].should == "first"
+    expect(@firstmatch.captures[0]).to eq("first")
   end
   
   it "returns last value from Regexp.last_match after all String#scan iterations" do
-    @lastmatch.captures[0].should == "last"
+    expect(@lastmatch.captures[0]).to eq("last")
   end
 end

@@ -56,10 +56,10 @@ describe Ant, "tasks:" do
       @ant.project.targets["jar"]
     end
 
-    it { should have_structure([{:_name => "jar", :destfile => "spec-test.jar", :compress => "true", :index => "true",
+    it { is_expected.to have_structure([{:_name => "jar", :destfile => "spec-test.jar", :compress => "true", :index => "true",
                                  :_children => [ { :_name => "fileset", :dir => "build" }] }]) }
 
-    it { should have_configured_structure([{:_type => "org.apache.tools.ant.taskdefs.Jar",
+    it { is_expected.to have_configured_structure([{:_type => "org.apache.tools.ant.taskdefs.Jar",
                                             :_children => [{:_type => "org.apache.tools.ant.types.FileSet"}] }]) }
 
   end
@@ -69,11 +69,11 @@ describe Ant, "tasks:" do
       @ant.project.targets["jarjar"]
     end
 
-    it { should have_structure([{:_name => "jarjar", :destfile => "spec-test.jar", :compress => "true",
+    it { is_expected.to have_structure([{:_name => "jarjar", :destfile => "spec-test.jar", :compress => "true",
                                  :_children => [ { :_name => "fileset", :dir => "build" },
                                                  { :_name => "zipfileset", :src => "./lib/jruby.jar" }] }]) }
 
-    it { should have_configured_structure([{:_type => "com.tonicsystems.jarjar.JarJarTask",
+    it { is_expected.to have_configured_structure([{:_type => "com.tonicsystems.jarjar.JarJarTask",
                                             :_children => [{:_type => "org.apache.tools.ant.types.FileSet"},
                                                            {:_type => "org.apache.tools.ant.types.ZipFileSet"}] }]) }
   end
@@ -81,15 +81,15 @@ describe Ant, "tasks:" do
   describe "macrodef" do
     it "should be defined and invokable from a target" do
       @ant.execute_target(:greet)
-      File.read(@output).should == "Hello Ant"
+      expect(File.read(@output)).to eq("Hello Ant")
     end
   end
 
   describe "rubygreet" do
     it "should execute the code block when the target is executed" do
-      @message.should == ""
+      expect(@message).to be_empty
       @ant.execute_target(:rubygreet)
-      @message.should == "Hello Ruby!"
+      expect(@message).to eq("Hello Ruby!")
     end
   end
 end

@@ -1,5 +1,5 @@
 describe "defined?(::BasicObject)" do
   it "returns \"constant\"" do
-    defined?(::BasicObject).should == "constant"
+    expect(defined?(::BasicObject)).to eq("constant")
   end
 end

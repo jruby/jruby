@@ -63,6 +63,6 @@ describe "JRuby::Synchronized" do
 
   it "should be includable only in classes" do
     mod = Module.new
-    lambda { mod.class_eval { include JRuby::Synchronized } }.should raise_error(TypeError)
+    expect { mod.class_eval { include JRuby::Synchronized } }.to raise_error(TypeError)
   end
 end

@@ -15,43 +15,39 @@ java_import "java_integration.fixtures.ClassWithAbstractMethods"
 describe "A Ruby subclass of a Java concrete class" do
   it "should allow access to the proxy object for the class" do
     my_arraylist = Class.new(ArrayList)
-    lambda { my_arraylist.java_proxy_class }.should_not raise_error
+    expect { my_arraylist.java_proxy_class }.not_to raise_error
   end
 
   it "should allow access to the actual generated class via java_class" do
     my_arraylist = Class.new(ArrayList)
     class_name = my_arraylist.java_proxy_class.to_s
-    class_name.index('Proxy').should_not == -1
+    expect(class_name.index('Proxy')).not_to eq(-1)
   end
 
   it "can invoke protected methods of the superclass" do
     subtype = Class.new(ProtectedInstanceMethod) do
       def go; theProtectedMethod; end
     end
-    subtype.new.go.should == "42"
+    expect(subtype.new.go).to eq("42")
 
     subtype = Class.new(ProtectedInstanceMethod) do
       def go; ProtectedStaticMethod.theProtectedMethod; end
     end
-    subtype.new.go.should == "42"
+    expect(subtype.new.go).to eq("42")
   end
 
   it "can not invoke package-visible methods of the superclass" do
     subtype = Class.new(PackageInstanceMethod) do
       def go; thePackageMethod; end
     end
-    pending "Why doesn't this raise NoMethodError?" do
-      lambda {subtype.new.go}.should raise_error(NoMethodError)
-    end
-    lambda {subtype.new.go}.should raise_error
+    expect {subtype.new.go}.to raise_error(NameError)
 
     subtype = Class.new(PackageInstanceMethod) do
       def go; PackageStaticMethod.thePackageMethod; end
     end
-    pending "Why doesn't this raise NoMethodError?" do
-      lambda {subtype.new.go}.should raise_error(NoMethodError)
-    end
-    lambda {subtype.new.go}.should raise_error
+    expect {subtype.new.go}.to raise_error(NameError)
+
+    skip "these should raise NoMethodError"
   end
 
   # JRUBY-4451
@@ -59,32 +55,27 @@ describe "A Ruby subclass of a Java concrete class" do
     subtype = Class.new(ComplexPrivateConstructor)
 
     obj = subtype.new("foo", 1, 2)
-    obj.result.should == "String: foo, int: 1, int: 2"
+    expect(obj.result).to eq("String: foo, int: 1, int: 2")
   end
 
   it "can override methods that return void and return non-void value" do
     subtype = Class.new(PackageInstanceMethod) do
       def voidMethod; 123; end
     end
-    subtype.new.invokeVoidMethod.should == nil
+    expect(subtype.new.invokeVoidMethod).to eq(nil)
   end
 
   it "can not invoke private methods of the superclass" do
     subtype = Class.new(PrivateInstanceMethod) do
       def go; thePrivateMethod; end
     end
-    pending "Why doesn't this raise NoMethodError?" do
-      lambda {subtype.new.go}.should raise_error(NoMethodError)
-    end
-    lambda {subtype.new.go}.should raise_error
+    expect {subtype.new.go}.to raise_error(NameError)
 
+    pending "this should raise NoMethodError"
     subtype = Class.new(PrivateInstanceMethod) do
       def go; PrivateStaticMethod.thePrivateMethod; end
     end
-    pending "Why doesn't this raise NoMethodError?" do
-      lambda {subtype.new.go}.should raise_error(NoMethodError)
-    end
-    lambda {subtype.new.go}.should raise_error
+    expect {subtype.new.go}.to raise_error(NoMethodError)
   end
 
   it "can override virtually-invoked methods from super" do
@@ -93,7 +84,7 @@ describe "A Ruby subclass of a Java concrete class" do
         "derived"
       end
     }
-    my_arraylist.new.callVirtualMethod.should == "derived"
+    expect(my_arraylist.new.callVirtualMethod).to eq("derived")
   end
 
   # JRUBY-4571
@@ -106,12 +97,12 @@ describe "A Ruby subclass of a Java concrete class" do
       def size; 100; end
     end.new
 
-    ReceivesArrayList.new.receive_array_list(my_arraylist).should == 100
+    expect(ReceivesArrayList.new.receive_array_list(my_arraylist)).to eq(100)
     
     thread = java.lang.Thread.new(my_arraylist)
     thread.start
     thread.join
-    my_arraylist.foo.should == 'foo'
+    expect(my_arraylist.foo).to eq('foo')
   end
 
   # JRUBY-4704
@@ -124,11 +115,11 @@ describe "A Ruby subclass of a Java concrete class" do
     end
 
     my_arraylist = nil
-    lambda do
+    expect do
       my_arraylist = my_arraylist_cls.new
-    end.should_not raise_error
-    my_arraylist.class.superclass.should == java.util.ArrayList
-    my_arraylist.to_java.should == my_arraylist
+    end.not_to raise_error
+    expect(my_arraylist.class.superclass).to eq(java.util.ArrayList)
+    expect(my_arraylist.to_java).to eq(my_arraylist)
   end
   
   it "raises argument error when super does not match superclass constructor arity" do
@@ -138,9 +129,9 @@ describe "A Ruby subclass of a Java concrete class" do
       end
     end
     
-    proc do
+    expect do
       my_arraylist_cls.new
-    end.should raise_error(ArgumentError)
+    end.to raise_error(ArgumentError)
   end
   
   # JRUBY-4788
@@ -153,9 +144,9 @@ describe "A Ruby subclass of a Java concrete class" do
     end
     my_cwam = my_cwam_cls.new
     
-    proc do
+    expect do
       ClassWithAbstractMethods.callFoo1(my_cwam, "ok")
-    end.should raise_error(ArgumentError)
+    end.to raise_error(ArgumentError)
   end
   
   it "dispatches to other-arity superclass methods if arities mismatch" do
@@ -167,14 +158,14 @@ describe "A Ruby subclass of a Java concrete class" do
     end
     my_cwam = my_cwam_cls.new
     
-    ClassWithAbstractMethods.callFoo2(my_cwam, "x", "y").should == "ok"
+    expect(ClassWithAbstractMethods.callFoo2(my_cwam, "x", "y")).to eq("ok")
   end
 end
 
 describe "A final Java class" do
   it "should not be allowed as a superclass" do
-    lambda do
+    expect do
       substring = Class.new(java.lang.String)
-    end.should raise_error(TypeError)
+    end.to raise_error(TypeError)
   end
 end

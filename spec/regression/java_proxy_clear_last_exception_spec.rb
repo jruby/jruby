@@ -4,6 +4,6 @@ describe "JavaProxy" do
       field_reader :value
     end
 
-    $!.should == nil
+    expect($!).to eq(nil)
   end
 end

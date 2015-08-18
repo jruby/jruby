@@ -573,8 +573,8 @@ modes.each do |mode|
         end.new
       ') do |obj|
         $~ = nil
-        obj.blank?.should == false
-        $~.should be_nil
+        expect(obj).not_to be_blank
+        expect($~).to be_nil
       end
     end
 
@@ -699,8 +699,8 @@ modes.each do |mode|
       run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo") {|result| expect(result).to eq({"1" => 2}) }
     end
 
-    it "compiles very long code bodies", pending: "JIT support" do
-      # JRUBY-2246
+    it "compiles very long code bodies" do
+      skip "JRUBY-2246"
       long_src = "a = 1\n"
       5000.times { long_src << "a += 1\n" }
       run(long_src) {|result| expect(result).to eq 5001 }
@@ -756,8 +756,9 @@ modes.each do |mode|
       EOS
     end
 
-    it "can compile large literal arrays and hashes", pending: "JIT support" do
-      # JRUBY-4757 and JRUBY-2621: can't compile large array/hash
+    it "can compile large literal arrays and hashes" do
+      skip "JRUBY-4757 and JRUBY-2621: can't compile large array/hash"
+
       large_array = (1..10000).to_a.inspect
       large_hash = large_array.clone
       large_hash.gsub!('[', '{')

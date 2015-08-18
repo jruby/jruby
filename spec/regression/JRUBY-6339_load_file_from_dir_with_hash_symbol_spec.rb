@@ -5,7 +5,7 @@ describe "JRUBY-6339: File does not load from inside path with a '#' symbol" do
         $LOAD_PATH.unshift "."
 
         require("foo")
-        $LOADED_FEATURES.pop.should =~ /foo\.rb$/
+        expect($LOADED_FEATURES.pop).to match(/foo\.rb$/)
       ensure
         $LOAD_PATH.shift
       end
