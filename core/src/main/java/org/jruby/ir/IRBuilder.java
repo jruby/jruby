@@ -229,6 +229,11 @@ public class IRBuilder {
                 if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
             }
 
+            // $! should be restored before the ensure block is run
+            if (savedGlobalException != null) {
+                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
+
             // Clone instructions now
             builder.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
             builder.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
@@ -346,11 +351,6 @@ public class IRBuilder {
             // For "break" and "next" instructions, we only want to run
             // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
-
-            // $! should be restored before the ensure block is run
-            if (ebi.savedGlobalException != null) {
-                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
-            }
 
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
@@ -2228,9 +2228,6 @@ public class IRBuilder {
 
         // Restore $! if we had a non-empty rescue node
         if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
-            if (ensurerNode == null) {
-                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
-            }
             ebi.savedGlobalException = savedGlobalException;
         }
 
@@ -3094,12 +3091,12 @@ public class IRBuilder {
             addInstr(new JumpInstr(rEndLabel, true));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
-            // up execution of all necessary ensure blocks.  So, nothing to do here!
+            // up execution of all necessary ensure blocks. So, nothing to do here!
             //
-            // Additionally, the value in 'rv' will never be used, so need to set it to any specific value.
-            // So, we can leave it undefined.  If on the other hand, there was an exception in that block,
+            // Additionally, the value in 'rv' will never be used, so no need to set it to any specific value.
+            // So, we can leave it undefined. If on the other hand, there was an exception in that block,
             // 'rv' will get set in the rescue handler -- see the 'rv' being passed into
-            // buildRescueBodyInternal below.  So, in either case, we are good!
+            // buildRescueBodyInternal below. So, in either case, we are good!
             //}
 
         // Start of rescue logic
