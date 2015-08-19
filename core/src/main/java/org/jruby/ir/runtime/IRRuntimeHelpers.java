@@ -726,6 +726,14 @@ public class IRRuntimeHelpers {
         return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
     }
 
+    @JIT
+    public static IRubyObject restoryPerlyExc(ThreadContext context, IRubyObject exc, IRubyObject savedExc) {
+        if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
+            context.runtime.getGlobalVariables().set("$!", savedExc);
+        }
+        return null;
+    }
+
     public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
         boolean inBindingEval = currDynScope.inBindingEval();
 
