@@ -26,7 +26,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.9</version>
+      <version>0.9.10</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -65,6 +65,10 @@
     <repository>
       <id>rubygems-releases</id>
       <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
+    </repository>
+    <repository>
+      <id>gem-release</id>
+      <url>http://oss.sonatype.org/content/repositories/staging</url>
     </repository>
   </repositories>
   <build>
