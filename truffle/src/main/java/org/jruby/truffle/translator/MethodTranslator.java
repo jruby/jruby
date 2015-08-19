@@ -141,10 +141,6 @@ class MethodTranslator extends BodyTranslator {
             behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
         }
 
-        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForBlocks, BehaveAsProcNode.class)) {
-            behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
-        }
-
         final RubyRootNode newRootNodeForBlocks = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 newNodeForBlocks, environment.needsDeclarationFrame());
 
@@ -155,10 +151,6 @@ class MethodTranslator extends BodyTranslator {
             behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
         }
 
-        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForProcs, BehaveAsProcNode.class)) {
-            behaveAsProcNode.replace(behaveAsProcNode.getAsProc());
-        }
-
         final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
                 newNodeForProcs, environment.needsDeclarationFrame());
 
@@ -167,10 +159,6 @@ class MethodTranslator extends BodyTranslator {
 
         for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForLambdas, BehaveAsBlockNode.class)) {
             behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
-        }
-
-        for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newNodeForLambdas, BehaveAsProcNode.class)) {
-            behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
         }
 
         final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
