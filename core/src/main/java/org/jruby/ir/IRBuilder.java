@@ -2224,13 +2224,13 @@ public class IRBuilder {
             getCurrentLoop(),
             activeRescuers.peek());
 
-        ensureBodyBuildStack.push(ebi);
-
-        // Restore $! if we had a non-empty rescue node
+        // Record $! save var if we had a non-empty rescue node.
+        // $! will be restored from it where required.
         if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
             ebi.savedGlobalException = savedGlobalException;
         }
 
+        ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
