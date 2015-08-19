@@ -889,6 +889,11 @@ public class CoreLibrary {
         return localJumpError("no block given", currentNode);
     }
 
+    public DynamicObject breakFromProcClosure(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return localJumpError("break from proc-closure", currentNode);
+    }
+
     public DynamicObject unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);

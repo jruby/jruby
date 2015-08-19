@@ -132,10 +132,6 @@ class MethodTranslator extends BodyTranslator {
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
-        body = new BehaveAsProcNode(context, sourceSection,
-                new CatchBreakAsProcErrorNode(context, sourceSection, body),
-                NodeUtil.cloneNode(body));
-
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
         // Blocks
