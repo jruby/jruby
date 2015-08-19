@@ -129,17 +129,15 @@ class MethodTranslator extends BodyTranslator {
     }
 
     private boolean shouldConsiderDestructuringArrayArg() {
-        final boolean shouldConsiderDestructuringArrayArg;
         if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
-            shouldConsiderDestructuringArrayArg = false;
+            return false;
         } else if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
-            shouldConsiderDestructuringArrayArg = false;
+            return false;
         } else if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
-            shouldConsiderDestructuringArrayArg = false;
+            return false;
         } else {
-            shouldConsiderDestructuringArrayArg = true;
+            return true;
         }
-        return shouldConsiderDestructuringArrayArg;
     }
 
     private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
