@@ -1167,15 +1167,8 @@ public abstract class KernelNodes {
 
             try {
                 getContext().loadFile(file.toString(), this);
-            } catch (RuntimeException e) {
-                // TODO (nirvdrum 05-Feb-15) This is ugly, but checked exceptions are wrapped up the call stack. We need to revisit this.
-                if (e.getCause() instanceof java.io.IOException) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
-                } else {
-                    throw e;
-                }
+            } catch (IOException e) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;

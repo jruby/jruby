@@ -27,11 +27,6 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.Arrays;
 
-/**
- * Manages the features loaded into Ruby. This basically means which library files are loaded, but
- * Ruby often talks about requiring features, not files.
- * 
- */
 public class FeatureLoader {
 
     private final RubyContext context;
@@ -103,7 +98,7 @@ public class FeatureLoader {
     }
 
     public boolean isAbsolutePath(String path) {
-        return path.startsWith("uri:classloader:") || path.startsWith("core:") || new File(path).isAbsolute();
+        return path.startsWith("uri:classloader:") || path.startsWith("truffle:") || path.startsWith("jruby:") || new File(path).isAbsolute();
     }
 
     private boolean requireFile(String feature, String path, Node currentNode) throws IOException {
@@ -112,8 +107,6 @@ public class FeatureLoader {
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
 
         if (path.startsWith("uri:classloader:/")) {
-            // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
-
             for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
                 if (loaded.toString().equals(path)) {
                     return true;
@@ -132,34 +125,22 @@ public class FeatureLoader {
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
 
             return true;
-        }
-        else if (path.startsWith("core:/")) {
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
-                if (loaded.toString().equals(path)) {
-                    return true;
-                }
-            }
-
-            final String coreFileName = path.substring("core:/".length());
-
-            if (context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), coreFileName) == null) {
-                return false;
-            }
-
-            ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
-            context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
-
-            return true;
         } else {
-            final File file = new File(path);
+            final String expandedPath;
 
-            assert file.isAbsolute();
+            if (!(path.startsWith("truffle:") || path.startsWith("jruby:"))) {
+                final File file = new File(path);
 
-            if (!file.isAbsolute() || !file.isFile()) {
-                return false;
+                assert file.isAbsolute();
+
+                if (!file.isAbsolute() || !file.isFile()) {
+                    return false;
+                }
+
+                expandedPath = new File(expandPath(context, path)).getCanonicalPath();
+            } else {
+                expandedPath = path;
             }
-
-            final String expandedPath = expandPath(context, path);
 
             for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
                 if (loaded.toString().equals(expandedPath)) {
@@ -171,7 +152,7 @@ public class FeatureLoader {
             final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
             ArrayNodes.slowPush(loadedFeatures, pathString);
             try {
-                context.loadFile(new File(expandedPath).getCanonicalPath(), currentNode);
+                context.loadFile(expandedPath, currentNode);
             } catch (RaiseException e) {
                 final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
                 final int length = Layouts.ARRAY.getSize(loadedFeatures);
@@ -185,6 +166,8 @@ public class FeatureLoader {
                     }
                 }
                 throw e;
+            } catch (IOException e) {
+                return false;
             }
         }
 

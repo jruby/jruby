@@ -46,8 +46,8 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
-import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
+import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
@@ -63,6 +63,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CoreLibrary {
+
+    public static final String CORE_PREFIX = SourceLoader.TRUFFLE_PREFIX + "/core";
 
     private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
 
@@ -628,7 +630,11 @@ public class CoreLibrary {
 
         try {
             state = State.LOADING_RUBY_CORE;
-            loadRubyCore("core.rb");
+            try {
+                context.load(context.getSourceCache().getSource("truffle:/core.rb"), node, NodeWrapper.IDENTITY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
 
@@ -663,10 +669,6 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
-    }
-
-    public void loadRubyCore(String fileName) {
-        loadRubyCore(fileName, "core:/");
     }
 
     public void loadRubyCore(String fileName, String prefix) {

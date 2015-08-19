@@ -261,26 +261,16 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return runningOnWindows;
     }
 
-    public void loadFile(String fileName, Node currentNode) {
-        if (new File(fileName).isAbsolute()) {
+    public void loadFile(String fileName, Node currentNode) throws IOException {
+        if (new File(fileName).isAbsolute() || fileName.startsWith("jruby:") || fileName.startsWith("truffle:")) {
             loadFileAbsolute(fileName, currentNode);
         } else {
-            try {
-                loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
         }
     }
 
-    private void loadFileAbsolute(String fileName, Node currentNode) {
-        final Source source;
-
-        try {
-            source = sourceCache.getSource(fileName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private void loadFileAbsolute(String fileName, Node currentNode) throws IOException {
+        final Source source = sourceCache.getSource(fileName);
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
