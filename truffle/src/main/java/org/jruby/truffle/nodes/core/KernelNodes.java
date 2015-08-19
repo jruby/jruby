@@ -1124,7 +1124,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject proc(NotProvided block) {
+        public DynamicObject lambda(NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
@@ -1132,11 +1132,11 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
             }
-            return proc(parentBlock);
+            return lambda(parentBlock);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject proc(DynamicObject block) {
+        public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,

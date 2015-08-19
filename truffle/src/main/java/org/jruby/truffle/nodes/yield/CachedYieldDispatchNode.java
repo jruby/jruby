@@ -15,7 +15,9 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -35,7 +37,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
         assert RubyGuards.isRubyProc(block);
 
-        callNode = Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForProcs(block));
+        callNode = Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForType(block));
         insert(callNode);
 
         if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
@@ -51,7 +53,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     protected boolean guard(DynamicObject block) {
-        return Layouts.PROC.getCallTargetForProcs(block) == callNode.getCallTarget();
+        return ProcNodes.getCallTargetForType(block) == callNode.getCallTarget();
     }
 
     @Override
