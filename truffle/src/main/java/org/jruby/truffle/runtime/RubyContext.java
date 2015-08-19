@@ -206,39 +206,53 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
         final DynamicObject loadPath = (DynamicObject) receiver.get("$:", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
 
-        final String home = runtime.getInstanceConfig().getJRubyHome();
-
-        // We don't want JRuby's stdlib paths, but we do want any extra paths set by -I and things like that
-
-        final List<String> excludedLibPaths = new ArrayList<>();
-        excludedLibPaths.add(new File(home, "lib/ruby/2.2/site_ruby").toString().replace('\\', '/'));
-        excludedLibPaths.add(new File(home, "lib/ruby/shared").toString().replace('\\', '/'));
-        excludedLibPaths.add(new File(home, "lib/ruby/stdlib").toString().replace('\\', '/'));
-
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
-            if (!excludedLibPaths.contains(path.toString())) {
-                ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
+            String pathString = path.toString();
+
+            if (!(pathString.endsWith("lib/ruby/2.2/site_ruby")
+                    || pathString.endsWith("lib/ruby/shared")
+                    || pathString.endsWith("lib/ruby/stdlib"))) {
+
+                if (pathString.startsWith("uri:classloader:")) {
+                    pathString = SourceLoader.JRUBY_PREFIX + pathString.substring("uri:classloader:".length());
+                }
+
+                ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), pathString));
             }
         }
 
         // Load our own stdlib path
 
+        String home = runtime.getInstanceConfig().getJRubyHome();
+
+        if (home.startsWith("uri:classloader:")) {
+            home = home.substring("uri:classloader:".length());
+
+            while (home.startsWith("/")) {
+                home = home.substring(1);
+            }
+
+            home = SourceLoader.JRUBY_PREFIX + "/" + home;
+        }
+
+        home = home + "/";
+
         // Libraries copied unmodified from MRI
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), home + "lib/ruby/truffle/mri"));
 
         // Our own implementations
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), home + "lib/ruby/truffle/truffle"));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+            ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), home + "lib/ruby/truffle/rubysl/" + lib + "/lib"));
         }
 
         // Shims
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
+        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), home + "lib/ruby/truffle/shims"));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {

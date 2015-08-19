@@ -44,6 +44,10 @@ public class SourceLoader {
     }
 
     private Source loadResource(String canonicalPath) throws IOException {
+        if (!canonicalPath.toLowerCase().endsWith(".rb")) {
+            throw new FileNotFoundException(canonicalPath);
+        }
+
         final Class relativeClass;
         final String relativePath;
 
