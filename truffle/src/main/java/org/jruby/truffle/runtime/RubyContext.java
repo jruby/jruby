@@ -50,6 +50,9 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.loader.FeatureLoader;
+import org.jruby.truffle.runtime.loader.SourceCache;
+import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
@@ -61,6 +64,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -87,7 +91,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final NativeSockets nativeSockets;
 
     private final CoreLibrary coreLibrary;
-    private final FeatureManager featureManager;
+    private final FeatureLoader featureLoader;
     private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
@@ -101,7 +105,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
     private final AttachmentsManager attachmentsManager;
-    private final SourceManager sourceManager;
+    private final SourceCache sourceCache;
     private final RubiniusConfiguration rubiniusConfiguration;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
@@ -156,7 +160,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
         coreLibrary.initialize();
 
-        featureManager = new FeatureManager(this);
+        featureLoader = new FeatureLoader(this);
         traceManager = new TraceManager();
         atExitManager = new AtExitManager(this);
 
@@ -176,7 +180,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         runningOnWindows = Platform.getPlatform().getOS() == OS_TYPE.WINDOWS;
 
         attachmentsManager = new AttachmentsManager(this);
-        sourceManager = new SourceManager(this);
+        sourceCache = new SourceCache(new SourceLoader(this));
         rubiniusConfiguration = RubiniusConfiguration.create(this);
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
@@ -261,12 +265,22 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         if (new File(fileName).isAbsolute()) {
             loadFileAbsolute(fileName, currentNode);
         } else {
-            loadFileAbsolute(this.getRuntime().getCurrentDirectory() + File.separator + fileName, currentNode);
+            try {
+                loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
     private void loadFileAbsolute(String fileName, Node currentNode) {
-        final Source source = sourceManager.forFile(fileName);
+        final Source source;
+
+        try {
+            source = sourceCache.getSource(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
@@ -528,8 +542,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return coreLibrary;
     }
 
-    public FeatureManager getFeatureManager() {
-        return featureManager;
+    public FeatureLoader getFeatureLoader() {
+        return featureLoader;
     }
 
     public ObjectSpaceManager getObjectSpaceManager() {
@@ -600,8 +614,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return attachmentsManager;
     }
 
-    public SourceManager getSourceManager() {
-        return sourceManager;
+    public SourceCache getSourceCache() {
+        return sourceCache;
     }
 
     public RubiniusConfiguration getRubiniusConfiguration() {
@@ -623,14 +637,13 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final String inputFile = rootNode.getPosition().getFile();
         final Source source;
 
-        if (inputFile.equals("-e")) {
-            // Assume UTF-8 for the moment
-            source = Source.fromText(new String(runtime.getInstanceConfig().inlineScript(), StandardCharsets.UTF_8), "-e");
-        } else {
-            source = sourceManager.forFile(inputFile);
+        try {
+            source = sourceCache.getSource(inputFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        featureManager.setMainScriptSource(source);
+        featureLoader.setMainScriptSource(source);
 
         load(source, null, new NodeWrapper() {
             @Override

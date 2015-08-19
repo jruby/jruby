@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.subsystems;
+package org.jruby.truffle.runtime.loader;
 
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -32,14 +32,14 @@ import java.util.Arrays;
  * Ruby often talks about requiring features, not files.
  * 
  */
-public class FeatureManager {
+public class FeatureLoader {
 
     private final RubyContext context;
 
     private Source mainScriptSource = null;
     private String mainScriptFullPath = null;
 
-    public FeatureManager(RubyContext context) {
+    public FeatureLoader(RubyContext context) {
         this.context = context;
     }
 
@@ -171,7 +171,7 @@ public class FeatureManager {
             final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
             ArrayNodes.slowPush(loadedFeatures, pathString);
             try {
-                context.loadFile(path, currentNode);
+                context.loadFile(new File(expandedPath).getCanonicalPath(), currentNode);
             } catch (RaiseException e) {
                 final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
                 final int length = Layouts.ARRAY.getSize(loadedFeatures);
