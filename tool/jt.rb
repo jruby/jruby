@@ -59,19 +59,26 @@ module Utilities
     name.upcase.tr('-', '_')
   end
 
+  def self.find_graal_parent
+    File.expand_path('../../../../../graal', find_graal)
+  end
+
   def self.find_graal_mx
-    mx = File.expand_path('../../../../mx.sh', find_graal)
-    raise "couldn't find mx.sh - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
+    mx = File.expand_path('../../../../../mx/mx', find_graal)
+    raise "couldn't find mx - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
     mx
   end
 
   def self.igv_running?
-    `ps a`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
+    `ps a`.lines.any? { |p| p.include? 'mx/mx.py igv' }
   end
 
   def self.ensure_igv_running
     unless igv_running?
-      spawn "#{find_graal_mx} igv", pgroup: true
+      Dir.chdir(find_graal_parent) do
+        spawn "#{find_graal_mx} igv", pgroup: true
+      end
+
       sleep 5
       puts
       puts
@@ -272,7 +279,7 @@ module Commands
     if args.delete('--igv')
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
-      jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+      jruby_args += %w[-J-Djvmci.options=Dump=TrufflePartialEscape]
     end
 
     if ENV["JRUBY_ECLIPSE"] == "true"
