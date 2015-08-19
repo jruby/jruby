@@ -163,7 +163,7 @@ class MethodTranslator extends BodyTranslator {
         final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
 
         return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
-                callTargetAsProc, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {

@@ -36,7 +36,7 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatchWithSelfAndBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject modifiedBlock, Object... argumentsObjects) {
-        return callNode.call(frame, Layouts.PROC.getCallTargetForBlocks(block),
+        return callNode.call(frame, Layouts.PROC.getCallTargetForProcs(block),
                 RubyArguments.pack(Layouts.PROC.getMethod(block), Layouts.PROC.getDeclarationFrame(block), self, modifiedBlock, argumentsObjects));
     }
 
