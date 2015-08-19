@@ -55,6 +55,7 @@ import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -1218,7 +1219,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         Ruby runtime = getRuntime();
         if (abortOnException(runtime) && exception instanceof Error) {
             // re-propagate on main thread
-            runtime.getThreadService().getMainThread().getNativeThread().stop(exception);
+            runtime.getThreadService().getMainThread().raise(JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
         } else {
             // just rethrow on this thread, let system handlers report it
             Helpers.throwException(exception);
