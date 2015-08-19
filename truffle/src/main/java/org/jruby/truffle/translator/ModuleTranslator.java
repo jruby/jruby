@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 
 /**
  * Translates module and class nodes.
@@ -82,11 +83,11 @@ class ModuleTranslator extends BodyTranslator {
         String methodName = node.getName();
         boolean rubiniusMethodRename = false;
 
-        if (sourceSection.getSource().getPath().equals("truffle:/core/rubinius/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/array.rb")) {
             rubiniusMethodRename = methodName.equals("zip");
-        } else if (sourceSection.getSource().getPath().equals("truffle:/core/rubinius/common/float.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/float.rb")) {
             rubiniusMethodRename = methodName.equals("round");
-        } else if (sourceSection.getSource().getPath().equals("truffle:/core/rubinius/common/range.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/range.rb")) {
             rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
         }
 

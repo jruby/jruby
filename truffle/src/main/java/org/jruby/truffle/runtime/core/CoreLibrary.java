@@ -55,6 +55,7 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -64,7 +65,7 @@ import java.util.Map;
 
 public class CoreLibrary {
 
-    public static final String CORE_PREFIX = SourceLoader.TRUFFLE_PREFIX + "/core";
+    public static final String CORE_LOAD_PATH = getCoreLoadPath();
 
     private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
 
@@ -164,6 +165,24 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+
+    private static String getCoreLoadPath() {
+        String path = Options.TRUFFLE_CORE_LOAD_PATH.load();
+
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        if (path.startsWith("truffle:")) {
+            return path;
+        }
+
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private enum State {
         INITIALIZING,
@@ -631,7 +650,7 @@ public class CoreLibrary {
         try {
             state = State.LOADING_RUBY_CORE;
             try {
-                context.load(context.getSourceCache().getSource("truffle:/core.rb"), node, NodeWrapper.IDENTITY);
+                context.load(context.getSourceCache().getSource(CoreLibrary.CORE_LOAD_PATH + "/core.rb"), node, NodeWrapper.IDENTITY);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
