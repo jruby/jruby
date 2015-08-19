@@ -30,13 +30,13 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
 
+    private final static com.oracle.truffle.api.object.Layout LAYOUT = com.oracle.truffle.api.object.Layout.createLayout();
+
     /** Special constructor for class Class */
     public static DynamicObject createClassClass(RubyContext context) {
         final ModuleFields model = new ModuleFields(context, null, "Class");
 
-        final com.oracle.truffle.api.object.Layout temporaryLayout = com.oracle.truffle.api.object.Layout.createLayout();
-
-        final DynamicObject rubyClass = temporaryLayout.newInstance(temporaryLayout.createShape(new ObjectType()));
+        final DynamicObject rubyClass = LAYOUT.newInstance(LAYOUT.createShape(new ObjectType()));
 
         final DynamicObjectFactory factory = Layouts.CLASS.createClassShape(rubyClass, rubyClass);
 
