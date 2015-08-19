@@ -231,7 +231,7 @@ public class IRBuilder {
 
             // $! should be restored before the ensure block is run
             if (savedGlobalException != null) {
-                addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             }
 
             // Clone instructions now
