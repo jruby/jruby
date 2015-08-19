@@ -263,7 +263,7 @@ describe "Predefined global $!" do
     $!.should == nil
   end
 
-  describe "in bodies without ensure"
+  describe "in bodies without ensure" do
     it "should be cleared when an exception is rescued" do
       begin
         raise 'foo'
@@ -287,7 +287,7 @@ describe "Predefined global $!" do
     end
 
     it "should not be cleared when an exception is not rescued" do
-      e = MyException.new
+      e = StandardError.new
       begin
         begin
           begin
@@ -302,7 +302,7 @@ describe "Predefined global $!" do
     end
 
     it "should not be cleared when an exception is rescued and rethrown" do
-      e = MyException.new
+      e = StandardError.new
       begin
         begin
           begin
@@ -318,7 +318,7 @@ describe "Predefined global $!" do
     end
   end
 
-  describe "in ensure-protected bodies"
+  describe "in ensure-protected bodies" do
     it "should be cleared when an exception is rescued" do
       begin
         raise 'foo'
@@ -329,7 +329,7 @@ describe "Predefined global $!" do
     end
 
     it "should not be cleared when an exception is not rescued" do
-      e = MyException.new
+      e = StandardError.new
       begin
         begin
           begin
@@ -345,7 +345,7 @@ describe "Predefined global $!" do
     end
 
     it "should not be cleared when an exception is rescued and rethrown" do
-      e = MyException.new
+      e = StandardError.new
       begin
         begin
           begin
