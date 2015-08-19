@@ -1363,6 +1363,6 @@ public class ParserSupport {
     }
 
     public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith("core:/");
+        return lexer.getFile().startsWith("truffle:/");
     }
 }
