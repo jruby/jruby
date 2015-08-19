@@ -79,23 +79,8 @@ class MethodTranslator extends BodyTranslator {
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
-        final RubyNode prelude;
-
-        boolean shouldConsiderDestructuringArrayArg = true;
-
-        if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
-            shouldConsiderDestructuringArrayArg = false;
-        }
-        if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
-            shouldConsiderDestructuringArrayArg = false;
-        }
-        if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
-            shouldConsiderDestructuringArrayArg = false;
-        }
-
-        RubyNode preludeBuilder;
-
-        if (shouldConsiderDestructuringArrayArg) {
+        final RubyNode preludeProc;
+        if (shouldConsiderDestructuringArrayArg()) {
             final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -105,22 +90,60 @@ class MethodTranslator extends BodyTranslator {
             destructureArgumentsTranslator.pushArraySlot(arraySlot);
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            preludeBuilder =
-                    new BehaveAsBlockNode(context, sourceSection,
-                            new IfNode(context, sourceSection,
+            preludeProc = new IfNode(context, sourceSection,
                                     new ShouldDestructureNode(context, sourceSection, arity,
                                             new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
-                                    SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
-                                    NodeUtil.cloneNode(loadArguments)),
-                            NodeUtil.cloneNode(loadArguments));
+                    SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments), loadArguments);
         } else {
-            preludeBuilder = loadArguments;
+            preludeProc = loadArguments;
         }
 
-        prelude = SequenceNode.sequence(context, sourceSection,
-                new BehaveAsBlockNode(context, sourceSection,
-                        nilNode(sourceSection),
-                        new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
+        final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
+                new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                NodeUtil.cloneNode(loadArguments));
+
+        // Procs
+        final RubyNode bodyProc = wrapBody(preludeProc, body);
+
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                bodyProc, environment.needsDeclarationFrame());
+
+        // Lambdas
+        final RubyNode bodyLambda =
+                new CatchBreakAsReturnNode(context, sourceSection,
+                        new CatchReturnNode(context, sourceSection,
+                                wrapBody(preludeLambda, body),
+                                environment.getReturnID()));
+
+        final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
+                context, sourceSection,
+                environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                bodyLambda,
+                environment.needsDeclarationFrame());
+
+        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
+        final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
+
+        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+    }
+
+    private boolean shouldConsiderDestructuringArrayArg() {
+        final boolean shouldConsiderDestructuringArrayArg;
+        if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
+            shouldConsiderDestructuringArrayArg = false;
+        } else if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
+            shouldConsiderDestructuringArrayArg = false;
+        } else if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
+            shouldConsiderDestructuringArrayArg = false;
+        } else {
+            shouldConsiderDestructuringArrayArg = true;
+        }
+        return shouldConsiderDestructuringArrayArg;
+    }
+
+    private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
+        final SourceSection sourceSection = body.getSourceSection();
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
 
@@ -131,39 +154,8 @@ class MethodTranslator extends BodyTranslator {
         body = new RedoableNode(context, sourceSection, body);
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
-
-        // Procs
-        final RubyNode newNodeForProcs = NodeUtil.cloneNode(body);
-
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForProcs, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-        }
-
-        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
-                newNodeForProcs, environment.needsDeclarationFrame());
-
-        // Lambdas
-        final RubyNode newNodeForLambdas = NodeUtil.cloneNode(body);
-
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForLambdas, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
-        }
-
-        final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
-                context, sourceSection,
-                environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
-                new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, sourceSection,
-                                newNodeForLambdas, environment.getReturnID())),
-                environment.needsDeclarationFrame());
-
-        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
-        final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
-
-        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
-                callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+        return body;
     }
 
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
