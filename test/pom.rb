@@ -48,8 +48,7 @@ project 'JRuby Integration Tests' do
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
               'jruby.home' => '${basedir}/..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared' )
 

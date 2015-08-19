@@ -2474,7 +2474,7 @@ public abstract class ArrayNodes {
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, array, null);
+                    maximumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2576,7 +2576,7 @@ public abstract class ArrayNodes {
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, array, null);
+                    minimumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 

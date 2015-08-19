@@ -59,7 +59,7 @@ public class ShouldDestructureNode extends RubyNode {
         }
 
         // If the single argument is a RubyArray, destructure
-        // TODO(CS): can we not just reply on the respondToCheck? Should experiment.
+        // TODO(CS): can we not just rely on the respondToCheck? Should experiment.
 
         if (RubyGuards.isRubyArray(RubyArguments.getUserArgument(frame.getArguments(), 0))) {
             return true;

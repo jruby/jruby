@@ -727,7 +727,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject restorePerlyExc(ThreadContext context, IRubyObject exc, IRubyObject savedExc) {
+    public static IRubyObject restoreExceptionVar(ThreadContext context, IRubyObject exc, IRubyObject savedExc) {
         if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
             context.runtime.getGlobalVariables().set("$!", savedExc);
         }

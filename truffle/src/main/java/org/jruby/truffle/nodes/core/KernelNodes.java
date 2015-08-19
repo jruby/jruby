@@ -1124,7 +1124,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject proc(NotProvided block) {
+        public DynamicObject lambda(NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
@@ -1132,16 +1132,15 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
             }
-            return proc(parentBlock);
+            return lambda(parentBlock);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject proc(DynamicObject block) {
+        public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
@@ -1353,15 +1352,36 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject proc(DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject proc(NotProvided block) {
+            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
+            if (parentBlock == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+            }
+
+            if (isANormalProc(parentBlock)) {
+                return procNormal(parentBlock);
+            } else {
+                return procSpecial(parentBlock);
+            }
+        }
+
+        @Specialization(guards = { "isRubyProc(block)", "isANormalProc(block)" })
+        public DynamicObject procNormal(DynamicObject block) {
+            return block;
+        }
+
+        @Specialization(guards = { "isRubyProc(block)", "!isANormalProc(block)" })
+        public DynamicObject procSpecial(DynamicObject block) {
+            // Just make it a normal Proc without a singleton class
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
-                    ProcNodes.Type.PROC,
+                    Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForProcs(block),
                     Layouts.PROC.getCallTargetForProcs(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
@@ -1369,6 +1389,11 @@ public abstract class KernelNodes {
                     Layouts.PROC.getSelf(block),
                     Layouts.PROC.getBlock(block));
         }
+
+        protected boolean isANormalProc(DynamicObject block) {
+            return Layouts.BASIC_OBJECT.getMetaClass(block) == getContext().getCoreLibrary().getProcClass();
+        }
+
     }
 
     @CoreMethod(names = "protected_methods", optional = 1)

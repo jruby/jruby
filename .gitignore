@@ -64,6 +64,7 @@ release.properties
 share
 spaces test
 target
+test/pom.xml
 test/prawn
 test/rails
 test/testapp/testapp

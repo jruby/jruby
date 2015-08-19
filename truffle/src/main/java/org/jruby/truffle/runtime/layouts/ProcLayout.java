@@ -29,7 +29,6 @@ public interface ProcLayout extends BasicObjectLayout {
             DynamicObjectFactory factory,
             @Nullable ProcNodes.Type type,
             @Nullable SharedMethodInfo sharedMethodInfo,
-            @Nullable CallTarget callTargetForBlocks,
             @Nullable CallTarget callTargetForProcs,
             @Nullable CallTarget callTargetForLambdas,
             @Nullable MaterializedFrame declarationFrame,
@@ -44,9 +43,6 @@ public interface ProcLayout extends BasicObjectLayout {
 
     SharedMethodInfo getSharedMethodInfo(DynamicObject object);
     void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
-
-    CallTarget getCallTargetForBlocks(DynamicObject object);
-    void setCallTargetForBlocks(DynamicObject object, CallTarget value);
 
     CallTarget getCallTargetForProcs(DynamicObject object);
     void setCallTargetForProcs(DynamicObject object, CallTarget value);
