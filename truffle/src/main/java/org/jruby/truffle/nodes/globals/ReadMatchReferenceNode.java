@@ -9,10 +9,11 @@
  */
 package org.jruby.truffle.nodes.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -33,9 +34,13 @@ public class ReadMatchReferenceNode extends RubyNode {
         this.index = index;
     }
 
-    @CompilerDirectives.TruffleBoundary
     @Override
     public Object execute(VirtualFrame frame) {
+        return readMatchReference();
+    }
+
+    @TruffleBoundary
+    private Object readMatchReference() {
         DynamicObject receiver = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
         final Object match = receiver.get("$~", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
 

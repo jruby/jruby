@@ -103,7 +103,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization(guards = "isRubyProc(block)")
         public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
