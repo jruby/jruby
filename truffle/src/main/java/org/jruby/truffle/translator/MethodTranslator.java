@@ -134,16 +134,6 @@ class MethodTranslator extends BodyTranslator {
 
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
-        // Blocks
-        final RubyNode newNodeForBlocks = NodeUtil.cloneNode(body);
-
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newNodeForBlocks, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-        }
-
-        final RubyRootNode newRootNodeForBlocks = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
-                newNodeForBlocks, environment.needsDeclarationFrame());
-
         // Procs
         final RubyNode newNodeForProcs = NodeUtil.cloneNode(body);
 
@@ -169,12 +159,11 @@ class MethodTranslator extends BodyTranslator {
                                 newNodeForLambdas, environment.getReturnID())),
                 environment.needsDeclarationFrame());
 
-        final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
         final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
         final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
 
         return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
-                callTargetAsBlock, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+                callTargetAsProc, callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
     public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
