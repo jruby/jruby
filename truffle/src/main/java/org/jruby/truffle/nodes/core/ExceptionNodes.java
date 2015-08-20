@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.List;
@@ -29,7 +28,7 @@ import java.util.List;
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
 
-    public static class BacktraceFormatter extends MRIBacktraceFormatter {
+    public static class BacktraceFormatter extends org.jruby.truffle.runtime.backtrace.BacktraceFormatter {
         @Override
         public String formatFromLine(List<Activation> activations, int n) {
             return formatCallerLine(activations, n);

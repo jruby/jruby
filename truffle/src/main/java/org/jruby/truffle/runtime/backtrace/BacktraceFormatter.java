@@ -10,10 +10,142 @@
 package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.core.CoreSourceSection;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
-public interface BacktraceFormatter {
+import java.util.ArrayList;
+import java.util.List;
 
-    String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace);
+public class BacktraceFormatter {
+
+    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
+        try {
+            final List<Activation> activations = backtrace == null ? new ArrayList<Activation>() : backtrace.getActivations();
+
+            final ArrayList<String> lines = new ArrayList<>();
+
+            if (activations.isEmpty()) {
+                if (exception != null) {
+                    assert RubyGuards.isRubyException(exception);
+
+                    lines.add(String.format("%s (%s)", Layouts.EXCEPTION.getMessage(exception), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName()));
+                }
+            } else {
+                lines.add(formatInLine(context, activations, exception));
+
+                for (int n = 1; n < activations.size(); n++) {
+                    lines.add(formatFromLine(activations, n));
+                }
+            }
+
+            return lines.toArray(new String[lines.size()]);
+        } catch (Exception e) {
+            throw new TruffleFatalException("Exception while trying to format a Ruby call stack", e);
+        }
+    }
+
+    private static String formatInLine(RubyContext context, List<Activation> activations, DynamicObject exception) {
+        final StringBuilder builder = new StringBuilder();
+
+        final Activation activation = activations.get(0);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+        final SourceSection reportedSourceSection;
+        final String reportedName;
+
+        if (sourceSection instanceof CoreSourceSection) {
+            reportedSourceSection = nextUserSourceSection(activations, 1);
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+        } else {
+            reportedSourceSection = sourceSection;
+            reportedName = reportedSourceSection.getIdentifier();
+        }
+
+        if (reportedSourceSection == null || reportedSourceSection.getSource() == null) {
+            builder.append("???");
+        } else {
+            builder.append(reportedSourceSection.getSource().getName());
+            builder.append(":");
+            builder.append(reportedSourceSection.getStartLine());
+            builder.append(":in `");
+            builder.append(reportedName);
+            builder.append("'");
+        }
+
+        if (exception != null) {
+            String message;
+            try {
+                Object messageObject = DebugOperations.send(context, exception, "message", null);
+                if (RubyGuards.isRubyString(messageObject)) {
+                    message = messageObject.toString();
+                } else {
+                    message = Layouts.EXCEPTION.getMessage(exception).toString();
+                }
+            } catch (RaiseException e) {
+                message = Layouts.EXCEPTION.getMessage(exception).toString();
+            }
+
+            builder.append(": ");
+            builder.append(message);
+            builder.append(" (");
+            builder.append(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName());
+            builder.append(")");
+        }
+
+        return builder.toString();
+    }
+
+    public String formatFromLine(List<Activation> activations, int n) {
+        return "\tfrom " + formatCallerLine(activations, n);
+    }
+
+    public static String formatCallerLine(List<Activation> activations, int n) {
+        final Activation activation = activations.get(n);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
+        final SourceSection reportedSourceSection;
+        final String reportedName;
+
+        if (sourceSection instanceof CoreSourceSection) {
+            reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
+        } else {
+            reportedSourceSection = sourceSection;
+            reportedName = sourceSection.getIdentifier();
+        }
+
+        final StringBuilder builder = new StringBuilder();
+        if (reportedSourceSection instanceof NullSourceSection) {
+            builder.append("???");
+        } else {
+            builder.append(reportedSourceSection.getSource().getName());
+            builder.append(":");
+            builder.append(reportedSourceSection.getStartLine());
+        }
+        builder.append(":in `");
+        builder.append(reportedName);
+        builder.append("'");
+
+        return builder.toString();
+    }
+
+    private static SourceSection nextUserSourceSection(List<Activation> activations, int n) {
+        while (n < activations.size()) {
+            SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+
+            if (!(sourceSection instanceof CoreSourceSection)) {
+                return sourceSection;
+            }
+
+            n++;
+        }
+        return null;
+    }
 
 }

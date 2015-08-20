@@ -19,7 +19,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class InstrumentationServerManager {
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    String[] lines = new MRIBacktraceFormatter().format(context, null, backtrace);
+                                    String[] lines = new BacktraceFormatter().format(context, null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");

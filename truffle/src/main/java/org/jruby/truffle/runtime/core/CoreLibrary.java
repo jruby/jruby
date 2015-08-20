@@ -41,13 +41,11 @@ import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.nodes.rubinius.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
-import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
@@ -633,7 +631,7 @@ public class CoreLibrary {
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
 
-            for (String line : new MRIBacktraceFormatter().format(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
+            for (String line : new BacktraceFormatter().format(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
                 System.err.println(line);
             }
 
