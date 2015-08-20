@@ -81,7 +81,7 @@ public class ModuleFields implements ModuleChain {
         this.context = context;
         this.lexicalParent = lexicalParent;
         this.givenBaseName = givenBaseName;
-        this.unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
+        this.unmodifiedAssumption = new CyclicAssumption(String.valueOf(givenBaseName) + " is unmodified");
         start = new PrependMarker(this);
     }
 
