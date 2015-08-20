@@ -41,14 +41,11 @@ import org.jruby.util.Memo;
 public abstract class ProcNodes {
 
     public static CallTarget getCallTargetForType(DynamicObject proc) {
-        switch (Layouts.PROC.getType(proc)) {
-            case PROC:
-                return Layouts.PROC.getCallTargetForProcs(proc);
-            case LAMBDA:
-                return Layouts.PROC.getCallTargetForLambdas(proc);
+        if (Layouts.PROC.getType(proc) == Type.PROC) {
+            return Layouts.PROC.getCallTargetForProcs(proc);
+        } else {
+            return Layouts.PROC.getCallTargetForLambdas(proc);
         }
-
-        throw new UnsupportedOperationException(Layouts.PROC.getType(proc).toString());
     }
 
     public static Object rootCall(DynamicObject proc, Object... args) {
