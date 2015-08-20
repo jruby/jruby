@@ -20,11 +20,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.util.Arrays;
 
 public class FeatureLoader {
@@ -37,8 +35,6 @@ public class FeatureLoader {
     public FeatureLoader(RubyContext context) {
         this.context = context;
     }
-
-    // TODO CS 27-May-15 we should do lookup in one phase, returning a path, and then do the load
 
     public boolean require(String feature, Node currentNode) throws IOException {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, context.getCoreLibrary().getObjectClass(), "DATA");
@@ -55,7 +51,7 @@ public class FeatureLoader {
             if (isAbsolutePath(feature)) {
                 // Try as a full path
 
-                if (requireInPath(null, feature, currentNode)) {
+                if (tryToRequireFileInPath(null, feature, currentNode)) {
                     return true;
                 }
             } else {
@@ -67,7 +63,7 @@ public class FeatureLoader {
                         loadPath = expandPath(context, loadPath);
                     }
 
-                    if (requireInPath(loadPath, feature, currentNode)) {
+                    if (tryToRequireFileInPath(loadPath, feature, currentNode)) {
                         return true;
                     }
                 }
@@ -83,92 +79,67 @@ public class FeatureLoader {
         }
     }
 
-    private boolean requireInPath(String path, String feature, Node currentNode) throws IOException {
+    private boolean tryToRequireFileInPath(String path, String feature, Node currentNode) throws IOException {
         String fullPath = new File(path, feature).getPath();
 
-        if (requireFile(feature, fullPath, currentNode)) {
+        if (tryToRequireFile(feature, fullPath, currentNode)) {
             return true;
         }
 
-        if (requireFile(feature, fullPath + ".rb", currentNode)) {
+        if (tryToRequireFile(feature, fullPath + ".rb", currentNode)) {
             return true;
         }
 
         return false;
     }
 
-    public boolean isAbsolutePath(String path) {
-        return path.startsWith("uri:classloader:") || path.startsWith("truffle:") || path.startsWith("jruby:") || new File(path).isAbsolute();
-    }
-
-    private boolean requireFile(String feature, String path, Node currentNode) throws IOException {
+    private boolean tryToRequireFile(String feature, String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
         final DynamicObject loadedFeatures = context.getCoreLibrary().getLoadedFeatures();
 
-        if (path.startsWith("uri:classloader:/")) {
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
-                if (loaded.toString().equals(path)) {
-                    return true;
-                }
-            }
+        final String expandedPath;
 
-            String coreFileName = path.substring("uri:classloader:/".length());
+        if (!(path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME))) {
+            final File file = new File(path);
 
-            coreFileName = FileSystems.getDefault().getPath(coreFileName).normalize().toString();
+            assert file.isAbsolute();
 
-            if (context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), coreFileName) == null) {
+            if (!file.isAbsolute() || !file.isFile()) {
                 return false;
             }
 
-            ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
-            context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
-
-            return true;
+            expandedPath = new File(expandPath(context, path)).getCanonicalPath();
         } else {
-            final String expandedPath;
+            expandedPath = path;
+        }
 
-            if (!(path.startsWith("truffle:") || path.startsWith("jruby:"))) {
-                final File file = new File(path);
-
-                assert file.isAbsolute();
-
-                if (!file.isAbsolute() || !file.isFile()) {
-                    return false;
-                }
-
-                expandedPath = new File(expandPath(context, path)).getCanonicalPath();
-            } else {
-                expandedPath = path;
+        for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
+            if (loaded.toString().equals(expandedPath)) {
+                return true;
             }
+        }
 
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
-                if (loaded.toString().equals(expandedPath)) {
-                    return true;
-                }
-            }
-
-            // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-            final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
-            ArrayNodes.slowPush(loadedFeatures, pathString);
-            try {
-                context.loadFile(expandedPath, currentNode);
-            } catch (RaiseException e) {
-                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
-                final int length = Layouts.ARRAY.getSize(loadedFeatures);
-                for (int i = length - 1; i >= 0; i--) {
-                    if (mirror.get(i) == pathString) {
-                        for (int j = length - 1; j > i; j--) {
-                            mirror.set(i - 1, mirror.get(i));
-                        }
-                        Layouts.ARRAY.setSize(loadedFeatures, length - 1);
-                        break;
+        // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
+        final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
+        ArrayNodes.slowPush(loadedFeatures, pathString);
+        try {
+            context.loadFile(expandedPath, currentNode);
+        } catch (RaiseException e) {
+            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
+            final int length = Layouts.ARRAY.getSize(loadedFeatures);
+            for (int i = length - 1; i >= 0; i--) {
+                if (mirror.get(i) == pathString) {
+                    for (int j = length - 1; j > i; j--) {
+                        mirror.set(i - 1, mirror.get(i));
                     }
+                    Layouts.ARRAY.setSize(loadedFeatures, length - 1);
+                    break;
                 }
-                throw e;
-            } catch (IOException e) {
-                return false;
             }
+            throw e;
+        } catch (IOException e) {
+            return false;
         }
 
         return true;
@@ -179,6 +150,18 @@ public class FeatureLoader {
         if (!source.getPath().equals("-e")) {
             this.mainScriptFullPath = expandPath(context, source.getPath());
         }
+    }
+
+    public String getSourcePath(Source source) {
+        if (source == mainScriptSource) {
+            return mainScriptFullPath;
+        } else {
+            return source.getPath();
+        }
+    }
+
+    public boolean isAbsolutePath(String path) {
+        return path.startsWith(SourceLoader.TRUFFLE_SCHEME) || path.startsWith(SourceLoader.JRUBY_SCHEME) || new File(path).isAbsolute();
     }
 
     public static String expandPath(RubyContext context, String fileName) {
@@ -204,15 +187,6 @@ public class FeatureLoader {
          */
 
         return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
-    }
-
-
-    public String getSourcePath(Source source) {
-        if (source == mainScriptSource) {
-            return mainScriptFullPath;
-        } else {
-            return source.getPath();
-        }
     }
 
 }

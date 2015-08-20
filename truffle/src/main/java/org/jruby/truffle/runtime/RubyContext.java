@@ -214,7 +214,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                     || pathString.endsWith("lib/ruby/stdlib"))) {
 
                 if (pathString.startsWith("uri:classloader:")) {
-                    pathString = SourceLoader.JRUBY_PREFIX + pathString.substring("uri:classloader:".length());
+                    pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
                 ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), pathString));
@@ -232,7 +232,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 home = home.substring(1);
             }
 
-            home = SourceLoader.JRUBY_PREFIX + "/" + home;
+            home = SourceLoader.JRUBY_SCHEME + "/" + home;
         }
 
         home = home + "/";
@@ -331,15 +331,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public Object instanceEval(ByteList code, Object self, Node currentNode) {
         return instanceEval(code, self, "(eval)", currentNode);
-    }
-
-    public Object eval(Source source) {
-        return execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, getCoreLibrary().getMainObject(), null, null, new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "simple eval", node);
-            }
-        });
     }
 
     @TruffleBoundary

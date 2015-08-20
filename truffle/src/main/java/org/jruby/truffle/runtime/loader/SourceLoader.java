@@ -18,8 +18,8 @@ import java.nio.charset.StandardCharsets;
 
 public class SourceLoader {
 
-    public static final String TRUFFLE_PREFIX = "truffle:";
-    public static final String JRUBY_PREFIX = "jruby:";
+    public static final String TRUFFLE_SCHEME = "truffle:";
+    public static final String JRUBY_SCHEME = "jruby:";
 
     private final RubyContext context;
 
@@ -30,7 +30,7 @@ public class SourceLoader {
     public Source load(String canonicalPath) throws IOException {
         if (canonicalPath.equals("-e")) {
             return loadInlineScript();
-        } else if (canonicalPath.startsWith(TRUFFLE_PREFIX) || canonicalPath.startsWith(JRUBY_PREFIX)) {
+        } else if (canonicalPath.startsWith(TRUFFLE_SCHEME) || canonicalPath.startsWith(JRUBY_SCHEME)) {
             return loadResource(canonicalPath);
         } else {
             assert new File(canonicalPath).getCanonicalPath().equals(canonicalPath) : canonicalPath;
@@ -51,12 +51,12 @@ public class SourceLoader {
         final Class relativeClass;
         final String relativePath;
 
-        if (canonicalPath.startsWith(TRUFFLE_PREFIX)) {
+        if (canonicalPath.startsWith(TRUFFLE_SCHEME)) {
             relativeClass = RubyContext.class;
-            relativePath = canonicalPath.substring(TRUFFLE_PREFIX.length());
-        } else if (canonicalPath.startsWith(JRUBY_PREFIX)) {
+            relativePath = canonicalPath.substring(TRUFFLE_SCHEME.length());
+        } else if (canonicalPath.startsWith(JRUBY_SCHEME)) {
             relativeClass = Ruby.class;
-            relativePath = canonicalPath.substring(JRUBY_PREFIX.length());
+            relativePath = canonicalPath.substring(JRUBY_SCHEME.length());
         } else {
             throw new UnsupportedOperationException();
         }
