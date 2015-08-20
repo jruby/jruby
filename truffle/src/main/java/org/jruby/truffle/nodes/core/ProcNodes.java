@@ -15,6 +15,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -35,6 +37,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.NullSourceSection;
@@ -75,22 +78,20 @@ public abstract class ProcNodes {
         PROC, LAMBDA
     }
 
-    @CoreMethod(names = "new", constructor = true, needsBlock = true)
-    @NodeChildren({
-            @NodeChild(type = RubyNode.class, value = "procClass"),
-            @NodeChild(type = RubyNode.class, value = "block")
-    })
-    public abstract static class ProcNewNode extends CoreMethodNode {
+    @CoreMethod(names = "new", constructor = true, needsBlock = true, rest = true)
+    public abstract static class ProcNewNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode initializeNode;
 
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            initializeNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
         }
 
-        public abstract DynamicObject executeProcNew(DynamicObject procClass, Object block);
+        public abstract DynamicObject executeProcNew(VirtualFrame frame, DynamicObject procClass, Object[] args, Object block);
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject proc(DynamicObject procClass, NotProvided block) {
+        public DynamicObject proc(VirtualFrame frame, DynamicObject procClass, Object[] args, NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
@@ -99,18 +100,18 @@ public abstract class ProcNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
             }
 
-            return executeProcNew(procClass, parentBlock);
+            return executeProcNew(frame, procClass, args, parentBlock);
         }
 
         @Specialization(guards = "procClass == metaClass(block)")
-        public DynamicObject procNormal(DynamicObject procClass, DynamicObject block) {
+        public DynamicObject procNormal(DynamicObject procClass, Object[] args, DynamicObject block) {
             return block;
         }
 
         @Specialization(guards = "procClass != metaClass(block)")
-        public DynamicObject procSpecial(DynamicObject procClass, DynamicObject block) {
+        public DynamicObject procSpecial(VirtualFrame frame, DynamicObject procClass, Object[] args, DynamicObject block) {
             // Instantiate a new instance of procClass as classes do not correspond
-            return ProcNodes.createRubyProc(
+            DynamicObject proc = ProcNodes.createRubyProc(
                     procClass,
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
@@ -120,10 +121,36 @@ public abstract class ProcNodes {
                     Layouts.PROC.getMethod(block),
                     Layouts.PROC.getSelf(block),
                     Layouts.PROC.getBlock(block));
+            initializeNode.call(frame, proc, "initialize", block, args);
+            return proc;
         }
 
         protected DynamicObject metaClass(DynamicObject object) {
             return Layouts.BASIC_OBJECT.getMetaClass(object);
+        }
+
+    }
+
+    @CoreMethod(names = { "dup", "clone" })
+    public abstract static class DupNode extends UnaryCoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject dup(DynamicObject proc) {
+            DynamicObject copy = ProcNodes.createRubyProc(
+                    Layouts.BASIC_OBJECT.getLogicalClass(proc),
+                    Layouts.PROC.getType(proc),
+                    Layouts.PROC.getSharedMethodInfo(proc),
+                    Layouts.PROC.getCallTargetForType(proc),
+                    Layouts.PROC.getCallTargetForLambdas(proc),
+                    Layouts.PROC.getDeclarationFrame(proc),
+                    Layouts.PROC.getMethod(proc),
+                    Layouts.PROC.getSelf(proc),
+                    Layouts.PROC.getBlock(proc));
+            return copy;
         }
 
     }

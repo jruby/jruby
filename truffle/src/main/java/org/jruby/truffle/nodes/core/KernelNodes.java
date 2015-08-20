@@ -59,6 +59,7 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -1355,12 +1356,12 @@ public abstract class KernelNodes {
 
         public ProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            procNewNode = ProcNewNodeFactory.create(context, sourceSection, null, null);
+            procNewNode = ProcNewNodeFactory.create(context, sourceSection, null);
         }
 
         @Specialization
-        public DynamicObject proc(Object block) {
-            return procNewNode.executeProcNew(getContext().getCoreLibrary().getProcClass(), block);
+        public DynamicObject proc(VirtualFrame frame, Object block) {
+            return procNewNode.executeProcNew(frame, getContext().getCoreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, block);
         }
 
     }
