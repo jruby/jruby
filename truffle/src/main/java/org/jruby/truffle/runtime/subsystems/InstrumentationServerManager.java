@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 @SuppressWarnings("restriction")
 public class InstrumentationServerManager {
@@ -69,7 +70,7 @@ public class InstrumentationServerManager {
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    String[] lines = new BacktraceFormatter().format(context, null, backtrace);
+                                    final List<String> lines = new BacktraceFormatter().formatBacktrace(context, null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");

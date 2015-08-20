@@ -81,16 +81,14 @@ public class SimpleShell {
                         try {
                             inspected = context.send(result, "inspect", null).toString();
                         } catch (Exception e) {
-                            inspected = String.format("(error inspecting %s@%x)", result.getClass().getSimpleName(), result.hashCode());
+                            inspected = String.format("(error inspecting %s@%x %s)", result.getClass().getSimpleName(), result.hashCode(), e.toString());
                         }
 
                         System.console().writer().println(inspected);
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : new BacktraceFormatter().format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
-                            System.console().writer().println(line);
-                        }
+                        new BacktraceFormatter().printBacktrace(context, (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
             }
         }
@@ -106,7 +104,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(new BacktraceFormatter().formatFromLine(Arrays.asList(activation), 0));
+            System.console().writer().println(new BacktraceFormatter().formatLine(Arrays.asList(activation), 0));
             n++;
         }
     }

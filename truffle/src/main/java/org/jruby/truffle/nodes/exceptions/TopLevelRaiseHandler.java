@@ -46,9 +46,7 @@ public class TopLevelRaiseHandler extends RubyNode {
     private void handleException(RaiseException e) {
         final Object rubyException = e.getRubyException();
 
-        for (String line : new BacktraceFormatter().format(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
-            System.err.println(line);
-        }
+        new BacktraceFormatter().printBacktrace(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
 
         System.exit(1);
     }

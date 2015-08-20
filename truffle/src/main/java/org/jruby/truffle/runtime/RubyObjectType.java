@@ -37,8 +37,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
-            return Layouts.EXCEPTION.getMessage(object) + " :\n" +
-                    Arrays.toString(new BacktraceFormatter().format(context, object, Layouts.EXCEPTION.getBacktrace(object)));
+            return Layouts.EXCEPTION.getMessage(object).toString();
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {

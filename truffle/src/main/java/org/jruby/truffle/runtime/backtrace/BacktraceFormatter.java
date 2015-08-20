@@ -16,38 +16,40 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BacktraceFormatter {
 
-    public String[] format(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        try {
-            final List<Activation> activations = backtrace == null ? new ArrayList<Activation>() : backtrace.getActivations();
+    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
+        printBacktrace(context, exception, backtrace, new PrintWriter(System.err));
+    }
 
+    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
+        for (String line : formatBacktrace(context, exception, backtrace)) {
+            writer.println(line);
+        }
+    }
+
+    public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
+        try {
+            final List<Activation> activations = backtrace.getActivations();
             final ArrayList<String> lines = new ArrayList<>();
 
-            if (activations.isEmpty()) {
-                if (exception != null) {
-                    assert RubyGuards.isRubyException(exception);
+            lines.add(formatInLine(context, activations, exception));
 
-                    lines.add(String.format("%s (%s)", Layouts.EXCEPTION.getMessage(exception), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName()));
-                }
-            } else {
-                lines.add(formatInLine(context, activations, exception));
-
-                for (int n = 1; n < activations.size(); n++) {
-                    lines.add(formatFromLine(activations, n));
-                }
+            for (int n = 1; n < activations.size(); n++) {
+                lines.add(formatFromLine(activations, n));
             }
 
-            return lines.toArray(new String[lines.size()]);
+            return lines;
         } catch (Exception e) {
-            throw new TruffleFatalException("Exception while trying to format a Ruby call stack", e);
+            return Arrays.asList(String.format("(exception while constructing backtrace: %s)", e.getStackTrace()[0].toString()));
         }
     }
 
@@ -101,11 +103,11 @@ public class BacktraceFormatter {
         return builder.toString();
     }
 
-    public String formatFromLine(List<Activation> activations, int n) {
-        return "\tfrom " + formatCallerLine(activations, n);
+    private String formatFromLine(List<Activation> activations, int n) {
+        return "\tfrom " + formatLine(activations, n);
     }
 
-    public static String formatCallerLine(List<Activation> activations, int n) {
+    public static String formatLine(List<Activation> activations, int n) {
         final Activation activation = activations.get(n);
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
