@@ -40,18 +40,10 @@ import org.jruby.util.Memo;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    public static CallTarget getCallTargetForType(DynamicObject proc) {
-        if (Layouts.PROC.getType(proc) == Type.PROC) {
-            return Layouts.PROC.getCallTargetForProcs(proc);
-        } else {
-            return Layouts.PROC.getCallTargetForLambdas(proc);
-        }
-    }
-
     public static Object rootCall(DynamicObject proc, Object... args) {
         assert RubyGuards.isRubyProc(proc);
 
-        return getCallTargetForType(proc).call(RubyArguments.pack(
+        return Layouts.PROC.getCallTargetForType(proc).call(RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
                 Layouts.PROC.getSelf(proc),
@@ -65,7 +57,7 @@ public abstract class ProcNodes {
         assert RubyGuards.isRubyProc(proc);
 
         Layouts.PROC.setSharedMethodInfo(proc, sharedMethodInfo);
-        Layouts.PROC.setCallTargetForProcs(proc, callTargetForProcs);
+        Layouts.PROC.setCallTargetForType(proc, Layouts.PROC.getType(proc) == Type.PROC ? callTargetForProcs : callTargetForLambdas);
         Layouts.PROC.setCallTargetForLambdas(proc, callTargetForLambdas);
         Layouts.PROC.setDeclarationFrame(proc, declarationFrame);
         Layouts.PROC.setMethod(proc, method);
@@ -162,7 +154,7 @@ public abstract class ProcNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public DynamicObject initialize(DynamicObject proc, DynamicObject block) {
-            ProcNodes.initialize(proc, Layouts.PROC.getSharedMethodInfo(block), Layouts.PROC.getCallTargetForProcs(block),
+            ProcNodes.initialize(proc, Layouts.PROC.getSharedMethodInfo(block), Layouts.PROC.getCallTargetForType(block),
                     Layouts.PROC.getCallTargetForLambdas(block), Layouts.PROC.getDeclarationFrame(block), Layouts.PROC.getMethod(block),
                     Layouts.PROC.getSelf(block), Layouts.PROC.getBlock(block));
 

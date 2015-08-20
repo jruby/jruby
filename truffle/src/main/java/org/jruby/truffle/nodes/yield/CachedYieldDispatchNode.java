@@ -37,7 +37,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
         assert RubyGuards.isRubyProc(block);
 
-        callNode = Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForType(block));
+        callNode = Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block));
         insert(callNode);
 
         if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
@@ -53,7 +53,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     protected boolean guard(DynamicObject block) {
-        return ProcNodes.getCallTargetForType(block) == callNode.getCallTarget();
+        return Layouts.PROC.getCallTargetForType(block) == callNode.getCallTarget();
     }
 
     @Override

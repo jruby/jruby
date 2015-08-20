@@ -19,6 +19,13 @@ import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
+// A instance of Proc behaves either as a proc or lambda (its type).
+// Kernel#lambda is the only primitive which can produce a lambda-semantics Proc from a proc-semantics one.
+// (possibly Module#define_method as well, but it does not need to be).
+// The literal lambda -> *args { body } defines the Proc as lambda directly.
+// callTargetForType caches the current CallTarget according to the type for faster access.
+// See the documentation of Proc#lambda?, it is a good reference.
+
 @Layout
 public interface ProcLayout extends BasicObjectLayout {
 
@@ -29,7 +36,7 @@ public interface ProcLayout extends BasicObjectLayout {
             DynamicObjectFactory factory,
             @Nullable ProcNodes.Type type,
             @Nullable SharedMethodInfo sharedMethodInfo,
-            @Nullable CallTarget callTargetForProcs,
+            @Nullable CallTarget callTargetForType,
             @Nullable CallTarget callTargetForLambdas,
             @Nullable MaterializedFrame declarationFrame,
             @Nullable InternalMethod method,
@@ -44,8 +51,8 @@ public interface ProcLayout extends BasicObjectLayout {
     SharedMethodInfo getSharedMethodInfo(DynamicObject object);
     void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
 
-    CallTarget getCallTargetForProcs(DynamicObject object);
-    void setCallTargetForProcs(DynamicObject object, CallTarget value);
+    CallTarget getCallTargetForType(DynamicObject object);
+    void setCallTargetForType(DynamicObject object, CallTarget value);
 
     CallTarget getCallTargetForLambdas(DynamicObject object);
     void setCallTargetForLambdas(DynamicObject object, CallTarget value);

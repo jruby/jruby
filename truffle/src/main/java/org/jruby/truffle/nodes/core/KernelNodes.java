@@ -1382,7 +1382,7 @@ public abstract class KernelNodes {
                     getContext().getCoreLibrary().getProcClass(),
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForProcs(block),
+                    Layouts.PROC.getCallTargetForType(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
                     Layouts.PROC.getMethod(block),
