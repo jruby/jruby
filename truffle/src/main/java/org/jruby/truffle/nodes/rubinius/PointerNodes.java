@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import jnr.ffi.Pointer;
-import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class PointerNodes {

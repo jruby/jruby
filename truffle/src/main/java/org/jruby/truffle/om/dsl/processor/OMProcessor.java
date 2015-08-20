@@ -21,7 +21,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;

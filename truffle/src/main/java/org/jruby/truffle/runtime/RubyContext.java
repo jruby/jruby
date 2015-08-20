@@ -9,11 +9,8 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.CompilerOptions;
-import com.oracle.truffle.api.ExecutionContext;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Probe;
@@ -39,7 +36,10 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.BignumNodes;
+import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
+import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
+import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
@@ -181,6 +181,21 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+    }
+
+    public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        assert block == null || RubyGuards.isRubyProc(block);
+
+        final InternalMethod method = ModuleOperations.lookupMethod(coreLibrary.getMetaClass(object), methodName);
+
+        if (method == null || method.isUndefined()) {
+            return null;
+        }
+
+        return method.getCallTarget().call(
+                RubyArguments.pack(method, method.getDeclarationFrame(), object, block, arguments));
     }
 
     @Override

@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -77,7 +76,15 @@ public class SimpleShell {
                                 RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
                                 false, currentNode, NodeWrapper.IDENTITY);
 
-                        System.console().writer().println(DebugOperations.inspect(context, result));
+                        String inspected;
+
+                        try {
+                            inspected = context.send(result, "inspect", null).toString();
+                        } catch (Exception e) {
+                            inspected = String.format("(error inspecting %s@%x)", result.getClass().getSimpleName(), result.hashCode());
+                        }
+
+                        System.console().writer().println(inspected);
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 

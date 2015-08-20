@@ -15,7 +15,10 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.api.Volatile;
-import org.jruby.truffle.om.dsl.processor.layout.model.*;
+import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
+import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
+import org.jruby.truffle.om.dsl.processor.layout.model.PropertyBuilder;
+import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;

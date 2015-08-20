@@ -14,9 +14,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.layouts.ThreadLayoutImpl;
-import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
-import org.jruby.truffle.runtime.layouts.rubinius.ByteArrayLayoutImpl;
 
 public abstract class RubyGuards {
 

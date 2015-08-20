@@ -16,13 +16,17 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ClassNodes;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.runtime.ModuleChain;
+import org.jruby.truffle.runtime.ModuleOperations;
+import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.ObjectGraph;
-import org.jruby.truffle.runtime.object.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
@@ -142,10 +146,20 @@ public class ModuleFields implements ModuleChain {
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
     public void checkFrozen(Node currentNode) {
-        if (getContext().getCoreLibrary() != null && DebugOperations.verySlowIsFrozen(getContext(), rubyModuleObject)) {
+        if (getContext().getCoreLibrary() != null && verySlowIsFrozen(getContext(), rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
         }
+    }
+
+    // TODO CS 20-Aug-15 this needs to go
+    public static boolean verySlowIsFrozen(RubyContext context, Object object) {
+        final RubyNode node = IsFrozenNodeGen.create(context, null, new LiteralNode(context, null, object));
+        new Node() {
+            @Child RubyNode child = node;
+        }.adoptChildren();
+
+        return (boolean) node.execute(null);
     }
 
     public void insertAfter(DynamicObject module) {
@@ -324,7 +338,7 @@ public class ModuleFields implements ModuleChain {
         newVersion();
 
         if (context.getCoreLibrary().isLoaded() && !method.isUndefined()) {
-            DebugOperations.send(context, rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
+            context.send(rubyModuleObject, "method_added", null, context.getSymbolTable().getSymbol(method.getName()));
         }
     }
 

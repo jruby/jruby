@@ -13,7 +13,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -82,7 +81,7 @@ public class BacktraceFormatter {
         if (exception != null) {
             String message;
             try {
-                Object messageObject = DebugOperations.send(context, exception, "message", null);
+                Object messageObject = context.send(exception, "message", null);
                 if (RubyGuards.isRubyString(messageObject)) {
                     message = messageObject.toString();
                 } else {

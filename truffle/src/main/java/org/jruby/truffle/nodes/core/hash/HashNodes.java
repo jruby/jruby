@@ -30,7 +30,6 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -51,7 +50,7 @@ import java.util.Map;
 public abstract class HashNodes {
 
     public static int slowHashKey(RubyContext context, Object key) {
-        final Object hashValue = DebugOperations.send(context, key, "hash", null);
+        final Object hashValue = context.send(key, "hash", null);
 
         if (hashValue instanceof Integer) {
             return (int) hashValue;
@@ -71,7 +70,7 @@ public abstract class HashNodes {
             method = "eql?";
         }
 
-        final Object equalityResult = DebugOperations.send(context, a, method, null, b);
+        final Object equalityResult = context.send(a, method, null, b);
 
         if (equalityResult instanceof Boolean) {
             return (boolean) equalityResult;
