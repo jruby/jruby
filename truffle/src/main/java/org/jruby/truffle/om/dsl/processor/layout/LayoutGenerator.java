@@ -409,7 +409,7 @@ public class LayoutGenerator {
         }
 
         stream.println("        assert factory != null;");
-        stream.println("        CompilerAsserts.compilationConstant(factory);");
+        stream.println("        CompilerAsserts.partialEvaluationConstant(factory);");
         stream.printf("        assert creates%s(factory);\n", layout.getName());
 
         for (PropertyModel property : layout.getAllNonShapeProperties()) {
@@ -490,7 +490,7 @@ public class LayoutGenerator {
             }
 
             stream.println("        assert factory != null;");
-            stream.println("        CompilerAsserts.compilationConstant(factory);");
+            stream.println("        CompilerAsserts.partialEvaluationConstant(factory);");
             stream.printf("        assert creates%s(factory);\n", layout.getName());
 
             for (PropertyModel property : layout.getAllNonShapeProperties()) {
