@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.om.dsl.processor.layout.model;
 
-import javax.lang.model.type.TypeMirror;
+import java.util.Locale;
 
 public abstract class NameUtils {
 
@@ -51,7 +51,7 @@ public abstract class NameUtils {
     }
 
     private static String asGetterSetter(String name, String getSet) {
-        return getSet + name.substring(0, 1).toUpperCase() + name.substring(1);
+        return getSet + name.substring(0, 1).toUpperCase(Locale.ENGLISH) + name.substring(1);
     }
 
     public static String typeWithoutParameters(String type) {

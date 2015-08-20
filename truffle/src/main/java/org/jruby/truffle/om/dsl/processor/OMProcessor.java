@@ -21,7 +21,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-import java.io.FileNotFoundException;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -51,7 +51,7 @@ public class OMProcessor extends AbstractProcessor {
 
             JavaFileObject output = processingEnv.getFiler().createSourceFile(layout.getInterfaceFullName() + "Impl", layoutElement);
 
-            try (PrintStream stream = new PrintStream(output.openOutputStream())) {
+            try (PrintStream stream = new PrintStream(output.openOutputStream(), false, "US-ASCII")) {
                 generator.generate(stream);
             }
         } catch (IOException e) {
@@ -60,9 +60,9 @@ public class OMProcessor extends AbstractProcessor {
     }
 
     public static void log(String file, String message) {
-        try (PrintStream stream = new PrintStream(new FileOutputStream(file, true))) {
+        try (PrintStream stream = new PrintStream(new FileOutputStream(file, true), false, "US-ASCII")) {
             stream.println(message);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
