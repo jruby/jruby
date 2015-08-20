@@ -53,8 +53,6 @@ public abstract class RubyCallStack {
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
-    private static final boolean BACKTRACE_GENERATE = Options.TRUFFLE_BACKTRACE_GENERATE.load();
-
     public static Backtrace getBacktrace(Node currentNode) {
         return getBacktrace(currentNode, 0);
     }
@@ -68,38 +66,35 @@ public abstract class RubyCallStack {
 
         final ArrayList<Activation> activations = new ArrayList<>();
 
-        if (BACKTRACE_GENERATE) {
             /*
              * TODO(cs): if this materializing the frames proves really expensive
              * we might want to make it optional - I think it's only used for some
              * features beyond what MRI does like printing locals in backtraces.
              */
 
-            if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
-                activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+        if (omit == 0 && currentNode != null && Truffle.getRuntime().getCurrentFrame() != null) {
+            activations.add(new Activation(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+        }
+
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
+            int depth = 1;
+
+            @Override
+            public InternalMethod visitFrame(FrameInstance frameInstance) {
+                // Multiple top level methods (require) introduce null call nodes - ignore them
+
+                if (frameInstance.getCallNode() != null && depth >= omit) {
+                    if (!(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
+                        activations.add(new Activation(frameInstance.getCallNode(),
+                                frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
+                    }
+                }
+                depth++;
+
+                return null;
             }
 
-            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
-                int depth = 1;
-
-                @Override
-                public InternalMethod visitFrame(FrameInstance frameInstance) {
-                    // Multiple top level methods (require) introduce null call nodes - ignore them
-                    
-                    if (frameInstance.getCallNode() != null && depth >= omit) {
-                        if (!(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
-                            activations.add(new Activation(frameInstance.getCallNode(),
-                                    frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
-                        }
-                    }
-                    depth++;
-
-                    return null;
-                }
-
-            });
-
-        }
+        });
 
         return new Backtrace(activations.toArray(new Activation[activations.size()]));
     }

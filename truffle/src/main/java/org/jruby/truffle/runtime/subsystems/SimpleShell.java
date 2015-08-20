@@ -19,13 +19,13 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class SimpleShell {
@@ -81,7 +81,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
+                        for (String line : new MRIBacktraceFormatter().format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
                             System.console().writer().println(line);
                         }
                     }
@@ -99,7 +99,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(DebugBacktraceFormatter.formatBasicLine(activation));
+            System.console().writer().println(new MRIBacktraceFormatter().formatFromLine(Arrays.asList(activation), 0));
             n++;
         }
     }

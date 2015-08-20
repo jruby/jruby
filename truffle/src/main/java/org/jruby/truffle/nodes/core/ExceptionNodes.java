@@ -31,7 +31,7 @@ public abstract class ExceptionNodes {
 
     public static class BacktraceFormatter extends MRIBacktraceFormatter {
         @Override
-        protected String formatFromLine(List<Activation> activations, int n) {
+        public String formatFromLine(List<Activation> activations, int n) {
             return formatCallerLine(activations, n);
         }
     }

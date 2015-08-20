@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public abstract class DebugOperations {
         System.err.println();
 
         try {
-            for (String line : Backtrace.PANIC_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+            for (String line : new MRIBacktraceFormatter().format(context, null, RubyCallStack.getBacktrace(currentNode))) {
                 System.err.println(line);
             }
         } catch (Throwable e) {
@@ -101,7 +102,7 @@ public abstract class DebugOperations {
     }
 
     public static String[] printableBacktrace(RubyContext context, Node currentNode) {
-        return Backtrace.DISPLAY_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode));
+        return new MRIBacktraceFormatter().format(context, null, RubyCallStack.getBacktrace(currentNode));
     }
 
     public static void printBacktrace(RubyContext context, Node currentNode) {

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -35,7 +36,7 @@ public class RubyObjectType extends ObjectType {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
             return Layouts.EXCEPTION.getMessage(object) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, Layouts.EXCEPTION.getBacktrace(object)));
+                    Arrays.toString(new MRIBacktraceFormatter().format(context, object, Layouts.EXCEPTION.getBacktrace(object)));
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {
