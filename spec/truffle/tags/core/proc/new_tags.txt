@@ -1,16 +1,1 @@
 fails:Proc.new with an associated block raises a LocalJumpError when context of the block no longer exists
-fails:Proc.new with an associated block returns from within enclosing method when 'return' is used in the block
-fails:Proc.new with an associated block returns a subclass of Proc
-fails:Proc.new with an associated block returns a new Proc instance from the block passed to the containing method
-fails:Proc.new with an associated block called on a subclass of Proc returns an instance of the subclass
-fails:Proc.new with an associated block called on a subclass of Proc using a reified block parameter returns an instance of the subclass
-fails:Proc.new with an associated block called on a subclass of Proc that does not 'super' in 'initialize' still constructs a functional proc
-fails:Proc.new with a block argument returns the passed proc created from a block
-fails:Proc.new with a block argument returns the passed proc created from a method
-fails:Proc.new with a block argument returns the passed proc created from a symbol
-fails:Proc.new with a block argument called indirectly from a subclass returns the passed proc created from a block
-fails:Proc.new with a block argument called indirectly from a subclass returns the passed proc created from a method
-fails:Proc.new with a block argument called indirectly from a subclass returns the passed proc created from a symbol
-fails:Proc.new without a block raises an ArgumentError
-fails:Proc.new without a block raises an ArgumentError if invoked from within a method with no block
-fails:Proc.new without a block raises an ArgumentError if invoked on a subclass from within a method with no block
