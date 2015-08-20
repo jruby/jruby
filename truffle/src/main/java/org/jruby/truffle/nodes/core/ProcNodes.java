@@ -9,33 +9,36 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.object.DynamicObjectFactory;
-import com.oracle.truffle.api.source.NullSourceSection;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.util.Memo;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.source.NullSourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -51,29 +54,11 @@ public abstract class ProcNodes {
                 args));
     }
 
-    public static void initialize(DynamicObject proc, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs, CallTarget callTargetForLambdas,
-                                  MaterializedFrame declarationFrame, InternalMethod method, Object self,
-                                  DynamicObject block) {
-        assert RubyGuards.isRubyProc(proc);
-
-        Layouts.PROC.setSharedMethodInfo(proc, sharedMethodInfo);
-        Layouts.PROC.setCallTargetForType(proc, Layouts.PROC.getType(proc) == Type.PROC ? callTargetForProcs : callTargetForLambdas);
-        Layouts.PROC.setCallTargetForLambdas(proc, callTargetForLambdas);
-        Layouts.PROC.setDeclarationFrame(proc, declarationFrame);
-        Layouts.PROC.setMethod(proc, method);
-        Layouts.PROC.setSelf(proc, self);
-        assert block == null || RubyGuards.isRubyProc(block);
-        Layouts.PROC.setBlock(proc, block);
-    }
-
-    public static DynamicObject createRubyProc(DynamicObject procClass, Type type) {
-        return createRubyProc(procClass, type, null, null, null, null, null, null, null);
-    }
-
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
                                                CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
                                                Object self, DynamicObject block) {
-        return createRubyProc(Layouts.CLASS.getInstanceFactory(procClass), type, sharedMethodInfo, callTargetForProcs,
+        return createRubyProc(Layouts.CLASS.getInstanceFactory(procClass),
+                type, sharedMethodInfo, callTargetForProcs,
                 callTargetForLambdas, declarationFrame, method,
                 self, block);
     }
@@ -81,14 +66,66 @@ public abstract class ProcNodes {
     public static DynamicObject createRubyProc(DynamicObjectFactory instanceFactory, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
                                           CallTarget callTargetForLambdas, MaterializedFrame declarationFrame, InternalMethod method,
                                           Object self, DynamicObject block) {
-        final DynamicObject proc = Layouts.PROC.createProc(instanceFactory, type, null, null, null, null, null, null, null);
-        ProcNodes.initialize(proc, sharedMethodInfo, callTargetForProcs, callTargetForLambdas, declarationFrame, method,
-                self, block);
-        return proc;
+        assert block == null || RubyGuards.isRubyProc(block);
+        final CallTarget callTargetForType = (type == Type.PROC) ? callTargetForProcs : callTargetForLambdas;
+        return Layouts.PROC.createProc(instanceFactory, type, sharedMethodInfo, callTargetForType, callTargetForLambdas, declarationFrame, method, self, block);
     }
 
     public enum Type {
         PROC, LAMBDA
+    }
+
+    @CoreMethod(names = "new", constructor = true, needsBlock = true)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "procClass"),
+            @NodeChild(type = RubyNode.class, value = "block")
+    })
+    public abstract static class ProcNewNode extends CoreMethodNode {
+
+        public ProcNewNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public abstract DynamicObject executeProcNew(DynamicObject procClass, Object block);
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject proc(DynamicObject procClass, NotProvided block) {
+            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
+            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+
+            if (parentBlock == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+            }
+
+            return executeProcNew(procClass, parentBlock);
+        }
+
+        @Specialization(guards = "procClass == metaClass(block)")
+        public DynamicObject procNormal(DynamicObject procClass, DynamicObject block) {
+            return block;
+        }
+
+        @Specialization(guards = "procClass != metaClass(block)")
+        public DynamicObject procSpecial(DynamicObject procClass, DynamicObject block) {
+            // Instantiate a new instance of procClass as classes do not correspond
+            return ProcNodes.createRubyProc(
+                    procClass,
+                    Layouts.PROC.getType(block),
+                    Layouts.PROC.getSharedMethodInfo(block),
+                    Layouts.PROC.getCallTargetForType(block),
+                    Layouts.PROC.getCallTargetForLambdas(block),
+                    Layouts.PROC.getDeclarationFrame(block),
+                    Layouts.PROC.getMethod(block),
+                    Layouts.PROC.getSelf(block),
+                    Layouts.PROC.getBlock(block));
+        }
+
+        protected DynamicObject metaClass(DynamicObject object) {
+            return Layouts.BASIC_OBJECT.getMetaClass(object);
+        }
+
     }
 
     @CoreMethod(names = "arity")
@@ -141,57 +178,6 @@ public abstract class ProcNodes {
         @Specialization(guards = "isRubyProc(block)")
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
             return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
-        }
-
-    }
-
-    @CoreMethod(names = "initialize", needsBlock = true)
-    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject initialize(DynamicObject proc, DynamicObject block) {
-            ProcNodes.initialize(proc, Layouts.PROC.getSharedMethodInfo(block), Layouts.PROC.getCallTargetForType(block),
-                    Layouts.PROC.getCallTargetForLambdas(block), Layouts.PROC.getDeclarationFrame(block), Layouts.PROC.getMethod(block),
-                    Layouts.PROC.getSelf(block), Layouts.PROC.getBlock(block));
-
-            return nil();
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject initialize(DynamicObject proc, NotProvided block) {
-            final Memo<Integer> frameCount = new Memo<>(0);
-
-            // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
-            // of the Proc.new call, since that is where the block should be inherited from.
-            final MaterializedFrame grandparentFrame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
-
-                @Override
-                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
-                    if (frameCount.get() == 1) {
-                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
-                    } else {
-                        frameCount.set(frameCount.get() + 1);
-                        return null;
-                    }
-                }
-
-            });
-
-            final DynamicObject grandparentBlock = RubyArguments.getBlock(grandparentFrame.getArguments());
-
-            if (grandparentBlock == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                // TODO (nirvdrum 19-Feb-15) MRI reports this error on the #new method, not #initialize.
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
-            }
-
-            return initialize(proc, grandparentBlock);
         }
 
     }
@@ -253,17 +239,4 @@ public abstract class ProcNodes {
 
     }
 
-    @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        public AllocateNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyProc(rubyClass, Type.PROC);
-        }
-
-    }
 }

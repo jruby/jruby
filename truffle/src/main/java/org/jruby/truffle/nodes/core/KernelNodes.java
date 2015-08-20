@@ -25,6 +25,7 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -43,6 +44,8 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
+import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
+import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -1348,50 +1351,16 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
+        @Child ProcNewNode procNewNode;
+
         public ProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            procNewNode = ProcNewNodeFactory.create(context, sourceSection, null, null);
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject proc(NotProvided block) {
-            final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
-            final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
-
-            if (parentBlock == null) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
-            }
-
-            if (isANormalProc(parentBlock)) {
-                return procNormal(parentBlock);
-            } else {
-                return procSpecial(parentBlock);
-            }
-        }
-
-        @Specialization(guards = { "isRubyProc(block)", "isANormalProc(block)" })
-        public DynamicObject procNormal(DynamicObject block) {
-            return block;
-        }
-
-        @Specialization(guards = { "isRubyProc(block)", "!isANormalProc(block)" })
-        public DynamicObject procSpecial(DynamicObject block) {
-            // Just make it a normal Proc without a singleton class
-            return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcClass(),
-                    Layouts.PROC.getType(block),
-                    Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForType(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
-                    Layouts.PROC.getDeclarationFrame(block),
-                    Layouts.PROC.getMethod(block),
-                    Layouts.PROC.getSelf(block),
-                    Layouts.PROC.getBlock(block));
-        }
-
-        protected boolean isANormalProc(DynamicObject block) {
-            return Layouts.BASIC_OBJECT.getMetaClass(block) == getContext().getCoreLibrary().getProcClass();
+        public DynamicObject proc(Object block) {
+            return procNewNode.executeProcNew(getContext().getCoreLibrary().getProcClass(), block);
         }
 
     }
