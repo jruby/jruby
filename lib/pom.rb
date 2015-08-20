@@ -24,7 +24,7 @@ end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.10', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.11', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
@@ -32,7 +32,7 @@ default_gems =
   ]
 
 project 'JRuby Lib Setup' do
- 
+
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
     def to_pathname
@@ -68,6 +68,9 @@ project 'JRuby Lib Setup' do
 
   repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
+  # for testing out jruby-ossl before final release :
+  repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+              :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
@@ -193,5 +196,5 @@ project 'JRuby Lib Setup' do
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
       File.chmod( 0644, f ) rescue nil if File.file?( f )
     end
-  end  
+  end
 end
