@@ -18,22 +18,13 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
-
-    private static final DateTime ZERO = new DateTime(0);
-
-    public static DateTime getDateTime(DynamicObject time) {
-        return Layouts.TIME.getDateTime(time);
-    }
-
-    public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
-        return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass), dateTime, offset);
-    }
 
     // We need it to copy the internal data for a call to Kernel#clone.
     @CoreMethod(names = "initialize_copy", required = 1)
@@ -45,7 +36,7 @@ public abstract class TimeNodes {
 
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            Layouts.TIME.setDateTime(self, getDateTime(from));
+            Layouts.TIME.setDateTime(self, Layouts.TIME.getDateTime(from));
             Layouts.TIME.setOffset(self, Layouts.TIME.getOffset(from));
             return self;
         }
@@ -63,8 +54,8 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalGMT(DynamicObject time) {
             return Layouts.TIME.getOffset(time) == nil() &&
-                    (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
-                     getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
+                    (Layouts.TIME.getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
+                     Layouts.TIME.getDateTime(time).getZone().getOffset(Layouts.TIME.getDateTime(time).getMillis()) == 0);
         }
     }
 
@@ -83,7 +74,7 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalSetGMT(DynamicObject time, boolean isGMT) {
             if (isGMT) {
-                Layouts.TIME.setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
+                Layouts.TIME.setDateTime(time, Layouts.TIME.getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
                 // Do nothing I guess - we can't change it to another zone, as what zone would that be?
             }
@@ -127,13 +118,18 @@ public abstract class TimeNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        private static final DateTime ZERO = new DateTime(0);
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyTime(rubyClass, ZERO, getContext().getCoreLibrary().getNilObject());
+            return allocateObjectNode.allocate(rubyClass, ZERO, getContext().getCoreLibrary().getNilObject());
         }
 
     }
