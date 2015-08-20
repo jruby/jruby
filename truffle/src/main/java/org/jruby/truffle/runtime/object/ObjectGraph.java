@@ -63,47 +63,44 @@ public class ObjectGraph {
     }
 
     private void visitRoots(final ObjectGraphVisitor visitor) {
-        final Memo<Boolean> keepVisiting = new Memo<>(true);
-
         context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
+
+            boolean keepVisiting = true;
 
             @Override
             public void run(DynamicObject thread, Node currentNode) {
-                if (keepVisiting.get()) {
-                    synchronized (this) {
-                        try {
-                            // We only visit the main object from the root thread
+                synchronized (this) {
+                    if (!keepVisiting) {
+                        return;
+                    }
 
-                            if (thread == context.getThreadManager().getRootThread()) {
-                                visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
-                            }
+                    try {
+                        // We only visit the global variables from the root thread
+                        visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
 
-                            // All threads visit the thread object
+                        // All threads visit the thread object
+                        visitObject(thread, visitor);
 
-                            visitObject(thread, visitor);
-
-                            // All threads visit the call stack
-
-                            if (Truffle.getRuntime().getCurrentFrame() != null) {
-                                visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
-                            }
-
-                            Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-
-                                @Override
-                                public Object visitFrame(FrameInstance frameInstance) {
-                                    try {
-                                        visitFrameInstance(frameInstance, visitor);
-                                    } catch (StopVisitingObjectsException e) {
-                                        return new Object();
-                                    }
-                                    return null;
-                                }
-
-                            });
-                        } catch (StopVisitingObjectsException e) {
-                            keepVisiting.set(true);
+                        // All threads visit their call stack
+                        if (Truffle.getRuntime().getCurrentFrame() != null) {
+                            visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
                         }
+
+                        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+
+                            @Override
+                            public Object visitFrame(FrameInstance frameInstance) {
+                                try {
+                                    visitFrameInstance(frameInstance, visitor);
+                                } catch (StopVisitingObjectsException e) {
+                                    return new Object();
+                                }
+                                return null;
+                            }
+
+                        });
+                    } catch (StopVisitingObjectsException e) {
+                        keepVisiting = false;
                     }
                 }
             }
