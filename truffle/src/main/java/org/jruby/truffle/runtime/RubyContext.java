@@ -629,7 +629,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
 
-        final String inputFile = rootNode.getPosition().getFile();
+        final String inputFile = new File(rootNode.getPosition().getFile()).getAbsolutePath();
         final Source source;
 
         try {
