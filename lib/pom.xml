@@ -34,7 +34,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.8</version>
+      <version>0.9.10</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -177,6 +177,10 @@ DO NOT MODIFIY - GENERATED CODE
     <repository>
       <id>rubygems-releases</id>
       <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
+    </repository>
+    <repository>
+      <id>gem-staging</id>
+      <url>http://oss.sonatype.org/content/repositories/staging</url>
     </repository>
   </repositories>
   <build>
