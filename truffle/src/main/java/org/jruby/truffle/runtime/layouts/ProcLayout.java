@@ -34,13 +34,13 @@ public interface ProcLayout extends BasicObjectLayout {
 
     DynamicObject createProc(
             DynamicObjectFactory factory,
-            @Nullable ProcNodes.Type type,
-            @Nullable SharedMethodInfo sharedMethodInfo,
-            @Nullable CallTarget callTargetForType,
-            @Nullable CallTarget callTargetForLambdas,
+            ProcNodes.Type type,
+            SharedMethodInfo sharedMethodInfo,
+            CallTarget callTargetForType,
+            CallTarget callTargetForLambdas,
             @Nullable MaterializedFrame declarationFrame,
             @Nullable InternalMethod method,
-            @Nullable Object self,
+            Object self,
             @Nullable DynamicObject block);
 
     boolean isProc(DynamicObject object);
@@ -49,24 +49,17 @@ public interface ProcLayout extends BasicObjectLayout {
     ProcNodes.Type getType(DynamicObject object);
 
     SharedMethodInfo getSharedMethodInfo(DynamicObject object);
-    void setSharedMethodInfo(DynamicObject object, SharedMethodInfo value);
 
     CallTarget getCallTargetForType(DynamicObject object);
-    void setCallTargetForType(DynamicObject object, CallTarget value);
 
     CallTarget getCallTargetForLambdas(DynamicObject object);
-    void setCallTargetForLambdas(DynamicObject object, CallTarget value);
 
     MaterializedFrame getDeclarationFrame(DynamicObject object);
-    void setDeclarationFrame(DynamicObject object, MaterializedFrame value);
 
     InternalMethod getMethod(DynamicObject object);
-    void setMethod(DynamicObject object, InternalMethod value);
 
     Object getSelf(DynamicObject object);
-    void setSelf(DynamicObject object, Object value);
 
     DynamicObject getBlock(DynamicObject object);
-    void setBlock(DynamicObject object, DynamicObject value);
 
 }
