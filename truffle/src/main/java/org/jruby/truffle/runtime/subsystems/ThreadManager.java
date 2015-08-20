@@ -142,7 +142,7 @@ public class ThreadManager {
                 break; // Successfully executed the safepoint and sent the exceptions.
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
-                new BacktraceFormatter().printBacktrace(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+                new BacktraceFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             }
         }
     }

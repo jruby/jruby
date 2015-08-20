@@ -22,26 +22,43 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 
 public class BacktraceFormatter {
 
-    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
-        printBacktrace(context, exception, backtrace, new PrintWriter(System.err));
+    public enum FormattingFlags {
+        OMIT_FROM_PREFIX
     }
 
-    public void printBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
-        for (String line : formatBacktrace(context, exception, backtrace)) {
+    private final RubyContext context;
+    private final EnumSet<FormattingFlags> flags;
+
+    public BacktraceFormatter(RubyContext context) {
+        this(context, EnumSet.noneOf(FormattingFlags.class));
+    }
+
+    public BacktraceFormatter(RubyContext context, EnumSet<FormattingFlags> flags) {
+        this.context = context;
+        this.flags = flags;
+    }
+
+    public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
+        printBacktrace(exception, backtrace, new PrintWriter(System.err));
+    }
+
+    public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
+        for (String line : formatBacktrace(exception, backtrace)) {
             writer.println(line);
         }
     }
 
-    public List<String> formatBacktrace(RubyContext context, DynamicObject exception, Backtrace backtrace) {
+    public List<String> formatBacktrace(DynamicObject exception, Backtrace backtrace) {
         try {
             final List<Activation> activations = backtrace.getActivations();
             final ArrayList<String> lines = new ArrayList<>();
 
-            lines.add(formatInLine(context, activations, exception));
+            lines.add(formatInLine(activations, exception));
 
             for (int n = 1; n < activations.size(); n++) {
                 lines.add(formatFromLine(activations, n));
@@ -53,7 +70,7 @@ public class BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(RubyContext context, List<Activation> activations, DynamicObject exception) {
+    private String formatInLine(List<Activation> activations, DynamicObject exception) {
         final StringBuilder builder = new StringBuilder();
 
         final Activation activation = activations.get(0);
@@ -104,7 +121,13 @@ public class BacktraceFormatter {
     }
 
     private String formatFromLine(List<Activation> activations, int n) {
-        return "\tfrom " + formatLine(activations, n);
+        final String formattedLine = formatLine(activations, n);
+
+        if (flags.contains(FormattingFlags.OMIT_FROM_PREFIX)) {
+            return formattedLine;
+        } else {
+            return "\tfrom " + formattedLine;
+        }
     }
 
     public static String formatLine(List<Activation> activations, int n) {

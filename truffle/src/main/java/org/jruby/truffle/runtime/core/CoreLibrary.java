@@ -634,7 +634,7 @@ public class CoreLibrary {
             loadRubyCore("core.rb");
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
-            new BacktraceFormatter().printBacktrace(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+            new BacktraceFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             throw new TruffleFatalException("couldn't load the core library", e);
         } finally {
             state = State.LOADED;

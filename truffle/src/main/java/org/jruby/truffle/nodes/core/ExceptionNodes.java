@@ -19,11 +19,11 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
+import java.util.EnumSet;
 import java.util.List;
 
 @CoreClass(name = "Exception")
@@ -32,9 +32,12 @@ public abstract class ExceptionNodes {
     @TruffleBoundary
     public static DynamicObject asRubyStringArray(DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
-
         assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-        final List<String> lines = new BacktraceFormatter().formatBacktrace(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
+
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext();
+
+        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
+                .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
 
         final Object[] array = new Object[lines.size()];
 
