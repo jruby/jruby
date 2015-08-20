@@ -909,6 +909,12 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(typeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String className = Layouts.MODULE.getFields(rubyClass).getName();
+        return typeError(String.format("allocator undefined for %s", className), currentNode);
+    }
+
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
