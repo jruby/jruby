@@ -45,7 +45,8 @@ public abstract class ExceptionNodes {
             array[n] = StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass(), lines.get(n));
         }
 
-        return ArrayNodes.fromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayClass(), array);
+        DynamicObject arrayClass = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayClass();
+        return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), array), array.length);
     }
 
     public static void setMessage(DynamicObject exception, Object message) {

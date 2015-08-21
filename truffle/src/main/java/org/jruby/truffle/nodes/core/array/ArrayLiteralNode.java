@@ -50,7 +50,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+        return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), executedValues), executedValues.length);
     }
 
     @Override
@@ -236,7 +237,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final DynamicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            final DynamicObject array = ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), executedValues), executedValues.length);
             final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {

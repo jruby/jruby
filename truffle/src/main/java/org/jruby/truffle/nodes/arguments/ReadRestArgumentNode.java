@@ -59,16 +59,16 @@ public class ReadRestArgumentNode extends RubyNode {
 
         if (startIndex == 0) {
             final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
-            return ArrayNodes.createArray(arrayClass, arguments, length);
+            return ArrayNodes.createGeneralArray(arrayClass, arguments, length);
         } else {
             if (startIndex >= endIndex) {
                 noArgumentsLeftProfile.enter();
-                return ArrayNodes.createEmptyArray(arrayClass);
+                return ArrayNodes.createGeneralArray(arrayClass, null, 0);
             } else {
                 subsetOfArgumentsProfile.enter();
                 final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
                 // TODO(CS): risk here of widening types too much - always going to be Object[] - does seem to be something that does happen
-                return ArrayNodes.createArray(arrayClass, ArrayUtils.extractRange(arguments, startIndex, endIndex), length);
+                return ArrayNodes.createGeneralArray(arrayClass, ArrayUtils.extractRange(arguments, startIndex, endIndex), length);
             }
         }
     }

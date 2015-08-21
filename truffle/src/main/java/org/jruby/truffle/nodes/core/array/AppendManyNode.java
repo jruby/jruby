@@ -41,25 +41,29 @@ public abstract class AppendManyNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, int[] other) {
-        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
+        Layouts.ARRAY.setStore(array, Arrays.copyOf(other, otherSize));
+        Layouts.ARRAY.setSize(array, otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, long[] other) {
-        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
+        Layouts.ARRAY.setStore(array, Arrays.copyOf(other, otherSize));
+        Layouts.ARRAY.setSize(array, otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, double[] other) {
-        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
+        Layouts.ARRAY.setStore(array, Arrays.copyOf(other, otherSize));
+        Layouts.ARRAY.setSize(array, otherSize);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendManyEmpty(DynamicObject array, int otherSize, Object[] other) {
-        ArrayNodes.setStore(array, Arrays.copyOf(other, otherSize), otherSize);
+        Layouts.ARRAY.setStore(array, Arrays.copyOf(other, otherSize));
+        Layouts.ARRAY.setSize(array, otherSize);
         return array;
     }
 
@@ -112,7 +116,8 @@ public abstract class AppendManyNode extends RubyNode {
         }
 
         otherStoreMirror.copyTo(newStoreMirror, 0, oldSize, otherSize);
-        ArrayNodes.setStore(array, newStoreMirror.getArray(), newSize);
+        Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
+        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append something else into an Object[]
@@ -153,7 +158,8 @@ public abstract class AppendManyNode extends RubyNode {
         }
 
         otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
-        ArrayNodes.setStore(array, newStore, newSize);
+        Layouts.ARRAY.setStore(array, newStore);
+        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append forcing a generalization from int[] to long[]
@@ -168,7 +174,8 @@ public abstract class AppendManyNode extends RubyNode {
 
         System.arraycopy(other, 0, newStore, oldSize, otherSize);
 
-        ArrayNodes.setStore(array, newStore, newSize);
+        Layouts.ARRAY.setStore(array, newStore);
+        Layouts.ARRAY.setSize(array, newSize);
         return array;
     }
 
@@ -228,7 +235,8 @@ public abstract class AppendManyNode extends RubyNode {
         final int newSize = oldSize + otherSize;
         Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
         otherStoreMirror.copyTo(newStore, 0, oldSize, otherSize);
-        ArrayNodes.setStore(array, newStore, newSize);
+        Layouts.ARRAY.setStore(array, newStore);
+        Layouts.ARRAY.setSize(array, newSize);
     }
 
 }

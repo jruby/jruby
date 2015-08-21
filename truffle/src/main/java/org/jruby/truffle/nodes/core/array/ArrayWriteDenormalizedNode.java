@@ -18,6 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -41,7 +42,7 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
             writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
         }
 
-        final int normalizedIndex = ArrayNodes.normalizeIndex(array, index);
+        final int normalizedIndex = ArrayNodes.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
         return writeNode.executeWrite(frame, array, normalizedIndex, value);
     }

@@ -597,10 +597,13 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getSetObjects(readableObjects, readableFds, readableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{};
+            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects1 = new Object[]{};
+            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects2 = new Object[]{getSetObjects(readableObjects, readableFds, readableSet), ArrayNodes.createGeneralArray(arrayClass1, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass1)).getContext(), objects1), objects1.length), ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length)};
+            return ArrayNodes.createGeneralArray(arrayClass2, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass2)).getContext(), objects2), objects2.length);
         }
 
         @TruffleBoundary
@@ -631,10 +634,13 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    getSetObjects(writableObjects, writableFds, writableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{};
+            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects1 = new Object[]{};
+            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects2 = new Object[]{ArrayNodes.createGeneralArray(arrayClass1, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass1)).getContext(), objects1), objects1.length), getSetObjects(writableObjects, writableFds, writableSet), ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length)};
+            return ArrayNodes.createGeneralArray(arrayClass2, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass2)).getContext(), objects2), objects2.length);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {

@@ -431,7 +431,7 @@ public class CoreLibrary {
 
         mainObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
         nilObject = Layouts.CLASS.getInstanceFactory(nilClass).newInstance();
-        argv = ArrayNodes.createEmptyArray(arrayClass);
+        argv = ArrayNodes.createGeneralArray(arrayClass, null, 0);
         rubiniusUndefined = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
         globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
@@ -524,8 +524,8 @@ public class CoreLibrary {
     private void initializeGlobalVariables() {
         DynamicObject globals = globalVariablesObject;
 
-        globals.define("$LOAD_PATH", ArrayNodes.createEmptyArray(arrayClass), 0);
-        globals.define("$LOADED_FEATURES", ArrayNodes.createEmptyArray(arrayClass), 0);
+        globals.define("$LOAD_PATH", ArrayNodes.createGeneralArray(arrayClass, null, 0), 0);
+        globals.define("$LOADED_FEATURES", ArrayNodes.createGeneralArray(arrayClass, null, 0), 0);
         globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$,", nilObject, 0);
@@ -594,10 +594,11 @@ public class CoreLibrary {
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
-            signals[i++] = ArrayNodes.fromObjects(arrayClass, signalName, signal.getValue());
+            Object[] objects = new Object[]{signalName, signal.getValue()};
+            signals[i++] = ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
         }
 
-        Layouts.MODULE.getFields(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createArray(arrayClass, signals, signals.length));
+        Layouts.MODULE.getFields(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createGeneralArray(arrayClass, signals, signals.length));
     }
 
     private DynamicObject defineClass(String name) {

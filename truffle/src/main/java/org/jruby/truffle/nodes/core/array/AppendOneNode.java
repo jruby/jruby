@@ -38,25 +38,29 @@ public abstract class AppendOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendOneEmpty(DynamicObject array, int value) {
-        ArrayNodes.setStore(array, new int[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new int[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendOneEmpty(DynamicObject array, long value) {
-        ArrayNodes.setStore(array, new long[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new long[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendOneEmpty(DynamicObject array, double value) {
-        ArrayNodes.setStore(array, new double[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new double[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isEmptyArray(array)"})
     public DynamicObject appendOneEmpty(DynamicObject array, Object value) {
-        ArrayNodes.setStore(array, new Object[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new Object[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return array;
     }
 
@@ -103,7 +107,8 @@ public abstract class AppendOneNode extends RubyNode {
         }
 
         newStoreMirror.set(oldSize, value);
-        ArrayNodes.setStore(array, newStoreMirror.getArray(), newSize);
+        Layouts.ARRAY.setStore(array, newStoreMirror.getArray());
+        Layouts.ARRAY.setSize(array, newSize);
     }
 
     // Append forcing a generalization from int[] to long[]
@@ -117,7 +122,8 @@ public abstract class AppendOneNode extends RubyNode {
         long[] newStore = ArrayUtils.longCopyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
 
         newStore[oldSize] = value;
-        ArrayNodes.setStore(array, newStore, newSize);
+        Layouts.ARRAY.setStore(array, newStore);
+        Layouts.ARRAY.setSize(array, newSize);
         return array;
     }
 
@@ -146,7 +152,8 @@ public abstract class AppendOneNode extends RubyNode {
         final int newSize = oldSize + 1;
         Object[] newStore = storeMirror.getBoxedCopy(ArrayUtils.capacity(storeMirror.getLength(), newSize));
         newStore[oldSize] = value;
-        ArrayNodes.setStore(array, newStore, newSize);
+        Layouts.ARRAY.setStore(array, newStore);
+        Layouts.ARRAY.setSize(array, newSize);
     }
 
 }
