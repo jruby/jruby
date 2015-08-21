@@ -32,8 +32,8 @@ public class LazyRubyRootNode extends RootNode {
     @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
 
-    public LazyRubyRootNode(Class<? extends TruffleLanguage> language, SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source) {
-        super(language, sourceSection, frameDescriptor);
+    public LazyRubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, Source source) {
+        super(RubyLanguage.class, sourceSection, frameDescriptor);
         this.source = source;
     }
 
