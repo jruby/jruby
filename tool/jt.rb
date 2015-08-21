@@ -398,11 +398,11 @@ module Commands
     case command
     when 'debug'
       if args.delete '--ruby-backtrace'
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreThrown"
+        compilation_exceptions_behaviour = ",+TruffleCompilationExceptionsAreThrown"
       else
-        compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
+        compilation_exceptions_behaviour = ",+TruffleCompilationExceptionsAreFatal"
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError #{compilation_exceptions_behaviour}"})
+      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-Djvmci.options=+TraceTruffleCompilation,+DumpOnError#{compilation_exceptions_behaviour}"})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
