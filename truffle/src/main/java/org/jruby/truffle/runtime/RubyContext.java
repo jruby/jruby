@@ -113,6 +113,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public RubyContext(Ruby runtime) {
         this(runtime, null);
     }
+
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         latestInstance = this;
 
