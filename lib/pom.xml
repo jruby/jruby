@@ -125,7 +125,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>2.0.14.pre1</version>
+      <version>2.0.14</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
