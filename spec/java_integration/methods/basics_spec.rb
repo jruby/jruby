@@ -2,17 +2,17 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 describe "Java instance methods" do
   it "should have Ruby arity -1" do
-    lambda do
-      java.lang.String.instance_method(:toString).arity.should == -1
-    end.should_not raise_error
+    expect do
+      expect(java.lang.String.instance_method(:toString).arity).to eq(-1)
+    end.not_to raise_error
   end
 end
 
 describe "Java static methods" do
   it "should have Ruby arity -1" do
-    lambda do
-      java.lang.System.method(:getProperty).arity.should == -1
-    end.should_not raise_error
+    expect do
+      expect(java.lang.System.method(:getProperty).arity).to eq(-1)
+    end.not_to raise_error
   end
 end
 
@@ -21,7 +21,7 @@ describe "JavaClass\#==" do
     str_jclass = java.lang.String.java_class
     str_class = java.lang.Class.forName('java.lang.String')
 
-    str_jclass.should == str_class
+    expect(str_jclass).to eq(str_class)
   end
 end
 
@@ -30,6 +30,6 @@ describe "java.lang.Class\#==" do
     str_jclass = java.lang.String.java_class
     str_class = java.lang.Class.forName('java.lang.String')
 
-    str_class.should == str_jclass
+    expect(str_class).to eq(str_jclass)
   end
 end

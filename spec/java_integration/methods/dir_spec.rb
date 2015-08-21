@@ -10,7 +10,7 @@ describe "Dir" do
     it "creates a new Dir object with an existing directory into a jar file" do
       dir = Dir.new(@path_in_jar)
 
-      dir.entries.should == %w|MANIFEST.MF|
+      expect(dir.entries).to eq(%w|MANIFEST.MF|)
     end
   end
 
@@ -18,14 +18,14 @@ describe "Dir" do
     it "returns an Array of filenames in an exisiting directory into a jar file" do
       a = Dir.entries(@path_in_jar)
 
-      a.should == %w|MANIFEST.MF|
+      expect(a).to eq(%w|MANIFEST.MF|)
     end
   end
 
   describe "glob file path" do
     it "lists contents of a file: path to a directory" do
       dir = Dir.new(@local_file_path)
-      dir.entries.should include("junit.jar")
+      expect(dir.entries).to include("junit.jar")
     end
   end
 end

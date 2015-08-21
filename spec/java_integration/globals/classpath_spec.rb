@@ -4,15 +4,15 @@ describe "$CLASSPATH" do
   describe "<<" do
     it "accepts an object" do
       $CLASSPATH << "file"
-      $CLASSPATH.to_a.include?("file:#{File.expand_path('file')}").should == true
+      expect($CLASSPATH.to_a.include?("file:#{File.expand_path('file')}")).to eq(true)
     end
     
     it "accepts an array" do
       Dir.chdir(File.join(File.dirname(__FILE__), '..', '..', '..', 'test')) do
         $CLASSPATH << Dir.glob("classpath*.jar")
-        ($CLASSPATH.to_a.include?("file:#{File.expand_path('classpath_test.jar')}")).should == true
+        expect($CLASSPATH.to_a.include?("file:#{File.expand_path('classpath_test.jar')}")).to eq(true)
       end
-      JRuby.runtime.getJRubyClassLoader.getResource('test_value.rb').should_not == nil
+      expect(JRuby.runtime.getJRubyClassLoader.getResource('test_value.rb')).not_to eq(nil)
     end
   end
 end

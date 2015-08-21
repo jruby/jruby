@@ -11,7 +11,7 @@ describe "java.util.regex.Matcher.end" do
     m = r.matcher(s)
 
     while m.find()
-      lambda{ m.end(0) }.should_not raise_error
+      expect{ m.end(0) }.not_to raise_error
     end
   end
 end

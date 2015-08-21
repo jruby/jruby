@@ -5,7 +5,7 @@ describe "String#setbyte" do
     s = "test"
     t = String.new(s) # depends on this sharing the backing store
     t.setbyte(0, "r".ord)
-    t.should == eval('"rest"') # eval these, so compiler/ast does not reuse ByteList
-    s.should == eval('"test"')
+    expect(t).to eq(eval('"rest"')) # eval these, so compiler/ast does not reuse ByteList
+    expect(s).to eq(eval('"test"'))
   end
 end

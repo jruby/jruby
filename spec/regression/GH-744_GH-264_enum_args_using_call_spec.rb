@@ -10,8 +10,8 @@ describe "Enumerable#each_with_index with Enumerable#each implemented with a cal
     end
 
     no_args_each.new.each_with_index do |args, index|
-      args.should == nil
-      index.should == 0
+      expect(args).to eq(nil)
+      expect(index).to eq(0)
     end
   end
 
@@ -24,8 +24,8 @@ describe "Enumerable#each_with_index with Enumerable#each implemented with a cal
     end
 
     one_arg_each.new.each_with_index do |args, index|
-      args.should == "one"
-      index.should == 0
+      expect(args).to eq("one")
+      expect(index).to eq(0)
     end
   end
 
@@ -38,8 +38,8 @@ describe "Enumerable#each_with_index with Enumerable#each implemented with a cal
     end
 
     many_args_each.new.each_with_index do |args, index|
-      args.should == [0, 1, 2, 3]
-      index.should == 0
+      expect(args).to eq([0, 1, 2, 3])
+      expect(index).to eq(0)
     end
   end
 end
@@ -54,11 +54,11 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
     end
 
     no_args_method.new.enum_for(:my_method).each_with_index do |args, index|
-      args.should == nil
-      index.should == 0
+      expect(args).to eq(nil)
+      expect(index).to eq(0)
     end
 
-    no_args_method.new.enum_for(:my_method).next.should == nil
+    expect(no_args_method.new.enum_for(:my_method).next).to eq(nil)
   end
 
   it "passes the arg directly to the block if the method passes one arg" do
@@ -70,11 +70,11 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
     end
 
     one_arg_each.new.enum_for(:my_method) do |args, index|
-      args.should == "one"
-      index.should == 0
+      expect(args).to eq("one")
+      expect(index).to eq(0)
     end
 
-    one_arg_each.new.enum_for(:my_method).next.should == "one"
+    expect(one_arg_each.new.enum_for(:my_method).next).to eq("one")
   end
 
   it "passes an array of arguments to the block if the method passes multiple values" do
@@ -86,11 +86,11 @@ describe "Enumerator#each_with_index for a method implemented with a call rather
     end
 
     many_args_method.new.enum_for(:my_method).each_with_index do |args, index|
-      args.should == [0, 1, 2, 3]
-      index.should == 0
+      expect(args).to eq([0, 1, 2, 3])
+      expect(index).to eq(0)
     end
 
-    many_args_method.new.enum_for(:my_method).next.should == [0, 1, 2, 3]
+    expect(many_args_method.new.enum_for(:my_method).next).to eq([0, 1, 2, 3])
   end
 end
 
@@ -107,9 +107,9 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
   shared_examples "an Enumerable method which takes a block" do |arity_one_behavior|
     it "passes all #each args to its block" do
       @test_enum.send(subject) do |a, b, c|
-        a.should == 1
-        b.should == 2
-        c.should == 3
+        expect(a).to eq(1)
+        expect(b).to eq(2)
+        expect(c).to eq(3)
       end
     end
 
@@ -117,11 +117,11 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
       case arity_one_behavior
         when :array
           @test_enum.send(subject) do |obj|
-            obj.should == [1, 2, 3]
+            expect(obj).to eq([1, 2, 3])
           end
         when :first_arg
           @test_enum.send(subject) do |obj|
-            obj.should == 1
+            expect(obj).to eq(1)
           end
         else
           raise 'Unknown arity_one_behavior'
@@ -132,13 +132,13 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
 
   shared_examples "an Enumerable method which returns an enum element" do
     it "puts an array of all each args in the returned value" do
-      @test_enum.send(subject) { true }.should == [1, 2, 3]
+      expect(@test_enum.send(subject) { true }).to eq([1, 2, 3])
     end
   end
 
   shared_examples "an Enumerable method which returns an array" do |block_ret|
     it "puts an array of all each args in the returned array" do
-      @test_enum.send(subject) { block_ret.nil? ? true : block_ret}.should == [[1, 2, 3]]
+      expect(@test_enum.send(subject) { block_ret.nil? ? true : block_ret}).to eq([[1, 2, 3]])
     end
   end
 
@@ -168,7 +168,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :partition }
     it_behaves_like "an Enumerable method which takes a block", :array
     it "returns all #each args" do
-      @test_enum.partition { true }.should == [[[1, 2, 3]], []]
+      expect(@test_enum.partition { true }).to eq([[[1, 2, 3]], []])
     end
   end
 
@@ -194,7 +194,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :minmax }
     it_behaves_like "an Enumerable method which takes a block", :array
     it "returns all #each args" do
-      @test_enum.minmax.should == [[1, 2, 3], [1, 2, 3]]
+      expect(@test_enum.minmax).to eq([[1, 2, 3], [1, 2, 3]])
     end
   end
 
@@ -214,13 +214,13 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :minmax_by }
     it_behaves_like "an Enumerable method which takes a block", :array
     it "returns all #each args" do
-      @test_enum.minmax_by {|o| o}.should == [[1, 2, 3], [1, 2, 3]]
+      expect(@test_enum.minmax_by {|o| o}).to eq([[1, 2, 3], [1, 2, 3]])
     end
   end
 
   describe "Enumerable#include?" do
     it "tests against all #each args" do
-      @test_enum.include?([1, 2, 3]).should be_true
+      expect(@test_enum.include?([1, 2, 3])).to be true
     end
   end
 
@@ -246,7 +246,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
 
   describe "Enumerable#inject" do
     it "passes all each args to its block" do
-      @test_enum.inject(0) { |memo, obj| obj.should == [1, 2, 3] }
+      @test_enum.inject(0) { |memo, obj| expect(obj).to eq([1, 2, 3]) }
     end
   end
 
@@ -254,14 +254,14 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :group_by }
     it_behaves_like "an Enumerable method which takes a block", :array
     it "returns groups containing all #each arguments in an array" do
-      @test_enum.group_by { :x }.should == { :x => [[1, 2, 3]]}
+      expect(@test_enum.group_by { :x }).to eq({ :x => [[1, 2, 3]]})
     end
   end
 
   describe "Enumerable#cycle" do
     it "passes all #each args to its block" do
       @test_enum.cycle(1) do |obj|
-        obj.should == [1, 2, 3]
+        expect(obj).to eq([1, 2, 3])
       end
     end
   end
@@ -269,7 +269,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
   describe "Enumerable#each_slice" do
     it "passes all #each args to its block" do
       @test_enum.each_slice(1) do |obj|
-        obj.should == [[1, 2, 3]]
+        expect(obj).to eq([[1, 2, 3]])
       end
     end
   end
@@ -278,9 +278,9 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :drop_while }
     it_behaves_like "an Enumerable method which takes a block", :array
     it "returns all #each args even if its block does not use them" do
-      @test_enum.drop_while do |a|
+      expect(@test_enum.drop_while do |a|
         false
-      end.should == [[1, 2, 3]]
+      end).to eq([[1, 2, 3]])
     end
   end
 
@@ -288,9 +288,9 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
     subject { :take_while }
     it_behaves_like "an Enumerable method which takes a block", RUBY_VERSION >= '1.9' ? :first_arg : :array
     it "returns all #each args even if its block does not use them" do
-      @test_enum.take_while do |a|
+      expect(@test_enum.take_while do |a|
         true
-      end.should == [[1, 2, 3]]
+      end).to eq([[1, 2, 3]])
     end
   end
 
@@ -306,25 +306,25 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
 
   describe "Enumerable#grep" do
     it "finds array of all #each args" do
-      @test_enum.grep([1, 2, 3]).should == [[1, 2, 3]]
+      expect(@test_enum.grep([1, 2, 3])).to eq([[1, 2, 3]])
     end
   end
 
   describe "Enumerable#zip" do
     it "includes all #each args in the zipped array" do
-      @test_enum.zip.should == [[[1, 2, 3]]]
+      expect(@test_enum.zip).to eq([[[1, 2, 3]]])
     end
   end
 
   describe "Enumerable#each_cons" do
     it "puts all #each args in its block array" do
-      @test_enum.each_cons(1) { |obj| obj.should == [[1, 2, 3]] }
+      @test_enum.each_cons(1) { |obj| expect(obj).to eq([[1, 2, 3]]) }
     end
   end
 
   describe "Enumerable#each_with_object" do
     it "passes all each args to its block" do
-      @test_enum.each_with_object([]) { |obj, memo| obj.should == [1, 2, 3] }
+      @test_enum.each_with_object([]) { |obj, memo| expect(obj).to eq([1, 2, 3]) }
     end
   end
 
@@ -336,7 +336,7 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
   describe "Enumerable#slice_before" do
     it "passes all #each args to its block" do
       @test_enum.slice_before do |obj|
-	obj.should == [1, 2, 3]
+	expect(obj).to eq([1, 2, 3])
       end.each{}
     end
   end
@@ -349,15 +349,15 @@ describe "Enumerables whose #each method passes multiple values to a block.call 
   describe "Enumerable#chunk" do
     it "passes all #each args to its block" do
       @test_enum.chunk do |a, b, c|
-	a.should == 1
-	b.should == 2
-	c.should == 3
+	expect(a).to eq(1)
+	expect(b).to eq(2)
+	expect(c).to eq(3)
       end.each {}
     end
       
     it "passes all #each args to its block" do
       @test_enum.chunk do |obj|
-	obj.should == [1, 2, 3]
+	expect(obj).to eq([1, 2, 3])
       end.each{}
     end
   end

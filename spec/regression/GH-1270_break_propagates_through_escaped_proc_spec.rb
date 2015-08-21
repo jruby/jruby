@@ -33,6 +33,6 @@ describe "A break passing through an intermediate escaped closure" do
       end
     end
 
-    Enumerator1270.new {|y| y.yield 1}.each {break 1}.should == 1
+    expect(Enumerator1270.new {|y| y.yield 1}.each {break 1}).to eq(1)
   end
 end

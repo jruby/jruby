@@ -20,6 +20,6 @@ end
 
 describe "JRUBY-5987: Module include wrappers" do
   it "delegate to the included module for autoloads" do
-    MyModel.activate.to_s.should == "ActiveRecord::Associations::HasOneThroughAssociation"
+    expect(MyModel.activate.to_s).to eq("ActiveRecord::Associations::HasOneThroughAssociation")
   end
 end

@@ -6,6 +6,6 @@ end
 
 describe 'Constant lookup in stabby lambdas' do
   it 'should not crash' do
-    -> { C::D.new }.should_not raise_error
+    expect { C::D.new }.not_to raise_error
   end
 end

@@ -9,9 +9,9 @@ describe Ant, "targets" do
         property :name => "foo", :value => "bar"
       end
     end
-    ant.properties["foo"].should_not == "bar"
+    expect(ant.properties["foo"]).not_to eq("bar")
     ant.execute_target(:foo)
-    ant.properties["foo"].should == "bar"
+    expect(ant.properties["foo"]).to eq("bar")
   end
 
   it "#ant should accumulate targets and tasks in the same global project" do
@@ -21,7 +21,7 @@ describe Ant, "targets" do
     ant do
       target :b
     end
-    ant.project.targets.keys.to_a.should include("a", "b")
+    expect(ant.project.targets.keys.to_a).to include("a", "b")
   end
 
   it "should heed :if and :unless conditions" do
@@ -44,32 +44,36 @@ describe Ant, "targets" do
     ant.execute_target(:will_never_execute)
     ant.execute_target(:also_will_never_execute)
     ant.execute_target(:may_execute)
-    message.should == ""
+    expect(message).to be_empty
 
     ant.property :name => "bar", :value => "defined"
     ant.execute_target(:may_execute)
-    message.should_not == ""
+    expect(message).to_not be_empty
   end
 
   it "should execute target tasks and non-tasks in order" do
+    bar = nil
     ant = example_ant do
       target :foo do
         property :name => "bar", :value => "true"
-        ant.properties["bar"].should == "true"
+        bar = ant.properties["bar"]
       end
     end
     ant.execute_target(:foo)
+    expect(bar).to eq("true")
   end
 
   it "should be executable if it doesn't have a block" do
+    bar = nil
     ant = example_ant do
       target :foo do
         property :name => "bar", :value => "true"
-        ant.properties["bar"].should == "true"
+        bar = ant.properties["bar"]
       end
       target :bar, :depends => :foo
     end
     ant.execute_target(:bar)
+    expect(bar).to eq("true")
   end
 
   it "does not support antcall for calling other targets" do
@@ -79,7 +83,9 @@ describe Ant, "targets" do
         antcall :target => :foo
       end
     end
-    lambda { ant.execute_target(:bar) }.should raise_error
+    expect {
+      ant.execute_target(:bar)
+    }.to raise_error(Java::OrgApacheToolsAnt::BuildException)
   end
 
   it "does not support ant for calling other buildfiles" do
@@ -89,6 +95,6 @@ describe Ant, "targets" do
         ant :antfile => "some-file", :target => :foo
       end
     end
-    lambda { a.execute_target(:bar) }.should raise_error
+    expect { ant.execute_target(:bar) }.to raise_error(RuntimeError)
   end
 end
