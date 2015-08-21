@@ -27,6 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.psych;
 
+import java.io.InputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
@@ -42,19 +46,28 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 public class PsychLibrary implements Library {
-    // NOTE: we add the last .0 for format compat with libyaml version numbers
-    // TODO: This should always reflect the SnakeYAML version
-    private static final String SNAKEYAML_VERSION = "1.13.0";
     public void load(final Ruby runtime, boolean wrap) {
         RubyModule psych = runtime.defineModule("Psych");
-        
-        RubyString version = runtime.newString(SNAKEYAML_VERSION);
+
+        // load version from properties packed with the jar
+        Properties props = new Properties();
+        InputStream is = runtime.getJRubyClassLoader().getResourceAsStream("META-INF/maven/org.yaml/snakeyaml/pom.properties");
+        try {
+            props.load(is);
+        }
+        catch( IOException e ) {
+            // ignored
+        } finally {
+            try {is.close();} catch (IOException ioe) {}
+        }
+        RubyString version = runtime.newString(props.getProperty("version", "0.0") + ".0");
         version.setFrozen(true);
-        
-        final RubyArray versionElements = runtime.newArray(runtime.newFixnum(1), runtime.newFixnum(13), runtime.newFixnum(0));
+        psych.setConstant("SNAKEYAML_VERSION", version);
+
+        String[] versionParts = version.toString().split("\\.");
+        final RubyArray versionElements = runtime.newArray(runtime.newFixnum(Integer.parseInt(versionParts[0])), runtime.newFixnum(Integer.parseInt(versionParts[1])), runtime.newFixnum(Integer.parseInt(versionParts[2])));
         versionElements.setFrozen(true);
 
-        psych.setConstant("LIBYAML_VERSION", version);
         psych.getSingletonClass().addMethod("libyaml_version", new JavaMethodZero(psych, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {

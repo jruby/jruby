@@ -6,7 +6,7 @@ module Psych
     class TestToRuby < TestCase
       def setup
         super
-        @visitor = ToRuby.new
+        @visitor = ToRuby.create
       end
 
       def test_object
@@ -18,8 +18,8 @@ module Psych
         assert_equal 'bar', o.instance_variable_get(:@foo)
       end
 
-      def test_awesome
-        Psych.load('1900-01-01T00:00:00+00:00')
+      def test_tz_00_00_loads_without_error
+        assert Psych.load('1900-01-01T00:00:00+00:00')
       end
 
       def test_legacy_struct
@@ -88,7 +88,7 @@ description:
       end
 
       def test_exception
-        exc = Exception.new 'hello'
+        exc = ::Exception.new 'hello'
 
         mapping = Nodes::Mapping.new nil, '!ruby/exception'
         mapping.children << Nodes::Scalar.new('message')
@@ -320,6 +320,13 @@ description:
         list = seq.to_ruby
         assert_equal %w{ foo foo }, list
         assert_equal list[0].object_id, list[1].object_id
+      end
+
+      def test_mapping_with_str_tag
+        mapping = Nodes::Mapping.new(nil, '!strawberry')
+        mapping.children << Nodes::Scalar.new('foo')
+        mapping.children << Nodes::Scalar.new('bar')
+        assert_equal({'foo' => 'bar'}, mapping.to_ruby)
       end
     end
   end

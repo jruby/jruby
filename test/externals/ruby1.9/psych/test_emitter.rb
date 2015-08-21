@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require 'psych/helper'
+require_relative 'helper'
 
 module Psych
   class TestEmitter < TestCase
@@ -11,8 +11,7 @@ module Psych
     end
 
     def test_line_width
-      assert_equal 0, @emitter.line_width
-      assert_equal 10, @emitter.line_width = 10
+      @emitter.line_width = 10
       assert_equal 10, @emitter.line_width
     end
 

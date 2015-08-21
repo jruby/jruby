@@ -34,6 +34,7 @@ import java.util.Map;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -51,6 +52,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.encoding.CharsetTranscoder;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -135,10 +138,19 @@ public class PsychParser extends RubyObject {
 
         if (yaml instanceof RubyString) {
             ByteList byteList = ((RubyString)yaml).getByteList();
+            Encoding enc = byteList.getEncoding();
+
+            // if not unicode, transcode to UTF8
+            if (!(enc instanceof UnicodeEncoding)) {
+                byteList = CharsetTranscoder.strTranscode(context, (RubyString)yaml, enc, UTF8Encoding.INSTANCE, context.nil);
+                enc = UTF8Encoding.INSTANCE;
+            }
+
             ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
-            Charset charset = byteList.getEncoding().getCharset();
-            if (charset == null) charset = Charset.defaultCharset();
+            Charset charset = enc.getCharset();
+
+            assert charset != null : "charset for encoding " + enc + " should not be null";
 
             InputStreamReader isr = new InputStreamReader(bais, charset);
 
@@ -147,9 +159,10 @@ public class PsychParser extends RubyObject {
 
         // fall back on IOInputStream, using default charset
         if (yaml.respondsTo("read")) {
-            Charset charset = (yaml instanceof RubyIO)
-                ? ((RubyIO)yaml).getReadEncoding().getCharset()
-                : Charset.defaultCharset();
+            Encoding enc = (yaml instanceof RubyIO)
+                ? ((RubyIO)yaml).getReadEncoding()
+                : UTF8Encoding.INSTANCE;
+            Charset charset = enc.getCharset();
             return new StreamReader(new InputStreamReader(new IOInputStream(yaml), charset));
         } else {
             throw runtime.newTypeError(yaml, runtime.getIO());

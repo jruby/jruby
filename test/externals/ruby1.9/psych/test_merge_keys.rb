@@ -1,7 +1,55 @@
-require 'psych/helper'
+require_relative 'helper'
 
 module Psych
   class TestMergeKeys < TestCase
+    class Product
+      attr_reader :bar
+    end
+
+    def test_merge_key_with_bare_hash
+      doc = Psych.load <<-eodoc
+map:
+  <<:
+    hello: world
+      eodoc
+      hash = { "map" => { "hello" => "world" } }
+      assert_equal hash, doc
+    end
+
+    def test_roundtrip_with_chevron_key
+      h = {}
+      v = { 'a' => h, '<<' => h }
+      assert_cycle v
+    end
+
+    def test_explicit_string
+      doc = Psych.load <<-eoyml
+a: &me { hello: world }
+b: { !!str '<<': *me }
+eoyml
+      expected = {
+        "a" => { "hello" => "world" },
+        "b" => {
+          "<<" => { "hello" => "world" }
+        }
+      }
+      assert_equal expected, doc
+    end
+
+    def test_mergekey_with_object
+      s = <<-eoyml
+foo: &foo
+  bar: 10
+product:
+  !ruby/object:#{Product.name}
+  <<: *foo
+      eoyml
+      hash = Psych.load s
+      assert_equal({"bar" => 10}, hash["foo"])
+      product = hash["product"]
+      assert_equal 10, product.bar
+    end
+
     def test_merge_nil
       yaml = <<-eoyml
 defaults: &defaults

@@ -1,4 +1,4 @@
-require 'psych/helper'
+require_relative 'helper'
 
 module Psych
   class TestException < TestCase
@@ -14,6 +14,12 @@ module Psych
     def setup
       super
       @wups = Wups.new
+    end
+
+    def test_naming_exception
+      err     = String.xxx rescue $!
+      new_err = Psych.load(Psych.dump(err))
+      assert_equal err.message, new_err.message
     end
 
     def test_load_takes_file
@@ -56,27 +62,27 @@ module Psych
     end
 
     def test_parse_file_exception
-      t = Tempfile.new(['parsefile', 'yml'])
-      t.binmode
-      t.write '--- `'
-      t.close
-      ex = assert_raises(Psych::SyntaxError) do
-        Psych.parse_file t.path
-      end
-      assert_equal t.path, ex.file
-      t.close(true)
+      Tempfile.create(['parsefile', 'yml']) {|t|
+        t.binmode
+        t.write '--- `'
+        t.close
+        ex = assert_raises(Psych::SyntaxError) do
+          Psych.parse_file t.path
+        end
+        assert_equal t.path, ex.file
+      }
     end
 
     def test_load_file_exception
-      t = Tempfile.new(['loadfile', 'yml'])
-      t.binmode
-      t.write '--- `'
-      t.close
-      ex = assert_raises(Psych::SyntaxError) do
-        Psych.load_file t.path
-      end
-      assert_equal t.path, ex.file
-      t.close(true)
+      Tempfile.create(['loadfile', 'yml']) {|t|
+        t.binmode
+        t.write '--- `'
+        t.close
+        ex = assert_raises(Psych::SyntaxError) do
+          Psych.load_file t.path
+        end
+        assert_equal t.path, ex.file
+      }
     end
 
     def test_psych_parse_takes_file
@@ -128,7 +134,7 @@ module Psych
     end
 
     def test_psych_syntax_error
-      Tempfile.open(['parsefile', 'yml']) do |t|
+      Tempfile.create(['parsefile', 'yml']) do |t|
         t.binmode
         t.write '--- `'
         t.close
@@ -138,7 +144,6 @@ module Psych
         rescue StandardError
           assert true # count assertion
         ensure
-          t.close(true)
           return unless $!
 
           ancestors = $!.class.ancestors.inspect
