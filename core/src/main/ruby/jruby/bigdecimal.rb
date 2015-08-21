@@ -75,4 +75,39 @@ module BigMath
       window_result
     end
   end
+
+  def exp(x, prec)
+    raise ArgumentError if x.nil?
+    raise ArgumentError if x.is_a?(Complex)
+    raise ArgumentError unless (true if Integer(prec) rescue false)
+    prec = prec.to_i
+    raise ArgumentError if prec < 1
+    return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
+    return BigDecimal::NAN if x.is_a?(Float) && x.nan?
+    x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
+    return BigDecimal::NAN if x.nan?
+    return x.sign > 0 ? BigDecimal::INFINITY : BigDecimal(0, prec) if x.infinite?
+
+    df = BigDecimal.double_fig
+    n = prec + df
+    one = BigDecimal(1)
+    x = -x if neg = x.sign < 0
+
+    y = one;
+    d = y;
+    i = 1;
+
+    while d.nonzero? && ((m = n - (y.exponent - d.exponent).abs) > 0)
+      m = df if m < df
+      d = d.mult(x, n)
+      d = d.div(i, m)
+      y += d
+      i += 1;
+    end
+    if neg
+      one.div(y, prec)
+    else
+      y.round(prec - y.exponent)
+    end
+  end
 end
