@@ -16,6 +16,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -72,32 +73,32 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendManySameType(DynamicObject array, int otherSize, int[] other,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManySameTypeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject appendManySameType(DynamicObject array, int otherSize, long[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManySameTypeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendManySameType(DynamicObject array, int otherSize, double[] other,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManySameTypeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendManySameType(DynamicObject array, int otherSize, Object[] other,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManySameTypeGeneric(array, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManySameTypeGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
@@ -125,21 +126,21 @@ public abstract class AppendManyNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, int[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, long[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendManyBoxIntoObject(DynamicObject array, int otherSize, double[] other,
                                         @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayMirror.reflect(other), extendProfile);
+        appendManyBoxIntoObjectGeneric(array, otherSize, ArrayReflector.reflect(other), extendProfile);
         return array;
     }
 
@@ -183,50 +184,50 @@ public abstract class AppendManyNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendManyGeneralizeIntegerDouble(DynamicObject array, int otherSize, double[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendManyGeneralizeIntegerDouble(DynamicObject array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject appendManyGeneralizeLongDouble(DynamicObject array, int otherSize, double[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject appendManyGeneralizeLongDouble(DynamicObject array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendManyGeneralizeDoubleInteger(DynamicObject array, int otherSize, int[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendManyGeneralizeDoubleLong(DynamicObject array, int otherSize, long[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendManyGeneralizeDoubleObject(DynamicObject array, int otherSize, Object[] other) {
-        appendManyGeneralizeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)),
-                otherSize, ArrayMirror.reflect(other));
+        appendManyGeneralizeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)),
+                otherSize, ArrayReflector.reflect(other));
         return array;
     }
 

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -69,28 +70,28 @@ public abstract class AppendOneNode extends RubyNode {
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, int value,
                                    @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, long value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, double value,
                                 @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
     public DynamicObject appendOneSameType(DynamicObject array, Object value,
                                   @Cached("createBinaryProfile()") ConditionProfile extendProfile) {
-        appendOneSameTypeGeneric(array, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
+        appendOneSameTypeGeneric(array, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), value, extendProfile);
         return array;
     }
 
@@ -131,19 +132,19 @@ public abstract class AppendOneNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)", "!isInteger(value)", "!isLong(value)"})
     public DynamicObject appendOneGeneralizeInteger(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)", "!isInteger(value)", "!isLong(value)"})
     public DynamicObject appendOneGeneralizeLong(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), value);
         return array;
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)", "!isDouble(value)"})
     public DynamicObject appendOneGeneralizeDouble(DynamicObject array, Object value) {
-        appendOneGeneralizeGeneric(array, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), value);
+        appendOneGeneralizeGeneric(array, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), value);
         return array;
     }
 

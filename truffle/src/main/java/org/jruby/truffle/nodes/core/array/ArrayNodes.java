@@ -50,9 +50,9 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -1811,48 +1811,48 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectIntegerFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectIntegerFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectLongFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectLongFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectFloat(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectFloatNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectObject(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectObjectNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
@@ -1879,48 +1879,48 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }

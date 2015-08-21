@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -172,7 +173,7 @@ public class FeatureManager {
             try {
                 context.loadFile(path, currentNode);
             } catch (RaiseException e) {
-                final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
+                final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
                 final int length = Layouts.ARRAY.getSize(loadedFeatures);
                 for (int i = length - 1; i >= 0; i--) {
                     if (mirror.get(i) == pathString) {

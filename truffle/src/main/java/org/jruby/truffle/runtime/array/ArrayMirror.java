@@ -9,237 +9,26 @@
  */
 package org.jruby.truffle.runtime.array;
 
-import java.util.Arrays;
+public interface ArrayMirror {
 
-public abstract class ArrayMirror {
+    int getLength();
 
-    public static IntegerArrayMirror reflect(int[] array) {
-        return new IntegerArrayMirror(array);
-    }
+    Object get(int index);
 
-    public static LongArrayMirror reflect(long[] array) {
-        return new LongArrayMirror(array);
-    }
+    void set(int index, Object value);
 
-    public static DoubleArrayMirror reflect(double[] array) {
-        return new DoubleArrayMirror(array);
-    }
+    ArrayMirror copyArrayAndMirror(int newLength);
 
-    public static ObjectArrayMirror reflect(Object[] array) {
-        return new ObjectArrayMirror(array);
-    }
+    void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count);
 
-    public abstract int getLength();
-    public abstract Object get(int index);
-    public abstract void set(int index, Object value);
-    public abstract ArrayMirror copyArrayAndMirror(int newLength);
-    public abstract void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count);
-    public abstract void copyTo(Object[] destination, int sourceStart, int destinationStart, int count);
-    public abstract Object getArray();
+    void copyTo(Object[] destination, int sourceStart, int destinationStart, int count);
 
-    public Object copyArrayAndMirror() {
-        return copyArrayAndMirror(getLength());
-    }
+    Object getArray();
 
-    public Object[] getBoxedCopy() {
-        return getBoxedCopy(getLength());
-    }
+    Object copyArrayAndMirror();
 
-    public Object[] getBoxedCopy(int newLength) {
-        final Object[] boxed = new Object[newLength];
-        copyTo(boxed, 0, 0, Math.min(getLength(), newLength));
-        return boxed;
-    }
+    Object[] getBoxedCopy();
 
-    private static class IntegerArrayMirror extends ArrayMirror {
-
-        private final int[] array;
-
-        public IntegerArrayMirror(int[] array) {
-            this.array = array;
-        }
-
-        @Override
-        public int getLength() {
-            return array.length;
-        }
-
-        @Override
-        public Object get(int index) {
-            return array[index];
-        }
-
-        @Override
-        public void set(int index, Object value) {
-            array[index] = (int) value;
-        }
-
-        @Override
-        public ArrayMirror copyArrayAndMirror(int newLength) {
-            return new IntegerArrayMirror(Arrays.copyOf(array, newLength));
-        }
-
-        @Override
-        public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-            System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
-        }
-
-        @Override
-        public Object[] getBoxedCopy(int newLength) {
-            return ArrayUtils.box(array, newLength);
-        }
-
-        @Override
-        public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-            for (int n = 0; n < count; n++) {
-                destination[destinationStart + n] = array[sourceStart + n];
-            }
-        }
-
-        @Override
-        public Object getArray() {
-            return array;
-        }
-
-    }
-
-    private static class LongArrayMirror extends ArrayMirror {
-
-        private final long[] array;
-
-        public LongArrayMirror(long[] array) {
-            this.array = array;
-        }
-
-        @Override
-        public int getLength() {
-            return array.length;
-        }
-
-        @Override
-        public Object get(int index) {
-            return array[index];
-        }
-
-        @Override
-        public void set(int index, Object value) {
-            array[index] = (long) value;
-        }
-
-        @Override
-        public ArrayMirror copyArrayAndMirror(int newLength) {
-            return new LongArrayMirror(Arrays.copyOf(array, newLength));
-        }
-
-        @Override
-        public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-            System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
-        }
-
-        @Override
-        public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-            for (int n = 0; n < count; n++) {
-                destination[destinationStart + n] = array[sourceStart + n];
-            }
-        }
-
-        @Override
-        public Object getArray() {
-            return array;
-        }
-
-    }
-
-    private static class DoubleArrayMirror extends ArrayMirror {
-
-        private final double[] array;
-
-        public DoubleArrayMirror(double[] array) {
-            this.array = array;
-        }
-
-        @Override
-        public int getLength() {
-            return array.length;
-        }
-
-        @Override
-        public Object get(int index) {
-            return array[index];
-        }
-
-        @Override
-        public void set(int index, Object value) {
-            array[index] = (double) value;
-        }
-
-        @Override
-        public ArrayMirror copyArrayAndMirror(int newLength) {
-            return new DoubleArrayMirror(Arrays.copyOf(array, newLength));
-        }
-
-        @Override
-        public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-            System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
-        }
-
-        @Override
-        public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-            for (int n = 0; n < count; n++) {
-                destination[destinationStart + n] = array[sourceStart + n];
-            }
-        }
-
-        @Override
-        public Object getArray() {
-            return array;
-        }
-
-    }
-
-    private static class ObjectArrayMirror extends ArrayMirror {
-
-        private final Object[] array;
-
-        public ObjectArrayMirror(Object[] array) {
-            this.array = array;
-        }
-
-        @Override
-        public int getLength() {
-            return array.length;
-        }
-
-        @Override
-        public Object get(int index) {
-            return array[index];
-        }
-
-        @Override
-        public void set(int index, Object value) {
-            array[index] = value;
-        }
-
-        @Override
-        public ArrayMirror copyArrayAndMirror(int newLength) {
-            return new ObjectArrayMirror(ArrayUtils.copyOf(array, newLength));
-        }
-
-        @Override
-        public void copyTo(ArrayMirror destination, int sourceStart, int destinationStart, int count) {
-            System.arraycopy(array, sourceStart, destination.getArray(), destinationStart, count);
-        }
-
-        @Override
-        public void copyTo(Object[] destination, int sourceStart, int destinationStart, int count) {
-            System.arraycopy(array, sourceStart, destination, destinationStart, count);
-        }
-
-        @Override
-        public Object getArray() {
-            return array;
-        }
-
-    }
+    Object[] getBoxedCopy(int newLength);
 
 }
