@@ -92,15 +92,6 @@ public abstract class ArrayNodes {
         return ArrayUtils.boxUntil(Layouts.ARRAY.getStore(array), Layouts.ARRAY.getSize(array));
     }
 
-    public static void slowUnshift(DynamicObject array, Object... values) {
-        assert RubyGuards.isRubyArray(array);
-        final Object[] newStore = new Object[Layouts.ARRAY.getSize(array) + values.length];
-        System.arraycopy(values, 0, newStore, 0, values.length);
-        ArrayUtils.copy(Layouts.ARRAY.getStore(array), newStore, values.length, Layouts.ARRAY.getSize(array));
-        Layouts.ARRAY.setStore(array, newStore);
-        Layouts.ARRAY.setSize(array, newStore.length);
-    }
-
     public static void slowPush(DynamicObject array, Object value) {
         assert RubyGuards.isRubyArray(array);
         Layouts.ARRAY.setStore(array, Arrays.copyOf(ArrayUtils.box(Layouts.ARRAY.getStore(array)), Layouts.ARRAY.getSize(array) + 1));
@@ -4338,7 +4329,12 @@ public abstract class ArrayNodes {
         public DynamicObject unshift(DynamicObject array, Object... args) {
             CompilerDirectives.transferToInterpreter();
 
-            slowUnshift(array, args);
+            assert RubyGuards.isRubyArray(array);
+            final Object[] newStore = new Object[Layouts.ARRAY.getSize(array) + args.length];
+            System.arraycopy(args, 0, newStore, 0, args.length);
+            ArrayUtils.copy(Layouts.ARRAY.getStore(array), newStore, args.length, Layouts.ARRAY.getSize(array));
+            Layouts.ARRAY.setStore(array, newStore);
+            Layouts.ARRAY.setSize(array, newStore.length);
             return array;
         }
 
