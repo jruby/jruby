@@ -26,11 +26,13 @@ module BigMath
     raise ArgumentError unless (true if Integer(prec) rescue false)
     prec = prec.to_i
     raise ArgumentError if prec < 1
-    return BigDecimal::NAN if x == BigDecimal::INFINITY
-    return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
-    return BigDecimal::NAN if x.is_a?(Float) && x.nan?
+    if x.is_a?(BigDecimal) || x.is_a?(Float)
+      return BigDecimal::INFINITY if x.infinite?
+      return BigDecimal::NAN if x.nan?
+    end
     x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
-    return BigDecimal::NAN if x.infinite? || x.nan?
+    return BigDecimal::INFINITY if x.infinite?
+    return BigDecimal::NAN if x.nan?
 
     # this uses the series expansion of the Arctangh (Arc tangens hyperbolicus)
     # http://en.wikipedia.org/wiki/Area_hyperbolic_tangent
