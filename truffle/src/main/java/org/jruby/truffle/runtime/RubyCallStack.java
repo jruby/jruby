@@ -83,7 +83,7 @@ public abstract class RubyCallStack {
                 // Multiple top level methods (require) introduce null call nodes - ignore them
 
                 if (frameInstance.getCallNode() != null && depth >= omit) {
-                    if (!(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
+                    if (!filterNullSourceSection || !(frameInstance.getCallNode().getEncapsulatingSourceSection() instanceof NullSourceSection)) {
                         activations.add(new Activation(frameInstance.getCallNode(),
                                 frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize()));
                     }

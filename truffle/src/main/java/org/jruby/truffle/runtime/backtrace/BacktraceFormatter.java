@@ -16,8 +16,8 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.cli.Options;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -28,14 +28,21 @@ import java.util.List;
 public class BacktraceFormatter {
 
     public enum FormattingFlags {
-        OMIT_FROM_PREFIX
+        OMIT_FROM_PREFIX,
+        INCLUDE_CORE_FILES
     }
 
     private final RubyContext context;
     private final EnumSet<FormattingFlags> flags;
 
-    public BacktraceFormatter(RubyContext context) {
-        this(context, EnumSet.noneOf(FormattingFlags.class));
+    public static BacktraceFormatter createDefaultFormatter(RubyContext context) {
+        final EnumSet<FormattingFlags> flags = EnumSet.noneOf(FormattingFlags.class);
+
+        if (!Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES.load()) {
+            flags.add(FormattingFlags.INCLUDE_CORE_FILES);
+        }
+
+        return new BacktraceFormatter(context, flags);
     }
 
     public BacktraceFormatter(RubyContext context, EnumSet<FormattingFlags> flags) {
@@ -44,7 +51,9 @@ public class BacktraceFormatter {
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
-        printBacktrace(exception, backtrace, new PrintWriter(System.err));
+        try (PrintWriter writer = new PrintWriter(System.err)) {
+            printBacktrace(exception, backtrace, writer);
+        }
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
@@ -66,7 +75,7 @@ public class BacktraceFormatter {
 
             return lines;
         } catch (Exception e) {
-            return Arrays.asList(String.format("(exception while constructing backtrace: %s)", e.getStackTrace()[0].toString()));
+            return Arrays.asList(String.format("(exception while constructing backtrace: %s %s)", e.getMessage(), e.getStackTrace()[0].toString()));
         }
     }
 
@@ -78,7 +87,7 @@ public class BacktraceFormatter {
         final SourceSection reportedSourceSection;
         final String reportedName;
 
-        if (sourceSection instanceof CoreSourceSection) {
+        if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
             reportedSourceSection = nextUserSourceSection(activations, 1);
             reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
@@ -130,14 +139,14 @@ public class BacktraceFormatter {
         }
     }
 
-    public static String formatLine(List<Activation> activations, int n) {
+    public String formatLine(List<Activation> activations, int n) {
         final Activation activation = activations.get(n);
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
 
-        if (sourceSection instanceof CoreSourceSection) {
-            reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
+        if (isCore(sourceSection) && !flags.contains(FormattingFlags.INCLUDE_CORE_FILES)) {
+            reportedSourceSection = nextUserSourceSection(activations, n);
             reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
             reportedSourceSection = sourceSection;
@@ -145,13 +154,17 @@ public class BacktraceFormatter {
         }
 
         final StringBuilder builder = new StringBuilder();
+
         if (reportedSourceSection instanceof NullSourceSection) {
+            builder.append(reportedSourceSection.getShortDescription());
+        } else if (reportedSourceSection == null) {
             builder.append("???");
         } else {
             builder.append(reportedSourceSection.getSource().getName());
             builder.append(":");
             builder.append(reportedSourceSection.getStartLine());
         }
+
         builder.append(":in `");
         builder.append(reportedName);
         builder.append("'");
@@ -159,17 +172,21 @@ public class BacktraceFormatter {
         return builder.toString();
     }
 
-    private static SourceSection nextUserSourceSection(List<Activation> activations, int n) {
+    private SourceSection nextUserSourceSection(List<Activation> activations, int n) {
         while (n < activations.size()) {
             SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
 
-            if (!(sourceSection instanceof CoreSourceSection)) {
+            if (!isCore(sourceSection)) {
                 return sourceSection;
             }
 
             n++;
         }
         return null;
+    }
+
+    private boolean isCore(SourceSection sourceSection) {
+        return sourceSection instanceof NullSourceSection || sourceSection.getSource().getPath().startsWith("core:");
     }
 
 }

@@ -65,7 +65,7 @@ public class AtExitManager {
                 ProcNodes.rootCall(block);
             } catch (RaiseException e) {
                 final Object rubyException = e.getRubyException();
-                new BacktraceFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+                BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             } catch (Exception e) {
                 e.printStackTrace();
             }

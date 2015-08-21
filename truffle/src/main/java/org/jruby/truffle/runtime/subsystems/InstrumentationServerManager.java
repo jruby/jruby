@@ -70,7 +70,7 @@ public class InstrumentationServerManager {
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    final List<String> lines = new BacktraceFormatter(context).formatBacktrace(null, backtrace);
+                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");

@@ -88,7 +88,7 @@ public class SimpleShell {
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        new BacktraceFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
+                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
             }
         }
@@ -104,7 +104,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(new BacktraceFormatter(context).formatLine(Arrays.asList(activation), 0));
+            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Arrays.asList(activation), 0));
             n++;
         }
     }

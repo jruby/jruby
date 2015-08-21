@@ -138,6 +138,8 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs");
 
+    public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
+
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");
     public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_uncached", false, "Always use uncached dispatch for the metaprogramming methods #__send__, #send and #respond_to?, and for any call site that has to use #method_missing or #const_missing.");
