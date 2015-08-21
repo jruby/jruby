@@ -36,7 +36,7 @@ public class OMProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
         for (Element element : roundEnvironment.getElementsAnnotatedWith(Layout.class)) {
-            assert element.getKind() == ElementKind.CLASS;
+            assert element.getKind() == ElementKind.INTERFACE : element.getKind();
             processLayout((TypeElement) element);
         }
 

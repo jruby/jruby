@@ -133,7 +133,7 @@ public class LayoutParser {
         List<? extends VariableElement> parameters = methodElement.getParameters();
 
         if (hasShapeProperties || (superLayout != null && superLayout.hasShapeProperties())) {
-            assert parameters.get(0).asType().toString().equals(DynamicObjectFactory.class.toString());
+            assert parameters.get(0).asType().toString().equals(DynamicObjectFactory.class.getName()) : parameters.get(0).asType();
             parameters = parameters.subList(1, parameters.size());
         }
 
@@ -176,9 +176,6 @@ public class LayoutParser {
         assert methodElement.getParameters().size() == 1;
 
         final String type = methodElement.getParameters().get(0).asType().toString();
-        assert type.equals(DynamicObject.class.getName()) || type.equals(Object.class.getName());
-
-        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
 
         if (type.equals(DynamicObject.class.getName())) {
             assert !hasDynamicObjectGuard;
@@ -189,6 +186,8 @@ public class LayoutParser {
         } else if (type.equals(Object.class.getName())) {
             assert !hasObjectGuard;
             hasObjectGuard = true;
+        } else {
+            assert false : "Unknown type for the first guard parameter: " + type;
         }
     }
 
@@ -240,8 +239,6 @@ public class LayoutParser {
             assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
         }
 
-        assert methodElement.getParameters().get(1).getSimpleName().toString().equals("value");
-
         String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
 
         if (isUnsafeSetter) {
@@ -281,7 +278,7 @@ public class LayoutParser {
         if (builder.getType() == null) {
             builder.setType(type);
         } else {
-            assert builder.getType().equals(type);
+            assert builder.getType().toString().equals(type.toString());
         }
     }
 
