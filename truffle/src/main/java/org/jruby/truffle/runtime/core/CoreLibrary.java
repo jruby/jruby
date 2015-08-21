@@ -595,7 +595,7 @@ public class CoreLibrary {
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
             DynamicObject signalName = StringNodes.createString(context.getCoreLibrary().getStringClass(), signal.getKey());
             Object[] objects = new Object[]{signalName, signal.getValue()};
-            signals[i++] = ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            signals[i++] = ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
         Layouts.MODULE.getFields(signalModule).setConstant(node, "SIGNAL_LIST", ArrayNodes.createGeneralArray(arrayClass, signals, signals.length));

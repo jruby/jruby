@@ -69,7 +69,7 @@ public abstract class ArrayNodes {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 
-    public static Object storeFromObjects(RubyContext context, Object... objects) {
+    public static Object storeSpecialisedFromObjects(RubyContext context, Object... objects) {
         if (objects.length == 0) {
             return null;
         }
@@ -501,7 +501,7 @@ public abstract class ArrayNodes {
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return readNormalizedSliceNode.executeReadSlice(frame, (DynamicObject) array, normalizedIndex, length);
+                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
             }
         }
 
@@ -509,14 +509,14 @@ public abstract class ArrayNodes {
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{a};
-            return fallback(frame, array, createGeneralArray(arrayClass, storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length));
+            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
         }
 
         @Specialization(guards = { "!isIntegerFixnumRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{a, b};
-            return fallback(frame, array, createGeneralArray(arrayClass, storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length));
+            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
         }
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {

@@ -157,7 +157,7 @@ public abstract class ObjectSpaceNodes {
                 registerFinalizer(object, finalizer);
                 DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
                 Object[] objects = new Object[]{0, finalizer};
-                return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+                return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));

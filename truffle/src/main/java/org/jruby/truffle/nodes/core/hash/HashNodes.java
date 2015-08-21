@@ -283,7 +283,7 @@ public abstract class HashNodes {
         @Specialization
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            return ruby(frame, "_constructor_fallback(*args)", "args", ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), args), args.length));
+            return ruby(frame, "_constructor_fallback(*args)", "args", ArrayNodes.createGeneralArray(arrayClass, args, args.length));
         }
 
         public static boolean isSmallArrayOfPairs(Object[] args) {
@@ -1304,7 +1304,7 @@ public abstract class HashNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{key, value};
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
@@ -1365,7 +1365,7 @@ public abstract class HashNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{key, value};
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }

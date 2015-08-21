@@ -271,7 +271,7 @@ public abstract class ProcNodes {
                 DynamicObject file = createString(sourceSection.getSource().getName());
                 DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+                return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
             }
         }
 

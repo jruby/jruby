@@ -1290,7 +1290,7 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1348,7 +1348,7 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
@@ -1396,7 +1396,7 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
@@ -1427,7 +1427,7 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
@@ -1769,7 +1769,7 @@ public abstract class KernelNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }

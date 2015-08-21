@@ -177,7 +177,7 @@ public abstract class StringPrimitiveNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = ret.toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
         private DynamicObject makeString(DynamicObject source, int index, int length) {

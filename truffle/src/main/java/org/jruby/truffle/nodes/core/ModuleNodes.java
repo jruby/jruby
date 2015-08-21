@@ -349,7 +349,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = ancestors.toArray(new Object[ancestors.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -848,7 +848,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = constantsArray.toArray(new Object[constantsArray.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
@@ -1246,7 +1246,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -1355,7 +1355,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -1512,7 +1512,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -1562,7 +1562,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -1622,7 +1622,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -1672,7 +1672,7 @@ public abstract class ModuleNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 

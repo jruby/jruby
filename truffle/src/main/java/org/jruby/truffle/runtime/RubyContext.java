@@ -508,7 +508,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         DynamicObject arrayClass = coreLibrary.getArrayClass();
-        return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), store), store.length);
+        return ArrayNodes.createGeneralArray(arrayClass, store, store.length);
     }
 
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {

@@ -463,12 +463,12 @@ public abstract class VMPrimitiveNodes {
 
                 DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
                 Object[] objects = new Object[]{createString(key), createString(stringValue)};
-                sectionKeyValues.add(ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length));
+                sectionKeyValues.add(ArrayNodes.createGeneralArray(arrayClass, objects, objects.length));
             }
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = sectionKeyValues.toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
@@ -539,7 +539,7 @@ public abstract class VMPrimitiveNodes {
 
             DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{output, termsig, stopsig, pid};
-            return ArrayNodes.createGeneralArray(arrayClass, ArrayNodes.storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
 
     }
