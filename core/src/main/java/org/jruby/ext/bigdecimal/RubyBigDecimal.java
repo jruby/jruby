@@ -1518,6 +1518,37 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
+    @JRubyMethod(name = "to_r")
+    public IRubyObject to_r(ThreadContext context) {
+        checkFloatDomain();
+
+        RubyArray i = split(context);
+        long sign = (long)i.get(0);
+        String digits = (String)i.get(1).toString();
+        long base = (long)i.get(2);
+        long power = (long)i.get(3);
+        long denomi_power = power - digits.length();
+
+        IRubyObject bigDigits = RubyBignum.newBignum(getRuntime(), (String)digits).op_mul(context, sign);
+        RubyBignum numerator;
+        if(bigDigits instanceof RubyBignum) {
+          numerator = (RubyBignum)bigDigits;
+        }
+        else {
+          numerator = RubyBignum.newBignum(getRuntime(), bigDigits.toString());
+        }
+        IRubyObject num, den;
+        if(denomi_power < 0) {
+            num = numerator;
+            den = RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), -denomi_power));
+        }
+        else {
+            num = numerator.op_pow(context, RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), denomi_power)));
+            den = RubyFixnum.newFixnum(getRuntime(), 1);
+        }
+        return RubyRational.newInstance(context, context.runtime.getRational(), num, den);
+    }
+
     public IRubyObject to_int19() {
         return to_int();
     }
