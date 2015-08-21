@@ -26,7 +26,7 @@ default_gems =
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
-   ImportedGem.new( 'psych', '2.0.14', true ),
+   ImportedGem.new( 'psych', '2.0.15', true ),
    ImportedGem.new( 'json', 'json.version', true ),
    ImportedGem.new( 'jar-dependencies', '0.1.15', true )
   ]
