@@ -43,6 +43,8 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
+import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
+import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -56,6 +58,7 @@ import org.jruby.truffle.pack.parser.FormatParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -73,7 +76,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @CoreClass(name = "Kernel")
 public abstract class KernelNodes {
@@ -1124,7 +1130,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject proc(NotProvided block) {
+        public DynamicObject lambda(NotProvided block) {
             final Frame parentFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameAccess.READ_ONLY, true);
             final DynamicObject parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
 
@@ -1132,16 +1138,15 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
             }
-            return proc(parentBlock);
+            return lambda(parentBlock);
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject proc(DynamicObject block) {
+        public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
                     Layouts.PROC.getDeclarationFrame(block),
@@ -1342,26 +1347,18 @@ public abstract class KernelNodes {
     @CoreMethod(names = "proc", isModuleFunction = true, needsBlock = true)
     public abstract static class ProcNode extends CoreMethodArrayArgumentsNode {
 
+        @Child ProcNewNode procNewNode;
+
         public ProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            procNewNode = ProcNewNodeFactory.create(context, sourceSection, null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
-        public DynamicObject proc(DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
-            return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcClass(),
-                    ProcNodes.Type.PROC,
-                    Layouts.PROC.getSharedMethodInfo(block),
-                    Layouts.PROC.getCallTargetForProcs(block),
-                    Layouts.PROC.getCallTargetForProcs(block),
-                    Layouts.PROC.getCallTargetForLambdas(block),
-                    Layouts.PROC.getDeclarationFrame(block),
-                    Layouts.PROC.getMethod(block),
-                    Layouts.PROC.getSelf(block),
-                    Layouts.PROC.getBlock(block));
+        @Specialization
+        public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {
+            return procNewNode.executeProcNew(frame, getContext().getCoreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, maybeBlock);
         }
+
     }
 
     @CoreMethod(names = "protected_methods", optional = 1)

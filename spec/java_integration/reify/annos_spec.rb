@@ -16,7 +16,7 @@ describe "JRuby annotation processing:" do
     end
 
     it "has two annotated methods" do
-      Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods).size.should == 2
+      expect(Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods).size).to eq(2)
     end
   end
 
@@ -29,7 +29,7 @@ describe "JRuby annotation processing:" do
     end
 
     it "has an annotated parameter" do
-      Java::java_integration.fixtures.ParameterAnnotations.countAnnotated(ClassWithAnnotatedParams).size.should == 1
+      expect(Java::java_integration.fixtures.ParameterAnnotations.countAnnotated(ClassWithAnnotatedParams).size).to eq(1)
     end
   end
 
@@ -47,7 +47,7 @@ describe "JRuby annotation processing:" do
     end
 
     it "has two annotated methods" do
-      Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods2).size.should == 2
+      expect(Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods2).size).to eq(2)
     end
   end
 
@@ -67,7 +67,7 @@ describe "JRuby annotation processing:" do
     end
 
     it "has two annotated fields" do
-      Java::java_integration.fixtures.FieldAnnotations.countAnnotated(cls).size.should == 2
+      expect(Java::java_integration.fixtures.FieldAnnotations.countAnnotated(cls).size).to eq(2)
     end
   end
 end

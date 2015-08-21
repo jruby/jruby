@@ -13,7 +13,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.gets
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking gets(rs)" do
@@ -21,7 +21,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.gets("foo")
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking eof?" do
@@ -29,7 +29,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.eof?
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking getc" do
@@ -37,7 +37,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.getc
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking readlines" do
@@ -45,7 +45,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.readlines
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking read" do
@@ -53,7 +53,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.read
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking read(n)" do
@@ -61,7 +61,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.read(1)
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking readpartial" do
@@ -69,7 +69,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.readpartial(1)
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   it "should be 'sleep' while blocking sysread" do
@@ -77,7 +77,7 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
       @client.sysread(1)
     }
     wait_block(thread)
-    thread.status.should == 'sleep'
+    expect(thread.status).to eq('sleep')
   end
 
   # See JRUBY-5122 spec for the reason of this value
@@ -92,10 +92,10 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     if blocked
-      thread.status.should == 'sleep'
+      expect(thread.status).to eq('sleep')
     else
       # it's OK since write is not blocked. we cannot test this behavior for such case.
-      thread.status.should == false
+      expect(thread.status).to eq(false)
     end
   end
 
@@ -108,10 +108,10 @@ describe "Thread#status behavior while blocking IO: JRUBY-5238" do
     }
     wait_block(thread)
     if blocked
-      thread.status.should == 'sleep'
+      expect(thread.status).to eq('sleep')
     else
       # it's OK since write is not blocked. we cannot test this behavior for such case.
-      thread.status.should == false
+      expect(thread.status).to eq(false)
     end
   end
 

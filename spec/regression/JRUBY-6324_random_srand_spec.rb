@@ -3,7 +3,7 @@ require 'java'
 describe "JRUBY-6324: random seed for srand is not initialized properly" do
   it "initializes initial seed for PRNG" do
     rt = Java.org.jruby.embed.ScriptingContainer.new(org.jruby.embed.LocalContextScope::SINGLETHREAD)
-    rt.run_scriptlet("srand").should > 0
+    expect(rt.run_scriptlet("srand")).to be > 0
   end
 
   it "initializes initial seed for PRNG" do
@@ -17,6 +17,6 @@ describe "JRUBY-6324: random seed for srand is not initialized properly" do
     #
     # Cross runtime object passing is evil.  I should implement Channel for
     # this purpose.
-    String.new(id1.to_s).should == String.new(id2.to_s)
+    expect(String.new(id1.to_s)).to eq(String.new(id2.to_s))
   end
 end

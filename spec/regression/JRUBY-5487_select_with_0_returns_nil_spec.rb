@@ -23,29 +23,29 @@ describe "Kernel#select with a zero timeout" do
     readables, writables, errables = 
       Kernel.select([@client_sock], nil, nil, 0)
 
-    readables.should_not be_nil
-    readables[0].should == @client_sock
-    errables.should == []
+    expect(readables).not_to be_nil
+    expect(readables[0]).to eq(@client_sock)
+    expect(errables).to eq([])
   end
 
   it "selects a single writable socket" do
     readables, writables, errables = 
       Kernel.select(nil, [@client_sock], nil, 0)
 
-    writables.should_not be_nil
-    writables[0].should == @client_sock
+    expect(writables).not_to be_nil
+    expect(writables[0]).to eq(@client_sock)
   end
 
   it "selects a readable (data in buffer), writable socket as readable and writable" do
     readables, writables, errables = 
       Kernel.select([@client_sock], [@client_sock], [@client_sock], 0)
 
-    readables.should_not be_nil
-    writables.should_not be_nil
-    errables.should_not be_nil
+    expect(readables).not_to be_nil
+    expect(writables).not_to be_nil
+    expect(errables).not_to be_nil
     
-    readables[0].should == @client_sock
-    writables[0].should == @client_sock
+    expect(readables[0]).to eq(@client_sock)
+    expect(writables[0]).to eq(@client_sock)
   end
 
 

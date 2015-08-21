@@ -17,23 +17,26 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-import java.io.FileNotFoundException;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Set;
 
 @SupportedAnnotationTypes("org.jruby.truffle.om.dsl.api.Layout")
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class OMProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
         for (Element element : roundEnvironment.getElementsAnnotatedWith(Layout.class)) {
-            assert element.getKind() == ElementKind.CLASS;
+            assert element.getKind() == ElementKind.INTERFACE : element.getKind();
             processLayout((TypeElement) element);
         }
 
@@ -51,7 +54,7 @@ public class OMProcessor extends AbstractProcessor {
 
             JavaFileObject output = processingEnv.getFiler().createSourceFile(layout.getInterfaceFullName() + "Impl", layoutElement);
 
-            try (PrintStream stream = new PrintStream(output.openOutputStream())) {
+            try (PrintStream stream = new PrintStream(output.openOutputStream(), false, "US-ASCII")) {
                 generator.generate(stream);
             }
         } catch (IOException e) {
@@ -60,9 +63,9 @@ public class OMProcessor extends AbstractProcessor {
     }
 
     public static void log(String file, String message) {
-        try (PrintStream stream = new PrintStream(new FileOutputStream(file, true))) {
+        try (PrintStream stream = new PrintStream(new FileOutputStream(file, true), false, "US-ASCII")) {
             stream.println(message);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

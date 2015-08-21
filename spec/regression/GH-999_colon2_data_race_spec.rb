@@ -40,6 +40,6 @@ describe "Colon2 lookup with changing receiver under concurrent load" do
     ary = []
     50.times { ary << Thread.new { 10000.times { obj3.casething(obj1); obj3.casething(obj2) } } }
 
-    lambda { ary.each(&:join) }.should_not raise_error
+    expect { ary.each(&:join) }.not_to raise_error
   end
 end

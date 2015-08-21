@@ -38,10 +38,13 @@ describe "Object extensions" do
       class Foo
         def initialize
           java_import java.util.Properties
-          Properties.should == java.util.Properties
+        end
+
+        def props
+          Properties
         end
       end
-      Foo.new
+      expect(Foo.new.props).to eq(java.util.Properties)
     end
   end
 

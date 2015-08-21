@@ -10,8 +10,8 @@ describe 'JRUBY-5773: assignment in a method with default argument strip off oth
     end
     obj = cls.new
 
-    obj.foo2(1, 2).should == [1, 2]
-    obj.foo3(1, 2).should == [1, 2]
-    obj.foo4(1, 2).should == [1, 2]
+    expect(obj.foo2(1, 2)).to eq([1, 2])
+    expect(obj.foo3(1, 2)).to eq([1, 2])
+    expect(obj.foo4(1, 2)).to eq([1, 2])
   end
 end

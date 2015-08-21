@@ -6,7 +6,7 @@ describe 'Time#+' do
     time_p1 = time + 1
     time_p1_m1 = time_p1 - 1
 
-    (time_p1.to_i - time.to_i).should == 1
-    time_p1_m1.to_i.should == time.to_i
+    expect(time_p1.to_i - time.to_i).to eq(1)
+    expect(time_p1_m1.to_i).to eq(time.to_i)
   end
 end

@@ -55,13 +55,15 @@ describe "SkinnyMethodAdapter" do
     
     insn_opcodes.each do |opcode|
       opcode = opcode.downcase
-      instance_methods.should include(opcode)
+      expect(instance_methods).to include(opcode)
     end
     
-    instance_methods.should include("go_to")
-    instance_methods.should include("voidreturn")
-    instance_methods.should include("instance_of")
-    instance_methods.should include("newobj")
+    expect(instance_methods).to include(
+      "go_to",
+      "voidreturn",
+      "instance_of",
+      "newobj"
+    )
   end
 end
 

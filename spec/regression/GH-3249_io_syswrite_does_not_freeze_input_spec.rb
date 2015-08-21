@@ -8,7 +8,7 @@ describe "IO#syswrite" do
       str = "string"
       w.syswrite(str)
 
-      str.frozen?.should_not == true
+      expect(str.frozen?).not_to eq(true)
     ensure
       w.close
     end

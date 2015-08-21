@@ -105,7 +105,7 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <rspec-core.version>2.14.2</rspec-core.version>
+    <rspec-core.version>3.3.2</rspec-core.version>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
@@ -116,16 +116,16 @@ DO NOT MODIFIY - GENERATED CODE
     <rake.version>10.1.0</rake.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
-    <rspec-expectations.version>2.14.0</rspec-expectations.version>
+    <rspec-expectations.version>3.3.1</rspec-expectations.version>
     <asm.version>5.0.3</asm.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <krypt.version>0.0.2.rc1</krypt.version>
     <test-unit.version>3.0.3</test-unit.version>
     <rdoc.version>4.1.0</rdoc.version>
-    <rspec.version>2.14.1</rspec.version>
+    <rspec.version>3.3.0</rspec.version>
     <base.java.version>1.7</base.java.version>
-    <rspec-mocks.version>2.14.1</rspec-mocks.version>
+    <rspec-mocks.version>3.3.2</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>

@@ -12,16 +12,16 @@ describe "JRuby" do
 
   C = ClassWithMultipleSignaturesWithPrimitiveArgs # for brevity
   it "chooses most appropriate method for a given primitive argument" do
-    C.foo1(@int).should == "int"
-    C.foo1(@float).should == "float"
-    C.foo2(Object.new, @int).should == "int"
-    C.foo2(Object.new, @float).should == "float"
+    expect(C.foo1(@int)).to eq("int")
+    expect(C.foo1(@float)).to eq("float")
+    expect(C.foo2(Object.new, @int)).to eq("int")
+    expect(C.foo2(Object.new, @float)).to eq("float")
   end
 end
 
 describe "A class with two inexact overloads" do
   it "will have the most specific overload called" do
-    GenericComparable.new.compareTo(0).should == 0
-    GenericComparable.new.compareTo('foo').should == 1
+    expect(GenericComparable.new.compareTo(0)).to eq(0)
+    expect(GenericComparable.new.compareTo('foo')).to eq(1)
   end
 end

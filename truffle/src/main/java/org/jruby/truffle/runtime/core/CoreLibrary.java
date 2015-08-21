@@ -33,15 +33,19 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
-import org.jruby.truffle.nodes.ext.*;
+import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
+import org.jruby.truffle.nodes.ext.DigestNodesFactory;
+import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
-import org.jruby.truffle.nodes.rubinius.*;
+import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
+import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -656,11 +660,7 @@ public class CoreLibrary {
             }
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
-                System.err.println(line);
-            }
-
+            BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             throw new TruffleFatalException("couldn't load the core library", e);
         } finally {
             state = State.LOADED;
@@ -910,6 +910,11 @@ public class CoreLibrary {
         return localJumpError("no block given", currentNode);
     }
 
+    public DynamicObject breakFromProcClosure(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return localJumpError("break from proc-closure", currentNode);
+    }
+
     public DynamicObject unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return localJumpError("unexpected return", currentNode);
@@ -923,6 +928,12 @@ public class CoreLibrary {
     public DynamicObject typeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(typeErrorClass, StringNodes.createString(context.getCoreLibrary().getStringClass(), message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        String className = Layouts.MODULE.getFields(rubyClass).getName();
+        return typeError(String.format("allocator undefined for %s", className), currentNode);
     }
 
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {

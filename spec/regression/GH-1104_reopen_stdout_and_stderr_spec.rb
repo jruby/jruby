@@ -11,7 +11,7 @@ describe 'reopen $stdout and $stderr' do
         stream.reopen(tmp, 'r+')
         stream.puts('test')
         stream.rewind
-        stream.read(5).should == "test\n"
+        expect(stream.read(5)).to eq("test\n")
       ensure
         stream.reopen(original_fd) # restore stdout/stderr
         tmp.close!

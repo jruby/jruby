@@ -252,7 +252,6 @@ public abstract class MethodNodes {
                     method.getSharedMethodInfo(),
                     callTarget,
                     callTarget,
-                    callTarget,
                     method.getDeclarationFrame(),
                     method,
                     Layouts.METHOD.getReceiver(methodObject),

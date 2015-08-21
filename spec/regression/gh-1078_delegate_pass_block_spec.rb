@@ -15,6 +15,6 @@ describe "SimpleDelegator" do
       [key,value]
     end
 
-    mapped_result.should == [["key", "value"]]
+    expect(mapped_result).to eq([["key", "value"]])
   end
 end

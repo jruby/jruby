@@ -10,7 +10,7 @@ describe "A Java object" do
     hash = {:foo => list}
 
     marshaled = Marshal.load(Marshal.dump(hash))
-    marshaled[:foo].class.should == ArrayList
-    marshaled[:foo][0].should == 'foo'
+    expect(marshaled[:foo].class).to eq(ArrayList)
+    expect(marshaled[:foo][0]).to eq('foo')
   end
 end

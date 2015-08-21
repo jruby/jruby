@@ -12,14 +12,14 @@ describe "A non-wrapped Java error" do
     rescue OutOfMemoryError => oome
     end
 
-    oome.should == exception
+    expect(oome).to eq(exception)
   end
 
   it "can be rescued using Object" do
     begin
       raise OutOfMemoryError.new
     rescue Object => e
-      e.should be_kind_of(OutOfMemoryError)
+      expect(e).to be_kind_of(OutOfMemoryError)
     end
   end
 
@@ -30,17 +30,17 @@ describe "A non-wrapped Java error" do
     rescue Exception => e
     end
 
-    e.should == exception
+    expect(e).to eq(exception)
   end
 
   it "cannot be rescued using StandardError" do
     exception = OutOfMemoryError.new
-    lambda do
+    expect do
       begin
         raise exception
       rescue => e
       end
-    end.should raise_error(exception)
+    end.to raise_error(exception)
   end
 
   it "cannot be rescued inline" do
@@ -49,9 +49,9 @@ describe "A non-wrapped Java error" do
       raise OutOfMemoryError.new
     end
 
-    lambda do
+    expect do
       obj.go rescue 'foo'
-    end.should raise_error(OutOfMemoryError)
+    end.to raise_error(OutOfMemoryError)
   end
 end
 
@@ -63,14 +63,14 @@ describe "A non-wrapped Java exception" do
     rescue java.lang.NullPointerException => npe
     end
 
-    npe.should == exception
+    expect(npe).to eq(exception)
   end
 
   it "can be rescued using Object" do
     begin
       raise java.lang.NullPointerException.new
     rescue Object => e
-      e.should be_kind_of(java.lang.NullPointerException)
+      expect(e).to be_kind_of(java.lang.NullPointerException)
     end
   end
 
@@ -78,7 +78,7 @@ describe "A non-wrapped Java exception" do
     begin
       raise java.lang.NullPointerException.new
     rescue Exception => e
-      e.should be_kind_of(java.lang.NullPointerException)
+      expect(e).to be_kind_of(java.lang.NullPointerException)
     end
   end
 
@@ -86,7 +86,7 @@ describe "A non-wrapped Java exception" do
     begin
       raise java.lang.NullPointerException.new
     rescue StandardError => e
-      e.should be_kind_of(java.lang.NullPointerException)
+      expect(e).to be_kind_of(java.lang.NullPointerException)
     end
   end
 
@@ -96,7 +96,7 @@ describe "A non-wrapped Java exception" do
       raise java.lang.NullPointerException.new
     end
 
-    (obj.go rescue 'foo').should == 'foo'
+    expect { obj.go rescue 'foo' }.not_to raise_error
   end
 
   it "can be rescued dynamically using Module" do
@@ -107,7 +107,7 @@ describe "A non-wrapped Java exception" do
     begin
       raise java.lang.NullPointerException.new
     rescue mod => e
-      e.should be_kind_of(java.lang.NullPointerException)
+      expect(e).to be_kind_of(java.lang.NullPointerException)
     end
   end
 
@@ -119,7 +119,7 @@ describe "A non-wrapped Java exception" do
     begin
       raise java.lang.NullPointerException.new
     rescue cls => e
-      e.should be_kind_of(java.lang.NullPointerException)
+      expect(e).to be_kind_of(java.lang.NullPointerException)
     end
   end
 end
@@ -127,10 +127,10 @@ end
 describe "A Ruby-level exception" do
   it "carries its message along to the Java exception" do
     java_ex = JRuby.runtime.new_runtime_error("error message");
-    java_ex.message.should == "(RuntimeError) error message"
+    expect(java_ex.message).to eq("(RuntimeError) error message")
 
     java_ex = JRuby.runtime.new_name_error("error message", "name");
-    java_ex.message.should == "(NameError) error message"
+    expect(java_ex.message).to eq("(NameError) error message")
   end
 end
 
@@ -139,18 +139,18 @@ describe "A native exception wrapped by another" do
     begin
       ThrowExceptionInInitializer.new.test
     rescue NativeException => e
-      e.message.should =~ /lets cause an init exception$/
+      expect(e.message).to match(/lets cause an init exception$/)
     end
   end
 
   it "can be re-raised" do
-    lambda {
+    expect {
       begin
         ThrowExceptionInInitializer.new.test
       rescue NativeException => e
         raise e.exception("re-raised")
       end
-    }.should raise_error(NativeException)
+    }.to raise_error(NativeException)
   end
 end
 
@@ -166,21 +166,21 @@ describe "A Ruby subclass of a Java exception" do
       raise exception
       fail
     rescue java.lang.Throwable
-      $!.should == exception
+      expect($!).to eq(exception)
     end
 
     begin
       raise exception
       fail
     rescue java.lang.Exception
-      $!.should == exception
+      expect($!).to eq(exception)
     end
 
     begin
       raise exception
       fail
     rescue java.lang.RuntimeException
-      $!.should == exception
+      expect($!).to eq(exception)
     end
   end
 
@@ -191,8 +191,8 @@ describe "A Ruby subclass of a Java exception" do
       raise exception
       fail
     rescue java.lang.Throwable => t
-      t.class.should == @ex_class
-      t.should equal(exception)
+      expect(t.class).to eq(@ex_class)
+      expect(t).to equal(exception)
     end
   end
 end
@@ -206,7 +206,7 @@ describe "Ruby exception raised through Java and back to Ruby" do
       end
       fail
     rescue RuntimeError => e
-      e.message.should == "it comes from ruby"
+      expect(e.message).to eq("it comes from ruby")
     end
   end
 
@@ -219,7 +219,7 @@ describe "Ruby exception raised through Java and back to Ruby" do
         end
         fail
       rescue RuntimeError => e
-        e.message.should == "it comes from ruby"
+        expect(e.message).to eq("it comes from ruby")
       end
     end
 

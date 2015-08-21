@@ -150,9 +150,8 @@ public abstract class SymbolNodes {
                     getContext().getCoreLibrary().getProcClass(),
                     ProcNodes.Type.PROC,
                     sharedMethodInfo,
-                    callTarget, callTarget, callTarget,
-                    null, null,
-                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(symbol)).getContext().getCoreLibrary().getNilObject(),
+                    callTarget, callTarget, null,
+                    null, getContext().getCoreLibrary().getNilObject(),
                     null);
         }
 

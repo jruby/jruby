@@ -262,6 +262,105 @@ describe "Predefined global $!" do
 
     $!.should == nil
   end
+
+  describe "in bodies without ensure" do
+    it "should be cleared when an exception is rescued" do
+      begin
+        raise 'foo'
+      rescue
+      end
+      $!.should == nil
+    end
+
+    it "should be cleared when an exception is rescued even when a non-local return is present" do
+      def foo; yield; end
+      def bar
+        begin
+          raise
+        rescue Exception
+          foo { return }
+        end
+      end
+
+      bar
+      $!.should == nil
+    end
+
+    it "should not be cleared when an exception is not rescued" do
+      e = StandardError.new
+      begin
+        begin
+          begin
+            raise e
+          rescue TypeError
+          end
+        ensure
+          $!.should == e
+        end
+      rescue
+      end
+    end
+
+    it "should not be cleared when an exception is rescued and rethrown" do
+      e = StandardError.new
+      begin
+        begin
+          begin
+            raise e
+          rescue => e
+            raise e
+          end
+        ensure
+          $!.should == e
+        end
+      rescue
+      end
+    end
+  end
+
+  describe "in ensure-protected bodies" do
+    it "should be cleared when an exception is rescued" do
+      begin
+        raise 'foo'
+      rescue
+      ensure
+      end
+      $!.should == nil
+    end
+
+    it "should not be cleared when an exception is not rescued" do
+      e = StandardError.new
+      begin
+        begin
+          begin
+            raise e
+          rescue TypeError
+          ensure
+          end
+        ensure
+          $!.should == e
+        end
+      rescue
+      end
+    end
+
+    it "should not be cleared when an exception is rescued and rethrown" do
+      e = StandardError.new
+      begin
+        begin
+          begin
+            raise e
+          rescue => e
+            raise e
+          ensure
+          end
+        ensure
+          $!.should == e
+        end
+      rescue
+      end
+    end
+  end
 end
 
 =begin

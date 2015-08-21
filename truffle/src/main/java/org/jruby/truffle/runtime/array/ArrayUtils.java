@@ -17,6 +17,8 @@ import java.util.Arrays;
 
 public abstract class ArrayUtils {
 
+    public static final Object[] EMPTY_ARRAY = new Object[0];
+
     /**
      * Extracts part of an array into a newly allocated Object[] array. Does not perform safety checks on parameters.
      * @param source the source array whose values should be extracted
@@ -248,7 +250,7 @@ public abstract class ArrayUtils {
         CompilerAsserts.neverPartOfCompilation();
 
         if (array == null) {
-            return new Object[0];
+            return EMPTY_ARRAY;
         } else if (array instanceof int[]) {
             return boxUntil((int[]) array, length);
         } else if (array instanceof long[]) {

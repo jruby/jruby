@@ -15,8 +15,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.core.ArrayForeignAccessFactory;
+import org.jruby.truffle.runtime.core.BasicForeignAccessFactory;
+import org.jruby.truffle.runtime.core.HashForeignAccessFactory;
+import org.jruby.truffle.runtime.core.StringForeignAccessFactory;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
@@ -34,8 +37,7 @@ public class RubyObjectType extends ObjectType {
         } else if (RubyGuards.isRubySymbol(object)) {
             return Layouts.SYMBOL.getString(object);
         } else if (RubyGuards.isRubyException(object)) {
-            return Layouts.EXCEPTION.getMessage(object) + " :\n" +
-                    Arrays.toString(Backtrace.EXCEPTION_FORMATTER.format(context, object, Layouts.EXCEPTION.getBacktrace(object)));
+            return Layouts.EXCEPTION.getMessage(object).toString();
         } else if (RubyGuards.isRubyModule(object)) {
             return Layouts.MODULE.getFields(object).toString();
         } else {

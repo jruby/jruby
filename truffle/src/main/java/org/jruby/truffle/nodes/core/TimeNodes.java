@@ -20,7 +20,6 @@ import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.layouts.TimeLayoutImpl;
 
 @CoreClass(name = "Time")
 public abstract class TimeNodes {

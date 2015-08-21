@@ -2271,7 +2271,7 @@ public class IRBuilder {
 
         // Emit code to conditionally restore $!
         Variable ret = createTemporaryVariable();
-        addInstr(new RuntimeHelperCall(ret, RESTORE_PERLY_EXC, new Operand[]{exc, savedGlobalException} ));
+        addInstr(new RuntimeHelperCall(ret, RESTORE_EXCEPTION_VAR, new Operand[]{exc, savedGlobalException} ));
 
         // Now emit the ensure body's stashed instructions
         if (ensurerNode != null) {

@@ -13,7 +13,7 @@ describe "An object which extends a Java class" do
       end
     end
 
-    Foo.new.foo.should == nil
+    expect(Foo.new.foo).to eq(nil)
   end
 end
 
@@ -26,8 +26,8 @@ describe "A class which has been set persistent" do
 
     al2 = ReceivesAndReturnsObject.returnObject(al)
 
-    al2.should be_equal(al)
-    al2.instance_variable_get(:@foo).should == 1
+    expect(al2).to be_equal(al)
+    expect(al2.instance_variable_get(:@foo)).to eq(1)
   end
 end
 

@@ -65,7 +65,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
             } else {
                 callNode = null;
             }

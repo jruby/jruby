@@ -12,7 +12,7 @@ def bar; end
 protected :bar
     end.new
 
-    obj.public_send(:foo).should == :foo
-    obj.public_send(:bar).should == :bar
+    expect(obj.public_send(:foo)).to eq(:foo)
+    expect(obj.public_send(:bar)).to eq(:bar)
   end
 end

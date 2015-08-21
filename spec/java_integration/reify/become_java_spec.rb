@@ -15,7 +15,7 @@ describe "JRuby class reification" do
       add_method_signature("run", [java.lang.Void::TYPE])
     end
     java_class = RubyRunnable.become_java!
-    java_class.interfaces.should include(java.lang.Runnable.java_class)
+    expect(java_class.interfaces).to include(java.lang.Runnable.java_class)
   end
 
   it "uses the nesting of the class for its package name" do
@@ -26,14 +26,14 @@ describe "JRuby class reification" do
     ReifyInterfacesClass1.become_java!
     ReifyInterfacesClass1::ReifyInterfacesClass2.become_java!
 
-    ReifyInterfacesClass1.to_java(jclass).name.should == "rubyobj.ReifyInterfacesClass1"
-    ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name.should == "rubyobj.ReifyInterfacesClass1.ReifyInterfacesClass2"
+    expect(ReifyInterfacesClass1.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1")
+    expect(ReifyInterfacesClass1::ReifyInterfacesClass2.to_java(jclass).name).to eq("rubyobj.ReifyInterfacesClass1.ReifyInterfacesClass2")
 
     # checking that the packages are valid for Java's purposes
-    lambda do
+    expect do
       ReifyInterfacesClass1.new
       ReifyInterfacesClass1::ReifyInterfacesClass2.new
-    end.should_not raise_error
+    end.not_to raise_error
   end
   
   it "creates static methods for Ruby class methods" do
@@ -47,9 +47,9 @@ describe "JRuby class reification" do
     java_class = cls.become_java!
     
     method = java_class.declared_methods.select {|m| m.name == "blah"}[0]
-    method.name.should == "blah"
-    method.return_type.should == org.jruby.runtime.builtin.IRubyObject.java_class
-    method.parameter_types.length.should == 0
+    expect(method.name).to eq("blah")
+    expect(method.return_type).to eq(org.jruby.runtime.builtin.IRubyObject.java_class)
+    expect(method.parameter_types.length).to eq(0)
   end
 
   it "supports fully reifying a deep class hierarchy" do
@@ -59,10 +59,10 @@ describe "JRuby class reification" do
     class TopRightOfTheStack < MiddleOfTheStack ; end
  
     java_class = TopLeftOfTheStack.become_java!
-    java_class.should_not be_nil
+    expect(java_class).not_to be_nil
     
     java_class = TopRightOfTheStack.become_java!
-    java_class.should_not be_nil
+    expect(java_class).not_to be_nil
   end
 
   it "supports reification of annotations and signatures on static methods without parameters" do
@@ -79,11 +79,11 @@ describe "JRuby class reification" do
 
     java_class = cls.become_java!()
     method = java_class.declared_methods.select {|m| m.name == "blah_no_args"}[0]
-    method.should_not be_nil
-    method.return_type.should == java.lang.Integer.java_class
+    expect(method).not_to be_nil
+    expect(method.return_type).to eq(java.lang.Integer.java_class)
 
     anno = method.get_annotation( java.lang.Deprecated.java_class )
-    anno.should_not be_nil
+    expect(anno).not_to be_nil
   end
 
   it "supports reification of annotations and signatures on static methods with parameters" do
@@ -101,11 +101,11 @@ describe "JRuby class reification" do
 
     java_class = cls.become_java!()
     method = java_class.declared_methods.select {|m| m.name == "blah_with_args"}[0]
-    method.should_not be_nil
-    method.return_type.should == java.lang.Integer.java_class
+    expect(method).not_to be_nil
+    expect(method.return_type).to eq(java.lang.Integer.java_class)
 
     anno = method.get_annotation( java.lang.Deprecated.java_class )
-    anno.should_not be_nil
+    expect(anno).not_to be_nil
   end
 
   it "allows loading reified classes into the main JRubyClassLoader" do
@@ -114,7 +114,7 @@ describe "JRuby class reification" do
 
     # load the java class from the classloader
     cl = java.lang.Thread.current_thread.getContextClassLoader
-    cl.load_class(a_class.get_name).should == a_class
+    expect(cl.load_class(a_class.get_name)).to eq(a_class)
   end
 
   describe "java fields" do
@@ -128,20 +128,20 @@ describe "JRuby class reification" do
     subject { cls.become_java! }
 
     it "adds specified fields to java_class" do
-      subject.get_declared_fields.map { |f| f.get_name }.should == %w(ruby rubyClass foo)
+      expect(subject.get_declared_fields.map { |f| f.get_name }).to eq(%w(ruby rubyClass foo))
     end
 
     it "lets you write to the fields" do
       subject
 
-      cls.new.should respond_to :foo
-      cls.new.should respond_to :foo=
+      expect(cls.new).to respond_to :foo
+      expect(cls.new).to respond_to :foo=
 
       field = subject.get_declared_fields.to_a.detect { |f| f.get_name == "foo" }
       instance = cls.new
       instance.foo = "String Value"
-      instance.foo.should == "String Value"
-      field.get(instance).should == "String Value"
+      expect(instance.foo).to eq("String Value")
+      expect(field.get(instance)).to eq("String Value")
     end
 
     context "many fields" do
@@ -153,7 +153,7 @@ describe "JRuby class reification" do
         java_field "java.lang.String allegro"
       }}
       it "keeps the ordering as specified" do
-        subject.get_declared_fields.map { |f| f.get_name }.should == %w(ruby rubyClass foo bar baz zot allegro)
+        expect(subject.get_declared_fields.map { |f| f.get_name }).to eq(%w(ruby rubyClass foo bar baz zot allegro))
       end
     end
   end

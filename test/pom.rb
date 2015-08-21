@@ -23,7 +23,7 @@ def truffle_spec_config(spec_type, generate_report)
     (if generate_report
       '<arg value="--format" /><arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />'
     else
-      ''
+      '<arg value="--format" /><arg value="specdoc" />' # Need lots of output to keep Travis happy
     end) +
     "<arg value=\":#{spec_type}\" />" +
     '</exec>' +
@@ -48,8 +48,7 @@ project 'JRuby Integration Tests' do
   plugin_repository( :id => 'rubygems-releases',
                      :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
               'jruby.home' => '${basedir}/..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared' )
 
