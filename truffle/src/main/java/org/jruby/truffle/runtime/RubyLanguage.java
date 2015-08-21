@@ -34,8 +34,9 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        Ruby r = Ruby.newInstance();
-        return new RubyContext(r, env);
+        final RubyContext context = new RubyContext(Ruby.newInstance(), env);
+        context.initialize();
+        return context;
     }
 
     @Override
