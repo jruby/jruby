@@ -70,19 +70,11 @@ public abstract class ArrayNodes {
 
     public static void setStore(DynamicObject array, Object store, int size) {
         assert verifyStore(store, size);
-
-        if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getContext(), store, size);
-            assert verifyStore(store, size);
-        }
-
         Layouts.ARRAY.setStore(array, store);
         Layouts.ARRAY.setSize(array, size);
     }
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-    public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
-    private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
     public static DynamicObject fromObject(DynamicObject arrayClass, Object object) {
         final Object store;
@@ -187,64 +179,6 @@ public abstract class ArrayNodes {
             return length;
         } else {
             return index;
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static Object randomizeStorageStrategy(RubyContext context, Object store, int size) {
-        // Use any type for empty arrays
-
-        if (size == 0) {
-            switch (random.nextInt(5)) {
-                case 0:
-                    return null;
-                case 1:
-                    return new int[]{};
-                case 2:
-                    return new long[]{};
-                case 3:
-                    return new double[]{};
-                case 4:
-                    return new Object[]{};
-                default:
-                    throw new IllegalStateException();
-            }
-        }
-
-        // Convert to the canonical store type first
-
-        final Object[] boxedStore = ArrayUtils.box(store);
-        final Object canonicalStore = storeFromObjects(context, boxedStore);
-
-        // Then promote it at random
-
-        if (canonicalStore instanceof int[]) {
-            switch (random.nextInt(3)) {
-                case 0:
-                    return boxedStore;
-                case 1:
-                    return ArrayUtils.longCopyOf((int[]) canonicalStore);
-                case 2:
-                    return canonicalStore;
-                default:
-                    throw new IllegalStateException();
-            }
-        } else if (canonicalStore instanceof long[]) {
-            if (random.nextBoolean()) {
-                return boxedStore;
-            } else {
-                return canonicalStore;
-            }
-        } else if (canonicalStore instanceof double[]) {
-            if (random.nextBoolean()) {
-                return boxedStore;
-            } else {
-                return canonicalStore;
-            }
-        } else if (canonicalStore instanceof Object[]) {
-            return canonicalStore;
-        } else {
-            throw new UnsupportedOperationException();
         }
     }
 
