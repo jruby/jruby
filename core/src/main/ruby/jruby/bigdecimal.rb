@@ -30,7 +30,7 @@ module BigMath
       return BigDecimal::INFINITY if x.infinite?
       return BigDecimal::NAN if x.nan?
     end
-    x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
+    x = x.is_a?(Rational) ? x.to_d(Float::DIG) : x.to_d
     return BigDecimal::INFINITY if x.infinite?
     return BigDecimal::NAN if x.nan?
 
@@ -86,7 +86,7 @@ module BigMath
     raise ArgumentError if prec < 1
     return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
     return BigDecimal::NAN if x.is_a?(Float) && x.nan?
-    x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
+    x = x.is_a?(Rational) ? x.to_d(Float::DIG) : x.to_d
     return BigDecimal::NAN if x.nan?
     return x.sign > 0 ? BigDecimal::INFINITY : BigDecimal(0, prec) if x.infinite?
 
