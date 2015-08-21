@@ -606,7 +606,8 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
-        if (arg instanceof RubyFloat || arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a rational");
+        if (arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a Rational.");
+        if (arg instanceof RubyFloat) throw context.runtime.newArgumentError("can't omit precision for a Float.");
         if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
         if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
         return newInstance(context, recv, arg, MathContext.UNLIMITED);

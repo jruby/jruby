@@ -5,7 +5,6 @@ exclude :test_BigMath_log_under_gc_stress, "needs investigation"
 exclude :test_div, "needs investigation"
 exclude :test_exception_underflow, "needs investigation"
 
-exclude :test_global_new, "runs forever"
 exclude :test_global_new_with_float, "needs investigation"
 exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"
