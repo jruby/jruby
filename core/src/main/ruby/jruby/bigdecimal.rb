@@ -1,8 +1,9 @@
 require 'bigdecimal'
+require 'bigdecimal/util'
 
 module BigMath
   module_function
-  
+
   # call-seq:
   #   log(decimal, numeric) -> BigDecimal
   #
@@ -18,24 +19,26 @@ module BigMath
   #   BigMath::log(BigMath::E(10), 10).to_s
   #   #=> "1.000000000000"
   #
-  def log(x, precision)
+  def log(x, prec)
     raise ArgumentError if x.nil?
     raise Math::DomainError if x.is_a?(Complex)
     raise Math::DomainError if x <= 0
-    raise ArgumentError unless precision.is_a?(Integer)
-    raise ArgumentError if precision < 1
-    return BigDecimal::INFINITY if x == BigDecimal::INFINITY
+    raise ArgumentError unless (true if Integer(prec) rescue false)
+    prec = prec.to_i
+    raise ArgumentError if prec < 1
+    return BigDecimal::NAN if x == BigDecimal::INFINITY
     return BigDecimal::NAN if x.is_a?(BigDecimal) && x.nan?
     return BigDecimal::NAN if x.is_a?(Float) && x.nan?
+    x = x.is_a?(Rational) ? x.to_d(prec) : x.to_d
+    return BigDecimal::NAN if x.infinite? || x.nan?
 
     # this uses the series expansion of the Arctangh (Arc tangens hyperbolicus)
     # http://en.wikipedia.org/wiki/Area_hyperbolic_tangent
     # where ln(x) = 2 * artanh ((x - 1) / (x + 1))
     # d are the elements in the series (getting smaller and smaller)
 
-    x = x.to_d
     rmpd_double_figures = 16 # from MRI ruby
-    n = precision + rmpd_double_figures
+    n = prec + rmpd_double_figures
 
     # offset the calculation to the efficient (0.1)...(10) window
     expo = x.exponent
