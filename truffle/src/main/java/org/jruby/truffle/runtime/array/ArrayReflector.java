@@ -27,4 +27,20 @@ public abstract class ArrayReflector {
         return new ObjectArrayMirror(array);
     }
 
+    public static ArrayMirror reflect(Object array) {
+        if (array == null) {
+            return new EmptyArrayMirror();
+        } else if (array instanceof int[]) {
+            return reflect((int[]) array);
+        } else if (array instanceof long[]) {
+            return reflect((long[]) array);
+        } else if (array instanceof double[]) {
+            return reflect((double[]) array);
+        } else if (array instanceof Object[]) {
+            return reflect((Object[]) array);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
 }

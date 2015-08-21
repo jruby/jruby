@@ -88,8 +88,7 @@ public abstract class ArrayNodes {
     }
 
     public static Object[] slowToArray(DynamicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        return ArrayUtils.boxUntil(Layouts.ARRAY.getStore(array), Layouts.ARRAY.getSize(array));
+        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
     }
 
     public static void slowPush(DynamicObject array, Object value) {
