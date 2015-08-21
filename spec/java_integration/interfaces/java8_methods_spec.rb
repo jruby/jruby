@@ -20,6 +20,17 @@ describe "an interface (Java 8+)" do
     src = <<-JAVA
     public class Java8Implemtor implements Java8Interface {
       public String bar() { return getClass().getSimpleName(); }
+
+      public static Object withConsumerCall(Integer i, java.util.function.IntConsumer c) {
+          c.accept(i * 10); return i + 1;
+      }
+
+      public static boolean withPredicateCall(Object obj, java.util.function.Predicate<Object> p) {
+          // TODO following line fails (obviously due test method in Ruby) :
+          // ArgumentError: wrong number of arguments (1 for 2)
+          //   org/jruby/gen/InterfaceImpl817905333.gen:13:in `test'
+          return p.test(obj);
+      }
     }
     JAVA
     files << (file = "#{@tmpdir}/Java8Implemtor.java"); File.open(file, 'w') { |f| f.print(src) }
@@ -65,6 +76,19 @@ describe "an interface (Java 8+)" do
     impl = Java::Java8Implemtor.new
     expect(impl.java_send(:bar)).to eq("Java8Implemtor")
     expect(impl.java_send(:foo, [ java.lang.Object ], 11)).to eq("11foo Java8Implemtor")
+  end
+
+  it "works with java.util.function-al interface with proc impl" do
+    expect( Java::Java8Implemtor.withConsumerCall(1) do |i|
+      expect(i).to eql 10
+    end ).to eql 2
+
+    pending "TODO: Predicate#test won't work as it collides with Ruby method"
+
+    ret = Java::Java8Implemtor.withPredicateCall([ ]) { |obj| obj.empty? }
+    expect( ret ).to be true
+    ret = Java::Java8Implemtor.withPredicateCall('x') { |obj| obj.empty? }
+    expect( ret ).to be false
   end
 
   def javac_compile(files)
