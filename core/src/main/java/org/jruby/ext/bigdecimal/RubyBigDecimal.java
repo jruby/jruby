@@ -465,6 +465,9 @@ public class RubyBigDecimal extends RubyNumeric {
             // Converted to a String because some values -inf cannot happen from Java libs
             return newInstance(context, context.runtime.getClass("BigDecimal"), value.asString());
         }
+        if ((value instanceof RubyRational) || (value instanceof RubyFloat)) {
+            return newInstance(context, context.runtime.getClass("BigDecimal"), value, RubyFixnum.newFixnum(context.runtime, RubyFloat.DIG));
+        }
         return cannotBeCoerced(context, value, must);
     }
 
@@ -1195,9 +1198,6 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray coerce(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFloat) {
-            return context.runtime.newArray(other, to_f());
-        }
         return context.runtime.newArray(getVpValue(context, other, true), this);
     }
 
