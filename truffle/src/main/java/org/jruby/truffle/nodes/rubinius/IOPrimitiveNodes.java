@@ -431,7 +431,8 @@ public abstract class IOPrimitiveNodes {
                 int written = posix().write(fd, buffer, buffer.remaining());
 
                 if (written == -1) {
-                    throw new UnsupportedOperationException();
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
                 }
 
                 buffer.position(buffer.position() + written);
