@@ -1362,8 +1362,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject proc(VirtualFrame frame, Object block) {
-            return procNewNode.executeProcNew(frame, getContext().getCoreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, block);
+        public DynamicObject proc(VirtualFrame frame, Object maybeBlock) {
+            return procNewNode.executeProcNew(frame, getContext().getCoreLibrary().getProcClass(), ArrayUtils.EMPTY_ARRAY, maybeBlock);
         }
 
     }
