@@ -24,11 +24,13 @@ if RUBY_VERSION >= '1.9'
     end
 
     it "leaves __FILE__ unexpanded" do
-        GH1940.__file__.should == @linkfilepath
+        expect(GH1940.__file__).to eq(@linkfilepath)
     end
 
-    it "leaves LOADED_FEATURES unexpanded", :pending => "fix for #1941" do
-      $LOADED_FEATURES.should include(@linkfilepath)
+    it "leaves LOADED_FEATURES unexpanded" do
+      skip "fix for #1941"
+
+      expect($LOADED_FEATURES).to include(@linkfilepath)
     end
   end
 end

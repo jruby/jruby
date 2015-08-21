@@ -44,30 +44,30 @@ describe "Single-method Java interfaces implemented in Ruby" do
       include java.awt.event.ActionListener
     end
 
-    lambda do
+    expect do
       b = Module.new do
         include a
       end
-    end.should_not raise_error
+    end.not_to raise_error
   end
 
   it "should be kind_of? the interface" do
-    @value_holder1.new(1).should be_kind_of(SingleMethodInterface)
-    SingleMethodInterface.should === @value_holder1.new(1)
+    expect(@value_holder1.new(1)).to be_kind_of(SingleMethodInterface)
+    expect(SingleMethodInterface === @value_holder1.new(1)).to be true
   end
 
   it "should be implemented with 'include InterfaceClass'" do
-    UsesSingleMethodInterface.callIt(@value_holder1.new(1)).should == 1
-    UsesSingleMethodInterface.callIt(@value_holder2.new(1)).should == 1
+    expect(UsesSingleMethodInterface.callIt(@value_holder1.new(1))).to eq(1)
+    expect(UsesSingleMethodInterface.callIt(@value_holder2.new(1))).to eq(1)
   end
 
   it "should be cast-able to the interface on the Java side" do
-    UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2)).should == 2
-    UsesSingleMethodInterface.castAndCallIt(@value_holder2.new(2)).should == 2
+    expect(UsesSingleMethodInterface.castAndCallIt(@value_holder1.new(2))).to eq(2)
+    expect(UsesSingleMethodInterface.castAndCallIt(@value_holder2.new(2))).to eq(2)
   end
 
   it "should allow implementation using the underscored version" do
-    UsesSingleMethodInterface.callIt(@value_holder2.new(3)).should == 3
+    expect(UsesSingleMethodInterface.callIt(@value_holder2.new(3))).to eq(3)
   end
 
   it "should allow reopening implementations" do
@@ -81,13 +81,13 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
     obj = @value_holder3.new(4);
-    UsesSingleMethodInterface.callIt(obj).should == 4
+    expect(UsesSingleMethodInterface.callIt(obj)).to eq(4)
     @value_holder3.class_eval do
       def callIt
         @value + @value
       end
     end
-    UsesSingleMethodInterface.callIt(obj).should == 8
+    expect(UsesSingleMethodInterface.callIt(obj)).to eq(8)
 
     @value_holder3 = Class.new do
       include SingleMethodInterface
@@ -99,13 +99,13 @@ describe "Single-method Java interfaces implemented in Ruby" do
       end
     end
     obj = @value_holder3.new(4);
-    UsesSingleMethodInterface.callIt(obj).should == 4
+    expect(UsesSingleMethodInterface.callIt(obj)).to eq(4)
     @value_holder3.class_eval do
       def call_it
         @value + @value
       end
     end
-    UsesSingleMethodInterface.callIt(obj).should == 8
+    expect(UsesSingleMethodInterface.callIt(obj)).to eq(8)
   end
 
   it "should use Object#equals if there is no Ruby equals defined" do
@@ -114,7 +114,7 @@ describe "Single-method Java interfaces implemented in Ruby" do
     arr = java.util.ArrayList.new
     v = c.new
     arr.add(v)
-    arr.contains(v).should be_true
+    expect(arr).to include(v)
   end
 
   it "should use Object#hashCode if there is no Ruby hashCode defined" do
@@ -141,104 +141,104 @@ describe "Single-method Java interfaces implemented in Ruby" do
         @value
       end
     end
-    UsesSingleMethodInterface.callIt(c.new(1)).should == 1
+    expect(UsesSingleMethodInterface.callIt(c.new(1))).to eq(1)
   end
 end
 
 describe "Single-method Java interfaces" do
   it "can be coerced from a block passed to a constructor" do
-    UsesSingleMethodInterface.new { 1 }.result.should == 1
-    UsesSingleMethodInterface.new(nil) { 1 }.result.should == 1
-    UsesSingleMethodInterface.new(nil, nil) { 1 }.result.should == 1
-    UsesSingleMethodInterface.new(nil, nil, nil) { 1 }.result.should == 1
+    expect(UsesSingleMethodInterface.new { 1 }.result).to eq(1)
+    expect(UsesSingleMethodInterface.new(nil) { 1 }.result).to eq(1)
+    expect(UsesSingleMethodInterface.new(nil, nil) { 1 }.result).to eq(1)
+    expect(UsesSingleMethodInterface.new(nil, nil, nil) { 1 }.result).to eq(1)
     # 3 normal args is our cutoff for specific-arity optz, so test four
-    UsesSingleMethodInterface.new(nil, nil, nil, nil) { 1 }.result.should == 1
+    expect(UsesSingleMethodInterface.new(nil, nil, nil, nil) { 1 }.result).to eq(1)
   end
 
   it "can be coerced from a block passed to a static method" do
-    UsesSingleMethodInterface.callIt { 1 }.should == 1
-    UsesSingleMethodInterface.callIt(nil) { 1 }.should == 1
-    UsesSingleMethodInterface.callIt(nil, nil) { 1 }.should == 1
-    UsesSingleMethodInterface.callIt(nil, nil, nil) { 1 }.should == 1
+    expect(UsesSingleMethodInterface.callIt { 1 }).to eq(1)
+    expect(UsesSingleMethodInterface.callIt(nil) { 1 }).to eq(1)
+    expect(UsesSingleMethodInterface.callIt(nil, nil) { 1 }).to eq(1)
+    expect(UsesSingleMethodInterface.callIt(nil, nil, nil) { 1 }).to eq(1)
     # 3 normal args is our cutoff for specific-arity optz, so test four
-    UsesSingleMethodInterface.callIt(nil, nil, nil, nil) { 1 }.should == 1
+    expect(UsesSingleMethodInterface.callIt(nil, nil, nil, nil) { 1 }).to eq(1)
   end
 
   it "can be coerced from a block passed to a instance method" do
-    UsesSingleMethodInterface.new.callIt2 do 1 end.should == 1
-    UsesSingleMethodInterface.new.callIt2(nil) do 1 end.should == 1
-    UsesSingleMethodInterface.new.callIt2(nil, nil) do 1 end.should == 1
-    UsesSingleMethodInterface.new.callIt2(nil, nil, nil) do 1 end.should == 1
+    expect(UsesSingleMethodInterface.new.callIt2 do 1 end).to eq(1)
+    expect(UsesSingleMethodInterface.new.callIt2(nil) do 1 end).to eq(1)
+    expect(UsesSingleMethodInterface.new.callIt2(nil, nil) do 1 end).to eq(1)
+    expect(UsesSingleMethodInterface.new.callIt2(nil, nil, nil) do 1 end).to eq(1)
     # 3 normal args is our cutoff for specific-arity optz, so test four
-    UsesSingleMethodInterface.new.callIt2(nil, nil, nil, nil) do 1 end.should == 1
+    expect(UsesSingleMethodInterface.new.callIt2(nil, nil, nil, nil) do 1 end).to eq(1)
   end
 
   it "should be implementable with .impl" do
     impl = SingleMethodInterface.impl { |name| name }
-    impl.should be_kind_of(SingleMethodInterface)
-    SingleMethodInterface.should === impl
+    expect(impl).to be_kind_of(SingleMethodInterface)
+    expect(SingleMethodInterface).to be === impl
 
-    UsesSingleMethodInterface.callIt(impl).should == :callIt
+    expect(UsesSingleMethodInterface.callIt(impl)).to eq(:callIt)
   end
 
   it "should allow assignable equivalents to be passed to a method" do
     impl = DescendantOfSingleMethodInterface.impl { |name| name }
-    impl.should be_kind_of(SingleMethodInterface)
-    DescendantOfSingleMethodInterface.should === impl
-    UsesSingleMethodInterface.callIt(impl).should == :callIt
-    UsesSingleMethodInterface.new.callIt2(impl).should == :callIt
+    expect(impl).to be_kind_of(SingleMethodInterface)
+    expect(DescendantOfSingleMethodInterface).to be === impl
+    expect(UsesSingleMethodInterface.callIt(impl)).to eq(:callIt)
+    expect(UsesSingleMethodInterface.new.callIt2(impl)).to eq(:callIt)
   end
 
   it "passes correct arguments to proc .impl" do
     Java::java.io.File.new('.').list do |dir, name| # FilenameFilter
-      dir.should be_kind_of(java.io.File)
-      name.should be_kind_of(String)
+      expect(dir).to be_kind_of(java.io.File)
+      expect(name).to be_kind_of(String)
       true # boolean accept(File dir, String name)
     end
 
     caller = Java::java_integration.fixtures.iface.SingleMethodInterfaceWithArg::Caller
 
-    caller.call { |arg| arg.should == 42 }
-    caller.call('x') { |arg| arg.should == 'x' }
+    caller.call { |arg| expect(arg).to eq(42) }
+    caller.call('x') { |arg| expect(arg).to eq('x') }
 
     Java::java_integration.fixtures.iface.SingleMethodInterfaceWith4Args::Caller.call do
       |arg1, arg2, arg3, arg4|
-      arg2.should == 'hello'
-      arg3.should == 'world'
-      arg4.should == 42
+      expect(arg2).to eq('hello')
+      expect(arg3).to eq('world')
+      expect(arg4).to eq(42)
       [ arg2, arg3, arg4 ] # return Object[]
     end
   end
 
   it "resolves 'ambiguous' method by proc argument count (with .impl)" do
     java.io.File.new('.').listFiles do |pathname| # FileFilter#accept(File)
-      pathname.should be_kind_of(java.io.File)
+      expect(pathname).to be_kind_of(java.io.File)
     end
     java.io.File.new('.').listFiles do |dir, name| # FilenameFilter#accept(File, String)
-      dir.should be_kind_of(java.io.File)
-      name.should be_kind_of(String)
+      expect(dir).to be_kind_of(java.io.File)
+      expect(name).to be_kind_of(String)
     end
 
     java.io.File.new('.').listFiles do |dir, name, invalid|
       # should choose FilenameFilter#accept(File, String)
-      dir.should be_kind_of(java.io.File)
-      name.should be_kind_of(String)
+      expect(dir).to be_kind_of(java.io.File)
+      expect(name).to be_kind_of(String)
     end
 
     java.io.File.new('.').listFiles do |pathname, *args|
-      pathname.should be_kind_of(java.io.File)
-      args.should be_empty
+      expect(pathname).to be_kind_of(java.io.File)
+      expect(args).to be_empty
     end
 
     java.io.File.new('.').listFiles do |dir, name, *args|
-      dir.should be_kind_of(java.io.File)
-      name.should be_kind_of(String)
-      args.should be_empty
+      expect(dir).to be_kind_of(java.io.File)
+      expect(name).to be_kind_of(String)
+      expect(args).to be_empty
     end
 
     java.io.File.new('.').listFiles do |*args|
-      args[0].should be_kind_of(java.io.File)
-      args.size.should eql 1
+      expect(args[0]).to be_kind_of(java.io.File)
+      expect(args.size).to eql 1
     end
 
     #executor = java.util.concurrent.Executors.newSingleThreadExecutor
@@ -248,25 +248,25 @@ describe "Single-method Java interfaces" do
     work_queue = java.util.concurrent.LinkedBlockingQueue.new
     executor = java.util.concurrent.ThreadPoolExecutor.new(0, 2, 0, java.util.concurrent.TimeUnit::SECONDS, work_queue) do
       |*args| # newThread(Runnable)
-      args[0].should be_kind_of(java.lang.Runnable)
-      args.size.should eql 1
+      expect(args[0]).to be_kind_of(java.lang.Runnable)
+      expect(args.size).to eql 1
       java.lang.Thread.new(args[0])
     end
-    executor.execute { |*args| args.should be_empty }; sleep 0.1
+    executor.execute { |*args| expect(args).to be_empty }; sleep 0.1
     executor.shutdown
   end
 
   it "should maintain Ruby object equality when passed through Java and back" do
     result = SingleMethodInterface.impl { |name| name }
     callable = double "callable"
-    callable.should_receive(:call).and_return result
-    UsesSingleMethodInterface.new.callIt3(callable).should == result
+    expect(callable).to receive(:call).and_return result
+    expect(UsesSingleMethodInterface.new.callIt3(callable)).to eq(result)
   end
 
   it "coerces to that interface after duck-typed implementation has happened" do
     callable = double "SingleMethodInterfaceImpl"
-    callable.should_receive(:callIt).and_return :callIt
-    UsesSingleMethodInterface.callIt(callable).should == :callIt
+    expect(callable).to receive(:callIt).and_return :callIt
+    expect(UsesSingleMethodInterface.callIt(callable)).to eq(:callIt)
 
     # receives Object, but should return the coerced impl
     cls = UsesSingleMethodInterface.getClass(callable)
@@ -278,7 +278,7 @@ describe "Single-method Java interfaces" do
       cls = cls.superclass
     end
 
-    interfaces.should include(SingleMethodInterface.java_class)
+    expect(interfaces).to include(SingleMethodInterface.java_class)
   end
 end
 
@@ -295,16 +295,16 @@ describe "A bean-like Java interface" do
     [myimpl1, myimpl2].each do |impl|
       bli = impl.new
       blih = BeanLikeInterfaceHandler.new(bli)
-      lambda do
+      expect do
         blih.setValue(1)
         blih.setMyValue(2)
         blih.setFoo(true)
         blih.setMyFoo(true)
-        blih.getValue().should == 1
-        blih.getMyValue().should == 2
-        blih.isFoo().should == true
-        blih.isMyFoo().should == true
-      end.should_not raise_error
+        expect(blih.getValue()).to eq(1)
+        expect(blih.getMyValue()).to eq(2)
+        expect(blih.isFoo()).to eq(true)
+        expect(blih.isMyFoo()).to eq(true)
+      end.not_to raise_error
     end
   end
 
@@ -315,41 +315,41 @@ describe "A bean-like Java interface" do
       def isMyFoo; true; end
       def is_my_foo; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl1.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl1.new).isMyFoo()).to eq(true)
     # Ruby name before beaned Java name
     myimpl2 = Class.new do
       include BeanLikeInterface
       def is_my_foo; true; end
       def myFoo; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl2.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl2.new).isMyFoo()).to eq(true)
     # Beaned Java name before beaned Ruby name
     myimpl3 = Class.new do
       include BeanLikeInterface
       def myFoo; true; end
       def my_foo; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl3.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl3.new).isMyFoo()).to eq(true)
     # Beaned Ruby name before q-marked beaned Java name
     myimpl4 = Class.new do
       include BeanLikeInterface
       def my_foo; true; end
       def myFoo?; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl4.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl4.new).isMyFoo()).to eq(true)
     # Q-marked beaned Java name before Q-marked beaned Ruby name
     myimpl5 = Class.new do
       include BeanLikeInterface
       def myFoo?; true; end
       def my_foo?; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl5.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl5.new).isMyFoo()).to eq(true)
     # Confirm q-marked beaned Ruby name works
     myimpl6 = Class.new do
       include BeanLikeInterface
       def my_foo?; true; end
     end
-    BeanLikeInterfaceHandler.new(myimpl6.new).isMyFoo().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl6.new).isMyFoo()).to eq(true)
 
     # Java name before Ruby name
     myimpl1 = Class.new do
@@ -357,27 +357,27 @@ describe "A bean-like Java interface" do
       def supahFriendly; true; end
       def supah_friendly; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl1.new).supahFriendly().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl1.new).supahFriendly()).to eq(true)
     # Ruby name before q-marked Java name
     myimpl2 = Class.new do
       include BeanLikeInterface
       def supah_friendly; true; end
       def supahFriendly?; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl2.new).supahFriendly().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl2.new).supahFriendly()).to eq(true)
     # Q-marked Java name before Q-marked Ruby name
     myimpl3 = Class.new do
       include BeanLikeInterface
       def supahFriendly?; true; end
       def supah_friendly?; false; end
     end
-    BeanLikeInterfaceHandler.new(myimpl3.new).supahFriendly().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl3.new).supahFriendly()).to eq(true)
     # confirm Q-marked Ruby name works
     myimpl4 = Class.new do
       include BeanLikeInterface
       def supah_friendly?; true; end
     end
-    BeanLikeInterfaceHandler.new(myimpl4.new).supahFriendly().should == true
+    expect(BeanLikeInterfaceHandler.new(myimpl4.new).supahFriendly()).to eq(true)
   end
 
   it "searches for implementation names in a predictable order" do
@@ -414,12 +414,12 @@ describe "A bean-like Java interface" do
     [myimpl1, myimpl2].each do |impl|
       bli = impl.new
       blih = BeanLikeInterfaceHandler.new(bli)
-      lambda do
-        blih.isFoo().should == true
-        blih.isMyFoo().should == true
-        blih.friendly().should == true
-        blih.supahFriendly().should == true
-      end.should_not raise_error
+      expect do
+        expect(blih.isFoo()).to eq(true)
+        expect(blih.isMyFoo()).to eq(true)
+        expect(blih.friendly()).to eq(true)
+        expect(blih.supahFriendly()).to eq(true)
+      end.not_to raise_error
     end
   end
 
@@ -445,8 +445,8 @@ describe "A bean-like Java interface" do
     [myimpl1, myimpl2].each do |impl|
       bli = impl.new
       blih = BeanLikeInterfaceHandler.new(bli)
-      lambda { blih.getSomethingFoo(1) }.should raise_error(NameError)
-      lambda { blih.setSomethingFoo(1,2) }.should raise_error(NameError)
+      expect { blih.getSomethingFoo(1) }.to raise_error(NameError)
+      expect { blih.setSomethingFoo(1,2) }.to raise_error(NameError)
     end
   end
 end
@@ -462,8 +462,8 @@ describe "A Ruby class including a descendant interface" do
 
     dosmi = impl.new
 
-    UsesSingleMethodInterface.callIt(dosmi).should == "foo"
-    UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
+    expect(UsesSingleMethodInterface.callIt(dosmi)).to eq("foo")
+    expect(UsesDescendantOfSingleMethodInterface.callThat(dosmi)).to eq("bar")
   end
 
   it "inherits implementation of super-interface methods from superclass" do
@@ -480,8 +480,8 @@ describe "A Ruby class including a descendant interface" do
 
     dosmi = impl.new
 
-    UsesSingleMethodInterface.callIt(dosmi).should == "foo"
-    UsesDescendantOfSingleMethodInterface.callThat(dosmi).should == "bar"
+    expect(UsesSingleMethodInterface.callIt(dosmi)).to eq("foo")
+    expect(UsesDescendantOfSingleMethodInterface.callThat(dosmi)).to eq("bar")
   end
 end
 
@@ -493,9 +493,9 @@ describe "Single object implementing methods of interface" do
   end
 
   it "should not be possible to call methods on instances of class from Java" do
-    proc do
+    expect do
       SingleMethodInterface::Caller.call(@impl.new)
-    end.should raise_error(NoMethodError)
+    end.to raise_error(NoMethodError)
   end
 
   it "should be possible to call methods on specific object that implements a method" do
@@ -503,7 +503,7 @@ describe "Single object implementing methods of interface" do
     def obj.callIt
       "foo"
     end
-    SingleMethodInterface::Caller.call(obj).should == "foo"
+    expect(SingleMethodInterface::Caller.call(obj)).to eq("foo")
   end
 end
 
@@ -523,8 +523,8 @@ describe "Calling include to include a Java interface into a Ruby class" do
     obj = c.new
     blih = BeanLikeInterfaceHandler.new(obj)
 
-    SingleMethodInterface::Caller.call(obj).should == "bar"
-    blih.value.should == 1
+    expect(SingleMethodInterface::Caller.call(obj)).to eq("bar")
+    expect(blih.value).to eq(1)
   end
 
   it "should incorporate constants from the interface into the class's metaclass" do
@@ -532,8 +532,8 @@ describe "Calling include to include a Java interface into a Ruby class" do
       include ConstantHoldingInterface
     end
 
-    c::MY_INT.should == 1
-    c::MY_STRING.should == "foo"
+    expect(c::MY_INT).to eq(1)
+    expect(c::MY_STRING).to eq("foo")
   end
 end
 
@@ -545,8 +545,8 @@ describe "A ruby module used as a carrier for Java interfaces" do
 
       def self.java_interfaces; @java_interface_mods; end
     end
-    m.java_interfaces.should include(SingleMethodInterface)
-    m.java_interfaces.should include(BeanLikeInterface)
+    expect(m.java_interfaces).to include(SingleMethodInterface)
+    expect(m.java_interfaces).to include(BeanLikeInterface)
   end
 
   it "calls append_features on each interface" do
@@ -572,15 +572,15 @@ describe "A ruby module used as a carrier for Java interfaces" do
       include my_bli
     end
 
-    my_smi.called.should == 1
-    my_bli.called.should == 1
+    expect(my_smi.called).to eq(1)
+    expect(my_bli.called).to eq(1)
 
     c = Class.new do
       include m
     end
 
-    my_smi.called.should == 2
-    my_bli.called.should == 2
+    expect(my_smi.called).to eq(2)
+    expect(my_bli.called).to eq(2)
   end
 
   it "causes an including class to implement all interfaces" do
@@ -598,8 +598,8 @@ describe "A ruby module used as a carrier for Java interfaces" do
     obj = c.new
     blih = BeanLikeInterfaceHandler.new(obj)
 
-    SingleMethodInterface::Caller.call(obj).should == "bar"
-    blih.value.should == 1
+    expect(SingleMethodInterface::Caller.call(obj)).to eq("bar")
+    expect(blih.value).to eq(1)
   end
 end
 
@@ -608,7 +608,7 @@ describe "Coercion of normal ruby objects" do
     ri = double "returns interface"
     consumer = ReturnsInterfaceConsumer.new
     consumer.set_returns_interface ri
-    ri.should be_kind_of(ReturnsInterface)
+    expect(ri).to be_kind_of(ReturnsInterface)
   end
 
 
@@ -616,43 +616,43 @@ describe "Coercion of normal ruby objects" do
     obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.returnArgumentBackToRuby(JRuby.runtime, obj)
-    obj.should be_kind_of(Java::JavaLang::Runnable)
-    result.should == obj
-    obj.should == result
+    expect(obj).to be_kind_of(Java::JavaLang::Runnable)
+    expect(result).to eq(obj)
+    expect(obj).to eq(result)
   end
 
   it "should return the original ruby object when converted back to Ruby" do
     obj = double "ruby object"
     cti = CoerceToInterface.new
     result = cti.coerceArgumentBackToRuby(JRuby.runtime, obj)
-    obj.should be_kind_of(Java::JavaLang::Runnable)
-    result.should == obj
+    expect(obj).to be_kind_of(Java::JavaLang::Runnable)
+    expect(result).to eq(obj)
   end
 
   it "should pass the original ruby object when converted back to Ruby and used as an argument to another Ruby object" do
     obj = double "ruby object"
     callable = double "callable"
-    callable.should_receive(:call).with(obj)
+    expect(callable).to receive(:call).with(obj)
     cti = CoerceToInterface.new
     cti.passArgumentToInvokableRubyObject(callable, obj)
-    obj.should be_kind_of(Java::JavaLang::Runnable)
+    expect(obj).to be_kind_of(Java::JavaLang::Runnable)
   end
 
   it "should allow an object passed to a java constructor to be coerced to the interface" do
     ri = double "returns interface"
     ReturnsInterfaceConsumer.new(ri)
-    ri.should be_kind_of(ReturnsInterface)
+    expect(ri).to be_kind_of(ReturnsInterface)
   end
 
   it "should allow an object to be coerced as a return type of a java method" do
     ri = double "returns interface"
     value = double "return value runnable"
-    ri.stub(:getRunnable).and_return value
+    allow(ri).to receive(:getRunnable).and_return value
 
     consumer = ReturnsInterfaceConsumer.new(ri)
     runnable = consumer.getRunnable
-    runnable.should == value
-    value.should be_kind_of(Java::JavaLang::Runnable)
+    expect(runnable).to eq(value)
+    expect(value).to be_kind_of(Java::JavaLang::Runnable)
   end
 end
 
@@ -664,7 +664,7 @@ describe "A child extending a Ruby class that includes Java interfaces" do
     obj = child.new
     blih = BeanLikeInterfaceHandler.new(obj)
 
-    blih.value.should == 1
+    expect(blih.value).to eq(1)
   end
 end
 
@@ -681,14 +681,14 @@ describe "Calling methods through interface on Ruby objects with methods defined
   it "should handle one object using instance_eval" do
     @obj1.instance_eval("def callIt; return :ok; end;")
 
-    UsesSingleMethodInterface.callIt(@obj1).should == :ok
+    expect(UsesSingleMethodInterface.callIt(@obj1)).to eq(:ok)
   end
 
   it "should handle one object extending module" do
     @module = Module.new { def callIt; return :ok; end; }
     @obj1.extend(@module)
 
-    UsesSingleMethodInterface.callIt(@obj1).should == :ok
+    expect(UsesSingleMethodInterface.callIt(@obj1)).to eq(:ok)
   end
 
   it "should handle two object with combo of instance_eval and module extension" do
@@ -696,8 +696,8 @@ describe "Calling methods through interface on Ruby objects with methods defined
     @module = Module.new { def callIt; return :two; end; }
     @obj2.extend(@module)
 
-    UsesSingleMethodInterface.callIt(@obj1).should == :one
-    UsesSingleMethodInterface.callIt(@obj2).should == :two
+    expect(UsesSingleMethodInterface.callIt(@obj1)).to eq(:one)
+    expect(UsesSingleMethodInterface.callIt(@obj2)).to eq(:two)
   end
 
   it "should handle two object with combo of instance_eval and module extension in opposite order" do
@@ -705,8 +705,8 @@ describe "Calling methods through interface on Ruby objects with methods defined
     @module = Module.new { def callIt; return :two; end; }
     @obj2.extend(@module)
 
-    UsesSingleMethodInterface.callIt(@obj2).should == :two
-    UsesSingleMethodInterface.callIt(@obj1).should == :one
+    expect(UsesSingleMethodInterface.callIt(@obj2)).to eq(:two)
+    expect(UsesSingleMethodInterface.callIt(@obj1)).to eq(:one)
   end
 end
 
@@ -723,7 +723,7 @@ describe "A Ruby class implementing Java interfaces with overlapping methods" do
     end
 
     obj = nil
-    lambda {obj = cls.new}.should_not raise_error
+    expect {obj = cls.new}.not_to raise_error
   end
 end
 
@@ -738,7 +738,7 @@ describe "A Ruby class implementing a Java interface with method returning Boole
     end
 
     obj = cls.new
-    BooleanReturningInterfaceConsumer.new.consume(obj).should be_true
+    expect(BooleanReturningInterfaceConsumer.new.consume(obj)).to be_truthy
   end
 end
 
@@ -748,11 +748,11 @@ describe "A Ruby class implementing an interface" do
       c1 = Class.new do
         include java.lang.Runnable
       end
-      lambda {c1.new}.should_not raise_error
+      expect {c1.new}.not_to raise_error
       c2 = Class.new(c1) do
         include java.io.Serializable
       end
-      lambda {c2.new}.should_not raise_error
+      expect {c2.new}.not_to raise_error
     end
   end
 
@@ -764,7 +764,7 @@ describe "A Ruby class implementing an interface" do
 
     java_cls = obj.java_class
 
-    java_cls.interfaces.should include(java.lang.Runnable.java_class)
+    expect(java_cls.interfaces).to include(java.lang.Runnable.java_class)
   end
 end
 

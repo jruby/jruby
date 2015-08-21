@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,8 +32,6 @@ import java.util.Arrays;
  * 
  */
 public class FeatureManager {
-
-    private static final boolean SHOW_RESOLUTION = Options.TRUFFLE_REQUIRE_SHOW_RESOLUTION.load();
 
     private final RubyContext context;
 
@@ -130,10 +127,6 @@ public class FeatureManager {
                 return false;
             }
 
-            if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
-            }
-
             ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
 
@@ -150,10 +143,6 @@ public class FeatureManager {
 
             if (context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), coreFileName) == null) {
                 return false;
-            }
-
-            if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s%n", feature, coreFileName);
             }
 
             ArrayNodes.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
@@ -175,10 +164,6 @@ public class FeatureManager {
                 if (loaded.toString().equals(expandedPath)) {
                     return true;
                 }
-            }
-
-            if (SHOW_RESOLUTION) {
-                System.err.printf("resolved %s -> %s%n", feature, expandedPath);
             }
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.

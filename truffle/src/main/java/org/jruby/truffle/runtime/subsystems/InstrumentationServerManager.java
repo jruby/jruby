@@ -19,11 +19,13 @@ import com.sun.net.httpserver.HttpServer;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 @SuppressWarnings("restriction")
 public class InstrumentationServerManager {
@@ -68,7 +70,7 @@ public class InstrumentationServerManager {
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    String[] lines = Backtrace.DISPLAY_FORMATTER.format(context, null, backtrace);
+                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");

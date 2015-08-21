@@ -128,7 +128,7 @@ public class TraceManager {
                             if (callNode == null) {
                                 CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
+                                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
 
                                 if (callNode.isCallTargetCloningAllowed()) {
                                     callNode.cloneCallTarget();
@@ -250,7 +250,7 @@ public class TraceManager {
                 if (callNode == null) {
                     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                    callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(traceFunc)));
+                    callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
 
                     if (callNode.isCallTargetCloningAllowed()) {
                         callNode.cloneCallTarget();

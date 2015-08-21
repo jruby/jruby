@@ -58,7 +58,7 @@ describe "A Hash being marshaled while modified" do
         d = Marshal.dump test
         t = Marshal.load(d);
 
-        t.obj.should be_instance_of GH1182_Value
+        expect(t.obj).to be_instance_of GH1182_Value
         #ok
         sleep 0.05
       rescue ConcurrencyError => ex

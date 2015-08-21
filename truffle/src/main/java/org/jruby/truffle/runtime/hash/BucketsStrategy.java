@@ -14,7 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.nodes.core.hash.HashNodes;
-import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.*;
@@ -39,6 +39,8 @@ public abstract class BucketsStrategy {
     }
 
     public static DynamicObject create(DynamicObject hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext();
+
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
@@ -51,7 +53,7 @@ public abstract class BucketsStrategy {
             Object key = entry.getKey();
 
             if (!byIdentity && RubyGuards.isRubyString(key)) {
-                key = DebugOperations.send(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext(), DebugOperations.send(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext(), key, "dup", null), "freeze", null);
+                key = context.send(context.send(key, "dup", null), "freeze", null);
             }
 
             final int hashed = HashNodes.slowHashKey(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext(), key);

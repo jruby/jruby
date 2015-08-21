@@ -118,7 +118,7 @@
     <Bug pattern="URF_UNREAD_FIELD" />
   </Match>
   <Match>
-    <Class name="~org\.jruby\.truffle\.runtime\.DebugOperations.*" />
+    <Class name="~org\.jruby\.truffle\.runtime\.core\.ModuleFields.*" />
     <Bug pattern="URF_UNREAD_FIELD" />
   </Match>
   <Match>
@@ -131,6 +131,10 @@
   <Match>
     <Class name="org.jruby.truffle.runtime.core.RubyException" />
     <Bug pattern="NM_CLASS_NOT_EXCEPTION" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.backtrace.BacktraceFormatter" />
+    <Bug pattern="DM_DEFAULT_ENCODING" />
   </Match>
 
   <!-- This is just the way the Truffle framework works -->

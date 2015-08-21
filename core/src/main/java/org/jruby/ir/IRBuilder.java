@@ -229,6 +229,11 @@ public class IRBuilder {
                 if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
             }
 
+            // $! should be restored before the ensure block is run
+            if (savedGlobalException != null) {
+                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
+
             // Clone instructions now
             builder.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
             builder.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
@@ -346,11 +351,6 @@ public class IRBuilder {
             // For "break" and "next" instructions, we only want to run
             // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
-
-            // $! should be restored before the ensure block is run
-            if (ebi.savedGlobalException != null) {
-                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
-            }
 
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
@@ -2224,12 +2224,13 @@ public class IRBuilder {
             getCurrentLoop(),
             activeRescuers.peek());
 
-        ensureBodyBuildStack.push(ebi);
-        // Restore $! if we the exception was rescued
+        // Record $! save var if we had a non-empty rescue node.
+        // $! will be restored from it where required.
         if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
-            addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             ebi.savedGlobalException = savedGlobalException;
         }
+
+        ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
@@ -2251,6 +2252,8 @@ public class IRBuilder {
         // Clone the ensure body and jump to the end.
         // Don't bother if the protected body ended in a return
         // OR if we are really processing a rescue node
+        //
+        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
         if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
@@ -2266,8 +2269,14 @@ public class IRBuilder {
         addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
+        // Emit code to conditionally restore $!
+        Variable ret = createTemporaryVariable();
+        addInstr(new RuntimeHelperCall(ret, RESTORE_EXCEPTION_VAR, new Operand[]{exc, savedGlobalException} ));
+
         // Now emit the ensure body's stashed instructions
-        ebi.emitBody(this);
+        if (ensurerNode != null) {
+            ebi.emitBody(this);
+        }
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
@@ -3082,12 +3091,12 @@ public class IRBuilder {
             addInstr(new JumpInstr(rEndLabel, true));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
-            // up execution of all necessary ensure blocks.  So, nothing to do here!
+            // up execution of all necessary ensure blocks. So, nothing to do here!
             //
-            // Additionally, the value in 'rv' will never be used, so need to set it to any specific value.
-            // So, we can leave it undefined.  If on the other hand, there was an exception in that block,
+            // Additionally, the value in 'rv' will never be used, so no need to set it to any specific value.
+            // So, we can leave it undefined. If on the other hand, there was an exception in that block,
             // 'rv' will get set in the rescue handler -- see the 'rv' being passed into
-            // buildRescueBodyInternal below.  So, in either case, we are good!
+            // buildRescueBodyInternal below. So, in either case, we are good!
             //}
 
         // Start of rescue logic

@@ -20,8 +20,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.AllocateObjectNode;
-import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
@@ -33,12 +31,10 @@ public abstract class RangeLiteralNode extends RubyNode {
     private final boolean excludeEnd;
 
     @Child private CallDispatchHeadNode cmpNode;
-    @Child private AllocateObjectNode allocateNode;
 
     public RangeLiteralNode(RubyContext context, SourceSection sourceSection, boolean excludeEnd) {
         super(context, sourceSection);
         this.excludeEnd = excludeEnd;
-        allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
     }
 
     @Specialization

@@ -20,7 +20,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -35,7 +34,6 @@ public class ExceptionTranslatingNode extends RubyNode {
 
     private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
     private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
-    private static final boolean PANIC_ON_JAVA_ASSERT = Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load();
 
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
 
@@ -170,10 +168,6 @@ public class ExceptionTranslatingNode extends RubyNode {
     public DynamicObject translate(Throwable throwable) {
         if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
-        }
-
-        if (PANIC_ON_JAVA_ASSERT && throwable instanceof AssertionError) {
-            DebugOperations.panic(getContext(), this, throwable.toString());
         }
 
         if (throwable.getStackTrace().length > 0) {

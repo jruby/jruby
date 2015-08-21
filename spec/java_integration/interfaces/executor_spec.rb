@@ -19,8 +19,8 @@ describe "java.util.concurrent.Executors" do
       end
     end
     future = nil
-    lambda { future = @executor.submit(cls.new) }.should_not raise_error
-    future.get.should == EXECUTOR_TEST_VALUE
+    expect { future = @executor.submit(cls.new) }.not_to raise_error
+    expect(future.get).to eq(EXECUTOR_TEST_VALUE)
   end
 
 end

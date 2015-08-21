@@ -437,7 +437,7 @@ module Commands
       indent = $1
       $&.gsub("1.7", "1.8") + "#{indent}'fork' => 'true',\n"
     end
-    contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)/) do
+    contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end
     File.write pom, contents

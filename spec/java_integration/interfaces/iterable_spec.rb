@@ -9,7 +9,7 @@ describe "Classes that implement Iterable" do
   it "should provide #each" do
     strings = []
     @i.each {|s| strings << s }
-    strings.should == @strings
+    expect(strings).to eq(@strings)
   end
 
   it "should provide #each_with_index" do
@@ -17,14 +17,14 @@ describe "Classes that implement Iterable" do
 
     @i.each_with_index do |string, i|
       block_ran = true
-      string.should == @strings[i]
+      expect(string).to eq(@strings[i])
     end
 
-    block_ran.should be(true)
+    expect(block_ran).to be(true)
   end
 
   it "should provide #map" do
     mapped = @i.map{|s| s.reverse }
-    mapped.should == @strings.map{|s| s.reverse }
+    expect(mapped).to eq(@strings.map{|s| s.reverse })
   end
 end

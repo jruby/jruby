@@ -64,8 +64,12 @@ public class Dir {
     public final static byte[] STAR = new byte[]{'*'};
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
 
-    private static boolean isdirsep(byte c) {
+    private static boolean isdirsep(char c) {
         return c == '/' || DOSISH && c == '\\';
+    }
+
+    private static boolean isdirsep(byte c) {
+        return isdirsep((char)(c & 0xFF));
     }
 
     private static int rb_path_next(byte[] _s, int s, int send) {
@@ -85,7 +89,7 @@ public class Dir {
         boolean nocase = (flags & FNM_CASEFOLD) != 0;
 
         while(pat<pend) {
-            byte c = bytes[pat++];
+            char c = (char)(bytes[pat++] & 0xFF);
             switch(c) {
             case '?':
                 if(s >= send || (pathname && isdirsep(string[s])) ||
@@ -95,7 +99,7 @@ public class Dir {
                 s++;
                 break;
             case '*':
-                while(pat < pend && (c = bytes[pat++]) == '*') {}
+                while(pat < pend && (c = (char)(bytes[pat++] & 0xFF)) == '*') {}
                 if(s < send && (period && string[s] == '.' && (s == 0 || (pathname && isdirsep(string[s-1]))))) {
                     return FNM_NOMATCH;
                 }
@@ -113,7 +117,7 @@ public class Dir {
                     }
                     return FNM_NOMATCH;
                 }
-                test = (char)((escape && c == '\\' && pat < pend ? bytes[pat] : c)&0xFF);
+                test = (char)(escape && c == '\\' && pat < pend ? (bytes[pat] & 0xFF) : c);
                 test = Character.toLowerCase(test);
                 pat--;
                 while(s < send) {
@@ -142,7 +146,7 @@ public class Dir {
                     if (pat >= pend) {
                         c = '\\';
                     } else {
-                        c = bytes[pat++];
+                        c = (char)(bytes[pat++] & 0xFF);
                     }
                 }
             default:
@@ -157,7 +161,7 @@ public class Dir {
                         }
 
                     } else {
-                        if(c != (char)string[s]) {
+                        if(c != (char)(string[s] & 0xFF)) {
                             return FNM_NOMATCH;
                         }
                     }

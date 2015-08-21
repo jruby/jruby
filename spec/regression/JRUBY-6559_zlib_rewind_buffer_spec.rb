@@ -12,8 +12,8 @@ describe 'JRUBY-6559: GZipReader rewind with buffered input' do
     zio.rewind
 
     io = Zlib::GzipReader.new(zio)
-    io.read.should == 'aaaa'
+    expect(io.read).to eq('aaaa')
     io.rewind
-    io.read.should == 'aaaa'
+    expect(io.read).to eq('aaaa')
   end
 end

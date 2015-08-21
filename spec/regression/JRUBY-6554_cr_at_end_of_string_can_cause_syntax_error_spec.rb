@@ -2,6 +2,6 @@ require 'rspec'
 
 describe 'JRUBY-6554: \r at end of string' do
   it "does not cause SyntaxError when eval'd" do
-    lambda {eval "{:a => '\r'}"}.should_not raise_error
+    expect {eval "{:a => '\r'}"}.not_to raise_error
   end
 end

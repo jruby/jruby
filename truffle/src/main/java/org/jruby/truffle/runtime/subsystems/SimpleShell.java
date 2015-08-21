@@ -14,18 +14,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class SimpleShell {
@@ -77,13 +76,19 @@ public class SimpleShell {
                                 RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
                                 false, currentNode, NodeWrapper.IDENTITY);
 
-                        System.console().writer().println(DebugOperations.inspect(context, result));
+                        String inspected;
+
+                        try {
+                            inspected = context.send(result, "inspect", null).toString();
+                        } catch (Exception e) {
+                            inspected = String.format("(error inspecting %s@%x %s)", result.getClass().getSimpleName(), result.hashCode(), e.toString());
+                        }
+
+                        System.console().writer().println(inspected);
                     } catch (RaiseException e) {
                         final Object rubyException = e.getRubyException();
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException()))).getContext(), (DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException))) {
-                            System.console().writer().println(line);
-                        }
+                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
             }
         }
@@ -99,7 +104,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(DebugBacktraceFormatter.formatBasicLine(activation));
+            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Arrays.asList(activation), 0));
             n++;
         }
     }

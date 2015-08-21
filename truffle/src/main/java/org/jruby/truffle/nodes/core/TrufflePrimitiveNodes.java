@@ -27,6 +27,9 @@ import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -38,6 +41,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -536,6 +540,30 @@ public abstract class TrufflePrimitiveNodes {
                 return yield(frame, block);
             }
         }
+    }
+
+    @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)
+    public abstract static class PrintInterleavedBacktraceNode extends CoreMethodNode {
+
+        public PrintInterleavedBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject printInterleavedBacktrace() {
+            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
+                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+
+            final StackTraceElement[] javaStacktrace = new Exception().getStackTrace();
+
+            for (String line : BacktraceInterleaver.interleave(rubyBacktrace, javaStacktrace)) {
+                System.err.println(line);
+            }
+
+            return nil();
+        }
+
     }
 
 }

@@ -134,10 +134,11 @@ public class Options {
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
     public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
-    public static final Option<Boolean> TRUFFLE_PANIC_ON_JAVA_ASSERT = bool(TRUFFLE, "truffle.debug.panic_on_java_assert", false, "Panic as soon as a Java assertion failure is found.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs");
+
+    public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
 
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");
@@ -149,15 +150,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_RANDOMIZE_STORAGE_ARRAY = bool(TRUFFLE, "truffle.randomize_storage.array", false, "Randomize Array storage strategy.");
     public static final Option<Integer> TRUFFLE_RANDOMIZE_SEED = integer(TRUFFLE, "truffle.randomize.seed", 0, "Seed for any randomization.");
 
-    public static final Option<Boolean> TRUFFLE_REQUIRE_SHOW_RESOLUTION = bool(TRUFFLE, "truffle.require.show_resolution", false, "So what files require statements resolve to.");
-
     public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
-
-    public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
-    public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
-    public static final Option<TruffleContextInterface.BacktraceFormatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", TruffleContextInterface.BacktraceFormatter.class, TruffleContextInterface.BacktraceFormatter.MRI, "How to format backtraces in Exception objects.");
-    public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
-    public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

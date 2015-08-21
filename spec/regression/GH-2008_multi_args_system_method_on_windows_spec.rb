@@ -16,8 +16,8 @@ if RbConfig::CONFIG['host_os'] =~ /mingw|mswin/
 
     it "can create directory by intenal command" do
       result = system("mkdir", test_dir_name)
-      result.should be_true
-      Dir.should be_exists(test_dir_name)
+      expect(result).to be_truthy
+      expect(Dir).to be_exists(test_dir_name)
     end
   end
 end

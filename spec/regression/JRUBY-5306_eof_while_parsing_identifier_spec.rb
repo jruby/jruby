@@ -1,5 +1,5 @@
 describe "Lexer" do
   it "should parse identifier at the end of stream" do
-    eval("$a").should == nil
+    expect(eval("$a")).to eq(nil)
   end
 end

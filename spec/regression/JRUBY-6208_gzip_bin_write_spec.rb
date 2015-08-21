@@ -11,6 +11,6 @@ describe "JRUBY-6208: GzipWriter creates corrupted gzip stream" do
       gz.print(content)
     end
     subject = Zlib::GzipReader.open(gzfile) { |gz| gz.read(1024) }
-    subject.should == content
+    expect(subject).to eq(content)
   end
 end

@@ -19,36 +19,30 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
+import java.util.EnumSet;
 import java.util.List;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
 
-    public static class BacktraceFormatter extends MRIBacktraceFormatter {
-        @Override
-        protected String formatFromLine(List<Activation> activations, int n) {
-            return formatCallerLine(activations, n);
-        }
-    }
-
-    public static final BacktraceFormatter BACKTRACE_FORMATTER = new BacktraceFormatter();
-
     @TruffleBoundary
     public static DynamicObject asRubyStringArray(DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
-
         assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-        final String[] lines = BACKTRACE_FORMATTER.format(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
 
-        final Object[] array = new Object[lines.length];
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext();
 
-        for (int n = 0;n < lines.length; n++) {
-            array[n] = StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass(), lines[n]);
+        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
+                .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
+
+        final Object[] array = new Object[lines.size()];
+
+        for (int n = 0;n < lines.size(); n++) {
+            array[n] = StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass(), lines.get(n));
         }
 
         return ArrayNodes.fromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayClass(), array);

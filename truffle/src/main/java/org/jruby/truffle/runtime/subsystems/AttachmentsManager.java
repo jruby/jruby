@@ -80,7 +80,7 @@ public class AttachmentsManager {
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-                            callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForBlocks(block)));
+                            callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block)));
 
                             if (callNode.isCallTargetCloningAllowed()) {
                                 callNode.cloneCallTarget();

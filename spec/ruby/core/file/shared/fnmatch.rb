@@ -234,4 +234,8 @@ describe :file_fnmatch, :shared => true do
     flags.should_receive(:to_int).and_return(10)
     lambda { File.send(@method, "*/place", "path/to/file", flags) }.should_not raise_error
   end
+
+  it "matches multibyte characters" do
+    File.fnmatch("*/ä/ø/ñ", "a/ä/ø/ñ").should == true
+  end
 end
