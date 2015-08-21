@@ -12,6 +12,7 @@ package org.jruby.truffle.tck;
 import com.oracle.truffle.api.vm.TruffleVM;
 import com.oracle.truffle.tck.TruffleTCK;
 
+import org.jruby.truffle.runtime.RubyLanguage;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -70,7 +71,7 @@ public class RubyTckTest extends TruffleTCK {
 
     @Override
     protected String mimeType() {
-        return "application/x-ruby";
+        return RubyLanguage.MIME_TYPE;
     }
 
     @Override

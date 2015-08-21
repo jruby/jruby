@@ -22,8 +22,10 @@ import org.jruby.truffle.nodes.LazyRubyRootNode;
 
 import java.io.IOException;
 
-@TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = "application/x-ruby")
+@TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = RubyLanguage.MIME_TYPE)
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
+
+    public static final String MIME_TYPE = "application/x-ruby";
 
     private RubyLanguage() {
     }
