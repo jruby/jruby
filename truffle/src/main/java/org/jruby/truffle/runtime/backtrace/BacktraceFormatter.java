@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.util.cli.Options;
 
 import java.io.PrintWriter;
@@ -186,7 +187,7 @@ public class BacktraceFormatter {
     }
 
     private boolean isCore(SourceSection sourceSection) {
-        return sourceSection instanceof NullSourceSection || sourceSection.getSource().getPath().startsWith("core:");
+        return sourceSection instanceof NullSourceSection || sourceSection.getSource().getPath().startsWith(SourceLoader.TRUFFLE_SCHEME);
     }
 
 }
