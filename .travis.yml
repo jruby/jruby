@@ -79,7 +79,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
-    - env: COMMAND=tool/truffle-findbugs.sh
     - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
 
 
