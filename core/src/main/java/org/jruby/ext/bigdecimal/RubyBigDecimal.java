@@ -493,7 +493,10 @@ public class RubyBigDecimal extends RubyNumeric {
         // precision can be no more than float digits
         if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw runtime.newArgumentError("precision too large");
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getDoubleValue(), mathContext));
+        double dblVal = arg.getDoubleValue();
+        if(Double.isInfinite(dblVal) || Double.isNaN(dblVal)) throw runtime.newFloatDomainError("NaN");
+
+        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(dblVal, mathContext));
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
