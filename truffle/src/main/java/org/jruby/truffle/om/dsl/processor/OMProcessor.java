@@ -17,16 +17,20 @@ import org.jruby.truffle.om.dsl.processor.layout.model.LayoutModel;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Set;
 
 @SupportedAnnotationTypes("org.jruby.truffle.om.dsl.api.Layout")
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class OMProcessor extends AbstractProcessor {
 
     @Override
