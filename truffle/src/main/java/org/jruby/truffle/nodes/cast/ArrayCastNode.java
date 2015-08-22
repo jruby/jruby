@@ -17,13 +17,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /*
  * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
@@ -81,10 +81,10 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{nil()}, 1);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;

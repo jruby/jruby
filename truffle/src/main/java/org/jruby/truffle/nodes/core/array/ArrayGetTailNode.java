@@ -36,7 +36,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public DynamicObject getTailNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        return createEmptyArray();
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
@@ -44,7 +44,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
@@ -55,7 +55,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
@@ -66,7 +66,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
@@ -77,7 +77,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
         CompilerDirectives.transferToInterpreter();
 
         if (index >= Layouts.ARRAY.getSize(array)) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }

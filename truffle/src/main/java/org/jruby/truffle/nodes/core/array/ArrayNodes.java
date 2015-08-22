@@ -70,10 +70,6 @@ public abstract class ArrayNodes {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 
-    public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
-        return Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), store, size);
-    }
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -109,7 +105,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(a)", "isNullArray(b)"})
         public DynamicObject addNull(DynamicObject a, DynamicObject b) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = {"isObjectArray(a)", "isNullArray(b)"})
@@ -208,9 +204,11 @@ public abstract class ArrayNodes {
 
         @Child private KernelNodes.RespondToNode respondToToStrNode;
         @Child private ToIntNode toIntNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -219,7 +217,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -237,7 +235,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongArray(array)")
@@ -255,7 +253,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isDoubleArray(array)")
@@ -273,7 +271,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -291,7 +289,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -343,9 +341,11 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
+        @Child protected AllocateObjectNode allocateObjectNode;
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -384,7 +384,7 @@ public abstract class ArrayNodes {
                 final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
@@ -400,16 +400,14 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isInteger(a)", "!isIntegerFixnumRange(a)"})
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{a};
-            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
+            return fallback(frame, array, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
         }
 
         @Specialization(guards = { "!isIntegerFixnumRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{a, b};
-            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
+            return fallback(frame, array, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
         }
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
@@ -780,7 +778,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public Object compactNull(DynamicObject array) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
     }
@@ -2058,7 +2056,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
         public DynamicObject mapNull(DynamicObject array, DynamicObject block) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
@@ -2610,7 +2608,7 @@ public abstract class ArrayNodes {
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
                 }
             }
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
@@ -3214,7 +3212,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
@@ -3247,7 +3245,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
@@ -3280,7 +3278,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -3608,7 +3606,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
         public Object selectNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = {"isObjectArray(array)", "isRubyProc(block)"})
@@ -3639,7 +3637,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
@@ -3670,7 +3668,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return createGeneralArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }
@@ -3819,7 +3817,7 @@ public abstract class ArrayNodes {
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
                 }
             }
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
@@ -4179,7 +4177,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject sortNull(DynamicObject array, Object unusedBlock) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @ExplodeLoop

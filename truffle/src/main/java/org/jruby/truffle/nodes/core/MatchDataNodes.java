@@ -326,9 +326,8 @@ public abstract class MatchDataNodes {
         public DynamicObject toA(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = getCaptures(matchData);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -448,9 +447,8 @@ public abstract class MatchDataNodes {
         public DynamicObject toA(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 

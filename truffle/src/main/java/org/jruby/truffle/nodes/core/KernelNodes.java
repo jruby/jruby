@@ -1053,7 +1053,7 @@ public abstract class KernelNodes {
 
             Arrays.sort(instanceVariableNames);
 
-            final DynamicObject array = createEmptyArray();
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
@@ -1197,7 +1197,7 @@ public abstract class KernelNodes {
         public DynamicObject localVariables() {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject array = createEmptyArray();
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
@@ -1282,9 +1282,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1340,9 +1339,8 @@ public abstract class KernelNodes {
             DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1388,9 +1386,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1419,9 +1416,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1757,13 +1753,12 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
             }
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }

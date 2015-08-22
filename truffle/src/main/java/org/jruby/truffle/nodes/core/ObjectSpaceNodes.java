@@ -155,9 +155,8 @@ public abstract class ObjectSpaceNodes {
         public DynamicObject defineFinalizer(VirtualFrame frame, Object object, Object finalizer) {
             if (respondToNode.executeBoolean(frame, finalizer)) {
                 registerFinalizer(object, finalizer);
-                DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
                 Object[] objects = new Object[]{0, finalizer};
-                return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+                return createArray(objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
