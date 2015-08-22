@@ -35,172 +35,15 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashLookupResult;
-import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
-
-    public static int slowHashKey(RubyContext context, Object key) {
-        final Object hashValue = context.send(key, "hash", null);
-
-        if (hashValue instanceof Integer) {
-            return (int) hashValue;
-        } else if (hashValue instanceof Long) {
-            return (int) (long) hashValue;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public static boolean slowAreKeysEqual(RubyContext context, Object a, Object b, boolean byIdentity) {
-        final String method;
-
-        if (byIdentity) {
-            method = "equal?";
-        } else {
-            method = "eql?";
-        }
-
-        final Object equalityResult = context.send(a, method, null, b);
-
-        if (equalityResult instanceof Boolean) {
-            return (boolean) equalityResult;
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
-    public static boolean verifyStore(DynamicObject hash) {
-        return verifyStore(Layouts.HASH.getStore(hash), Layouts.HASH.getSize(hash), Layouts.HASH.getFirstInSequence(hash), Layouts.HASH.getLastInSequence(hash));
-    }
-
-    public static boolean verifyStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        assert store == null || store instanceof Object[] || store instanceof Entry[];
-
-        if (store == null) {
-            assert size == 0;
-            assert firstInSequence == null;
-            assert lastInSequence == null;
-        }
-
-        if (store instanceof Entry[]) {
-            assert lastInSequence == null || lastInSequence.getNextInSequence() == null;
-
-            final Entry[] entryStore = (Entry[]) store;
-
-            Entry foundFirst = null;
-            Entry foundLast = null;
-            int foundSizeBuckets = 0;
-
-            for (int n = 0; n < entryStore.length; n++) {
-                Entry entry = entryStore[n];
-
-                while (entry != null) {
-                    foundSizeBuckets++;
-
-                    if (entry == firstInSequence) {
-                        assert foundFirst == null;
-                        foundFirst = entry;
-                    }
-
-                    if (entry == lastInSequence) {
-                        assert foundLast == null;
-                        foundLast = entry;
-                    }
-
-                    entry = entry.getNextInLookup();
-                }
-            }
-
-            assert foundSizeBuckets == size;
-            assert firstInSequence == foundFirst;
-            assert lastInSequence == foundLast;
-
-            int foundSizeSequence = 0;
-            Entry entry = firstInSequence;
-
-            while (entry != null) {
-                foundSizeSequence++;
-
-                if (entry.getNextInSequence() == null) {
-                    assert entry == lastInSequence;
-                } else {
-                    assert entry.getNextInSequence().getPreviousInSequence() == entry;
-                }
-
-                entry = entry.getNextInSequence();
-
-                assert entry != firstInSequence;
-            }
-
-            assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
-        } else if (store instanceof Object[]) {
-            assert ((Object[]) store).length == PackedArrayStrategy.MAX_ENTRIES * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
-
-            final Object[] packedStore = (Object[]) store;
-
-            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
-                if (n < size) {
-                    assert packedStore[n * 2] != null;
-                    assert packedStore[n * 2 + 1] != null;
-                }
-            }
-
-            assert firstInSequence == null;
-            assert lastInSequence == null;
-        }
-
-        return true;
-    }
-
-    public static void setStore(DynamicObject hash, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
-        assert RubyGuards.isRubyHash(hash);
-        assert verifyStore(store, size, firstInSequence, lastInSequence);
-        Layouts.HASH.setStore(hash, store);
-        Layouts.HASH.setSize(hash, size);
-        Layouts.HASH.setFirstInSequence(hash, firstInSequence);
-        Layouts.HASH.setLastInSequence(hash, lastInSequence);
-
-    }
-
-    @TruffleBoundary
-    public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(DynamicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-
-        if (HashGuards.isNullHash(hash)) {
-            return Collections.emptyIterator();
-        } if (HashGuards.isPackedHash(hash)) {
-            return PackedArrayStrategy.iterateKeyValues((Object[]) Layouts.HASH.getStore(hash), Layouts.HASH.getSize(hash));
-        } else if (HashGuards.isBucketHash(hash)) {
-            return BucketsStrategy.iterateKeyValues(Layouts.HASH.getFirstInSequence(hash));
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @TruffleBoundary
-    public static Iterable<Map.Entry<Object, Object>> iterableKeyValues(final DynamicObject hash) {
-        assert RubyGuards.isRubyHash(hash);
-
-        return new Iterable<Map.Entry<Object, Object>>() {
-
-            @Override
-            public Iterator<Map.Entry<Object, Object>> iterator() {
-                return iterateKeyValues(hash);
-            }
-
-        };
-    }
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
@@ -461,9 +304,14 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isNullHash(hash)")
         public DynamicObject empty(DynamicObject hash) {
-            assert verifyStore(hash);
-            setStore(hash, null, 0, null, null);
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
+            assert HashOperations.verifyStore(null, 0, null, null);
+            Layouts.HASH.setStore(hash, null);
+            Layouts.HASH.setSize(hash, 0);
+            Layouts.HASH.setFirstInSequence(hash, null);
+            Layouts.HASH.setLastInSequence(hash, null);
+
+            assert HashOperations.verifyStore(hash);
             return hash;
         }
 
@@ -537,21 +385,21 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNullHash(hash)")
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, NotProvided block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return nil();
         }
 
         @Specialization(guards = { "isNullHash(hash)", "isRubyProc(block)" })
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return yieldNode.dispatch(frame, (DynamicObject) block, key);
         }
 
         @Specialization(guards = {"isPackedHash(hash)", "!isCompareByIdentity(hash)"})
         public Object deletePackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object maybeBlock) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final int hashed = hashNode.hash(frame, key);
 
@@ -565,14 +413,14 @@ public abstract class HashNodes {
                             final Object value = PackedArrayStrategy.getValue(store, n);
                             PackedArrayStrategy.removeEntry(store, n);
                             Layouts.HASH.setSize(hash, size - 1);
-                            assert verifyStore(hash);
+                            assert HashOperations.verifyStore(hash);
                             return value;
                         }
                     }
                 }
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             if (maybeBlock == NotProvided.INSTANCE) {
                 return nil();
@@ -583,7 +431,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBucketHash(hash)")
         public Object delete(VirtualFrame frame, DynamicObject hash, Object key, Object maybeBlock) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
@@ -623,7 +471,7 @@ public abstract class HashNodes {
 
             Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) - 1);
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return entry.getValue();
         }
@@ -648,7 +496,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
         public DynamicObject eachPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
@@ -676,7 +524,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
         public DynamicObject eachBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 yield(frame, block, createArray(new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
@@ -728,7 +576,12 @@ public abstract class HashNodes {
 
         @Specialization
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, NotProvided block) {
-            setStore(hash, null, 0, null, null);
+            assert HashOperations.verifyStore(null, 0, null, null);
+            Layouts.HASH.setStore(hash, null);
+            Layouts.HASH.setSize(hash, 0);
+            Layouts.HASH.setFirstInSequence(hash, null);
+            Layouts.HASH.setLastInSequence(hash, null);
+
             Layouts.HASH.setDefaultValue(hash, null);
             Layouts.HASH.setDefaultBlock(hash, null);
             return hash;
@@ -736,7 +589,12 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isRubyProc(block)")
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, DynamicObject block) {
-            setStore(hash, null, 0, null, null);
+            assert HashOperations.verifyStore(null, 0, null, null);
+            Layouts.HASH.setStore(hash, null);
+            Layouts.HASH.setSize(hash, 0);
+            Layouts.HASH.setFirstInSequence(hash, null);
+            Layouts.HASH.setLastInSequence(hash, null);
+
             Layouts.HASH.setDefaultValue(hash, null);
             Layouts.HASH.setDefaultBlock(hash, block);
             return hash;
@@ -744,7 +602,12 @@ public abstract class HashNodes {
 
         @Specialization(guards = "wasProvided(defaultValue)")
         public DynamicObject initialize(DynamicObject hash, Object defaultValue, NotProvided block) {
-            setStore(hash, null, 0, null, null);
+            assert HashOperations.verifyStore(null, 0, null, null);
+            Layouts.HASH.setStore(hash, null);
+            Layouts.HASH.setSize(hash, 0);
+            Layouts.HASH.setFirstInSequence(hash, null);
+            Layouts.HASH.setLastInSequence(hash, null);
+
             Layouts.HASH.setDefaultValue(hash, defaultValue);
             Layouts.HASH.setDefaultBlock(hash, null);
             return hash;
@@ -772,7 +635,12 @@ public abstract class HashNodes {
                 return self;
             }
 
-            setStore(self, null, 0, null, null);
+            assert HashOperations.verifyStore(null, 0, null, null);
+            Layouts.HASH.setStore(self, null);
+            Layouts.HASH.setSize(self, 0);
+            Layouts.HASH.setFirstInSequence(self, null);
+            Layouts.HASH.setLastInSequence(self, null);
+
             copyOtherFields(self, from);
 
             return self;
@@ -785,11 +653,17 @@ public abstract class HashNodes {
             }
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(from);
-            setStore(self, PackedArrayStrategy.copyStore(store), Layouts.HASH.getSize(from), null, null);
+            Object store1 = PackedArrayStrategy.copyStore(store);
+            int size = Layouts.HASH.getSize(from);
+            assert HashOperations.verifyStore(store1, size, null, null);
+            Layouts.HASH.setStore(self, store1);
+            Layouts.HASH.setSize(self, size);
+            Layouts.HASH.setFirstInSequence(self, null);
+            Layouts.HASH.setLastInSequence(self, null);
 
             copyOtherFields(self, from);
 
-            assert verifyStore(self);
+            assert HashOperations.verifyStore(self);
 
             return self;
         }
@@ -804,7 +678,7 @@ public abstract class HashNodes {
             BucketsStrategy.copyInto(from, self);
             copyOtherFields(self, from);
 
-            assert verifyStore(self);
+            assert HashOperations.verifyStore(self);
 
             return self;
         }
@@ -834,7 +708,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isNullHash(hash)", "isRubyProc(block)"})
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
@@ -842,7 +716,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
         public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             if (arrayBuilderNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -873,7 +747,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
         public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             if (arrayBuilderNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -989,8 +863,8 @@ public abstract class HashNodes {
                 "!isEmptyHash(other)",
                 "!isCompareByIdentity(hash)"})
         public DynamicObject mergePackedPacked(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
-            assert verifyStore(hash);
-            assert verifyStore(other);
+            assert HashOperations.verifyStore(hash);
+            assert HashOperations.verifyStore(other);
 
             final Object[] storeA = (Object[]) Layouts.HASH.getStore(hash);
             final int storeASize = Layouts.HASH.getSize(hash);
@@ -1086,7 +960,7 @@ public abstract class HashNodes {
                 setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(storeB, n),  PackedArrayStrategy.getValue(storeB, n), false);
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return merged;
         }
@@ -1113,7 +987,7 @@ public abstract class HashNodes {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return merged;
         }
@@ -1145,7 +1019,7 @@ public abstract class HashNodes {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return merged;
         }
@@ -1175,7 +1049,7 @@ public abstract class HashNodes {
                 }
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return merged;
         }
@@ -1190,7 +1064,7 @@ public abstract class HashNodes {
 
             int size = 0;
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), false);
                 size++;
             }
@@ -1200,7 +1074,7 @@ public abstract class HashNodes {
                 lookupEntryNode = insert(new LookupEntryNode(getContext(), getSourceSection()));
             }
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(other)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(other)) {
                 final HashLookupResult searchResult = lookupEntryNode.lookup(frame, merged, keyValue.getKey());
 
                 if (searchResult.getEntry() == null) {
@@ -1217,7 +1091,7 @@ public abstract class HashNodes {
 
             Layouts.HASH.setSize(merged, size);
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return merged;
         }
@@ -1284,7 +1158,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isPackedHash(hash)"})
         public DynamicObject shiftPackedArray(DynamicObject hash) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             
@@ -1295,7 +1169,7 @@ public abstract class HashNodes {
 
             Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) - 1);
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             Object[] objects = new Object[]{key, value};
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
@@ -1303,7 +1177,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
         public DynamicObject shiftBuckets(DynamicObject hash) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final Entry first = Layouts.HASH.getFirstInSequence(hash);
             assert first.getPreviousInSequence() == null;
@@ -1355,7 +1229,7 @@ public abstract class HashNodes {
 
             Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) - 1);
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             Object[] objects = new Object[]{key, value};
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
@@ -1401,7 +1275,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isPackedHash(hash)")
         public DynamicObject rehashPackedArray(VirtualFrame frame, DynamicObject hash) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
@@ -1412,7 +1286,7 @@ public abstract class HashNodes {
                 }
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             return hash;
         }
@@ -1420,7 +1294,7 @@ public abstract class HashNodes {
         @TruffleBoundary
         @Specialization(guards = "isBucketHash(hash)")
         public DynamicObject rehashBuckets(DynamicObject hash) {
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
 
             final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
             Arrays.fill(entries, null);
@@ -1444,7 +1318,7 @@ public abstract class HashNodes {
                 entry = entry.getNextInSequence();
             }
 
-            assert verifyStore(hash);
+            assert HashOperations.verifyStore(hash);
             
             return hash;
         }

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
         for (RubyNode child : children) {
             try {
-                for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(child.executeDynamicObject(frame))) {
+                for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(child.executeDynamicObject(frame))) {
                     keyValues.add(keyValue);
                 }
             } catch (UnexpectedResultException e) {

@@ -45,8 +45,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
@@ -64,6 +62,7 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.FeatureManager;
@@ -113,7 +112,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -685,7 +684,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -2015,7 +2014,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
