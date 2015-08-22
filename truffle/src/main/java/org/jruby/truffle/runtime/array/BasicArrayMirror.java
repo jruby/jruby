@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.runtime.array;
 
+import java.util.Arrays;
+import java.util.Iterator;
+
 public abstract class BasicArrayMirror implements ArrayMirror {
 
     @Override
@@ -26,6 +29,18 @@ public abstract class BasicArrayMirror implements ArrayMirror {
         final Object[] boxed = new Object[newLength];
         copyTo(boxed, 0, 0, Math.min(getLength(), newLength));
         return boxed;
+    }
+
+    @Override
+    public Iterable<Object> iterableUntil(final int length) {
+        return new Iterable<Object>() {
+
+            @Override
+            public Iterator<Object> iterator() {
+                return Arrays.asList(getBoxedCopy(length)).iterator();
+            }
+
+        };
     }
 
 }

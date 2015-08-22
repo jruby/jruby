@@ -31,4 +31,6 @@ public interface ArrayMirror {
 
     Object[] getBoxedCopy(int newLength);
 
+    Iterable<Object> iterableUntil(int length);
+
 }

@@ -66,7 +66,7 @@ public class YieldNode extends RubyNode {
         // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;
         assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayNodes.slowToArray(((DynamicObject) argumentsObjects[0]));
+        return ArrayNodes.toObjectArray(((DynamicObject) argumentsObjects[0]));
     }
 
     @Override

@@ -440,7 +440,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public org.jruby.RubyArray toJRubyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
+        return runtime.newArray(toJRuby(ArrayNodes.toObjectArray(array)));
     }
 
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {

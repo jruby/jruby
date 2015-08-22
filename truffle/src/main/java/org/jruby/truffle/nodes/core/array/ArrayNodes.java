@@ -87,8 +87,12 @@ public abstract class ArrayNodes {
         }
     }
 
-    public static Object[] slowToArray(DynamicObject array) {
+    public static Object[] toObjectArray(DynamicObject array) {
         return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
+    }
+
+    public static Iterable<Object> iterate(DynamicObject array) {
+        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
     }
 
     public static void slowPush(DynamicObject array, Object value) {
@@ -592,7 +596,7 @@ public abstract class ArrayNodes {
             }
 
             final int replacementLength = Layouts.ARRAY.getSize(replacement);
-            final Object[] replacementStore = slowToArray(replacement);
+            final Object[] replacementStore = toObjectArray(replacement);
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
@@ -617,7 +621,7 @@ public abstract class ArrayNodes {
                     }
                 }
 
-                final Object store = slowToArray(array);
+                final Object store = toObjectArray(array);
                 final Object newStore[] = new Object[newLength];
 
 
@@ -1702,7 +1706,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isRubyArray(copy)")
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            Layouts.ARRAY.setStore(array, slowToArray(copy));
+            Layouts.ARRAY.setStore(array, toObjectArray(copy));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }
@@ -1710,7 +1714,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isRubyArray(copy)", "isRubyProc(block)"})
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            Layouts.ARRAY.setStore(array, slowToArray(copy));
+            Layouts.ARRAY.setStore(array, toObjectArray(copy));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }

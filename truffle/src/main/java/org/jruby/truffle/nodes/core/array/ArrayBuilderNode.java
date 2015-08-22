@@ -89,7 +89,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object appendArray(Object store, int index, DynamicObject array) {
             CompilerDirectives.transferToInterpreter();
 
-            for (Object value : ArrayNodes.slowToArray(array)) {
+            for (Object value : ArrayNodes.iterate(array)) {
                 store = appendValue(store, index, value);
                 index++;
             }

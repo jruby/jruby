@@ -77,7 +77,7 @@ public class GeneralSuperCallNode extends RubyNode {
         final Object[] argumentsArray;
         if (isSplatted) {
             // TODO(CS): need something better to splat the arguments array
-            argumentsArray = ArrayNodes.slowToArray((DynamicObject) argumentsObjects[0]);
+            argumentsArray = ArrayNodes.toObjectArray((DynamicObject) argumentsObjects[0]);
         } else {
             argumentsArray = argumentsObjects;
         }

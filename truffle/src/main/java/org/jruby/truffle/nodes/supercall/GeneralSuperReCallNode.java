@@ -74,7 +74,7 @@ public class GeneralSuperReCallNode extends RubyNode {
             // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
             final Object restArg = superArguments[superArguments.length - 1];
             assert RubyGuards.isRubyArray(restArg);
-            final Object[] restArgs = ArrayNodes.slowToArray((DynamicObject) restArg);
+            final Object[] restArgs = ArrayNodes.toObjectArray((DynamicObject) restArg);
             final int restArgIndex = reloadNodes.length - 1;
             superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
             ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);

@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
-import java.util.Arrays;
 
 /**
  * Manages the features loaded into Ruby. This basically means which library files are loaded, but
@@ -66,7 +65,7 @@ public class FeatureManager {
             } else {
                 // Try each load path in turn
 
-                for (Object pathObject : ArrayNodes.slowToArray(context.getCoreLibrary().getLoadPath())) {
+                for (Object pathObject : ArrayNodes.iterate(context.getCoreLibrary().getLoadPath())) {
                     String loadPath = pathObject.toString();
                     if (!isAbsolutePath(loadPath)) {
                         loadPath = expandPath(context, loadPath);
@@ -114,7 +113,7 @@ public class FeatureManager {
         if (path.startsWith("uri:classloader:/")) {
             // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
 
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
+            for (Object loaded : ArrayNodes.iterate(loadedFeatures)) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -134,7 +133,7 @@ public class FeatureManager {
             return true;
         }
         else if (path.startsWith("core:/")) {
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
+            for (Object loaded : ArrayNodes.iterate(loadedFeatures)) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -161,7 +160,7 @@ public class FeatureManager {
 
             final String expandedPath = expandPath(context, path);
 
-            for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
+            for (Object loaded : ArrayNodes.iterate(loadedFeatures)) {
                 if (loaded.toString().equals(expandedPath)) {
                     return true;
                 }

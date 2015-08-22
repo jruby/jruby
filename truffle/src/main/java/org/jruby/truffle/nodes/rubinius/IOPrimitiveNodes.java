@@ -572,7 +572,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] readableObjects = ArrayNodes.slowToArray(readables);
+            final Object[] readableObjects = ArrayNodes.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
@@ -609,7 +609,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
         public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayNodes.slowToArray(writables);
+            final Object[] writableObjects = ArrayNodes.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
 
             final FDSet writableSet = fdSetFactory.create();
@@ -646,7 +646,7 @@ public abstract class IOPrimitiveNodes {
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
             assert RubyGuards.isRubyArray(fileDescriptorArray);
 
-            final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
+            final Object[] objects = ArrayNodes.toObjectArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];
 
