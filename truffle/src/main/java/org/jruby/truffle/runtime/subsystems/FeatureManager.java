@@ -65,7 +65,7 @@ public class FeatureManager {
             } else {
                 // Try each load path in turn
 
-                for (Object pathObject : ArrayOperations.iterate(context.getCoreLibrary().getLoadPath())) {
+                for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
                     String loadPath = pathObject.toString();
                     if (!isAbsolutePath(loadPath)) {
                         loadPath = expandPath(context, loadPath);
@@ -113,7 +113,7 @@ public class FeatureManager {
         if (path.startsWith("uri:classloader:/")) {
             // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
 
-            for (Object loaded : ArrayOperations.iterate(loadedFeatures)) {
+            for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -127,13 +127,13 @@ public class FeatureManager {
                 return false;
             }
 
-            ArrayOperations.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
+            ArrayOperations.append(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
 
             return true;
         }
         else if (path.startsWith("core:/")) {
-            for (Object loaded : ArrayOperations.iterate(loadedFeatures)) {
+            for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
                 if (loaded.toString().equals(path)) {
                     return true;
                 }
@@ -145,7 +145,7 @@ public class FeatureManager {
                 return false;
             }
 
-            ArrayOperations.slowPush(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
+            ArrayOperations.append(loadedFeatures, StringNodes.createString(context.getCoreLibrary().getStringClass(), path));
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
 
             return true;
@@ -160,7 +160,7 @@ public class FeatureManager {
 
             final String expandedPath = expandPath(context, path);
 
-            for (Object loaded : ArrayOperations.iterate(loadedFeatures)) {
+            for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
                 if (loaded.toString().equals(expandedPath)) {
                     return true;
                 }
@@ -168,7 +168,7 @@ public class FeatureManager {
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
             final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
-            ArrayOperations.slowPush(loadedFeatures, pathString);
+            ArrayOperations.append(loadedFeatures, pathString);
             try {
                 context.loadFile(path, currentNode);
             } catch (RaiseException e) {

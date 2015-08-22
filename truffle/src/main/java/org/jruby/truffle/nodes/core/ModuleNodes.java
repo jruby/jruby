@@ -806,7 +806,7 @@ public abstract class ModuleNodes {
             final DynamicObject array = ArrayNodes.createGeneralArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(module)).getContext().getCoreLibrary().getArrayClass(), null, 0);
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayOperations.slowPush(array, getSymbol(variable));
+                ArrayOperations.append(array, getSymbol(variable));
             }
             return array;
         }

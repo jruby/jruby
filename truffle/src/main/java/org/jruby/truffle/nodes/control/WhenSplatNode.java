@@ -53,7 +53,7 @@ public class WhenSplatNode extends RubyNode {
             throw new UnsupportedOperationException();
         }
 
-        for (Object value : ArrayOperations.iterate(array)) {
+        for (Object value : ArrayOperations.toIterable(array)) {
             if (dispatchCaseEqual.callBoolean(frame, caseExpression, "===", null, value)) {
                 return true;
             }

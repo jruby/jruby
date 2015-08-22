@@ -29,9 +29,9 @@ public abstract class ArrayOperations {
     }
 
     public static int clampExclusiveIndex(int length, int index) {
-        if (index < 0) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
             return 0;
-        } else if (index > length) {
+        } else if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index > length)) {
             return length;
         } else {
             return index;
@@ -42,11 +42,11 @@ public abstract class ArrayOperations {
         return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
     }
 
-    public static Iterable<Object> iterate(DynamicObject array) {
+    public static Iterable<Object> toIterable(DynamicObject array) {
         return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
     }
 
-    public static void slowPush(DynamicObject array, Object value) {
+    public static void append(DynamicObject array, Object value) {
         assert RubyGuards.isRubyArray(array);
         Layouts.ARRAY.setStore(array, Arrays.copyOf(ArrayUtils.box(Layouts.ARRAY.getStore(array)), Layouts.ARRAY.getSize(array) + 1));
         Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));

@@ -1057,7 +1057,7 @@ public abstract class KernelNodes {
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    ArrayOperations.slowPush(array, getSymbol((String) name));
+                    ArrayOperations.append(array, getSymbol((String) name));
                 }
             }
 
@@ -1208,7 +1208,7 @@ public abstract class KernelNodes {
 
             for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    ArrayOperations.slowPush(array, getSymbol((String) name));
+                    ArrayOperations.append(array, getSymbol((String) name));
                 }
             }
 

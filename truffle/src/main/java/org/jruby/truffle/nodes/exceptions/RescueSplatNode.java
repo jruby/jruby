@@ -41,7 +41,7 @@ public class RescueSplatNode extends RescueNode {
 
         final DynamicObject exceptionRubyClass = Layouts.BASIC_OBJECT.getLogicalClass(exception);
 
-        for (Object handlingClass : ArrayOperations.iterate(handlingClasses)) {
+        for (Object handlingClass : ArrayOperations.toIterable(handlingClasses)) {
             if (ModuleOperations.assignableTo(exceptionRubyClass, (DynamicObject) handlingClass)) {
                 return true;
             }

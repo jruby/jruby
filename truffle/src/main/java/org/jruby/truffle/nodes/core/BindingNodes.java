@@ -267,7 +267,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
                     if (name instanceof String) {
-                        ArrayOperations.slowPush(array, getSymbol((String) name));
+                        ArrayOperations.append(array, getSymbol((String) name));
                     }
                 }
 

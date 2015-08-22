@@ -210,7 +210,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayOperations.slowPush(coreLibrary.getArgv(), StringNodes.createString(coreLibrary.getStringClass(), arg.toString()));
+            ArrayOperations.append(coreLibrary.getArgv(), StringNodes.createString(coreLibrary.getStringClass(), arg.toString()));
         }
 
         // Set the load path
@@ -229,28 +229,28 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
-                ArrayOperations.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
+                ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
             }
         }
 
         // Load our own stdlib path
 
         // Libraries copied unmodified from MRI
-        ArrayOperations.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
 
         // Our own implementations
-        ArrayOperations.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+            ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
         // Shims
-        ArrayOperations.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {

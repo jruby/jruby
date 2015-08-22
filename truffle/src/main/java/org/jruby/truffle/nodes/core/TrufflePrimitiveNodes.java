@@ -390,7 +390,7 @@ public abstract class TrufflePrimitiveNodes {
 
             int n = 0;
 
-            for (Object object : ArrayOperations.iterate(array)) {
+            for (Object object : ArrayOperations.toIterable(array)) {
                 if (RubyGuards.isRubyString(object) || RubyGuards.isRubySymbol(object)) {
                     strings[n] = object.toString();
                     n++;
