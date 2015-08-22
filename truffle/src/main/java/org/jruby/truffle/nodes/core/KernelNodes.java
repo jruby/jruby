@@ -65,7 +65,7 @@ import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.subsystems.FeatureManager;
+import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -1172,15 +1172,8 @@ public abstract class KernelNodes {
 
             try {
                 getContext().loadFile(file.toString(), this);
-            } catch (RuntimeException e) {
-                // TODO (nirvdrum 05-Feb-15) This is ugly, but checked exceptions are wrapped up the call stack. We need to revisit this.
-                if (e.getCause() instanceof java.io.IOException) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
-                } else {
-                    throw e;
-                }
+            } catch (IOException e) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
@@ -1543,7 +1536,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureManager().require(feature, this);
+                getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1562,16 +1555,16 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(DynamicObject feature) {
-            final FeatureManager featureManager = getContext().getFeatureManager();
+            final FeatureLoader featureLoader = getContext().getFeatureLoader();
 
             final String featureString = feature.toString();
             final String featurePath;
 
-            if (featureManager.isAbsolutePath(featureString)) {
+            if (featureLoader.isAbsolutePath(featureString)) {
                 featurePath = featureString;
             } else {
                 final Source source = RubyCallStack.getCallerFrame(getContext()).getCallNode().getEncapsulatingSourceSection().getSource();
-                final String sourcePath = featureManager.getSourcePath(source);
+                final String sourcePath = featureLoader.getSourcePath(source);
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1582,7 +1575,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                featureManager.require(featurePath, this);
+                featureLoader.require(featurePath, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

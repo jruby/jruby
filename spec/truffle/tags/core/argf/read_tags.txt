@@ -1,3 +1,6 @@
 slow:ARGF.read reads the contents of stdin
 slow:ARGF.read reads a number of bytes from stdin
 slow:ARGF.read reads the contents of one file and stdin
+fails:ARGF.read reads the contents of stdin
+fails:ARGF.read reads a number of bytes from stdin
+fails:ARGF.read reads the contents of one file and stdin
