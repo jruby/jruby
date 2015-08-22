@@ -31,16 +31,8 @@ public abstract class BucketsStrategy {
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
 
-    public static DynamicObject create(DynamicObject hashClass, int capacity) {
-        final int bucketsCount = capacityGreaterThan(capacity) * OVERALLOCATE_FACTOR;
-        final Entry[] newEntries = new Entry[bucketsCount];
-
-        return HashNodes.createHash(hashClass, null, null, newEntries, 0, null, null);
-    }
-
-    public static DynamicObject create(DynamicObject hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext();
-
+    @TruffleBoundary
+    public static DynamicObject create(RubyContext context, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
@@ -56,7 +48,7 @@ public abstract class BucketsStrategy {
                 key = context.send(context.send(key, "dup", null), "freeze", null);
             }
 
-            final int hashed = HashNodes.slowHashKey(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext(), key);
+            final int hashed = HashNodes.slowHashKey(context, key);
             Entry newEntry = new Entry(hashed, key, entry.getValue());
 
             final int index = BucketsStrategy.getBucketIndex(hashed, newEntries.length);
@@ -69,7 +61,7 @@ public abstract class BucketsStrategy {
 
                 while (bucketEntry != null) {
                     if (hashed == bucketEntry.getHashed()
-                            && HashNodes.slowAreKeysEqual(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(hashClass)).getContext(), bucketEntry.getKey(), key, byIdentity)) {
+                            && HashNodes.slowAreKeysEqual(context, bucketEntry.getKey(), key, byIdentity)) {
                         bucketEntry.setValue(entry.getValue());
 
                         actualSize--;
@@ -116,7 +108,7 @@ public abstract class BucketsStrategy {
             lastInSequence = newEntry;
         }
 
-        return HashNodes.createHash(hashClass, null, null, newEntries, actualSize, firstInSequence, lastInSequence);
+        return Layouts.HASH.createHash(context.getCoreLibrary().getHashFactory(), null, null, newEntries, actualSize, firstInSequence, lastInSequence, false);
     }
 
     public static int capacityGreaterThan(int size) {

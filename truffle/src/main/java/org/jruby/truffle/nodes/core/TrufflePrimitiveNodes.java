@@ -292,7 +292,7 @@ public abstract class TrufflePrimitiveNodes {
                 converted.put(createString(source.getKey().getPath()), array);
             }
 
-            return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), converted.entrySet(), false);
+            return BucketsStrategy.create(getContext(), converted.entrySet(), false);
         }
 
         private Object[] lineCountsStore(Long[] array) {

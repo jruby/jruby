@@ -46,7 +46,7 @@ public class ConcatHashLiteralNode extends RubyNode {
             }
         }
 
-        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues, false);
+        return BucketsStrategy.create(getContext(), keyValues, false);
     }
 
 }

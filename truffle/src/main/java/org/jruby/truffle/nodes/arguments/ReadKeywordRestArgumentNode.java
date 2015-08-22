@@ -78,7 +78,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(keyValue);
         }
 
-        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), entries, Layouts.HASH.getCompareByIdentity(hash));
+        return BucketsStrategy.create(getContext(), entries, Layouts.HASH.getCompareByIdentity(hash));
     }
 
 }
