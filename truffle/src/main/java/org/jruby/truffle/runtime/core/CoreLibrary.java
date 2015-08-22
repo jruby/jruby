@@ -91,6 +91,7 @@ public class CoreLibrary {
     private final DynamicObject floatClass;
     private final DynamicObject floatDomainErrorClass;
     private final DynamicObject hashClass;
+    private final DynamicObjectFactory hashFactory;
     private final DynamicObject integerClass;
     private final DynamicObject indexErrorClass;
     private final DynamicObject ioErrorClass;
@@ -330,7 +331,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(fiberClass, Layouts.FIBER.createFiberShape(fiberClass, fiberClass));
         defineModule("FileTest");
         hashClass = defineClass("Hash");
-        Layouts.CLASS.setInstanceFactoryUnsafe(hashClass, Layouts.HASH.createHashShape(hashClass, hashClass));
+        hashFactory = Layouts.HASH.createHashShape(hashClass, hashClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(hashClass, hashFactory);
         matchDataClass = defineClass("MatchData");
         Layouts.CLASS.setInstanceFactoryUnsafe(matchDataClass, Layouts.MATCH_DATA.createMatchDataShape(matchDataClass, matchDataClass));
         methodClass = defineClass("Method");
@@ -1548,6 +1550,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getStringFactory() {
         return stringFactory;
+    }
+
+    public DynamicObjectFactory getHashFactory() {
+        return hashFactory;
     }
 
 }

@@ -171,14 +171,6 @@ public abstract class HashNodes {
 
     }
 
-    public static DynamicObject createEmptyHash(DynamicObject hashClass) {
-        return createHash(hashClass, null, null, null, 0, null, null);
-    }
-
-    public static DynamicObject createHash(DynamicObject hashClass, Object[] store, int size) {
-        return createHash(hashClass, null, null, store, size, null, null);
-    }
-
     public static DynamicObject createHash(DynamicObject hashClass, DynamicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         return Layouts.HASH.createHash(Layouts.CLASS.getInstanceFactory(hashClass), defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, false);
     }
@@ -221,7 +213,7 @@ public abstract class HashNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return HashNodes.createEmptyHash(rubyClass);
+            return createHash(rubyClass, null, null, null, 0, null, null);
         }
 
     }
@@ -276,7 +268,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return createHash(hashClass, newStore, size);
+            return createHash(hashClass, null, null, newStore, size, null, null);
         }
 
         @Specialization

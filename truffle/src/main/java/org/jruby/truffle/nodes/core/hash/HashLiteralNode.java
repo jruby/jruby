@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class HashLiteralNode extends RubyNode {
 
@@ -77,7 +78,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, null, 0, null, null, false);
         }
 
     }
@@ -135,7 +136,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), store, size);
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, store, size, null, null, false);
         }
 
     }
