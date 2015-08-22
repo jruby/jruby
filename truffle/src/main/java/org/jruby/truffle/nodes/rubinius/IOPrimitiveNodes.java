@@ -598,13 +598,11 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects = new Object[]{};
-            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects1 = new Object[]{};
-            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects2 = new Object[]{getSetObjects(readableObjects, readableFds, readableSet), ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
-            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                    getSetObjects(readableObjects, readableFds, readableSet),
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
         @TruffleBoundary
@@ -635,13 +633,11 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects = new Object[]{};
-            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects1 = new Object[]{};
-            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects2 = new Object[]{ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), getSetObjects(writableObjects, writableFds, writableSet), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
-            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                            getSetObjects(writableObjects, writableFds, writableSet),
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {

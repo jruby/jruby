@@ -44,10 +44,6 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
 
-    public DynamicObject finishAndCreate(DynamicObject arrayClass, Object store, int length) {
-        return ArrayNodes.createGeneralArray(arrayClass, finish(store, length), length);
-    }
-
     protected RubyContext getContext() {
         return context;
     }

@@ -461,14 +461,12 @@ public abstract class VMPrimitiveNodes {
                     stringValue = value.toString();
                 }
 
-                DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
                 Object[] objects = new Object[]{createString(key), createString(stringValue)};
-                sectionKeyValues.add(ArrayNodes.createGeneralArray(arrayClass, objects, objects.length));
+                sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = sectionKeyValues.toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -537,9 +535,8 @@ public abstract class VMPrimitiveNodes {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{output, termsig, stopsig, pid};
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

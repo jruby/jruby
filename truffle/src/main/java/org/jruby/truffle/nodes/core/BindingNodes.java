@@ -260,7 +260,7 @@ public abstract class BindingNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables(DynamicObject binding) {
-            final DynamicObject array = createEmptyArray();
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 

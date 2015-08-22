@@ -1180,7 +1180,8 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(b)" })
         public Object divmod(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             final BigDecimal[] result = divmodBigDecimal(Layouts.BIG_DECIMAL.getValue(a), Layouts.BIG_DECIMAL.getValue(b));
-            return createArrayWith(createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]));
+            Object[] store = new Object[]{createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1])};
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = {
@@ -1189,9 +1190,8 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(a)",
                 "!isNormalZero(b)" })
         public Object divmodZeroDividend(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return createArrayWith(
-                    createBigDecimal(frame, BigDecimal.ZERO),
-                    createBigDecimal(frame, BigDecimal.ZERO));
+            Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = {
@@ -1211,7 +1211,8 @@ public abstract class BigDecimalNodes {
             final Type bType = Layouts.BIG_DECIMAL.getType(b);
 
             if (aType == Type.NAN || bType == Type.NAN) {
-                return createArrayWith(createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN));
+                Object[] store = new Object[]{createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
@@ -1220,9 +1221,8 @@ public abstract class BigDecimalNodes {
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
-                return createArrayWith(
-                        createBigDecimal(frame, BigDecimal.ZERO),
-                        createBigDecimal(frame, BigDecimal.ZERO));
+                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
@@ -1235,13 +1235,13 @@ public abstract class BigDecimalNodes {
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
 
-                return createArrayWith(
-                        createBigDecimal(frame, type),
-                        createBigDecimal(frame, Type.NAN));
+                Object[] store = new Object[]{createBigDecimal(frame, type), createBigDecimal(frame, Type.NAN)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                return createArrayWith(createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a));
+                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             throw new UnsupportedOperationException();

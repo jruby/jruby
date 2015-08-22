@@ -26,7 +26,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -282,8 +281,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            return ruby(frame, "_constructor_fallback(*args)", "args", ArrayNodes.createGeneralArray(arrayClass, args, args.length));
+            return ruby(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
         }
 
         public static boolean isSmallArrayOfPairs(Object[] args) {
@@ -843,7 +841,7 @@ public abstract class HashNodes {
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert verifyStore(hash);
 
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         }
 
         @ExplodeLoop
@@ -875,7 +873,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return arrayBuilderNode.finishAndCreate(getContext().getCoreLibrary().getArrayClass(), resultStore, length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(resultStore, length), length);
         }
 
         @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
@@ -903,7 +901,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return arrayBuilderNode.finishAndCreate(getContext().getCoreLibrary().getArrayClass(), store, length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(store, length), length);
         }
 
     }
@@ -1302,9 +1300,8 @@ public abstract class HashNodes {
 
             assert verifyStore(hash);
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{key, value};
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = {"!isEmptyHash(hash)", "isBucketHash(hash)"})
@@ -1363,9 +1360,8 @@ public abstract class HashNodes {
 
             assert verifyStore(hash);
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{key, value};
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

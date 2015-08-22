@@ -348,9 +348,8 @@ public abstract class ModuleNodes {
                 ancestors.add(module);
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = ancestors.toArray(new Object[ancestors.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -803,7 +802,7 @@ public abstract class ModuleNodes {
         public DynamicObject getClassVariables(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject array = ArrayNodes.createGeneralArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(module)).getContext().getCoreLibrary().getArrayClass(), null, 0);
+            final DynamicObject array = createArray(null, 0);
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayOperations.append(array, getSymbol(variable));
@@ -847,9 +846,8 @@ public abstract class ModuleNodes {
                 }
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = constantsArray.toArray(new Object[constantsArray.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
 
     }
@@ -1245,9 +1243,8 @@ public abstract class ModuleNodes {
                 }
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1354,9 +1351,8 @@ public abstract class ModuleNodes {
                 lexicalScope = lexicalScope.getParent();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1511,9 +1507,8 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1561,9 +1556,8 @@ public abstract class ModuleNodes {
         public DynamicObject privateInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1621,9 +1615,8 @@ public abstract class ModuleNodes {
         public DynamicObject publicInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 
@@ -1671,9 +1664,8 @@ public abstract class ModuleNodes {
         public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return createArray(objects, objects.length);
         }
     }
 

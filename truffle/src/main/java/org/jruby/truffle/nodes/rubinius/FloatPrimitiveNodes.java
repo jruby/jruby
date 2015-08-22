@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Locale;
 
@@ -62,7 +63,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{createString(string), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{createString(string), decimal, sign, string.length()}, 4);
         }
 
     }

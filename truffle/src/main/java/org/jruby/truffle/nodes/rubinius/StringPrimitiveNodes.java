@@ -175,9 +175,8 @@ public abstract class StringPrimitiveNodes {
 
             if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = ret.toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         private DynamicObject makeString(DynamicObject source, int index, int length) {

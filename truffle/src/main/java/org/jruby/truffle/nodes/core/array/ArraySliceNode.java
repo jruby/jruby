@@ -40,7 +40,7 @@ public abstract class ArraySliceNode extends RubyNode {
     public DynamicObject sliceNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        return createEmptyArray();
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
@@ -49,7 +49,7 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
@@ -61,7 +61,7 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
@@ -73,7 +73,7 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }
@@ -85,7 +85,7 @@ public abstract class ArraySliceNode extends RubyNode {
         final int to = Layouts.ARRAY.getSize(array) + this.to;
 
         if (from >= to) {
-            return createEmptyArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
             return createArray(ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), from, to), to - from);
         }

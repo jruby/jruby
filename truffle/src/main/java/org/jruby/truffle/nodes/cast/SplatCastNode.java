@@ -19,13 +19,13 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -64,10 +64,10 @@ public abstract class SplatCastNode extends RubyNode {
     public DynamicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{nil()}, 1);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             default: {
                 throw new UnsupportedOperationException();
@@ -101,7 +101,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -109,7 +109,7 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
     }
 
 }

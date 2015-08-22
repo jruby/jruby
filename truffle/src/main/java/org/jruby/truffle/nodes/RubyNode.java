@@ -191,14 +191,6 @@ public abstract class RubyNode extends Node {
         return StringNodes.createString(getContext().getCoreLibrary().getStringFactory(), bytes);
     }
 
-    protected DynamicObject createEmptyArray() {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-    }
-
-    protected DynamicObject createArrayWith(Object... store) {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-    }
-
     protected DynamicObject createArray(Object store, int size) {
         return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
     }
