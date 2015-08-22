@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
@@ -225,7 +224,7 @@ public abstract class MatchDataNodes {
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return createArray(store, length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
         }
 
         @Specialization(guards = "isRubySymbol(index)")
@@ -284,7 +283,7 @@ public abstract class MatchDataNodes {
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
-            return createArray(store, length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
         }
 
     }
@@ -327,7 +326,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] objects = getCaptures(matchData);
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -448,7 +447,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 

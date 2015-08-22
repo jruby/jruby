@@ -48,7 +48,6 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -681,7 +680,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return createArray(setObjects, setFdsCount);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), setObjects, setFdsCount);
         }
 
     }

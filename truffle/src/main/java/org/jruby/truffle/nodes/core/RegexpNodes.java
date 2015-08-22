@@ -30,7 +30,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -661,7 +660,7 @@ public abstract class RegexpNodes {
                 final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
-                final DynamicObject backrefsRubyArray = createArray(backrefs, backrefs.length);
+                final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), backrefs, backrefs.length);
 
                 lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
             }

@@ -360,7 +360,7 @@ public abstract class KernelNodes {
                 locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
-            return createArray(locations, locations.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), locations, locations.length);
         }
     }
 
@@ -1289,7 +1289,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1346,7 +1346,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1393,7 +1393,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1423,7 +1423,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1764,7 +1764,7 @@ public abstract class KernelNodes {
 
             CompilerDirectives.transferToInterpreter();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return createArray(objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

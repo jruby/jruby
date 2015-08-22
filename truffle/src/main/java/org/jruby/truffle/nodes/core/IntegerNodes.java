@@ -100,7 +100,7 @@ public abstract class IntegerNodes {
                 array[i] = i;
             }
 
-            return createArray(array, n);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, n);
         }
 
         @Specialization(guards = "isRubyProc(block)")

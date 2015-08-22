@@ -398,7 +398,7 @@ public abstract class RangeNodes {
                     values[n] = begin + n;
                 }
 
-                return createArray(values, length);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), values, length);
             }
         }
 

@@ -332,7 +332,7 @@ public abstract class EncodingNodes {
 
             final DynamicObject[] encodings = cloneEncodingList();
 
-            return createArray(encodings, encodings.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), encodings, encodings.length);
         }
     }
 

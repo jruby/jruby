@@ -794,7 +794,7 @@ public abstract class StringNodes {
                 store[n] = ((int) bytes[n]) & 0xFF;
             }
 
-            return createArray(store, bytes.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, bytes.length);
         }
 
     }

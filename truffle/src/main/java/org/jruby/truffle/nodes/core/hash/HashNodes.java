@@ -510,7 +510,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < size) {
-                        yield(frame, block, createArray(new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
+                        yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
                     }
                 }
             } finally {
@@ -527,7 +527,7 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(hash);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
-                yield(frame, block, createArray(new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
+                yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{keyValue.getKey(), keyValue.getValue()}, 2));
             }
 
             return hash;

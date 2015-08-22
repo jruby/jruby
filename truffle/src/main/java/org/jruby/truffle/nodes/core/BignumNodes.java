@@ -550,7 +550,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization
@@ -560,7 +560,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -568,7 +568,7 @@ public abstract class BignumNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
     }

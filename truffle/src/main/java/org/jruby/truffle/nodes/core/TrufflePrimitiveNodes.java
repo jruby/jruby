@@ -288,7 +288,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
-                final DynamicObject array = createArray(store, store.length);
+                final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
                 converted.put(createString(source.getKey().getPath()), array);
             }
 

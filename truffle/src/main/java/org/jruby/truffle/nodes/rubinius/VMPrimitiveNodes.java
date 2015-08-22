@@ -54,7 +54,6 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
@@ -368,14 +367,14 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return createArray(new double[]{
-                    utime,
-                    stime,
-                    cutime,
-                    cstime,
-                    tutime,
-                    tstime
-            }, 6);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new double[]{
+                        utime,
+                        stime,
+                        cutime,
+                        cstime,
+                        tutime,
+                        tstime
+                }, 6);
         }
 
     }

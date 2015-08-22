@@ -185,7 +185,7 @@ public abstract class TimePrimitiveNodes {
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
-            return createArray(decomposed, decomposed.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), decomposed, decomposed.length);
         }
 
     }

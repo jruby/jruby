@@ -25,7 +25,6 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -270,7 +269,7 @@ public abstract class ProcNodes {
             } else {
                 DynamicObject file = createString(sourceSection.getSource().getName());
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return createArray(objects, objects.length);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 

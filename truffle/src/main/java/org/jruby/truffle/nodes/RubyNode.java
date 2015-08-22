@@ -167,10 +167,6 @@ public abstract class RubyNode extends Node {
         return getContext().getSymbol(name);
     }
 
-    protected DynamicObject createEmptyString() {
-        return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
-    }
-
     protected DynamicObject createString(String string) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
     }
@@ -189,14 +185,6 @@ public abstract class RubyNode extends Node {
 
     protected DynamicObject createString(ByteList bytes) {
         return StringNodes.createString(getContext().getCoreLibrary().getStringFactory(), bytes);
-    }
-
-    protected DynamicObject createArray(Object store, int size) {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
-    }
-
-    protected DynamicObject createBignum(BigInteger value) {
-        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     protected POSIX posix() {

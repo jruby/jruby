@@ -30,7 +30,6 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.nodes.objects.ClassNode;
@@ -203,7 +202,7 @@ public abstract class MethodNodes {
             } else {
                 DynamicObject file = createString(sourceSection.getSource().getName());
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return createArray(objects, objects.length);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 

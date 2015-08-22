@@ -1912,16 +1912,14 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isNormal(value)")
         public Object precsNormal(DynamicObject value) {
             final BigDecimal bigDecimalValue = Layouts.BIG_DECIMAL.getValue(value).abs();
-            return createArray(
-                    new int[]{
-                            bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                            nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())},
-                    2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{
+                                bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
+                                nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())}, 2);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object precsSpecial(DynamicObject value) {
-            return createArray(new int[]{ 1, 1 }, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{ 1, 1 }, 2);
         }
 
     }
