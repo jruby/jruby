@@ -20,9 +20,9 @@ import org.joni.Matcher;
 import org.joni.Regex;
 import org.jruby.truffle.nodes.core.RegexpGuards;
 import org.jruby.truffle.nodes.core.RegexpNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpSupport;
@@ -137,10 +137,10 @@ public abstract class RegexpPrimitiveNodes {
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             final ByteList stringBl = Layouts.STRING.getByteList(string);
             final ByteList bl = Layouts.REGEXP.getSource(regexp);
-            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true);
+            final Encoding enc = RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringNodes.getCodeRangeable(string), true));
+            final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getRegex(regexp).getOptions(), RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeable(string), true));
             final Matcher matcher = r.matcher(stringBl.getUnsafeBytes(), stringBl.begin(), stringBl.begin() + stringBl.realSize());
 
             if (forward) {

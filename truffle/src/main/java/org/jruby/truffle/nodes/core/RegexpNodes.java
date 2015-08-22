@@ -37,6 +37,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.*;
 
@@ -92,10 +93,10 @@ public abstract class RegexpNodes {
         final byte[] stringBytes = Layouts.STRING.getByteList(source).bytes();
 
         final ByteList bl = Layouts.REGEXP.getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, StringNodes.getCodeRangeable(source), true);
+        final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeable(source), true);
         final ByteList preprocessed = RegexpSupport.preprocess(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringNodes.getCodeRangeable(source), true));
+        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeable(source), true));
         final Matcher matcher = r.matcher(stringBytes);
         int range = stringBytes.length;
 
@@ -319,7 +320,7 @@ public abstract class RegexpNodes {
 
         // Suppress trailing empty fields if not using a limit and the supplied limit isn't negative.
         if (!useLimit && limit == 0) {
-            while (! strings.isEmpty() && (StringNodes.length(strings.get(strings.size() - 1)) == 0)) {
+            while (! strings.isEmpty() && (StringOperations.length(strings.get(strings.size() - 1)) == 0)) {
                 strings.remove(strings.size() - 1);
             }
         }
@@ -570,7 +571,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
-            boolean isAsciiOnly = Layouts.STRING.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
+            boolean isAsciiOnly = Layouts.STRING.getByteList(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
             return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), org.jruby.RubyRegexp.quote19(Layouts.STRING.getByteList(raw), isAsciiOnly), StringSupport.CR_UNKNOWN, null);
         }
 

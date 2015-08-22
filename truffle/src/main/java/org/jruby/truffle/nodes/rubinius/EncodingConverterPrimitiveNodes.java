@@ -23,12 +23,12 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.EncodingConverterNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -79,8 +79,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            StringNodes.modify(source);
-            StringNodes.clearCodeRange(source);
+            StringOperations.modify(source);
+            StringOperations.clearCodeRange(source);
 
             return primitiveConvertHelper(encodingConverter, Layouts.STRING.getByteList(source), source, target, offset, size, options);
         }
@@ -92,8 +92,8 @@ public abstract class EncodingConverterPrimitiveNodes {
 
             final boolean nonNullSource = source != nil();
 
-            StringNodes.modify(target);
-            StringNodes.clearCodeRange(target);
+            StringOperations.modify(target);
+            StringOperations.clearCodeRange(target);
 
             final ByteList outBytes = Layouts.STRING.getByteList(target);
 

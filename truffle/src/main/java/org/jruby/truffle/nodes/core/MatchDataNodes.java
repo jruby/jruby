@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
@@ -69,7 +70,7 @@ public abstract class MatchDataNodes {
             return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(matchData)).getContext().getCoreLibrary().getNilObject();
         }
 
-        final CodeRangeable sourceWrapped = StringNodes.getCodeRangeable(Layouts.MATCH_DATA.getSource(matchData));
+        final CodeRangeable sourceWrapped = StringOperations.getCodeRangeable(Layouts.MATCH_DATA.getSource(matchData));
         if (!StringSupport.isSingleByteOptimizable(sourceWrapped, sourceWrapped.getByteList().getEncoding())) {
             updateCharOffset(matchData);
             e = Layouts.MATCH_DATA.getCharOffsets(matchData).end[index];

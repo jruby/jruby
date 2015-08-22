@@ -11,6 +11,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -25,7 +26,7 @@ public class RegexpGuards {
     }
 
     public static boolean isValidEncoding(DynamicObject string) {
-        return StringNodes.scanForCodeRange(string) != StringSupport.CR_BROKEN;
+        return StringOperations.scanForCodeRange(string) != StringSupport.CR_BROKEN;
     }
 
 }
