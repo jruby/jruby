@@ -40,7 +40,6 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -99,7 +98,6 @@ import org.jruby.ast.SClassNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
-import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
@@ -1864,7 +1862,7 @@ literal         : numeric {
                     $$ = $1;
                 }
                 | symbol {
-                    $$ = new SymbolNode(lexer.getPosition(), new ByteList($1.getBytes(), lexer.getEncoding()));
+                    $$ = support.asSymbol(lexer.getPosition(), $1);
                 }
                 | dsym
 
@@ -2066,11 +2064,11 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // EvStrNode :"#{some expression}"
                      // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                         $$ = new SymbolNode(lexer.getPosition(), new ByteList(new byte[0], lexer.getEncoding()));
+                         $$ = support.asSymbol(lexer.getPosition(), "");
                      } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($2.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($2.getPosition(), $<StrNode>2.getValue());
+                         $$ = support.asSymbol($2.getPosition(), $2);
                      } else {
                          $$ = new DSymbolNode($2.getPosition());
                          $<DSymbolNode>$.add($2);
@@ -2480,7 +2478,7 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = new KeyValuePair<Node,Node>($1, $3);
                 }
                 | tLABEL arg_value {
-                    SymbolNode label = new SymbolNode(support.getPosition($2), new ByteList($1.getBytes(), lexer.getEncoding()));
+                    Node label = support.asSymbol(support.getPosition($2), $1);
                     $$ = new KeyValuePair<Node,Node>(label, $2);
                 }
                 | tSTRING_BEG string_contents tLABEL_END arg_value {

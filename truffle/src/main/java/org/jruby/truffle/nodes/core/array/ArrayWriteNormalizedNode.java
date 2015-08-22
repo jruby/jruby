@@ -48,7 +48,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)", "index == 0"}
     )
     public boolean writeNull0(DynamicObject array, int index, boolean value) {
-        ArrayNodes.setStore(array, new Object[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new Object[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return value;
     }
 
@@ -56,7 +57,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)", "index == 0"}
     )
     public int writeNull0(DynamicObject array, int index, int value) {
-        ArrayNodes.setStore(array, new int[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new int[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return value;
     }
 
@@ -64,7 +66,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)", "index == 0"}
     )
     public long writeNull0(DynamicObject array, int index, long value) {
-        ArrayNodes.setStore(array, new long[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new long[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return value;
     }
 
@@ -72,7 +75,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)", "index == 0"}
     )
     public double writeNull0(DynamicObject array, int index, double value) {
-        ArrayNodes.setStore(array, new double[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new double[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return value;
     }
 
@@ -80,7 +84,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
             guards={"isRubyArray(array)", "isNullArray(array)", "index == 0"}
     )
     public DynamicObject writeNull0(DynamicObject array, int index, DynamicObject value) {
-        ArrayNodes.setStore(array, new Object[]{value}, 1);
+        Layouts.ARRAY.setStore(array, new Object[]{value});
+        Layouts.ARRAY.setSize(array, 1);
         return value;
     }
 
@@ -97,7 +102,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         store[index] = value;
-        ArrayNodes.setStore(array, store, store.length);
+        Layouts.ARRAY.setStore(array, store);
+        Layouts.ARRAY.setSize(array, store.length);
         return value;
     }
 
@@ -170,7 +176,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         longStore[index] = value;
-        ArrayNodes.setStore(array, longStore, Layouts.ARRAY.getSize(array));
+        Layouts.ARRAY.setStore(array, longStore);
+        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return value;
     }
 
@@ -180,7 +187,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public Object writeWithinInt(DynamicObject array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((int[]) Layouts.ARRAY.getStore(array));
         objectStore[index] = value;
-        ArrayNodes.setStore(array, objectStore, Layouts.ARRAY.getSize(array));
+        Layouts.ARRAY.setStore(array, objectStore);
+        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return value;
     }
 
@@ -190,7 +198,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public Object writeWithinLong(DynamicObject array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((long[]) Layouts.ARRAY.getStore(array));
         objectStore[index] = value;
-        ArrayNodes.setStore(array, objectStore, Layouts.ARRAY.getSize(array));
+        Layouts.ARRAY.setStore(array, objectStore);
+        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return value;
     }
 
@@ -200,7 +209,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public Object writeWithinDouble(DynamicObject array, int index, Object value) {
         final Object[] objectStore = ArrayUtils.box((double[]) Layouts.ARRAY.getStore(array));
         objectStore[index] = value;
-        ArrayNodes.setStore(array, objectStore, Layouts.ARRAY.getSize(array));
+        Layouts.ARRAY.setStore(array, objectStore);
+        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return value;
     }
 
@@ -212,7 +222,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public boolean writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, boolean value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -222,7 +233,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public int writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((int[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -232,7 +244,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public int writeExtendByOneIntIntoLong(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -242,7 +255,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public long writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, long value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -252,7 +266,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public double writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, double value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((double[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -262,7 +277,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public DynamicObject writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, DynamicObject value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -272,7 +288,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public int writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -290,7 +307,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         objectStore[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
@@ -306,7 +324,8 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         objectStore[index] = value;
-        ArrayNodes.setStore(array, Layouts.ARRAY.getStore(array), index + 1);
+        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+        Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 

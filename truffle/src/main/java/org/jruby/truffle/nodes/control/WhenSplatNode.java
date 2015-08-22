@@ -16,10 +16,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 
 public class WhenSplatNode extends RubyNode {
 
@@ -53,7 +53,7 @@ public class WhenSplatNode extends RubyNode {
             throw new UnsupportedOperationException();
         }
 
-        for (Object value : ArrayNodes.slowToArray(array)) {
+        for (Object value : ArrayOperations.toIterable(array)) {
             if (dispatchCaseEqual.callBoolean(frame, caseExpression, "===", null, value)) {
                 return true;
             }

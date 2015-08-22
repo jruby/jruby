@@ -17,10 +17,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 
 /**
  * Yield to the current block.
@@ -66,7 +66,7 @@ public class YieldNode extends RubyNode {
         // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;
         assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayNodes.slowToArray(((DynamicObject) argumentsObjects[0]));
+        return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
     }
 
     @Override

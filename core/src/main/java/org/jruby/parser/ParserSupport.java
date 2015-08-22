@@ -36,10 +36,13 @@
 package org.jruby.parser;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.RubyBignum;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
@@ -878,6 +881,19 @@ public class ParserSupport {
 
     public DStrNode createDStrNode(ISourcePosition position) {
         return new DStrNode(position, lexer.getEncoding());
+    }
+
+    public Node asSymbol(ISourcePosition position, String value) {
+        // FIXME: tLABEL and identifiers could return ByteList and not String and make String on-demand for method names
+        // or lvars.  This would prevent this re-extraction of bytes from a string with proper charset
+        try {
+            Charset charset = lexer.getEncoding().getCharset();
+            if (charset != null) return new SymbolNode(position, new ByteList(value.getBytes(charset), lexer.getEncoding()));
+        } catch (UnsupportedCharsetException e) {}
+
+        // for non-charsets we are screwed here since bytes will file.encoding and not what we read them as (see above FIXME for
+        // a much more invasive solution.
+        return new SymbolNode(position, new ByteList(value.getBytes(), lexer.getEncoding()));
     }
         
     public Node asSymbol(ISourcePosition position, Node value) {

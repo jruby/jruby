@@ -125,7 +125,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>2.0.14.pre1</version>
+      <version>2.0.15</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -171,12 +171,12 @@ DO NOT MODIFIY - GENERATED CODE
   </dependencies>
   <repositories>
     <repository>
-      <id>tb-rubygems-releases</id>
-      <url>http://rubygems-proxy.torquebox.org/releases</url>
-    </repository>
-    <repository>
       <id>rubygems-releases</id>
       <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
+    </repository>
+    <repository>
+      <id>tb-rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
   </repositories>
   <build>

@@ -79,7 +79,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
-    - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
 
 
 branches:
@@ -100,6 +99,7 @@ notifications:
     on_failure: always
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+    skip_join: true
 
   # update jruby-head installed on Travis CI
   webhooks:

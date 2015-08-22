@@ -50,9 +50,10 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -63,263 +64,11 @@ import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
-import java.util.Random;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    public static void setStore(DynamicObject array, Object store, int size) {
-        assert verifyStore(store, size);
-
-        if (RANDOMIZE_STORAGE_ARRAY) {
-            store = randomizeStorageStrategy(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(array)).getContext(), store, size);
-            assert verifyStore(store, size);
-        }
-
-        Layouts.ARRAY.setStore(array, store);
-        Layouts.ARRAY.setSize(array, size);
-    }
-
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-    public static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
-    private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
-
-    public static DynamicObject fromObject(DynamicObject arrayClass, Object object) {
-        final Object store;
-
-        if (object instanceof Integer) {
-            store = new int[]{(int) object};
-        } else if (object instanceof Long) {
-            store = new long[]{(long) object};
-        } else if (object instanceof Double) {
-            store = new double[]{(double) object};
-        } else {
-            store = new Object[]{object};
-        }
-
-        return createGeneralArray(arrayClass, store, 1);
-    }
-
-    public static DynamicObject fromObjects(DynamicObject arrayClass, Object... objects) {
-        return createGeneralArray(arrayClass, storeFromObjects(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(arrayClass)).getContext(), objects), objects.length);
-    }
-
-    private static Object storeFromObjects(RubyContext context, Object... objects) {
-        if (objects.length == 0) {
-            return null;
-        }
-
-        boolean canUseInteger = true;
-        boolean canUseLong = true;
-        boolean canUseDouble = true;
-
-        for (Object object : objects) {
-            if (object instanceof Integer) {
-                canUseDouble = false;
-            } else if (object instanceof Long) {
-                canUseInteger = canUseInteger && CoreLibrary.fitsIntoInteger((long) object);
-                canUseDouble = false;
-            } else if (object instanceof Double) {
-                canUseInteger = false;
-                canUseLong = false;
-            } else {
-                canUseInteger = false;
-                canUseLong = false;
-                canUseDouble = false;
-            }
-        }
-
-        if (canUseInteger) {
-            final int[] store = new int[objects.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                final Object object = objects[n];
-                if (object instanceof Integer) {
-                    store[n] = (int) object;
-                } else if (object instanceof Long) {
-                    store[n] = (int) (long) object;
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
-
-            return store;
-        } else if (canUseLong) {
-            final long[] store = new long[objects.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                final Object object = objects[n];
-                if (object instanceof Integer) {
-                    store[n] = (long) (int) object;
-                } else if (object instanceof Long) {
-                    store[n] = (long) object;
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
-
-            return store;
-        } else if (canUseDouble) {
-            final double[] store = new double[objects.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                store[n] = CoreLibrary.toDouble(objects[n], context.getCoreLibrary().getNilObject());
-            }
-
-            return store;
-        } else {
-            return objects;
-        }
-    }
-
-    public static int normalizeIndex(int length, int index) {
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
-            return length + index;
-        } else {
-            return index;
-        }
-    }
-
-    public static int clampExclusiveIndex(int length, int index) {
-        if (index < 0) {
-            return 0;
-        } else if (index > length) {
-            return length;
-        } else {
-            return index;
-        }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public static Object randomizeStorageStrategy(RubyContext context, Object store, int size) {
-        // Use any type for empty arrays
-
-        if (size == 0) {
-            switch (random.nextInt(5)) {
-                case 0:
-                    return null;
-                case 1:
-                    return new int[]{};
-                case 2:
-                    return new long[]{};
-                case 3:
-                    return new double[]{};
-                case 4:
-                    return new Object[]{};
-                default:
-                    throw new IllegalStateException();
-            }
-        }
-
-        // Convert to the canonical store type first
-
-        final Object[] boxedStore = ArrayUtils.box(store);
-        final Object canonicalStore = storeFromObjects(context, boxedStore);
-
-        // Then promote it at random
-
-        if (canonicalStore instanceof int[]) {
-            switch (random.nextInt(3)) {
-                case 0:
-                    return boxedStore;
-                case 1:
-                    return ArrayUtils.longCopyOf((int[]) canonicalStore);
-                case 2:
-                    return canonicalStore;
-                default:
-                    throw new IllegalStateException();
-            }
-        } else if (canonicalStore instanceof long[]) {
-            if (random.nextBoolean()) {
-                return boxedStore;
-            } else {
-                return canonicalStore;
-            }
-        } else if (canonicalStore instanceof double[]) {
-            if (random.nextBoolean()) {
-                return boxedStore;
-            } else {
-                return canonicalStore;
-            }
-        } else if (canonicalStore instanceof Object[]) {
-            return canonicalStore;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    public static Object[] slowToArray(DynamicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        return ArrayUtils.boxUntil(Layouts.ARRAY.getStore(array), Layouts.ARRAY.getSize(array));
-    }
-
-    public static void slowUnshift(DynamicObject array, Object... values) {
-        assert RubyGuards.isRubyArray(array);
-        final Object[] newStore = new Object[Layouts.ARRAY.getSize(array) + values.length];
-        System.arraycopy(values, 0, newStore, 0, values.length);
-        ArrayUtils.copy(Layouts.ARRAY.getStore(array), newStore, values.length, Layouts.ARRAY.getSize(array));
-        setStore(array, newStore, newStore.length);
-    }
-
-    public static void slowPush(DynamicObject array, Object value) {
-        assert RubyGuards.isRubyArray(array);
-        setStore(array, Arrays.copyOf(ArrayUtils.box(Layouts.ARRAY.getStore(array)), Layouts.ARRAY.getSize(array) + 1), Layouts.ARRAY.getSize(array));
-        ((Object[]) Layouts.ARRAY.getStore(array))[Layouts.ARRAY.getSize(array)] = value;
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) + 1);
-    }
-
-    public static int normalizeIndex(DynamicObject array, int index) {
-        assert RubyGuards.isRubyArray(array);
-        return normalizeIndex(Layouts.ARRAY.getSize(array), index);
-    }
-
-    public static int clampExclusiveIndex(DynamicObject array, int index) {
-        assert RubyGuards.isRubyArray(array);
-        return clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
-    }
-
-    private static boolean verifyStore(Object store, int size) {
-        assert size >= 0;
-
-        assert store == null
-                || store instanceof Object[]
-                || store instanceof int[]
-                || store instanceof long[]
-                || store instanceof double[];
-
-        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
-        assert !(store instanceof int[]) || size <= ((int[]) store).length;
-        assert !(store instanceof long[]) || size <= ((long[]) store).length;
-        assert !(store instanceof double[]) || size <= ((double[]) store).length;
-
-        if (store instanceof Object[]) {
-            for (int n = 0; n < size; n++) {
-                assert ((Object[]) store)[n] != null : String.format("array of size %s had null at %d", size, n);
-            }
-        }
-
-        return true;
-    }
-
-    public static DynamicObject createEmptyArray(DynamicObject arrayClass) {
-        return createGeneralArray(arrayClass, null, 0);
-    }
-
-    public static DynamicObject createArray(DynamicObject arrayClass, int[] store, int size) {
-        return createGeneralArray(arrayClass, store, size);
-    }
-
-    public static DynamicObject createArray(DynamicObject arrayClass, long[] store, int size) {
-        return createGeneralArray(arrayClass, store, size);
-    }
-
-    public static DynamicObject createArray(DynamicObject arrayClass, double[] store, int size) {
-        return createGeneralArray(arrayClass, store, size);
-    }
-
-    public static DynamicObject createArray(DynamicObject arrayClass, Object[] store, int size) {
-        return createGeneralArray(arrayClass, store, size);
-    }
 
     public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
         return Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), store, size);
@@ -470,7 +219,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return ArrayNodes.createEmptyArray(Layouts.BASIC_OBJECT.getLogicalClass(array));
+            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -488,7 +237,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongArray(array)")
@@ -506,7 +255,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isDoubleArray(array)")
@@ -524,7 +273,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -542,7 +291,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return ArrayNodes.createArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -625,16 +374,17 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
 
             if (normalizedIndex < 0 || normalizedIndex > Layouts.ARRAY.getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-                final int exclusiveEnd = clampExclusiveIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1);
+                final int end = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                int index = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1;
+                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return ArrayNodes.createEmptyArray(Layouts.BASIC_OBJECT.getLogicalClass(array));
+                    return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
@@ -644,18 +394,22 @@ public abstract class ArrayNodes {
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return readNormalizedSliceNode.executeReadSlice(frame, (DynamicObject) array, normalizedIndex, length);
+                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
             }
         }
 
         @Specialization(guards = {"!isInteger(a)", "!isIntegerFixnumRange(a)"})
         public Object fallbackIndex(VirtualFrame frame, DynamicObject array, Object a, NotProvided length) {
-            return fallback(frame, array, fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{a};
+            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
         }
 
         @Specialization(guards = { "!isIntegerFixnumRange(a)", "wasProvided(b)" })
         public Object fallbackSlice(VirtualFrame frame, DynamicObject array, Object a, Object b) {
-            return fallback(frame, array, fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{a, b};
+            return fallback(frame, array, createGeneralArray(arrayClass, objects, objects.length));
         }
 
         public Object fallback(VirtualFrame frame, DynamicObject array, DynamicObject args) {
@@ -693,7 +447,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused) {
-            final int normalizedIndex = normalizeIndex(array, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
@@ -731,14 +485,14 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = normalizeIndex(array, start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int begin = normalizeIndex(array, start);
+            final int begin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
 
             if (begin < Layouts.ARRAY.getSize(array) && length == 1) {
                 return write(frame, array, begin, value);
@@ -801,7 +555,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = normalizeIndex(array, start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
             if (normalizedIndex < 0) {
                 tooSmallBranch.enter();
                 CompilerDirectives.transferToInterpreter();
@@ -809,7 +563,7 @@ public abstract class ArrayNodes {
             }
 
             final int replacementLength = Layouts.ARRAY.getSize(replacement);
-            final Object[] replacementStore = slowToArray(replacement);
+            final Object[] replacementStore = ArrayOperations.toObjectArray(replacement);
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
@@ -834,7 +588,7 @@ public abstract class ArrayNodes {
                     }
                 }
 
-                final Object store = slowToArray(array);
+                final Object store = ArrayOperations.toObjectArray(array);
                 final Object newStore[] = new Object[newLength];
 
 
@@ -855,7 +609,8 @@ public abstract class ArrayNodes {
                     System.arraycopy(store, normalizedIndex + length, newStore, normalizedIndex + replacementLength, arrayLength - (normalizedIndex + length));
                 }
 
-                setStore(array, newStore, newLength);
+                Layouts.ARRAY.setStore(array, newStore);
+                Layouts.ARRAY.setSize(array, newLength);
             }
 
             return replacement;
@@ -863,8 +618,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -878,13 +633,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRangeArray(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -899,13 +654,14 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-                int normalizedEnd = normalizeIndex(array, Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                int normalizedBegin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+                int normalizedEnd = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
                 if (normalizedBegin == 0 && normalizedEnd == Layouts.ARRAY.getSize(array) - 1) {
-                    setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)), Layouts.ARRAY.getSize(other));
+                    Layouts.ARRAY.setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
+                    Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
                 } else {
                     CompilerDirectives.transferToInterpreter();
                     return setRangeArray(frame, array, range, other, unused);
@@ -972,7 +728,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isRubyArray(array)")
         public DynamicObject clear(DynamicObject array) {
-            setStore(array, Layouts.ARRAY.getStore(array), 0);
+            Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
+            Layouts.ARRAY.setSize(array, 0);
             return array;
         }
 
@@ -1054,7 +811,8 @@ public abstract class ArrayNodes {
                 }
             }
 
-            setStore(array, store, m);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, m);
 
             if (m == size) {
                 return nil();
@@ -1140,7 +898,8 @@ public abstract class ArrayNodes {
                 i++;
             }
             if(i != n){
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return found;
         }
@@ -1178,7 +937,8 @@ public abstract class ArrayNodes {
             }
 
             if(i != n){
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return found;
         }
@@ -1211,7 +971,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
         public int deleteAtIntegerFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(array, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1221,7 +981,8 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) Layouts.ARRAY.getStore(array);
                 final int value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -1246,14 +1007,15 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) Layouts.ARRAY.getStore(array);
                 final int value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
 
         @Specialization(guards = "isLongArray(array)", rewriteOn = UnexpectedResultException.class)
         public long deleteAtLongFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(array, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1263,7 +1025,8 @@ public abstract class ArrayNodes {
                 final long[] store = (long[]) Layouts.ARRAY.getStore(array);
                 final long value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -1288,14 +1051,15 @@ public abstract class ArrayNodes {
                 final long[] store = (long[]) Layouts.ARRAY.getStore(array);
                 final long value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
 
         @Specialization(guards = "isDoubleArray(array)", rewriteOn = UnexpectedResultException.class)
         public double deleteAtFloatInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(array, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1305,7 +1069,8 @@ public abstract class ArrayNodes {
                 final double[] store = (double[]) Layouts.ARRAY.getStore(array);
                 final double value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -1330,14 +1095,15 @@ public abstract class ArrayNodes {
                 final double[] store = (double[]) Layouts.ARRAY.getStore(array);
                 final double value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
 
         @Specialization(guards = "isObjectArray(array)", rewriteOn = UnexpectedResultException.class)
         public Object deleteAtObjectInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(array, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1347,7 +1113,8 @@ public abstract class ArrayNodes {
                 final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
                 final Object value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -1372,7 +1139,8 @@ public abstract class ArrayNodes {
                 final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
                 final Object value = store[normalizedIndex];
                 System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -1788,7 +1556,8 @@ public abstract class ArrayNodes {
         public DynamicObject initialize(DynamicObject array, int size, int defaultValue, NotProvided block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
-            setStore(array, store, size);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, size);
             return array;
         }
 
@@ -1802,7 +1571,8 @@ public abstract class ArrayNodes {
         public DynamicObject initialize(DynamicObject array, int size, long defaultValue, NotProvided block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
-            setStore(array, store, size);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, size);
             return array;
         }
 
@@ -1816,7 +1586,8 @@ public abstract class ArrayNodes {
         public DynamicObject initialize(DynamicObject array, int size, double defaultValue, NotProvided block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
-            setStore(array, store, size);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, size);
             return array;
         }
         
@@ -1830,7 +1601,8 @@ public abstract class ArrayNodes {
         public DynamicObject initialize(DynamicObject array, int size, Object defaultValue, NotProvided block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
-            setStore(array, store, size);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, size);
             return array;
         }
 
@@ -1885,7 +1657,8 @@ public abstract class ArrayNodes {
                     getRootNode().reportLoopCount(count);
                 }
 
-                setStore(array, arrayBuilder.finish(store, n), n);
+                Layouts.ARRAY.setStore(array, arrayBuilder.finish(store, n));
+                Layouts.ARRAY.setSize(array, n);
             }
 
             return array;
@@ -1900,14 +1673,16 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isRubyArray(copy)")
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            setStore(array, slowToArray(copy), Layouts.ARRAY.getSize(copy));
+            Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }
 
         @Specialization(guards = {"isRubyArray(copy)", "isRubyProc(block)"})
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            setStore(array, slowToArray(copy), Layouts.ARRAY.getSize(copy));
+            Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }
 
@@ -1936,7 +1711,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            setStore(self, null, 0);
+            Layouts.ARRAY.setStore(self, null);
+            Layouts.ARRAY.setSize(self, 0);
             return self;
         }
 
@@ -1945,7 +1721,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            setStore(self, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)), Layouts.ARRAY.getSize(from));
+            Layouts.ARRAY.setStore(self, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
 
@@ -1954,7 +1731,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            setStore(self, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)), Layouts.ARRAY.getSize(from));
+            Layouts.ARRAY.setStore(self, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
 
@@ -1963,7 +1741,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            setStore(self, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)), Layouts.ARRAY.getSize(from));
+            Layouts.ARRAY.setStore(self, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
 
@@ -1972,7 +1751,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            setStore(self, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)), Layouts.ARRAY.getSize(from));
+            Layouts.ARRAY.setStore(self, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
 
@@ -2001,48 +1781,48 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectIntegerFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isIntArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectIntegerFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectLongFixnum(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isLongArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectLongFixnumNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectFloat(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isDoubleArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectFloatNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)", "isRubyProc(block)" })
         public Object injectObject(VirtualFrame frame, DynamicObject array, Object initial, NotProvided unused, DynamicObject block) {
-            return injectHelper(frame, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
+            return injectHelper(frame, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, block, 0);
         }
 
         @Specialization(guards = { "isObjectArray(array)", "!isEmptyArray(array)", "isRubyProc(block)" })
         public Object injectObjectNoInitial(VirtualFrame frame, DynamicObject array, NotProvided initial, NotProvided unused, DynamicObject block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array));
 
             return injectHelper(frame, mirror, array, mirror.get(0), block, 1);
         }
@@ -2069,48 +1849,48 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isIntArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolIntArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((int[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((int[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isLongArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolLongArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((long[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((long[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isDoubleArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolDoubleArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((double[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((double[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)", "wasProvided(initial)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, Object initial, DynamicObject symbol, NotProvided block) {
-            return injectSymbolHelper(frame, ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
+            return injectSymbolHelper(frame, ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array)), array, initial, symbol, 0);
         }
 
         @Specialization(guards = { "isRubySymbol(symbol)", "isObjectArray(array)", "!isEmptyArray(array)" })
         public Object injectSymbolObjectArray(VirtualFrame frame, DynamicObject array, DynamicObject symbol, NotProvided unused, NotProvided block) {
-            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(array));
+            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(array));
 
             return injectSymbolHelper(frame, mirror, array, mirror.get(0), symbol, 1);
         }
@@ -2185,7 +1965,8 @@ public abstract class ArrayNodes {
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
-            setStore(array, store, index + 1);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, index + 1);
             return array;
         }
 
@@ -2195,7 +1976,8 @@ public abstract class ArrayNodes {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
             System.arraycopy(store, index, store, index + 1, Layouts.ARRAY.getSize(array) - index);
             store[index] = value;
-            setStore(array, store, Layouts.ARRAY.getSize(array) + 1);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) + 1);
             return array;
         }
 
@@ -2221,7 +2003,8 @@ public abstract class ArrayNodes {
 
             System.arraycopy(values, 0, store, index, values.length);
 
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
 
             return array;
         }
@@ -2844,7 +2627,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -2863,7 +2647,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -2882,7 +2667,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -2901,7 +2687,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;            }
         }
 
@@ -2919,7 +2706,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;}
         }
 
@@ -2937,7 +2725,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;}
         }
 
@@ -2955,7 +2744,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final Object[] filler = new Object[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -2979,7 +2769,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -3003,7 +2794,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final int[] filler = new int[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -3027,7 +2819,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -3051,7 +2844,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final long[] filler = new long[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;            }
         }
 
@@ -3074,7 +2868,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;}
         }
 
@@ -3097,7 +2892,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final double[] filler = new double[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;}
         }
 
@@ -3120,7 +2916,8 @@ public abstract class ArrayNodes {
                 final DynamicObject result = createArray(Arrays.copyOfRange(store, Layouts.ARRAY.getSize(array) - numPop, Layouts.ARRAY.getSize(array)), numPop);
                 final Object[] filler = new Object[numPop];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numPop, numPop);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numPop);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numPop);
                 return result;
             }
         }
@@ -3156,20 +2953,23 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
         public DynamicObject pushNullEmptySingleIntegerFixnum(DynamicObject array, int value, Object[] values) {
-            setStore(array, new int[] { value }, 1);
+            Layouts.ARRAY.setStore(array, new int[] { value });
+            Layouts.ARRAY.setSize(array, 1);
             return array;
         }
 
         @Specialization(guards = { "isNullArray(array)", "values.length == 0" })
         public DynamicObject pushNullEmptySingleIntegerLong(DynamicObject array, long value, Object[] values) {
-            setStore(array, new long[] { value }, 1);
+            Layouts.ARRAY.setStore(array, new long[] { value });
+            Layouts.ARRAY.setSize(array, 1);
             return array;
         }
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushNullEmptyObjects(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
-            setStore(array, values, values.length);
+            Layouts.ARRAY.setStore(array, values);
+            Layouts.ARRAY.setSize(array, values.length);
             return array;
         }
 
@@ -3177,7 +2977,8 @@ public abstract class ArrayNodes {
         public DynamicObject pushEmptySingleIntegerFixnum(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
             // TODO CS 20-Apr-15 in reality might be better reusing any current storage, but won't worry about that for now
             final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
-            setStore(array, values, values.length);
+            Layouts.ARRAY.setStore(array, values);
+            Layouts.ARRAY.setSize(array, values.length);
             return array;
         }
 
@@ -3194,7 +2995,8 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3214,7 +3016,8 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3239,7 +3042,8 @@ public abstract class ArrayNodes {
                 store[oldSize + n] = values[n];
             }
 
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3256,7 +3060,8 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = (long) value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3273,7 +3078,8 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3285,7 +3091,8 @@ public abstract class ArrayNodes {
             }
 
             final Object[] values = RubyArguments.extractUserArguments(frame.getArguments());
-            setStore(array, values, values.length);
+            Layouts.ARRAY.setStore(array, values);
+            Layouts.ARRAY.setSize(array, values.length);
             return array;
         }
 
@@ -3307,7 +3114,8 @@ public abstract class ArrayNodes {
                 store[oldSize + n] = values[n];
             }
 
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3325,7 +3133,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNullArray(array)")
         public DynamicObject pushEmpty(DynamicObject array, Object value) {
-            setStore(array, new Object[]{value}, 1);
+            Layouts.ARRAY.setStore(array, new Object[]{value});
+            Layouts.ARRAY.setSize(array, 1);
             return array;
         }
 
@@ -3338,11 +3147,14 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                setStore(array, store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize)), Layouts.ARRAY.getSize(array));
+                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Layouts.ARRAY.setStore(array, store1);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             }
 
             store[oldSize] = value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3362,7 +3174,8 @@ public abstract class ArrayNodes {
             }
 
             newStore[oldSize] = value;
-            setStore(array, newStore, newSize);
+            Layouts.ARRAY.setStore(array, newStore);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3375,11 +3188,14 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                setStore(array, store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize)), Layouts.ARRAY.getSize(array));
+                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Layouts.ARRAY.setStore(array, store1);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             }
 
             store[oldSize] = value;
-            setStore(array, store, newSize);
+            Layouts.ARRAY.setStore(array, store);
+            Layouts.ARRAY.setSize(array, newSize);
             return array;
         }
 
@@ -3502,7 +3318,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final int[] filler = new int[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return array;
         }
@@ -3527,7 +3344,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final long[] filler = new long[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return array;
         }
@@ -3552,7 +3370,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final double[] filler = new double[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return array;
         }
@@ -3577,7 +3396,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final Object[] filler = new Object[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
             }
             return array;
         }
@@ -3618,7 +3438,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final int[] filler = new int[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
                 return array;
             } else {
                 return nil();
@@ -3645,7 +3466,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final long[] filler = new long[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
                 return array;
             } else {
                 return nil();
@@ -3672,7 +3494,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final double[] filler = new double[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
                 return array;
             } else {
                 return nil();
@@ -3699,7 +3522,8 @@ public abstract class ArrayNodes {
             if (i != n) {
                 final Object[] filler = new Object[n - i];
                 System.arraycopy(filler, 0, store, i, n - i);
-                setStore(array, store, i);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, i);
                 return array;
             } else {
                 return nil();
@@ -3728,7 +3552,8 @@ public abstract class ArrayNodes {
         public DynamicObject replace(DynamicObject array, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
-            setStore(array, null, 0);
+            Layouts.ARRAY.setStore(array, null);
+            Layouts.ARRAY.setSize(array, 0);
             return array;
         }
 
@@ -3736,7 +3561,8 @@ public abstract class ArrayNodes {
         public DynamicObject replaceIntegerFixnum(DynamicObject array, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
-            setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)), Layouts.ARRAY.getSize(other));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
             return array;
         }
 
@@ -3744,7 +3570,8 @@ public abstract class ArrayNodes {
         public DynamicObject replaceLongFixnum(DynamicObject array, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
-            setStore(array, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)), Layouts.ARRAY.getSize(other));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
             return array;
         }
 
@@ -3752,7 +3579,8 @@ public abstract class ArrayNodes {
         public DynamicObject replaceFloat(DynamicObject array, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
-            setStore(array, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)), Layouts.ARRAY.getSize(other));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
             return array;
         }
 
@@ -3760,7 +3588,8 @@ public abstract class ArrayNodes {
         public DynamicObject replaceObject(DynamicObject array, DynamicObject other) {
             CompilerDirectives.transferToInterpreter();
 
-            setStore(array, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)), Layouts.ARRAY.getSize(other));
+            Layouts.ARRAY.setStore(array, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
+            Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
             return array;
         }
 
@@ -3872,7 +3701,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final int[] filler = new int[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3887,7 +3717,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final int[] filler = new int[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3902,7 +3733,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final long[] filler = new long[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3917,7 +3749,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final long[] filler = new long[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3932,7 +3765,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final double[] filler = new double[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3947,7 +3781,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final double[] filler = new double[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -3962,7 +3797,8 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 1, store, 0, Layouts.ARRAY.getSize(array) - 1);
                 final Object[] filler = new Object[1];
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - 1, 1);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - 1);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
                 return value;
             }
         }
@@ -4001,7 +3837,8 @@ public abstract class ArrayNodes {
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4021,7 +3858,8 @@ public abstract class ArrayNodes {
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4041,7 +3879,8 @@ public abstract class ArrayNodes {
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4061,7 +3900,8 @@ public abstract class ArrayNodes {
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4081,7 +3921,8 @@ public abstract class ArrayNodes {
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4101,7 +3942,8 @@ public abstract class ArrayNodes {
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4121,7 +3963,8 @@ public abstract class ArrayNodes {
                 final Object[] filler = new Object[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4146,7 +3989,8 @@ public abstract class ArrayNodes {
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4171,7 +4015,8 @@ public abstract class ArrayNodes {
                 final int[] filler = new int[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4196,7 +4041,8 @@ public abstract class ArrayNodes {
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4221,7 +4067,8 @@ public abstract class ArrayNodes {
                 final long[] filler = new long[numShift];
                 System.arraycopy(store, numShift, store, 0 , Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;          }
         }
 
@@ -4245,7 +4092,8 @@ public abstract class ArrayNodes {
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4270,7 +4118,8 @@ public abstract class ArrayNodes {
                 final double[] filler = new double[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4295,7 +4144,8 @@ public abstract class ArrayNodes {
                 final Object[] filler = new Object[numShift];
                 System.arraycopy(store, numShift, store, 0, Layouts.ARRAY.getSize(array) - numShift);
                 System.arraycopy(filler, 0, store, Layouts.ARRAY.getSize(array) - numShift, numShift);
-                setStore(array, store, Layouts.ARRAY.getSize(array) - numShift);
+                Layouts.ARRAY.setStore(array, store);
+                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - numShift);
                 return result;
             }
         }
@@ -4449,7 +4299,12 @@ public abstract class ArrayNodes {
         public DynamicObject unshift(DynamicObject array, Object... args) {
             CompilerDirectives.transferToInterpreter();
 
-            slowUnshift(array, args);
+            assert RubyGuards.isRubyArray(array);
+            final Object[] newStore = new Object[Layouts.ARRAY.getSize(array) + args.length];
+            System.arraycopy(args, 0, newStore, 0, args.length);
+            ArrayUtils.copy(Layouts.ARRAY.getStore(array), newStore, args.length, Layouts.ARRAY.getSize(array));
+            Layouts.ARRAY.setStore(array, newStore);
+            Layouts.ARRAY.setSize(array, newStore.length);
             return array;
         }
 

@@ -23,16 +23,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.backtrace.BacktraceInterleaver;
 import org.jruby.truffle.runtime.cext.CExtManager;
 import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -391,7 +390,7 @@ public abstract class TrufflePrimitiveNodes {
 
             int n = 0;
 
-            for (Object object : ArrayNodes.slowToArray(array)) {
+            for (Object object : ArrayOperations.toIterable(array)) {
                 if (RubyGuards.isRubyString(object) || RubyGuards.isRubySymbol(object)) {
                     strings[n] = object.toString();
                     n++;

@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
@@ -208,7 +209,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
                 return nil();
@@ -222,7 +223,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
             return createArray(store, length);
         }
@@ -277,9 +278,9 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
-            final int normalizedIndex = ArrayNodes.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
-            final int end = ArrayNodes.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
-            final int exclusiveEnd = ArrayNodes.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
+            final int end = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
+            final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
             final int length = exclusiveEnd - normalizedIndex;
 
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
@@ -325,7 +326,9 @@ public abstract class MatchDataNodes {
         public DynamicObject toA(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), getCaptures(matchData));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = getCaptures(matchData);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 
@@ -445,7 +448,9 @@ public abstract class MatchDataNodes {
         public DynamicObject toA(DynamicObject matchData) {
             CompilerDirectives.transferToInterpreter();
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
         }
     }
 

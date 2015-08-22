@@ -67,7 +67,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return createEmptyArray();
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{nil()}, 1);
 
             default: {
                 throw new UnsupportedOperationException();
@@ -101,7 +101,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -109,7 +109,7 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+        return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
     }
 
 }

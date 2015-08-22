@@ -47,6 +47,7 @@ import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -214,7 +215,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayNodes.slowPush(coreLibrary.getArgv(), StringNodes.createString(coreLibrary.getStringClass(), arg.toString()));
+            ArrayOperations.append(coreLibrary.getArgv(), StringNodes.createString(coreLibrary.getStringClass(), arg.toString()));
         }
 
         // Set the load path
@@ -233,28 +234,28 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
-                ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
+                ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(path.toString()).getAbsolutePath()));
             }
         }
 
         // Load our own stdlib path
 
         // Libraries copied unmodified from MRI
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/mri").toString()));
 
         // Our own implementations
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+            ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
         // Shims
-        ArrayNodes.slowPush(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
+        ArrayOperations.append(loadPath, StringNodes.createString(coreLibrary.getStringClass(), new File(home, "lib/ruby/truffle/shims").toString()));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
@@ -445,7 +446,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public org.jruby.RubyArray toJRubyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return runtime.newArray(toJRuby(ArrayNodes.slowToArray(array)));
+        return runtime.newArray(toJRuby(ArrayOperations.toObjectArray(array)));
     }
 
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {
@@ -512,7 +513,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             store[n] = toTruffle(array.entry(n));
         }
 
-        return ArrayNodes.fromObjects(coreLibrary.getArrayClass(), store);
+        DynamicObject arrayClass = coreLibrary.getArrayClass();
+        return ArrayNodes.createGeneralArray(arrayClass, store, store.length);
     }
 
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
