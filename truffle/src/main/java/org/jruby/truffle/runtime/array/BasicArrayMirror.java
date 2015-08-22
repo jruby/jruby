@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.array;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public abstract class BasicArrayMirror implements ArrayMirror {
 
@@ -46,7 +47,11 @@ public abstract class BasicArrayMirror implements ArrayMirror {
                     }
 
                     @Override
-                    public Object next() {
+                    public Object next() throws NoSuchElementException {
+                        if (n >= length) {
+                            throw new NoSuchElementException();
+                        }
+
                         final Object object = get(n);
                         n++;
                         return object;

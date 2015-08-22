@@ -15,6 +15,7 @@ import org.jruby.truffle.runtime.RubyContext;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class SourceLoader {
 
@@ -44,7 +45,7 @@ public class SourceLoader {
     }
 
     private Source loadResource(String canonicalPath) throws IOException {
-        if (!canonicalPath.toLowerCase().endsWith(".rb")) {
+        if (!canonicalPath.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
             throw new FileNotFoundException(canonicalPath);
         }
 
@@ -67,7 +68,7 @@ public class SourceLoader {
             throw new FileNotFoundException(canonicalPath);
         }
 
-        return Source.fromReader(new InputStreamReader(stream), canonicalPath);
+        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), canonicalPath);
     }
 
 }
