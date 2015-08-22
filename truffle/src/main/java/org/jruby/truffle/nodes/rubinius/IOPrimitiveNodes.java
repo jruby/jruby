@@ -53,6 +53,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
@@ -431,7 +432,8 @@ public abstract class IOPrimitiveNodes {
                 int written = posix().write(fd, buffer, buffer.remaining());
 
                 if (written == -1) {
-                    throw new UnsupportedOperationException();
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
                 }
 
                 buffer.position(buffer.position() + written);
@@ -571,7 +573,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] readableObjects = ArrayNodes.slowToArray(readables);
+            final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
@@ -596,16 +598,19 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    getSetObjects(readableObjects, readableFds, readableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{};
+            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects1 = new Object[]{};
+            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects2 = new Object[]{getSetObjects(readableObjects, readableFds, readableSet), ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
+            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
         }
 
         @TruffleBoundary
         @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
         public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayNodes.slowToArray(writables);
+            final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
 
             final FDSet writableSet = fdSetFactory.create();
@@ -630,16 +635,19 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    getSetObjects(writableObjects, writableFds, writableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects = new Object[]{};
+            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects1 = new Object[]{};
+            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
+            Object[] objects2 = new Object[]{ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), getSetObjects(writableObjects, writableFds, writableSet), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
+            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
             assert RubyGuards.isRubyArray(fileDescriptorArray);
 
-            final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
+            final Object[] objects = ArrayOperations.toObjectArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];
 

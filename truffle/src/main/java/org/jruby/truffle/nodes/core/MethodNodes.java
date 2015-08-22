@@ -202,8 +202,9 @@ public abstract class MethodNodes {
                 return nil();
             } else {
                 DynamicObject file = createString(sourceSection.getSource().getName());
-                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        file, sourceSection.getStartLine());
+                DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+                Object[] objects = new Object[]{file, sourceSection.getStartLine()};
+                return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
             }
         }
 

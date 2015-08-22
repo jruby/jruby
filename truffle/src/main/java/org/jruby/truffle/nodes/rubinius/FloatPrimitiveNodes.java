@@ -62,8 +62,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(),
-                    new Object[]{createString(string), decimal, sign, string.length()}, 4);
+            return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{createString(string), decimal, sign, string.length()}, 4);
         }
 
     }

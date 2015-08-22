@@ -1031,10 +1031,12 @@ public class EncodingUtils {
         EConvResult ret;
         int convertedOutput = 0;
 
+        // these are in the while clause in MRI
         destbytes = newStr.getUnsafeBytes();
         int dest = newStr.begin();
         dp.p = dest + convertedOutput;
         ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+
         while (ret == EConvResult.DestinationBufferFull) {
             int convertedInput = sp.p - start;
             int rest = len - convertedInput;
@@ -1048,6 +1050,12 @@ public class EncodingUtils {
             }
             olen += rest < 2 ? 2 : rest;
             newStr.ensure(olen);
+
+            // these are the while clause in MRI
+            destbytes = newStr.getUnsafeBytes();
+            dest = newStr.begin();
+            dp.p = dest + convertedOutput;
+            ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
         }
         ec.close();
 

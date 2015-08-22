@@ -13,17 +13,17 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
+import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class FeatureLoader {
 
@@ -57,7 +57,7 @@ public class FeatureLoader {
             } else {
                 // Try each load path in turn
 
-                for (Object pathObject : ArrayNodes.slowToArray(context.getCoreLibrary().getLoadPath())) {
+                for (Object pathObject : ArrayOperations.toIterable(context.getCoreLibrary().getLoadPath())) {
                     String loadPath = pathObject.toString();
                     if (!isAbsolutePath(loadPath)) {
                         loadPath = expandPath(context, loadPath);
@@ -114,7 +114,7 @@ public class FeatureLoader {
             expandedPath = path;
         }
 
-        for (Object loaded : Arrays.asList(ArrayNodes.slowToArray(loadedFeatures))) {
+        for (Object loaded : ArrayOperations.toIterable(loadedFeatures)) {
             if (loaded.toString().equals(expandedPath)) {
                 return true;
             }
@@ -122,11 +122,11 @@ public class FeatureLoader {
 
         // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
         final DynamicObject pathString = StringNodes.createString(context.getCoreLibrary().getStringClass(), expandedPath);
-        ArrayNodes.slowPush(loadedFeatures, pathString);
+        ArrayOperations.append(loadedFeatures, pathString);
         try {
             context.loadFile(expandedPath, currentNode);
         } catch (RaiseException e) {
-            final ArrayMirror mirror = ArrayMirror.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
+            final ArrayMirror mirror = ArrayReflector.reflect((Object[]) Layouts.ARRAY.getStore(loadedFeatures));
             final int length = Layouts.ARRAY.getSize(loadedFeatures);
             for (int i = length - 1; i >= 0; i--) {
                 if (mirror.get(i) == pathString) {

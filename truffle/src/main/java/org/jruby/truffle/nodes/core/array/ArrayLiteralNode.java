@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
@@ -50,7 +51,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+        return ArrayNodes.createGeneralArray(arrayClass, executedValues, executedValues.length);
     }
 
     @Override
@@ -236,7 +238,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
                 executedValues[n] = values[n].execute(frame);
             }
 
-            final DynamicObject array = ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+            final DynamicObject array = ArrayNodes.createGeneralArray(arrayClass, storeSpecialisedFromObjects(executedValues), executedValues.length);
             final Object store = Layouts.ARRAY.getStore(array);
 
             if (store == null) {
@@ -252,6 +255,74 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
 
             return array;
+        }
+
+        public Object storeSpecialisedFromObjects(Object... objects) {
+            if (objects.length == 0) {
+                return null;
+            }
+
+            boolean canUseInteger = true;
+            boolean canUseLong = true;
+            boolean canUseDouble = true;
+
+            for (Object object : objects) {
+                if (object instanceof Integer) {
+                    canUseDouble = false;
+                } else if (object instanceof Long) {
+                    canUseInteger = canUseInteger && CoreLibrary.fitsIntoInteger((long) object);
+                    canUseDouble = false;
+                } else if (object instanceof Double) {
+                    canUseInteger = false;
+                    canUseLong = false;
+                } else {
+                    canUseInteger = false;
+                    canUseLong = false;
+                    canUseDouble = false;
+                }
+            }
+
+            if (canUseInteger) {
+                final int[] store = new int[objects.length];
+
+                for (int n = 0; n < objects.length; n++) {
+                    final Object object = objects[n];
+                    if (object instanceof Integer) {
+                        store[n] = (int) object;
+                    } else if (object instanceof Long) {
+                        store[n] = (int) (long) object;
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
+                }
+
+                return store;
+            } else if (canUseLong) {
+                final long[] store = new long[objects.length];
+
+                for (int n = 0; n < objects.length; n++) {
+                    final Object object = objects[n];
+                    if (object instanceof Integer) {
+                        store[n] = (long) (int) object;
+                    } else if (object instanceof Long) {
+                        store[n] = (long) object;
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
+                }
+
+                return store;
+            } else if (canUseDouble) {
+                final double[] store = new double[objects.length];
+
+                for (int n = 0; n < objects.length; n++) {
+                    store[n] = CoreLibrary.toDouble(objects[n], getContext().getCoreLibrary().getNilObject());
+                }
+
+                return store;
+            } else {
+                return objects;
+            }
         }
 
     }

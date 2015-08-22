@@ -465,6 +465,9 @@ public class RubyBigDecimal extends RubyNumeric {
             // Converted to a String because some values -inf cannot happen from Java libs
             return newInstance(context, context.runtime.getClass("BigDecimal"), value.asString());
         }
+        if ((value instanceof RubyRational) || (value instanceof RubyFloat)) {
+            return newInstance(context, context.runtime.getClass("BigDecimal"), value, RubyFixnum.newFixnum(context.runtime, RubyFloat.DIG));
+        }
         return cannotBeCoerced(context, value, must);
     }
 
@@ -493,7 +496,10 @@ public class RubyBigDecimal extends RubyNumeric {
         // precision can be no more than float digits
         if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw runtime.newArgumentError("precision too large");
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.getDoubleValue(), mathContext));
+        double dblVal = arg.getDoubleValue();
+        if(Double.isInfinite(dblVal) || Double.isNaN(dblVal)) throw runtime.newFloatDomainError("NaN");
+
+        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(dblVal, mathContext));
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
@@ -600,7 +606,8 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyBigDecimal) return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
-        if (arg instanceof RubyFloat || arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a rational");
+        if (arg instanceof RubyRational) throw context.runtime.newArgumentError("can't omit precision for a Rational.");
+        if (arg instanceof RubyFloat) throw context.runtime.newArgumentError("can't omit precision for a Float.");
         if (arg instanceof RubyFixnum) return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
         if (arg instanceof RubyBignum) return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
         return newInstance(context, recv, arg, MathContext.UNLIMITED);
@@ -1192,9 +1199,6 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray coerce(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFloat) {
-            return context.runtime.newArray(other, to_f());
-        }
         return context.runtime.newArray(getVpValue(context, other, true), this);
     }
 
@@ -1516,6 +1520,37 @@ public class RubyBigDecimal extends RubyNumeric {
         } catch (ArithmeticException ae) {
             return RubyBignum.bignorm(getRuntime(), value.toBigInteger());
         }
+    }
+
+    @JRubyMethod(name = "to_r")
+    public IRubyObject to_r(ThreadContext context) {
+        checkFloatDomain();
+
+        RubyArray i = split(context);
+        long sign = (long)i.get(0);
+        String digits = (String)i.get(1).toString();
+        long base = (long)i.get(2);
+        long power = (long)i.get(3);
+        long denomi_power = power - digits.length();
+
+        IRubyObject bigDigits = RubyBignum.newBignum(getRuntime(), (String)digits).op_mul(context, sign);
+        RubyBignum numerator;
+        if(bigDigits instanceof RubyBignum) {
+          numerator = (RubyBignum)bigDigits;
+        }
+        else {
+          numerator = RubyBignum.newBignum(getRuntime(), bigDigits.toString());
+        }
+        IRubyObject num, den;
+        if(denomi_power < 0) {
+            num = numerator;
+            den = RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), -denomi_power));
+        }
+        else {
+            num = numerator.op_pow(context, RubyFixnum.newFixnum(getRuntime(), base).op_mul(context, RubyFixnum.newFixnum(getRuntime(), denomi_power)));
+            den = RubyFixnum.newFixnum(getRuntime(), 1);
+        }
+        return RubyRational.newInstance(context, context.runtime.getRational(), num, den);
     }
 
     public IRubyObject to_int19() {

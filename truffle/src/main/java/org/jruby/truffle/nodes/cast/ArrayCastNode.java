@@ -84,7 +84,7 @@ public abstract class ArrayCastNode extends RubyNode {
                 return createEmptyArray();
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;

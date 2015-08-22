@@ -52,7 +52,6 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -64,6 +63,7 @@ import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.*;
@@ -176,7 +176,7 @@ public abstract class StringNodes {
     }
 
     public static int normalizeIndex(int length, int index) {
-        return ArrayNodes.normalizeIndex(length, index);
+        return ArrayOperations.normalizeIndex(length, index);
     }
 
     public static int normalizeIndex(DynamicObject rubyString, int index) {
@@ -185,7 +185,7 @@ public abstract class StringNodes {
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayNodes.clampExclusiveIndex(Layouts.STRING.getByteList(string).length(), index);
+        return ArrayOperations.clampExclusiveIndex(Layouts.STRING.getByteList(string).length(), index);
     }
 
     @TruffleBoundary

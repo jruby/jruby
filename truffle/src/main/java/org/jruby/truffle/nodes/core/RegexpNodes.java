@@ -661,7 +661,7 @@ public abstract class RegexpNodes {
                 final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
-                final DynamicObject backrefsRubyArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);
+                final DynamicObject backrefsRubyArray = ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);
 
                 lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
             }
