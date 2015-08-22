@@ -70,10 +70,6 @@ public abstract class ArrayNodes {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 
-    public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
-        return Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), store, size);
-    }
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -208,9 +204,11 @@ public abstract class ArrayNodes {
 
         @Child private KernelNodes.RespondToNode respondToToStrNode;
         @Child private ToIntNode toIntNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -219,7 +217,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -237,7 +235,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongArray(array)")
@@ -255,7 +253,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isDoubleArray(array)")
@@ -273,7 +271,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObjectArray(array)")
@@ -291,7 +289,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -343,9 +341,11 @@ public abstract class ArrayNodes {
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
         @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
+        @Child protected AllocateObjectNode allocateObjectNode;
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -384,7 +384,7 @@ public abstract class ArrayNodes {
                 final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
 
                 if (exclusiveEnd <= normalizedIndex) {
-                    return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
+                    return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
                 }
 
                 final int length = exclusiveEnd - normalizedIndex;
