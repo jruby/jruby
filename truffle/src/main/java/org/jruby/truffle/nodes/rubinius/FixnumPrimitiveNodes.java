@@ -43,12 +43,12 @@ public abstract class FixnumPrimitiveNodes {
 
         @Specialization
         public DynamicObject coerce(int a, int b) {
-            return createArray(new int[]{b, a}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{b, a}, 2);
         }
 
         @Specialization
         public DynamicObject coerce(long a, int b) {
-            return createArray(new long[]{b, a}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new long[]{b, a}, 2);
         }
 
         @Specialization(guards = "!isInteger(b)")

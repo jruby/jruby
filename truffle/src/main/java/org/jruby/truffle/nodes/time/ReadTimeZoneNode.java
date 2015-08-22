@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.time;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
@@ -19,6 +21,8 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class ReadTimeZoneNode extends RubyNode {
     
@@ -32,7 +36,7 @@ public class ReadTimeZoneNode extends RubyNode {
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadLiteralConstantNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
-        TZ = createString("TZ");
+        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
     @Override
@@ -42,7 +46,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return createString("UTC");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("UTC", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         } else if (RubyGuards.isRubyString(tz)) {
             return tz;
         } else {

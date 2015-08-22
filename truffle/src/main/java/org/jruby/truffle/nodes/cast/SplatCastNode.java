@@ -15,17 +15,20 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -64,10 +67,10 @@ public abstract class SplatCastNode extends RubyNode {
     public DynamicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{nil()}, 1);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             default: {
                 throw new UnsupportedOperationException();
@@ -93,7 +96,7 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, createString(method), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(method, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
@@ -101,7 +104,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -109,7 +112,7 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.createGeneralArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{object}, 1);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
     }
 
 }

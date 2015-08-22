@@ -111,7 +111,7 @@ public class AttachmentsManager {
 
         }, null, info);
 
-        final Source source = context.getSourceManager().forFileBestFuzzily(file);
+        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 
         final LineLocation lineLocation = source.createLineLocation(line);
 
@@ -135,7 +135,7 @@ public class AttachmentsManager {
     }
 
     public synchronized void detach(String file, int line) {
-        final Source source = context.getSourceManager().forFileBestFuzzily(file);
+        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 
         final LineLocation lineLocation = source.createLineLocation(line);
 

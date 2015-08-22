@@ -19,14 +19,16 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ProcNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.loader.SourceLoader;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -78,11 +80,11 @@ public class TraceManager {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "line");
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
                 final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-                final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 final int line = sourceSection.getStartLine();
 
                 return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);
@@ -94,7 +96,7 @@ public class TraceManager {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "call");
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("call", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
                 return new AdvancedInstrumentRoot() {
 
@@ -108,9 +110,9 @@ public class TraceManager {
                             // set_trace_func reports the file and line of the call site.
                             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
                             final String filename = sourceSection.getSource().getName();
-                            final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), filename);
+                            final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
-                            if (! INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith("core:")) {
+                            if (! INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                                 return context.getCoreLibrary().getNilObject();
                             }
 
@@ -168,11 +170,11 @@ public class TraceManager {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = StringNodes.createString(context.getCoreLibrary().getStringClass(), "class");
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("class", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
                 final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-                final DynamicObject file = StringNodes.createString(context.getCoreLibrary().getStringClass(), sourceSection.getSource().getName());
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 final int line = sourceSection.getStartLine();
 
                 return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);

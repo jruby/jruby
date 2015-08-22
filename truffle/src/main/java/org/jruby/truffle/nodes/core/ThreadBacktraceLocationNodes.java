@@ -13,10 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
@@ -41,12 +44,12 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection.getSource() == null) {
-                return createString(sourceSection.getShortDescription());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            return createString(sourceSection.getSource().getPath());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -85,13 +88,13 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection.getSource() == null) {
-                return createString(sourceSection.getShortDescription());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
-            return createString(String.format("%s:%d:in `%s'",
-                        sourceSection.getSource().getShortName(),
-                        sourceSection.getStartLine(),
-                        sourceSection.getIdentifier()));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(String.format("%s:%d:in `%s'",
+                    sourceSection.getSource().getShortName(),
+                    sourceSection.getStartLine(),
+                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

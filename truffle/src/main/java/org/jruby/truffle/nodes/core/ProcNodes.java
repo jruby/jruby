@@ -20,11 +20,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -36,6 +37,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -267,10 +269,9 @@ public abstract class ProcNodes {
             if (sourceSection.getSource() == null) {
                 return nil();
             } else {
-                DynamicObject file = createString(sourceSection.getSource().getName());
-                DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
+                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
-                return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 

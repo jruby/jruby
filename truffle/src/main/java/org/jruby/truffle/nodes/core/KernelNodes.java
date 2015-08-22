@@ -28,6 +28,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -45,8 +46,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
@@ -64,13 +63,15 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.subsystems.FeatureManager;
+import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -113,7 +114,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -144,7 +145,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return createString(resultBuilder.toString(), Layouts.ENCODING.getEncoding(EncodingNodes.getEncoding("UTF-8")));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(resultBuilder.toString(), Layouts.ENCODING.getEncoding(EncodingNodes.getEncoding("UTF-8"))), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -361,7 +362,7 @@ public abstract class KernelNodes {
                 locations[n] = ThreadBacktraceLocationNodes.createRubyThreadBacktraceLocation(threadBacktraceLocationClass, activation);
             }
 
-            return createArray(locations, locations.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), locations, locations.length);
         }
     }
 
@@ -685,7 +686,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
@@ -846,7 +847,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = createString(line);
+            final DynamicObject rubyLine = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(line, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
             // Set the local variable $_ in the caller
 
@@ -1053,7 +1054,7 @@ public abstract class KernelNodes {
 
             Arrays.sort(instanceVariableNames);
 
-            final DynamicObject array = createEmptyArray();
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
@@ -1173,15 +1174,8 @@ public abstract class KernelNodes {
 
             try {
                 getContext().loadFile(file.toString(), this);
-            } catch (RuntimeException e) {
-                // TODO (nirvdrum 05-Feb-15) This is ugly, but checked exceptions are wrapped up the call stack. We need to revisit this.
-                if (e.getCause() instanceof java.io.IOException) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
-                } else {
-                    throw e;
-                }
+            } catch (IOException e) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
             return true;
@@ -1204,7 +1198,7 @@ public abstract class KernelNodes {
         public DynamicObject localVariables() {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject array = createEmptyArray();
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
@@ -1289,9 +1283,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(regular, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
         @Specialization(guards = "!regular")
@@ -1347,9 +1340,8 @@ public abstract class KernelNodes {
             DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1395,9 +1387,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1426,9 +1417,8 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterMethodsOnObject(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1548,7 +1538,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureManager().require(feature, this);
+                getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1567,16 +1557,16 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(feature)")
         public boolean requireRelative(DynamicObject feature) {
-            final FeatureManager featureManager = getContext().getFeatureManager();
+            final FeatureLoader featureLoader = getContext().getFeatureLoader();
 
             final String featureString = feature.toString();
             final String featurePath;
 
-            if (featureManager.isAbsolutePath(featureString)) {
+            if (featureLoader.isAbsolutePath(featureString)) {
                 featurePath = featureString;
             } else {
                 final Source source = RubyCallStack.getCallerFrame(getContext()).getCallNode().getEncapsulatingSourceSection().getSource();
-                final String sourcePath = featureManager.getSourcePath(source);
+                final String sourcePath = featureLoader.getSourcePath(source);
 
                 if (sourcePath == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -1587,7 +1577,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                featureManager.require(featurePath, this);
+                featureLoader.require(featurePath, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1764,13 +1754,12 @@ public abstract class KernelNodes {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             if (!Layouts.CLASS.getIsSingleton(metaClass)) {
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
             }
 
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(metaClass).filterSingletonMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1948,7 +1937,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+            final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(result.getOutput(), 0, result.getOutputLength()), StringSupport.CR_UNKNOWN, null);
 
             if (format.length() == 0) {
                 StringNodes.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -2020,7 +2009,7 @@ public abstract class KernelNodes {
             final List<String> envp = new ArrayList<>();
 
             // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(envAsHash)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
                 envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
             }
 
@@ -2125,7 +2114,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return createString("#<" + className + ":0x" + hexID + ">");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

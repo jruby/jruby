@@ -23,9 +23,9 @@ import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
@@ -34,9 +34,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
-
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
+import org.jruby.util.StringSupport;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -62,7 +60,7 @@ public abstract class RubyNode extends Node {
     public abstract Object execute(VirtualFrame frame);
 
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "expression");
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("expression", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
     // Execute without returning the result
@@ -165,46 +163,6 @@ public abstract class RubyNode extends Node {
 
     public DynamicObject getSymbol(ByteList name) {
         return getContext().getSymbol(name);
-    }
-
-    protected DynamicObject createEmptyString() {
-        return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
-    }
-
-    protected DynamicObject createString(String string) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
-    }
-
-    protected DynamicObject createString(String string, Encoding encoding) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string, encoding);
-    }
-
-    protected DynamicObject createString(byte[] bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
-    }
-
-    protected DynamicObject createString(ByteBuffer bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
-    }
-
-    protected DynamicObject createString(ByteList bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringFactory(), bytes);
-    }
-
-    protected DynamicObject createEmptyArray() {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-    }
-
-    protected DynamicObject createArrayWith(Object... store) {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-    }
-
-    protected DynamicObject createArray(Object store, int size) {
-        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, size);
-    }
-
-    protected DynamicObject createBignum(BigInteger value) {
-        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     protected POSIX posix() {

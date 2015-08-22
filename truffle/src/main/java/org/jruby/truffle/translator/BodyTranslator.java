@@ -432,7 +432,7 @@ public class BodyTranslator extends Translator {
             }
         } else if (receiver instanceof VCallNode // undefined.equal?(obj)
                 && ((VCallNode) receiver).getName().equals("undefined")
-                && sourceSection.getSource().getPath().startsWith("core:/core/")
+                && sourceSection.getSource().getPath().startsWith(CoreLibrary.CORE_LOAD_PATH + "/core/")
                 && methodName.equals("equal?")) {
             RubyNode argument = translateArgumentsAndBlock(sourceSection, null, node.getArgsNode(), null, methodName).getArguments()[0];
             final RubyNode ret = new IsRubiniusUndefinedNode(context, sourceSection, argument);
@@ -988,7 +988,7 @@ public class BodyTranslator extends Translator {
 
         final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
-        if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/core/rubinius")) {
+        if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
             return addNewlineIfNeeded(node, ret);
         }
@@ -1180,7 +1180,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getBody() == null) {
             final SourceSection sourceSection = translate(node.getPosition());
-            ret = new LiteralNode(context, sourceSection, StringNodes.createEmptyString(context.getCoreLibrary().getStringClass()));
+            ret = new LiteralNode(context, sourceSection, Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null));
         } else {
             ret = node.getBody().accept(this);
         }
@@ -1504,7 +1504,7 @@ public class BodyTranslator extends Translator {
             RubyNode readNode = environment.findLocalVarNode(name, sourceSection);
 
             if (name.equals("$_")) {
-                if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+                if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/regexp.rb")) {
                     readNode = new RubiniusLastStringReadNode(context, sourceSection);
                 } else {
                     readNode = GetFromThreadLocalNodeGen.create(context, sourceSection, readNode);
@@ -1605,7 +1605,7 @@ public class BodyTranslator extends Translator {
         // Also note the check for frozen.
         final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
                 final RubyNode ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
@@ -1615,7 +1615,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
                 final RubyNode ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
@@ -1625,8 +1625,8 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
-                sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/bootstrap/string.rb") ||
+                sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/string.rb")) {
 
             if (name.equals("@hash")) {
                 final RubyNode ret = StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[]{});
@@ -1634,7 +1634,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/range.rb")) {
             if (name.equals("@begin")) {
                 final RubyNode ret = RangeNodesFactory.InternalSetBeginNodeGen.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
@@ -1648,7 +1648,7 @@ public class BodyTranslator extends Translator {
         }
 
         // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/io.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/io.rb")) {
             if (name.equals("@start") || name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
                 return addNewlineIfNeeded(
@@ -1677,8 +1677,8 @@ public class BodyTranslator extends Translator {
          * self, and @start to be 0.
          */
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb") ||
-                sourceSection.getSource().getPath().equals("core:/core/rubinius/api/shims/array.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/array.rb") ||
+                sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/api/shims/array.rb")) {
 
             if (name.equals("@total")) {
                 final RubyNode ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
@@ -1692,7 +1692,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/regexp.rb")) {
             if (name.equals("@source")) {
                 final RubyNode ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
@@ -1709,8 +1709,8 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
-                sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/bootstrap/string.rb") ||
+                sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/string.rb")) {
 
             if (name.equals("@num_bytes")) {
                 final RubyNode ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
@@ -1724,7 +1724,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
                 final RubyNode ret = TimeNodesFactory.InternalGMTNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
@@ -1734,7 +1734,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
                 final RubyNode ret = HashNodesFactory.DefaultValueNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
@@ -1747,8 +1747,8 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb") ||
-                sourceSection.getSource().getPath().equals("core:/core/rubinius/api/shims/range.rb")) {
+        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/range.rb") ||
+                sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/api/shims/range.rb")) {
 
             if (name.equals("@begin")) {
                 final RubyNode ret = RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
@@ -2751,7 +2751,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        if (node.getName().equals("undefined") && sourceSection.getSource().getPath().startsWith("core:/core/")) {
+        if (node.getName().equals("undefined") && sourceSection.getSource().getPath().startsWith(CoreLibrary.CORE_LOAD_PATH + "/core/")) {
             final RubyNode ret = new LiteralNode(context, sourceSection, context.getCoreLibrary().getRubiniusUndefined());
             return addNewlineIfNeeded(node, ret);
         }

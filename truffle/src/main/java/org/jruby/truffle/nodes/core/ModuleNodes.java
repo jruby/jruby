@@ -22,6 +22,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -39,7 +41,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.GenerateAccessorNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetMethodVisibilityNodeGen;
 import org.jruby.truffle.nodes.core.ModuleNodesFactory.SetVisibilityNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
@@ -60,6 +61,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.IdUtil;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -348,9 +350,8 @@ public abstract class ModuleNodes {
                 ancestors.add(module);
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = ancestors.toArray(new Object[ancestors.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -803,7 +804,7 @@ public abstract class ModuleNodes {
         public DynamicObject getClassVariables(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            final DynamicObject array = ArrayNodes.createGeneralArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(module)).getContext().getCoreLibrary().getArrayClass(), null, 0);
+            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
                 ArrayOperations.append(array, getSymbol(variable));
@@ -847,9 +848,8 @@ public abstract class ModuleNodes {
                 }
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = constantsArray.toArray(new Object[constantsArray.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -1245,9 +1245,8 @@ public abstract class ModuleNodes {
                 }
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1325,7 +1324,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return createString(Layouts.MODULE.getFields(module).getName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -1354,9 +1353,8 @@ public abstract class ModuleNodes {
                 lexicalScope = lexicalScope.getParent();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = modules.toArray(new Object[modules.size()]);
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1511,9 +1509,8 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1561,9 +1558,8 @@ public abstract class ModuleNodes {
         public DynamicObject privateInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1621,9 +1617,8 @@ public abstract class ModuleNodes {
         public DynamicObject publicInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1671,9 +1666,8 @@ public abstract class ModuleNodes {
         public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
 
@@ -1867,7 +1861,7 @@ public abstract class ModuleNodes {
         public DynamicObject toS(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            return createString(Layouts.MODULE.getFields(module).getName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

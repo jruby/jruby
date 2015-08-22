@@ -1378,7 +1378,9 @@ public class ParserSupport {
         return "";
     }
 
+    private static final String TRUFFLE_CORE_LOAD_PATH = Options.TRUFFLE_CORE_LOAD_PATH.load();
+
     public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith("core:/");
+        return lexer.getFile().startsWith(TRUFFLE_CORE_LOAD_PATH);
     }
 }

@@ -17,9 +17,9 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
 import java.util.Map;
 
@@ -76,7 +76,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     private Object lookupKeywordInHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
+        for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
             if (keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }

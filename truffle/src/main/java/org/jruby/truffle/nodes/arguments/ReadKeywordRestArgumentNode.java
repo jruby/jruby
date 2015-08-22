@@ -15,11 +15,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.ArrayList;
@@ -63,12 +63,12 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
         if (hash == null) {
-            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, null, 0, null, null, false);
         }
 
         final List<Map.Entry<Object, Object>> entries = new ArrayList<>();
 
-        outer: for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
+        outer: for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
             for (String excludedKeyword : excludedKeywords) {
                 if (excludedKeyword.equals(keyValue.getKey().toString())) {
                     continue outer;
@@ -78,7 +78,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(keyValue);
         }
 
-        return BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), entries, Layouts.HASH.getCompareByIdentity(hash));
+        return BucketsStrategy.create(getContext(), entries, Layouts.HASH.getCompareByIdentity(hash));
     }
 
 }

@@ -11,8 +11,12 @@ package org.jruby.truffle.nodes.defined;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class DefinedWrapperNode extends RubyNode {
 
@@ -33,7 +37,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return createString(definition);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(definition, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
 }

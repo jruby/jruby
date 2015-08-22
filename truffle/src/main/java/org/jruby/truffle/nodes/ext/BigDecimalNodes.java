@@ -16,6 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -39,6 +41,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1180,7 +1183,8 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(b)" })
         public Object divmod(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             final BigDecimal[] result = divmodBigDecimal(Layouts.BIG_DECIMAL.getValue(a), Layouts.BIG_DECIMAL.getValue(b));
-            return createArrayWith(createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]));
+            Object[] store = new Object[]{createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1])};
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = {
@@ -1189,9 +1193,8 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(a)",
                 "!isNormalZero(b)" })
         public Object divmodZeroDividend(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            return createArrayWith(
-                    createBigDecimal(frame, BigDecimal.ZERO),
-                    createBigDecimal(frame, BigDecimal.ZERO));
+            Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = {
@@ -1211,7 +1214,8 @@ public abstract class BigDecimalNodes {
             final Type bType = Layouts.BIG_DECIMAL.getType(b);
 
             if (aType == Type.NAN || bType == Type.NAN) {
-                return createArrayWith(createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN));
+                Object[] store = new Object[]{createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (bType == Type.NEGATIVE_ZERO || (bType == Type.NORMAL && isNormalZero(b))) {
@@ -1220,9 +1224,8 @@ public abstract class BigDecimalNodes {
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
-                return createArrayWith(
-                        createBigDecimal(frame, BigDecimal.ZERO),
-                        createBigDecimal(frame, BigDecimal.ZERO));
+                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (aType == Type.POSITIVE_INFINITY || aType == Type.NEGATIVE_INFINITY) {
@@ -1235,13 +1238,13 @@ public abstract class BigDecimalNodes {
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
 
-                return createArrayWith(
-                        createBigDecimal(frame, type),
-                        createBigDecimal(frame, Type.NAN));
+                Object[] store = new Object[]{createBigDecimal(frame, type), createBigDecimal(frame, Type.NAN)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                return createArrayWith(createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a));
+                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a)};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             throw new UnsupportedOperationException();
@@ -1912,16 +1915,14 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isNormal(value)")
         public Object precsNormal(DynamicObject value) {
             final BigDecimal bigDecimalValue = Layouts.BIG_DECIMAL.getValue(value).abs();
-            return createArray(
-                    new int[]{
-                            bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                            nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())},
-                    2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{
+                                bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
+                                nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())}, 2);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object precsSpecial(DynamicObject value) {
-            return createArray(new int[]{ 1, 1 }, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{ 1, 1 }, 2);
         }
 
     }
@@ -1968,13 +1969,14 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public Object unscaled(DynamicObject value) {
-            return createString(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object unscaledSpecial(DynamicObject value) {
             final String type = Layouts.BIG_DECIMAL.getType(value).getRepresentation();
-            return createString(type.startsWith("-") ? type.substring(1) : type);
+            String string = type.startsWith("-") ? type.substring(1) : type;
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(string, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

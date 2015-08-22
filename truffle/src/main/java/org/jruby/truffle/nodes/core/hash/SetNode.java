@@ -26,10 +26,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashLookupResult;
-import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @ImportStatic(HashGuards.class)
@@ -62,8 +59,14 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
     public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        HashNodes.setStore(hash, PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value), 1, null, null);
-        assert HashNodes.verifyStore(hash);
+        Object store = PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value);
+        assert HashOperations.verifyStore(store, 1, null, null);
+        Layouts.HASH.setStore(hash, store);
+        Layouts.HASH.setSize(hash, 1);
+        Layouts.HASH.setFirstInSequence(hash, null);
+        Layouts.HASH.setLastInSequence(hash, null);
+
+        assert HashOperations.verifyStore(hash);
         return value;
     }
 
@@ -80,7 +83,7 @@ public abstract class SetNode extends RubyNode {
     @ExplodeLoop
     @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
     public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         final int hashed = hashNode.hash(frame, key);
 
@@ -100,7 +103,7 @@ public abstract class SetNode extends RubyNode {
 
                     if (equal) {
                         PackedArrayStrategy.setValue(store, n, value);
-                        assert HashNodes.verifyStore(hash);
+                        assert HashOperations.verifyStore(hash);
                         return value;
                     }
                 }
@@ -118,7 +121,7 @@ public abstract class SetNode extends RubyNode {
             BucketsStrategy.addNewEntry(hash, hashed, key, value);
         }
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         return value;
     }
@@ -141,7 +144,7 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
     public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -187,7 +190,7 @@ public abstract class SetNode extends RubyNode {
             entry.setKeyValue(result.getHashed(), key, value);
         }
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
 
         return value;
     }

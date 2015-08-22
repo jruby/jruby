@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
 import java.util.Iterator;
@@ -120,9 +120,13 @@ public abstract class PackedArrayStrategy {
             }
         }
 
-        HashNodes.setStore(hash, buckets, size, firstInSequence, lastInSequence);
+        assert HashOperations.verifyStore(buckets, size, firstInSequence, lastInSequence);
+        Layouts.HASH.setStore(hash, buckets);
+        Layouts.HASH.setSize(hash, size);
+        Layouts.HASH.setFirstInSequence(hash, firstInSequence);
+        Layouts.HASH.setLastInSequence(hash, lastInSequence);
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(hash);
     }
 
     @TruffleBoundary

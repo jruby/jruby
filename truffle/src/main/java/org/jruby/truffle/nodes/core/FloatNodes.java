@@ -18,12 +18,14 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -699,7 +701,7 @@ public abstract class FloatNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(double value) {
-            return createString(Double.toString(value), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

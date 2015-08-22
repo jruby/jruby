@@ -125,6 +125,8 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
+    public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/", "Directory to load the Truffle core library from.");
+
     public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
     public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");

@@ -48,7 +48,6 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -61,6 +60,7 @@ import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
@@ -262,7 +262,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -295,10 +295,10 @@ public abstract class IOPrimitiveNodes {
             }
 
             if (bytesRead == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -556,7 +556,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return createString(buffer);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(buffer.array()), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -598,13 +598,11 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects = new Object[]{};
-            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects1 = new Object[]{};
-            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects2 = new Object[]{getSetObjects(readableObjects, readableFds, readableSet), ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
-            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                    getSetObjects(readableObjects, readableFds, readableSet),
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
         @TruffleBoundary
@@ -635,13 +633,11 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects = new Object[]{};
-            DynamicObject arrayClass1 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects1 = new Object[]{};
-            DynamicObject arrayClass2 = getContext().getCoreLibrary().getArrayClass();
-            Object[] objects2 = new Object[]{ArrayNodes.createGeneralArray(arrayClass1, objects1, objects1.length), getSetObjects(writableObjects, writableFds, writableSet), ArrayNodes.createGeneralArray(arrayClass, objects, objects.length)};
-            return ArrayNodes.createGeneralArray(arrayClass2, objects2, objects2.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                            getSetObjects(writableObjects, writableFds, writableSet),
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
@@ -685,7 +681,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return createArray(setObjects, setFdsCount);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), setObjects, setFdsCount);
         }
 
     }

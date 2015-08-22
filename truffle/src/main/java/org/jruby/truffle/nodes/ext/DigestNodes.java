@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -190,7 +191,7 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return createString(clonedDigest.digest());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(clonedDigest.digest()), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -221,7 +222,7 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final ByteList byteList = Layouts.STRING.getByteList(message);
-            return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()), StringSupport.CR_UNKNOWN, null);
         }
 
     }

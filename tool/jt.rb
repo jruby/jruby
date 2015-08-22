@@ -249,7 +249,7 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
-    jruby_args = %w[-X+T]
+    jruby_args = %w[-X+T -Xtruffle.core.load_path=truffle/src/main/ruby]
 
     { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)

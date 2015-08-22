@@ -23,7 +23,9 @@ import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class HashLiteralNode extends RubyNode {
 
@@ -77,7 +79,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, null, 0, null, null, false);
         }
 
     }
@@ -135,7 +137,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), store, size);
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, store, size, null, null, false);
         }
 
     }
@@ -155,7 +157,10 @@ public abstract class HashLiteralNode extends RubyNode {
                 setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
-            final DynamicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
+            final int bucketsCount = BucketsStrategy.capacityGreaterThan(keyValues.length / 2) * BucketsStrategy.OVERALLOCATE_FACTOR;
+            final Entry[] newEntries = new Entry[bucketsCount];
+
+            final DynamicObject hash = Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, newEntries, 0, null, null, false);
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);

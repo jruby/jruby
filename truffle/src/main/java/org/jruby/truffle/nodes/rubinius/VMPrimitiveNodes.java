@@ -46,6 +46,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -54,7 +56,6 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
@@ -66,6 +67,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.StringSupport;
 import org.jruby.util.io.PosixShim;
 import sun.misc.Signal;
 
@@ -148,7 +150,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return createString(Layouts.MODULE.getFields(module).getName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -169,7 +171,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return createString(passwd.getHome());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -368,14 +370,14 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return createArray(new double[]{
-                    utime,
-                    stime,
-                    cutime,
-                    cstime,
-                    tutime,
-                    tstime
-            }, 6);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new double[]{
+                        utime,
+                        stime,
+                        cutime,
+                        cstime,
+                        tutime,
+                        tstime
+                }, 6);
         }
 
     }
@@ -461,14 +463,12 @@ public abstract class VMPrimitiveNodes {
                     stringValue = value.toString();
                 }
 
-                DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
-                Object[] objects = new Object[]{createString(key), createString(stringValue)};
-                sectionKeyValues.add(ArrayNodes.createGeneralArray(arrayClass, objects, objects.length));
+                Object[] objects = new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(key, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(stringValue, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null)};
+                sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = sectionKeyValues.toArray();
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -537,9 +537,8 @@ public abstract class VMPrimitiveNodes {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
-            DynamicObject arrayClass = getContext().getCoreLibrary().getArrayClass();
             Object[] objects = new Object[]{output, termsig, stopsig, pid};
-            return ArrayNodes.createGeneralArray(arrayClass, objects, objects.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }

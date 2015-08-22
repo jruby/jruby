@@ -41,6 +41,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -55,6 +56,8 @@ import org.jruby.truffle.nodes.core.array.ArrayCoreMethodNode;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLowerNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodes;
@@ -70,7 +73,6 @@ import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 @CoreClass(name = "String")
@@ -208,36 +210,6 @@ public abstract class StringNodes {
         return StringSupport.isSingleByteOptimizable(getCodeRangeable(string), EncodingUtils.STR_ENC_GET(getCodeRangeable(string)));
     }
 
-    public static DynamicObject createEmptyString(DynamicObject stringClass) {
-        return createString(stringClass, new ByteList());
-    }
-
-    public static DynamicObject createString(DynamicObject stringClass, String string) {
-        return createString(stringClass, string, UTF8Encoding.INSTANCE);
-    }
-
-    @TruffleBoundary
-    public static DynamicObject createString(DynamicObject stringClass, String string, Encoding encoding) {
-        return createString(stringClass, org.jruby.RubyString.encodeBytelist(string, encoding));
-    }
-
-    public static DynamicObject createString(DynamicObject stringClass, byte[] bytes) {
-        return createString(stringClass, new ByteList(bytes));
-    }
-
-    public static DynamicObject createString(DynamicObject stringClass, ByteBuffer bytes) {
-        return createString(stringClass, new ByteList(bytes.array()));
-    }
-
-    public static DynamicObject createString(DynamicObject stringClass, ByteList bytes) {
-        assert RubyGuards.isRubyClass(stringClass);
-        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), bytes, StringSupport.CR_UNKNOWN, null);
-    }
-
-    public static DynamicObject createString(DynamicObjectFactory stringFactory, ByteList bytes) {
-        return Layouts.STRING.createString(stringFactory, bytes, StringSupport.CR_UNKNOWN, null);
-    }
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -272,7 +244,7 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject add(DynamicObject string, DynamicObject other) {
             final Encoding enc = checkEncoding(string, getCodeRangeable(other), this);
-            final DynamicObject ret = createString(StringSupport.addByteLists(Layouts.STRING.getByteList(string), Layouts.STRING.getByteList(other)));
+            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringSupport.addByteLists(Layouts.STRING.getByteList(string), Layouts.STRING.getByteList(other)), StringSupport.CR_UNKNOWN, null);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -293,9 +265,11 @@ public abstract class StringNodes {
         private final ConditionProfile negativeTimesProfile = ConditionProfile.createBinaryProfile();
 
         @Child private ToIntNode toIntNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -313,7 +287,7 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
-            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
             Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(string));
 
             return ret;
@@ -362,7 +336,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -410,7 +384,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "to_str"), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -434,7 +408,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "<=>"), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -642,7 +616,7 @@ public abstract class StringNodes {
                 if (begin == stringLength) {
                     final ByteList byteList = new ByteList();
                     byteList.setEncoding(Layouts.STRING.getByteList(string).getEncoding());
-                    return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), byteList);
+                    return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), byteList, StringSupport.CR_UNKNOWN, null);
                 }
 
                 end = normalizeIndex(stringLength, end);
@@ -772,7 +746,7 @@ public abstract class StringNodes {
         public DynamicObject b(DynamicObject string) {
             final ByteList bytes = Layouts.STRING.getByteList(string).dup();
             bytes.setEncoding(ASCIIEncoding.INSTANCE);
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -794,7 +768,7 @@ public abstract class StringNodes {
                 store[n] = ((int) bytes[n]) & 0xFF;
             }
 
-            return createArray(store, bytes.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, bytes.length);
         }
 
     }
@@ -977,7 +951,7 @@ public abstract class StringNodes {
 
             final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
             ByteList otherBL = Layouts.STRING.getByteList(salt).dup();
-            final DynamicObject otherStr = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), otherBL);
+            final DynamicObject otherStr = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), otherBL, StringSupport.CR_UNKNOWN, null);
 
             modify(otherStr);
             StringSupport.associateEncoding(getCodeRangeable(otherStr), ascii8bit);
@@ -1005,7 +979,7 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix.errno(), this));
             }
 
-            final DynamicObject result = StringNodes.createString(getContext().getCoreLibrary().getStringClass(), new ByteList(cryptedString, 0, cryptedString.length - 1));
+            final DynamicObject result = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(cryptedString, 0, cryptedString.length - 1), StringSupport.CR_UNKNOWN, null);
             StringSupport.associateEncoding(getCodeRangeable(result), ascii8bit);
 
             return result;
@@ -1095,7 +1069,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject downcase(DynamicObject string) {
             final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), newByteList);
+            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), newByteList, StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -1215,7 +1189,7 @@ public abstract class StringNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), substringBytes);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), substringBytes, StringSupport.CR_UNKNOWN, null);
 
             return taintResultNode.maybeTaint(string, ret);
         }
@@ -1333,7 +1307,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject inspect(DynamicObject string) {
             final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), inspected.getByteList());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), inspected.getByteList(), StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -1713,8 +1687,11 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public DumpNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "isAsciiCompatible(string)")
@@ -1723,7 +1700,7 @@ public abstract class StringNodes {
 
             ByteList outputBytes = dumpCommon(string);
 
-            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
             Layouts.STRING.getByteList(result).setEncoding(Layouts.STRING.getByteList(string).getEncoding());
             Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1747,7 +1724,7 @@ public abstract class StringNodes {
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
 
-            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes);
+            final DynamicObject result = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), outputBytes, StringSupport.CR_UNKNOWN, null);
             Layouts.STRING.getByteList(result).setEncoding(ASCIIEncoding.INSTANCE);
             Layouts.STRING.setCodeRange(result, StringSupport.CR_7BIT);
 
@@ -1927,9 +1904,9 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject succ(DynamicObject string) {
             if (length(string) > 0) {
-                return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), StringSupport.succCommon(getContext().getRuntime(), Layouts.STRING.getByteList(string)));
+                return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), StringSupport.succCommon(getContext().getRuntime(), Layouts.STRING.getByteList(string)), StringSupport.CR_UNKNOWN, null);
             } else {
-                return StringNodes.createEmptyString(Layouts.BASIC_OBJECT.getLogicalClass(string));
+                return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
         }
     }
@@ -2260,7 +2237,7 @@ public abstract class StringNodes {
         @Specialization
         public DynamicObject upcase(DynamicObject string) {
             final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), byteListString);
+            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), byteListString, StringSupport.CR_UNKNOWN, null);
         }
 
     }

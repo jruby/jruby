@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -26,6 +27,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 
@@ -550,7 +552,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization
@@ -560,7 +562,7 @@ public abstract class BignumNodes {
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
@@ -568,7 +570,7 @@ public abstract class BignumNodes {
             CompilerDirectives.transferToInterpreter();
 
             Object[] store = new Object[] { b, a };
-            return createArray(store, store.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
     }
@@ -677,7 +679,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return createString(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
@@ -688,7 +690,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return createString(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

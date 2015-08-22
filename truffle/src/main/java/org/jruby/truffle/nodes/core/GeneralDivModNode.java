@@ -17,6 +17,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -106,15 +107,15 @@ public class GeneralDivModNode extends RubyNode {
 
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            return createArray(new int[]{(int) (long) integerDiv, (int) mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
         } else if (integerDiv instanceof Long) {
             useObjectPairProfile.enter();
-            return createArray(new Object[]{integerDiv, mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{integerDiv, mod}, 2);
         } else {
             useObjectPairProfile.enter();
-            return createArray(new Object[]{
-                    fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
-                    mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                        fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
+                        mod}, 2);
         }
     }
 
@@ -138,7 +139,7 @@ public class GeneralDivModNode extends RubyNode {
             mod += b;
         }
 
-        return createArray(new Object[]{
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(div),
                 mod}, 2);
     }
@@ -158,7 +159,7 @@ public class GeneralDivModNode extends RubyNode {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return createArray(new Object[]{
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
