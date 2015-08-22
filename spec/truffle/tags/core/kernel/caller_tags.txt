@@ -1,0 +1,2 @@
+fails:Kernel#caller returns an Array of caller locations using a custom offset
+fails:Kernel#caller returns the locations as String instances

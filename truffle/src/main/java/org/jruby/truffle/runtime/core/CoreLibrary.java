@@ -53,6 +53,7 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
+import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
@@ -61,6 +62,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -69,6 +71,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CoreLibrary {
+
+    public static final String CORE_LOAD_PATH = getCoreLoadPath();
 
     private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
 
@@ -169,6 +173,24 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+
+    private static String getCoreLoadPath() {
+        String path = Options.TRUFFLE_CORE_LOAD_PATH.load();
+
+        while (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        if (path.startsWith("truffle:")) {
+            return path;
+        }
+
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private enum State {
         INITIALIZING,
@@ -637,7 +659,11 @@ public class CoreLibrary {
 
         try {
             state = State.LOADING_RUBY_CORE;
-            loadRubyCore("core.rb");
+            try {
+                context.load(context.getSourceCache().getSource(CoreLibrary.CORE_LOAD_PATH + "/core.rb"), node, NodeWrapper.IDENTITY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
             BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
@@ -668,10 +694,6 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
-    }
-
-    public void loadRubyCore(String fileName) {
-        loadRubyCore(fileName, "core:/");
     }
 
     public void loadRubyCore(String fileName, String prefix) {
