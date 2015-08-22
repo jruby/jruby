@@ -50,6 +50,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.ModuleFields;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -805,7 +806,7 @@ public abstract class ModuleNodes {
             final DynamicObject array = ArrayNodes.createGeneralArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(module)).getContext().getCoreLibrary().getArrayClass(), null, 0);
 
             for (String variable : ModuleOperations.getAllClassVariables(module).keySet()) {
-                ArrayNodes.slowPush(array, getSymbol(variable));
+                ArrayOperations.slowPush(array, getSymbol(variable));
             }
             return array;
         }

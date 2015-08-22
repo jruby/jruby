@@ -16,6 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.cli.Options;
 
@@ -89,7 +90,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object appendArray(Object store, int index, DynamicObject array) {
             CompilerDirectives.transferToInterpreter();
 
-            for (Object value : ArrayNodes.iterate(array)) {
+            for (Object value : ArrayOperations.iterate(array)) {
                 store = appendValue(store, index, value);
                 index++;
             }

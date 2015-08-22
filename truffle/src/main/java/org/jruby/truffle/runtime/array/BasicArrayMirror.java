@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.runtime.array;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 public abstract class BasicArrayMirror implements ArrayMirror {
@@ -35,9 +34,25 @@ public abstract class BasicArrayMirror implements ArrayMirror {
     public Iterable<Object> iterableUntil(final int length) {
         return new Iterable<Object>() {
 
+            private int n = 0;
+
             @Override
             public Iterator<Object> iterator() {
-                return Arrays.asList(getBoxedCopy(length)).iterator();
+                return new Iterator<Object>() {
+
+                    @Override
+                    public boolean hasNext() {
+                        return n < length;
+                    }
+
+                    @Override
+                    public Object next() {
+                        final Object object = get(n);
+                        n++;
+                        return object;
+                    }
+
+                };
             }
 
         };

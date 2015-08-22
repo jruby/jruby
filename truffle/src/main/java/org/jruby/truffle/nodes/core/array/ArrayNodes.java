@@ -53,6 +53,7 @@ import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -68,40 +69,6 @@ import java.util.Arrays;
 public abstract class ArrayNodes {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-
-    public static int normalizeIndex(int length, int index) {
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
-            return length + index;
-        } else {
-            return index;
-        }
-    }
-
-    public static int clampExclusiveIndex(int length, int index) {
-        if (index < 0) {
-            return 0;
-        } else if (index > length) {
-            return length;
-        } else {
-            return index;
-        }
-    }
-
-    public static Object[] toObjectArray(DynamicObject array) {
-        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).getBoxedCopy(Layouts.ARRAY.getSize(array));
-    }
-
-    public static Iterable<Object> iterate(DynamicObject array) {
-        return ArrayReflector.reflect(Layouts.ARRAY.getStore(array)).iterableUntil(Layouts.ARRAY.getSize(array));
-    }
-
-    public static void slowPush(DynamicObject array, Object value) {
-        assert RubyGuards.isRubyArray(array);
-        Layouts.ARRAY.setStore(array, Arrays.copyOf(ArrayUtils.box(Layouts.ARRAY.getStore(array)), Layouts.ARRAY.getSize(array) + 1));
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
-        ((Object[]) Layouts.ARRAY.getStore(array))[Layouts.ARRAY.getSize(array)] = value;
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) + 1);
-    }
 
     public static DynamicObject createGeneralArray(DynamicObject arrayClass, Object store, int size) {
         return Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), store, size);
@@ -407,14 +374,14 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
 
             if (normalizedIndex < 0 || normalizedIndex > Layouts.ARRAY.getSize(array)) {
                 return nil();
             } else {
-                final int end = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                final int end = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
                 int index = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1;
-                final int exclusiveEnd = clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
+                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return createGeneralArray(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
@@ -480,7 +447,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused) {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
@@ -518,14 +485,14 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int begin = normalizeIndex(Layouts.ARRAY.getSize(array), start);
+            final int begin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
 
             if (begin < Layouts.ARRAY.getSize(array) && length == 1) {
                 return write(frame, array, begin, value);
@@ -588,7 +555,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
             if (normalizedIndex < 0) {
                 tooSmallBranch.enter();
                 CompilerDirectives.transferToInterpreter();
@@ -596,7 +563,7 @@ public abstract class ArrayNodes {
             }
 
             final int replacementLength = Layouts.ARRAY.getSize(replacement);
-            final Object[] replacementStore = toObjectArray(replacement);
+            final Object[] replacementStore = ArrayOperations.toObjectArray(replacement);
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
@@ -621,7 +588,7 @@ public abstract class ArrayNodes {
                     }
                 }
 
-                final Object store = toObjectArray(array);
+                final Object store = ArrayOperations.toObjectArray(array);
                 final Object newStore[] = new Object[newLength];
 
 
@@ -651,8 +618,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -666,13 +633,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setRangeArray(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            final int normalizedStart = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
 
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
             if (normalizedEnd < 0) {
                 normalizedEnd = -1;
             }
@@ -687,8 +654,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 return setRangeArray(frame, array, range, other, unused);
             } else {
-                int normalizedBegin = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-                int normalizedEnd = normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                int normalizedBegin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+                int normalizedEnd = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
@@ -1004,7 +971,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
         public int deleteAtIntegerFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1048,7 +1015,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongArray(array)", rewriteOn = UnexpectedResultException.class)
         public long deleteAtLongFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1092,7 +1059,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isDoubleArray(array)", rewriteOn = UnexpectedResultException.class)
         public double deleteAtFloatInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1136,7 +1103,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObjectArray(array)", rewriteOn = UnexpectedResultException.class)
         public Object deleteAtObjectInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = normalizeIndex(Layouts.ARRAY.getSize(array), index);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
             if (normalizedIndex < 0) {
                 throw new UnexpectedResultException(nil());
@@ -1706,7 +1673,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isRubyArray(copy)")
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
-            Layouts.ARRAY.setStore(array, toObjectArray(copy));
+            Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }
@@ -1714,7 +1681,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isRubyArray(copy)", "isRubyProc(block)"})
         public DynamicObject initialize(DynamicObject array, DynamicObject copy, NotProvided defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
-            Layouts.ARRAY.setStore(array, toObjectArray(copy));
+            Layouts.ARRAY.setStore(array, ArrayOperations.toObjectArray(copy));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(copy));
             return array;
         }

@@ -20,7 +20,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
@@ -29,6 +28,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -267,7 +267,7 @@ public abstract class BindingNodes {
             while (frame != null) {
                 for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
                     if (name instanceof String) {
-                        ArrayNodes.slowPush(array, getSymbol((String) name));
+                        ArrayOperations.slowPush(array, getSymbol((String) name));
                     }
                 }
 

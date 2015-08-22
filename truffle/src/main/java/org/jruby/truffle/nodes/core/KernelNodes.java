@@ -62,6 +62,7 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -1056,7 +1057,7 @@ public abstract class KernelNodes {
 
             for (Object name : instanceVariableNames) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getSymbol((String) name));
+                    ArrayOperations.slowPush(array, getSymbol((String) name));
                 }
             }
 
@@ -1207,7 +1208,7 @@ public abstract class KernelNodes {
 
             for (Object name : RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getFrameDescriptor().getIdentifiers()) {
                 if (name instanceof String) {
-                    ArrayNodes.slowPush(array, getSymbol((String) name));
+                    ArrayOperations.slowPush(array, getSymbol((String) name));
                 }
             }
 

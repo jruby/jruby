@@ -19,13 +19,13 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.Arrays;
@@ -74,7 +74,7 @@ public class GeneralSuperReCallNode extends RubyNode {
             // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
             final Object restArg = superArguments[superArguments.length - 1];
             assert RubyGuards.isRubyArray(restArg);
-            final Object[] restArgs = ArrayNodes.toObjectArray((DynamicObject) restArg);
+            final Object[] restArgs = ArrayOperations.toObjectArray((DynamicObject) restArg);
             final int restArgIndex = reloadNodes.length - 1;
             superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
             ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);

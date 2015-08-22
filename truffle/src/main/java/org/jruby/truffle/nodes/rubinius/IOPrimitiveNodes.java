@@ -53,6 +53,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
@@ -572,7 +573,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] readableObjects = ArrayNodes.toObjectArray(readables);
+            final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
@@ -609,7 +610,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
         public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayNodes.toObjectArray(writables);
+            final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
 
             final FDSet writableSet = fdSetFactory.create();
@@ -646,7 +647,7 @@ public abstract class IOPrimitiveNodes {
         private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
             assert RubyGuards.isRubyArray(fileDescriptorArray);
 
-            final Object[] objects = ArrayNodes.toObjectArray(fileDescriptorArray);
+            final Object[] objects = ArrayOperations.toObjectArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];
 
