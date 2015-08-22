@@ -52,6 +52,11 @@ public abstract class BasicArrayMirror implements ArrayMirror {
                         return object;
                     }
 
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException("remove");
+                    }
+
                 };
             }
 
