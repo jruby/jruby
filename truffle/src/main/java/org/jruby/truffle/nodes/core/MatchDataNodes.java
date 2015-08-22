@@ -463,7 +463,7 @@ public abstract class MatchDataNodes {
             CompilerDirectives.transferToInterpreter();
 
             final ByteList bytes = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
-            return createString(bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
         }
     }
 

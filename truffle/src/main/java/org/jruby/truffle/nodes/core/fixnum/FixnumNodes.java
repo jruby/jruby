@@ -19,6 +19,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -28,6 +29,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 
@@ -1115,13 +1117,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(int n) {
-            return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(long n) {
-            return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -1169,13 +1171,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return createString(Integer.toString(n), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
-            return createString(Long.toString(n), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
@@ -1186,7 +1188,7 @@ public abstract class FixnumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return createString(Long.toString(n, base), USASCIIEncoding.INSTANCE);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n, base), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

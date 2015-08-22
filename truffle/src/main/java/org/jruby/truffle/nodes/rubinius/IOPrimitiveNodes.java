@@ -60,6 +60,7 @@ import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
@@ -261,7 +262,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -294,10 +295,10 @@ public abstract class IOPrimitiveNodes {
             }
 
             if (bytesRead == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -555,7 +556,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return createString(buffer);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(buffer.array()), StringSupport.CR_UNKNOWN, null);
         }
 
     }

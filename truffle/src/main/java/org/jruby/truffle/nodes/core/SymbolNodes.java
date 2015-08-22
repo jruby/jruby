@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -167,7 +168,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
-            return createString(Layouts.SYMBOL.getByteList(symbol).dup());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.SYMBOL.getByteList(symbol).dup(), StringSupport.CR_UNKNOWN, null);
         }
 
     }

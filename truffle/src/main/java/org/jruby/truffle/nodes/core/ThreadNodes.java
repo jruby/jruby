@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -352,7 +353,7 @@ public abstract class ThreadNodes {
                 }
             }
 
-            return createString(Layouts.THREAD.getStatus(self).bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.THREAD.getStatus(self).bytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }

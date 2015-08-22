@@ -17,6 +17,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
@@ -34,6 +36,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -383,7 +386,7 @@ public class RubyCallNode extends RubyNode {
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, createString(methodName), false);
+            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(methodName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false);
 
             if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return nil();
@@ -394,7 +397,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return createString("method");
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("method", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
     public String getName() {

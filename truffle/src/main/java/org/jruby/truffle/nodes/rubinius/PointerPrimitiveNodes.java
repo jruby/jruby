@@ -16,12 +16,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.PointerGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 public abstract class PointerPrimitiveNodes {
@@ -148,7 +150,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
             Layouts.POINTER.getPointer(pointer).get(0, bytes, 0, length);
-            return createString(bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -281,7 +283,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return createString(Layouts.POINTER.getPointer(pointer).getString(offset));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "type == TYPE_PTR")
@@ -324,13 +326,13 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
-            return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public DynamicObject readStringToNull(DynamicObject pointer) {
-            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address()));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())), StringSupport.CR_UNKNOWN, null);
         }
 
     }

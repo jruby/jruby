@@ -23,9 +23,11 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
@@ -48,11 +50,12 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
+    @TruffleBoundary
     public static DynamicObject makeString(DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
         final ByteList bytes = new ByteList(Layouts.STRING.getByteList(source), start, length);
-        final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(source), bytes);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
 
         Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(source));
 
@@ -253,7 +256,7 @@ public abstract class RegexpNodes {
             end = StringSupport.positionEndForScan(Layouts.STRING.getByteList(string), matcher, encoding, p, range);
         }
 
-        return StringNodes.createString(context.getCoreLibrary().getStringClass(), builder.toString());
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist(builder.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
     @TruffleBoundary
@@ -285,12 +288,12 @@ public abstract class RegexpNodes {
             while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
                     if (len == 0) {
-                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), ""));
+                        strings.add(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
                         break;
 
                     } else if (lastNull) {
                         final int substringLength = StringSupport.length(encoding, byteArray, begin + beg, range);
-                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, substringLength).dup()));
+                        strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, substringLength).dup(), StringSupport.CR_UNKNOWN, null));
                         beg = start - begin;
 
                     } else {
@@ -299,7 +302,7 @@ public abstract class RegexpNodes {
                         continue;
                     }
                 } else {
-                    strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, end - beg).dup()));
+                    strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, end - beg).dup(), StringSupport.CR_UNKNOWN, null));
                     beg = matcher.getEnd();
                     start = begin + beg;
                 }
@@ -310,7 +313,7 @@ public abstract class RegexpNodes {
             }
 
             if (len > 0 && (useLimit || len > beg || limit < 0)) {
-                strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, len - beg).dup()));
+                strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, len - beg).dup(), StringSupport.CR_UNKNOWN, null));
             }
         }
 
@@ -518,7 +521,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
         public DynamicObject escape(DynamicObject pattern) {
-            return createString(org.jruby.RubyRegexp.quote19(new ByteList(Layouts.STRING.getByteList(pattern)), true).toString());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(org.jruby.RubyRegexp.quote19(new ByteList(Layouts.STRING.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -568,12 +571,12 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
             boolean isAsciiOnly = Layouts.STRING.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(Layouts.STRING.getByteList(raw), isAsciiOnly));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), org.jruby.RubyRegexp.quote19(Layouts.STRING.getByteList(raw), isAsciiOnly), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
-            return quoteString(StringNodes.createString(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(raw)).getContext().getCoreLibrary().getStringClass(), Layouts.SYMBOL.getString(raw)));
+            return quoteString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(raw)).getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         }
 
     }
@@ -601,7 +604,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public DynamicObject source(DynamicObject regexp) {
-            return createString(Layouts.REGEXP.getSource(regexp).dup());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.REGEXP.getSource(regexp).dup(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -616,7 +619,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }

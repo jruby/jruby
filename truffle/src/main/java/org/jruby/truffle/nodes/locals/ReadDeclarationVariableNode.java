@@ -13,11 +13,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.ReadNode;
 import org.jruby.truffle.translator.Translator;
+import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -56,12 +60,12 @@ public class ReadDeclarationVariableNode extends RubyNode implements ReadNode {
         if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
             if (ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
                     || readFrameSlotNode.executeRead(RubyArguments.getDeclarationFrame(frame, frameDepth)) != nil()) {
-                return createString("global-variable");
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             } else {
                 return nil();
             }
         } else {
-            return createString("local-variable");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("local-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
     }
 

@@ -19,8 +19,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
+import org.jruby.RubyString;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -38,6 +40,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
+import org.jruby.util.StringSupport;
 
 import java.util.HashMap;
 import java.util.List;
@@ -110,7 +113,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return createString(source);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(source, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -182,7 +185,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject javaClassOf(Object value) {
-            return createString(value.getClass().getSimpleName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -205,7 +208,7 @@ public abstract class TrufflePrimitiveNodes {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
             }
 
-            return createString(builder.toString());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(builder.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -249,7 +252,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
-            return createString(System.getProperty("graal.version", "unknown"));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -289,7 +292,7 @@ public abstract class TrufflePrimitiveNodes {
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-                converted.put(createString(source.getKey().getPath()), array);
+                converted.put(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(source.getKey().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), array);
             }
 
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
@@ -448,7 +451,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return createString(getContext().getRuntime().getJRubyHome());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -462,7 +465,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject hostOS() {
-            return createString(RbConfigLibrary.getOSName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

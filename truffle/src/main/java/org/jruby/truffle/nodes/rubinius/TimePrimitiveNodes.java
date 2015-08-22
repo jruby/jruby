@@ -16,8 +16,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
@@ -25,6 +27,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Time} class.
@@ -181,7 +184,7 @@ public abstract class TimePrimitiveNodes {
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
             } else {
-                zone = createString(zoneString);
+                zone = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(zoneString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
@@ -202,7 +205,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return createString(rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
         }
 
     }

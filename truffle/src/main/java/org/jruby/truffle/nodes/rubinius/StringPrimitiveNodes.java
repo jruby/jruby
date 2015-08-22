@@ -71,7 +71,8 @@ import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -185,7 +186,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = new ByteList(Layouts.STRING.getByteList(source), index, length);
             bytes.setEncoding(Layouts.STRING.getByteList(source).getEncoding());
 
-            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(source), bytes);
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
             taintResultNode.maybeTaint(source, ret);
 
             return ret;
@@ -196,10 +197,12 @@ public abstract class StringPrimitiveNodes {
     public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private TaintResultNode taintResultNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             taintResultNode = new TaintResultNode(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -235,7 +238,7 @@ public abstract class StringPrimitiveNodes {
                 length = bytes.length() - normalizedIndex;
             }
 
-            final DynamicObject result = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length));
+            final DynamicObject result = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(bytes, normalizedIndex, length), StringSupport.CR_UNKNOWN, null);
 
             return taintResultNode.maybeTaint(string, result);
         }
@@ -459,9 +462,11 @@ public abstract class StringPrimitiveNodes {
     public static abstract class StringFindCharacterNode extends RubiniusPrimitiveNode {
 
         @Child private TaintResultNode taintResultNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public StringFindCharacterNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = "isSingleByte(string)")
@@ -477,7 +482,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1));
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_UNKNOWN, null);
 
             return propagate(string, ret);
         }
@@ -501,9 +506,9 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret;
             if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
-                ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen));
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, clen), StringSupport.CR_UNKNOWN, null);
             } else {
-                ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1));
+                ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(byteList, offset, 1), StringSupport.CR_UNKNOWN, null);
             }
 
             return propagate(string, ret);
@@ -534,9 +539,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
         public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
-            return StringNodes.createString(
-                    getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(new byte[]{(byte) code}, Layouts.ENCODING.getEncoding(encoding)));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
@@ -563,9 +566,7 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
-            return StringNodes.createString(
-                    getContext().getCoreLibrary().getStringClass(),
-                    new ByteList(bytes, Layouts.ENCODING.getEncoding(encoding)));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -1060,21 +1061,24 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_pattern", lowerFixnumParameters = {0, 1})
     public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
-
 
         @Specialization(guards = "value == 0")
         public DynamicObject stringPatternZero(DynamicObject stringClass, int size, int value) {
-            return StringNodes.createString(stringClass, new ByteList(new byte[size]));
+            ByteList bytes = new ByteList(new byte[size]);
+            return allocateObjectNode.allocate(stringClass, bytes, StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "value != 0")
         public DynamicObject stringPattern(DynamicObject stringClass, int size, int value) {
             final byte[] bytes = new byte[size];
             Arrays.fill(bytes, (byte) value);
-            return StringNodes.createString(stringClass, new ByteList(bytes));
+            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubyString(string)")
@@ -1087,8 +1091,8 @@ public abstract class StringPrimitiveNodes {
                     System.arraycopy(byteList.unsafeBytes(), byteList.begin(), bytes, n, Math.min(byteList.length(), size - n));
                 }
             }
-            
-            return StringNodes.createString(stringClass, new ByteList(bytes));
+
+            return allocateObjectNode.allocate(stringClass, new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -1263,7 +1267,7 @@ public abstract class StringPrimitiveNodes {
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = StringNodes.createString(Layouts.BASIC_OBJECT.getLogicalClass(string), new ByteList(Layouts.STRING.getByteList(string), beg, len));
+            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), new ByteList(Layouts.STRING.getByteList(string), beg, len), StringSupport.CR_UNKNOWN, null);
             Layouts.STRING.getByteList(ret).setEncoding(Layouts.STRING.getByteList(string).getEncoding());
             taintResultNode.maybeTaint(string, ret);
 
@@ -1283,7 +1287,7 @@ public abstract class StringPrimitiveNodes {
         public DynamicObject stringFromByteArray(DynamicObject bytes, int start, int count) {
             // Data is copied here - can we do something COW?
             final ByteList byteList = Layouts.BYTE_ARRAY.getBytes(bytes);
-            return createString(new ByteList(byteList, start, count));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(byteList, start, count), StringSupport.CR_UNKNOWN, null);
         }
 
     }

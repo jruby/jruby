@@ -22,6 +22,8 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -59,6 +61,7 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.IdUtil;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1321,7 +1324,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return createString(Layouts.MODULE.getFields(module).getName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -1858,7 +1861,7 @@ public abstract class ModuleNodes {
         public DynamicObject toS(DynamicObject module) {
             CompilerDirectives.transferToInterpreter();
 
-            return createString(Layouts.MODULE.getFields(module).getName());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

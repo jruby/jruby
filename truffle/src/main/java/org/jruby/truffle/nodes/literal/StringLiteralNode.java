@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 public class StringLiteralNode extends RubyNode {
 
@@ -31,7 +32,7 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        final DynamicObject string = createString(bytes.dup());
+        final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes.dup(), StringSupport.CR_UNKNOWN, null);
         Layouts.STRING.setCodeRange(string, codeRange);
         return string;
     }

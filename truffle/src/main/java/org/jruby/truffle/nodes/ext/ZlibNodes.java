@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
@@ -103,7 +104,7 @@ public abstract class ZlibNodes {
 
             deflater.end();
 
-            return createString(outputBytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -141,7 +142,7 @@ public abstract class ZlibNodes {
 
             inflater.end();
 
-            return createString(outputBytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }

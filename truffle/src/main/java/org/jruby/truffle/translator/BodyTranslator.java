@@ -1180,7 +1180,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getBody() == null) {
             final SourceSection sourceSection = translate(node.getPosition());
-            ret = new LiteralNode(context, sourceSection, StringNodes.createEmptyString(context.getCoreLibrary().getStringClass()));
+            ret = new LiteralNode(context, sourceSection, Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null));
         } else {
             ret = node.getBody().accept(this);
         }
