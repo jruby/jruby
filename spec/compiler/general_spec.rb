@@ -68,8 +68,8 @@ module JITSpecUtils
         oj.runtime.builtin.IRubyObject[].java_class,
         oj.runtime.Block.java_class,
         oj.RubyModule.java_class,
-        java.lang.String.java_class);
-    handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
+        java.lang.String.java_class)
+    handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
         handle,
@@ -603,7 +603,7 @@ modes.each do |mode|
 
     it "prevents reopening or extending non-modules" do
       # ensure that invalid classes and modules raise errors
-      AFixnum = 1;
+      AFixnum = 1
       expect { run("class AFixnum; end")}.to raise_error(TypeError)
       expect { run("class B < AFixnum; end")}.to raise_error(TypeError)
       expect { run("module AFixnum; end")}.to raise_error(TypeError)
