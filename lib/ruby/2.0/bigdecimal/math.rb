@@ -159,7 +159,6 @@ module BigMath
 
     d = one
     k = one
-    w = one
     t = BigDecimal("-80")
     while d.nonzero? && ((m = n - (pi.exponent - d.exponent).abs) > 0)
       m = BigDecimal.double_fig if m < BigDecimal.double_fig
@@ -171,7 +170,6 @@ module BigMath
 
     d = one
     k = one
-    w = one
     t = BigDecimal("956")
     while d.nonzero? && ((m = n - (pi.exponent - d.exponent).abs) > 0)
       m = BigDecimal.double_fig if m < BigDecimal.double_fig
@@ -187,19 +185,6 @@ module BigMath
   # digits of precision.
   def E(prec)
     raise ArgumentError, "Zero or negative precision for E" if prec <= 0
-    n    = prec + BigDecimal.double_fig
-    one  = BigDecimal("1")
-    y  = one
-    d  = y
-    z  = one
-    i  = 0
-    while d.nonzero? && ((m = n - (y.exponent - d.exponent).abs) > 0)
-      m = BigDecimal.double_fig if m < BigDecimal.double_fig
-      i += 1
-      z *= i
-      d  = one.div(z,m)
-      y += d
-    end
-    y
+    BigMath.exp(1, prec)
   end
 end
