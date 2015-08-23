@@ -1592,7 +1592,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateMethod(name, module, this));
             }
 
-            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return Layouts.UNBOUND_METHOD.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodFactory(), module, method);
         }
 
     }
@@ -1697,7 +1697,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(name, module, this));
             }
 
-            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
+            return Layouts.UNBOUND_METHOD.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodFactory(), module, method);
         }
 
     }

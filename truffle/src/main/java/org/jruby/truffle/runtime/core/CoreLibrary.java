@@ -153,7 +153,9 @@ public class CoreLibrary {
     private final DynamicObject bigDecimalClass;
     private final DynamicObject encodingCompatibilityErrorClass;
     private final DynamicObject methodClass;
+    private final DynamicObjectFactory methodFactory;
     private final DynamicObject unboundMethodClass;
+    private final DynamicObjectFactory unboundMethodFactory;
     private final DynamicObject byteArrayClass;
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
@@ -361,7 +363,8 @@ public class CoreLibrary {
         matchDataClass = defineClass("MatchData");
         Layouts.CLASS.setInstanceFactoryUnsafe(matchDataClass, Layouts.MATCH_DATA.createMatchDataShape(matchDataClass, matchDataClass));
         methodClass = defineClass("Method");
-        Layouts.CLASS.setInstanceFactoryUnsafe(methodClass, Layouts.METHOD.createMethodShape(methodClass, methodClass));
+        methodFactory = Layouts.METHOD.createMethodShape(methodClass, methodClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(methodClass, methodFactory);
         final DynamicObject mutexClass = defineClass("Mutex");
         Layouts.CLASS.setInstanceFactoryUnsafe(mutexClass, Layouts.MUTEX.createMutexShape(mutexClass, mutexClass));
         nilClass = defineClass("NilClass");
@@ -393,7 +396,8 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(timeClass, Layouts.TIME.createTimeShape(timeClass, timeClass));
         trueClass = defineClass("TrueClass");
         unboundMethodClass = defineClass("UnboundMethod");
-        Layouts.CLASS.setInstanceFactoryUnsafe(unboundMethodClass, Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass));
+        unboundMethodFactory = Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(unboundMethodClass, unboundMethodFactory);
         final DynamicObject ioClass = defineClass("IO");
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
@@ -1477,8 +1481,16 @@ public class CoreLibrary {
         return unboundMethodClass;
     }
 
+    public DynamicObjectFactory getUnboundMethodFactory() {
+        return unboundMethodFactory;
+    }
+
     public DynamicObject getMethodClass() {
         return methodClass;
+    }
+
+    public DynamicObjectFactory getMethodFactory() {
+        return methodFactory;
     }
 
     public DynamicObject getComplexClass() {

@@ -36,10 +36,6 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
-    public static DynamicObject createUnboundMethod(DynamicObject rubyClass, DynamicObject origin, InternalMethod method) {
-        return Layouts.UNBOUND_METHOD.createUnboundMethod(Layouts.CLASS.getInstanceFactory(rubyClass), origin, method);
-    }
-
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
@@ -101,7 +97,7 @@ public abstract class UnboundMethodNodes {
                 }
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
+            return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
         }
 
         protected DynamicObject metaClass(VirtualFrame frame, Object object) {

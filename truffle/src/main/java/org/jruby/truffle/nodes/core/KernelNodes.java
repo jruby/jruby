@@ -1257,7 +1257,7 @@ public abstract class KernelNodes {
                         name, getContext().getCoreLibrary().getLogicalClass(self), this));
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), self, method);
+            return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), self, method);
         }
 
     }
