@@ -13,6 +13,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.StringSupport;
@@ -21,7 +22,7 @@ public class StringGuards {
 
     public static boolean isSingleByteOptimizable(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding());
+        return StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding());
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {
@@ -42,7 +43,7 @@ public class StringGuards {
 
     public static boolean isValidOr7BitEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringNodes.isCodeRangeValid(string) || CodeRangeSupport.isCodeRangeAsciiOnly(StringNodes.getCodeRangeable(string));
+        return StringOperations.isCodeRangeValid(string) || CodeRangeSupport.isCodeRangeAsciiOnly(StringOperations.getCodeRangeable(string));
     }
 
     public static boolean isFixedWidthEncoding(DynamicObject string) {
@@ -52,6 +53,6 @@ public class StringGuards {
 
     public static boolean isValidUtf8(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringNodes.isCodeRangeValid(string) && Layouts.STRING.getByteList(string).getEncoding() instanceof UTF8Encoding;
+        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getByteList(string).getEncoding() instanceof UTF8Encoding;
     }
 }

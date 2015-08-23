@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
@@ -33,12 +32,12 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public int scanForCodeRange() {
-        return StringNodes.scanForCodeRange(string);
+        return StringOperations.scanForCodeRange(string);
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        return StringNodes.isCodeRangeValid(string);
+        return StringOperations.isCodeRangeValid(string);
     }
 
     @Override
@@ -48,32 +47,32 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public final void clearCodeRange() {
-        StringNodes.clearCodeRange(string);
+        StringOperations.clearCodeRange(string);
     }
 
     @Override
     public final void keepCodeRange() {
-        StringNodes.keepCodeRange(string);
+        StringOperations.keepCodeRange(string);
     }
 
     @Override
     public final void modify() {
-        StringNodes.modify(string);
+        StringOperations.modify(string);
     }
 
     @Override
     public final void modify(int length) {
-        StringNodes.modify(string, length);
+        StringOperations.modify(string, length);
     }
 
     @Override
     public final void modifyAndKeepCodeRange() {
-        StringNodes.modifyAndKeepCodeRange(string);
+        StringOperations.modifyAndKeepCodeRange(string);
     }
 
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
-        return StringNodes.checkEncoding(string, other);
+        return StringOperations.checkEncoding(string, other);
     }
 
     @Override

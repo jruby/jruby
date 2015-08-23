@@ -44,10 +44,6 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
 
-    public static DynamicObject createMethod(DynamicObject rubyClass, Object receiver, InternalMethod method) {
-        return Layouts.METHOD.createMethod(Layouts.CLASS.getInstanceFactory(rubyClass), receiver, method);
-    }
-
     @CoreMethod(names = { "==", "eql?" }, required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
 
@@ -223,7 +219,7 @@ public abstract class MethodNodes {
         @Specialization
         public DynamicObject unbind(VirtualFrame frame, DynamicObject method) {
             final DynamicObject receiverClass = classNode.executeGetClass(frame, Layouts.METHOD.getReceiver(method));
-            return UnboundMethodNodes.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, Layouts.METHOD.getMethod(method));
+            return Layouts.UNBOUND_METHOD.createUnboundMethod(getContext().getCoreLibrary().getUnboundMethodFactory(), receiverClass, Layouts.METHOD.getMethod(method));
         }
 
     }

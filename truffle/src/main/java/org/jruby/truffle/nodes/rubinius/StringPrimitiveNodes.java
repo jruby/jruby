@@ -76,6 +76,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -139,7 +140,7 @@ public abstract class StringPrimitiveNodes {
             boolean skip = true;
 
             int e = 0, b = 0;
-            final boolean singlebyte = StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), enc);
+            final boolean singlebyte = StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), enc);
             while (p < end) {
                 final int c;
                 if (singlebyte) {
@@ -228,7 +229,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int normalizedIndex = StringNodes.normalizeIndex(string, index);
+            final int normalizedIndex = StringOperations.normalizeIndex(string, index);
 
             if (normalizedIndex < 0 || normalizedIndex > bytes.length()) {
                 return nil();
@@ -448,7 +449,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList b = Layouts.STRING.getByteList(other);
 
             if (incompatibleEncodingProfile.profile((a.getEncoding() != b.getEncoding()) &&
-                    (org.jruby.RubyEncoding.areCompatible(StringNodes.getCodeRangeable(string), StringNodes.getCodeRangeable(other)) == null))) {
+                    (org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other)) == null))) {
                 return false;
             }
 
@@ -624,8 +625,8 @@ public abstract class StringPrimitiveNodes {
             // Rubinius will pass in a byte index for the `start` value, but StringSupport.index requires a character index.
             final int charIndex = byteIndexToCharIndexNode.executeStringBytCharacterIndex(frame, string, start, 0);
 
-            final int index = StringSupport.index(StringNodes.getCodeRangeable(string),
-                    StringNodes.getCodeRangeable(pattern),
+            final int index = StringSupport.index(StringOperations.getCodeRangeable(string),
+                    StringOperations.getCodeRangeable(pattern),
                     charIndex, Layouts.STRING.getByteList(string).getEncoding());
 
             if (index == -1) {
@@ -736,7 +737,7 @@ public abstract class StringPrimitiveNodes {
             final byte[] stringBytes = Layouts.STRING.getByteList(string).getUnsafeBytes();
             final byte[] patternBytes = Layouts.STRING.getByteList(pattern).getUnsafeBytes();
 
-            if (StringSupport.isSingleByteOptimizable(StringNodes.getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding())) {
+            if (StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding())) {
                 for(s = p += offset, ss = pp; p < e; s = ++p) {
                     if (stringBytes[p] != patternBytes[pp]) continue;
 
@@ -866,11 +867,11 @@ public abstract class StringPrimitiveNodes {
 
             if (match_size == 0) return offset;
 
-            if (StringNodes.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
+            if (StringOperations.scanForCodeRange(string) == StringSupport.CR_BROKEN) {
                 return nil();
             }
 
-            final Encoding encoding = StringNodes.checkEncoding(string, StringNodes.getCodeRangeable(pattern), this);
+            final Encoding encoding = StringOperations.checkEncoding(string, StringOperations.getCodeRangeable(pattern), this);
             int p = Layouts.STRING.getByteList(string).getBegin();
             final int e = p + Layouts.STRING.getByteList(string).getRealSize();
             int pp = Layouts.STRING.getByteList(pattern).getBegin();
@@ -1227,17 +1228,17 @@ public abstract class StringPrimitiveNodes {
                     }
                     return makeSubstring(string, p - s, e - p);
                 } else {
-                    beg += StringSupport.strLengthFromRubyString(StringNodes.getCodeRangeable(string), enc);
+                    beg += StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc);
                     if (beg < 0) {
                         return nil();
                     }
                 }
-            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringNodes.getCodeRangeable(string), enc)) {
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(StringOperations.getCodeRangeable(string), enc)) {
                 return nil();
             }
             if (len == 0) {
                 p = 0;
-            } else if (StringNodes.isCodeRangeValid(string) && enc instanceof UTF8Encoding) {
+            } else if (StringOperations.isCodeRangeValid(string) && enc instanceof UTF8Encoding) {
                 p = StringSupport.utf8Nth(bytes, s, end, beg);
                 len = StringSupport.utf8Offset(bytes, p, end, len);
             } else if (enc.isFixedWidth()) {

@@ -47,12 +47,12 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
@@ -151,7 +151,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return posix().open(StringNodes.getString(path), mode, permission);
+            return posix().open(StringOperations.getString(path), mode, permission);
         }
 
     }
@@ -171,7 +171,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
-            final int result = posix().truncate(StringNodes.getString(path), length);
+            final int result = posix().truncate(StringOperations.getString(path), length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -356,7 +356,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
             int fd = Layouts.IO.getDescriptor(file);
-            final String pathString = StringNodes.getString(path);
+            final String pathString = StringOperations.getString(path);
 
             int otherFd = posix().open(pathString, mode, 666);
             if (otherFd < 0) {
