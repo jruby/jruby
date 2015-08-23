@@ -408,7 +408,7 @@ modes.each do |mode|
 
     it "compiles constant access" do
       const_code = <<-EOS
-        A = 'a'; module X; B = 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
+        A ||= 'a'; module X; B ||= 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
       EOS
       run(const_code) {|result| expect(result).to eq(["a", "b", "a"]) }
     end
@@ -603,7 +603,7 @@ modes.each do |mode|
 
     it "prevents reopening or extending non-modules" do
       # ensure that invalid classes and modules raise errors
-      AFixnum = 1
+      AFixnum ||= 1
       expect { run("class AFixnum; end")}.to raise_error(TypeError)
       expect { run("class B < AFixnum; end")}.to raise_error(TypeError)
       expect { run("module AFixnum; end")}.to raise_error(TypeError)
@@ -671,7 +671,9 @@ modes.each do |mode|
 
     it "resolves Foo::Bar style constants" do
       # JRUBY-1388, Foo::Bar broke in the compiler
-      run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      silence_warnings do
+        run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      end
     end
 
     it "re-runs enclosing block when redo is called from ensure" do
@@ -849,11 +851,13 @@ modes.each do |mode|
       class JRUBY4925
       end
 
-      run 'JRUBY4925::BLAH, a = 1, 2' do |x|
-        expect(JRUBY4925::BLAH).to eq 1
-      end
-      run '::JRUBY4925_BLAH, a = 1, 2' do |x|
-        expect(JRUBY4925_BLAH).to eq 1
+      silence_warnings do
+        run 'JRUBY4925::BLAH, a = 1, 2' do |x|
+          expect(JRUBY4925::BLAH).to eq 1
+        end
+        run '::JRUBY4925_BLAH, a = 1, 2' do |x|
+          expect(JRUBY4925_BLAH).to eq 1
+        end
       end
     end
 
