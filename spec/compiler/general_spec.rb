@@ -32,7 +32,7 @@ module JITSpecUtils
   def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
     run( "def __temp; #{src}; end; __temp", filename, line)
   end
-  
+
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
     yield compile_run(src, filename, line) unless (ENV['COMPILER_TEST'] == 'false')
   end
@@ -963,7 +963,7 @@ modes.each do |mode|
 
         [C.new.foo, D.new.foo, D.new.foo(str: "d", num:75, a:1, b:2)]
       ' do |x|
-        
+
         expect(x).to eq [
             ["foo", 42, {}],
             ["bar", 45, {}],
