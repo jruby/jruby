@@ -21,6 +21,8 @@ describe "an interface (Java 8+)" do
     public class Java8Implemtor implements Java8Interface {
       public String bar() { return getClass().getSimpleName(); }
 
+      // re-using the same class for proc-impl testing
+
       public static Object withConsumerCall(Integer i, java.util.function.IntConsumer c) {
           c.accept(i * 10); return i + 1;
       }
@@ -31,6 +33,34 @@ describe "an interface (Java 8+)" do
           //   org/jruby/gen/InterfaceImpl817905333.gen:13:in `test'
           return p.test(obj);
       }
+
+      public static String ambiguousCall1(String str, java.util.Map<?, ?> map) {
+          return "ambiguousWithMap";
+      }
+      public static String ambiguousCall1(String str, java.util.function.Consumer<StringBuilder> c) {
+          StringBuilder builder = new StringBuilder(str);
+          c.accept(builder.append("ambiguousWithConsumer")); return builder.toString();
+      }
+
+      public static String ambiguousCall2(CharSequence str, java.util.function.Consumer<StringBuilder> c) {
+          StringBuilder builder = new StringBuilder(str);
+          c.accept(builder.append("ambiguousWithConsumer")); return builder.toString();
+      }
+      public static String ambiguousCall2(String str, java.util.Map<?, ?> map) {
+          return "ambiguousWithMap";
+      }
+
+      public static String ambiguousCall3(CharSequence str, java.util.function.Consumer<StringBuilder> c) {
+          StringBuilder builder = new StringBuilder(str);
+          c.accept(builder.append("ambiguousWithConsumer")); return builder.toString();
+      }
+      public static String ambiguousCall3(String str, java.util.Map<?, ?> map) {
+          return "ambiguousWithMap";
+      }
+      public static String ambiguousCall3(String str, java.util.function.DoubleBinaryOperator op) {
+          return "ambiguousWithBinaryOperator";
+      }
+
     }
     JAVA
     files << (file = "#{@tmpdir}/Java8Implemtor.java"); File.open(file, 'w') { |f| f.print(src) }
@@ -89,6 +119,43 @@ describe "an interface (Java 8+)" do
     expect( ret ).to be true
     ret = Java::Java8Implemtor.withPredicateCall('x') { |obj| obj.empty? }
     expect( ret ).to be false
+  end
+
+  it "does not consider Map vs func-type Consumer ambiguous" do
+    output = with_stderr_captured do # exact match should not warn :
+      ret = Java::Java8Implemtor.ambiguousCall1('') do |c|
+        c.append('+proc')
+      end
+      expect( ret ).to eql "ambiguousWithConsumer+proc"
+    end
+    expect( output.index('ambiguous') ).to be nil
+
+    output = with_stderr_captured do # exact match should not warn :
+      ret = Java::Java8Implemtor.ambiguousCall2('') do |c|
+        c.append('+proc')
+      end
+      expect( ret ).to eql "ambiguousWithConsumer+proc"
+    end
+    expect( output.index('ambiguous') ).to be nil
+
+    output = with_stderr_captured do # exact match should not warn :
+      ret = Java::Java8Implemtor.ambiguousCall3('') do |c|
+        c.append('+proc')
+      end
+      expect( ret ).to eql "ambiguousWithConsumer+proc"
+    end
+    expect( output.index('ambiguous') ).to be nil
+  end
+
+  def with_stderr_captured
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      yield
+      $stderr.string
+    ensure
+      $stderr = stderr
+    end
   end
 
   def javac_compile(files)

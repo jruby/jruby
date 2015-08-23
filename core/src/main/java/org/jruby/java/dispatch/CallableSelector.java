@@ -172,7 +172,8 @@ public class CallableSelector {
                 final int procArity;
                 if ( lastArg instanceof RubyProc ) {
                     final Method implMethod; final int last = msTypes.length - 1;
-                    if ( last >= 0 && msTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
+                    if ( last >= 0 && msTypes[last].isInterface() &&
+                        ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
                         mostSpecificArity = implMethod.getParameterTypes().length;
                     }
                     procArity = ((RubyProc) lastArg).getBlock().arity().getValue();
@@ -181,34 +182,37 @@ public class CallableSelector {
                     procArity = Integer.MIN_VALUE;
                 }
 
-                OUTER: for ( int c = 1; c < size; c++ ) {
+                /* OUTER: */
+                for ( int c = 1; c < size; c++ ) {
                     final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
 
                     // TODO still need to handle var-args better Class<?> lastType;
-                    for ( int i = 0; i < msTypes.length; i++ ) {
-                        final Class<?> msType = msTypes[i], cType = cTypes[i];
-                        if ( msType != cType && msType.isAssignableFrom(cType) ) {
-                            mostSpecific = candidate; msTypes = cTypes;
-                            ambiguous = false; continue OUTER;
-                        }
+
+                    final boolean lastArgProc = procArity != Integer.MIN_VALUE;
+                    final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
+                    if ( (Object) moreSpecific == Boolean.TRUE ) {
+                        mostSpecific = candidate; msTypes = cTypes;
+                        ambiguous = false; continue /* OUTER */;
                     }
-                    // none more specific; check for ambiguities
-                    for ( int i = 0; i < msTypes.length; i++ ) {
-                        final Class<?> msType = msTypes[i], cType = cTypes[i];
-                        if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
-                            ambiguous = false; continue OUTER;
-                        }
-                        else if ( cType.isPrimitive() && msType.isAssignableFrom(getBoxType(cType)) ) {
-                            ambiguous = false; continue OUTER;
-                        }
-                        else {
-                            ambiguous = true;
+                    else { // if ( (Object) moreSpecific == Boolean.FALSE ) {
+                        // none more specific; check for ambiguities
+                        for ( int i = 0; i < msTypes.length; i++ ) {
+                            final Class<?> msType = msTypes[i], cType = cTypes[i];
+                            if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
+                                ambiguous = false; break; // continue OUTER;
+                            }
+                            else if ( cType.isPrimitive() && msType.isAssignableFrom(getBoxType(cType)) ) {
+                                ambiguous = false; break; // continue OUTER;
+                            }
+                            else {
+                                ambiguous = true;
+                            }
                         }
                     }
 
                     // special handling if we're dealing with Proc#impl :
-                    if ( procArity != Integer.MIN_VALUE ) { // lastArg instanceof RubyProc
+                    if ( lastArgProc ) {  // lastArg instanceof RubyProc
                         // cases such as (both ifaces - differ in arg count) :
                         // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
                         // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
@@ -285,6 +289,48 @@ public class CallableSelector {
         }
 
         return method;
+    }
+
+    private static Boolean moreSpecificTypes(final Class[] msTypes, final Class[] cTypes,
+        final boolean lastArgProc) {
+
+        final int last = msTypes.length - 1;
+        int moreSpecific = 0; Class<?> msType, cType;
+        for ( int i = 0; i < last; i++ ) {
+             msType = msTypes[i]; cType = cTypes[i];
+            if ( msType == cType ) ;
+            else if ( msType.isAssignableFrom(cType) ) {
+                moreSpecific++; /* continue; */
+            }
+            else if ( cType.isAssignableFrom(msType) ) {
+                moreSpecific--; /* continue; */
+            }
+            /* return false; */
+        }
+
+        if ( last >= 0 ) { // last argument :
+            msType = msTypes[last]; cType = cTypes[last];
+            if ( lastArgProc ) {
+                if ( cType.isAssignableFrom(RubyProc.class) ) {
+                    if ( ! msType.isAssignableFrom(RubyProc.class) ) moreSpecific++;
+                    // return moreSpecific > 0;
+                }
+                else {
+                    // NOTE: maybe this needs some implMethod arity matching here?
+                    return null; // interface matching logic (can not decide)
+                }
+            }
+            else {
+                if ( msType == cType ) ;
+                else if ( msType.isAssignableFrom(cType) ) {
+                    moreSpecific++;
+                }
+                else if ( cType.isAssignableFrom(msType) ) {
+                    moreSpecific--;
+                }
+            }
+        }
+        return moreSpecific > 0 ? Boolean.TRUE : Boolean.FALSE;
     }
 
     private static <T extends ParameterTypes> T findMatchingCallableForArgsFallback(final Ruby runtime,
