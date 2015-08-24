@@ -97,6 +97,10 @@ public abstract class ObjectIDOperations {
         return !id.and(FLOAT_FLAG).equals(BigInteger.ZERO);
     }
 
+    public static boolean isBasicObjectID(long id) {
+        return id >= FIRST_OBJECT_ID && id % 2 == 0;
+    }
+
     private static BigInteger unsignedBigInteger(long value) {
         BigInteger big = BigInteger.valueOf(value);
         if (value < 0) {

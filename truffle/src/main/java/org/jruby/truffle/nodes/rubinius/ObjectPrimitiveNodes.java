@@ -84,7 +84,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public Object objectID(DynamicObject object) {
+        public long objectID(DynamicObject object) {
             if (readObjectIdNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 readObjectIdNode = insert(new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
@@ -98,12 +98,12 @@ public abstract class ObjectPrimitiveNodes {
                     writeObjectIdNode = insert(new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
                 }
 
-                final Long newId = getContext().getNextObjectID();
+                final long newId = getContext().getNextObjectID();
                 writeObjectIdNode.execute(object, newId);
                 return newId;
             }
 
-            return id;
+            return (long) id;
         }
 
         protected boolean isSmallFixnum(long fixnum) {
