@@ -40,6 +40,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_raises(NoMethodError) { Integer.new(10) }
   end
 
+  def test_java_alias_prior_to_import
+    mod = Module.new do
+      java_alias :SYS, 'System'
+      import 'java.lang'
+    end
+    mod::SYS.currentTimeMillis # nothing raised
+  end
+
   Random = java.util.Random
   Double = java.lang.Double
   def test_constructors_and_instance_methods

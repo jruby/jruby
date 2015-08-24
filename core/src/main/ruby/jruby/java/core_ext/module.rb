@@ -9,12 +9,13 @@ class Module
   #
   def include_package(package_name)
     if defined? @included_packages
-      @included_packages << package_name      
+      @included_packages << package_name
       return
     end
+
     @included_packages = [package_name]
     @java_aliases ||= {}
-    
+
     def self.const_missing(constant)
       real_name = @java_aliases[constant] || constant
 
@@ -44,20 +45,21 @@ class Module
       end
     end
   end
-  
+
   # Imports the package specified by +package_name+, first by trying to scan JAR resources
   # for the file in question, and failing that by adding a const_missing hook
   # to try that package when constants are missing.
-  def import(package_name, &b)
+  def import(package_name, &block)
     if package_name.respond_to?(:java_class) || (String === package_name && package_name.split(/\./).last =~ /^[A-Z]/)
-      return super(package_name, &b)
+      return super(package_name, &block)
     end
 
     package_name = package_name.package_name if package_name.respond_to?(:package_name)
-    return include_package(package_name, &b)
+    include_package(package_name, &block)
   end
 
   def java_alias(new_id, old_id)
-    @java_aliases[new_id] = old_id
+    (@java_aliases ||= {})[new_id] = old_id
   end
+
 end
