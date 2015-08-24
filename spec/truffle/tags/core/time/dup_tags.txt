@@ -1,2 +1,1 @@
-fails:Time#dup returns an independent Time object
 fails:Time#dup returns a subclass instance

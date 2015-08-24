@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
+import org.joda.time.DateTimeZone;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -46,7 +47,8 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("UTC", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            final String zone = DateTimeZone.getDefault().toString();
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(zone, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         } else if (RubyGuards.isRubyString(tz)) {
             return tz;
         } else {

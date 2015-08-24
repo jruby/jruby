@@ -1,2 +1,1 @@
 fails:Time#_dump dumps like MRI's marshaled time format
-fails:Time#_dump preserves the GMT flag
