@@ -198,6 +198,9 @@ public class CallableSelector {
                     else { // if ( (Object) moreSpecific == Boolean.FALSE ) {
                         // none more specific; check for ambiguities
                         for ( int i = 0; i < msTypes.length; i++ ) {
+                            // TODO if lastArgProc (and we're not dealing with RubyProc.class)
+                            // then comparing last arg should not be needed, right?
+                            // ... same applies for moreSpecificTypes method ...
                             final Class<?> msType = msTypes[i], cType = cTypes[i];
                             if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
                                 ambiguous = false; break; // continue OUTER;
