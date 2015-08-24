@@ -382,11 +382,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public long getNextObjectID() {
-        // TODO(CS): We can theoretically run out of long values
-
         final long id = nextObjectID.getAndAdd(2);
 
         if (id < 0) {
+            CompilerDirectives.transferToInterpreter();
             nextObjectID.set(Long.MIN_VALUE);
             throw new RuntimeException("Object IDs exhausted");
         }

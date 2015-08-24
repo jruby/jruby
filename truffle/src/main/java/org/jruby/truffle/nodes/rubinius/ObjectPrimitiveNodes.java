@@ -34,9 +34,6 @@ public abstract class ObjectPrimitiveNodes {
     @RubiniusPrimitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private ReadHeadObjectFieldNode readObjectIdNode;
-        @Child private WriteHeadObjectFieldNode writeObjectIdNode;
-
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -71,7 +68,7 @@ public abstract class ObjectPrimitiveNodes {
         @Specialization
         public Object objectID(long value,
                                @Cached("createCountingProfile()") ConditionProfile smallProfile) {
-            if (smallProfile.profile(isSmallFixnum(value))) {
+            if (smallProfile.profile(ObjectIDOperations.isSmallFixnum(value))) {
                 return ObjectIDOperations.smallFixnumToID(value);
             } else {
                 return ObjectIDOperations.largeFixnumToID(getContext(), value);
@@ -84,20 +81,12 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public long objectID(DynamicObject object) {
-            if (readObjectIdNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readObjectIdNode = insert(new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
-            }
-
+        public long objectID(DynamicObject object,
+                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
+                @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
             final Object id = readObjectIdNode.execute(object);
 
             if (id == nil()) {
-                if (writeObjectIdNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    writeObjectIdNode = insert(new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
-                }
-
                 final long newId = getContext().getNextObjectID();
                 writeObjectIdNode.execute(object, newId);
                 return newId;
@@ -106,8 +95,12 @@ public abstract class ObjectPrimitiveNodes {
             return (long) id;
         }
 
-        protected boolean isSmallFixnum(long fixnum) {
-            return ObjectIDOperations.isSmallFixnum(fixnum);
+        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
+            return new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
+        }
+
+        protected WriteHeadObjectFieldNode createWriteObjectIDNode() {
+            return new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }
