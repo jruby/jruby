@@ -199,9 +199,7 @@ public abstract class ProcNodes {
         public Object binding(DynamicObject proc) {
             final MaterializedFrame frame = Layouts.PROC.getDeclarationFrame(proc);
 
-            return BindingNodes.createRubyBinding(getContext().getCoreLibrary().getBindingClass(),
-                    RubyArguments.getSelf(frame.getArguments()),
-                    frame);
+            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame);
         }
 
     }

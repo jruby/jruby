@@ -25,7 +25,6 @@ import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
@@ -226,10 +225,7 @@ public abstract class RubyNode extends Node {
     protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
 
-        final DynamicObject binding = BindingNodes.createRubyBinding(
-                getContext().getCoreLibrary().getBindingClass(),
-                self,
-                evalFrame);
+        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), self, evalFrame);
 
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }

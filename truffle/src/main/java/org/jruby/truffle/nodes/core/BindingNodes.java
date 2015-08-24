@@ -24,6 +24,8 @@ import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNode;
 import org.jruby.truffle.nodes.locals.WriteFrameSlotNodeGen;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.ThreadLocalObject;
@@ -34,14 +36,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
-
-    public static DynamicObject createRubyBinding(DynamicObject bindingClass) {
-        return createRubyBinding(bindingClass, null, null);
-    }
-
-    public static DynamicObject createRubyBinding(DynamicObject bindingClass, Object self, MaterializedFrame frame) {
-        return Layouts.BINDING.createBinding(Layouts.CLASS.getInstanceFactory(bindingClass), self, frame);
-    }
 
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
@@ -281,13 +275,16 @@ public abstract class BindingNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return BindingNodes.createRubyBinding(rubyClass);
+            return allocateObjectNode.allocate(rubyClass, null, null);
         }
 
     }

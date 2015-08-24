@@ -122,6 +122,35 @@ public abstract class HashNodes {
             return ruby(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
         }
 
+        @TruffleBoundary
+        public static boolean noiseIsSmallArrayOfPairs(Object[] args) {
+            System.err.println("??");
+
+            if (args.length != 1) {
+                System.err.println("too many arguments");
+            }
+
+            final Object arg = args[0];
+
+            if (!RubyGuards.isRubyArray(arg)) {
+                System.err.println("not array");
+            }
+
+            final DynamicObject array = (DynamicObject) arg;
+
+            if (!(Layouts.ARRAY.getStore(array) instanceof Object[])) {
+                System.err.println("not Object[]");
+            }
+
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
+
+            if (store.length > PackedArrayStrategy.MAX_ENTRIES) {
+                System.err.println("too long");
+            }
+
+            return true;
+        }
+
         public static boolean isSmallArrayOfPairs(Object[] args) {
             if (args.length != 1) {
                 return false;

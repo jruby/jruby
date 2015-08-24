@@ -20,7 +20,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -83,7 +82,7 @@ public class TraceNode extends RubyNode {
                         file,
                         line,
                         context.getCoreLibrary().getNilObject(),
-                        BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
+                        Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
                         context.getCoreLibrary().getNilObject()
                 };
 
