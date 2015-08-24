@@ -156,10 +156,10 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.io.SEEK_CUR", 1);
         configuration.config("rbx.platform.io.SEEK_END", 2);
 
-        configuration.config("rbx.platform.socket.AI_PASSIVE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        configuration.config("rbx.platform.socket.AF_UNSPEC", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("0", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        configuration.config("rbx.platform.socket.AI_PASSIVE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.AF_UNSPEC", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
     }
 
     protected static DynamicObject newBignum(RubyContext context, String value) {

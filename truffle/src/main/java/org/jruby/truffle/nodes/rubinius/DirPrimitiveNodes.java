@@ -121,9 +121,9 @@ public abstract class DirPrimitiveNodes {
             Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(".", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(".", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else if (position == -1) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("..", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("..", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 

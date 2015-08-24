@@ -103,12 +103,12 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
 
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else if (readNode.isSet(receiverValue)) {
                 if (readNode.execute(receiverValue) == nil()) {
                     return nil();
                 } else {
-                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
                 }
             } else {
                 return nil();
@@ -124,7 +124,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }

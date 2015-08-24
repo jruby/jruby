@@ -57,7 +57,7 @@ public class ZSuperOutsideMethodNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("super", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("super", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

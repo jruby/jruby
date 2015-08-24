@@ -859,7 +859,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary
