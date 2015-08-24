@@ -7,13 +7,15 @@ class Module
   # package will become available in this class/module, unless a constant
   # with the same name as a Java class is already defined.
   #
-  def include_package(package_name)
+  def include_package(package)
+    package = package.package_name if package.respond_to?(:package_name)
+
     if defined? @included_packages
-      @included_packages << package_name
+      @included_packages << package
       return
     end
 
-    @included_packages = [package_name]
+    @included_packages = [ package ]
     @java_aliases ||= {}
 
     def self.const_missing(constant)
@@ -24,7 +26,7 @@ class Module
 
       @included_packages.each do |package|
           begin
-            java_class = JavaUtilities.get_java_class(package + '.' + real_name.to_s)
+            java_class = JavaUtilities.get_java_class("#{package}.#{real_name}")
           rescue NameError
             # we only rescue NameError, since other errors should bubble out
             last_error = $!
@@ -53,8 +55,6 @@ class Module
     if package_name.respond_to?(:java_class) || (String === package_name && package_name.split(/\./).last =~ /^[A-Z]/)
       return super(package_name, &block)
     end
-
-    package_name = package_name.package_name if package_name.respond_to?(:package_name)
     include_package(package_name, &block)
   end
 
