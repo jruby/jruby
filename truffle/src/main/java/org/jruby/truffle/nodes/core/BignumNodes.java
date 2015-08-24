@@ -671,7 +671,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
         @TruffleBoundary
@@ -682,7 +682,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }

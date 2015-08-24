@@ -1117,13 +1117,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(int n) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject inspect(long n) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }
@@ -1171,13 +1171,13 @@ public abstract class FixnumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(int n, NotProvided base) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Integer.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(long n, NotProvided base) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
         @TruffleBoundary
@@ -1188,7 +1188,7 @@ public abstract class FixnumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n, base), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Long.toString(n, base), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }

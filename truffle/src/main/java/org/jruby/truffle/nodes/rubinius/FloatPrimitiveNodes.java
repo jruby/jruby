@@ -65,7 +65,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(string, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(string, UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), decimal, sign, string.length()}, 4);
         }
 
     }
