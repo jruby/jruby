@@ -32,8 +32,7 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public DynamicObject execute(VirtualFrame frame) {
-        final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes.dup(), StringSupport.CR_UNKNOWN, null);
-        Layouts.STRING.setCodeRange(string, codeRange);
+        final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes.dup(), codeRange, null);
         return string;
     }
 
