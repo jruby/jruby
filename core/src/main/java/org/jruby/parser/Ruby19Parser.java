@@ -95,7 +95,6 @@ import org.jruby.ast.SClassNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
-import org.jruby.ast.SymbolNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
@@ -138,7 +137,7 @@ public class Ruby19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 142 "-"
+					// line 141 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -3553,8 +3552,7 @@ states[412] = new ParserState() {
 };
 states[415] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* FIXME: We may be intern'ing more than once.*/
-  yyVal = new SymbolNode(((Token)yyVals[0+yyTop]).getPosition(), new ByteList(((String)((Token)yyVals[0+yyTop]).getValue()).getBytes(), lexer.getEncoding()));
+                    yyVal = support.asSymbol(lexer.getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
     return yyVal;
   }
 };
@@ -3791,11 +3789,11 @@ states[452] = new ParserState() {
                      /* EvStrNode :"#{some expression}"*/
                      /* Ruby 1.9 allows empty strings as symbols*/
                      if (((Node)yyVals[-1+yyTop]) == null) {
-                         yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), "");
+                         yyVal = support.asSymbol(lexer.getPosition(), "");
                      } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                          yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((DStrNode)yyVals[-1+yyTop]));
                      } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
-                         yyVal = new SymbolNode(((Token)yyVals[-2+yyTop]).getPosition(), ((StrNode)yyVals[-1+yyTop]).getValue());
+                         yyVal = support.asSymbol(((Node)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[-1+yyTop]));
                      } else {
                          yyVal = new DSymbolNode(((Token)yyVals[-2+yyTop]).getPosition());
                          ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop]));
@@ -4242,7 +4240,7 @@ states[528] = new ParserState() {
 states[529] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ISourcePosition pos = ((Token)yyVals[-1+yyTop]).getPosition();
-                    yyVal = support.newArrayNode(pos, new SymbolNode(pos, new ByteList(((String) ((Token)yyVals[-1+yyTop]).getValue()).getBytes(), lexer.getEncoding()))).add(((Node)yyVals[0+yyTop]));
+                    yyVal = support.newArrayNode(pos, support.asSymbol(support.getPosition(((Node)yyVals[0+yyTop])), (String) ((Token)yyVals[-1+yyTop]).getValue())).add(((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4271,7 +4269,7 @@ states[556] = new ParserState() {
   }
 };
 }
-					// line 2025 "Ruby19Parser.y"
+					// line 2023 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4290,4 +4288,4 @@ states[556] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8255 "-"
+					// line 8253 "-"

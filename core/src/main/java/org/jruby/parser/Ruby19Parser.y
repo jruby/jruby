@@ -92,7 +92,6 @@ import org.jruby.ast.SClassNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
-import org.jruby.ast.SymbolNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
@@ -1523,8 +1522,7 @@ opt_ensure      : kENSURE compstmt {
 
 literal         : numeric
                 | symbol {
-                    // FIXME: We may be intern'ing more than once.
-  $$ = new SymbolNode($1.getPosition(), new ByteList(((String)$<Token>1.getValue()).getBytes(), lexer.getEncoding()));
+                    $$ = support.asSymbol(lexer.getPosition(), (String) $1.getValue());
                 }
                 | dsym
 
@@ -1693,11 +1691,11 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // EvStrNode :"#{some expression}"
                      // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                         $$ = new SymbolNode($1.getPosition(), "");
+                         $$ = support.asSymbol(lexer.getPosition(), "");
                      } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($1.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($1.getPosition(), $<StrNode>2.getValue());
+                         $$ = support.asSymbol($2.getPosition(), $2);
                      } else {
                          $$ = new DSymbolNode($1.getPosition());
                          $<DSymbolNode>$.add($2);
@@ -1990,7 +1988,7 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tLABEL arg_value {
                     ISourcePosition pos = $1.getPosition();
-                    $$ = support.newArrayNode(pos, new SymbolNode(pos, new ByteList(((String) $1.getValue()).getBytes(), lexer.getEncoding()))).add($2);
+                    $$ = support.newArrayNode(pos, support.asSymbol(support.getPosition($2), (String) $1.getValue())).add($2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
