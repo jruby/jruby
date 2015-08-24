@@ -117,7 +117,7 @@ public abstract class HashNodes {
             return allocateObjectNode.allocate(hashClass, null, null, newStore, size, null, null, false);
         }
 
-        @Specialization
+        @Specialization(guards = "!isSmallArrayOfPairs(args)")
         public Object constructFallback(VirtualFrame frame, DynamicObject hashClass, Object[] args) {
             return ruby(frame, "_constructor_fallback(*args)", "args", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length));
         }
