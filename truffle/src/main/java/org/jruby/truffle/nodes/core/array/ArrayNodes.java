@@ -1591,7 +1591,7 @@ public abstract class ArrayNodes {
             Layouts.ARRAY.setSize(array, size);
             return array;
         }
-        
+
         @Specialization(guards = "size < 0")
         public DynamicObject initializeNegative(DynamicObject array, int size, double defaultValue, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
@@ -3086,7 +3086,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isDoubleArray(array)")
         public DynamicObject pushFloat(VirtualFrame frame, DynamicObject array, Object unusedValue, Object[] unusedRest) {
-            // TODO CS 5-Feb-15 hack to get things working with empty double[] store            
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
             if (Layouts.ARRAY.getSize(array) != 0) {
                 throw new UnsupportedOperationException();
             }

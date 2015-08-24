@@ -42,7 +42,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
         Object store = new Object[requiredCapacity];
         Layouts.ARRAY.setStore(array, store);
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -52,7 +51,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
         final int[] intStore = (int[]) Layouts.ARRAY.getStore(array);
         Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -62,7 +60,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
         final long[] intStore = (long[]) Layouts.ARRAY.getStore(array);
         Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return array;
     }
 
@@ -72,7 +69,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
         final double[] intStore = (double[]) Layouts.ARRAY.getStore(array);
         Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
-        Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
         return array;
     }
 
