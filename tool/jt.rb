@@ -395,7 +395,7 @@ module Commands
       else
         compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError #{compilation_exceptions_behaviour}"})
+      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError -J-G:-GraphPE #{compilation_exceptions_behaviour}"})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
