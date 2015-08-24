@@ -168,6 +168,7 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] boxExtra(int[] unboxed, int extra) {
+        assert extra >= 0: "extra is not negative";
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -178,6 +179,7 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] boxExtra(long[] unboxed, int extra) {
+        assert extra >= 0: "extra is not negative";
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -188,6 +190,7 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] boxExtra(double[] unboxed, int extra) {
+        assert extra >= 0: "extra is not negative";
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -198,6 +201,7 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] boxExtra(Object array, int extra) {
+        assert extra >= 0: "extra is not negative";
         CompilerAsserts.neverPartOfCompilation();
 
         if (array == null) {
