@@ -10,3 +10,4 @@ fails:Time.mktime ignores fractional seconds if a passed whole number of microse
 fails:Time.mktime ignores fractional seconds if a passed fractional number of microseconds
 fails:Time.mktime timezone changes correctly adjusts the timezone change to 'EET' on 'Europe/Istanbul'
 fails:Time.mktime timezone changes correctly adjusts the timezone change to 'CEST' on 'Europe/Amsterdam'
+fails(Joda Time behavior):Time.mktime respects rare old timezones
