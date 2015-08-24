@@ -245,7 +245,7 @@ public abstract class MethodNodes {
             final InternalMethod method = Layouts.METHOD.getMethod(methodObject);
 
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcClass(),
+                    getContext().getCoreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     method.getSharedMethodInfo(),
                     callTarget,
