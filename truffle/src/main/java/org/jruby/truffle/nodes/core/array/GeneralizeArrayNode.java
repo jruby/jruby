@@ -34,8 +34,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
 
     public abstract Object executeGeneralize(VirtualFrame frame, DynamicObject array, int requiredCapacity);
 
-    // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
-
     @Specialization(
             guards={"isRubyArray(array)", "isNullArray(array)"}
     )
@@ -49,8 +47,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isIntArray(array)"}
     )
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
-        final int[] intStore = (int[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
+        final int[] store = (int[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 
@@ -58,8 +56,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isLongArray(array)"}
     )
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
-        final long[] intStore = (long[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
+        final long[] store = (long[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 
@@ -67,8 +65,8 @@ public abstract class GeneralizeArrayNode extends RubyNode {
             guards={"isRubyArray(array)", "isDoubleArray(array)"}
     )
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
-        final double[] intStore = (double[]) Layouts.ARRAY.getStore(array);
-        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length));
+        final double[] store = (double[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 
