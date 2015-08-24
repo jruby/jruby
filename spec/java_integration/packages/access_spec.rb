@@ -17,10 +17,8 @@ describe "java package" do
   end
 
   it "can be imported using 'include_package package.module" do
-    pending "does not work; probably should for consistency?" do
-      m = Module.new { include_package java.lang }
-      m::System.should respond_to 'getProperty'
-    end
+    m = Module.new { include_package java.lang }
+    m::System.should respond_to 'getProperty'
   end
 
   it "can be imported using 'include_package \"package.module\"'" do
