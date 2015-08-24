@@ -77,7 +77,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.5',
+              'joda.time.version' => '2.8.2',
               'test-unit.version' => '3.0.3',
               'power_assert.version' => '0.2.3' )
 
