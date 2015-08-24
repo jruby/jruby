@@ -438,7 +438,7 @@ public abstract class FixnumNodes {
 
             if (mod < 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) > 0 || mod > 0 && Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 adjustProfile.enter();
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), BigInteger.valueOf(mod).add(Layouts.BIGNUM.getValue(b)));
             }
 
             return mod;
@@ -1051,7 +1051,7 @@ public abstract class FixnumNodes {
         @Specialization(contains = "absInBounds")
         public Object abs(long n) {
             if (n == Long.MIN_VALUE) {
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BigInteger.valueOf(n).abs());
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), BigInteger.valueOf(n).abs());
             }
             return (n < 0) ? -n : n;
         }

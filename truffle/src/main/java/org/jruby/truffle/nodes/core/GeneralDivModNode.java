@@ -165,7 +165,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public DynamicObject create(BigInteger value) {
-        return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     @Override

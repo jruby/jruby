@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -71,13 +70,13 @@ public abstract class ObjectIDOperations {
     public static DynamicObject largeFixnumToID(RubyContext context, long fixnum) {
         assert !isSmallFixnum(fixnum);
         BigInteger big = unsignedBigInteger(fixnum);
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(LARGE_FIXNUM_FLAG));
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(LARGE_FIXNUM_FLAG));
     }
 
     public static DynamicObject floatToID(RubyContext context, double value) {
         long bits = Double.doubleToRawLongBits(value);
         BigInteger big = unsignedBigInteger(bits);
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(FLOAT_FLAG));
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(FLOAT_FLAG));
     }
 
     // ID => primitive

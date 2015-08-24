@@ -37,7 +37,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -492,8 +491,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return ((org.jruby.RubyFloat) object).getDoubleValue();
         } else if (object instanceof org.jruby.RubyBignum) {
             final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-
-            return BignumNodes.createRubyBignum(coreLibrary.getBignumClass(), value);
+            return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
             return toTruffle((org.jruby.RubyString) object);
         } else if (object instanceof org.jruby.RubySymbol) {

@@ -43,7 +43,6 @@ import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
@@ -164,7 +163,7 @@ public abstract class DefaultRubiniusConfiguration {
     }
 
     protected static DynamicObject newBignum(RubyContext context, String value) {
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), new BigInteger(value));
     }
 
     protected static DynamicObject string(RubyContext context, String value) {

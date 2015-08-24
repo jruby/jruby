@@ -10,15 +10,20 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
@@ -28,6 +33,9 @@ public abstract class ObjectPrimitiveNodes {
 
     @RubiniusPrimitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private ReadHeadObjectFieldNode readObjectIdNode;
+        @Child private WriteHeadObjectFieldNode writeObjectIdNode;
 
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -60,20 +68,10 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.smallFixnumToIDOverflow(value);
         }
 
-        /* TODO: Ideally we would have this instead of the code below to speculate better. [GRAAL-903]
-        @Specialization(guards = "isSmallFixnum")
-        public long objectIDSmallFixnum(long value) {
-            return ObjectIDOperations.smallFixnumToID(value);
-        }
-
-        @Specialization(guards = "!isSmallFixnum")
-        public Object objectIDLargeFixnum(long value) {
-            return ObjectIDOperations.largeFixnumToID(getContext(), value);
-        } */
-
         @Specialization
-        public Object objectID(long value) {
-            if (isSmallFixnum(value)) {
+        public Object objectID(long value,
+                               @Cached("createCountingProfile()") ConditionProfile smallProfile) {
+            if (smallProfile.profile(isSmallFixnum(value))) {
                 return ObjectIDOperations.smallFixnumToID(value);
             } else {
                 return ObjectIDOperations.largeFixnumToID(getContext(), value);
@@ -86,9 +84,26 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public long objectID(DynamicObject object) {
-            // TODO: CS 22-Mar-15 need to write this using nodes
-            return ObjectIDOperations.verySlowGetObjectID(object);
+        public Object objectID(DynamicObject object) {
+            if (readObjectIdNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readObjectIdNode = insert(new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
+            }
+
+            final Object id = readObjectIdNode.execute(object);
+
+            if (id == nil()) {
+                if (writeObjectIdNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    writeObjectIdNode = insert(new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER));
+                }
+
+                final Long newId = getContext().getNextObjectID();
+                writeObjectIdNode.execute(object, newId);
+                return newId;
+            }
+
+            return id;
         }
 
         protected boolean isSmallFixnum(long fixnum) {

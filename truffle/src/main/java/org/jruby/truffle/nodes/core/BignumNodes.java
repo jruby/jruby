@@ -34,14 +34,6 @@ import java.math.BigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
-    public static DynamicObject createRubyBignum(DynamicObject rubyClass, BigInteger value) {
-        assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return Layouts.BIGNUM.createBignum(Layouts.CLASS.getInstanceFactory(rubyClass), value);
-    }
-
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
