@@ -357,7 +357,6 @@ public abstract class ArrayUtils {
         return longs;
     }
 
-    @TruffleBoundary
     public static int capacity(int current, int needed) {
         if (needed < 16) {
             return 16;
