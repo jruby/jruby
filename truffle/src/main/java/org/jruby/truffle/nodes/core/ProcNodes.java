@@ -28,6 +28,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -93,10 +95,12 @@ public abstract class ProcNodes {
     public abstract static class ProcNewNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode initializeNode;
+        @Child private AllocateObjectNode allocateObjectNode;
 
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             initializeNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         public abstract DynamicObject executeProcNew(VirtualFrame frame, DynamicObject procClass, Object[] args, Object block);
@@ -122,7 +126,7 @@ public abstract class ProcNodes {
         @Specialization(guards = "procClass != metaClass(block)")
         public DynamicObject procSpecial(VirtualFrame frame, DynamicObject procClass, Object[] args, DynamicObject block) {
             // Instantiate a new instance of procClass as classes do not correspond
-            DynamicObject proc = ProcNodes.createRubyProc(
+            DynamicObject proc = allocateObjectNode.allocate(
                     procClass,
                     Layouts.PROC.getType(block),
                     Layouts.PROC.getSharedMethodInfo(block),
@@ -145,13 +149,16 @@ public abstract class ProcNodes {
     @CoreMethod(names = { "dup", "clone" })
     public abstract static class DupNode extends UnaryCoreMethodNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject dup(DynamicObject proc) {
-            DynamicObject copy = ProcNodes.createRubyProc(
+            DynamicObject copy = allocateObjectNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(proc),
                     Layouts.PROC.getType(proc),
                     Layouts.PROC.getSharedMethodInfo(proc),

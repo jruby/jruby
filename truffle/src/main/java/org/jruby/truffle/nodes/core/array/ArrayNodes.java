@@ -2256,7 +2256,7 @@ public abstract class ArrayNodes {
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
-            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
+            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
                     maximumClosureFrame.materialize(), null, array, null);
 
@@ -2358,7 +2358,7 @@ public abstract class ArrayNodes {
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC,
+            final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
                     minimumClosureFrame.materialize(), null, array, null);
 

@@ -1147,7 +1147,7 @@ public abstract class KernelNodes {
         @Specialization(guards = "isRubyProc(block)")
         public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
-                    getContext().getCoreLibrary().getProcClass(),
+                    getContext().getCoreLibrary().getProcFactory(),
                     ProcNodes.Type.LAMBDA,
                     Layouts.PROC.getSharedMethodInfo(block),
                     Layouts.PROC.getCallTargetForLambdas(block),
