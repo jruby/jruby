@@ -22,8 +22,8 @@ import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
-        @NodeChild(value="array", type=RubyNode.class),
-        @NodeChild(value="requiredCapacity", type=RubyNode.class)
+        @NodeChild(value = "array", type = RubyNode.class),
+        @NodeChild(value = "requiredCapacity", type = RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
 public abstract class GeneralizeArrayNode extends RubyNode {
@@ -35,7 +35,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     public abstract Object executeGeneralize(VirtualFrame frame, DynamicObject array, int requiredCapacity);
 
     @Specialization(
-            guards={"isRubyArray(array)", "isNullArray(array)"}
+            guards = { "isRubyArray(array)", "isNullArray(array)" }
     )
     public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
         Object store = new Object[requiredCapacity];
@@ -44,7 +44,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isIntArray(array)"}
+            guards = { "isRubyArray(array)", "isIntArray(array)" }
     )
     public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
         final int[] store = (int[]) Layouts.ARRAY.getStore(array);
@@ -53,7 +53,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isLongArray(array)"}
+            guards = { "isRubyArray(array)", "isLongArray(array)" }
     )
     public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
         final long[] store = (long[]) Layouts.ARRAY.getStore(array);
@@ -62,7 +62,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isDoubleArray(array)"}
+            guards = { "isRubyArray(array)", "isDoubleArray(array)" }
     )
     public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
         final double[] store = (double[]) Layouts.ARRAY.getStore(array);
