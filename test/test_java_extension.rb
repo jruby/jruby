@@ -1,7 +1,9 @@
-require 'java'
 require 'test/unit'
+require 'test/test_helper'
+require 'java'
 
 class TestJavaExtension < Test::Unit::TestCase
+  include TestHelper
 
   class TestParent < org.jruby.test.Parent
     attr_accessor :result

@@ -105,18 +105,21 @@ module TestHelper
   def assert_in_sub_runtime(script)
     assert run_in_sub_runtime(script)
   end
-end
 
-require 'test/unit'
-
-class Test::Unit::TestCase
-
-  unless method_defined?(:skip)
-    if method_defined?(:omit)
-      alias skip omit
-    else
-      def skip(msg = nil)
-        warn "Skipped: #{caller[0]} #{msg}"
+  def self.included(base)
+    if defined? Test::Unit::TestCase
+      if base < Test::Unit::TestCase
+        Test::Unit::TestCase.class_eval do
+          unless method_defined?(:skip)
+            if method_defined?(:omit)
+              alias skip omit
+            else
+              def skip(msg = nil)
+                warn "Skipped: #{caller[0]} #{msg}"
+              end
+            end
+          end
+        end
       end
     end
   end
