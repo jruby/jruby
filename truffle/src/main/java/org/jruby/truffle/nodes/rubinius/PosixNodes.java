@@ -925,12 +925,47 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen > 0;
+            assert servlen > 0;
+
             return nativeSockets().getnameinfo(
                     Layouts.POINTER.getPointer(sa),
                     salen,
                     Layouts.POINTER.getPointer(host),
                     hostlen,
                     Layouts.POINTER.getPointer(serv),
+                    servlen,
+                    flags);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = {"isRubyPointer(sa)", "isNil(host)", "isRubyPointer(serv)"})
+        public int getnameinfoNullHost(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen == 0;
+            assert servlen > 0;
+
+            return nativeSockets().getnameinfo(
+                    Layouts.POINTER.getPointer(sa),
+                    salen,
+                    PointerNodes.NULL_POINTER,
+                    hostlen,
+                    Layouts.POINTER.getPointer(serv),
+                    servlen,
+                    flags);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isNil(serv)"})
+        public int getnameinfoNullService(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen > 0;
+            assert servlen == 0;
+
+            return nativeSockets().getnameinfo(
+                    Layouts.POINTER.getPointer(sa),
+                    salen,
+                    Layouts.POINTER.getPointer(host),
+                    hostlen,
+                    PointerNodes.NULL_POINTER,
                     servlen,
                     flags);
         }
