@@ -1402,6 +1402,8 @@ public class BodyTranslator extends Translator {
         m.put("$-v", "$VERBOSE");
         m.put("$-w", "$VERBOSE");
         m.put("$-0", "$/");
+        m.put("$RS", "$/");
+        m.put("$INPUT_RECORD_SEPARATOR", "$/");
         m.put("$>", "$stdout");
     }
 
