@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -43,7 +42,7 @@ public abstract class BignumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), Layouts.BIGNUM.getValue(a).pow((int) b));
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 

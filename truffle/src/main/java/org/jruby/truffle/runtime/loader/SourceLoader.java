@@ -44,31 +44,32 @@ public class SourceLoader {
                 StandardCharsets.UTF_8), "-e");
     }
 
-    private Source loadResource(String canonicalPath) throws IOException {
-        if (!canonicalPath.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
-            throw new FileNotFoundException(canonicalPath);
+    private Source loadResource(String path) throws IOException {
+        if (!path.toLowerCase(Locale.ENGLISH).endsWith(".rb")) {
+            throw new FileNotFoundException(path);
         }
 
         final Class relativeClass;
         final String relativePath;
 
-        if (canonicalPath.startsWith(TRUFFLE_SCHEME)) {
+        if (path.startsWith(TRUFFLE_SCHEME)) {
             relativeClass = RubyContext.class;
-            relativePath = canonicalPath.substring(TRUFFLE_SCHEME.length());
-        } else if (canonicalPath.startsWith(JRUBY_SCHEME)) {
+            relativePath = path.substring(TRUFFLE_SCHEME.length());
+        } else if (path.startsWith(JRUBY_SCHEME)) {
             relativeClass = Ruby.class;
-            relativePath = canonicalPath.substring(JRUBY_SCHEME.length());
+            relativePath = path.substring(JRUBY_SCHEME.length());
         } else {
             throw new UnsupportedOperationException();
         }
 
-        final InputStream stream = relativeClass.getResourceAsStream(relativePath);
+        final String canonicalPath = (new File(relativePath)).getCanonicalPath();
+        final InputStream stream = relativeClass.getResourceAsStream(canonicalPath);
 
         if (stream == null) {
-            throw new FileNotFoundException(canonicalPath);
+            throw new FileNotFoundException(path);
         }
 
-        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), canonicalPath);
+        return Source.fromReader(new InputStreamReader(stream, StandardCharsets.UTF_8), path);
     }
 
 }

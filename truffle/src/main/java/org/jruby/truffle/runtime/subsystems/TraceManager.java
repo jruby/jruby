@@ -122,8 +122,8 @@ public class TraceManager {
                             final Object classname = context.getCoreLibrary().getLogicalClass(self);
                             final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
 
-                            final DynamicObject binding = BindingNodes.createRubyBinding(
-                                    context.getCoreLibrary().getBindingClass(),
+                            final DynamicObject binding = Layouts.BINDING.createBinding(
+                                    context.getCoreLibrary().getBindingFactory(),
                                     self,
                                     frame.materialize());
 
@@ -244,8 +244,8 @@ public class TraceManager {
                 final Object classname = context.getCoreLibrary().getNilObject();
                 final Object id = context.getCoreLibrary().getNilObject();
 
-                final DynamicObject binding = BindingNodes.createRubyBinding(
-                        context.getCoreLibrary().getBindingClass(),
+                final DynamicObject binding = Layouts.BINDING.createBinding(
+                        context.getCoreLibrary().getBindingFactory(),
                         self,
                         frame.materialize());
 

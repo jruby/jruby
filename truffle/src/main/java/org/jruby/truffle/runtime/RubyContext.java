@@ -37,7 +37,6 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.core.LoadRequiredLibrariesNode;
 import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -299,7 +298,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
-        if (new File(fileName).isAbsolute() || fileName.startsWith("jruby:") || fileName.startsWith("truffle:")) {
+        if (new File(fileName).isAbsolute() || fileName.startsWith(SourceLoader.JRUBY_SCHEME) || fileName.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
             loadFileAbsolute(fileName, currentNode);
         } else {
             loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
@@ -393,11 +392,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public long getNextObjectID() {
-        // TODO(CS): We can theoretically run out of long values
-
         final long id = nextObjectID.getAndAdd(2);
 
         if (id < 0) {
+            CompilerDirectives.transferToInterpreter();
             nextObjectID.set(Long.MIN_VALUE);
             throw new RuntimeException("Object IDs exhausted");
         }
@@ -502,8 +500,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return ((org.jruby.RubyFloat) object).getDoubleValue();
         } else if (object instanceof org.jruby.RubyBignum) {
             final BigInteger value = ((org.jruby.RubyBignum) object).getBigIntegerValue();
-
-            return BignumNodes.createRubyBignum(coreLibrary.getBignumClass(), value);
+            return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
             return toTruffle((org.jruby.RubyString) object);
         } else if (object instanceof org.jruby.RubySymbol) {

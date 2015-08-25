@@ -859,7 +859,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -925,6 +925,9 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isRubyPointer(serv)"})
         public int getnameinfo(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen > 0;
+            assert servlen > 0;
+
             return nativeSockets().getnameinfo(
                     Layouts.POINTER.getPointer(sa),
                     salen,
@@ -933,6 +936,53 @@ public abstract class PosixNodes {
                     Layouts.POINTER.getPointer(serv),
                     servlen,
                     flags);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = {"isRubyPointer(sa)", "isNil(host)", "isRubyPointer(serv)"})
+        public int getnameinfoNullHost(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen == 0;
+            assert servlen > 0;
+
+            return nativeSockets().getnameinfo(
+                    Layouts.POINTER.getPointer(sa),
+                    salen,
+                    PointerNodes.NULL_POINTER,
+                    hostlen,
+                    Layouts.POINTER.getPointer(serv),
+                    servlen,
+                    flags);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = {"isRubyPointer(sa)", "isRubyPointer(host)", "isNil(serv)"})
+        public int getnameinfoNullService(DynamicObject sa, int salen, DynamicObject host, int hostlen, DynamicObject serv, int servlen, int flags) {
+            assert hostlen > 0;
+            assert servlen == 0;
+
+            return nativeSockets().getnameinfo(
+                    Layouts.POINTER.getPointer(sa),
+                    salen,
+                    Layouts.POINTER.getPointer(host),
+                    hostlen,
+                    PointerNodes.NULL_POINTER,
+                    servlen,
+                    flags);
+        }
+
+    }
+
+    @CoreMethod(names = "shutdown", isModuleFunction = true, required = 2)
+    public abstract static class ShutdownNode extends CoreMethodArrayArgumentsNode {
+
+        public ShutdownNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public int shutdown(int socket, int how) {
+            return nativeSockets().shutdown(socket, how);
         }
 
     }

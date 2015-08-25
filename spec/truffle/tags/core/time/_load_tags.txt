@@ -1,3 +1,1 @@
-fails:Time._load loads a time object in the new format
 fails:Time._load loads MRI's marshaled time format
-fails:Time._load treats the data as binary data

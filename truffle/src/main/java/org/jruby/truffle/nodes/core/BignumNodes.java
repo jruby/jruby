@@ -34,14 +34,6 @@ import java.math.BigInteger;
 @CoreClass(name = "Bignum")
 public abstract class BignumNodes {
 
-    public static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    public static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-
-    public static DynamicObject createRubyBignum(DynamicObject rubyClass, BigInteger value) {
-        assert value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0 : String.format("%s not in Bignum range", value);
-        return Layouts.BIGNUM.createBignum(Layouts.CLASS.getInstanceFactory(rubyClass), value);
-    }
-
     public static abstract class BignumCoreMethodNode extends CoreMethodArrayArgumentsNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
@@ -679,7 +671,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
         @TruffleBoundary
@@ -690,7 +682,7 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }

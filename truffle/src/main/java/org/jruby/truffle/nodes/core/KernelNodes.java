@@ -291,10 +291,7 @@ public abstract class KernelNodes {
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
-            return BindingNodes.createRubyBinding(
-                    getContext().getCoreLibrary().getBindingClass(),
-                    RubyArguments.getSelf(callerFrame.getArguments()),
-                    callerFrame);
+            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(callerFrame.getArguments()), callerFrame);
         }
     }
 

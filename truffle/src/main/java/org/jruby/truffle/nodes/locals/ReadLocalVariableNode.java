@@ -50,12 +50,12 @@ public class ReadLocalVariableNode extends RubyNode implements ReadNode {
         if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(readFrameSlotNode.getFrameSlot().getIdentifier())) {
             if (Translator.ALWAYS_DEFINED_GLOBALS.contains(readFrameSlotNode.getFrameSlot().getIdentifier())
                     || readFrameSlotNode.executeRead(frame) != nil()) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }
         } else {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("local-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("local-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

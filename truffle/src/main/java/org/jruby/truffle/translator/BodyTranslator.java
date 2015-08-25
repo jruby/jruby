@@ -317,7 +317,7 @@ public class BodyTranslator extends Translator {
         final RubyNode ret;
 
         if (value.bitLength() >= 64) {
-            ret = new LiteralNode(context, sourceSection, BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+            ret = new LiteralNode(context, sourceSection, Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), node.getValue()));
         } else {
             ret = new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
         }
@@ -1402,6 +1402,8 @@ public class BodyTranslator extends Translator {
         m.put("$-v", "$VERBOSE");
         m.put("$-w", "$VERBOSE");
         m.put("$-0", "$/");
+        m.put("$RS", "$/");
+        m.put("$INPUT_RECORD_SEPARATOR", "$/");
         m.put("$>", "$stdout");
     }
 

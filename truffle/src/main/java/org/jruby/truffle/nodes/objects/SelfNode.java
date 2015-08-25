@@ -35,7 +35,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("self", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("self", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
 }

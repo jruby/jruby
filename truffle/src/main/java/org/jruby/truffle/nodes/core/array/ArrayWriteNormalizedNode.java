@@ -222,7 +222,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public boolean writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, boolean value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -233,7 +232,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public int writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((int[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -244,7 +242,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public int writeExtendByOneIntIntoLong(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -255,7 +252,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public long writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, long value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((long[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -266,7 +262,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public double writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, double value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((double[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -277,18 +272,16 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     public DynamicObject writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, DynamicObject value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
 
     @Specialization(
-        guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
+            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
     public int writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -307,7 +300,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         objectStore[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }
@@ -324,7 +316,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         }
 
         objectStore[index] = value;
-        Layouts.ARRAY.setStore(array, Layouts.ARRAY.getStore(array));
         Layouts.ARRAY.setSize(array, index + 1);
         return value;
     }

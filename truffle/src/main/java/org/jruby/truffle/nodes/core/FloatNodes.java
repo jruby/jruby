@@ -701,7 +701,7 @@ public abstract class FloatNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(double value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }

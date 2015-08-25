@@ -85,6 +85,7 @@ public class CoreLibrary {
     private final DynamicObject bignumClass;
     private final DynamicObjectFactory bignumFactory;
     private final DynamicObject bindingClass;
+    private final DynamicObjectFactory bindingFactory;
     private final DynamicObject classClass;
     private final DynamicObject complexClass;
     private final DynamicObject dirClass;
@@ -348,7 +349,8 @@ public class CoreLibrary {
         arrayFactory = Layouts.ARRAY.createArrayShape(arrayClass, arrayClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(arrayClass, arrayFactory);
         bindingClass = defineClass("Binding");
-        Layouts.CLASS.setInstanceFactoryUnsafe(bindingClass, Layouts.BINDING.createBindingShape(bindingClass, bindingClass));
+        bindingFactory = Layouts.BINDING.createBindingShape(bindingClass, bindingClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(bindingClass, bindingFactory);
         dirClass = defineClass("Dir");
         Layouts.CLASS.setInstanceFactoryUnsafe(dirClass, Layouts.DIR.createDirShape(dirClass, dirClass));
         encodingClass = defineClass("Encoding");
@@ -1319,6 +1321,10 @@ public class CoreLibrary {
 
     public DynamicObject getBindingClass() {
         return bindingClass;
+    }
+
+    public DynamicObjectFactory getBindingFactory() {
+        return bindingFactory;
     }
 
     public DynamicObject getClassClass() {

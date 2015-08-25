@@ -72,10 +72,7 @@ public class AttachmentsManager {
 
                     @Override
                     public Object executeRoot(Node node, VirtualFrame frame) {
-                        final DynamicObject binding = BindingNodes.createRubyBinding(
-                                context.getCoreLibrary().getBindingClass(),
-                                RubyArguments.getSelf(frame.getArguments()),
-                                frame.materialize());
+                        final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
 
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();

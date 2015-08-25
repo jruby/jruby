@@ -397,7 +397,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("method", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("method", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     public String getName() {

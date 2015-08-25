@@ -9,14 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,61 +23,80 @@ import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.object.StopVisitingObjectsException;
 import org.jruby.util.Memo;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
+
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)
+    @ImportStatic(ObjectIDOperations.class)
     public abstract static class ID2RefNode extends CoreMethodArrayArgumentsNode {
 
         public ID2RefNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public Object id2Ref(int id) {
-            return id2Ref((long) id);
+        @Specialization(guards = "id == NIL")
+        public Object id2RefNil(long id) {
+            return nil();
         }
 
-        @TruffleBoundary
-        @Specialization
-        public Object id2Ref(final long id) {
-            if (id == ObjectIDOperations.NIL) {
-                return nil();
-            } else if (id == ObjectIDOperations.TRUE) {
-                return true;
-            } else if (id == ObjectIDOperations.FALSE) {
-                return false;
-            } else if (ObjectIDOperations.isSmallFixnumID(id)) {
-                return ObjectIDOperations.toFixnum(id);
-            } else {
-                final Memo<Object> result = new Memo<Object>(nil());
+        @Specialization(guards = "id == TRUE")
+        public boolean id2RefTrue(long id) {
+            return true;
+        }
 
-                new ObjectGraph(getContext()).visitObjects(new ObjectGraphVisitor() {
+        @Specialization(guards = "id == FALSE")
+        public boolean id2RefFalse(long id) {
+            return false;
+        }
 
-                    @Override
-                    public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
-                        if (ObjectIDOperations.verySlowGetObjectID(object) == id) {
-                            result.set(object);
-                            throw new StopVisitingObjectsException();
-                        }
+        @Specialization(guards = "isSmallFixnumID(id)")
+        public long id2RefSmallInt(long id) {
+            return ObjectIDOperations.toFixnum(id);
+        }
 
-                        return true;
+        @Specialization(guards = "isBasicObjectID(id)")
+        public Object id2Ref(final VirtualFrame frame, final long id,
+                @Cached("createReadObjectIDNode()") final ReadHeadObjectFieldNode readObjectIdNode) {
+            CompilerDirectives.transferToInterpreter();
+
+            final Memo<Object> result = new Memo<Object>(nil());
+
+            new ObjectGraph(getContext()).visitObjects(new ObjectGraphVisitor() {
+                @Override
+                public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
+                    final Object objectID = readObjectIdNode.execute(object);
+                    if (objectID != nil() && (long) objectID == id) {
+                        result.set(object);
+                        throw new StopVisitingObjectsException();
                     }
+                    return true;
+                }
+            });
 
-                });
-
-                return result.get();
-            }
+            return result.get();
         }
 
-        @Specialization(guards = {"isRubyBignum(id)", "isLargeFixnumID(id)"})
+        @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
         public Object id2RefLargeFixnum(DynamicObject id) {
             return Layouts.BIGNUM.getValue(id).longValue();
         }
 
-        @Specialization(guards = {"isRubyBignum(id)", "isFloatID(id)"})
+        @Specialization(guards = { "isRubyBignum(id)", "isFloatID(id)" })
         public double id2RefFloat(DynamicObject id) {
             return Double.longBitsToDouble(Layouts.BIGNUM.getValue(id).longValue());
+        }
+
+        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
+            return new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {

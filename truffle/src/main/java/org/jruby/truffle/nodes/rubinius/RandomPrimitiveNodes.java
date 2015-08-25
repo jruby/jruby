@@ -18,8 +18,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRandom;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -86,7 +86,7 @@ public abstract class RandomPrimitiveNodes {
         @Specialization
         public DynamicObject randomizerGenSeed(DynamicObject random) {
             BigInteger integer = RandomPrimitiveHelper.randomSeed(getContext().getRuntime());
-            return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), integer);
+            return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), integer);
         }
     }
 

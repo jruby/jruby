@@ -83,7 +83,7 @@ public class ReadMatchReferenceNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         if (execute(frame) != nil()) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         } else {
             return nil();
         }
