@@ -6,7 +6,7 @@ module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  # using the classloader setup to determine whether it runs inside 
+  # using the classloader setup to determine whether it runs inside
   # ScriptingContainer or via commandline
   IS_COMMAND_LINE_EXECUTION = JRuby.runtime.jruby_class_loader == java.lang.Thread.current_thread.context_class_loader
   IS_JAR_EXECUTION = RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
@@ -114,4 +114,23 @@ module TestHelper
   def assert_in_sub_runtime(script)
     assert run_in_sub_runtime(script)
   end
+
+#  def self.included(base)
+#    if defined? Test::Unit::TestCase
+#      if base < Test::Unit::TestCase
+#        Test::Unit::TestCase.class_eval do
+#          unless method_defined?(:skip)
+#            if method_defined?(:omit)
+#              alias skip omit
+#            else
+#              def skip(msg = nil)
+#                warn "Skipped: #{caller[0]} #{msg}"
+#              end
+#            end
+#          end
+#        end
+#      end
+#    end
+#  end
+
 end
