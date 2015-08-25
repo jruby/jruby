@@ -197,7 +197,8 @@ public class JavaProxyClassFactory {
             Field proxy_class = clazz.getDeclaredField(PROXY_CLASS_FIELD_NAME);
             proxy_class.setAccessible(true);
             return (JavaProxyClass) proxy_class.get(clazz);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             InternalError ie = new InternalError();
             ie.initCause(ex);
             throw ie;
@@ -266,12 +267,17 @@ public class JavaProxyClassFactory {
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
 
-        cw.visitField(Opcodes.ACC_PRIVATE, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE.getDescriptor(), null, null).visitEnd();
+        // private final JavaProxyInvocationHandler __handler;
+        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                INVOCATION_HANDLER_FIELD_NAME,
+                INVOCATION_HANDLER_TYPE.getDescriptor(), null, null
+        ).visitEnd();
 
-        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-                PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE.getDescriptor(), null,
-                null).visitEnd();
+        // private static JavaProxyClass __proxy_class;
+        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                PROXY_CLASS_FIELD_NAME,
+                PROXY_CLASS_TYPE.getDescriptor(), null, null
+        ).visitEnd();
 
         return cw;
     }
@@ -486,6 +492,7 @@ public class JavaProxyClassFactory {
 
         ga.loadThis();
         ga.loadArg(superConstructorParameterTypes.length);
+
         ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // do a void return
