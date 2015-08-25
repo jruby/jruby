@@ -156,7 +156,16 @@ class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    /*
+     * This method exists solely to be substituted to support lazy
+     * method parsing. The substitution returns a node which performs
+     * the parsing lazily and then calls doCompileMethodBody.
+     */
+    public RubyNode compileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+    }
+
+    public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
@@ -194,7 +203,11 @@ class MethodTranslator extends BodyTranslator {
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, sourceSection, body);
+        return body;
+    }
 
+    public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
