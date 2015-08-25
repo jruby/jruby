@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.translator;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -34,6 +37,7 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
 import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -335,4 +339,29 @@ class MethodTranslator extends BodyTranslator {
         }
     }
 
+    /*
+     * The following methods allow us to save and restore enough of
+     * the current state of the Translator to allow lazy parsing. When
+     * the lazy parsing is actually performed, the state is restored
+     * to what it would have been if the method had been parsed
+     * eagerly.
+     */
+    public TranslatorState getCurrentState() {
+        return new TranslatorState(getEnvironment().getLexicalScope(), new ArrayDeque<SourceSection>(parentSourceSection));
+    }
+
+    public void restoreState(TranslatorState state) {
+        this.getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
+        this.parentSourceSection = state.parentSourceSection;
+    }
+
+    public static class TranslatorState {
+        private final LexicalScope scope;
+        private final Deque<SourceSection> parentSourceSection;
+
+        private TranslatorState(LexicalScope scope, Deque<SourceSection> parentSourceSection) {
+            this.scope = scope;
+            this.parentSourceSection = parentSourceSection;
+        }
+    }
 }
