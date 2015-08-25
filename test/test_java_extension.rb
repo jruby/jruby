@@ -272,19 +272,31 @@ class TestJavaExtension < Test::Unit::TestCase
     assert listing.size >= 0
   end
 
-  class ExtendedClass < org.jruby.test.Abstract
+  class RubyConcrete < org.jruby.test.Abstract
     def protected_method
       "Ruby overrides java!"
     end
   end
 
   def test_overriding_protected_method
-    a = ExtendedClass.new
+    a = RubyConcrete.new
     begin
       assert_equal "Ruby overrides java!", a.call_protected
     rescue Exception => e
       flunk "Exception raised: #{e}"
     end
+  end
+
+  class CallAbstractInConstructor < org.jruby.test.Abstract
+    def initialize; super("call protected method in constructor!") end
+
+    def protected_method; "HELLO!" end
+  end
+
+  def test_calling_abstract_method_in_java_constructor
+    skip('this leaking in super constructor (calling Ruby implemented methods)')
+    a = CallAbstractInConstructor.new
+    assert_equal "HELLO!", a.result
   end
 
   def test_map_interface_to_array
