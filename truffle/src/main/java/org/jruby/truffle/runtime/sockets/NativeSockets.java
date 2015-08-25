@@ -118,4 +118,10 @@ public interface NativeSockets {
 
     int connect(int socket, Pointer address, int address_len);
 
+    /**
+     * int shutdown(int sockfd, int how);
+     */
+
+    int shutdown(int socket, int how);
+
 }

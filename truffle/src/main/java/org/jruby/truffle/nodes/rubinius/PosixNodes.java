@@ -972,6 +972,21 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "shutdown", isModuleFunction = true, required = 2)
+    public abstract static class ShutdownNode extends CoreMethodArrayArgumentsNode {
+
+        public ShutdownNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public int shutdown(int socket, int how) {
+            return nativeSockets().shutdown(socket, how);
+        }
+
+    }
+
     @CoreMethod(names = "socket", isModuleFunction = true, required = 3)
     public abstract static class SocketNode extends CoreMethodArrayArgumentsNode {
 
