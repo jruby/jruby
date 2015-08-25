@@ -205,16 +205,17 @@ public class JavaProxyClassFactory {
         }
     }
 
-    private static String targetClassName(final Class clazz) {
+    private static String targetClassName(final Class<?> clazz) {
         // We always prepend an org.jruby.proxy package to the beginning
         // because java and javax packages are protected and signed
         // jars prevent us generating new classes with those package
         // names. See JRUBY-2439.
-        final String pkgName = proxyPackageName(clazz);
         final String fullName = clazz.getName();
-        int ix = fullName.lastIndexOf('.');
-        String className = ix == -1 ? fullName : fullName.substring(ix + 1);
-        return pkgName + '.' + className + "$Proxy" + nextId();
+        final int idx = fullName.lastIndexOf('.');
+        String className = idx == -1 ? fullName : fullName.substring(idx + 1);
+        return proxyPackageName(fullName)
+                .append('.').append(className)
+                .append("$Proxy").append(nextId()).toString();
     }
 
     private static final Method defineClassMethod;
@@ -809,11 +810,12 @@ public class JavaProxyClassFactory {
         return clazzName.substring(0, idx);
     }
 
-    private static String proxyPackageName(Class clazz) {
-        String clazzName = clazz.getName();
-        int idx = clazzName.lastIndexOf('.');
-        if ( idx == -1 ) return "org.jruby.proxy";
-        return "org.jruby.proxy." + clazzName.substring(0, idx);
+    private static StringBuilder proxyPackageName(final String className) {
+        final String proxyPackagePrefix = "org.jruby.proxy";
+        final StringBuilder str = new StringBuilder(proxyPackagePrefix.length() + className.length() + 8);
+        final int idx = className.lastIndexOf('.');
+        str.append(proxyPackagePrefix);
+        return idx == -1 ? str : str.append('.').append(className.substring(0, idx));
     }
 
     /**
