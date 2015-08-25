@@ -10,18 +10,6 @@ rescue # jarjar renames things, so we try the renamed version
   import "org.jruby.org.objectweb.asm.Opcodes"
 end
 
-class MockMethodVisitor
-  attr_accessor :calls
-
-  def initialize
-    @calls = []
-  end
-
-  def method_missing(name, *args)
-    @calls << [name, args]
-  end
-end
-
 describe "SkinnyMethodAdapter" do
   it "supports all JVM opcodes" do
     insn_opcodes = Opcodes.constants.select do |c|
