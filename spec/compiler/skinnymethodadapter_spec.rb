@@ -66,4 +66,3 @@ describe "SkinnyMethodAdapter" do
     )
   end
 end
-
