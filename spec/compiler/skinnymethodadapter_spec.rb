@@ -11,7 +11,8 @@ rescue # jarjar renames things, so we try the renamed version
 end
 
 describe "SkinnyMethodAdapter" do
-  it "supports all JVM opcodes" do
+  let(:instance_methods) { SkinnyMethodAdapter.instance_methods.map(&:to_s) }
+  let(:insn_opcodes) do
     insn_opcodes = Opcodes.constants.select do |c|
       case c.to_s # for 1.9's symbols
 
@@ -35,17 +36,12 @@ describe "SkinnyMethodAdapter" do
       else
         true
       end
-    end
-
+    end.map(&:to_s).map(&:downcase)
     # 1.9 makes them symbols, so to_s the lot
-    insn_opcodes = insn_opcodes.map(&:to_s)
-    instance_methods = SkinnyMethodAdapter.instance_methods.map(&:to_s)
+  end
 
-    insn_opcodes.each do |opcode|
-      opcode = opcode.downcase
-      expect(instance_methods).to include(opcode)
-    end
-
+  it "supports all JVM opcodes" do
+    expect(instance_methods).to include(*insn_opcodes)
     expect(instance_methods).to include(
       "go_to",
       "voidreturn",
