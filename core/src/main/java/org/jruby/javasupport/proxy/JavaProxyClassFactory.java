@@ -288,6 +288,7 @@ public class JavaProxyClassFactory {
         for (int i = 0; i < interfaces.length; i++) {
             interfaceNames[i] = toInternalClassName(interfaces[i]);
         }
+        // all proxies implement our InternalJavaProxy interface :
         interfaceNames[interfaces.length] = toInternalClassName(InternalJavaProxy.class);
 
         return interfaceNames;
@@ -302,8 +303,11 @@ public class JavaProxyClassFactory {
         }
     }
 
+    /**
+     * @see InternalJavaProxy
+     */
     private void generateGetInvocationHandler(Type selfType, ClassVisitor cw) {
-        // make getter for handler
+        // make getter for handler (due implements InternalJavaProxy)
         GeneratorAdapter gh = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getInvocationHandler",
                         INVOCATION_HANDLER_TYPE, EMPTY_TYPE_ARRAY), null,
@@ -315,8 +319,11 @@ public class JavaProxyClassFactory {
         gh.endMethod();
     }
 
+    /**
+     * @see InternalJavaProxy
+     */
     private void generateGetProxyClass(Type selfType, ClassVisitor cw) {
-        // make getter for proxy class
+        // make getter for proxy class (due implements InternalJavaProxy)
         GeneratorAdapter gpc = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getProxyClass",
                         PROXY_CLASS_TYPE, EMPTY_TYPE_ARRAY), null,
