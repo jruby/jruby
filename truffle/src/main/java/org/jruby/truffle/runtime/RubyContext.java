@@ -288,7 +288,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
-        if (new File(fileName).isAbsolute() || fileName.startsWith("jruby:") || fileName.startsWith("truffle:")) {
+        if (new File(fileName).isAbsolute() || fileName.startsWith(SourceLoader.JRUBY_SCHEME) || fileName.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
             loadFileAbsolute(fileName, currentNode);
         } else {
             loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
