@@ -98,12 +98,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return wrappedMap;
     }
 
-    private static class RubyHashMap extends RubyHash {
+    private static final class RubyHashMap extends RubyHash {
+
+        static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
 
         private final MapJavaProxy receiver;
 
-        public RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime, 0);
+        RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
+            super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
             this.receiver = receiver;
         }
 

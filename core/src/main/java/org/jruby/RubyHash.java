@@ -265,6 +265,13 @@ public class RubyHash extends RubyObject implements Map {
         allocFirst(buckets);
     }
 
+    protected RubyHash(Ruby runtime, RubyClass metaClass, IRubyObject defaultValue, RubyHashEntry[] initialTable, int threshold) {
+        super(runtime, metaClass);
+        this.ifNone = defaultValue;
+        this.threshold = threshold;
+        this.table = initialTable;
+    }
+
     /*
      *  Constructor for internal usage (mainly for Array#|, Array#&, Array#- and Array#uniq)
      *  it doesn't initialize ifNone field
