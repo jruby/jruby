@@ -45,6 +45,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
 
@@ -96,6 +97,8 @@ public class StaticScope implements Serializable {
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
     private IRScope irScope;
+
+    private RubyModule overlayModule;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -529,5 +532,13 @@ public class StaticScope implements Serializable {
         dupe.setSignature(signature);
 
         return dupe;
+    }
+
+    public RubyModule getOverlayModule(ThreadContext context) {
+        RubyModule omod = overlayModule;
+        if (omod == null) {
+            overlayModule = omod = RubyModule.newModule(context.runtime);
+        }
+        return omod;
     }
 }

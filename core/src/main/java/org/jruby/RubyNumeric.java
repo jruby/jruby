@@ -583,8 +583,8 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "singleton_method_added")
-    public IRubyObject sadded(IRubyObject name) {
-        throw getRuntime().newTypeError("can't define singleton method " + name + " for " + getType().getName());
+    public static IRubyObject sadded(IRubyObject self, IRubyObject name) {
+        throw self.getRuntime().newTypeError("can't define singleton method " + name + " for " + self.getType().getName());
     }
 
     /** num_init_copy
