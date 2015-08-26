@@ -143,7 +143,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             constructorParameters == null ? EMPTY_CLASS_ARRAY : constructorParameters
         );
         return constructor.newInstance(constructorArgs, handler);
-
     }
 
     public Class getSuperclass() {
