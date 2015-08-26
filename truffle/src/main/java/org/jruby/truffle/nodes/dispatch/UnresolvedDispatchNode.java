@@ -235,9 +235,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object methodName,
             Object receiverObject) {
+        // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
+        final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
+
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
+                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
             }
 
@@ -252,9 +255,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                     return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
-
-                // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
-                final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
