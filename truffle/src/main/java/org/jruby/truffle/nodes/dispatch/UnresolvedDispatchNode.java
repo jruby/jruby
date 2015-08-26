@@ -197,7 +197,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
         } else {
-            return new CachedBoxedDispatchNode(getContext(), methodName, first,
+            return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
                     getContext().getCoreLibrary().getMetaClass(receiverObject), method, indirect, getDispatchAction());
         }
     }

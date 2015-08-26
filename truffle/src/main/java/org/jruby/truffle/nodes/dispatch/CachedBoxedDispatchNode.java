@@ -16,6 +16,8 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -24,7 +26,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final DynamicObject expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
 
     private final InternalMethod method;
@@ -35,6 +37,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
+            Shape expectedShape,
             DynamicObject expectedClass,
             InternalMethod method,
             boolean indirect,
@@ -43,7 +46,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
         assert RubyGuards.isRubyClass(expectedClass);
 
-        this.expectedClass = expectedClass;
+        this.expectedShape = expectedShape;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
@@ -68,7 +71,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                Layouts.BASIC_OBJECT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override
@@ -137,7 +140,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                Layouts.MODULE.getFields(expectedClass).getName(), expectedClass.hashCode(),
+                expectedShape, expectedShape.hashCode(),
                 method == null ? "null" : method.toString());
     }
 
