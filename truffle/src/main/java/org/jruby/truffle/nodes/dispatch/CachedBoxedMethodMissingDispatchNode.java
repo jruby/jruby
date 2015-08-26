@@ -16,6 +16,8 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +31,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
     private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
 
-    private final DynamicObject expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
 
@@ -40,6 +42,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
+            Shape expectedShape,
             DynamicObject expectedClass,
             InternalMethod method,
             boolean indirect,
@@ -47,7 +50,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
         super(context, cachedName, next, indirect, dispatchAction);
 
         assert RubyGuards.isRubyClass(expectedClass);
-        this.expectedClass = expectedClass;
+        this.expectedShape = expectedShape;
         unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
 
@@ -79,7 +82,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                Layouts.BASIC_OBJECT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override

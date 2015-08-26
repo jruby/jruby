@@ -17,10 +17,12 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -251,7 +253,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
 
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
+                // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
+                final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
+
+                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
             }
 
