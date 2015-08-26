@@ -199,6 +199,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
+        public RubyBoolean has_key_p(IRubyObject key) {
+            final Object convertedKey = key.toJava(Object.class);
+            return getRuntime().newBoolean( mapDelegate().containsKey(convertedKey) );
+        }
+
+        @Override
         public RubyHash rehash() {
             // java.util.Map does not expose rehash, and many maps don't use hashing, so we do nothing. #3142
             return this;
