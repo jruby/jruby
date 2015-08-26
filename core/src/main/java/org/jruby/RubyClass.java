@@ -1116,7 +1116,9 @@ public class RubyClass extends RubyModule {
             throw runtime.newTypeError("uninitialized class");
         }
 
-        while (superClazz != null && superClazz.isIncluded()) superClazz = superClazz.superClass;
+        while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
+            superClazz = superClazz.superClass;
+        }
 
         return superClazz != null ? superClazz : runtime.getNil();
     }
