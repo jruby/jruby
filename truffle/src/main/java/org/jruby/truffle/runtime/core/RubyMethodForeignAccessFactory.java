@@ -82,6 +82,11 @@ public class RubyMethodForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     @Override
+    public CallTarget accessNew(int argumentsLength) {
+        return null;
+    }
+
+    @Override
     public CallTarget accessMessage(com.oracle.truffle.api.interop.Message msg) {
         return null;
     }

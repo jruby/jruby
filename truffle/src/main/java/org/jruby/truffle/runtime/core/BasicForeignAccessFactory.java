@@ -84,6 +84,11 @@ public class BasicForeignAccessFactory implements ForeignAccess.Factory10 {
     }
 
     @Override
+    public CallTarget accessNew(int argumentsLength) {
+        return null;
+    }
+
+    @Override
     public CallTarget accessMessage(Message msg) {
         return null;
     }

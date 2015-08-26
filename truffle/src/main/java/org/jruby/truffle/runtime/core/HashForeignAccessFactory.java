@@ -22,8 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.InteropNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-public class HashForeignAccessFactory
-implements ForeignAccess.Factory10, ForeignAccess.Factory {
+public class HashForeignAccessFactory implements ForeignAccess.Factory10, ForeignAccess.Factory {
 
     private final RubyContext context;
 
@@ -90,6 +89,11 @@ implements ForeignAccess.Factory10, ForeignAccess.Factory {
     @Override
     public CallTarget accessInvoke(int arity) {
         return Truffle.getRuntime().createCallTarget(new RubyInteropRootNode(InteropNode.createExecuteAfterRead(context, SourceSection.createUnavailable("", ""), arity)));
+    }
+
+    @Override
+    public CallTarget accessNew(int argumentsLength) {
+        return null;
     }
 
     @Override
