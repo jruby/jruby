@@ -16,8 +16,6 @@ import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 @SuppressWarnings("restriction")
 public class ProcSignalHandler implements SignalHandler {
