@@ -102,7 +102,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         private final MapJavaProxy receiver;
 
         public RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime);
+            super(runtime, 0);
             this.receiver = receiver;
         }
 
