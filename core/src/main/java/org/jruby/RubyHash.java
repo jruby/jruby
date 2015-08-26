@@ -1961,7 +1961,7 @@ public class RubyHash extends RubyObject implements Map {
                     }
                 }
             });
-            return context.runtime.getNil();
+            return context.nil;
         } catch (FoundPair found) {
             return context.runtime.newArray(found.key, found.value);
         }
@@ -1978,7 +1978,7 @@ public class RubyHash extends RubyObject implements Map {
                     }
                 }
             });
-            return context.runtime.getNil();
+            return context.nil;
         } catch (FoundPair found) {
             return context.runtime.newArray(found.key, found.value);
         }
@@ -2151,7 +2151,7 @@ public class RubyHash extends RubyObject implements Map {
         return Map.class;
     }
 
-    // Satisfy java.util.Set interface (for Java integration)
+    // Satisfy java.util.Map interface (for Java integration)
 
     @Override
     public int size() {
