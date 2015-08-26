@@ -174,7 +174,7 @@ import java.lang.annotation.Target;
  * indirection so you may want to cache the result (against the shape).
  *
  * You can also use the getter and setter against the {@code DynamicObjectFactory} that
- * {@code createFooShape} returns, with the setter reutrning a new factory. This allows
+ * {@code createFooShape} returns, with the setter returning a new factory. This allows
  * objects to be created with modified shape properties, and is much more efficient than
  * using the instance setter after creating the object.
  *
