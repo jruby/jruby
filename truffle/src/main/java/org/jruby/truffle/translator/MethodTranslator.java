@@ -42,7 +42,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
-class MethodTranslator extends BodyTranslator {
+public class MethodTranslator extends BodyTranslator {
 
     private final org.jruby.ast.ArgsNode argsNode;
     private boolean isBlock;
