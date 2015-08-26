@@ -115,6 +115,56 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         private Map mapDelegate() { return receiver.getMapObject(); }
 
         @Override
+        public RubyFixnum rb_size() {
+            return getRuntime().newFixnum( mapDelegate().size() );
+        }
+
+        @Override
+        public RubyBoolean empty_p() {
+            return mapDelegate().isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
+        }
+
+        @Override
+        public IRubyObject inspect19(ThreadContext context) {
+            setSize( mapDelegate().size() );
+            return super.inspect19(context);
+        }
+
+        @Override
+        public RubyArray to_a() {
+            setSize( mapDelegate().size() );
+            return super.to_a();
+        }
+
+        @Override
+        public RubyFixnum hash19() {
+            return getRuntime().newFixnum( mapDelegate().hashCode() );
+        }
+
+        @Override
+        public RubyArray keys() {
+            setSize( mapDelegate().size() );
+            return super.keys();
+        }
+
+        @Override
+        public RubyArray rb_values() {
+            setSize( mapDelegate().size() );
+            return super.rb_values();
+        }
+
+        @Override
+        public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
+            modify();
+
+            Object value = mapDelegate().remove(key.toJava(Object.class));
+            if ( value != null ) return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value);
+
+            if ( block.isGiven() ) return block.yield(context, key);
+            return context.nil;
+        }
+
+        @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
             internalPutSmall(key, value, checkForExisting);
         }
@@ -124,7 +174,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             @SuppressWarnings("unchecked")
             final Map<Object, Object> map = mapDelegate();
             map.put(key.toJava(Object.class), value.toJava(Object.class));
-            this.size = map.size();
+            setSize( map.size() );
         }
 
         @Override
@@ -132,7 +182,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             @SuppressWarnings("unchecked")
             final Map<Object, Object> map = mapDelegate();
             map.put(key.decodeString(), value.toJava(Object.class));
-            this.size = map.size();
+            setSize( map.size() );
         }
 
         @Override
@@ -168,7 +218,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
             if (value != null) {
                 map.remove(convertedKey);
-                this.size = map.size();
+                setSize( map.size() );
                 return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
             return NO_ENTRY;
@@ -181,7 +231,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
 
             if (map.containsKey(convertedKey)) {
                 map.remove(convertedKey);
-                this.size = map.size();
+                setSize( map.size() );
                 return entry;
             }
 
@@ -208,6 +258,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
+        public RubyBoolean has_value_p(ThreadContext context, IRubyObject val) {
+            final Object convertedVal = val.toJava(Object.class);
+            return getRuntime().newBoolean( mapDelegate().containsValue(convertedVal) );
+        }
+
+        @Override
         public RubyHash rehash() {
             // java.util.Map does not expose rehash, and many maps don't use hashing, so we do nothing. #3142
             return this;
@@ -216,7 +272,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyHash rb_clear() {
             mapDelegate().clear();
-            this.size = 0;
+            setSize( 0 );
             return this;
         }
 
