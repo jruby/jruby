@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@SuppressWarnings("restriction")
 public class SignalOperations {
 
     private static final ConcurrentMap<Signal, SignalHandler> ORIGINAL_HANDLERS = new ConcurrentHashMap<Signal, SignalHandler>();

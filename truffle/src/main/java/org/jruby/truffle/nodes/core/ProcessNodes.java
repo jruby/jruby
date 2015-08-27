@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
-@SuppressWarnings("restriction")
 @CoreClass(name = "Process")
 public abstract class ProcessNodes {
 

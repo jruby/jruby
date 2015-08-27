@@ -382,7 +382,6 @@ public abstract class VMPrimitiveNodes {
 
     }
 
-    @SuppressWarnings("restriction")
     @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
     public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -397,7 +396,6 @@ public abstract class VMPrimitiveNodes {
             }
 
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchDefaultForSignal(signal);
             return true;
         }
@@ -405,7 +403,6 @@ public abstract class VMPrimitiveNodes {
         @Specialization(guards = {"isRubyString(signalName)", "isNil(nil)"})
         public boolean watchSignal(DynamicObject signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
             return true;
         }
@@ -413,7 +410,6 @@ public abstract class VMPrimitiveNodes {
         @Specialization(guards = {"isRubyString(signalName)", "isRubyProc(proc)"})
         public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
             return true;
         }
