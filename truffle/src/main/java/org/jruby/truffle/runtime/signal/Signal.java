@@ -29,7 +29,7 @@ public class Signal {
     }
 
     public static void handleDefault(final Signal signal) {
-        final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal);
+        final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal.sunSignal);
         if (defaultHandler != null) { // otherwise it is already the default signal
             sun.misc.Signal.handle(signal.sunSignal, defaultHandler);
         }
