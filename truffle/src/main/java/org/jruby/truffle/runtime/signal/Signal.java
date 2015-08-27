@@ -15,22 +15,24 @@ import java.util.concurrent.ConcurrentMap;
 @SuppressWarnings("restriction")
 public class Signal {
 
-    private final sun.misc.Signal signal;
+    private final sun.misc.Signal sunSignal;
 
-    private static final ConcurrentMap<sun.misc.SignalHandler, SignalHandler> SUN2OUR_HANDLERS = new ConcurrentHashMap<sun.misc.SignalHandler, SignalHandler>();
+    private static final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<sun.misc.Signal, sun.misc.SignalHandler>();
 
     public Signal(String name) {
-        signal = new sun.misc.Signal(name);
+        sunSignal = new sun.misc.Signal(name);
     }
 
-    public static SignalHandler handle(final Signal signal, final SignalHandler newHandler) {
-        final sun.misc.SignalHandler wrappedNewHandler = wrapHandler(signal, newHandler);
-        SUN2OUR_HANDLERS.put(wrappedNewHandler, newHandler);
+    public static void handle(final Signal signal, final SignalHandler newHandler) {
+        final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(signal.sunSignal, wrapHandler(signal, newHandler));
+        DEFAULT_HANDLERS.putIfAbsent(signal.sunSignal, oldSunHandler);
+    }
 
-        final sun.misc.SignalHandler oldWrappedHandler = sun.misc.Signal.handle(signal.signal, wrappedNewHandler);
-
-        final SignalHandler oldHandler = SUN2OUR_HANDLERS.putIfAbsent(oldWrappedHandler, unwrapHandler(oldWrappedHandler));
-        return oldHandler;
+    public static void handleDefault(final Signal signal) {
+        final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal);
+        if (defaultHandler != null) { // otherwise it is already the default signal
+            sun.misc.Signal.handle(signal.sunSignal, defaultHandler);
+        }
     }
 
     private static sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
@@ -42,17 +44,8 @@ public class Signal {
         };
     }
 
-    private static SignalHandler unwrapHandler(final sun.misc.SignalHandler oldWrappedHandler) {
-        return new SignalHandler() {
-            @Override
-            public void handle(Signal signal) {
-                oldWrappedHandler.handle(signal.signal);
-            }
-        };
-    }
-
     public static void raise(Signal signal) {
-        sun.misc.Signal.raise(signal.signal);
+        sun.misc.Signal.raise(signal.sunSignal);
     }
 
 }
