@@ -65,11 +65,11 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.PosixShim;
-import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;

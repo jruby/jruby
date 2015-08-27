@@ -499,7 +499,7 @@ public class RubyHash extends RubyObject implements Map {
         if (MRI_HASH_RESIZE) MRICheckResize(); else JavaSoftCheckResize();
     }
 
-    private void checkIterating() {
+    protected final void checkIterating() {
         if (iteratorCount > 0) {
             throw getRuntime().newRuntimeError("can't add a new key into hash during iteration");
         }
@@ -2020,10 +2020,15 @@ public class RubyHash extends RubyObject implements Map {
 
     @Override
     public void putAll(Map map) {
-        Ruby runtime = getRuntime();
-        for (Iterator<Map.Entry> iter = map.entrySet().iterator(); iter.hasNext();) {
+        final Ruby runtime = getRuntime();
+        @SuppressWarnings("unchecked")
+        final Iterator<Map.Entry> iter = map.entrySet().iterator();
+        while ( iter.hasNext() ) {
             Map.Entry entry = iter.next();
-            internalPut(JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey()), JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue()));
+            internalPut(
+                JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey()),
+                JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue())
+            );
         }
     }
 

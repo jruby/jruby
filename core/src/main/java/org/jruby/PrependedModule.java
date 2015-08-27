@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2014 Timur Duehr <tduehr@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,14 +28,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.Variable;
 
 /**
  * This class is used as an intermediate superclass for Module#prepend
@@ -44,6 +40,7 @@ import org.jruby.runtime.builtin.Variable;
  * @see org.jruby.RubyModule
  */
 public class PrependedModule extends IncludedModule {
+
     public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
         methods = origin.methods;
@@ -59,4 +56,5 @@ public class PrependedModule extends IncludedModule {
     public boolean isPrepended() {
         return true;
     }
+
 }

@@ -82,6 +82,7 @@ DO NOT MODIFIY - GENERATED CODE
                 <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
               </includes>
               <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-ea</compilerArg>
               </compilerArgs>
             </configuration>

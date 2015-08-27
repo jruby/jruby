@@ -58,7 +58,7 @@ public abstract class LookupConstantNode extends RubyNode {
                                           @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
                                           @Cached("isVisible(cachedModule, constant)") boolean isVisible,
                                           @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
-        if (!isVisible && !ignoreVisibility) {
+        if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }
@@ -75,7 +75,7 @@ public abstract class LookupConstantNode extends RubyNode {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
 
-        if (!isVisible && !ignoreVisibility) {
+        if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
         }
@@ -102,7 +102,7 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     protected boolean isVisible(DynamicObject module, RubyConstant constant) {
-        return constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
+        return ignoreVisibility || constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
     }
 
 }

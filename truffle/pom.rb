@@ -34,7 +34,8 @@ project 'JRuby Truffle' do
                    :id => 'anno',
                    :phase => 'process-resources',
                    'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
-                   'compilerArgs' => [ '-J-ea' ] )
+                   'compilerArgs' => [ '-XDignore.symbol.file=true',
+                                       '-J-ea' ] )
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',

@@ -13,25 +13,28 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final DynamicObject expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
+            Shape expectedShape,
             DynamicObject expectedClass,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
         assert RubyGuards.isRubyClass(expectedClass);
-        this.expectedClass = expectedClass;
+        this.expectedShape = expectedShape;
         unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
@@ -40,7 +43,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof DynamicObject) &&
-                Layouts.BASIC_OBJECT.getMetaClass(((DynamicObject) receiver)) == expectedClass;
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -186,7 +187,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
         } else {
-            return new CachedBoxedDispatchNode(getContext(), methodName, first,
+            return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
                     getContext().getCoreLibrary().getMetaClass(receiverObject), method, indirect, getDispatchAction());
         }
     }
@@ -207,9 +208,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object methodName,
             Object receiverObject) {
+        // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
+        final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
+
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
+                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
             }
 
@@ -225,7 +229,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
 
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
+                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
             }
 

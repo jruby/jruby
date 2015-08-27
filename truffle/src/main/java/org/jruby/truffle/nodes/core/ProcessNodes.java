@@ -22,8 +22,8 @@ import org.jruby.truffle.nodes.cast.DefaultValueNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
-import sun.misc.Signal;
 
 @SuppressWarnings("restriction")
 @CoreClass(name = "Process")

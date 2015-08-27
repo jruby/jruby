@@ -10,8 +10,6 @@
 package org.jruby.truffle.runtime.signal;
 
 import org.jruby.RubySignal;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 import java.util.Collections;
 import java.util.Map;
