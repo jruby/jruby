@@ -37,7 +37,7 @@ public class Signal {
 
             final sun.misc.SignalHandler oldWrappedHandler = sun.misc.Signal.handle(signal.signal, wrappedNewHandler);
 
-            SignalHandler oldHandler = handlers.getOrDefault(oldWrappedHandler, null);
+            SignalHandler oldHandler = handlers.get(oldWrappedHandler);
 
             if (oldHandler == null) {
                 oldHandler = new SignalHandler() {
