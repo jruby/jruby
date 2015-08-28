@@ -23,6 +23,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.Main;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
@@ -53,7 +54,6 @@ import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
-import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
@@ -664,12 +664,16 @@ public class CoreLibrary {
         // Load Ruby core
 
         try {
+            Main.printTruffleTimeMetric("before-load-truffle-core");
+
             state = State.LOADING_RUBY_CORE;
             try {
                 context.load(context.getSourceCache().getSource(CoreLibrary.CORE_LOAD_PATH + "/core.rb"), node, NodeWrapper.IDENTITY);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            Main.printTruffleTimeMetric("after-load-truffle-core");
         } catch (RaiseException e) {
             final Object rubyException = e.getRubyException();
             BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
