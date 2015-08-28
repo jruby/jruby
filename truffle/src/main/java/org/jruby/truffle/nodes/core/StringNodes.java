@@ -2228,7 +2228,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject clear(DynamicObject string) {
-            ByteList empty = ByteList.EMPTY_BYTELIST;
+            ByteList empty = new ByteList(0);
             empty.setEncoding(Layouts.STRING.getByteList(string).getEncoding());
             Layouts.STRING.setByteList(string, empty);
             return string;
