@@ -19,8 +19,10 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.ast.ArgsNode;
@@ -98,6 +100,9 @@ public abstract class ProcNodes {
         @Child private CallDispatchHeadNode initializeNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
+        protected final DynamicObject PROC_CLASS = getContext().getCoreLibrary().getProcClass();
+        protected final Shape PROC_SHAPE = getContext().getCoreLibrary().getProcFactory().getShape();
+
         public ProcNewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             initializeNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
@@ -117,6 +122,11 @@ public abstract class ProcNodes {
             }
 
             return executeProcNew(frame, procClass, args, parentBlock);
+        }
+
+        @Specialization(guards = { "procClass == PROC_CLASS", "block.getShape() == PROC_SHAPE" })
+        public DynamicObject procNormalOptimized(DynamicObject procClass, Object[] args, DynamicObject block) {
+            return block;
         }
 
         @Specialization(guards = "procClass == metaClass(block)")
