@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.translator;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -34,11 +37,12 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
 import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
-class MethodTranslator extends BodyTranslator {
+public class MethodTranslator extends BodyTranslator {
 
     private final org.jruby.ast.ArgsNode argsNode;
     private boolean isBlock;
@@ -156,7 +160,16 @@ class MethodTranslator extends BodyTranslator {
         return body;
     }
 
-    public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+    /*
+     * This method exists solely to be substituted to support lazy
+     * method parsing. The substitution returns a node which performs
+     * the parsing lazily and then calls doCompileMethodBody.
+     */
+    public RubyNode compileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+    }
+
+    public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
 
@@ -194,7 +207,11 @@ class MethodTranslator extends BodyTranslator {
 
         // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
         body = new ExceptionTranslatingNode(context, sourceSection, body);
+        return body;
+    }
 
+    public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
@@ -322,4 +339,29 @@ class MethodTranslator extends BodyTranslator {
         }
     }
 
+    /*
+     * The following methods allow us to save and restore enough of
+     * the current state of the Translator to allow lazy parsing. When
+     * the lazy parsing is actually performed, the state is restored
+     * to what it would have been if the method had been parsed
+     * eagerly.
+     */
+    public TranslatorState getCurrentState() {
+        return new TranslatorState(getEnvironment().getLexicalScope(), new ArrayDeque<SourceSection>(parentSourceSection));
+    }
+
+    public void restoreState(TranslatorState state) {
+        this.getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
+        this.parentSourceSection = state.parentSourceSection;
+    }
+
+    public static class TranslatorState {
+        private final LexicalScope scope;
+        private final Deque<SourceSection> parentSourceSection;
+
+        private TranslatorState(LexicalScope scope, Deque<SourceSection> parentSourceSection) {
+            this.scope = scope;
+            this.parentSourceSection = parentSourceSection;
+        }
+    }
 }
