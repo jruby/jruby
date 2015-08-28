@@ -9,53 +9,43 @@
  */
 package org.jruby.truffle.runtime.signal;
 
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
+@SuppressWarnings("restriction")
 public class Signal {
 
-    private final sun.misc.Signal signal;
+    private final sun.misc.Signal sunSignal;
 
-    private final static Map<sun.misc.SignalHandler, SignalHandler> handlers = new WeakHashMap<>();
+    private static final ConcurrentMap<sun.misc.Signal, sun.misc.SignalHandler> DEFAULT_HANDLERS = new ConcurrentHashMap<sun.misc.Signal, sun.misc.SignalHandler>();
 
     public Signal(String name) {
-        signal = new sun.misc.Signal(name);
+        sunSignal = new sun.misc.Signal(name);
     }
 
-    public static SignalHandler handle(final Signal signal, final SignalHandler newHandler) {
-        final sun.misc.SignalHandler wrappedNewHandler = new sun.misc.SignalHandler() {
+    public static void handle(final Signal signal, final SignalHandler newHandler) {
+        final sun.misc.SignalHandler oldSunHandler = sun.misc.Signal.handle(signal.sunSignal, wrapHandler(signal, newHandler));
+        DEFAULT_HANDLERS.putIfAbsent(signal.sunSignal, oldSunHandler);
+    }
 
+    public static void handleDefault(final Signal signal) {
+        final sun.misc.SignalHandler defaultHandler = DEFAULT_HANDLERS.get(signal.sunSignal);
+        if (defaultHandler != null) { // otherwise it is already the default signal
+            sun.misc.Signal.handle(signal.sunSignal, defaultHandler);
+        }
+    }
+
+    private static sun.misc.SignalHandler wrapHandler(final Signal signal, final SignalHandler newHandler) {
+        return new sun.misc.SignalHandler() {
             @Override
             public void handle(sun.misc.Signal wrappedSignal) {
                 newHandler.handle(signal);
             }
-
         };
-
-        synchronized (handlers) {
-            handlers.put(wrappedNewHandler, newHandler);
-
-            final sun.misc.SignalHandler oldWrappedHandler = sun.misc.Signal.handle(signal.signal, wrappedNewHandler);
-
-            SignalHandler oldHandler = handlers.getOrDefault(oldWrappedHandler, null);
-
-            if (oldHandler == null) {
-                oldHandler = new SignalHandler() {
-                    @Override
-                    public void handle(Signal signal) {
-                        oldWrappedHandler.handle(signal.signal);
-                    }
-                };
-
-                handlers.put(oldWrappedHandler, oldHandler);
-            }
-
-            return oldHandler;
-        }
     }
 
     public static void raise(Signal signal) {
-        sun.misc.Signal.raise(signal.signal);
+        sun.misc.Signal.raise(signal.sunSignal);
     }
 
 }

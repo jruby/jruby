@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
-@SuppressWarnings("restriction")
 public class ProcSignalHandler implements SignalHandler {
 
     private final RubyContext context;

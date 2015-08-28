@@ -635,13 +635,12 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         String inputFile = rootNode.getPosition().getFile();
 
-        if (!inputFile.equals("-e")) {
-            inputFile = new File(inputFile).getAbsolutePath();
-        }
-
         final Source source;
 
         try {
+            if (!inputFile.equals("-e")) {
+                inputFile = new File(inputFile).getCanonicalPath();
+            }
             source = sourceCache.getSource(inputFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
