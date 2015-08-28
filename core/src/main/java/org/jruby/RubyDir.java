@@ -807,11 +807,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject systemHash = runtime.getObject().getConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject home = null;
-
-        if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("HOME"));
-        }
+        IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));
 
         if (home == null || home.isNil()) {
             home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));

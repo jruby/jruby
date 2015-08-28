@@ -139,7 +139,6 @@ public class VariableInterceptor {
             }
         }
         Collection<BiVariable> variables = map.getVariables();
-        if ( variables == null ) return;
         for ( final BiVariable var : variables ) var.inject();
     }
 

@@ -537,8 +537,6 @@ public class RubyTime extends RubyObject {
     }
 
     private int cmp(RubyTime other) {
-        Ruby runtime = getRuntime();
-
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
         // ignore < usec on 1.8
