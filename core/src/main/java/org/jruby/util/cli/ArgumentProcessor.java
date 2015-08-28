@@ -56,7 +56,7 @@ import java.util.List;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
-    private final class Argument {
+    private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
         public Argument(String value, boolean dashed) {
