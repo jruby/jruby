@@ -139,11 +139,9 @@ public class NativeException extends RubyException {
             }
         }
         if (skip > 0) {
-            StackTraceElement[] newStackTrace =
-                    new StackTraceElement[origStackTrace.length - skip];
-            for (int i = 0; i < newStackTrace.length; ++i) {
-                newStackTrace[i] = origStackTrace[i];
-            }
+            final int len = origStackTrace.length - skip;
+            StackTraceElement[] newStackTrace = new StackTraceElement[len];
+            System.arraycopy(origStackTrace, 0, newStackTrace, 0, len);
             cause.setStackTrace(newStackTrace);
         }
     }
