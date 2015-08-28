@@ -750,7 +750,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyInteger convertToInteger(String convertMethod) {
         IRubyObject val = TypeConverter.convertToType(this, getRuntime().getInteger(), convertMethod, true);
-        if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + "#" + convertMethod + " should return Integer");
+        if (!(val instanceof RubyInteger)) throw getRuntime().newTypeError(getMetaClass().getName() + '#' + convertMethod + " should return Integer");
         return (RubyInteger)val;
     }
 
@@ -769,7 +769,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject anyToString() {
         String cname = getMetaClass().getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
+        RubyString str = getRuntime().newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + '>');
         str.setTaint(isTaint());
         return str;
     }
@@ -1087,11 +1087,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
 
-            part.append(sep).append(" ").append(entry.getKey()).append("=");
+            part.append(sep).append(' ').append(entry.getKey()).append('=');
             part.append(invokedynamic(context, (IRubyObject)value, INSPECT));
             sep = ",";
         }
-        part.append(">");
+        part.append('>');
         return part;
     }
 

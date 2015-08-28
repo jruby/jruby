@@ -88,19 +88,14 @@ public class NativeException extends RubyException {
         StackTraceElement[] stackTrace = cause.getStackTrace();
         for (int i = stackTrace.length - 1; i >= 0; i--) {
             StackTraceElement element = stackTrace[i];
-            String className = element.getClassName();
-            String line = null;
+            final String className = element.getClassName();
+            final String line;
             if (element.getFileName() == null) {
-                line = className + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+                line = className + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
             } else {
-                int index = className.lastIndexOf(".");
-                String packageName = null;
-                if (index == -1) {
-                    packageName = "";
-                } else {
-                    packageName = className.substring(0, index) + "/";
-                }
-                line = packageName.replace(".", "/") + element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+                final int index = className.lastIndexOf('.');
+                final String packageName = index == -1 ? "" : className.substring(0, index) + '/';
+                line = packageName.replace('.', '/') + element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
             }
             RubyString string = runtime.newString(line);
             array.unshift(string);

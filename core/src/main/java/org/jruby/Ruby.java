@@ -543,7 +543,7 @@ public final class Ruby {
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey().toString(), varvalue);
+            getGlobalVariables().set('$' + entry.getKey().toString(), varvalue);
         }
 
         if (filename.endsWith(".class")) {

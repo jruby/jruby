@@ -51,7 +51,7 @@ public class RubyClassPathVariable extends RubyObject {
     private RubyClassPathVariable(Ruby runtime) {
         super(runtime, runtime.getObject());
     }
-    
+
     @Deprecated
     public IRubyObject append(IRubyObject obj) {
         return append(obj.getRuntime().getCurrentContext(), obj);
@@ -65,7 +65,7 @@ public class RubyClassPathVariable extends RubyObject {
         } else {
             paths = context.runtime.newArray(obj).toJavaArray();
         }
-        
+
         boolean is1_8 = context.getRuntime().is1_8();
         for (IRubyObject path: paths) {
             try {
@@ -79,7 +79,7 @@ public class RubyClassPathVariable extends RubyObject {
             } catch (MalformedURLException mue) {
                 throw getRuntime().newArgumentError(mue.getLocalizedMessage());
             }
-            
+
         }
         return this;
     }
@@ -94,7 +94,7 @@ public class RubyClassPathVariable extends RubyObject {
             String path = target;
             if (f.exists() && f.isDirectory() && !path.endsWith("/")) {
                 // URLClassLoader requires that directores end with slashes
-                path = path + "/";
+                path = path + '/';
             }
             return new URL("file", null, path);
         }
