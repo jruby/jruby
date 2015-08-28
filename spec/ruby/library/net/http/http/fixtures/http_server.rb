@@ -48,11 +48,11 @@ module NetHTTPSpecs
 
     def start_server
       server_config = {
-        :BindAddress => "localhost",
-        :Port => 3333,
-        :Logger => WEBrick::Log.new(NullWriter.new),
-        :AccessLog => [],
-        :ServerType => Thread
+        BindAddress: "localhost",
+        Port: 3333,
+        Logger: WEBrick::Log.new(NullWriter.new),
+        AccessLog: [],
+        ServerType: Thread
       }
 
       @server = WEBrick::HTTPServer.new(server_config)

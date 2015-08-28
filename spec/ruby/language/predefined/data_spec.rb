@@ -19,7 +19,7 @@ describe "The DATA constant" do
 
   it "is included in an otherwise empty file" do
     ap = fixture(__FILE__, "print_data.rb")
-    str = ruby_exe(fixture(__FILE__, "data_only.rb"), :options => "-r#{ap}")
+    str = ruby_exe(fixture(__FILE__, "data_only.rb"), options: "-r#{ap}")
     str.chomp.should == "data only"
   end
 

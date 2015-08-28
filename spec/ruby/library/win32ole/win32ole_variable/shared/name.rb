@@ -1,7 +1,7 @@
 platform_is :windows do
   require 'win32ole'
 
-  describe :win32ole_variable_new, :shared => true do
+  describe :win32ole_variable_new, shared: true do
     # not sure how WIN32OLE_VARIABLE objects are supposed to be generated
     # WIN32OLE_VARIABLE.new even seg faults in some cases
     before :each do

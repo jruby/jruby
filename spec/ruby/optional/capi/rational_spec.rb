@@ -2,13 +2,13 @@ require File.expand_path('../spec_helper', __FILE__)
 
 load_extension("rational")
 
-describe :rb_Rational, :shared => true do
+describe :rb_Rational, shared: true do
   it "creates a new Rational with numerator and denominator" do
     @r.send(@method, 1, 2).should == Rational(1, 2)
   end
 end
 
-describe :rb_rational_new, :shared => true do
+describe :rb_rational_new, shared: true do
   it "creates a normalized Rational" do
     r = @r.send(@method, 10, 4)
     r.numerator.should == 5

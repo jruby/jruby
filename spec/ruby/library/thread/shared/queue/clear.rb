@@ -1,4 +1,4 @@
-describe :queue_clear, :shared => true do
+describe :queue_clear, shared: true do
   it "removes all objects from the queue" do
     queue = @object
     queue << Object.new

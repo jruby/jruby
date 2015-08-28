@@ -1,10 +1,10 @@
-describe :kernel_instance_callcc, :shared => true do
+describe :kernel_instance_callcc, shared: true do
   it "is a private method" do
     Kernel.should have_private_instance_method(:callcc)
   end
 end
 
-describe :kernel_callcc, :shared => true do
+describe :kernel_callcc, shared: true do
   it "is possible to exit a loop like a break" do
     i = 0
     @object.callcc do |x|

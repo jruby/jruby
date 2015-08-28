@@ -1,4 +1,4 @@
-describe :tempfile_length, :shared => true do
+describe :tempfile_length, shared: true do
   before :each do
     @tempfile = Tempfile.new("specs")
   end

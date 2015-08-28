@@ -1,6 +1,6 @@
 # -*- encoding: ascii-8bit -*-
 
-describe :array_pack_16bit_le, :shared => true do
+describe :array_pack_16bit_le, shared: true do
   it "encodes the least significant 16 bits of a positive number" do
     [ [[0x0000_0021], "\x21\x00"],
       [[0x0000_4321], "\x21\x43"],
@@ -52,7 +52,7 @@ describe :array_pack_16bit_le, :shared => true do
   end
 end
 
-describe :array_pack_16bit_be, :shared => true do
+describe :array_pack_16bit_be, shared: true do
   it "encodes the least significant 16 bits of a positive number" do
     [ [[0x0000_0021], "\x00\x21"],
       [[0x0000_4321], "\x43\x21"],
@@ -104,7 +104,7 @@ describe :array_pack_16bit_be, :shared => true do
   end
 end
 
-describe :array_pack_32bit_le, :shared => true do
+describe :array_pack_32bit_le, shared: true do
   it "encodes the least significant 32 bits of a positive number" do
     [ [[0x0000_0021], "\x21\x00\x00\x00"],
       [[0x0000_4321], "\x21\x43\x00\x00"],
@@ -156,7 +156,7 @@ describe :array_pack_32bit_le, :shared => true do
   end
 end
 
-describe :array_pack_32bit_be, :shared => true do
+describe :array_pack_32bit_be, shared: true do
   it "encodes the least significant 32 bits of a positive number" do
     [ [[0x0000_0021], "\x00\x00\x00\x21"],
       [[0x0000_4321], "\x00\x00\x43\x21"],
@@ -208,7 +208,7 @@ describe :array_pack_32bit_be, :shared => true do
   end
 end
 
-describe :array_pack_32bit_le_platform, :shared => true do
+describe :array_pack_32bit_le_platform, shared: true do
   it "encodes the least significant 32 bits of a number" do
     [ [[0x7865_4321],  "\x21\x43\x65\x78"],
       [[-0x7865_4321], "\xdf\xbc\x9a\x87"]
@@ -225,7 +225,7 @@ describe :array_pack_32bit_le_platform, :shared => true do
     str.should == "\x78\x65\x43\x12\xcd\xab\xf0\xde\x21\x43\x65\x78"
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     it "encodes the least significant 32 bits of a number that is greater than 32 bits" do
       [ [[0xff_7865_4321],  "\x21\x43\x65\x78"],
         [[-0xff_7865_4321], "\xdf\xbc\x9a\x87"]
@@ -234,7 +234,7 @@ describe :array_pack_32bit_le_platform, :shared => true do
   end
 end
 
-describe :array_pack_32bit_be_platform, :shared => true do
+describe :array_pack_32bit_be_platform, shared: true do
   it "encodes the least significant 32 bits of a number" do
     [ [[0x7865_4321],  "\x78\x65\x43\x21"],
       [[-0x7865_4321], "\x87\x9a\xbc\xdf"]
@@ -251,7 +251,7 @@ describe :array_pack_32bit_be_platform, :shared => true do
     str.should == "\x12\x43\x65\x78\xde\xf0\xab\xcd\x78\x65\x43\x21"
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     it "encodes the least significant 32 bits of a number that is greater than 32 bits" do
       [ [[0xff_7865_4321],  "\x78\x65\x43\x21"],
         [[-0xff_7865_4321], "\x87\x9a\xbc\xdf"]
@@ -260,7 +260,7 @@ describe :array_pack_32bit_be_platform, :shared => true do
   end
 end
 
-describe :array_pack_64bit_le, :shared => true do
+describe :array_pack_64bit_le, shared: true do
   it "encodes the least significant 64 bits of a positive number" do
     [ [[0x0000_0000_0000_0021], "\x21\x00\x00\x00\x00\x00\x00\x00"],
       [[0x0000_0000_0000_4321], "\x21\x43\x00\x00\x00\x00\x00\x00"],
@@ -320,7 +320,7 @@ describe :array_pack_64bit_le, :shared => true do
   end
 end
 
-describe :array_pack_64bit_be, :shared => true do
+describe :array_pack_64bit_be, shared: true do
   it "encodes the least significant 64 bits of a positive number" do
     [ [[0x0000_0000_0000_0021], "\x00\x00\x00\x00\x00\x00\x00\x21"],
       [[0x0000_0000_0000_4321], "\x00\x00\x00\x00\x00\x00\x43\x21"],

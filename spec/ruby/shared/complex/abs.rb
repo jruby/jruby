@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_abs, :shared => true do
+describe :complex_abs, shared: true do
   it "returns the modulus: |a + bi| = sqrt((a ^ 2) + (b ^ 2))" do
     Complex(0, 0).send(@method).should == 0
     Complex(3, 4).send(@method).should == 5 # well-known integer case

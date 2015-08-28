@@ -7,6 +7,21 @@ module ClassSpecs
   Number = 12
 end
 
+describe "The class keyword" do
+  it "creates a new class with semicolon" do
+    class ClassSpecsKeywordWithSemicolon; end
+    ClassSpecsKeywordWithSemicolon.should be_an_instance_of(Class)
+  end
+
+  ruby_version_is "2.3" do
+    it "does not raise a SyntaxError when opening a class without a semicolon" do
+      lambda { eval "class ClassSpecsKeywordWithoutSemicolon end" }
+        .should_not raise_error(SyntaxError)
+      ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
+    end
+  end
+end
+
 describe "A class definition" do
   it "creates a new class" do
     ClassSpecs::A.should be_kind_of(Class)

@@ -1,4 +1,4 @@
-describe :exception_new, :shared => true do
+describe :exception_new, shared: true do
   it "creates a new instance of Exception" do
     Exception.should be_ancestor_of(Exception.send(@method).class)
   end

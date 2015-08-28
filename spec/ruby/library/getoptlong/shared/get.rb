@@ -1,4 +1,4 @@
-describe :getoptlong_get, :shared => true do
+describe :getoptlong_get, shared: true do
   before :each do
     @opts = GetoptLong.new(
       [ '--size', '-s',             GetoptLong::REQUIRED_ARGUMENT ],

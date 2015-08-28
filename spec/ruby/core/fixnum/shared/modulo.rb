@@ -1,4 +1,4 @@
-describe :fixnum_modulo, :shared => true do
+describe :fixnum_modulo, shared: true do
   it "returns the modulus obtained from dividing self by the given argument" do
     13.send(@method, 4).should == 1
     4.send(@method, 13).should == 4

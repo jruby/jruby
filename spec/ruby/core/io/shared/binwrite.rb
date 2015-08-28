@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :io_binwrite, :shared => true do
+describe :io_binwrite, shared: true do
   before :each do
     @filename = tmp("IO_binwrite_file") + $$.to_s
     File.open(@filename, "w") do |file|
@@ -61,14 +61,14 @@ describe :io_binwrite, :shared => true do
   end
 
   it "accepts a :mode option" do
-    IO.send(@method, @filename, "hello, world!", :mode => 'a')
+    IO.send(@method, @filename, "hello, world!", mode: 'a')
     File.read(@filename).should == "012345678901234567890123456789hello, world!"
-    IO.send(@method, @filename, "foo", 2, :mode => 'w')
+    IO.send(@method, @filename, "foo", 2, mode: 'w')
     File.read(@filename).should == "\0\0foo"
   end
 
   it "raises an error if readonly mode is specified" do
-    lambda { IO.send(@method, @filename, "abcde", :mode => "r") }.should raise_error(IOError)
+    lambda { IO.send(@method, @filename, "abcde", mode: "r") }.should raise_error(IOError)
   end
 
   it "truncates if empty :opts provided and offset skipped" do

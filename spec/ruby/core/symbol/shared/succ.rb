@@ -1,6 +1,6 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :symbol_succ, :shared => true do
+describe :symbol_succ, shared: true do
   it "returns a successor" do
     :abcd.send(@method).should == :abce
     :THX1138.send(@method).should == :THX1139

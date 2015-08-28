@@ -1,4 +1,4 @@
-describe :hash_eql, :shared => true do
+describe :hash_eql, shared: true do
   it "does not compare values when keys don't match" do
     value = mock('x')
     value.should_not_receive(:==)
@@ -53,12 +53,12 @@ describe :hash_eql, :shared => true do
 
   it "computes equality for complex recursive hashes" do
     a, b = {}, {}
-    a.merge! :self => a, :other => b
-    b.merge! :self => b, :other => a
+    a.merge! self: a, other: b
+    b.merge! self: b, other: a
     a.send(@method, b).should be_true # they both have the same structure!
 
     c = {}
-    c.merge! :other => c, :self => c
+    c.merge! other: c, self: c
     c.send(@method, a).should be_true # subtle, but they both have the same structure!
     a[:delta] = c[:delta] = a
     c.send(@method, a).should be_false # not quite the same structure, as a[:other][:delta] = nil
@@ -72,7 +72,7 @@ describe :hash_eql, :shared => true do
 
   it "computes equality for recursive hashes & arrays" do
     x, y, z = [], [], []
-    a, b, c = {:foo => x, :bar => 42}, {:foo => y, :bar => 42}, {:foo => z, :bar => 42}
+    a, b, c = {foo: x, bar: 42}, {foo: y, bar: 42}, {foo: z, bar: 42}
     x << a
     y << c
     z << b
@@ -92,7 +92,7 @@ describe :hash_eql, :shared => true do
   end
 end
 
-describe :hash_eql_additional, :shared => true do
+describe :hash_eql_additional, shared: true do
   it "compares values when keys match" do
     x = mock('x')
     y = mock('y')
@@ -119,7 +119,7 @@ describe :hash_eql_additional, :shared => true do
   end
 
   it "returns true iff other Hash has the same number of keys and each key-value pair matches" do
-    a = new_hash(:a => 5)
+    a = new_hash(a: 5)
     b = new_hash
     a.send(@method, b).should be_false
 
@@ -134,7 +134,7 @@ describe :hash_eql_additional, :shared => true do
     c = new_hash("A" => 5)
     a.send(@method, c).should be_false
 
-    c = new_hash(:a => 6)
+    c = new_hash(a: 6)
     a.send(@method, c).should be_false
   end
 
@@ -201,7 +201,7 @@ describe :hash_eql_additional, :shared => true do
   end
 end
 
-describe :hash_eql_additional_more, :shared => true do
+describe :hash_eql_additional_more, shared: true do
   it "returns true if other Hash has the same number of keys and each key-value pair matches, even though the default-value are not same" do
     new_hash(5).send(@method, new_hash(1)).should be_true
     new_hash {|h, k| 1}.send(@method, new_hash {}).should be_true

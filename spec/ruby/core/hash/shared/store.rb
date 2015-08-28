@@ -1,8 +1,8 @@
-describe :hash_store, :shared => true do
+describe :hash_store, shared: true do
   it "associates the key with the value and return the value" do
-    h = new_hash(:a => 1)
+    h = new_hash(a: 1)
     h.send(@method, :b, 2).should == 2
-    h.should == new_hash(:b=>2, :a=>1)
+    h.should == new_hash(b:2, a:1)
   end
 
   it "duplicates string keys using dup semantics" do

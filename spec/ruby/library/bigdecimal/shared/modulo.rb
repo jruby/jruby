@@ -1,6 +1,6 @@
 require 'bigdecimal'
 
-describe :bigdecimal_modulo, :shared => true do
+describe :bigdecimal_modulo, shared: true do
   before :each do
     @one = BigDecimal("1")
     @zero = BigDecimal("0")
@@ -105,7 +105,7 @@ describe :bigdecimal_modulo, :shared => true do
   end
 end
 
-describe :bigdecimal_modulo_zerodivisionerror, :shared => true do
+describe :bigdecimal_modulo_zerodivisionerror, shared: true do
   it "raises ZeroDivisionError if other is zero" do
     bd5667 = BigDecimal.new("5667.19")
 

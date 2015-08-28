@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require 'prime'
 
-describe :prime_each, :shared => true do
+describe :prime_each, shared: true do
   before :each do
     ScratchPad.record []
   end
@@ -90,7 +90,7 @@ describe :prime_each, :shared => true do
   end
 end
 
-describe :prime_each_with_arguments, :shared => true do
+describe :prime_each_with_arguments, shared: true do
   before :each do
     ScratchPad.record []
   end

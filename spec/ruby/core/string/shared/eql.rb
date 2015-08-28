@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :string_eql_value, :shared => true do
+describe :string_eql_value, shared: true do
   it "returns true if self <=> string returns 0" do
     'hello'.send(@method, 'hello').should be_true
   end

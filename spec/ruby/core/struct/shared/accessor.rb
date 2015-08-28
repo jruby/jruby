@@ -1,4 +1,4 @@
-describe :struct_accessor, :shared => true do
+describe :struct_accessor, shared: true do
   it "does not override the instance accessor method" do
     struct = Struct.new(@method.to_sym)
     instance = struct.new 42

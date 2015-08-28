@@ -1,4 +1,4 @@
-describe :array_eql, :shared => true do
+describe :array_eql, shared: true do
   it "returns true if other is the same array" do
     a = [1]
     a.send(@method, a).should be_true

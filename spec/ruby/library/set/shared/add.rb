@@ -1,4 +1,4 @@
-describe :set_add, :shared => true do
+describe :set_add, shared: true do
   before :each do
     @set = Set.new
   end

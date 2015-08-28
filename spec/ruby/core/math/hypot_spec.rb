@@ -25,8 +25,8 @@ describe "Math.hypot" do
     Math.hypot(nan_value, nan_value).nan?.should be_true
   end
 
-  it "raises an ArgumentError if the argument is nil" do
-    lambda { Math.hypot(nil) }.should raise_error(ArgumentError)
+  it "raises a TypeError if the argument is nil" do
+    lambda { Math.hypot(nil, nil) }.should raise_error(TypeError)
   end
 
   it "accepts any argument that can be coerced with Float()" do

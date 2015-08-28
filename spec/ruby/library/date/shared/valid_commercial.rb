@@ -1,4 +1,4 @@
-describe :date_valid_commercial?, :shared => true do
+describe :date_valid_commercial?, shared: true do
 
   it "returns true if it is a valid commercial date" do
     # October 1582 (the Gregorian calendar, Commercial Date)

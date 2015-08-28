@@ -1,4 +1,4 @@
-describe :set_intersection, :shared => true do
+describe :set_intersection, shared: true do
   before :each do
     @set = Set[:a, :b, :c]
   end

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_integer, :shared => true do
+describe :kernel_integer, shared: true do
   it "returns a Bignum for a Bignum" do
     Integer(2e100).should == 2e100
   end
@@ -83,7 +83,7 @@ describe :kernel_integer, :shared => true do
   end
 end
 
-describe "Integer() given a String", :shared => true do
+describe "Integer() given a String", shared: true do
   it "raises an ArgumentError if the String is a null byte" do
     lambda { Integer("\0") }.should raise_error(ArgumentError)
   end
@@ -256,7 +256,7 @@ describe "Integer() given a String", :shared => true do
   end
 end
 
-describe "Integer() given a String and base", :shared => true do
+describe "Integer() given a String and base", shared: true do
   it "raises an ArgumentError if the String is a null byte" do
     lambda { Integer("\0", 2) }.should raise_error(ArgumentError)
   end
@@ -488,7 +488,7 @@ describe "Integer() given a String and base", :shared => true do
   end
 end
 
-describe :kernel_Integer, :shared => true do
+describe :kernel_Integer, shared: true do
   it "raises an ArgumentError when the String contains digits out of range of radix 2" do
     str = "23456789abcdefghijklmnopqrstuvwxyz"
     lambda { @object.send(@method, str, 2) }.should raise_error(ArgumentError)

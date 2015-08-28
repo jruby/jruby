@@ -20,7 +20,7 @@ module ProcessSpecs
       args = Marshal.dump(arguments).unpack("H*")
       args << @input << @data << behavior
 
-      ruby_exe @script, :args => args
+      ruby_exe @script, args: args
 
       wait_for_daemon
 
@@ -40,7 +40,7 @@ module ProcessSpecs
 
       @thread = Thread.new do
         args = [@pid_file, scenario, ruby_exe]
-        @result = ruby_exe @script, :args => args
+        @result = ruby_exe @script, args: args
       end
       Thread.pass until File.exist? @pid_file
       while @pid.nil? || @pid == 0

@@ -1,4 +1,4 @@
-describe :string_unpack_string, :shared => true do
+describe :string_unpack_string, shared: true do
   it "returns an empty string if the input is empty" do
     "".unpack(unpack_format).should == [""]
   end
@@ -40,7 +40,7 @@ describe :string_unpack_string, :shared => true do
   end
 end
 
-describe :string_unpack_Aa, :shared => true do
+describe :string_unpack_Aa, shared: true do
   it "decodes the number of bytes specified by the count modifier including NULL bytes" do
     "a\x00bc".unpack(unpack_format(3)+unpack_format).should == ["a\x00b", "c"]
   end

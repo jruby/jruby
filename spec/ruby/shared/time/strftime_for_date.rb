@@ -1,6 +1,6 @@
 # Shared for Time, Date and DateTime, testing only date components (smallest unit is day)
 
-describe :strftime_date, :shared => true do
+describe :strftime_date, shared: true do
   before :all do
     @d200_4_6 =   @new_date[200, 4, 6]
     @d2000_4_6 =  @new_date[2000, 4, 6]

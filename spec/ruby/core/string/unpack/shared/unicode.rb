@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-describe :string_unpack_unicode, :shared => true do
+describe :string_unpack_unicode, shared: true do
   it "decodes Unicode codepoints as ASCII values" do
     [ ["\x00",      [0]],
       ["\x01",      [1]],

@@ -1,4 +1,4 @@
-describe :float_quo, :shared => true do
+describe :float_quo, shared: true do
   it "performs floating-point division between self and a Fixnum" do
     8.9.send(@method, 7).should == 1.2714285714285716
   end

@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :symbol_match, :shared => true do
+describe :symbol_match, shared: true do
   it "returns the index of the beginning of the match" do
     :abc.send(@method, /b/).should == 1
   end

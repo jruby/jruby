@@ -21,7 +21,7 @@ Specify `core` or `library` as the `base`.
 This is very easy, just run the command below in your `rubyspec` directory.  
 `ruby` must be a recent version of MRI.
 
-    $ ruby --disable-gem ../mspec/bin/mkspec 
+    $ ruby --disable-gem ../mspec/bin/mkspec
 
 You might also want to search for:
 

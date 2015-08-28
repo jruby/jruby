@@ -1,4 +1,4 @@
-describe :float_modulo, :shared => true do
+describe :float_modulo, shared: true do
   it "returns self modulo other" do
     6543.21.send(@method, 137).should be_close(104.21, TOLERANCE)
     5667.19.send(@method, bignum_value).should be_close(5667.19, TOLERANCE)
@@ -8,21 +8,21 @@ describe :float_modulo, :shared => true do
   end
 
   it "returns self when modulus is +Infinity" do
-    4.2.send(@method, (1/0.0)).should == 4.2
+    4.2.send(@method, Float::INFINITY).should == 4.2
   end
 
   it "returns -Infinity when modulus is -Infinity" do
-    4.2.send(@method, (-1/0.0)).should == (-1/0.0)
+    4.2.send(@method, -Float::INFINITY).should == -Float::INFINITY
   end
 
   it "returns NaN when called on NaN or Infinities" do
-    (0/0.0).send(@method, 42).should be_nan
-   (1/0.0).send(@method, 42).should be_nan
-   (-1/0.0).send(@method, 42).should be_nan
+    Float::NAN.send(@method, 42).should be_nan
+    Float::INFINITY.send(@method, 42).should be_nan
+    (-Float::INFINITY).send(@method, 42).should be_nan
   end
 
   it "returns NaN when modulus is NaN" do
-    4.2.send(@method, (0/0.0)).should be_nan
+    4.2.send(@method, Float::NAN).should be_nan
   end
 
   it "returns -0.0 when called on -0.0 with a non zero modulus" do
@@ -30,7 +30,7 @@ describe :float_modulo, :shared => true do
     r.should == 0
     (1/r).should < 0
 
-    r = (-0.0).send(@method, (1/0.0))
+    r = (-0.0).send(@method, Float::INFINITY)
     r.should == 0
     (1/r).should < 0
   end

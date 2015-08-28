@@ -1,6 +1,6 @@
 require File.expand_path('../enumerable_enumeratorized', __FILE__)
 
-describe :enumerable_find, :shared => true do
+describe :enumerable_find, shared: true do
   # #detect and #find are aliases, so we only need one function
   before :each do
     ScratchPad.record []

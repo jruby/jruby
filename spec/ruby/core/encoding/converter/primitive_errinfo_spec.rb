@@ -23,7 +23,7 @@ with_feature :encoding do
 
     it "returns [:destination_buffer_full,nil,nil,nil,nil] when #primitive_convert last returned :destination_buffer_full" do
       ec = Encoding::Converter.new("utf-8", "iso-2022-jp")
-      ec.primitive_convert("\u{9999}", "", 0, 0, :partial_input => false) \
+      ec.primitive_convert("\u{9999}", "", 0, 0, partial_input: false) \
         .should == :destination_buffer_full
       ec.primitive_errinfo.should == [:destination_buffer_full, nil, nil, nil, nil]
     end

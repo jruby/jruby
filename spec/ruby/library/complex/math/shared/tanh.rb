@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_tanh, :shared => true do
+describe :complex_math_tanh, shared: true do
   it "returns the hyperbolic tangent of the argument" do
     @object.send(:tanh, 0.0).should == 0.0
     @object.send(:tanh, -0.0).should == -0.0
@@ -16,7 +16,7 @@ describe :complex_math_tanh, :shared => true do
   end
 end
 
-describe :complex_math_tanh_bang, :shared => true do
+describe :complex_math_tanh_bang, shared: true do
   it "returns the hyperbolic tangent of the argument" do
     @object.send(:tanh!, 0.0).should == 0.0
     @object.send(:tanh!, -0.0).should == -0.0

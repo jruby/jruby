@@ -1,4 +1,4 @@
-describe :time_gmtime, :shared => true do
+describe :time_gmtime, shared: true do
   it "returns the utc representation of time" do
     # Testing with America/Regina here because it doesn't have DST.
     with_timezone("CST", -6) do

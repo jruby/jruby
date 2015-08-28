@@ -1,4 +1,4 @@
-describe :env_store, :shared => true do
+describe :env_store, shared: true do
   after :each do
     ENV.delete("foo")
   end

@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_sinh, :shared => true do
+describe :complex_math_sinh, shared: true do
   it "returns the hyperbolic sin of the argument" do
     @object.send(:sinh, 0.0).should == 0.0
     @object.send(:sinh, -0.0).should == 0.0
@@ -14,7 +14,7 @@ describe :complex_math_sinh, :shared => true do
   end
 end
 
-describe :complex_math_sinh_bang, :shared => true do
+describe :complex_math_sinh_bang, shared: true do
   it "returns the hyperbolic sin of the argument" do
     @object.send(:sinh!, 0.0).should == 0.0
     @object.send(:sinh!, -0.0).should == 0.0

@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_inspect, :shared => true do
+describe :rational_inspect, shared: true do
   conflicts_with :Prime do
     it "returns a string representation of self" do
       Rational(3, 4).inspect.should == "(3/4)"

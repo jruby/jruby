@@ -1,4 +1,4 @@
-describe :strscan_bol, :shared => true do
+describe :strscan_bol, shared: true do
   it "returns true if the scan pointer is at the beginning of the line, false otherwise" do
     s = StringScanner.new("This is a test")
     s.send(@method).should be_true

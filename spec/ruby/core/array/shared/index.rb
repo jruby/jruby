@@ -1,4 +1,4 @@
-describe :array_index, :shared => true do
+describe :array_index, shared: true do
   it "returns the index of the first element == to object" do
     x = mock('3')
     def x.==(obj) 3 == obj; end

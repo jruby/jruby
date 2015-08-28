@@ -1,4 +1,4 @@
-describe :integer_next, :shared => true do
+describe :integer_next, shared: true do
   it "returns the next larger positive Fixnum" do
     2.send(@method).should == 3
   end

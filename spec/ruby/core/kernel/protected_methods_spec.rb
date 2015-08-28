@@ -26,7 +26,7 @@ describe "Kernel#protected_methods" do
   end
 end
 
-describe :kernel_protected_methods_supers, :shared => true do
+describe :kernel_protected_methods_supers, shared: true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.protected_methods(*@object)
     m.select { |x| x == :pro }.sort.should == [:pro]
@@ -43,7 +43,7 @@ describe :kernel_protected_methods_supers, :shared => true do
   end
 end
 
-describe :kernel_protected_methods_with_falsy, :shared => true do
+describe :kernel_protected_methods_with_falsy, shared: true do
   it "returns a list of protected methods in without its ancestors" do
     ReflectSpecs::F.protected_methods(@object).select{|m|/_pro\z/ =~ m}.sort.should == [:ds_pro, :fs_pro]
     ReflectSpecs::F.new.protected_methods(@object).should == [:f_pro]

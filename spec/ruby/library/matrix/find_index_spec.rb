@@ -25,21 +25,21 @@ describe "Matrix#find_index with a subselection argument" do
   before :all do
     @tests = [
     [  Matrix[ [1, 2, 3, 4], [5, 6, 7, 8] ], {
-        :diagonal => [1, 6]               ,
-        :off_diagonal => [2, 3, 4, 5, 7, 8],
-        :lower => [1, 5, 6]               ,
-        :strict_lower => [5]              ,
-        :strict_upper => [2, 3, 4, 7, 8]  ,
-        :upper => [1, 2, 3, 4, 6, 7, 8]   ,
+        diagonal: [1, 6]               ,
+        off_diagonal: [2, 3, 4, 5, 7, 8],
+        lower: [1, 5, 6]               ,
+        strict_lower: [5]              ,
+        strict_upper: [2, 3, 4, 7, 8]  ,
+        upper: [1, 2, 3, 4, 6, 7, 8]   ,
       }
     ],
     [  Matrix[ [1, 2], [3, 4], [5, 6], [7, 8] ], {
-        :diagonal => [1, 4]               ,
-        :off_diagonal => [2, 3, 5, 6, 7, 8],
-        :lower => [1, 3, 4, 5, 6, 7, 8]   ,
-        :strict_lower => [3, 5, 6, 7, 8]  ,
-        :strict_upper => [2]              ,
-        :upper => [1, 2, 4]               ,
+        diagonal: [1, 4]               ,
+        off_diagonal: [2, 3, 5, 6, 7, 8],
+        lower: [1, 3, 4, 5, 6, 7, 8]   ,
+        strict_lower: [3, 5, 6, 7, 8]  ,
+        strict_upper: [2]              ,
+        upper: [1, 2, 4]               ,
       }
     ]]
   end

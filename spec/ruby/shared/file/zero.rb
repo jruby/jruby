@@ -1,4 +1,4 @@
-describe :file_zero, :shared => true do
+describe :file_zero, shared: true do
   before :each do
     @zero_file    = tmp("test.txt")
     @nonzero_file = tmp("test2.txt")
@@ -68,7 +68,7 @@ describe :file_zero, :shared => true do
   end
 end
 
-describe :file_zero_missing, :shared => true do
+describe :file_zero_missing, shared: true do
   it "returns false if the file does not exist" do
     @object.send(@method, 'fake_file').should == false
   end

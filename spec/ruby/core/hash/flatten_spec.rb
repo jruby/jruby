@@ -3,9 +3,9 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Hash#flatten" do
 
   before :each do
-    @h = {:plato => :greek,
-          :witgenstein => [:austrian, :british],
-          :russell => :welsh}
+    @h = {plato: :greek,
+          witgenstein: [:austrian, :british],
+          russell: :welsh}
   end
 
   it "returns an Array" do
@@ -36,9 +36,9 @@ describe "Hash#flatten" do
   end
 
   it "does not recursively flatten Hash values when called without arguments" do
-    @h[:russell] = {:born => :wales, :influenced_by => :mill }
+    @h[:russell] = {born: :wales, influenced_by: :mill }
     a = @h.flatten
-    a[5].should_not == {:born => :wales, :influenced_by => :mill }.flatten
+    a[5].should_not == {born: :wales, influenced_by: :mill }.flatten
   end
 
   it "recursively flattens Array values when called with an argument >= 2" do

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_system, :shared => true do
+describe :kernel_system, shared: true do
   it "executes the specified command in a subprocess" do
     lambda { @object.system("echo a") }.should output_to_fd("a\n")
   end

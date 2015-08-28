@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require 'cgi'
 
-describe :cgi_http_header, :shared => true do
+describe :cgi_http_header, shared: true do
   describe "CGI#http_header when passed no arguments" do
     before :each do
       ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']

@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :enum_new, :shared => true do
+describe :enum_new, shared: true do
   it "creates a new custom enumerator with the given object, iterator and arguments" do
     enum = enumerator_class.new(1, :upto, 3)
     enum.should be_an_instance_of(enumerator_class)

@@ -1,5 +1,5 @@
 # -*- encoding: us-ascii -*-
-describe :string_succ, :shared => true do
+describe :string_succ, shared: true do
   it "returns an empty string for empty strings" do
     "".send(@method).should == ""
   end
@@ -72,7 +72,7 @@ describe :string_succ, :shared => true do
   end
 end
 
-describe :string_succ_bang, :shared => true do
+describe :string_succ_bang, shared: true do
   it "is equivalent to succ, but modifies self in place (still returns self)" do
     ["", "abcd", "THX1138"].each do |s|
       r = s.dup.send(@method)

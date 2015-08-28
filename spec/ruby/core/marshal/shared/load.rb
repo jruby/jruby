@@ -1,7 +1,7 @@
 require File.expand_path('../../fixtures/marshal_data', __FILE__)
 require 'stringio'
 
-describe :marshal_load, :shared => true do
+describe :marshal_load, shared: true do
   ruby_version_is ""..."2.1" do
     before :all do
       @num_self_class = 0
@@ -15,7 +15,7 @@ describe :marshal_load, :shared => true do
   end
 
   it "raises an ArgumentError when the dumped data is truncated" do
-    obj = {:first => 1, :second => 2, :third => 3}
+    obj = {first: 1, second: 2, third: 3}
     lambda { Marshal.send(@method, Marshal.dump(obj)[0, 5]) }.should raise_error(ArgumentError)
   end
 
@@ -91,11 +91,11 @@ describe :marshal_load, :shared => true do
       it "loads any structure with multiple references to the same object, followed by multiple instances of another object" do
         str = "string"
 
-        # this string represents: {:a => <#UserDefinedImmediate A>, :b => <#UserDefinedImmediate A>, :c => <#String "string">, :d => <#String "string">}
+        # this string represents: {a: <#UserDefinedImmediate A>, b: <#UserDefinedImmediate A>, c: <#String "string">, d: <#String "string">}
         hash_dump = "\x04\b{\t:\x06aIu:\x19UserDefinedImmediate\x00\x06:\x06ET:\x06b@\x06:\x06cI\"\vstring\x06;\aT:\x06d@\a"
 
         marshaled_obj = Marshal.send(@method, hash_dump)
-        marshaled_obj.should == {:a => nil, :b => nil, :c => str, :d => str}
+        marshaled_obj.should == {a: nil, b: nil, c: str, d: str}
 
         # this string represents: [<#UserDefinedImmediate A>, <#UserDefinedImmediate A>, <#String "string">, <#String "string">]
         array_dump = "\x04\b[\tIu:\x19UserDefinedImmediate\x00\x06:\x06ET@\x06I\"\vstring\x06;\x06T@\a"
@@ -328,7 +328,7 @@ describe :marshal_load, :shared => true do
     end
 
     it "loads an extended hash object containing a user-marshaled object" do
-      obj = {:a => UserMarshal.new}.extend(Meths)
+      obj = {a: UserMarshal.new}.extend(Meths)
 
       new_obj = Marshal.send(@method, "\004\be:\nMeths{\006:\006aU:\020UserMarshal\"\nstuff")
 
@@ -341,7 +341,7 @@ describe :marshal_load, :shared => true do
     it "preserves hash ivars when hash contains a string having ivar" do
       s = 'string'
       s.instance_variable_set :@string_ivar, 'string ivar'
-      h = { :key => s }
+      h = { key: s }
       h.instance_variable_set :@hash_ivar, 'hash ivar'
 
       unmarshalled = Marshal.send(@method, Marshal.dump(h))
@@ -665,7 +665,7 @@ describe :marshal_load, :shared => true do
   end
 
   describe "for a Bignum" do
-    platform_is :wordsize => 64 do
+    platform_is wordsize: 64 do
       context "that is Bignum on 32-bit platforms but Fixnum on 64-bit" do
         it "dumps a Fixnum" do
           val = Marshal.send(@method, "\004\bl+\ab:wU")

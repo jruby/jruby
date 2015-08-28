@@ -1,4 +1,4 @@
-describe :rexml_attribute_add, :shared => true do
+describe :rexml_attribute_add, shared: true do
   before :each do
     @e = REXML::Element.new("root")
     @attr = REXML::Attributes.new(@e)

@@ -1,4 +1,4 @@
-describe :thread_wakeup, :shared => true do
+describe :thread_wakeup, shared: true do
   it "can interrupt Kernel#sleep" do
     exit_loop = false
     after_sleep1 = false

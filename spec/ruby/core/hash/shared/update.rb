@@ -1,18 +1,18 @@
-describe :hash_update, :shared => true do
+describe :hash_update, shared: true do
   it "adds the entries from other, overwriting duplicate keys. Returns self" do
-    h = new_hash(:_1 => 'a', :_2 => '3')
-    h.send(@method, :_1 => '9', :_9 => 2).should equal(h)
-    h.should == new_hash(:_1 => "9", :_2 => "3", :_9 => 2)
+    h = new_hash(_1: 'a', _2: '3')
+    h.send(@method, _1: '9', _9: 2).should equal(h)
+    h.should == new_hash(_1: "9", _2: "3", _9: 2)
   end
 
   it "sets any duplicate key to the value of block if passed a block" do
-    h1 = new_hash(:a => 2, :b => -1)
-    h2 = new_hash(:a => -2, :c => 1)
+    h1 = new_hash(a: 2, b: -1)
+    h2 = new_hash(a: -2, c: 1)
     h1.send(@method, h2) { |k,x,y| 3.14 }.should equal(h1)
-    h1.should == new_hash(:c => 1, :b => -1, :a => 3.14)
+    h1.should == new_hash(c: 1, b: -1, a: 3.14)
 
     h1.send(@method, h1) { nil }
-    h1.should == new_hash(:a => nil, :b => nil, :c => nil)
+    h1.should == new_hash(a: nil, b: nil, c: nil)
   end
 
   it "tries to convert the passed argument to a hash using #to_hash" do

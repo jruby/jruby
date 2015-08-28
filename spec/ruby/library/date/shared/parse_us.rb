@@ -1,4 +1,4 @@
-describe :date_parse_us, :shared => true do
+describe :date_parse_us, shared: true do
   it "parses a YYYY#{@sep}MM#{@sep}DD string into a Date object" do
     d = Date.parse("2007#{@sep}10#{@sep}01")
     d.year.should  == 2007

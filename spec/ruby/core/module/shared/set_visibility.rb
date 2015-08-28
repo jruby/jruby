@@ -1,6 +1,6 @@
 # -*- encoding: us-ascii -*-
 
-describe :set_visibility, :shared => true do
+describe :set_visibility, shared: true do
   it "is a private method" do
     Module.should have_private_instance_method(@method, false)
   end

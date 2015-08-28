@@ -1,4 +1,4 @@
-describe :erb_util_html_escape, :shared => true do
+describe :erb_util_html_escape, shared: true do
   it "escape (& < > \" ') to (&amp; &lt; &gt; &quot; &#39;)" do
     input = '& < > " \''
     expected = '&amp; &lt; &gt; &quot; &#39;'

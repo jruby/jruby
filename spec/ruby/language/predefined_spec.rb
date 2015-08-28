@@ -733,7 +733,7 @@ describe "Global variable $-d" do
   end
 end
 
-describe :verbose_global_alias, :shared => true do
+describe :verbose_global_alias, shared: true do
   before :each do
     @verbose = $VERBOSE
   end
@@ -1034,7 +1034,7 @@ with_feature :encoding do
     describe "ARGV" do
       it "contains Strings encoded in locale Encoding" do
         code = fixture __FILE__, "argv_encoding.rb"
-        result = ruby_exe(code, :args => "a b")
+        result = ruby_exe(code, args: "a b")
         encoding = Encoding.default_external
         result.chomp.should == %{["#{encoding}", "#{encoding}"]}
       end

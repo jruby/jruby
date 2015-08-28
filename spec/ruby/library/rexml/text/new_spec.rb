@@ -32,10 +32,10 @@ describe "REXML::Text.new" do
   end
 
   it "uses raw value of the parent if raw is nil" do
-    e1 = REXML::Element.new("root", nil, { :raw => :all})
+    e1 = REXML::Element.new("root", nil, { raw: :all})
     lambda {REXML::Text.new("<&>", false, e1)}.should raise_error(Exception)
 
-    e2 = REXML::Element.new("root", nil, { :raw => []})
+    e2 = REXML::Element.new("root", nil, { raw: []})
     e2.raw.should be_false
     t1 = REXML::Text.new("<&>", false, e2)
     t1.should == "&lt;&amp;&gt;"

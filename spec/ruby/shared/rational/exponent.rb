@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_exponent, :shared => true do
+describe :rational_exponent, shared: true do
   describe "when passed Rational" do
     conflicts_with :Prime do
       it "returns Rational(1) if the exponent is Rational(0)" do

@@ -1,4 +1,4 @@
-describe :stringio_eof, :shared => true do
+describe :stringio_eof, shared: true do
   before :each do
     @io = StringIO.new("eof")
   end

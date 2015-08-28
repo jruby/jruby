@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_log, :shared => true do
+describe :complex_math_log, shared: true do
   it "returns the natural logarithm of the passed argument" do
     @object.send(:log, 0.0001).should be_close(-9.21034037197618, TOLERANCE)
     @object.send(:log, 0.000000000001e-15).should be_close(-62.1697975108392, TOLERANCE)
@@ -20,7 +20,7 @@ describe :complex_math_log, :shared => true do
   end
 end
 
-describe :complex_math_log_bang, :shared => true do
+describe :complex_math_log_bang, shared: true do
   it "returns the natural logarithm of the argument" do
     @object.send(:log!, 0.0001).should be_close(-9.21034037197618, TOLERANCE)
     @object.send(:log!, 0.000000000001e-15).should be_close(-62.1697975108392, TOLERANCE)

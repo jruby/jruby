@@ -38,25 +38,25 @@ m = Kernel.private_instance_methods(false).grep(/^#{name}$/)
 print m.map { |x| x.to_s }.join("")
 '
     EOC
-    ruby_exe("puts", :args => cmd) == name.to_s
+    ruby_exe("puts", args: cmd) == name.to_s
   end
 
   def self.chop(str, method)
     cmd = "| #{RUBY_EXE} -n -e '$_ = #{str.inspect}; #{method}; print $_'"
-    ruby_exe "puts", :args => cmd
+    ruby_exe "puts", args: cmd
   end
 
   def self.encoded_chop(file)
-    ruby_exe "puts", :args => "| #{RUBY_EXE} -n #{file}"
+    ruby_exe "puts", args: "| #{RUBY_EXE} -n #{file}"
   end
 
   def self.chomp(str, method, sep="\n")
     cmd = "| #{RUBY_EXE} -n -e '$_ = #{str.inspect}; $/ = #{sep.inspect}; #{method}; print $_'"
-    ruby_exe "puts", :args => cmd
+    ruby_exe "puts", args: cmd
   end
 
   def self.encoded_chomp(file)
-    ruby_exe "puts", :args => "| #{RUBY_EXE} -n #{file}"
+    ruby_exe "puts", args: "| #{RUBY_EXE} -n #{file}"
   end
 
   # kind_of?, is_a?, instance_of?

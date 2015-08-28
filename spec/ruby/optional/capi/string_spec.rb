@@ -3,7 +3,7 @@ require File.expand_path('../spec_helper', __FILE__)
 
 load_extension('string')
 
-describe :rb_str_new2, :shared => true do
+describe :rb_str_new2, shared: true do
   it "returns a new string object calling strlen on the passed C string" do
     # Hardcoded to pass const char * = "hello\0invisible"
     @s.send(@method, "hello\0not used").should == "hello"
@@ -166,7 +166,7 @@ describe "C-API String function" do
 
     it "accepts an encoding options Hash specifying replacement String" do
       # Yeah, MRI aborts with rb_bug() if the options Hash is not frozen
-      options = { :replace => "b" }.freeze
+      options = { replace: "b" }.freeze
       result = @s.rb_str_encode("a\xffc", "us-ascii",
                                 Encoding::Converter::INVALID_REPLACE,
                                 options)
@@ -562,7 +562,7 @@ describe "rb_str_free" do
   end
 end
 
-describe :rb_external_str_new, :shared => true do
+describe :rb_external_str_new, shared: true do
   it "returns a String in the default external encoding" do
     Encoding.default_external = "UTF-8"
     @s.send(@method, "abc").encoding.should == Encoding::UTF_8

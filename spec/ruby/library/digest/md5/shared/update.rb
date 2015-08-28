@@ -1,4 +1,4 @@
-describe :md5_update, :shared => true do
+describe :md5_update, shared: true do
   it "can update" do
     cur_digest = Digest::MD5.new
     cur_digest.send @method, MD5Constants::Contents

@@ -2,7 +2,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-describe :string_match_escaped_literal, :shared => true do
+describe :string_match_escaped_literal, shared: true do
   not_supported_on :opal do
     it "matches a literal Regexp that uses ASCII-only UTF-8 escape sequences" do
       "a b".match(/([\u{20}-\u{7e}])/)[0].should == "a"

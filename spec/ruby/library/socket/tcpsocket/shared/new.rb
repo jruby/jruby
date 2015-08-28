@@ -1,7 +1,7 @@
 require File.expand_path('../../../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/classes', __FILE__)
 
-describe :tcpsocket_new, :shared => true do
+describe :tcpsocket_new, shared: true do
   it "requires a hostname and a port as arguments" do
     lambda { TCPSocket.send(@method) }.should raise_error(ArgumentError)
   end

@@ -1,4 +1,4 @@
-describe :thread_exit, :shared => true do
+describe :thread_exit, shared: true do
   before :each do
     ScratchPad.clear
   end

@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :string_equal_value, :shared => true do
+describe :string_equal_value, shared: true do
   it "returns false if obj does not respond to to_str" do
     'hello'.send(@method, 5).should be_false
     not_supported_on :opal do

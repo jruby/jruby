@@ -66,7 +66,7 @@ describe "C-API Hash function" do
 
   describe "rb_hash_aref" do
     it "returns the value associated with the key" do
-      hsh = {:chunky => 'bacon'}
+      hsh = {chunky: 'bacon'}
       @s.rb_hash_aref(hsh, :chunky).should == 'bacon'
     end
 
@@ -87,13 +87,21 @@ describe "C-API Hash function" do
     it "adds the key/value pair and returns the value" do
       hsh = {}
       @s.rb_hash_aset(hsh, :chunky, 'bacon').should == 'bacon'
-      hsh.should == {:chunky => 'bacon'}
+      hsh.should == {chunky: 'bacon'}
+    end
+  end
+
+  describe "rb_hash_clear" do
+    it "returns self that cleared keys and values" do
+      hsh = { :key => 'value' }
+      @s.rb_hash_clear(hsh).should equal(hsh)
+      hsh.should == {}
     end
   end
 
   describe "rb_hash_delete" do
     it "removes the key and returns the value" do
-      hsh = {:chunky => 'bacon'}
+      hsh = {chunky: 'bacon'}
       @s.rb_hash_delete(hsh, :chunky).should == 'bacon'
       hsh.should == {}
     end
@@ -101,19 +109,19 @@ describe "C-API Hash function" do
 
   describe "rb_hash_delete_if" do
     it "removes an entry if the block returns true" do
-      h = { :a => 1, :b => 2, :c => 3 }
+      h = { a: 1, b: 2, c: 3 }
       @s.rb_hash_delete_if(h) { |k, v| v == 2 }
-      h.should == { :a => 1, :c => 3 }
+      h.should == { a: 1, c: 3 }
     end
 
     it "returns an Enumerator when no block is passed" do
-      @s.rb_hash_delete_if({:a => 1}).should be_an_instance_of(enumerator_class)
+      @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(enumerator_class)
     end
   end
 
   describe "rb_hash_foreach" do
     it "iterates over the hash" do
-      hsh = {:name => "Evan", :sign => :libra}
+      hsh = {name: "Evan", sign: :libra}
 
       out = @s.rb_hash_foreach(hsh)
       out.equal?(hsh).should == false
@@ -121,17 +129,17 @@ describe "C-API Hash function" do
     end
 
     it "stops via the callback" do
-      hsh = {:name => "Evan", :sign => :libra}
+      hsh = {name: "Evan", sign: :libra}
 
       out = @s.rb_hash_foreach_stop(hsh)
       out.size.should == 1
     end
 
     it "deletes via the callback" do
-      hsh = {:name => "Evan", :sign => :libra}
+      hsh = {name: "Evan", sign: :libra}
 
       out = @s.rb_hash_foreach_delete(hsh)
-      out.should == {:name => "Evan", :sign => :libra}
+      out.should == {name: "Evan", sign: :libra}
       hsh.should == {}
     end
   end
@@ -139,7 +147,7 @@ describe "C-API Hash function" do
   ruby_version_is "2.2" do
     describe "rb_hash_size" do
       it "returns the size of the hash" do
-        hsh = {:fast => 'car', :good => 'music'}
+        hsh = {fast: 'car', good: 'music'}
         @s.rb_hash_size(hsh).should == 2
       end
 
@@ -151,7 +159,7 @@ describe "C-API Hash function" do
 
   describe "rb_hash_lookup" do
     it "returns the value associated with the key" do
-      hsh = {:chunky => 'bacon'}
+      hsh = {chunky: 'bacon'}
       @s.rb_hash_lookup(hsh, :chunky).should == 'bacon'
     end
 
@@ -169,7 +177,7 @@ describe "C-API Hash function" do
 
     describe "rb_hash_lookup2" do
       it "returns the value associated with the key" do
-        hash = {:chunky => 'bacon'}
+        hash = {chunky: 'bacon'}
 
         @s.rb_hash_lookup2(hash, :chunky, nil).should == 'bacon'
       end

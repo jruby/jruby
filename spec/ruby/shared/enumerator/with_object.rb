@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :enum_with_object, :shared => true do
+describe :enum_with_object, shared: true do
   before :each do
     @enum = [:a, :b].to_enum
     @memo = ''

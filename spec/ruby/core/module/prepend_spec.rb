@@ -8,6 +8,10 @@ describe "Module#prepend" do
     end
   end
 
+  it "does not affect the superclass" do
+    Class.new { prepend Module.new }.superclass.should == Object
+  end
+
   it "calls #prepend_features(self) in reversed order on each module" do
     ScratchPad.record []
 

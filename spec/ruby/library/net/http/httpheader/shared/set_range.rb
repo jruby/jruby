@@ -1,4 +1,4 @@
-describe :net_httpheader_set_range, :shared => true do
+describe :net_httpheader_set_range, shared: true do
   before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end

@@ -1,4 +1,4 @@
-describe :array_replace, :shared => true do
+describe :array_replace, shared: true do
   it "replaces the elements with elements from other array" do
     a = [1, 2, 3, 4, 5]
     b = ['a', 'b', 'c']

@@ -1,4 +1,4 @@
-describe :dir_pos, :shared => true do
+describe :dir_pos, shared: true do
   before :each do
     @dir = Dir.open DirSpecs.mock_dir
   end
@@ -25,7 +25,7 @@ describe :dir_pos, :shared => true do
   end
 end
 
-describe :dir_pos_set, :shared => true do
+describe :dir_pos_set, shared: true do
   before :each do
     @dir = Dir.open DirSpecs.mock_dir
   end

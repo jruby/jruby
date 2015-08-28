@@ -1,4 +1,4 @@
-describe :sorted_set_intersection, :shared => true do
+describe :sorted_set_intersection, shared: true do
   before :each do
     @set = SortedSet["a", "b", "c"]
   end

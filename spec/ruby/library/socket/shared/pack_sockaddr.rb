@@ -1,4 +1,4 @@
-describe :socket_pack_sockaddr_in, :shared => true do
+describe :socket_pack_sockaddr_in, shared: true do
   it "packs and unpacks" do
     sockaddr_in = Socket.pack_sockaddr_in 0, nil
     port, addr = Socket.unpack_sockaddr_in(sockaddr_in)
@@ -19,7 +19,7 @@ describe :socket_pack_sockaddr_in, :shared => true do
   end
 end
 
-describe :socket_pack_sockaddr_un, :shared => true do
+describe :socket_pack_sockaddr_un, shared: true do
   not_supported_on :jruby, :windows do
     it "packs and unpacks" do
       sockaddr_un = Socket.pack_sockaddr_un '/tmp/s'

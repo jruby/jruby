@@ -1,4 +1,4 @@
-describe :queue_deq, :shared => true do
+describe :queue_deq, shared: true do
   it "removes an item from the Queue" do
     q = @object
     q << Object.new

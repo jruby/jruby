@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Hash#rassoc" do
   before :each do
-    @h = {:apple => :green, :orange => :orange, :grape => :green, :banana => :yellow}
+    @h = {apple: :green, orange: :orange, grape: :green, banana: :yellow}
   end
 
   it "returns an Array if the argument is a value of the Hash" do
@@ -36,7 +36,7 @@ describe "Hash#rassoc" do
   end
 
   it "returns nil if the argument is not a value of the Hash even when there is a default" do
-    Hash.new(42).merge!( :foo => :bar ).rassoc(42).should be_nil
-    Hash.new{|h, k| h[k] = 42}.merge!( :foo => :bar ).rassoc(42).should be_nil
+    Hash.new(42).merge!( foo: :bar ).rassoc(42).should be_nil
+    Hash.new{|h, k| h[k] = 42}.merge!( foo: :bar ).rassoc(42).should be_nil
   end
 end
