@@ -714,33 +714,51 @@ public class ArgumentProcessor {
         }
     }
 
-    private static final Set<String> KNOWN_PROPERTIES;
+    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>();
 
     static {
-        final Set<String> propertyNames = new HashSet<>();
-        propertyNames.addAll(Options.getPropertyNames());
-        propertyNames.add("jruby.home");
-        propertyNames.add("jruby.script");
-        propertyNames.add("jruby.shell");
-        propertyNames.add("jruby.lib");
-        propertyNames.add("jruby.bindir");
-        propertyNames.add("jruby.jar");
-        propertyNames.add("jruby.compat.version");
-        propertyNames.add("jruby.reflection");
-        propertyNames.add("jruby.thread.pool.enabled");
-        propertyNames.add("jruby.memory.max");
-        propertyNames.add("jruby.stack.max");
-        KNOWN_PROPERTIES = propertyNames;
+        KNOWN_PROPERTIES.addAll(Options.getPropertyNames());
+        KNOWN_PROPERTIES.add("jruby.home");
+        KNOWN_PROPERTIES.add("jruby.script");
+        KNOWN_PROPERTIES.add("jruby.shell");
+        KNOWN_PROPERTIES.add("jruby.lib");
+        KNOWN_PROPERTIES.add("jruby.bindir");
+        KNOWN_PROPERTIES.add("jruby.jar");
+        KNOWN_PROPERTIES.add("jruby.compat.version");
+        KNOWN_PROPERTIES.add("jruby.reflection");
+        KNOWN_PROPERTIES.add("jruby.thread.pool.enabled");
+        KNOWN_PROPERTIES.add("jruby.memory.max");
+        KNOWN_PROPERTIES.add("jruby.stack.max");
+    }
+
+    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>();
+
+    static {
+        KNOWN_PROPERTY_PREFIXES.add("jruby.openssl.");
     }
 
     private void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {
-                if (!KNOWN_PROPERTIES.contains(propertyName)) {
+                if (!isPropertySupported(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }
             }
         }
+    }
+
+    private boolean isPropertySupported(String propertyName) {
+        if (KNOWN_PROPERTIES.contains(propertyName)) {
+            return true;
+        }
+
+        for (String prefix : KNOWN_PROPERTY_PREFIXES) {
+            if (propertyName.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
