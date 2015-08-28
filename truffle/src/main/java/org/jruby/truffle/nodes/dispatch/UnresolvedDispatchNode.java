@@ -196,11 +196,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return createMethodMissingNode(first, methodName, receiverObject);
         }
 
+        final DynamicObject receiverMetaClass = getContext().getCoreLibrary().getMetaClass(receiverObject);
         if (RubyGuards.isRubySymbol(receiverObject)) {
             return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
+        } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
+            return new CachedSingletonDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject),
+                    receiverMetaClass, method, indirect, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
-                    getContext().getCoreLibrary().getMetaClass(receiverObject), method, indirect, getDispatchAction());
+                    receiverMetaClass, method, indirect, getDispatchAction());
         }
     }
 
