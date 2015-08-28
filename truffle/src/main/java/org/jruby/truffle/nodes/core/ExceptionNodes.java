@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -137,7 +138,8 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public Object message(DynamicObject exception) {
-            return Layouts.EXCEPTION.getMessage(exception);
+            final Object message = Layouts.EXCEPTION.getMessage(exception);
+            return message == null ? nil() : message;
         }
 
     }
