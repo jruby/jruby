@@ -428,7 +428,7 @@ public class LoadService {
 
     protected final RequireLocks requireLocks = new RequireLocks();
 
-    private class RequireLocks {
+    private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         private final ReentrantLock globalLock;
