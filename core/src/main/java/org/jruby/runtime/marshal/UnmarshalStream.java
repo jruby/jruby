@@ -108,7 +108,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     // introduced for keeping ivar read state recursively.
-    private class MarshalState {
+    private static class MarshalState {
         private boolean ivarWaiting;
         
         MarshalState(boolean ivarWaiting) {
