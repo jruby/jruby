@@ -218,10 +218,6 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject size = context.nil;
-
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(2, 1);
         } else {
@@ -239,10 +235,6 @@ public class RubyEnumerator extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject size = context.nil;
-
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(3, 1);
         } else {
