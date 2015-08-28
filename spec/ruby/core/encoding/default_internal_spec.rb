@@ -31,17 +31,17 @@ with_feature :encoding do
 
     describe "with command line options" do
       it "returns Encoding::UTF_8 if ruby was invoked with -U" do
-        ruby_exe("print Encoding.default_internal", :options => '-U').
+        ruby_exe("print Encoding.default_internal", options: '-U').
           should == 'UTF-8'
       end
 
       it "uses the encoding specified when ruby is invoked with an '-E :internal' argument" do
-        ruby_exe("print Encoding.default_internal", :options => '-E :SHIFT_JIS').
+        ruby_exe("print Encoding.default_internal", options: '-E :SHIFT_JIS').
           should == 'Shift_JIS'
       end
 
       it "uses the encoding specified when ruby is invoked with an '-E external:internal' argument" do
-        ruby_exe("print Encoding.default_internal", :options => '-E UTF-8:SHIFT_JIS').
+        ruby_exe("print Encoding.default_internal", options: '-E UTF-8:SHIFT_JIS').
           should == 'Shift_JIS'
       end
     end

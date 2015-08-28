@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :regexp_match, :shared => true do
+describe :regexp_match, shared: true do
   it "returns nil if there is no match" do
     /xyz/.send(@method,"abxyc").should be_nil
   end

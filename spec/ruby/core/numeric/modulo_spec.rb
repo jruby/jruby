@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :numeric_modulo_19, :shared => true do
+describe :numeric_modulo_19, shared: true do
   it "returns self - other * self.div(other)" do
     s = mock_numeric('self')
     o = mock_numeric('other')

@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :kernel_Complex, :shared => true do
+describe :kernel_Complex, shared: true do
   describe "when passed [Complex, Complex]" do
     it "returns a new Complex number based on the two given numbers" do
       Complex(Complex(3, 4), Complex(5, 6)).should == Complex(3 - 6, 4 + 5)

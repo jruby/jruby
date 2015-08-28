@@ -1,4 +1,4 @@
-describe :queue_num_waiting, :shared => true do
+describe :queue_num_waiting, shared: true do
   it "reports the number of threads waiting on the queue" do
     q = @object
     threads = []

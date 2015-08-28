@@ -1,4 +1,4 @@
-describe :array_slice, :shared => true do
+describe :array_slice, shared: true do
   it "returns the element at index with [index]" do
     [ "a", "b", "c", "d", "e" ].send(@method, 1).should == "b"
 

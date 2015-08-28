@@ -1,4 +1,4 @@
-describe :array_pack_numeric_basic, :shared => true do
+describe :array_pack_numeric_basic, shared: true do
   it "returns an empty String if count is zero" do
     [1].pack(pack_format(0)).should == ""
   end
@@ -21,7 +21,7 @@ describe :array_pack_numeric_basic, :shared => true do
   end
 end
 
-describe :array_pack_integer, :shared => true do
+describe :array_pack_integer, shared: true do
   it "raises a TypeError when the object does not respond to #to_int" do
     obj = mock('not an integer')
     lambda { [obj].pack(pack_format) }.should raise_error(TypeError)
@@ -32,7 +32,7 @@ describe :array_pack_integer, :shared => true do
   end
 end
 
-describe :array_pack_float, :shared => true do
+describe :array_pack_float, shared: true do
   it "raises a TypeError if a String does not represent a floating point number" do
     lambda { ["a"].pack(pack_format) }.should raise_error(TypeError)
   end

@@ -103,7 +103,7 @@ public abstract class IntegerNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array, n);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object times(VirtualFrame frame, int n, DynamicObject block) {
             int count = 0;
 
@@ -124,7 +124,7 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object times(VirtualFrame frame, long n, DynamicObject block) {
             int count = 0;
 
@@ -145,7 +145,7 @@ public abstract class IntegerNodes {
             return n;
         }
 
-        @Specialization(guards = {"isRubyBignum(n)", "isRubyProc(block)"})
+        @Specialization(guards = "isRubyBignum(n)")
         public Object times(VirtualFrame frame, DynamicObject n, DynamicObject block,
                 @Cached("create(getContext(), getSourceSection())") FixnumOrBignumNode fixnumOrBignumNode) {
 

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :io_chars, :shared => true do
+describe :io_chars, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     @kcode, $KCODE = $KCODE, "utf-8"
@@ -56,7 +56,7 @@ describe :io_chars, :shared => true do
   end
 end
 
-describe :io_chars_empty, :shared => true do
+describe :io_chars_empty, shared: true do
   before :each do
     @kcode, $KCODE = $KCODE, "utf-8"
     @name = tmp("io_each_char")

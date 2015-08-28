@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-describe :string_length, :shared => true do
+describe :string_length, shared: true do
   it "returns the length of self" do
     "".send(@method).should == 0
     "\x00".send(@method).should == 1

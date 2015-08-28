@@ -2,6 +2,11 @@ require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/module', __FILE__)
 
 describe "The module keyword" do
+  it "creates a new module without semicolon" do
+    module ModuleSpecsKeywordWithoutSemicolon end
+    ModuleSpecsKeywordWithoutSemicolon.should be_an_instance_of(Module)
+  end
+
   it "creates a new module with a non-qualified constant name" do
     module ModuleSpecsToplevel; end
     ModuleSpecsToplevel.should be_an_instance_of(Module)

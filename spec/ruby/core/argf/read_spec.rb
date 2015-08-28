@@ -72,17 +72,17 @@ describe "ARGF.read" do
   end
 
   it "reads the contents of stdin" do
-    stdin = ruby_exe("print ARGF.read", :args => "< #{@stdin_name}")
+    stdin = ruby_exe("print ARGF.read", args: "< #{@stdin_name}")
     stdin.should == @stdin
   end
 
   it "reads a number of bytes from stdin" do
-    stdin = ruby_exe("print ARGF.read(10)", :args => "< #{@stdin_name}")
+    stdin = ruby_exe("print ARGF.read(10)", args: "< #{@stdin_name}")
     stdin.should == @stdin[0,10]
   end
 
   it "reads the contents of one file and stdin" do
-    stdin = ruby_exe("print ARGF.read", :args => "#{@file1_name} - < #{@stdin_name}")
+    stdin = ruby_exe("print ARGF.read", args: "#{@file1_name} - < #{@stdin_name}")
     stdin.should == @file1 + @stdin
   end
 

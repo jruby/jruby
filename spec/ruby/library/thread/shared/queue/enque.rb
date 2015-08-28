@@ -1,4 +1,4 @@
-describe :queue_enq, :shared => true do
+describe :queue_enq, shared: true do
   it "adds an element to the Queue" do
     q = @object
     q.size.should == 0

@@ -1,4 +1,4 @@
-describe :struct_equal_value, :shared => true do
+describe :struct_equal_value, shared: true do
   it "returns true if the other is the same object" do
     car = same_car = StructClasses::Car.new("Honda", "Accord", "1998")
     car.send(@method, same_car).should == true

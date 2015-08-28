@@ -1,4 +1,4 @@
-describe :sizedqueue_enq, :shared => true do
+describe :sizedqueue_enq, shared: true do
   it "blocks if queued elements exceed size" do
     q = @object.new(1)
 

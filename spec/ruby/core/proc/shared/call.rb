@@ -1,4 +1,4 @@
-describe :proc_call, :shared => true do
+describe :proc_call, shared: true do
   it "invokes self" do
     Proc.new { "test!" }.send(@method).should == "test!"
     lambda { "test!" }.send(@method).should == "test!"
@@ -21,7 +21,7 @@ describe :proc_call, :shared => true do
 end
 
 
-describe :proc_call_on_proc_new, :shared => true do
+describe :proc_call_on_proc_new, shared: true do
   it "replaces missing arguments with nil" do
     Proc.new { |a, b| [a, b] }.send(@method).should == [nil, nil]
     Proc.new { |a, b| [a, b] }.send(@method, 1).should == [1, nil]
@@ -40,7 +40,7 @@ describe :proc_call_on_proc_new, :shared => true do
   end
 end
 
-describe :proc_call_on_proc_or_lambda, :shared => true do
+describe :proc_call_on_proc_or_lambda, shared: true do
   it "ignores excess arguments when self is a proc" do
     a = proc {|x| x}.send(@method, 1, 2)
     a.should == 1

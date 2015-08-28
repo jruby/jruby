@@ -13,7 +13,7 @@ describe "CSV.generate" do
   end
 
   it "accepts a col separator" do
-    csv_str = CSV.generate(:col_sep => ";") do |csv|
+    csv_str = CSV.generate(col_sep: ";") do |csv|
       csv.add_row [1, 2, 3]
       csv << [4, 5, 6]
     end

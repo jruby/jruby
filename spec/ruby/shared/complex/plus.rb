@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_plus, :shared => true do
+describe :complex_plus, shared: true do
   describe "with Complex" do
     it "adds both the real and imaginary components" do
       (Complex(1, 2) + Complex(10, 20)).should == Complex(1 + 10, 2 + 20)

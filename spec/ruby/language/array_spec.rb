@@ -21,7 +21,7 @@ describe "Array literals" do
   end
 
   it "[] accepts a literal hash without curly braces as its only parameter" do
-    ["foo" => :bar, :baz => 42].should == [{"foo" => :bar, :baz => 42}]
+    ["foo" => :bar, baz: 42].should == [{"foo" => :bar, baz: 42}]
   end
 
   it "[] accepts a literal hash without curly braces as its last parameter" do

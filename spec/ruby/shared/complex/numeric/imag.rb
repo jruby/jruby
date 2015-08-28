@@ -1,6 +1,6 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :numeric_imag, :shared => true do
+describe :numeric_imag, shared: true do
   before :each do
     @numbers = [
       20,             # Integer

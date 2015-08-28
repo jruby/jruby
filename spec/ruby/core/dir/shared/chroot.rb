@@ -1,4 +1,4 @@
-describe :dir_chroot_as_root, :shared => true do
+describe :dir_chroot_as_root, shared: true do
   before :all do
     DirSpecs.create_mock_dirs
 

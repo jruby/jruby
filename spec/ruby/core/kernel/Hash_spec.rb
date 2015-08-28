@@ -11,9 +11,9 @@ describe "Kernel" do
   end
 end
 
-describe :kernel_Hash, :shared => true do
+describe :kernel_Hash, shared: true do
   before :each do
-    @hash = { :a => 1}
+    @hash = { a: 1}
   end
 
   it "converts nil to a Hash" do
@@ -30,7 +30,7 @@ describe :kernel_Hash, :shared => true do
   end
 
   it "calls #to_hash to convert the argument to an Hash" do
-    obj = mock("Hash(:a => 1)")
+    obj = mock("Hash(a: 1)")
     obj.should_receive(:to_hash).and_return(@hash)
 
     @object.send(@method, obj).should == @hash

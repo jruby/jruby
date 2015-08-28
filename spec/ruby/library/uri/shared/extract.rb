@@ -1,4 +1,4 @@
-describe :uri_extract, :shared => true do
+describe :uri_extract, shared: true do
   it "behaves according to its documentation" do
     @object.extract("text here http://foo.example.org/bla and here mailto:test@example.com and here also.").should == ["http://foo.example.org/bla", "mailto:test@example.com"]
   end

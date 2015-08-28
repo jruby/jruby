@@ -1,7 +1,7 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 require 'matrix'
 
-describe :inverse, :shared => true do
+describe :inverse, shared: true do
 
   it "returns a Matrix" do
     Matrix[ [1,2], [2,1] ].send(@method).should be_an_instance_of(Matrix)

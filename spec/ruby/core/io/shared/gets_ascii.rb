@@ -1,5 +1,5 @@
 # -*- encoding: ascii -*-
-describe :io_gets_ascii, :shared => true do
+describe :io_gets_ascii, shared: true do
   describe "with ASCII separator" do
     before :each do
       @name = tmp("gets_specs.txt")

@@ -474,7 +474,7 @@ describe "The defined? keyword for an expression" do
   end
 
   it "returns 'expression' when passed a Hash literal" do
-    defined?({:a => :b}).should == "expression"
+    defined?({a: :b}).should == "expression"
   end
 
   it "returns 'expression' when passed a Symbol literal" do

@@ -1,4 +1,4 @@
-describe :stringio_read, :shared => true do
+describe :stringio_read, shared: true do
   before :each do
     @io = StringIO.new("example")
   end
@@ -32,7 +32,7 @@ describe :stringio_read, :shared => true do
   end
 end
 
-describe :stringio_read_length, :shared => true do
+describe :stringio_read_length, shared: true do
   before :each do
     @io = StringIO.new("example")
   end
@@ -73,7 +73,7 @@ describe :stringio_read_length, :shared => true do
   end
 end
 
-describe :stringio_read_no_arguments, :shared => true do
+describe :stringio_read_no_arguments, shared: true do
   before :each do
     @io = StringIO.new("example")
   end
@@ -91,7 +91,7 @@ describe :stringio_read_no_arguments, :shared => true do
   end
 end
 
-describe :stringio_read_nil, :shared => true do
+describe :stringio_read_nil, shared: true do
   before :each do
     @io = StringIO.new("example")
   end
@@ -109,7 +109,7 @@ describe :stringio_read_nil, :shared => true do
   end
 end
 
-describe :stringio_read_not_readable, :shared => true do
+describe :stringio_read_not_readable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("test", "w")
     lambda { io.send(@method) }.should raise_error(IOError)

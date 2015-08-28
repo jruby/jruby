@@ -1,4 +1,4 @@
-describe :continuation_call, :shared => true do
+describe :continuation_call, shared: true do
   # TODO: fix these specs
 
   it "using #call transfers execution to right after the Kernel.callcc block" do

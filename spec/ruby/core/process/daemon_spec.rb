@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
-describe :process_daemon_keep_stdio_open_false, :shared => true do
+describe :process_daemon_keep_stdio_open_false, shared: true do
   it "redirects stdout to /dev/null" do
     @daemon.invoke("keep_stdio_open_false_stdout", @object).should == ""
   end
@@ -19,7 +19,7 @@ describe :process_daemon_keep_stdio_open_false, :shared => true do
   end
 end
 
-describe :process_daemon_keep_stdio_open_true, :shared => true do
+describe :process_daemon_keep_stdio_open_true, shared: true do
   it "does not redirect stdout to /dev/null" do
     @daemon.invoke("keep_stdio_open_true_stdout", @object).should == "writing to stdout"
   end

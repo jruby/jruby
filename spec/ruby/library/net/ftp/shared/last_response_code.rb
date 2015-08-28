@@ -1,4 +1,4 @@
-describe :net_ftp_last_response_code, :shared => true do
+describe :net_ftp_last_response_code, shared: true do
   before :each do
     @server = NetFTPSpecs::DummyFTP.new
     @server.serve_once

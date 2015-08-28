@@ -3,7 +3,7 @@ require 'ostruct'
 
 describe "OpenStruct#to_h" do
   before :each do
-    @h = {:name => "John Smith", :age => 70, :pension => 300}
+    @h = {name: "John Smith", age: 70, pension: 300}
     @os = OpenStruct.new(@h)
     @to_h = @os.to_h
   end

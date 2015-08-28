@@ -4,7 +4,7 @@ require "ostruct"
 describe "OpenStruct#new_ostruct_member when passed [method_name]" do
   before :each do
     @os = OpenStruct.new
-    @os.instance_variable_set(:@table, :age => 20)
+    @os.instance_variable_set(:@table, age: 20)
   end
 
   it "creates an attribute reader method for the passed method_name" do

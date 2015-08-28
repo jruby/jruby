@@ -1,4 +1,4 @@
-describe :env_key, :shared => true do
+describe :env_key, shared: true do
   it "needs to be reviewed for completeness"
 
   it "returns the index associated with the passed value" do

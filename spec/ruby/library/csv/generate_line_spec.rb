@@ -14,7 +14,7 @@ describe "CSV.generate_line" do
   end
 
   it "generates the string 'foo;bar'" do
-    result = CSV.generate_line(["foo", "bar"], :col_sep => ?;)
+    result = CSV.generate_line(["foo", "bar"], col_sep: ?;)
     result.should == "foo;bar\n"
   end
 
@@ -24,7 +24,7 @@ describe "CSV.generate_line" do
   end
 
   it "generates the string 'foo;;bar'" do
-    result = CSV.generate_line(["foo", nil, "bar"], :col_sep => ?;)
+    result = CSV.generate_line(["foo", nil, "bar"], col_sep: ?;)
     result.should == "foo;;bar\n"
   end
 end

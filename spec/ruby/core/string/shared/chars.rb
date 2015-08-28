@@ -2,7 +2,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :string_chars, :shared => true do
+describe :string_chars, shared: true do
   it "passes each char in self to the given block" do
     a = []
     "hello".send(@method) { |c| a << c }

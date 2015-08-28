@@ -1,6 +1,6 @@
 require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
 
-describe :env_each, :shared => true do
+describe :env_each, shared: true do
   it "returns each pair" do
     orig = ENV.to_hash
     e = []

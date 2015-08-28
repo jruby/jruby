@@ -1,6 +1,6 @@
 require 'bigdecimal'
 
-describe :bigdecimal_mult, :shared => true do
+describe :bigdecimal_mult, shared: true do
   before :each do
     @zero = BigDecimal "0"
     @zero_pos = BigDecimal "+0"

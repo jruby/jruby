@@ -191,7 +191,7 @@ public abstract class ClassNodes {
         CompilerAsserts.neverPartOfCompilation();
 
         for (DynamicObject ancestor : Layouts.MODULE.getFields(rubyClass).parentAncestors()) {
-            if (RubyGuards.isRubyClass(ancestor)) {
+            if (RubyGuards.isRubyClass(ancestor) && ancestor != rubyClass) {
                 return ancestor;
             }
         }

@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_minus, :shared => true do
+describe :complex_minus, shared: true do
   describe "with Complex" do
     it "subtracts both the real and imaginary components" do
       (Complex(1, 2) - Complex(10, 20)).should == Complex(1 - 10, 2 - 20)

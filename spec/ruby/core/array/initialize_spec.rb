@@ -103,14 +103,14 @@ describe "Array#initialize with (size, object=nil)" do
     lambda { [].send(:initialize, -1) }.should raise_error(ArgumentError)
   end
 
-  platform_is :wordsize => 32 do
+  platform_is wordsize: 32 do
     it "raises an ArgumentError if size is too large" do
       max_size = ArraySpecs.max_32bit_size
       lambda { [].send(:initialize, max_size + 1) }.should raise_error(ArgumentError)
     end
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     it "raises an ArgumentError if size is too large" do
       max_size = ArraySpecs.max_64bit_size
       lambda { [].send(:initialize, max_size + 1) }.should raise_error(ArgumentError)

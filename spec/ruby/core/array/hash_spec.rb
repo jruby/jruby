@@ -32,8 +32,8 @@ describe "Array#hash" do
   it "returns the same hash for equal recursive arrays through hashes" do
     h = {} ; rec = [h] ; h[:x] = rec
     rec.hash.should == [h].hash
-    rec.hash.should == [{:x => rec}].hash
-    # Like above, this is because rec.eql?([{:x => rec}])
+    rec.hash.should == [{x: rec}].hash
+    # Like above, this is because rec.eql?([{x: rec}])
   end
 
   #  Too much of an implementation detail? -rue

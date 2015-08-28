@@ -1,6 +1,6 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :kernel_method, :shared => true do
+describe :kernel_method, shared: true do
   it "returns a method object for a valid method" do
     class KernelSpecs::Foo; def bar; 'done'; end; end
     m = KernelSpecs::Foo.new.send(@method, :bar)

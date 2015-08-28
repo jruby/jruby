@@ -1,4 +1,4 @@
-describe :module_class_eval, :shared => true do
+describe :module_class_eval, shared: true do
   # TODO: This should probably be replaced with a "should behave like" that uses
   # the many scoping/binding specs from kernel/eval_spec, since most of those
   # behaviors are the same for instance_eval. See also module_eval/class_eval.

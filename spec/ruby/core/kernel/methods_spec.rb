@@ -69,7 +69,7 @@ describe "Kernel#methods" do
   end
 end
 
-describe :kernel_methods_supers, :shared => true do
+describe :kernel_methods_supers, shared: true do
   before :all do
     @ms = [:pro, :pub]
   end

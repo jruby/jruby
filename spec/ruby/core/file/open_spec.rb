@@ -540,13 +540,13 @@ describe "File.open" do
   end
 
   it "uses the second argument as an options Hash" do
-    @fh = File.open(@file, :mode => "r")
+    @fh = File.open(@file, mode: "r")
     @fh.should be_an_instance_of(File)
   end
 
   it "calls #to_hash to convert the second argument to a Hash" do
     options = mock("file open options")
-    options.should_receive(:to_hash).and_return({ :mode => "r" })
+    options.should_receive(:to_hash).and_return({ mode: "r" })
 
     @fh = File.open(@file, options)
   end

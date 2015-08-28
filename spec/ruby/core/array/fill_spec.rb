@@ -206,7 +206,7 @@ describe "Array#fill with (filler, index, length)" do
   end
 
   not_compliant_on :rubinius do
-    platform_is :wordsize => 32 do
+    platform_is wordsize: 32 do
       it "raises an ArgumentError or RangeError for too-large sizes" do
         arr = [1, 2, 3]
         lambda { arr.fill(10, 1, 2**31 - 1) }.should raise_error(ArgumentError)
@@ -214,7 +214,7 @@ describe "Array#fill with (filler, index, length)" do
       end
     end
 
-    platform_is :wordsize => 64 do
+    platform_is wordsize: 64 do
       it "raises an ArgumentError or RangeError for too-large sizes" do
         arr = [1, 2, 3]
         lambda { arr.fill(10, 1, 2**63 - 1) }.should raise_error(ArgumentError)

@@ -1,6 +1,6 @@
 require 'scanf'
 
-describe :scanf_string_block_scanf, :shared => true do
+describe :scanf_string_block_scanf, shared: true do
   it "passes each match to the block as an array" do
     a = []
     "hello world".send(@method, "%s%s"){|w| a << w}

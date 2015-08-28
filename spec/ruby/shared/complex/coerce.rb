@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_coerce, :shared => true do
+describe :complex_coerce, shared: true do
   before :each do
     @one = Complex(1)
   end

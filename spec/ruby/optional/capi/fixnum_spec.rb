@@ -7,7 +7,7 @@ describe "CApiFixnumSpecs" do
     @s = CApiFixnumSpecs.new
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     describe "rb_fix2uint" do
       it "raises a TypeError if passed nil" do
         lambda { @s.rb_fix2uint(nil) }.should raise_error(TypeError)

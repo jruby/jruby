@@ -33,7 +33,7 @@ describe "Kernel#public_methods" do
   end
 end
 
-describe :kernel_public_methods_supers, :shared => true do
+describe :kernel_public_methods_supers, shared: true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.public_methods(*@object)
     m.select { |x| x == :pub }.sort.should == [:pub]
@@ -50,7 +50,7 @@ describe :kernel_public_methods_supers, :shared => true do
   end
 end
 
-describe :kernel_public_methods_with_falsy, :shared => true do
+describe :kernel_public_methods_with_falsy, shared: true do
   it "returns a list of public methods in without its ancestors" do
     ReflectSpecs::F.public_methods(@object).select{|m|/_pub\z/ =~ m}.sort.should == [:ds_pub, :fs_pub]
     ReflectSpecs::F.new.public_methods(@object).should == [:f_pub]

@@ -1,4 +1,4 @@
-describe :sha384_update, :shared => true do
+describe :sha384_update, shared: true do
   it "can update" do
     cur_digest = Digest::SHA384.new
     cur_digest.send @method, SHA384Constants::Contents

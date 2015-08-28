@@ -288,7 +288,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goals('jar-no-fork', :id => 'attach-sources')
     end
     plugin(:javadoc) do
-      execute_goals('jar', :id => 'attach-javadocs')
+      execute_goals('jar', :id => 'attach-javadocs', :configuration => [ xml('<additionalparam>${javadoc.opts}</additionalparam>') ])
     end
   end
 

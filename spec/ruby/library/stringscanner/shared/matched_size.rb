@@ -1,4 +1,4 @@
-describe :strscan_matched_size, :shared => true do
+describe :strscan_matched_size, shared: true do
   before :each do
     @s = StringScanner.new("This is a test")
   end

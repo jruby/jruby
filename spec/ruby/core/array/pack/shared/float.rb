@@ -1,6 +1,6 @@
 # -*- encoding: ascii-8bit -*-
 
-describe :array_pack_float_le, :shared => true do
+describe :array_pack_float_le, shared: true do
   it "encodes a positive Float" do
     [1.42].pack(pack_format).should == "\x8f\xc2\xb5?"
   end
@@ -62,7 +62,7 @@ describe :array_pack_float_le, :shared => true do
   end
 end
 
-describe :array_pack_float_be, :shared => true do
+describe :array_pack_float_be, shared: true do
   it "encodes a positive Float" do
     [1.42].pack(pack_format).should == "?\xb5\xc2\x8f"
   end
@@ -124,7 +124,7 @@ describe :array_pack_float_be, :shared => true do
   end
 end
 
-describe :array_pack_double_le, :shared => true do
+describe :array_pack_double_le, shared: true do
   it "encodes a positive Float" do
     [1.42].pack(pack_format).should == "\xb8\x1e\x85\xebQ\xb8\xf6?"
   end
@@ -186,7 +186,7 @@ describe :array_pack_double_le, :shared => true do
   end
 end
 
-describe :array_pack_double_be, :shared => true do
+describe :array_pack_double_be, shared: true do
   it "encodes a positive Float" do
     [1.42].pack(pack_format).should == "?\xf6\xb8Q\xeb\x85\x1e\xb8"
   end

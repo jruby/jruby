@@ -1,4 +1,4 @@
-describe :range_end, :shared => true do
+describe :range_end, shared: true do
   it "end returns the last element of self" do
     (-1..1).send(@method).should == 1
     (0..1).send(@method).should == 1

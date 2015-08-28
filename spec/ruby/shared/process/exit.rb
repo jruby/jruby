@@ -1,4 +1,4 @@
-describe :process_exit, :shared => true do
+describe :process_exit, shared: true do
   it "raises a SystemExit with status 0" do
     lambda { @object.exit }.should raise_error(SystemExit) { |e|
       e.status.should == 0
@@ -45,7 +45,7 @@ describe :process_exit, :shared => true do
   end
 end
 
-describe :process_exit!, :shared => true do
+describe :process_exit!, shared: true do
   with_feature :fork do
     it "exits with the given status" do
       pid = Process.fork { @object.exit!(1) }

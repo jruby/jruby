@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :enum_next, :shared => true do
+describe :enum_next, shared: true do
 
   before :each do
     @enum = enumerator_class.new(1, :upto, 3)

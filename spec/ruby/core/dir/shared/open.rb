@@ -1,4 +1,4 @@
-describe :dir_open, :shared => true do
+describe :dir_open, shared: true do
   it "returns a Dir instance representing the specified directory" do
     dir = Dir.send(@method, DirSpecs.mock_dir)
     dir.should be_kind_of(Dir)
@@ -44,20 +44,20 @@ describe :dir_open, :shared => true do
   end
 
   it "accepts an options Hash" do
-    dir = Dir.send(@method, DirSpecs.mock_dir, :encoding => "utf-8") {|dir| dir }
+    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: "utf-8") {|dir| dir }
     dir.should be_kind_of(Dir)
   end
 
   it "calls #to_hash to convert the options object" do
     options = mock("dir_open")
-    options.should_receive(:to_hash).and_return({ :encoding => Encoding::UTF_8 })
+    options.should_receive(:to_hash).and_return({ encoding: Encoding::UTF_8 })
 
     dir = Dir.send(@method, DirSpecs.mock_dir, options) {|dir| dir }
     dir.should be_kind_of(Dir)
   end
 
   it "ignores the :encoding option if it is nil" do
-    dir = Dir.send(@method, DirSpecs.mock_dir, :encoding => nil) {|dir| dir }
+    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: nil) {|dir| dir }
     dir.should be_kind_of(Dir)
   end
 end

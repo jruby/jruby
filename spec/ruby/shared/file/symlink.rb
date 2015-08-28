@@ -1,4 +1,4 @@
-describe :file_symlink, :shared => true do
+describe :file_symlink, shared: true do
   before :each do
     @file = tmp("test.txt")
     @link = tmp("test.lnk")
@@ -24,7 +24,7 @@ describe :file_symlink, :shared => true do
   end
 end
 
-describe :file_symlink_nonexistent, :shared => true do
+describe :file_symlink_nonexistent, shared: true do
   before :each do
     @file = tmp("test.txt")
     @link = tmp("test.lnk")

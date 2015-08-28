@@ -2,13 +2,13 @@ require File.expand_path('../spec_helper', __FILE__)
 
 load_extension("complex")
 
-describe :rb_Complex, :shared => true do
+describe :rb_Complex, shared: true do
   it "creates a new Complex with numerator and denominator" do
     @r.send(@method, 1, 2).should == Complex(1, 2)
   end
 end
 
-describe :rb_complex_new, :shared => true do
+describe :rb_complex_new, shared: true do
   it "creates a normalized Complex" do
     r = @r.send(@method, 10, 4)
     r.real.should == 10

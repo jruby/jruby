@@ -1,4 +1,4 @@
-describe :string_to_sym, :shared => true do
+describe :string_to_sym, shared: true do
   it "returns the symbol corresponding to self" do
     "Koala".send(@method).should == :Koala
     'cat'.send(@method).should == :cat

@@ -38,7 +38,7 @@ describe "Module#public_instance_methods" do
   end
 end
 
-describe :module_public_instance_methods_supers, :shared => true do
+describe :module_public_instance_methods_supers, shared: true do
   it "returns a unique list for a class including a module" do
     m = ReflectSpecs::D.public_instance_methods(*@object)
     m.select { |x| x == :pub }.sort.should == [:pub]

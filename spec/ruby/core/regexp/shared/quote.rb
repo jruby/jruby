@@ -1,6 +1,6 @@
 # -*- encoding: ascii-8bit -*-
 
-describe :regexp_quote, :shared => true do
+describe :regexp_quote, shared: true do
   it "escapes any characters with special meaning in a regular expression" do
     Regexp.send(@method, '\*?{}.+^[]()- ').should == '\\\\\*\?\{\}\.\+\^\[\]\(\)\-\\ '
     Regexp.send(@method, "\*?{}.+^[]()- ").should == '\\*\\?\\{\\}\\.\\+\\^\\[\\]\\(\\)\\-\\ '

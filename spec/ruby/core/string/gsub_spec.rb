@@ -2,7 +2,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-describe :string_gsub_named_capture, :shared => true do
+describe :string_gsub_named_capture, shared: true do
   it "replaces \\k named backreferences with the regexp's corresponding capture" do
     str = "hello"
 
@@ -279,7 +279,7 @@ describe "String#gsub with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".gsub(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "tattoo".gsub(/(tt)/, 'tt' => 'b', tt: 'z').should == "taboo"
   end
 
   it "uses a key's value as many times as needed" do
@@ -368,7 +368,7 @@ describe "String#gsub! with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".gsub!(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "hello".gsub!(/(ll)/, 'll' => 'r', ll: 'z').should == "hero"
   end
 
   it "uses a key's value as many times as needed" do

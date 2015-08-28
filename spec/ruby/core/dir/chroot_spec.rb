@@ -10,7 +10,7 @@ platform_is_not :windows do
       end
     end
 
-    platform_is_not :os => :cygwin do
+    platform_is_not os: :cygwin do
       as_user do
         describe "Dir.chroot as regular user" do
           before :all do
@@ -38,7 +38,7 @@ platform_is_not :windows do
       end
     end
 
-    platform_is :os => :cygwin do
+    platform_is os: :cygwin do
       as_user do
         describe "Dir.chroot as regular user" do
           it_behaves_like :dir_chroot_as_root, :chroot

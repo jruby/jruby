@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_acos, :shared => true do
+describe :complex_math_acos, shared: true do
   it "returns the arccosine of the passed argument" do
     @object.send(:acos, 1).should be_close(0.0, TOLERANCE)
     @object.send(:acos, 0).should be_close(1.5707963267949, TOLERANCE)
@@ -20,7 +20,7 @@ describe :complex_math_acos, :shared => true do
   end
 end
 
-describe :complex_math_acos_bang, :shared => true do
+describe :complex_math_acos_bang, shared: true do
   it "returns the arccosine of the argument" do
     @object.send(:acos!, 1).should be_close(0.0, TOLERANCE)
     @object.send(:acos!, 0).should be_close(1.5707963267949, TOLERANCE)

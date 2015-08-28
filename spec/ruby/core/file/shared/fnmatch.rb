@@ -1,4 +1,4 @@
-describe :file_fnmatch, :shared => true do
+describe :file_fnmatch, shared: true do
   it "matches entire strings" do
     File.send(@method, 'cat', 'cat').should == true
   end

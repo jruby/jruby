@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_coerce, :shared => true do
+describe :rational_coerce, shared: true do
   it "returns the passed argument, self as Float, when given a Float" do
     result = Rational(3, 4).coerce(1.0)
     result.should == [1.0, 0.75]

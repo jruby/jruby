@@ -1,4 +1,4 @@
-describe :date_valid_ordinal?, :shared => true do
+describe :date_valid_ordinal?, shared: true do
   it "determines if the date is a valid ordinal date" do
     # October 1582 (the Gregorian calendar, Ordinal Date)
     #   S   M  Tu   W  Th   F   S

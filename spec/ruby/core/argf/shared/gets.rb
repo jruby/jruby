@@ -1,4 +1,4 @@
-describe :argf_gets, :shared => true do
+describe :argf_gets, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
@@ -27,7 +27,7 @@ describe :argf_gets, :shared => true do
     total = @stdin.count $/
     stdin = ruby_exe(
       "#{total}.times { print ARGF.send(#{@method.inspect}) }",
-      :args => "< #{@stdin_name}")
+      args: "< #{@stdin_name}")
     stdin.should == @stdin
   end
 
@@ -51,7 +51,7 @@ describe :argf_gets, :shared => true do
   end
 end
 
-describe :argf_gets_inplace_edit, :shared => true do
+describe :argf_gets_inplace_edit, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
@@ -74,11 +74,11 @@ describe :argf_gets_inplace_edit, :shared => true do
   end
 
   # -i with no backup extension is not supported on Windows
-  platform_is_not :os => :windows do
+  platform_is_not os: :windows do
     it "modifies the files when in place edit mode is on" do
       ruby_exe(@code,
-               :options => "-i",
-               :args => "#{@tmp1_name} #{@tmp2_name}")
+               options: "-i",
+               args: "#{@tmp1_name} #{@tmp2_name}")
 
       File.read(@tmp1_name).should == "x\nx\n"
       File.read(@tmp2_name).should == "x\nx\n"
@@ -87,8 +87,8 @@ describe :argf_gets_inplace_edit, :shared => true do
 
   it "modifies and backups two files when in place edit mode is on" do
     ruby_exe(@code,
-             :options => "-i.bak",
-             :args => "#{@tmp1_name} #{@tmp2_name}")
+             options: "-i.bak",
+             args: "#{@tmp1_name} #{@tmp2_name}")
 
     File.read(@tmp1_name).should == "x\nx\n"
     File.read(@tmp2_name).should == "x\nx\n"

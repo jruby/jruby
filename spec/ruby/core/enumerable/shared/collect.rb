@@ -1,6 +1,6 @@
 require File.expand_path('../enumerable_enumeratorized', __FILE__)
 
-describe :enumerable_collect, :shared => true do
+describe :enumerable_collect, shared: true do
   before :each do
     ScratchPad.record []
   end

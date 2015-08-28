@@ -1,4 +1,4 @@
-describe :argf_getc, :shared => true do
+describe :argf_getc, shared: true do
   before :each do
     @file1 = fixture __FILE__, "file1.txt"
     @file2 = fixture __FILE__, "file2.txt"

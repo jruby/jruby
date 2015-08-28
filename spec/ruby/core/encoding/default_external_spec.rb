@@ -30,17 +30,17 @@ with_feature :encoding do
       end
 
       it "is not changed by the -U option" do
-        result = ruby_exe("print Encoding.default_external", :options => '-U')
+        result = ruby_exe("print Encoding.default_external", options: '-U')
         result.should == "US-ASCII"
       end
 
       it "returns the encoding specified by '-E external'" do
-        result = ruby_exe("print Encoding.default_external", :options => '-E euc-jp')
+        result = ruby_exe("print Encoding.default_external", options: '-E euc-jp')
         result.should == "EUC-JP"
       end
 
       it "returns the encoding specified by '-E external:'" do
-        result = ruby_exe("print Encoding.default_external", :options => '-E Shift_JIS:')
+        result = ruby_exe("print Encoding.default_external", options: '-E Shift_JIS:')
         result.should == "Shift_JIS"
       end
     end

@@ -104,7 +104,7 @@ describe "IO#reopen with a String" do
   end
 
   it "effects exec/system/fork performed after it" do
-    ruby_exe fixture(__FILE__, "reopen_stdout.rb"), :args => @tmp_file
+    ruby_exe fixture(__FILE__, "reopen_stdout.rb"), args: @tmp_file
     @tmp_file.should have_data("from system\nfrom exec", "r")
   end
 

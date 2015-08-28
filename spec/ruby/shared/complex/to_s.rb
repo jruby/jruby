@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_to_s, :shared => true do
+describe :complex_to_s, shared: true do
   describe "when self's real component is 0" do
     it "returns both the real and imaginary component even when the real is 0" do
       Complex(0, 5).to_s.should == "0+5i"

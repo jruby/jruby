@@ -1,4 +1,4 @@
-describe :date_new_bang, :shared => true do
+describe :date_new_bang, shared: true do
 
   it "returns a new Date object set to Astronomical Julian Day 0 if no arguments passed" do
     d = Date.send(@method)

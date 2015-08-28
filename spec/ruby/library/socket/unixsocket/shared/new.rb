@@ -1,7 +1,7 @@
 require File.expand_path('../../../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/classes', __FILE__)
 
-describe :unixsocket_new, :shared => true do
+describe :unixsocket_new, shared: true do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path

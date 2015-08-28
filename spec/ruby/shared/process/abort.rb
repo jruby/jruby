@@ -1,4 +1,4 @@
-describe :process_abort, :shared => true do
+describe :process_abort, shared: true do
   before :each do
     @stderr, $stderr = $stderr, IOStub.new
   end

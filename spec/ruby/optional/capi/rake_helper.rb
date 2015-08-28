@@ -15,7 +15,7 @@ end
 
 CLOBBER.include(output)
 
-task :default => [output]
+task default: [output]
 
 file output => [input] do
   sh build_cmd
