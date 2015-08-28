@@ -13,12 +13,14 @@
 # For example:
 # $ ruby test/truffle/memory/minimum-heap.rb bin/jruby "-X+T -e 'puts 14'"
 
-tolerance = 1
+tolerance = 5
+max_iterations = 100
 
 lower = 0
 upper = 4 * 1024
+iterations = 0
 
-while upper - lower > tolerance
+while upper - lower > tolerance && iterations < max_iterations
   mid = lower + (upper - lower) / 2
 
   print "trying #{mid}m... "
@@ -31,6 +33,8 @@ while upper - lower > tolerance
     puts "no"
     lower = mid
   end
+  
+  iterations += 1
 end
 
 puts "minimum heap: #{upper}m"
