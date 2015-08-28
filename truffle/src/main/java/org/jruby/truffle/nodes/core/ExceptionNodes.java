@@ -139,7 +139,12 @@ public abstract class ExceptionNodes {
         @Specialization
         public Object message(DynamicObject exception) {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
-            return message == null ? nil() : message;
+            if (message == null) {
+                final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            } else {
+                return message;
+            }
         }
 
     }
