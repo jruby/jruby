@@ -2008,4 +2008,21 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "singleton_class?")
+    public abstract static class IsSingletonClassNode extends CoreMethodArrayArgumentsNode {
+
+        public IsSingletonClassNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "!isRubyClass(rubyModule)")
+        public Object doModule(DynamicObject rubyModule) {
+            return false;
+        }
+
+        @Specialization(guards = "isRubyClass(rubyClass)")
+        public Object doClass(DynamicObject rubyClass) {
+            return Layouts.CLASS.getIsSingleton(rubyClass);
+        }
+    }
 }
