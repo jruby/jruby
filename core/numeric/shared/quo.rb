@@ -1,4 +1,4 @@
-describe :numeric_quo_18, :shared => true do
+describe :numeric_quo_18, shared: true do
   it "returns the result of calling self#/ with other" do
     obj = mock_numeric('numeric')
     obj.should_receive(:/).with(19).and_return(:result)

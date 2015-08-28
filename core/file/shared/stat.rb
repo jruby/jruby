@@ -1,4 +1,4 @@
-describe :file_stat, :shared => true do
+describe :file_stat, shared: true do
   before :each do
     @file = tmp('i_exist')
     touch(@file) { |f| f.write 'rubinius' }

@@ -6,7 +6,7 @@ describe "Enumerable#group_by" do
   it "returns a hash with values grouped according to the block" do
     e = EnumerableSpecs::Numerous.new("foo", "bar", "baz")
     h = e.group_by { |word| word[0..0].to_sym }
-    h.should == { :f => ["foo"], :b => ["bar", "baz"]}
+    h.should == { f: ["foo"], b: ["bar", "baz"]}
   end
 
   it "returns an empty hash for empty enumerables" do

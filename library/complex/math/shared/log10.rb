@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_log10, :shared => true do
+describe :complex_math_log10, shared: true do
   it "returns the base-10 logarithm of the passed argument" do
     @object.send(:log10, 0.0001).should be_close(-4.0, TOLERANCE)
     @object.send(:log10, 0.000000000001e-15).should be_close(-27.0, TOLERANCE)
@@ -22,7 +22,7 @@ describe :complex_math_log10, :shared => true do
   #end
 end
 
-describe :complex_math_log10_bang, :shared => true do
+describe :complex_math_log10_bang, shared: true do
   it "returns the base-10 logarithm of the argument" do
     @object.send(:log10!, 0.0001).should be_close(-4.0, TOLERANCE)
     @object.send(:log10!, 0.000000000001e-15).should be_close(-27.0, TOLERANCE)

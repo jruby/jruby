@@ -1,4 +1,4 @@
-describe :kernel_require_basic, :shared => true do
+describe :kernel_require_basic, shared: true do
   describe "(path resolution)" do
     it "loads an absolute path" do
       path = File.expand_path "load_fixture.rb", CODE_LOADING_DIR
@@ -27,7 +27,7 @@ describe :kernel_require_basic, :shared => true do
     end
 
     # Can't make a file unreadable on these platforms
-    platform_is_not :os => [:windows, :cygwin] do
+    platform_is_not os: [:windows, :cygwin] do
       describe "with an unreadable file" do
         before :each do
           @path = tmp("unreadable_file.rb")
@@ -201,7 +201,7 @@ describe :kernel_require_basic, :shared => true do
   end
 end
 
-describe :kernel_require, :shared => true do
+describe :kernel_require, shared: true do
   describe "(path resolution)" do
     # For reference see [ruby-core:24155] in which matz confirms this feature is
     # intentional for security reasons.

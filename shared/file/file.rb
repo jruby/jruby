@@ -1,4 +1,4 @@
-describe :file_file, :shared => true do
+describe :file_file, shared: true do
   before :each do
     platform_is :windows do
       @null = "NUL"

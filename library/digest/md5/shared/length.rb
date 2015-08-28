@@ -1,4 +1,4 @@
-describe :md5_length, :shared => true do
+describe :md5_length, shared: true do
   it "returns the length of the digest" do
     cur_digest = Digest::MD5.new
     cur_digest.send(@method).should == MD5Constants::BlankDigest.size

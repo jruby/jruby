@@ -1,4 +1,4 @@
-describe :rexml_cdata_to_s, :shared => true do
+describe :rexml_cdata_to_s, shared: true do
   it "returns the contents of the CData" do
     c = REXML::CData.new("some text")
     c.send(@method).should == "some text"

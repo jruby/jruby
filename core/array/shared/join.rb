@@ -1,7 +1,7 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 require File.expand_path('../../fixtures/encoded_strings', __FILE__)
 
-describe :array_join_with_default_separator, :shared => true do
+describe :array_join_with_default_separator, shared: true do
   before :each do
     @separator = $,
   end
@@ -111,7 +111,7 @@ describe :array_join_with_default_separator, :shared => true do
   end
 end
 
-describe :array_join_with_string_separator, :shared => true do
+describe :array_join_with_string_separator, shared: true do
   it "returns a string formed by concatenating each element.to_str separated by separator" do
     obj = mock('foo')
     obj.should_receive(:to_str).and_return("foo")

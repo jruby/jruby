@@ -1,4 +1,4 @@
-describe :string_replace, :shared => true do
+describe :string_replace, shared: true do
   it "returns self" do
     a = "a"
     a.send(@method, "b").should equal(a)

@@ -3,7 +3,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 # This spec defines Document#add and Document#<<
 
-describe :rexml_document_add, :shared => true do
+describe :rexml_document_add, shared: true do
   before :each do
     @doc  = REXML::Document.new("<root/>")
     @decl = REXML::XMLDecl.new("1.0")

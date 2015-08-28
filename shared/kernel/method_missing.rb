@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/kernel/classes', __FILE__)
 
-describe :method_missing_defined_module, :shared => true do
+describe :method_missing_defined_module, shared: true do
   describe "for a Module with #method_missing defined" do
     it "is not called when a defined method is called" do
       @object.method_public.should == :module_public_method
@@ -21,7 +21,7 @@ describe :method_missing_defined_module, :shared => true do
   end
 end
 
-describe :method_missing_module, :shared => true do
+describe :method_missing_module, shared: true do
   describe "for a Module" do
     it "raises a NoMethodError when an undefined method is called" do
       lambda { @object.method_undefined }.should raise_error(NoMethodError)
@@ -37,7 +37,7 @@ describe :method_missing_module, :shared => true do
   end
 end
 
-describe :method_missing_defined_class, :shared => true do
+describe :method_missing_defined_class, shared: true do
   describe "for a Class with #method_missing defined" do
     it "is not called when a defined method is called" do
       @object.method_public.should == :class_public_method
@@ -57,7 +57,7 @@ describe :method_missing_defined_class, :shared => true do
   end
 end
 
-describe :method_missing_class, :shared => true do
+describe :method_missing_class, shared: true do
   describe "for a Class" do
     it "raises a NoMethodError when an undefined method is called" do
       lambda { @object.method_undefined }.should raise_error(NoMethodError)
@@ -73,7 +73,7 @@ describe :method_missing_class, :shared => true do
   end
 end
 
-describe :method_missing_defined_instance, :shared => true do
+describe :method_missing_defined_instance, shared: true do
   describe "for an instance with #method_missing defined" do
     before :each do
       @instance = @object.new
@@ -97,7 +97,7 @@ describe :method_missing_defined_instance, :shared => true do
   end
 end
 
-describe :method_missing_instance, :shared => true do
+describe :method_missing_instance, shared: true do
   describe "for an instance" do
     it "raises a NoMethodError when an undefined method is called" do
       lambda { @object.new.method_undefined }.should raise_error(NoMethodError)

@@ -7,9 +7,9 @@ describe "Hash literal" do
   end
 
   it "{} should return a new hash populated with the given elements" do
-    h = {:a => 'a', 'b' => 3, 44 => 2.3}
+    h = {a: 'a', 'b' => 3, 44 => 2.3}
     h.size.should == 3
-    h.should == {:a => "a", "b" => 3, 44 => 2.3}
+    h.should == {a: "a", "b" => 3, 44 => 2.3}
   end
 
   it "treats empty expressions as nils" do
@@ -23,7 +23,7 @@ describe "Hash literal" do
     h.values.should == [:value]
     h[nil].should == :value
 
-    h = {:key => ()}
+    h = {key: ()}
     h.keys.should == [:key]
     h.values.should == [nil]
     h[:key].should == nil
@@ -40,15 +40,15 @@ describe "Hash literal" do
   end
 
   it "checks duplicated keys on initialization" do
-    h = {:foo => :bar, :foo => :foo}
+    h = {foo: :bar, foo: :foo}
     h.keys.size.should == 1
-    h.should == {:foo => :foo}
+    h.should == {foo: :foo}
   end
 
   it "accepts a hanging comma" do
-    h = {:a => 1, :b => 2,}
+    h = {a: 1, b: 2,}
     h.size.should == 2
-    h.should == {:a => 1, :b => 2}
+    h.should == {a: 1, b: 2}
   end
 
   it "recognizes '=' at the end of the key" do
@@ -62,20 +62,20 @@ describe "Hash literal" do
   end
 
   it "constructs a new hash with the given elements" do
-    {foo: 123}.should == {:foo => 123}
-    h = {:rbx => :cool, :specs => 'fail_sometimes'}
+    {foo: 123}.should == {foo: 123}
+    h = {rbx: :cool, specs: 'fail_sometimes'}
     {rbx: :cool, specs: 'fail_sometimes'}.should == h
   end
 
   it "ignores a hanging comma" do
-    {foo: 123,}.should == {:foo => 123}
-    h = {:rbx => :cool, :specs => 'fail_sometimes'}
+    {foo: 123,}.should == {foo: 123}
+    h = {rbx: :cool, specs: 'fail_sometimes'}
     {rbx: :cool, specs: 'fail_sometimes',}.should == h
   end
 
   it "accepts mixed 'key: value' and 'key => value' syntax" do
-    h = {:a => 1, :b => 2, "c" => 3}
-    {a: 1, :b => 2, "c" => 3}.should == h
+    h = {a: 1, b: 2, "c" => 3}
+    {a: 1, b: 2, "c" => 3}.should == h
   end
 
   it "expands an '**{}' element into the containing Hash literal initialization" do

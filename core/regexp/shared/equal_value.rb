@@ -1,4 +1,4 @@
-describe :regexp_eql, :shared => true do
+describe :regexp_eql, shared: true do
   it "is true if self and other have the same pattern" do
     /abc/.send(@method, /abc/).should == true
     /abc/.send(@method, /abd/).should == false

@@ -1,4 +1,4 @@
-describe :env_include, :shared => true do
+describe :env_include, shared: true do
   it "returns true if ENV has the key" do
     ENV["foo"] = "bar"
     ENV.send(@method, "foo").should == true

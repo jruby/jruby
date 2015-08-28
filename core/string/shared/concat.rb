@@ -1,4 +1,4 @@
-describe :string_concat, :shared => true do
+describe :string_concat, shared: true do
   it "concatenates the given argument to self and returns self" do
     str = 'hello '
     str.send(@method, 'world').should equal(str)
@@ -97,7 +97,7 @@ describe :string_concat, :shared => true do
   end
 end
 
-describe :string_concat_encoding, :shared => true do
+describe :string_concat_encoding, shared: true do
   describe "when self is in an ASCII-incompatible encoding incompatible with the argument's encoding" do
     it "uses self's encoding if both are empty" do
       "".encode("UTF-16LE").send(@method, "").encoding.should == Encoding::UTF_16LE

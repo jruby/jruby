@@ -1,4 +1,4 @@
-describe :time_rfc2822, :shared => true do
+describe :time_rfc2822, shared: true do
   it "parses RFC-822 strings" do
     t1 = (Time.utc(1976, 8, 26, 14, 30) + 4 * 3600)
     t2 = Time.rfc2822("26 Aug 76 14:30 EDT")

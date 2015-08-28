@@ -1,4 +1,4 @@
-describe :date_valid_jd?, :shared => true do
+describe :date_valid_jd?, shared: true do
   it "returns true if passed any value other than nil" do
     Date.send(@method, -100).should be_true
     Date.send(@method, :number).should    be_true

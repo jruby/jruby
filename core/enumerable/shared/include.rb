@@ -1,4 +1,4 @@
-describe :enumerable_include, :shared => true do
+describe :enumerable_include, shared: true do
   it "returns true if any element == argument for numbers" do
     class EnumerableSpecIncludeP; def ==(obj) obj == 5; end; end
 

@@ -65,17 +65,17 @@ describe "CSV.parse" do
   end
 
   it "parses 'foo' into [['foo']] with a separator of ;" do
-    result = CSV.parse "foo", :col_sep => ?;
+    result = CSV.parse "foo", col_sep: ?;
     result.should == [['foo']]
   end
 
   it "parses 'foo;bar' into [['foo','bar']] with a separator of ;" do
-    result = CSV.parse "foo;bar", :col_sep => ?;
+    result = CSV.parse "foo;bar", col_sep: ?;
     result.should == [['foo','bar']]
   end
 
   it "parses 'foo;bar\nbaz;quz' into [['foo','bar'],['baz','quz']] with a separator of ;" do
-    result = CSV.parse "foo;bar\nbaz;quz", :col_sep => ?;
+    result = CSV.parse "foo;bar\nbaz;quz", col_sep: ?;
     result.should == [['foo','bar'],['baz','quz']]
   end
 end

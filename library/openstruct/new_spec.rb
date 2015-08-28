@@ -3,7 +3,7 @@ require 'ostruct'
 
 describe "OpenStruct.new when passed [Hash]" do
   before :each do
-    @os = OpenStruct.new(:name => "John Smith", :age => 70, :pension => 300)
+    @os = OpenStruct.new(name: "John Smith", age: 70, pension: 300)
   end
 
   it "creates an attribute for each key of the passed Hash" do

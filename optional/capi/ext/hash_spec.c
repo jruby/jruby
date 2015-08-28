@@ -40,6 +40,12 @@ VALUE hash_spec_rb_hash_aset(VALUE self, VALUE hash, VALUE key, VALUE val) {
 }
 #endif
 
+#ifdef HAVE_RB_HASH_CLEAR
+VALUE hash_spec_rb_hash_clear(VALUE self, VALUE hash) {
+  return rb_hash_clear(hash);
+}
+#endif
+
 #ifdef HAVE_RB_HASH_DELETE
 VALUE hash_spec_rb_hash_delete(VALUE self, VALUE hash, VALUE key) {
   return rb_hash_delete(hash, key);
@@ -145,6 +151,10 @@ void Init_hash_spec() {
 
 #ifdef HAVE_RB_HASH_ASET
   rb_define_method(cls, "rb_hash_aset", hash_spec_rb_hash_aset, 3);
+#endif
+
+#ifdef HAVE_RB_HASH_CLEAR
+  rb_define_method(cls, "rb_hash_clear", hash_spec_rb_hash_clear, 1);
 #endif
 
 #ifdef HAVE_RB_HASH_DELETE

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :io_copy_stream_to_file, :shared => true do
+describe :io_copy_stream_to_file, shared: true do
   it "copies the entire IO contents to the file" do
     IO.copy_stream(@object.from, @to_name)
     @to_name.should have_data(@content)
@@ -35,14 +35,14 @@ describe :io_copy_stream_to_file, :shared => true do
   end
 end
 
-describe :io_copy_stream_to_file_with_offset, :shared => true do
+describe :io_copy_stream_to_file_with_offset, shared: true do
   it "copies only length bytes from the offset" do
     IO.copy_stream(@object.from, @to_name, 8, 4).should == 8
     @to_name.should have_data(" one\n\nLi")
   end
 end
 
-describe :io_copy_stream_to_io, :shared => true do
+describe :io_copy_stream_to_io, shared: true do
   it "copies the entire IO contents to the IO" do
     IO.copy_stream(@object.from, @to_io)
     @to_name.should have_data(@content)
@@ -83,7 +83,7 @@ describe :io_copy_stream_to_io, :shared => true do
   end
 end
 
-describe :io_copy_stream_to_io_with_offset, :shared => true do
+describe :io_copy_stream_to_io_with_offset, shared: true do
   it "copies only length bytes from the offset" do
     IO.copy_stream(@object.from, @to_io, 8, 4).should == 8
     @to_name.should have_data(" one\n\nLi")

@@ -1,4 +1,4 @@
-describe :date_jd, :shared => true do
+describe :date_jd, shared: true do
   it "constructs a Date object if passed a Julian day" do
     Date.send(@method, 2454482).should == Date.civil(2008, 1, 16)
   end

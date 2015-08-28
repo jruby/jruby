@@ -1,4 +1,4 @@
-describe :string_to_a, :shared => true do
+describe :string_to_a, shared: true do
   it "returns an empty array for empty strings" do
     "".send(@method).should == []
   end

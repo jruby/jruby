@@ -1,4 +1,4 @@
-describe :env_length, :shared => true do
+describe :env_length, shared: true do
   it "returns the number of ENV entries" do
     orig = ENV.to_hash
     begin

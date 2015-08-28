@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-describe :array_pack_unicode, :shared => true do
+describe :array_pack_unicode, shared: true do
   it "encodes ASCII values as a Unicode codepoint" do
     [ [[0],   "\x00"],
       [[1],   "\x01"],

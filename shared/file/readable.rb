@@ -1,4 +1,4 @@
-describe :file_readable, :shared => true do
+describe :file_readable, shared: true do
   before :each do
     @file = tmp('i_exist')
     platform_is :windows do
@@ -23,7 +23,7 @@ describe :file_readable, :shared => true do
   end
 end
 
-describe :file_readable_missing, :shared => true do
+describe :file_readable_missing, shared: true do
   it "returns false if the file does not exist" do
     @object.send(@method, 'fake_file').should == false
   end

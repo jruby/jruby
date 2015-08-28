@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/reflection', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_singleton_methods, :shared => true do
+describe :kernel_singleton_methods, shared: true do
   it "returns an empty Array for an object with no singleton methods" do
     ReflectSpecs.o.singleton_methods(*@object).should == []
   end
@@ -28,7 +28,7 @@ describe :kernel_singleton_methods, :shared => true do
   end
 end
 
-describe :kernel_singleton_methods_modules, :shared => true do
+describe :kernel_singleton_methods_modules, shared: true do
   it "does not return any included methods for a module including a module" do
     ReflectSpecs::N.singleton_methods(*@object).should include(:ns_pro, :ns_pub)
   end
@@ -38,7 +38,7 @@ describe :kernel_singleton_methods_modules, :shared => true do
   end
 end
 
-describe :kernel_singleton_methods_supers, :shared => true do
+describe :kernel_singleton_methods_supers, shared: true do
   it "returns the names of singleton methods for an object extented with a module" do
     ReflectSpecs.oe.singleton_methods(*@object).should include(:m_pro, :m_pub)
   end
@@ -90,7 +90,7 @@ describe :kernel_singleton_methods_supers, :shared => true do
   end
 end
 
-describe :kernel_singleton_methods_private_supers, :shared => true do
+describe :kernel_singleton_methods_private_supers, shared: true do
   it "does not return private singleton methods for an object extended with a module" do
     ReflectSpecs.oe.singleton_methods(*@object).should_not include(:m_pri)
   end

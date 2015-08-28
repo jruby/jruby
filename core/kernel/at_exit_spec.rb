@@ -33,7 +33,7 @@ describe "Kernel.at_exit" do
       end
     EOC
 
-    result = ruby_exe(code, :args => "2>&1", :escape => true)
+    result = ruby_exe(code, args: "2>&1", escape: true)
     result.should =~ /The exception matches: true/
   end
 

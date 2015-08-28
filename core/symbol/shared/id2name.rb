@@ -1,4 +1,4 @@
-describe :symbol_id2name, :shared => true do
+describe :symbol_id2name, shared: true do
   it "returns the string corresponding to self" do
     :rubinius.send(@method).should == "rubinius"
     :squash.send(@method).should == "squash"

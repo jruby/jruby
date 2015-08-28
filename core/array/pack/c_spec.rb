@@ -5,7 +5,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 require File.expand_path('../shared/basic', __FILE__)
 require File.expand_path('../shared/numeric_basic', __FILE__)
 
-describe :array_pack_8bit, :shared => true do
+describe :array_pack_8bit, shared: true do
   it "encodes the least significant eight bits of a positive number" do
     [ [[49],           "1"],
       [[0b11111111],   "\xFF"],

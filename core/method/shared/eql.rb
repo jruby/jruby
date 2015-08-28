@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :method_equal, :shared => true do
+describe :method_equal, shared: true do
   before :each do
     @m = MethodSpecs::Methods.new
     @m_foo = @m.method(:foo)

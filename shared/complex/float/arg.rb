@@ -1,6 +1,6 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :float_arg, :shared => true do
+describe :float_arg, shared: true do
   it "returns NaN if NaN" do
     f = nan_value
     f.send(@method).nan?.should be_true

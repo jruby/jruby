@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 with_feature :encoding do
-  describe :io_external_encoding_write, :shared => true do
+  describe :io_external_encoding_write, shared: true do
     describe "when Encoding.default_internal is nil" do
       before :each do
         Encoding.default_internal = nil

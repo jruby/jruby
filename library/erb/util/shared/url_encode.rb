@@ -1,4 +1,4 @@
-describe :erb_util_url_encode, :shared => true do
+describe :erb_util_url_encode, shared: true do
   it "encode characters" do
     #input  = (0x20..0x7E).to_a.collect{|ch| ch.chr}.join
     input    = " !\"\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"

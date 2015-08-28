@@ -8,13 +8,13 @@ describe "Hash#invert" do
   end
 
   it "handles collisions by overriding with the key coming later in keys()" do
-    h = new_hash(:a => 1, :b => 1)
+    h = new_hash(a: 1, b: 1)
     override_key = h.keys.last
     h.invert[1].should == override_key
   end
 
   it "compares new keys with eql? semantics" do
-    h = new_hash(:a => 1.0, :b => 1)
+    h = new_hash(a: 1.0, b: 1)
     i = h.invert
     i[1.0].should == :a
     i[1].should == :b

@@ -1,4 +1,4 @@
-describe :stringio_each_byte, :shared => true do
+describe :stringio_each_byte, shared: true do
   before :each do
     @io = StringIO.new("xyz")
   end
@@ -36,7 +36,7 @@ describe :stringio_each_byte, :shared => true do
   end
 end
 
-describe :stringio_each_byte_not_readable, :shared => true do
+describe :stringio_each_byte_not_readable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("xyz", "w")
     lambda { io.send(@method) { |b| b } }.should raise_error(IOError)

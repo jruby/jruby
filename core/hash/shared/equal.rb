@@ -1,4 +1,4 @@
-describe :hash_equal, :shared => true do
+describe :hash_equal, shared: true do
   it "does not compare values when keys don't match" do
     value = mock('x')
     value.should_not_receive(:==)
@@ -50,12 +50,12 @@ describe :hash_equal, :shared => true do
 
   it "computes equality for complex recursive hashes" do
     a, b = {}, {}
-    a.merge! :self => a, :other => b
-    b.merge! :self => b, :other => a
+    a.merge! self: a, other: b
+    b.merge! self: b, other: a
     a.send(@method, b).should be_true # they both have the same structure!
 
     c = {}
-    c.merge! :other => c, :self => c
+    c.merge! other: c, self: c
     c.send(@method, a).should be_true # subtle, but they both have the same structure!
     a[:delta] = c[:delta] = a
     c.send(@method, a).should be_false # not quite the same structure, as a[:other][:delta] = nil
@@ -69,7 +69,7 @@ describe :hash_equal, :shared => true do
 
   it "computes equality for recursive hashes & arrays" do
     x, y, z = [], [], []
-    a, b, c = {:foo => x, :bar => 42}, {:foo => y, :bar => 42}, {:foo => z, :bar => 42}
+    a, b, c = {foo: x, bar: 42}, {foo: y, bar: 42}, {foo: z, bar: 42}
     x << a
     y << c
     z << b

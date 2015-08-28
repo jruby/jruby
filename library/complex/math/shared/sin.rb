@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_sin, :shared => true do
+describe :complex_math_sin, shared: true do
   it "returns the sine of the passed argument expressed in radians" do
     @object.send(:sin, CMath::PI).should be_close(0.0, TOLERANCE)
     @object.send(:sin, 0).should be_close(0.0, TOLERANCE)
@@ -15,7 +15,7 @@ describe :complex_math_sin, :shared => true do
   end
 end
 
-describe :complex_math_sin_bang, :shared => true do
+describe :complex_math_sin_bang, shared: true do
   it "returns the sine of the passed argument expressed in radians" do
     @object.send(:sin!, CMath::PI).should be_close(0.0, TOLERANCE)
     @object.send(:sin!, 0).should be_close(0.0, TOLERANCE)

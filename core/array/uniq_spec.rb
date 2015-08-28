@@ -107,6 +107,32 @@ describe "Array#uniq" do
 
     [x, x].uniq.should == [x]
   end
+
+  describe "given an array of BasicObject subclasses that define ==, eql?, and hash" do
+    # jruby/jruby#3227
+    it "filters equivalent elements using those definitions" do
+
+      basic = Class.new(BasicObject) do
+        attr_reader :x
+
+        def initialize(x)
+          @x = x
+        end
+
+        def ==(rhs)
+          @x == rhs.x
+        end
+        alias_method :eql?, :==
+
+        def hash
+          @x.hash
+        end
+      end
+
+      a = [basic.new(3), basic.new(2), basic.new(1), basic.new(4), basic.new(1), basic.new(2), basic.new(3)]
+      a.uniq.should == [basic.new(3), basic.new(2), basic.new(1), basic.new(4)]
+    end
+  end
 end
 
 describe "Array#uniq!" do

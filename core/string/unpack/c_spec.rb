@@ -3,7 +3,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 require File.expand_path('../shared/basic', __FILE__)
 
-describe :string_unpack_8bit, :shared => true do
+describe :string_unpack_8bit, shared: true do
   it "decodes one byte for a single format character" do
     "abc".unpack(unpack_format()).should == [97]
   end

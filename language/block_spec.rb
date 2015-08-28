@@ -704,7 +704,7 @@ describe "Block-local variables" do
     b = :b
     c = :c
     d = :d
-    {:ant => :bee}.each_pair do |a, b; c, d|
+    {ant: :bee}.each_pair do |a, b; c, d|
       a = :A
       b = :B
       c = :C

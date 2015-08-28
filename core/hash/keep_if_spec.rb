@@ -11,9 +11,9 @@ describe "Hash#keep_if" do
   end
 
   it "keeps every entry for which block is true and returns self" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
     h.keep_if { |k,v| v % 2 == 0 }.should equal(h)
-    h.should == new_hash(:b => 2, :d => 4)
+    h.should == new_hash(b: 2, d: 4)
   end
 
   it "returns self even if unmodified" do

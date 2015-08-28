@@ -2,7 +2,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :range_include, :shared => true do
+describe :range_include, shared: true do
   describe "on string elements" do
     it "returns true if other is matched by element.succ" do
       ('a'..'c').send(@method, 'b').should be_true

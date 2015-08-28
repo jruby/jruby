@@ -1,4 +1,4 @@
-describe :binding_clone, :shared => true do
+describe :binding_clone, shared: true do
   before :each do
     @b1 = BindingSpecs::Demo.new(99).get_binding
     @b2 = @b1.send(@method)

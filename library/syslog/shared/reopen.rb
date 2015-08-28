@@ -1,4 +1,4 @@
-describe :syslog_reopen, :shared => true do
+describe :syslog_reopen, shared: true do
   platform_is_not :windows do
     before :each do
       Syslog.opened?.should be_false

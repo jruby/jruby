@@ -1,4 +1,4 @@
-describe :enumerable_take, :shared => true do
+describe :enumerable_take, shared: true do
   before :each do
     @values = [4,3,2,1,0,-1]
     @enum = EnumerableSpecs::Numerous.new(*@values)

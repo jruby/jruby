@@ -10,6 +10,6 @@ describe "Hash.allocate" do
     hsh = hash_class.allocate
     hsh.size.should == 0
     hsh[:a] = 1
-    hsh.should == { :a => 1 }
+    hsh.should == { a: 1 }
   end
 end

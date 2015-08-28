@@ -1,4 +1,4 @@
-describe :file_unlink, :shared => true do
+describe :file_unlink, shared: true do
   before :each do
     @file1 = 'test.txt'
     @file2 = 'test2.txt'

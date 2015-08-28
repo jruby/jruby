@@ -9,38 +9,38 @@ describe "Hash.[]" do
   end
 
   it "creates a Hash; values can be provided as the argument list" do
-    hash_class[:a, 1, :b, 2].should == new_hash(:a => 1, :b => 2)
+    hash_class[:a, 1, :b, 2].should == new_hash(a: 1, b: 2)
     hash_class[].should == new_hash
-    hash_class[:a, 1, :b, new_hash(:c => 2)].should ==
-      new_hash(:a => 1, :b => new_hash(:c => 2))
+    hash_class[:a, 1, :b, new_hash(c: 2)].should ==
+      new_hash(a: 1, b: new_hash(c: 2))
   end
 
   it "creates a Hash; values can be provided as one single hash" do
-    hash_class[:a => 1, :b => 2].should == new_hash(:a => 1, :b => 2)
+    hash_class[a: 1, b: 2].should == new_hash(a: 1, b: 2)
     hash_class[new_hash(1 => 2, 3 => 4)].should == new_hash(1 => 2, 3 => 4)
     hash_class[new_hash].should == new_hash
   end
 
   describe "passed an array" do
     it "treats elements that are 2 element arrays as key and value" do
-      hash_class[[[:a, :b], [:c, :d]]].should == new_hash(:a => :b, :c => :d)
+      hash_class[[[:a, :b], [:c, :d]]].should == new_hash(a: :b, c: :d)
     end
 
     it "treats elements that are 1 element arrays as keys with value nil" do
-      hash_class[[[:a]]].should == new_hash(:a => nil)
+      hash_class[[[:a]]].should == new_hash(a: nil)
     end
   end
 
   # #1000 #1385
   it "creates a Hash; values can be provided as a list of value-pairs in an array" do
-    hash_class[[[:a, 1], [:b, 2]]].should == new_hash(:a => 1, :b => 2)
+    hash_class[[[:a, 1], [:b, 2]]].should == new_hash(a: 1, b: 2)
   end
 
   it "coerces a single argument which responds to #to_ary" do
     ary = mock('to_ary')
     ary.should_receive(:to_ary).and_return([[:a, :b]])
 
-    hash_class[ary].should == new_hash(:a => :b)
+    hash_class[ary].should == new_hash(a: :b)
   end
 
   it "ignores elements that are not arrays" do
@@ -58,7 +58,7 @@ describe "Hash.[]" do
 
   describe "passed a single argument which responds to #to_hash" do
     it "coerces it and returns a copy" do
-      h = new_hash(:a => :b, :c => :d)
+      h = new_hash(a: :b, c: :d)
       to_hash = mock('to_hash')
       to_hash.should_receive(:to_hash).and_return(h)
 

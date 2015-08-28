@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_div_rat, :shared => true do
+describe :rational_div_rat, shared: true do
   it "performs integer division and returns the result" do
     Rational(2, 3).div(Rational(2, 3)).should == 1
     Rational(-2, 9).div(Rational(-9, 2)).should == 0
@@ -15,7 +15,7 @@ describe :rational_div_rat, :shared => true do
   end
 end
 
-describe :rational_div_float, :shared => true do
+describe :rational_div_float, shared: true do
   it "performs integer division and returns the result" do
     Rational(2, 3).div(30.333).should == 0
     Rational(2, 9).div(Rational(-8.6)).should == -1
@@ -27,7 +27,7 @@ describe :rational_div_float, :shared => true do
   end
 end
 
-describe :rational_div_int, :shared => true do
+describe :rational_div_int, shared: true do
   it "performs integer division and returns the result" do
     Rational(2, 1).div(1).should == 2
     Rational(25, 5).div(-50).should == -1
@@ -38,7 +38,7 @@ describe :rational_div_int, :shared => true do
   end
 end
 
-describe :rational_div, :shared => true do
+describe :rational_div, shared: true do
   it "returns an Integer" do
     Rational(229, 21).div(82).should be_kind_of(Integer)
   end

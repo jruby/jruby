@@ -2,7 +2,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_chop, :shared => true do
+describe :kernel_chop, shared: true do
   it "removes the final character of $_" do
     KernelSpecs.chop("abc", @method).should == "ab"
   end
@@ -12,7 +12,7 @@ describe :kernel_chop, :shared => true do
   end
 end
 
-describe :kernel_chop_private, :shared => true do
+describe :kernel_chop_private, shared: true do
   it "is a private method" do
     KernelSpecs.has_private_method(@method).should be_true
   end
@@ -29,7 +29,7 @@ describe "#chop" do
 end
 
 with_feature :encoding do
-  describe :kernel_chop_encoded, :shared => true do
+  describe :kernel_chop_encoded, shared: true do
     before :each do
       @external = Encoding.default_external
       Encoding.default_external = Encoding::UTF_8

@@ -1,4 +1,4 @@
-describe :module_equal, :shared => true do
+describe :module_equal, shared: true do
   it "returns true if self and the given module are the same" do
     ModuleSpecs.send(@method, ModuleSpecs).should == true
     ModuleSpecs::Child.send(@method, ModuleSpecs::Child).should == true

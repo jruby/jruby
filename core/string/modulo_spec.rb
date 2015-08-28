@@ -420,8 +420,8 @@ describe "String#%" do
     it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
       ("%e" % 1e1020).should == "Inf"
       ("%e" % -1e1020).should == "-Inf"
-      ("%e" % (-0e0/0)).should == "NaN"
-      ("%e" % (0.0/0)).should == "NaN"
+      ("%e" % -Float::NAN).should == "NaN"
+      ("%e" % Float::NAN).should == "NaN"
     end
 
     it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
@@ -431,8 +431,8 @@ describe "String#%" do
       ("%10E" % 1e1020).should == "       Inf"
       ("%+E" % 1e1020).should == "+Inf"
       ("% E" % 1e1020).should == " Inf"
-      ("%E" % (0.0/0)).should == "NaN"
-      ("%E" % (-0e0/0)).should == "NaN"
+      ("%E" % Float::NAN).should == "NaN"
+      ("%E" % -Float::NAN).should == "NaN"
     end
   end
 
@@ -451,7 +451,7 @@ describe "String#%" do
     it "pads with spaces for %E with Inf, -Inf, and NaN" do
       ("%010E" % -1e1020).should == "      -Inf"
       ("%010E" % 1e1020).should == "       Inf"
-      ("%010E" % (0.0/0)).should == "       NaN"
+      ("%010E" % Float::NAN).should == "       NaN"
     end
   end
 
@@ -751,7 +751,7 @@ describe "String#%" do
 
   describe "when format string contains %{} sections" do
     it "replaces %{} sections with values from passed-in hash" do
-      ("%{foo}bar" % {:foo => 'oof'}).should == "oofbar"
+      ("%{foo}bar" % {foo: 'oof'}).should == "oofbar"
     end
 
     it "raises KeyError if key is missing from passed-in hash" do
@@ -765,7 +765,7 @@ describe "String#%" do
 
   describe "when format string contains %<> formats" do
     it "uses the named argument for the format's value" do
-      ("%<foo>d" % {:foo => 1}).should == "1"
+      ("%<foo>d" % {foo: 1}).should == "1"
     end
 
     it "raises KeyError if key is missing from passed-in hash" do

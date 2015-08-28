@@ -1,4 +1,4 @@
-describe :date_parse_eu, :shared => true do
+describe :date_parse_eu, shared: true do
   # The - separator let's it work like European format, so it as a different spec
   it "can parse a YYYY-MM-DD string into a Date object" do
     d = Date.parse("2007#{@sep}10#{@sep}01")

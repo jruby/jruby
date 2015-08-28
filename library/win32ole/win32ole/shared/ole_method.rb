@@ -1,7 +1,7 @@
 platform_is :windows do
   require 'win32ole'
 
-  describe :win32ole_ole_method, :shared => true do
+  describe :win32ole_ole_method, shared: true do
     before :each do
       @ie = WIN32OLE.new("InternetExplorer.application")
     end

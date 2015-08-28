@@ -4,6 +4,7 @@ describe "Range#max" do
   it "returns the maximum value in the range when called with no arguments" do
     (1..10).max.should == 10
     (1...10).max.should == 9
+    (0...2**64).max.should == 18446744073709551615
     ('f'..'l').max.should == 'l'
     ('a'...'f').max.should == 'e'
   end

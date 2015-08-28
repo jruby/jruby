@@ -3,7 +3,7 @@ require 'ostruct'
 
 describe "OpenStruct.new when frozen" do
   before :each do
-    @os = OpenStruct.new(:name => "John Smith", :age => 70, :pension => 300).freeze
+    @os = OpenStruct.new(name: "John Smith", age: 70, pension: 300).freeze
   end
   #
   # method_missing case handled in method_missing_spec.rb

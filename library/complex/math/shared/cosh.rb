@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_cosh, :shared => true do
+describe :complex_math_cosh, shared: true do
   it "returns the hyperbolic cosine of the passed argument" do
     @object.send(:cosh, 0.0).should == 1.0
     @object.send(:cosh, -0.0).should == 1.0
@@ -14,7 +14,7 @@ describe :complex_math_cosh, :shared => true do
   end
 end
 
-describe :complex_math_cosh_bang, :shared => true do
+describe :complex_math_cosh_bang, shared: true do
   it "returns the hyperbolic cosine of the passed argument" do
     @object.send(:cosh!, 0.0).should == 1.0
     @object.send(:cosh!, -0.0).should == 1.0

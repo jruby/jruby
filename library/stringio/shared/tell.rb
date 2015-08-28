@@ -1,4 +1,4 @@
-describe :stringio_tell, :shared => true do
+describe :stringio_tell, shared: true do
   before :each do
     @io = StringIOSpecs.build
   end

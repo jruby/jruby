@@ -20,7 +20,7 @@ describe "BigDecimal#exponent" do
 
 # commenting this spec out after discussion with Defiler, since it seems to be an MRI bug, not a real feature
 =begin
-  platform_is :wordsize => 32 do
+  platform_is wordsize: 32 do
     # TODO: write specs for both 32 and 64 bit
     it "returns 0 if exponent can't be represented as Fixnum" do
       BigDecimal("2E1000000000000000").exponent.should == 0

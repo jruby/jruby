@@ -1,4 +1,4 @@
-describe :kernel_send, :shared => true do
+describe :kernel_send, shared: true do
   it "invokes the named method" do
     class KernelSpecs::Foo
       def bar

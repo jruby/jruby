@@ -11,7 +11,7 @@ describe "OpenStruct#table" do
   end
 
   it "returns self's method/value table" do
-    @os.send(:table).should == { :age => 20, :name => "John" }
+    @os.send(:table).should == { age: 20, name: "John" }
     @os.send(:table)[:age] = 30
     @os.age.should == 30
   end

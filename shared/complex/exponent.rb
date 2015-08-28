@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_exponent, :shared => true do
+describe :complex_exponent, shared: true do
   describe "with Fixnum 0" do
     it "returns Complex(1)" do
       (Complex(3, 4) ** 0).should eql(Complex(1))

@@ -1,4 +1,4 @@
-describe :bignum_equal, :shared => true do
+describe :bignum_equal, shared: true do
   before :each do
     @bignum = bignum_value
   end

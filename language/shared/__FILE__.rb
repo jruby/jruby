@@ -1,4 +1,4 @@
-describe :language___FILE__, :shared => true do
+describe :language___FILE__, shared: true do
   before :each do
     CodeLoadingSpecs.spec_setup
     @path = File.join(CODE_LOADING_DIR, "file_fixture.rb")

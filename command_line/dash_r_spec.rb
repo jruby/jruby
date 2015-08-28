@@ -7,7 +7,7 @@ describe "The -r command line option" do
   end
 
   it "requires the specified file" do
-    result = ruby_exe(@script, :options => "-r #{@test_file}")
+    result = ruby_exe(@script, options: "-r #{@test_file}")
     result.should include(@test_file + ".rb")
   end
 end

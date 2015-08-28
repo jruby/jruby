@@ -1,4 +1,4 @@
-describe :string_slice, :shared => true do
+describe :string_slice, shared: true do
   it "returns the character code of the character at the given index" do
     "hello".send(@method, 0).should == ?h
     "hello".send(@method, -1).should == ?o
@@ -31,7 +31,7 @@ describe :string_slice, :shared => true do
   end
 end
 
-describe :string_slice_index_length, :shared => true do
+describe :string_slice_index_length, shared: true do
   it "returns the substring starting at the given index with the given length" do
     "hello there".send(@method, 0,0).should == ""
     "hello there".send(@method, 0,1).should == "h"
@@ -157,7 +157,7 @@ describe :string_slice_index_length, :shared => true do
   end
 end
 
-describe :string_slice_range, :shared => true do
+describe :string_slice_range, shared: true do
   it "returns the substring given by the offsets of the range" do
     "hello there".send(@method, 1..1).should == "e"
     "hello there".send(@method, 1..3).should == "ell"
@@ -267,7 +267,7 @@ describe :string_slice_range, :shared => true do
   end
 end
 
-describe :string_slice_regexp, :shared => true do
+describe :string_slice_regexp, shared: true do
   it "returns the matching portion of self" do
     "hello there".send(@method, /[aeiou](.)\1/).should == "ell"
     "".send(@method, //).should == ""
@@ -313,7 +313,7 @@ describe :string_slice_regexp, :shared => true do
   end
 end
 
-describe :string_slice_regexp_index, :shared => true do
+describe :string_slice_regexp_index, shared: true do
   it "returns the capture for the given index" do
     "hello there".send(@method, /[aeiou](.)\1/, 0).should == "ell"
     "hello there".send(@method, /[aeiou](.)\1/, 1).should == "l"
@@ -402,7 +402,7 @@ describe :string_slice_regexp_index, :shared => true do
   end
 end
 
-describe :string_slice_string, :shared => true do
+describe :string_slice_string, shared: true do
   it "returns other_str if it occurs in self" do
     s = "lo"
     "hello there".send(@method, s).should == s
@@ -447,7 +447,7 @@ describe :string_slice_string, :shared => true do
   end
 end
 
-describe :string_slice_regexp_group, :shared => true do
+describe :string_slice_regexp_group, shared: true do
   not_supported_on :opal do
     it "returns the capture for the given name" do
       "hello there".send(@method, /(?<g>[aeiou](.))/, 'g').should == "el"
@@ -526,7 +526,7 @@ describe :string_slice_regexp_group, :shared => true do
   end
 end
 
-describe :string_slice_symbol, :shared => true do
+describe :string_slice_symbol, shared: true do
   it "raises TypeError" do
     lambda { 'hello'.send(@method, :hello) }.should raise_error(TypeError)
   end

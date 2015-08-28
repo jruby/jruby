@@ -26,7 +26,7 @@ describe "Kernel#private_methods" do
   end
 end
 
-describe :kernel_private_methods_supers, :shared => true do
+describe :kernel_private_methods_supers, shared: true do
   it "returns a unique list for an object extended by a module" do
     m = ReflectSpecs.oed.private_methods(*@object)
     m.select { |x| x == :pri }.sort.should == [:pri]
@@ -43,7 +43,7 @@ describe :kernel_private_methods_supers, :shared => true do
   end
 end
 
-describe :kernel_private_methods_with_falsy, :shared => true do
+describe :kernel_private_methods_with_falsy, shared: true do
   it "returns a list of private methods in without its ancestors" do
     ReflectSpecs::F.private_methods(@object).select{|m|/_pri\z/ =~ m}.sort.should == [:ds_pri, :fs_pri]
     ReflectSpecs::F.new.private_methods(@object).should == [:f_pri]

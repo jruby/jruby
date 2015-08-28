@@ -1,6 +1,6 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :numeric_polar, :shared => true do
+describe :numeric_polar, shared: true do
   before :each do
     @pos_numbers = [
       1,

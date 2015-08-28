@@ -1,4 +1,4 @@
-describe :dir_delete, :shared => true do
+describe :dir_delete, shared: true do
   before :each do
     DirSpecs.rmdir_dirs true
   end

@@ -1,10 +1,10 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :to_s, :shared => true do
+describe :to_s, shared: true do
 
   it "returns a string representation with same order as each()" do
-    h = new_hash(:a => [1, 2], :b => -2, :d => -6, nil => nil)
+    h = new_hash(a: [1, 2], b: -2, d: -6, nil => nil)
 
     pairs = []
     h.each do |key, value|

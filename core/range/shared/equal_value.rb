@@ -1,4 +1,4 @@
-describe :range_eql, :shared => true do
+describe :range_eql, shared: true do
   it "returns true if other has same begin, end, and exclude_end? values" do
     (0..2).send(@method, 0..2).should == true
     ('G'..'M').send(@method,'G'..'M').should == true

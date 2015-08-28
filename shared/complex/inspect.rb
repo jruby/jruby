@@ -1,4 +1,4 @@
-describe :complex_inspect, :shared => true do
+describe :complex_inspect, shared: true do
   it "returns (${real}+${image}i) for positive imaginary parts" do
     Complex(1).inspect.should == "(1+0i)"
     Complex(7).inspect.should == "(7+0i)"

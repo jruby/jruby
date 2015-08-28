@@ -1,4 +1,4 @@
-describe :float_to_i, :shared => true do
+describe :float_to_i, shared: true do
   it "returns self truncated to an Integer" do
     899.2.send(@method).should eql(899)
     -1.122256e-45.send(@method).should eql(0)

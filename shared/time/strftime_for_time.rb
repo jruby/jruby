@@ -1,6 +1,6 @@
 # Shared for Time and DateTime, testing only time components (hours, minutes, seconds and smaller)
 
-describe :strftime_time, :shared => true do
+describe :strftime_time, shared: true do
   before :all do
     @time = @new_time[2001, 2, 3, 4, 5, 6]
   end

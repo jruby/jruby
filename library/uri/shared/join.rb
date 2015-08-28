@@ -1,4 +1,4 @@
-describe :uri_join, :shared => true do
+describe :uri_join, shared: true do
   it "returns a URI object of the concatenation of a protocol and domain, and a path" do
     @object.join("http://localhost/","main.rbx").should == URI.parse("http://localhost/main.rbx")
   end

@@ -1,7 +1,7 @@
 require 'mathn'
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :mathn_math_sqrt, :shared => true do
+describe :mathn_math_sqrt, shared: true do
   it "returns the square root for Rational numbers" do
     @object.send(:sqrt, Rational(9, 25)).should == Rational(3, 5)
     @object.send(:sqrt, 16/64).should == Rational(1, 2)

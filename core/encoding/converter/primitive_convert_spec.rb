@@ -86,7 +86,7 @@ with_feature :encoding do
     end
 
     it "accepts an options hash" do
-      @ec.primitive_convert("","",nil,nil, {:after_output => true})\
+      @ec.primitive_convert("","",nil,nil, {after_output: true})\
         .should_not raise_error(ArgumentError)
     end
 
@@ -114,7 +114,7 @@ with_feature :encoding do
 
     it "returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified" do
       ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
-      ec.primitive_convert("\xa4", "", nil, nil, :partial_input => false).should == :incomplete_input
+      ec.primitive_convert("\xa4", "", nil, nil, partial_input: false).should == :incomplete_input
     end
 
     it "clears the source buffer when returning :incomplete_input" do
@@ -127,13 +127,13 @@ with_feature :encoding do
 
     it "returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true" do
       ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
-      ec.primitive_convert("\xa4", "", nil, nil, :partial_input => true).should == :source_buffer_empty
+      ec.primitive_convert("\xa4", "", nil, nil, partial_input: true).should == :source_buffer_empty
     end
 
     it "clears the source buffer when returning :source_buffer_empty" do
       ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
       s = "\xa4"
-      ec.primitive_convert(s, "", nil, nil, :partial_input => true).should == :source_buffer_empty
+      ec.primitive_convert(s, "", nil, nil, partial_input: true).should == :source_buffer_empty
 
       s.should == ""
     end

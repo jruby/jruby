@@ -1,7 +1,7 @@
 require "#{File.dirname __FILE__}/../../../spec_helper"
 require "#{File.dirname __FILE__}/../fixtures/classes"
 
-describe :method_to_s, :shared => true do
+describe :method_to_s, shared: true do
   before :each do
     @m = MethodSpecs::MySub.new.method :bar
     @string = @m.send(@method).sub(/0x\w+/, '0xXXXXXX')

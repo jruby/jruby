@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :dir_glob, :shared => true do
+describe :dir_glob, shared: true do
   before :all do
     DirSpecs.create_mock_dirs
     @cwd = Dir.pwd
@@ -275,7 +275,7 @@ describe :dir_glob, :shared => true do
   end
 end
 
-describe :dir_glob_recursive, :shared => true do
+describe :dir_glob_recursive, shared: true do
   before :all do
     @cwd = Dir.pwd
     @mock_dir = File.expand_path tmp('dir_glob_mock')

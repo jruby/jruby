@@ -116,7 +116,7 @@ describe "C-API Thread function" do
 
 end
 
-describe :rb_thread_blocking_region, :shared => true do
+describe :rb_thread_blocking_region, shared: true do
   before :each do
     @t = CApiThreadSpecs.new
     ScratchPad.clear

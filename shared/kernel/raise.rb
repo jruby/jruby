@@ -1,4 +1,4 @@
-describe :kernel_raise, :shared => true do
+describe :kernel_raise, shared: true do
   before :each do
     ScratchPad.clear
   end

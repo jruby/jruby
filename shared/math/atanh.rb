@@ -1,4 +1,4 @@
-describe :math_atanh_base, :shared => true do
+describe :math_atanh_base, shared: true do
   it "returns a float" do
     @object.send(@method, 0.5).should be_an_instance_of(Float)
   end
@@ -27,13 +27,13 @@ describe :math_atanh_base, :shared => true do
   end
 end
 
-describe :math_atanh_private, :shared => true do
+describe :math_atanh_private, shared: true do
   it "is a private instance method" do
     Math.should have_private_instance_method(@method)
   end
 end
 
-describe :math_atanh_no_complex, :shared => true do
+describe :math_atanh_no_complex, shared: true do
   it "raises a Math::DomainError for arguments greater than 1.0" do
     lambda { @object.send(@method, 1.0 + Float::EPSILON)  }.should raise_error(Math::DomainError)
   end

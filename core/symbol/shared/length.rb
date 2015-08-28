@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-describe :symbol_length, :shared => true do
+describe :symbol_length, shared: true do
   it "returns 0 for empty name" do
     :''.send(@method).should == 0
   end
