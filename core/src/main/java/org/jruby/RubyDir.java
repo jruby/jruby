@@ -560,9 +560,9 @@ public class RubyDir extends RubyObject {
         Ruby runtime = getRuntime();
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":");
+        part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
-        part.append(">");
+        part.append('>');
 
         return runtime.newString(part.toString());
     }

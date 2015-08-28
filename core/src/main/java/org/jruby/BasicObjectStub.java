@@ -179,7 +179,7 @@ public final class BasicObjectStub {
 
     public static RubyInteger convertToInteger(IRubyObject self, String convertMethod) {
         IRubyObject val = TypeConverter.convertToType(self, getRuntime(self).getInteger(), convertMethod, true);
-        if (!(val instanceof RubyInteger)) throw getRuntime(self).newTypeError(getMetaClass(self).getName() + "#" + convertMethod + " should return Integer");
+        if (!(val instanceof RubyInteger)) throw getRuntime(self).newTypeError(getMetaClass(self).getName() + '#' + convertMethod + " should return Integer");
         return (RubyInteger)val;
     }
 
@@ -255,11 +255,11 @@ public final class BasicObjectStub {
         String sep = "";
 
         for (Variable<IRubyObject> ivar : getInstanceVariables(self).getInstanceVariableList()) {
-            part.append(sep).append(" ").append(ivar.getName()).append("=");
+            part.append(sep).append(' ').append(ivar.getName()).append('=');
             part.append(invokedynamic(context, ivar.getValue(), INSPECT));
             sep = ",";
         }
-        part.append(">");
+        part.append('>');
         return part;
     }
 
