@@ -545,14 +545,16 @@ public class Main {
     }
 
     private static void printTruffleMemoryMetric() {
-        System.gc();
+        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+            System.gc();
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
         }
-
-        System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
     }
 
     private final RubyInstanceConfig config;
