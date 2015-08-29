@@ -16,7 +16,7 @@ public class Java7ClassValue<T> extends ClassValue<T> {
     public T get(Class cls) {
         // We don't check for null on the WeakReference since the
         // value is strongly referenced by proxy's list
-        return proxy.get(cls).get();
+        return (T)proxy.get(cls).get();
     }
 
     // If we put any objects that reference an org.jruby.Ruby runtime
@@ -24,6 +24,7 @@ public class Java7ClassValue<T> extends ClassValue<T> {
     // reference situation that GC isn't handling where they will
     // always be strongly referenced and never garbage collected. We
     // break that by holding the computed values with a WeakReference.
+    // This appears to be a bug in OpenJDK. See jruby/jruby#3228.
     private final java.lang.ClassValue<WeakReference<T>> proxy = new java.lang.ClassValue<WeakReference<T>>() {
         // Strongly reference all computed values so they don't get
         // garbage collected until this Java7ClassValue instance goes
