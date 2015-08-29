@@ -548,9 +548,9 @@ public final class Ruby implements Constantizable {
             return;
         }
 
-        Main.printTruffleTimeMetric("before-parse");
+        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        Main.printTruffleTimeMetric("after-parse");
+        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
