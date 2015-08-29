@@ -13,28 +13,47 @@
 # For example:
 # $ ruby test/truffle/memory/minimum-heap.rb bin/jruby "-X+T -e 'puts 14'"
 
-tolerance = 5
-max_iterations = 100
+COMMAND = ARGV[0]
+OPTIONS = ARGV[1]
 
-lower = 0
-upper = 4 * 1024
-iterations = 0
+TOLERANCE = 1
+UPPER_FACTOR = 4
 
-while upper - lower > tolerance && iterations < max_iterations
-  mid = lower + (upper - lower) / 2
+def can_run(heap)
+  print "trying #{heap} MB... "
 
-  print "trying #{mid}m... "
-  can_run = !(`#{ARGV[0]} -J-Xmx#{mid}m #{ARGV[1]} 2>&1`.include? 'GC overhead limit exceeded')
+  output = `#{COMMAND} -J-Xmx#{heap}m #{OPTIONS} 2>&1`
+  can_run = !output.include?('OutOfMemoryError')
 
   if can_run
     puts "yes"
-    upper = mid
   else
     puts "no"
-    lower = mid
   end
-  
-  iterations += 1
+
+  can_run
 end
 
-puts "minimum heap: #{upper}m"
+puts "looking for an upper bound..."
+
+lower = 0
+upper = 1
+
+while !can_run(upper)
+  lower = upper
+  upper *= UPPER_FACTOR
+end
+
+puts "binary search between #{lower} and #{upper} MB..."
+
+while upper - lower > TOLERANCE
+  mid = lower + (upper - lower) / 2
+
+  if can_run(mid)
+    upper = mid
+  else
+    lower = mid
+  end
+end
+
+puts "minimum heap: #{upper} MB"
