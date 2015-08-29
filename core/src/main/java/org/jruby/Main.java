@@ -222,6 +222,7 @@ public class Main {
         }
 
         printTruffleTimeMetric("after-main");
+        printTruffleMemoryMetric();
     }
 
     public Status run(String[] args) {
@@ -541,6 +542,17 @@ public class Main {
             final long millis = System.currentTimeMillis();
             System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
         }
+    }
+
+    private static void printTruffleMemoryMetric() {
+        System.gc();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        }
+
+        System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
     }
 
     private final RubyInstanceConfig config;
