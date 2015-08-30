@@ -586,6 +586,7 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_PATCHLEVEL", 0);
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_ENGINE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "JRUBY_ENGINE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.ENGINE, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_PLATFORM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.PLATFORM, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_RELEASE_DATE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_DESCRIPTION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
