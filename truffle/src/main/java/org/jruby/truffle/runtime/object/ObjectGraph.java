@@ -79,10 +79,14 @@ public class ObjectGraph {
                     }
 
                     try {
-                        // We only visit the global variables from the root thread
+                        // We only visit the global variables and other global state from the root thread
 
                         if (thread == context.getThreadManager().getRootThread()) {
                             visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
+
+                            for (DynamicObject handler : context.getAtExitManager().getHandlers()) {
+                                visitObject(handler, visitor);
+                            }
                         }
 
                         // All threads visit their thread object
