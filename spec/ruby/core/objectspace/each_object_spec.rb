@@ -131,4 +131,42 @@ describe "ObjectSpace.each_object" do
     weak_ref = WeakRef.new(ObjectSpaceFixtures::ObjectToBeFound.new(:weakref))
     ObjectSpaceFixtures::to_be_found_symbols.should_not include(:weakref)
   end
+
+  it "finds an object stored in a thread local" do
+    Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:thread_local)
+  end
+
+  it "finds an object stored in a fiber local" do
+    Thread.current[:object_space_fiber_local] = ObjectSpaceFixtures::ObjectToBeFound.new(:fiber_local)
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:fiber_local)
+  end
+
+  it "finds an object captured in an at_exit handler" do
+    Proc.new {
+      local = ObjectSpaceFixtures::ObjectToBeFound.new(:at_exit)
+
+      at_exit do
+        local
+      end
+    }.call
+
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:at_exit)
+  end
+
+  it "finds an object captured in finalizer" do
+    alive = Object.new
+
+    Proc.new {
+      local = ObjectSpaceFixtures::ObjectToBeFound.new(:at_exit)
+
+      ObjectSpace.define_finalizer(alive, Proc.new {
+        local
+      })
+    }.call
+
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:at_exit)
+
+    alive.should_not be_nil
+  end
 end
