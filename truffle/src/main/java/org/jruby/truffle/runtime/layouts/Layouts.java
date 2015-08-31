@@ -50,6 +50,7 @@ public abstract class Layouts {
     public static final ThreadLayout THREAD = ThreadLayoutImpl.INSTANCE;
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
+    public static final WeakRefLayout WEAK_REF_LAYOUT = WeakRefLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

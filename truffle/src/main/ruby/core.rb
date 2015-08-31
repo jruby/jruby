@@ -96,7 +96,7 @@ require_relative 'core/rubinius/bootstrap/true'
 require_relative 'core/rubinius/bootstrap/type'
 #require_relative 'core/rubinius/bootstrap/variable_scope'
 #require_relative 'core/rubinius/bootstrap/vm'
-#require_relative 'core/rubinius/bootstrap/weakref'
+require_relative 'core/rubinius/bootstrap/weakref'
 
 # Load platform (ordered according to Rubinius' load_order.txt)
 
