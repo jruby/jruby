@@ -62,7 +62,6 @@ class Thread
     if self == Thread.current
       Kernel.raise exc
     else
-      exc.capture_backtrace! 2 unless exc.backtrace?
       raise_prim exc
     end
   end
