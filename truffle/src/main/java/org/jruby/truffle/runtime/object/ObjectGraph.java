@@ -14,9 +14,14 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.ModuleFields;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
 import java.util.HashSet;
@@ -75,12 +80,17 @@ public class ObjectGraph {
 
                     try {
                         // We only visit the global variables from the root thread
-                        visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
 
-                        // All threads visit the thread object
+                        if (thread == context.getThreadManager().getRootThread()) {
+                            visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
+                        }
+
+                        // All threads visit their thread object
+
                         visitObject(thread, visitor);
 
                         // All threads visit their call stack
+
                         if (Truffle.getRuntime().getCurrentFrame() != null) {
                             visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
                         }
@@ -115,8 +125,22 @@ public class ObjectGraph {
 
             // Visit all properties
 
-            for (Property property : object.getShape().getProperties()) {
+            for (Property property : object.getShape().getPropertyListInternal(false)) {
                 visitObject(property.get(object, object.getShape()), visitor);
+            }
+
+            // Visit specific objects that we're managing
+
+            if (RubyGuards.isRubyModule(object)) {
+                final ModuleFields module = Layouts.MODULE.getFields(object);
+
+                for (DynamicObject ancestor : module.ancestors()) {
+                    visitObject(ancestor, visitor);
+                }
+
+                for (RubyConstant constant : module.getConstants().values()) {
+                    visitObject(constant.getValue(), visitor);
+                }
             }
         }
     }
@@ -133,8 +157,11 @@ public class ObjectGraph {
             visitObject(entry.getKey(), visitor);
             visitObject(entry.getValue(), visitor);
             visitObject(entry.getNextInLookup(), visitor);
-        } else if (object instanceof MaterializedFrame) {
-            visitFrame((MaterializedFrame) object, visitor);
+        } else if (object instanceof Frame) {
+            visitFrame((Frame) object, visitor);
+        } else if (object instanceof InternalMethod) {
+            final InternalMethod method = (InternalMethod) object;
+            visitObject(method.getDeclarationFrame(), visitor);
         }
     }
 
@@ -145,6 +172,18 @@ public class ObjectGraph {
     private void visitFrame(Frame frame, ObjectGraphVisitor visitor) throws StopVisitingObjectsException {
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             visitObject(frame.getValue(slot), visitor);
+        }
+
+        Frame declarationFrame;
+
+        try {
+            declarationFrame = RubyArguments.getDeclarationFrame(frame.getArguments());
+        } catch (Exception e) {
+            declarationFrame = null;
+        }
+
+        if (declarationFrame != null) {
+            visitFrame(declarationFrame, visitor);
         }
     }
 }
