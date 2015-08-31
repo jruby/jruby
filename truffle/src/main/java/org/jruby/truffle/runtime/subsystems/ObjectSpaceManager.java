@@ -101,7 +101,7 @@ public class ObjectSpaceManager {
 
         while (true) {
             // Wait on the finalizer queue
-            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingAction<FinalizerReference>() {
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(null, new BlockingAction<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();

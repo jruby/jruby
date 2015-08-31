@@ -88,7 +88,7 @@ public abstract class QueueNodes {
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
+            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -136,7 +136,7 @@ public abstract class QueueNodes {
             final long durationInMillis = (long) (duration * 1000.0);
             final long start = System.currentTimeMillis();
 
-            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
+            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     long now = System.currentTimeMillis();
@@ -246,7 +246,7 @@ public abstract class QueueNodes {
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
+            getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

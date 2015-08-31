@@ -23,7 +23,7 @@ public class FileUtils {
     public static byte[] readAllBytesInterruptedly(RubyContext context, String file) {
         final Path path = Paths.get(file);
 
-        return context.getThreadManager().runUntilResult(new BlockingAction<byte[]>() {
+        return context.getThreadManager().runUntilResult(null, new BlockingAction<byte[]>() {
             @Override
             public byte[] block() throws InterruptedException {
                 try {

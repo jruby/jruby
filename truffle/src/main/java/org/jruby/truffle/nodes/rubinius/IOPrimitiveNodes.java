@@ -582,7 +582,7 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(
@@ -617,7 +617,7 @@ public abstract class IOPrimitiveNodes {
                 writableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(

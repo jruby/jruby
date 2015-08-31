@@ -142,7 +142,7 @@ public abstract class SizedQueueNodes {
         public DynamicObject pushBlocking(DynamicObject self, final Object value, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
+            getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     queue.put(value);
@@ -189,7 +189,7 @@ public abstract class SizedQueueNodes {
         public Object popBlocking(DynamicObject self, boolean nonBlocking) {
             final BlockingQueue<Object> queue = Layouts.SIZED_QUEUE.getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingAction<Object>() {
+            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -282,7 +282,7 @@ public abstract class SizedQueueNodes {
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
             final Condition notFullCondition = (Condition) UnsafeHolder.U.getObject(arrayBlockingQueue, NOT_FULL_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
+            getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

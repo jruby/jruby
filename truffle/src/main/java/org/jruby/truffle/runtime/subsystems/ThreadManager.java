@@ -68,7 +68,7 @@ public class ThreadManager {
      * @return the first non-null return value from {@code action}
      */
     @TruffleBoundary
-    public <T> T runUntilResult(BlockingAction<T> action) {
+    public <T> T runUntilResult(Node currentNode, BlockingAction<T> action) {
         T result = null;
 
         do {
@@ -83,7 +83,7 @@ public class ThreadManager {
                 }
             } catch (InterruptedException e) {
                 // We were interrupted, possibly by the SafepointManager.
-                context.getSafepointManager().pollFromBlockingCall(null);
+                context.getSafepointManager().pollFromBlockingCall(currentNode);
             }
         } while (result == null);
 
