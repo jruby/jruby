@@ -31,7 +31,7 @@ bootclasspath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
-  classpath << "#{JRUBY}/truffle/src/main/ruby"
+  java_flags << "-Djruby.truffle.core.load_path=truffle/src/main/ruby"
 end
 
 args = [java]
