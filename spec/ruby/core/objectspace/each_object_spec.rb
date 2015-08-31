@@ -56,7 +56,7 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures::to_be_found_symbols.should include(:top_level_constant)
   end
 
-  it "finds an object stored in a top-level constant" do
+  it "finds an object stored in a second-level constant" do
     ObjectSpaceFixtures::to_be_found_symbols.should include(:second_level_constant)
   end
 
