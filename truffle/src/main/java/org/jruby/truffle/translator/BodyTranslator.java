@@ -979,14 +979,26 @@ public class BodyTranslator extends Translator {
         // Unqualified constant access, as in CONST
         final SourceSection sourceSection = translate(node.getPosition());
 
+        String name = ConstantReplacer.replacementName(sourceSection, node.getName());
+
+        /*
+         * We'd like to be able to use JRuby to run bundler to standalone-install gems required to run
+         * programs using Truffle. Bundler puts the JRuby engine name into the path, so to get around
+         * that we detect it asking for the engine, and pretend to be just JRuby.
+         */
+
+        if (name.equals("RUBY_ENGINE")
+                && sourceSection.getSource().getPath().endsWith("bundler/setup.rb")
+                && sourceSection.getStartLine() == 3) {
+            name = "JRUBY_ENGINE";
+        }
+
         /*
          * Constants of the form Rubinius::Foo in the Rubinius kernel code always seem to get resolved, even if
          * Rubinius is not defined, such as in BasicObject. We get around this by translating Rubinius to be
          * ::Rubinius. Note that this isn't quite what Rubinius does, as they say that Rubinius isn't defined, but
          * we will because we'll translate that to ::Rubinius. But it is a simpler translation.
          */
-
-        final String name = ConstantReplacer.replacementName(sourceSection, node.getName());
 
         if (name.equals("Rubinius") && sourceSection.getSource().getPath().startsWith(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius")) {
             final RubyNode ret = new org.jruby.ast.Colon3Node(node.getPosition(), name).accept(this);
