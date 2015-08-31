@@ -65,19 +65,28 @@ describe "ObjectSpace.each_object" do
     ObjectSpaceFixtures::to_be_found_symbols.should include(:local)
   end
 
-  it "finds an object stored in a local variable captured in a block" do
+  it "finds an object stored in a local variable captured in a block explicitly" do
     proc = Proc.new {
-      local_in_block = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_block)
+      local_in_block = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_block_explicit)
+      Proc.new { local_in_block }
+    }.call
+
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_block_explicit)
+  end
+
+  it "finds an object stored in a local variable captured in a block implicitly" do
+    proc = Proc.new {
+      local_in_block = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_block_implicit)
       Proc.new { }
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_block)
+    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_block_implicit)
   end
 
   it "finds an object stored in a local variable captured in a Proc#binding" do
     binding = Proc.new {
       local_in_proc_binding = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_proc_binding)
-      Proc.new{ }.binding
+      Proc.new { }.binding
     }.call
 
     ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_proc_binding)
