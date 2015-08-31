@@ -66,10 +66,6 @@
       <id>rubygems-releases</id>
       <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
     </repository>
-    <repository>
-      <id>gem-staging</id>
-      <url>http://oss.sonatype.org/content/repositories/staging</url>
-    </repository>
   </repositories>
   <build>
     <plugins>
