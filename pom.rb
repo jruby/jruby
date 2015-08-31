@@ -299,6 +299,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     properties 'invoker.skip' => false
   end
 
+  profile 'jdk8' do
+    activation do
+      jdk '1.8'
+    end
+    plugin :javadoc, :additionalparam => '-Xdoclint:none'
+  end
+
   reporting do
     plugin( :'project-info-reports', '2.4',
             'dependencyLocationsEnabled' =>  'false',
