@@ -16,6 +16,13 @@ class Thread
     __thread_local_variables[symbol] = value
   end
 
+  def thread_variable?(symbol)
+    __thread_local_variables.has_key? symbol
+  end
+
+  alias_method :thread_variable_get, :[]
+  alias_method :thread_variable_set, :[]=
+
   def __thread_local_variables
     @__thread_local_variables ||= {}
   end
