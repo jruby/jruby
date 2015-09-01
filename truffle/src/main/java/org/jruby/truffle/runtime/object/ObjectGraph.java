@@ -67,6 +67,8 @@ public class ObjectGraph {
     }
 
     private void visitRoots(final ObjectGraphVisitor visitor) {
+        final Thread mainThread = Thread.currentThread();
+
         context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
 
             boolean keepVisiting = true;
@@ -81,7 +83,7 @@ public class ObjectGraph {
                     try {
                         // We only visit the global variables and other global state from the root thread
 
-                        if (thread == context.getThreadManager().getRootThread()) {
+                        if (Thread.currentThread() == mainThread) {
                             visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
 
                             for (DynamicObject handler : context.getAtExitManager().getHandlers()) {
