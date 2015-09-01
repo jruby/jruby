@@ -19,12 +19,14 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -680,7 +682,7 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private static void exec(RubyContext context, DynamicObject envAsHash, String[] commandLine) {
+        private void exec(RubyContext context, DynamicObject envAsHash, String[] commandLine) {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
@@ -697,7 +699,7 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(new BlockingAction<Integer>() {
+            int exitCode = context.getThreadManager().runUntilResult(this, new BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return process.waitFor();
@@ -838,7 +840,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
-            final String line = getContext().getThreadManager().runUntilResult(new BlockingAction<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(this, new BlockingAction<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1839,17 +1841,17 @@ public abstract class KernelNodes {
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
             Layouts.THREAD.getWakeUp(thread).getAndSet(false);
 
-            return sleepFor(getContext(), durationInMillis);
+            return sleepFor(this, getContext(), durationInMillis);
         }
 
-        public static long sleepFor(RubyContext context, final long durationInMillis) {
+        public static long sleepFor(Node currentNode, RubyContext context, final long durationInMillis) {
             assert durationInMillis >= 0;
 
             final DynamicObject thread = context.getThreadManager().getCurrentThread();
 
             final long start = System.currentTimeMillis();
 
-            long slept = context.getThreadManager().runUntilResult(new BlockingAction<Long>() {
+            long slept = context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Long>() {
                 @Override
                 public Long block() throws InterruptedException {
                     long now = System.currentTimeMillis();

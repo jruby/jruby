@@ -67,7 +67,7 @@ public abstract class MutexNodes {
                 throw new RaiseException(context.getCoreLibrary().threadError("deadlock; recursive locking", currentNode));
             }
 
-            context.getThreadManager().runUntilResult(new BlockingAction<Boolean>() {
+            context.getThreadManager().runUntilResult(currentNode, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();
@@ -214,7 +214,7 @@ public abstract class MutexNodes {
 
             UnlockNode.unlock(lock, thread, this);
             try {
-                return KernelNodes.SleepNode.sleepFor(getContext(), durationInMillis);
+                return KernelNodes.SleepNode.sleepFor(this, getContext(), durationInMillis);
             } finally {
                 LockNode.lock(lock, thread, this);
             }

@@ -16,9 +16,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -118,44 +120,6 @@ public abstract class ThreadNodes {
         assert RubyGuards.isRubyThread(thread);
         Layouts.THREAD.getFiberManager(thread).shutdown();
         throw new ThreadExitException();
-    }
-
-    public static void join(final DynamicObject thread) {
-        assert RubyGuards.isRubyThread(thread);
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(thread)).getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
-            @Override
-            public Boolean block() throws InterruptedException {
-                Layouts.THREAD.getFinishedLatch(thread).await();
-                return SUCCESS;
-            }
-        });
-
-        if (Layouts.THREAD.getException(thread) != null) {
-            throw new RaiseException(Layouts.THREAD.getException(thread));
-        }
-    }
-
-    public static boolean join(final DynamicObject thread, final int timeoutInMillis) {
-        assert RubyGuards.isRubyThread(thread);
-        final long start = System.currentTimeMillis();
-        final boolean joined = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(thread)).getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingAction<Boolean>() {
-            @Override
-            public Boolean block() throws InterruptedException {
-                long now = System.currentTimeMillis();
-                long waited = now - start;
-                if (waited >= timeoutInMillis) {
-                    // We need to know whether countDown() was called and we do not want to block.
-                    return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
-                }
-                return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
-            }
-        });
-
-        if (joined && Layouts.THREAD.getException(thread) != null) {
-            throw new RaiseException(Layouts.THREAD.getException(thread));
-        }
-
-        return joined;
     }
 
     @CoreMethod(names = "alive?")
@@ -275,7 +239,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public DynamicObject join(DynamicObject thread, NotProvided timeout) {
-            ThreadNodes.join(thread);
+            doJoin(this, thread);
             return thread;
         }
 
@@ -295,13 +259,49 @@ public abstract class ThreadNodes {
         }
 
         private Object joinMillis(DynamicObject self, int timeoutInMillis) {
-            assert RubyGuards.isRubyThread(self);
-
-            if (ThreadNodes.join(self, timeoutInMillis)) {
+            if (doJoinMillis(self, timeoutInMillis)) {
                 return self;
             } else {
                 return nil();
             }
+        }
+
+        @TruffleBoundary
+        public static void doJoin(RubyNode currentNode, final DynamicObject thread) {
+            currentNode.getContext().getThreadManager().runUntilResult(currentNode, new ThreadManager.BlockingAction<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    Layouts.THREAD.getFinishedLatch(thread).await();
+                    return SUCCESS;
+                }
+            });
+
+            if (Layouts.THREAD.getException(thread) != null) {
+                throw new RaiseException(Layouts.THREAD.getException(thread));
+            }
+        }
+
+        @TruffleBoundary
+        private boolean doJoinMillis(final DynamicObject thread, final int timeoutInMillis) {
+            final long start = System.currentTimeMillis();
+            final boolean joined = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    long now = System.currentTimeMillis();
+                    long waited = now - start;
+                    if (waited >= timeoutInMillis) {
+                        // We need to know whether countDown() was called and we do not want to block.
+                        return Layouts.THREAD.getFinishedLatch(thread).getCount() == 0;
+                    }
+                    return Layouts.THREAD.getFinishedLatch(thread).await(timeoutInMillis - waited, TimeUnit.MILLISECONDS);
+                }
+            });
+
+            if (joined && Layouts.THREAD.getException(thread) != null) {
+                throw new RaiseException(Layouts.THREAD.getException(thread));
+            }
+
+            return joined;
         }
 
     }
@@ -381,7 +381,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object value(DynamicObject self) {
-            join(self);
+            JoinNode.doJoin(this, self);
             return Layouts.THREAD.getValue(self);
         }
 

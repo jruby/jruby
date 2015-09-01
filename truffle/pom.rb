@@ -62,6 +62,7 @@ project 'JRuby Truffle' do
     resource do
       directory 'src/main/ruby'
       includes '**/*rb'
+      target_path '${project.build.directory}/classes/jruby-truffle'
     end
   end
 

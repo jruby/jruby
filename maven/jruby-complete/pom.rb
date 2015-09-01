@@ -117,6 +117,5 @@ project 'JRuby Complete' do
       jdk '1.8'
     end
     plugin :invoker, :pomExcludes => ['osgi_many_bundles_with_embedded_gems_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
-    properties 'javadoc.opts' => '-Xdoclint:none'
   end
 end

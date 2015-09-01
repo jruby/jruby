@@ -288,7 +288,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goals('jar-no-fork', :id => 'attach-sources')
     end
     plugin(:javadoc) do
-      execute_goals('jar', :id => 'attach-javadocs', :configuration => [ xml('<additionalparam>${javadoc.opts}</additionalparam>') ])
+      execute_goals('jar', :id => 'attach-javadocs')
     end
   end
 
@@ -297,6 +297,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       property :name => 'invoker.test'
     end
     properties 'invoker.skip' => false
+  end
+
+  profile 'jdk8' do
+    activation do
+      jdk '1.8'
+    end
+    plugin :javadoc, :additionalparam => '-Xdoclint:none'
   end
 
   reporting do

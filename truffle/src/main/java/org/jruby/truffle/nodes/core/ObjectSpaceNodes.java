@@ -165,9 +165,9 @@ public abstract class ObjectSpaceNodes {
         }
 
         @Specialization
-        public DynamicObject defineFinalizer(VirtualFrame frame, Object object, Object finalizer) {
+        public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
             if (respondToNode.executeBoolean(frame, finalizer)) {
-                registerFinalizer(object, finalizer);
+                getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
                 Object[] objects = new Object[]{0, finalizer};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             } else {
@@ -176,10 +176,6 @@ public abstract class ObjectSpaceNodes {
             }
         }
 
-        @TruffleBoundary
-        private void registerFinalizer(Object object, Object finalizer) {
-            getContext().getObjectSpaceManager().defineFinalizer((DynamicObject) object, finalizer);
-        }
     }
 
     @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)

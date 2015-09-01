@@ -13,7 +13,10 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
@@ -34,16 +37,18 @@ public class ThreadPrimitiveNodes {
 
         @Specialization(guards = { "isRubyThread(thread)", "isRubyException(exception)" })
         public DynamicObject raise(DynamicObject thread, final DynamicObject exception) {
-            getContext().getSafepointManager().pauseThreadAndExecuteLater(
-                    Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(thread).getCurrentFiber())),
-                    this,
-                    new SafepointAction() {
-                        @Override
-                        public void run(DynamicObject currentThread, Node currentNode) {
-                            throw new RaiseException(exception);
-                        }
-                    });
+            final Thread javaThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(thread).getCurrentFiber()));
 
+            getContext().getSafepointManager().pauseThreadAndExecuteLater(javaThread, this, new SafepointAction() {
+                @Override
+                public void run(DynamicObject currentThread, Node currentNode) {
+                    if (Layouts.EXCEPTION.getBacktrace(exception) == null) {
+                        Backtrace backtrace = RubyCallStack.getBacktrace(currentNode);
+                        Layouts.EXCEPTION.setBacktrace(exception, backtrace);
+                    }
+                    throw new RaiseException(exception);
+                }
+            });
             return nil();
         }
 

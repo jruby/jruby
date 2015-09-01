@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -17,10 +18,7 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
@@ -61,6 +59,7 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
+    @CompilerDirectives.TruffleBoundary
     public synchronized void defineFinalizer(DynamicObject object, Object callable) {
         // Record the finalizer against the object
 
@@ -101,7 +100,7 @@ public class ObjectSpaceManager {
 
         while (true) {
             // Wait on the finalizer queue
-            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingAction<FinalizerReference>() {
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(null, new BlockingAction<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();
@@ -120,6 +119,20 @@ public class ObjectSpaceManager {
         } catch (RaiseException e) {
             // MRI seems to silently ignore exceptions in finalizers
         }
+    }
+
+    public List<DynamicObject> getFinalizerHandlers() {
+        final List<DynamicObject> handlers = new ArrayList<>();
+
+        for (FinalizerReference finalizer : finalizerReferences.values()) {
+            for (Object handler : finalizer.getFinalizers()) {
+                if (handler instanceof DynamicObject) {
+                    handlers.add((DynamicObject) handler);
+                }
+            }
+        }
+
+        return handlers;
     }
 
 }

@@ -329,7 +329,11 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public Object timeEnvZone(DynamicObject time) {
-            throw new UnsupportedOperationException("time_env_zone");
+            final DateTime dt = Layouts.TIME.getDateTime(time);
+
+            final String timezone = dt.getZone().getShortName(dt.getMillis());
+
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(timezone, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

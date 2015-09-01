@@ -161,6 +161,8 @@ public class CoreLibrary {
     private final DynamicObject fiberErrorClass;
     private final DynamicObject threadErrorClass;
     private final DynamicObject internalBufferClass;
+    private final DynamicObject weakRefClass;
+    private final DynamicObjectFactory weakRefFactory;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -404,6 +406,9 @@ public class CoreLibrary {
         Layouts.CLASS.setInstanceFactoryUnsafe(ioClass, Layouts.IO.createIOShape(ioClass, ioClass));
         internalBufferClass = defineClass(ioClass, objectClass, "InternalBuffer");
         Layouts.CLASS.setInstanceFactoryUnsafe(internalBufferClass, Layouts.IO_BUFFER.createIOBufferShape(internalBufferClass, internalBufferClass));
+        weakRefClass = defineClass("WeakRef");
+        weakRefFactory = Layouts.WEAK_REF_LAYOUT.createWeakRefShape(weakRefClass, weakRefClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(weakRefClass, weakRefFactory);
 
         // Modules
 
@@ -1597,6 +1602,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getHashFactory() {
         return hashFactory;
+    }
+
+    public DynamicObjectFactory getWeakRefFactory() {
+        return weakRefFactory;
     }
 
 }

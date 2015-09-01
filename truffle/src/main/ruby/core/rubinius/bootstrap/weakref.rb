@@ -23,48 +23,48 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Modifications are subject to:
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-#
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
 
-class Thread
+class WeakRef < BasicObject
 
-  def raise(exc=undefined, msg=nil, trace=nil)
-    return self unless alive?
+  class RefError < ::RuntimeError; end
 
-    if undefined.equal? exc
-      no_argument = true
-      exc         = nil
-    end
+  def self.new(obj)
+    Rubinius.primitive :weakref_new
+    ::Kernel.raise PrimitiveFailure, "WeakRef.new primitive failed"
+  end
 
-    if exc.respond_to? :exception
-      exc = exc.exception msg
-      Kernel.raise TypeError, 'exception class/object expected' unless Exception === exc
-      exc.set_backtrace trace if trace
-    elsif no_argument
-      exc = RuntimeError.exception nil
-    elsif exc.kind_of? String
-      exc = RuntimeError.exception exc
+  def __setobj__(obj)
+    Rubinius.primitive :weakref_set_object
+    ::Kernel.raise PrimitiveFailure, "WeakRef#__setobj__ primitive failed"
+  end
+
+  def __object__
+    Rubinius.primitive :weakref_object
+    ::Kernel.raise PrimitiveFailure, "WeakRef#__object__ primitive failed"
+  end
+
+  def __getobj__
+    obj = __object__()
+    ::Kernel.raise RefError, "Object has been collected as garbage" unless obj
+    return obj
+  end
+
+  def weakref_alive?
+    !!__object__
+  end
+
+  def method_missing(method, *args, &block)
+    target = __getobj__
+    if target.respond_to?(method)
+      target.__send__(method, *args, &block)
     else
-      Kernel.raise TypeError, 'exception class/object expected'
-    end
-
-    if $DEBUG
-      STDERR.puts "Exception: #{exc.message} (#{exc.class})"
-    end
-
-    if self == Thread.current
-      Kernel.raise exc
-    else
-      exc.capture_backtrace! 2 unless exc.backtrace?
-      raise_prim exc
+      super(method, *args, &block)
     end
   end
 
+  def respond_to_missing?(method, include_private)
+    target = __getobj__
+    target.respond_to?(method, include_private) and
+      (!include_private || target.respond_to?(method, false))
+  end
 end

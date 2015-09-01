@@ -17,7 +17,9 @@ import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -70,6 +72,13 @@ public class AtExitManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    public List<DynamicObject> getHandlers() {
+        final List<DynamicObject> handlers = new ArrayList<>();
+        handlers.addAll(runOnExit);
+        handlers.addAll(runOnExitAlways);
+        return handlers;
     }
 
 }
