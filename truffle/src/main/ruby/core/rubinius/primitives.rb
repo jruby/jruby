@@ -33,5 +33,11 @@ module Rubinius
 
     Truffle::Primitive.install_rubinius_primitive method(:module_mirror)
 
+    def self.vm_gc_start(obj)
+      Truffle::Interop.execute Truffle::Java::System.gc
+    end
+
+    Truffle::Primitive.install_rubinius_primitive method(:vm_gc_start)
+
   end
 end

@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.java.JavaInterop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
@@ -178,6 +180,8 @@ public class CoreLibrary {
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
+
+    private static final TruffleObject systemObject = JavaInterop.asTruffleObject(System.class);
 
     private static String getCoreLoadPath() {
         String path = Options.TRUFFLE_CORE_LOAD_PATH.load();
@@ -624,6 +628,11 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+
+        // Java interop
+
+        final DynamicObject javaModule = defineModule(truffleModule, "Java");
+        Layouts.MODULE.getFields(javaModule).setConstant(null, "System", systemObject);
     }
 
     private void initializeSignalConstants() {
