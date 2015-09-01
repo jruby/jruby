@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name        = 'jruby_truffle_runner'
+  s.name        = 'jruby+truffle_runner'
   s.version     = '0.0.1'
   s.platform    = Gem::Platform::RUBY
   s.authors     = ['Petr Chalupa']
@@ -13,5 +13,5 @@ Gem::Specification.new do |s|
   s.files        = Dir['{lib}/**/*.rb', 'bin/*', 'gem_configurations/*.yaml', 'LICENSE', '*.md']
   s.require_path = 'lib'
 
-  s.executables = ['truffle']
+  s.executables = ['jruby+truffle']
 end

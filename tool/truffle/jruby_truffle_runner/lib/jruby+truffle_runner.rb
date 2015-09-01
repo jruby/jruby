@@ -16,6 +16,9 @@ require 'fileutils'
 class JRubyTruffleRunner
   attr_reader :options
 
+  EXECUTABLE        = 'jruby+truffle'
+  LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
+
   begin
     assign_new_value   = -> (new, old) { new }
     add_to_array       = -> (new, old) { old << new }
@@ -34,8 +37,8 @@ class JRubyTruffleRunner
             debug_port:          ['--debug-port PORT', 'Debug port', assign_new_value, '51819'],
             debug_option:        ['--debug-option OPTION', 'Debug JVM option', assign_new_value,
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
-            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'truffle_bundle'],
-            jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/ruby', assign_new_value,
+            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'jruby+truffle_bundle'],
+            jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
                                   '../jruby/bin/jruby']
         },
         setup:  {
@@ -50,6 +53,7 @@ class JRubyTruffleRunner
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
+            # TODO (pitr 01-Sep-2015): add option for prepended load paths to be able to replace ugly echo in the yaml file
             jexception: ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
         clean:  {
@@ -60,13 +64,13 @@ class JRubyTruffleRunner
 
   begin
     global_help = <<-TXT.gsub(/^ {6}/, '')
-      Usage: truffle [options] [subcommand [subcommand-options]]
+      Usage: #{EXECUTABLE} [options] [subcommand [subcommand-options]]
       Subcommands are: #{(OPTION_DEFINITIONS.keys - [:global]).map(&:to_s).join(', ')}
 
       Allows to execute gem/app on JRuby+Truffle until it's more complete. Environment
       has to be set up first with setup subcommand then run subcommand can be used.
 
-      Options can be set on commandline or in local directory in .truffle.yaml file.
+      Options can be set on commandline or in local directory in #{LOCAL_CONFIG_FILE} file.
       Tha data in yaml file follow same structure as OPTION_DEFINITIONS what, its values
       are deep-merged with default values, then command-line options are applied.
 
@@ -77,7 +81,7 @@ class JRubyTruffleRunner
 
     setup_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: truffle [options] setup [subcommand-options]
+      Usage: #{EXECUTABLE} [options] setup [subcommand-options]
 
       Creates environment for running gem/app on JRuby+Truflle.
 
@@ -85,19 +89,19 @@ class JRubyTruffleRunner
 
     run_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: truffle [options] run [subcommand-options] -- [ruby-options]
+      Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
 
       Runs file, -e expr, etc in setup environment on JRuby+Truffle
-      Examples: truffle run -- a_file.rb
-                truffle run -- -S irb
-                truffle run -- -e 'puts :v'
-                truffle --verbose run -- -Itest test/a_test_file_test.rb
+      Examples: #{EXECUTABLE} run -- a_file.rb
+                #{EXECUTABLE} run -- -S irb
+                #{EXECUTABLE} run -- -e 'puts :v'
+                #{EXECUTABLE} --verbose run -- -Itest test/a_test_file_test.rb
 
     TXT
 
     clean_help = <<-TXT.gsub(/^ {6}/, '')
 
-      Usage: truffle [options] clean [subcommand-options]
+      Usage: #{EXECUTABLE} [options] clean [subcommand-options]
 
       Deletes all files created by setup subcommand.
 
@@ -161,7 +165,7 @@ class JRubyTruffleRunner
   end
 
   def load_local_yaml_configuration
-    yaml_path = File.join Dir.pwd, '.truffle.yaml'
+    yaml_path = File.join Dir.pwd, LOCAL_CONFIG_FILE
 
     unless File.exist? yaml_path
       candidates = Dir['*.gemspec']
@@ -170,8 +174,8 @@ class JRubyTruffleRunner
 
         default_configuration_file_path = File.dirname(__FILE__) + "/../gem_configurations/#{gem_name}.yaml"
         if File.exist?(default_configuration_file_path)
-          puts "Copying default .truffle.yaml for #{gem_name}."
-          FileUtils.cp default_configuration_file_path, '.truffle.yaml'
+          puts "Copying default #{LOCAL_CONFIG_FILE} for #{gem_name}."
+          FileUtils.cp default_configuration_file_path, LOCAL_CONFIG_FILE
         end
       end
     end
@@ -238,10 +242,14 @@ class JRubyTruffleRunner
 
     execute_cmd 'gem install bundler' unless bundle_installed
 
-    execute_cmd "bundle install --standalone --path #{bundle_path} " +
-                    "--without #{@options[:setup][:without].join(' ')}"
+    execute_cmd ['bundle install --standalone',
+                 "--path #{bundle_path}",
+                 ("--without #{@options[:setup][:without].join(' ')}" unless @options[:setup][:without].empty?)
+                ].join(' ')
 
-    execute_cmd "ln -s #{bundle_path}/#{RUBY_ENGINE} #{bundle_path}/jruby+truffle", fail: false
+    link_path = "#{bundle_path}/jruby+truffle"
+    FileUtils.rm link_path if File.exist? link_path
+    execute_cmd "ln -s #{bundle_path}/#{RUBY_ENGINE} #{link_path}"
 
     @options[:setup][:file].each do |name, content|
       puts "creating file: #{name}" if verbose?
