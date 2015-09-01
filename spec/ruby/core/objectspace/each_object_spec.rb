@@ -1,8 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures', __FILE__)
 
-require 'weakref'
-
 describe "ObjectSpace.each_object" do
   it "calls the block once for each living, non-immediate object in the Ruby process" do
     class ObjectSpaceSpecEachObject; end
@@ -49,20 +47,20 @@ describe "ObjectSpace.each_object" do
 
   it "finds an object stored in a global variable" do
     $object_space_global_variable = ObjectSpaceFixtures::ObjectToBeFound.new(:global)
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:global)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:global)
   end
 
   it "finds an object stored in a top-level constant" do
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:top_level_constant)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:top_level_constant)
   end
 
   it "finds an object stored in a second-level constant" do
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:second_level_constant)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:second_level_constant)
   end
 
   it "finds an object stored in a local variable" do
     local = ObjectSpaceFixtures::ObjectToBeFound.new(:local)
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local)
   end
 
   it "finds an object stored in a local variable captured in a block explicitly" do
@@ -71,7 +69,7 @@ describe "ObjectSpace.each_object" do
       Proc.new { local_in_block }
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_block_explicit)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_block_explicit)
   end
 
   it "finds an object stored in a local variable captured in a block implicitly" do
@@ -80,7 +78,7 @@ describe "ObjectSpace.each_object" do
       Proc.new { }
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_block_implicit)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_block_implicit)
   end
 
   it "finds an object stored in a local variable captured in a Proc#binding" do
@@ -89,7 +87,7 @@ describe "ObjectSpace.each_object" do
       Proc.new { }.binding
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_proc_binding)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_proc_binding)
   end
 
   it "finds an object stored in a local variable captured in a Kernel#binding" do
@@ -98,48 +96,51 @@ describe "ObjectSpace.each_object" do
       binding
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_kernel_binding)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_kernel_binding)
   end
 
   it "finds an object stored in a local variable set in a binding manually" do
     b = binding
     b.local_variable_set(:local, ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_manual_binding))
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:local_in_manual_binding)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_manual_binding)
   end
 
   it "finds an object stored in an array" do
     array = [ObjectSpaceFixtures::ObjectToBeFound.new(:array)]
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:array)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:array)
   end
 
   it "finds an object stored in a hash key" do
     hash = {ObjectSpaceFixtures::ObjectToBeFound.new(:hash_key) => :value}
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:hash_key)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:hash_key)
   end
 
   it "finds an object stored in a hash value" do
     hash = {a: ObjectSpaceFixtures::ObjectToBeFound.new(:hash_value)}
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:hash_value)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:hash_value)
   end
 
   it "finds an object stored in an instance variable" do
     local = ObjectSpaceFixtures::ObjectWithInstanceVariable.new
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:instance_variable)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:instance_variable)
   end
 
   it "doesn't find an object stored in a WeakRef that should have been cleared" do
+    require 'weakref'
+
     weak_ref = WeakRef.new(ObjectSpaceFixtures::ObjectToBeFound.new(:weakref))
-    ObjectSpaceFixtures::to_be_found_symbols.should_not include(:weakref)
+    ObjectSpaceFixtures.wait_for_weakref_cleared(weak_ref)
+    ObjectSpaceFixtures.to_be_found_symbols.should_not include(:weakref)
   end
 
   it "finds an object stored in a thread local" do
     Thread.current.thread_variable_set(:object_space_thread_local, ObjectSpaceFixtures::ObjectToBeFound.new(:thread_local))
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:thread_local)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:thread_local)
   end
 
   it "finds an object stored in a fiber local" do
     Thread.current[:object_space_fiber_local] = ObjectSpaceFixtures::ObjectToBeFound.new(:fiber_local)
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:fiber_local)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:fiber_local)
   end
 
   it "finds an object captured in an at_exit handler" do
@@ -151,21 +152,21 @@ describe "ObjectSpace.each_object" do
       end
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:at_exit)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:at_exit)
   end
 
   it "finds an object captured in finalizer" do
     alive = Object.new
 
     Proc.new {
-      local = ObjectSpaceFixtures::ObjectToBeFound.new(:at_exit)
+      local = ObjectSpaceFixtures::ObjectToBeFound.new(:finalizer)
 
       ObjectSpace.define_finalizer(alive, Proc.new {
         local
       })
     }.call
 
-    ObjectSpaceFixtures::to_be_found_symbols.should include(:at_exit)
+    ObjectSpaceFixtures.to_be_found_symbols.should include(:finalizer)
 
     alive.should_not be_nil
   end

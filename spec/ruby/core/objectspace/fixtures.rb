@@ -33,10 +33,10 @@ module ObjectSpaceFixtures
   end
 
   class ObjectToBeFound
-    attr_reader :id
+    attr_reader :name
 
-    def initialize(id)
-      @id = id
+    def initialize(name)
+      @name = name
     end
   end
 
@@ -47,9 +47,16 @@ module ObjectSpaceFixtures
   end
 
   def self.to_be_found_symbols
-    GC.start
     ObjectSpace.each_object(ObjectToBeFound).map do |o|
-      o.id
+      o.name
+    end
+  end
+
+  def self.wait_for_weakref_cleared(weakref)
+    started = Time.now
+
+    while weakref.weakref_alive? && Time.now - started < 3
+      GC.start
     end
   end
 
