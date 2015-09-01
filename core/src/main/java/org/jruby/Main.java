@@ -45,6 +45,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -183,6 +184,8 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
+        printTruffleTimeMetric("before-main");
+
         doGCJCheck();
 
         Main main;
@@ -217,6 +220,9 @@ public class Main {
 
             System.exit(1);
         }
+
+        printTruffleTimeMetric("after-main");
+        printTruffleMemoryMetric();
     }
 
     public Status run(String[] args) {
@@ -528,6 +534,28 @@ public class Main {
         } else {
             System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
             return 1;
+        }
+    }
+
+    public static void printTruffleTimeMetric(String id) {
+        if (Options.TRUFFLE_METRICS_TIME.load()) {
+            final long millis = System.currentTimeMillis();
+            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
+        }
+    }
+
+    private static void printTruffleMemoryMetric() {
+        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+            for (int n = 0; n < 10; n++) {
+                System.gc();
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
         }
     }
 

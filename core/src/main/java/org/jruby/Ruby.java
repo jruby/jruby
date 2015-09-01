@@ -79,7 +79,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -549,7 +548,9 @@ public final class Ruby implements Constantizable {
             return;
         }
 
+        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
+        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -843,7 +844,9 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
+            Main.printTruffleTimeMetric("before-run");
             getTruffleContext().execute((RootNode) rootNode);
+            Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
             return Interpreter.getInstance().execute(this, rootNode, self);
@@ -891,6 +894,8 @@ public final class Ruby implements Constantizable {
     }
 
     private TruffleContextInterface loadTruffleContext() {
+        Main.printTruffleTimeMetric("before-load-truffle-context");
+
         final Class<?> clazz;
 
         try {
@@ -909,6 +914,8 @@ public final class Ruby implements Constantizable {
         }
 
         truffleContext.initialize();
+
+        Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
     }
