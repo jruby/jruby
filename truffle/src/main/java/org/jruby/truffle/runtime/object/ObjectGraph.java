@@ -87,6 +87,10 @@ public class ObjectGraph {
                             for (DynamicObject handler : context.getAtExitManager().getHandlers()) {
                                 visitObject(handler, visitor);
                             }
+
+                            for (DynamicObject handler : context.getObjectSpaceManager().getFinalizerHandlers()) {
+                                visitObject(handler, visitor);
+                            }
                         }
 
                         // All threads visit their thread object
@@ -136,16 +140,20 @@ public class ObjectGraph {
             // Visit specific objects that we're managing
 
             if (RubyGuards.isRubyModule(object)) {
-                final ModuleFields module = Layouts.MODULE.getFields(object);
-
-                for (DynamicObject ancestor : module.ancestors()) {
-                    visitObject(ancestor, visitor);
-                }
-
-                for (RubyConstant constant : module.getConstants().values()) {
-                    visitObject(constant.getValue(), visitor);
-                }
+                visitModule(object, visitor);
             }
+        }
+    }
+
+    private void visitModule(DynamicObject module, ObjectGraphVisitor visitor) {
+        final ModuleFields fields = Layouts.MODULE.getFields(module);
+
+        for (DynamicObject ancestor : fields.ancestors()) {
+            visitObject(ancestor, visitor);
+        }
+
+        for (RubyConstant constant : fields.getConstants().values()) {
+            visitObject(constant.getValue(), visitor);
         }
     }
 
