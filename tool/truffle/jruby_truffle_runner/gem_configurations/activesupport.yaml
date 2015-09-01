@@ -3,9 +3,6 @@
   # default ../jruby/bin/ruby won't work since activesupport is one more dir deeper
   :jruby_truffle_path: '../../jruby/bin/jruby'
 :setup:
-  :after:
-    # patches from truffle_bundle_path has to be loaded first
-    - 'echo "$:.unshift \"\#{path}/..\"" >> "#{options[:global][:truffle_bundle_path]}/bundler/setup.rb"'
   :file:
     shims.rb: |
               require 'minitest'

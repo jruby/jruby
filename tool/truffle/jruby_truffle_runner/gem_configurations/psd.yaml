@@ -1,6 +1,4 @@
 ---
 :setup:
-  :after:
-    - 'echo "$:.unshift \"\#{path}/..\"" >> "#{options[:global][:truffle_bundle_path]}/bundler/setup.rb"'
   :file:
     nokogiri.rb: nil

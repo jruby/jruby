@@ -39,7 +39,9 @@ class JRubyTruffleRunner
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'jruby+truffle_bundle'],
             jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
-                                  '../jruby/bin/jruby']
+                                  '../jruby/bin/jruby'],
+            mock_load_path:      ['--mock-load-path PATH', 'Root path for all mocks/monkey-patches which is prepended in $:',
+                                  assign_new_value, 'mocks']
         },
         setup:  {
             help:    ['-h', '--help', 'Show this message', assign_new_value, false],
@@ -251,9 +253,16 @@ class JRubyTruffleRunner
     FileUtils.rm link_path if File.exist? link_path
     execute_cmd "ln -s #{bundle_path}/#{RUBY_ENGINE} #{link_path}"
 
+    mock_path = "#{bundle_path}/#{@options[:global][:mock_load_path]}"
+    FileUtils.mkpath mock_path
+
     @options[:setup][:file].each do |name, content|
-      puts "creating file: #{name}" if verbose?
-      File.write "#{bundle_path}/#{name}", content
+      puts "creating file: #{mock_path}/#{name}" if verbose?
+      File.write "#{mock_path}/#{name}", content
+    end
+
+    File.open("#{bundle_path}/bundler/setup.rb", 'a') do |f|
+      f.write %[$:.unshift "\#{path}/../#{@options[:global][:mock_load_path]}"]
     end
 
     @options[:setup][:after].each do |cmd|
