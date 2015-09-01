@@ -546,7 +546,9 @@ public class Main {
 
     private static void printTruffleMemoryMetric() {
         if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
-            System.gc();
+            for (int n = 0; n < 10; n++) {
+                System.gc();
+            }
 
             try {
                 Thread.sleep(1000);
