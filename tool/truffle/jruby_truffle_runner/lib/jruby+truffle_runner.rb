@@ -40,6 +40,7 @@ class JRubyTruffleRunner
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'jruby+truffle_bundle'],
             jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
                                   '../jruby/bin/jruby'],
+            graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
             mock_load_path:      ['--mock-load-path PATH', 'Root path for all mocks/monkey-patches which is prepended in $:',
                                   assign_new_value, 'mocks']
         },
@@ -52,6 +53,7 @@ class JRubyTruffleRunner
         run:    {
             help:       ['-h', '--help', 'Show this message', assign_new_value, false],
             test:       ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
+            graal:      ['-g', '--graal', 'Run on graal', assign_new_value, false],
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
@@ -280,7 +282,11 @@ class JRubyTruffleRunner
         *@options[:run][:require].map { |v| '-r ' + v }
     ].compact.join(' ')
 
-    cmd = [@options[:global][:jruby_truffle_path], cmd_options, *rest].join(' ')
+    cmd = [("JAVACMD=#{@options[:global][:graal_path]}" if @options[:run][:graal]),
+           @options[:global][:jruby_truffle_path],
+           cmd_options,
+           *rest
+    ].compact.join(' ')
 
     exit execute_cmd(cmd, fail: false, print_always: true)
   end
