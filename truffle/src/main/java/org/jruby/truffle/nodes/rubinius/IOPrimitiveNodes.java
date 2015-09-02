@@ -262,7 +262,8 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                        new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -275,11 +276,12 @@ public abstract class IOPrimitiveNodes {
             timeout.putLong(0, 0);
             timeout.putLong(8, 0);
 
-            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(), PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
+                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.EAGAIN.intValue(), this));
+                rubyWithSelf(file, "IO::EAGAINWaitReadable.new");
             }
 
             if (res < 0) {
@@ -296,10 +298,12 @@ public abstract class IOPrimitiveNodes {
             }
 
             if (bytesRead == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                        new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                    new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
