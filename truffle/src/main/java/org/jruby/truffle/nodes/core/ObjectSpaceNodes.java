@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,6 +30,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -73,8 +75,14 @@ public abstract class ObjectSpaceNodes {
             new ObjectGraph(getContext()).visitObjects(new ObjectGraphVisitor() {
                 @Override
                 public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
-                    final Object objectID = readObjectIdNode.execute(object);
-                    if (objectID != nil() && (long) objectID == id) {
+                    final long objectID;
+                    try {
+                        objectID = readObjectIdNode.executeLong(object);
+                    } catch (UnexpectedResultException e) {
+                        throw new UnsupportedOperationException(e);
+                    }
+
+                    if (objectID == id) {
                         result.set(object);
                         throw new StopVisitingObjectsException();
                     }
@@ -96,7 +104,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
+            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {
