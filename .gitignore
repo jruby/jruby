@@ -76,6 +76,7 @@ tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb
+tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
 
 # binaries
 !bin/gem

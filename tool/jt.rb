@@ -206,6 +206,7 @@ module Commands
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
+    puts 'jt install-tool                                install the jruby+truffle tool for working with Ruby gems'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -469,6 +470,22 @@ module Commands
       raise ArgumentError, kind
     end
   end
+
+  def install_tool
+    Dir.chdir(JRUBY_DIR) do
+      Dir.chdir('tool/truffle/jruby_truffle_runner') do
+        raw_sh('gem', 'build', 'jruby+truffle_runner.gemspec')
+        raw_sh('gem', 'install', 'jruby+truffle_runner-0.0.1.gem')
+
+        begin
+          system('rbenv', 'rehash')
+        rescue
+        end
+      end
+    end
+  end
+
+  alias_method :"install-tool", :install_tool
 end
 
 class JT
