@@ -4191,9 +4191,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.INSTANCE.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < getContext().getOptions().ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.INSTANCE.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < getContext().getOptions().ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
@@ -4219,9 +4219,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.INSTANCE.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < getContext().getOptions().ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.INSTANCE.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < getContext().getOptions().ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
@@ -4281,8 +4281,8 @@ public abstract class ArrayNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("expecting a Fixnum to sort", this));
         }
 
-        protected static boolean isSmall(DynamicObject array) {
-            return Layouts.ARRAY.getSize(array) <= Options.INSTANCE.ARRAYS_SMALL;
+        protected boolean isSmall(DynamicObject array) {
+            return Layouts.ARRAY.getSize(array) <= getContext().getOptions().ARRAYS_SMALL;
         }
 
     }

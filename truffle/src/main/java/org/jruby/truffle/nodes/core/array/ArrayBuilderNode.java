@@ -65,7 +65,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[Options.INSTANCE.ARRAYS_UNINITIALIZED_SIZE];
+            return new Object[getContext().getOptions().ARRAYS_UNINITIALIZED_SIZE];
         }
 
         @Override

@@ -80,6 +80,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final Ruby runtime;
 
+    private final Options options;
+
     private final POSIX posix;
     private final NativeSockets nativeSockets;
 
@@ -108,6 +110,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private final PrintStream debugStandardOut;
 
     public RubyContext(Ruby runtime) {
+        options = new Options();
+
         latestInstance = this;
 
         assert runtime != null;
@@ -127,7 +131,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if ((boolean) Options.INSTANCE.COVERAGE) {
+        if (options.COVERAGE) {
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -163,8 +167,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
-        if (Options.INSTANCE.INSTRUMENTATION_SERVER_PORT != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, Options.INSTANCE.INSTRUMENTATION_SERVER_PORT);
+        if (options.INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;
@@ -672,6 +676,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public PrintStream getDebugStandardOut() {
         return debugStandardOut;
+    }
+
+    public Options getOptions() {
+        return options;
     }
 
 }

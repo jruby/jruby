@@ -11,8 +11,6 @@ package org.jruby.truffle.runtime;
 
 public class Options {
 
-    public static final Options INSTANCE = new Options();
-
     public final String CORE_LOAD_PATH = org.jruby.util.cli.Options.TRUFFLE_CORE_LOAD_PATH.load();
 
     public final int DISPATCH_POLYMORPHIC_MAX = org.jruby.util.cli.Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load();

@@ -172,8 +172,8 @@ public abstract class RubyNode extends Node {
         return getContext().getNativeSockets();
     }
 
-    protected static int getCacheLimit() {
-        return Options.INSTANCE.DISPATCH_POLYMORPHIC_MAX;
+    protected int getCacheLimit() {
+        return getContext().getOptions().DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Helper methods for caching

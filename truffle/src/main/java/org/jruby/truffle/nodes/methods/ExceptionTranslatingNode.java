@@ -90,7 +90,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(ArithmeticException exception) {
-        if (Options.INSTANCE.EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -98,7 +98,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
-        if (Options.INSTANCE.EXCEPTIONS_PRINT_JAVA) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -163,7 +163,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public DynamicObject translate(Throwable throwable) {
-        if (Options.INSTANCE.EXCEPTIONS_PRINT_JAVA || (boolean) Options.INSTANCE.EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA || (boolean) getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();
         }
 

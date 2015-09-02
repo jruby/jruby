@@ -72,8 +72,6 @@ import java.util.Map;
 
 public class CoreLibrary {
 
-    public static final String CORE_LOAD_PATH = getCoreLoadPath();
-
     private static final String CLI_RECORD_SEPARATOR = org.jruby.util.cli.Options.CLI_RECORD_SEPARATOR.load();
 
     private final RubyContext context;
@@ -179,8 +177,8 @@ public class CoreLibrary {
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
-    private static String getCoreLoadPath() {
-        String path = Options.INSTANCE.CORE_LOAD_PATH;
+    public String getCoreLoadPath() {
+        String path = context.getOptions().CORE_LOAD_PATH;
 
         while (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
@@ -673,7 +671,7 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                context.load(context.getSourceCache().getSource(CoreLibrary.CORE_LOAD_PATH + "/core.rb"), node, NodeWrapper.IDENTITY);
+                context.load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node, NodeWrapper.IDENTITY);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -57,7 +57,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= Options.INSTANCE.HASH_PACKED_ARRAY_MAX * 2) {
+        } else if (keyValues.length <= context.getOptions().HASH_PACKED_ARRAY_MAX * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -102,7 +102,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            final Object[] store = PackedArrayStrategy.createStore();
+            final Object[] store = PackedArrayStrategy.createStore(getContext());
 
             int size = 0;
 

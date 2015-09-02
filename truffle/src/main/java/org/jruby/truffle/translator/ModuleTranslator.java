@@ -83,11 +83,11 @@ class ModuleTranslator extends BodyTranslator {
         String methodName = node.getName();
         boolean rubiniusMethodRename = false;
 
-        if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/array.rb")) {
             rubiniusMethodRename = methodName.equals("zip");
-        } else if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/float.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/float.rb")) {
             rubiniusMethodRename = methodName.equals("round");
-        } else if (sourceSection.getSource().getPath().equals(CoreLibrary.CORE_LOAD_PATH + "/core/rubinius/common/range.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
             rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
         }
 

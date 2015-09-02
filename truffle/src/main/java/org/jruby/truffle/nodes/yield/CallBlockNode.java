@@ -85,10 +85,10 @@ public abstract class CallBlockNode extends RubyNode {
         final DirectCallNode callNode = Truffle.getRuntime().createDirectCallNode(callTarget);
         final CallNodeWrapperNode callNodeWrapperNode = new CallNodeWrapperNode(callNode);
 
-        if (Options.INSTANCE.INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
+        if (getContext().getOptions().INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
-        if (Options.INSTANCE.INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
+        if (getContext().getOptions().INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
             callNode.forceInlining();
         }
         return callNodeWrapperNode;

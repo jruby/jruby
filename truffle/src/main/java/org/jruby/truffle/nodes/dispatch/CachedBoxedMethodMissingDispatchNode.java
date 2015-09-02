@@ -63,12 +63,12 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
              */
 
             if (callNode.isCallTargetCloningAllowed()
-                    && (Options.INSTANCE.DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+                    && (getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
 
-            if (callNode.isInlinable() && Options.INSTANCE.DISPATCH_METHODMISSING_ALWAYS_INLINED) {
+            if (callNode.isInlinable() && getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_INLINED) {
                 insert(callNode);
                 callNode.forceInlining();
             }

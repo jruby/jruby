@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Iterator;
@@ -21,21 +21,20 @@ import java.util.NoSuchElementException;
 public abstract class PackedArrayStrategy {
 
     public static final int ELEMENTS_PER_ENTRY = 3;
-    public static final int MAX_ELEMENTS = Options.INSTANCE.HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY;
 
-    public static Object[] createStore(int hashed, Object key, Object value) {
-        final Object[] store = createStore();
+    public static Object[] createStore(RubyContext context, int hashed, Object key, Object value) {
+        final Object[] store = createStore(context);
         setHashedKeyValue(store, 0, hashed, key, value);
         return store;
     }
 
-    public static Object[] createStore() {
-        return new Object[MAX_ELEMENTS];
+    public static Object[] createStore(RubyContext context) {
+        return new Object[context.getOptions().HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY];
     }
 
-    public static Object[] copyStore(Object[] store) {
-        final Object[] copied = createStore();
-        System.arraycopy(store, 0, copied, 0, MAX_ELEMENTS);
+    public static Object[] copyStore(RubyContext context, Object[] store) {
+        final Object[] copied = createStore(context);
+        System.arraycopy(store, 0, copied, 0, context.getOptions().HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY);
         return copied;
     }
 
@@ -69,21 +68,21 @@ public abstract class PackedArrayStrategy {
         setValue(store, n, value);
     }
 
-    public static void removeEntry(Object[] store, int n) {
-        for (int i = 0; i < MAX_ELEMENTS; i += ELEMENTS_PER_ENTRY) {
+    public static void removeEntry(RubyContext context, Object[] store, int n) {
+        for (int i = 0; i < context.getOptions().HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY; i += ELEMENTS_PER_ENTRY) {
             assert store[i] == null || store[i] instanceof Integer;
         }
 
         final int index = n * ELEMENTS_PER_ENTRY;
-        System.arraycopy(store, index + ELEMENTS_PER_ENTRY, store, index, MAX_ELEMENTS - ELEMENTS_PER_ENTRY - index);
+        System.arraycopy(store, index + ELEMENTS_PER_ENTRY, store, index, context.getOptions().HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY - ELEMENTS_PER_ENTRY - index);
 
-        for (int i = 0; i < MAX_ELEMENTS; i += ELEMENTS_PER_ENTRY) {
+        for (int i = 0; i < context.getOptions().HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY; i += ELEMENTS_PER_ENTRY) {
             assert store[i] == null || store[i] instanceof Integer;
         }
     }
 
     @TruffleBoundary
-    public static void promoteToBuckets(DynamicObject hash, Object[] store, int size) {
+    public static void promoteToBuckets(RubyContext context, DynamicObject hash, Object[] store, int size) {
         final Entry[] buckets = new Entry[BucketsStrategy.capacityGreaterThan(size)];
 
         Entry firstInSequence = null;
@@ -119,13 +118,13 @@ public abstract class PackedArrayStrategy {
             }
         }
 
-        assert HashOperations.verifyStore(buckets, size, firstInSequence, lastInSequence);
+        assert HashOperations.verifyStore(context, buckets, size, firstInSequence, lastInSequence);
         Layouts.HASH.setStore(hash, buckets);
         Layouts.HASH.setSize(hash, size);
         Layouts.HASH.setFirstInSequence(hash, firstInSequence);
         Layouts.HASH.setLastInSequence(hash, lastInSequence);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
     }
 
     @TruffleBoundary

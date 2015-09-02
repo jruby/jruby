@@ -124,9 +124,9 @@ public abstract class BucketsStrategy {
         return (hashed & SIGN_BIT_MASK) % bucketsCount;
     }
 
-    public static void addNewEntry(DynamicObject hash, int hashed, Object key, Object value) {
+    public static void addNewEntry(RubyContext context, DynamicObject hash, int hashed, Object key, Object value) {
         assert HashGuards.isBucketHash(hash);
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
 
         final Entry[] buckets = (Entry[]) Layouts.HASH.getStore(hash);
 
@@ -157,13 +157,13 @@ public abstract class BucketsStrategy {
 
         Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) + 1);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
     }
 
     @TruffleBoundary
-    public static void resize(DynamicObject hash) {
+    public static void resize(RubyContext context, DynamicObject hash) {
         assert HashGuards.isBucketHash(hash);
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
 
         final int bucketsCount = capacityGreaterThan(Layouts.HASH.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
@@ -191,13 +191,13 @@ public abstract class BucketsStrategy {
         int size = Layouts.HASH.getSize(hash);
         Entry firstInSequence = Layouts.HASH.getFirstInSequence(hash);
         Entry lastInSequence = Layouts.HASH.getLastInSequence(hash);
-        assert HashOperations.verifyStore(newEntries, size, firstInSequence, lastInSequence);
+        assert HashOperations.verifyStore(context, newEntries, size, firstInSequence, lastInSequence);
         Layouts.HASH.setStore(hash, newEntries);
         Layouts.HASH.setSize(hash, size);
         Layouts.HASH.setFirstInSequence(hash, firstInSequence);
         Layouts.HASH.setLastInSequence(hash, lastInSequence);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
     }
 
     public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
@@ -261,12 +261,12 @@ public abstract class BucketsStrategy {
         };
     }
 
-    public static void copyInto(DynamicObject from, DynamicObject to) {
+    public static void copyInto(RubyContext context, DynamicObject from, DynamicObject to) {
         assert RubyGuards.isRubyHash(from);
         assert HashGuards.isBucketHash(from);
-        assert HashOperations.verifyStore(from);
+        assert HashOperations.verifyStore(context, from);
         assert RubyGuards.isRubyHash(to);
-        assert HashOperations.verifyStore(to);
+        assert HashOperations.verifyStore(context, to);
 
         final Entry[] newEntries = new Entry[((Entry[]) Layouts.HASH.getStore(from)).length];
 
@@ -298,7 +298,7 @@ public abstract class BucketsStrategy {
         }
 
         int size = Layouts.HASH.getSize(from);
-        assert HashOperations.verifyStore(newEntries, size, firstInSequence, lastInSequence);
+        assert HashOperations.verifyStore(context, newEntries, size, firstInSequence, lastInSequence);
         Layouts.HASH.setStore(to, newEntries);
         Layouts.HASH.setSize(to, size);
         Layouts.HASH.setFirstInSequence(to, firstInSequence);
