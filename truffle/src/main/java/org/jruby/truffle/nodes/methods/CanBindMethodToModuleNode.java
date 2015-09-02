@@ -55,4 +55,8 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
         return ModuleOperations.canBindMethodTo(declaringModule, module);
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().BIND_CACHE;
+    }
+
 }

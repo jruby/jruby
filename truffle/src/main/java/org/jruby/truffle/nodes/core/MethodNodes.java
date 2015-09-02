@@ -271,6 +271,10 @@ public abstract class MethodNodes {
             return Truffle.getRuntime().createCallTarget(newRootNode);
         }
 
+        protected int getCacheLimit() {
+            return getContext().getOptions().METHOD_TO_PROC_CACHE;
+        }
+
     }
 
     private static class SetReceiverNode extends RubyNode {

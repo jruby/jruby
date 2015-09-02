@@ -26,9 +26,9 @@ public class SharedMethodInfo {
     private final String name;
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
-    private final boolean alwaysSplit;
+    private final boolean alwaysClone;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysSplit) {
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysClone) {
         assert sourceSection != null;
         assert name != null;
 
@@ -38,7 +38,7 @@ public class SharedMethodInfo {
         this.name = name;
         this.isBlock = isBlock;
         this.parseTree = parseTree;
-        this.alwaysSplit = alwaysSplit;
+        this.alwaysClone = alwaysClone;
     }
 
     public SourceSection getSourceSection() {
@@ -65,12 +65,12 @@ public class SharedMethodInfo {
         return parseTree;
     }
 
-    public boolean shouldAlwaysSplit() {
-        return alwaysSplit;
+    public boolean shouldAlwaysClone() {
+        return alwaysClone;
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysSplit);
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysClone);
     }
 
     @Override

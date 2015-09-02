@@ -81,9 +81,8 @@ public abstract class BindingNodes {
                 "isRubySymbol(symbol)",
                 "symbol == cachedSymbol",
                 "!isLastLine(cachedSymbol)",
-                "getFrameDescriptor(binding) == cachedFrameDescriptor"
-
-        })
+                "getFrameDescriptor(binding) == cachedFrameDescriptor",
+        }, limit = "getCacheLimit()")
         public Object localVariableGetCached(DynamicObject binding, DynamicObject symbol,
                                              @Cached("symbol") DynamicObject cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
@@ -166,6 +165,10 @@ public abstract class BindingNodes {
             return symbol == dollarUnderscore;
         }
 
+        protected int getCacheLimit() {
+            return getContext().getOptions().BINDING_LOCAL_VARIABLE_CACHE;
+        }
+
     }
 
     @CoreMethod(names = "local_variable_set", required = 2)
@@ -183,7 +186,7 @@ public abstract class BindingNodes {
                 "!isLastLine(symbol)",
                 "getFrameDescriptor(binding) == cachedFrameDescriptor",
                 "symbol == cachedSymbol"
-        })
+        }, limit = "getCacheLimit()")
         public Object localVariableSetCached(DynamicObject binding, DynamicObject symbol, Object value,
                                              @Cached("symbol") DynamicObject cachedSymbol,
                                              @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
@@ -241,6 +244,10 @@ public abstract class BindingNodes {
 
         protected boolean isLastLine(DynamicObject symbol) {
             return symbol == dollarUnderscore;
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().BINDING_LOCAL_VARIABLE_CACHE;
         }
     }
 

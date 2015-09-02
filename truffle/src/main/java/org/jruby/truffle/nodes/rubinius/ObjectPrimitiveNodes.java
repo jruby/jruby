@@ -13,14 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -41,17 +44,17 @@ public abstract class ObjectPrimitiveNodes {
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization(guards = "isNil(nil)")
-        public int objectID(Object nil) {
+        public long objectID(Object nil) {
             return ObjectIDOperations.NIL;
         }
 
         @Specialization(guards = "value")
-        public int objectIDTrue(boolean value) {
+        public long objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
         @Specialization(guards = "!value")
-        public int objectIDFalse(boolean value) {
+        public long objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }
 
@@ -84,9 +87,14 @@ public abstract class ObjectPrimitiveNodes {
         public long objectID(DynamicObject object,
                 @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
                 @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
-            final Object id = readObjectIdNode.execute(object);
+            final long id;
+            try {
+                id = readObjectIdNode.executeLong(object);
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException(e);
+            }
 
-            if (id == nil()) {
+            if (id == 0) {
                 final long newId = getContext().getNextObjectID();
                 writeObjectIdNode.execute(object, newId);
                 return newId;
@@ -96,7 +104,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return new ReadHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
+            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
         }
 
         protected WriteHeadObjectFieldNode createWriteObjectIDNode() {

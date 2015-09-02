@@ -27,7 +27,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -170,10 +169,6 @@ public abstract class RubyNode extends Node {
 
     protected NativeSockets nativeSockets() {
         return getContext().getNativeSockets();
-    }
-
-    protected int getCacheLimit() {
-        return getContext().getOptions().DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Helper methods for caching

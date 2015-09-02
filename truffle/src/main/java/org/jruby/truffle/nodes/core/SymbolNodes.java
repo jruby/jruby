@@ -117,7 +117,7 @@ public abstract class SymbolNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "cachedSymbol == symbol")
+        @Specialization(guards = "cachedSymbol == symbol", limit = "getCacheLimit()")
         public DynamicObject toProcCached(DynamicObject symbol,
                                      @Cached("symbol") DynamicObject cachedSymbol,
                                      @Cached("createProc(symbol)") DynamicObject cachedProc) {
@@ -155,6 +155,10 @@ public abstract class SymbolNodes {
                     callTarget, callTarget, null,
                     null, getContext().getCoreLibrary().getNilObject(),
                     null);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().SYMBOL_TO_PROC_CACHE;
         }
 
     }

@@ -41,7 +41,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
             "!cachedIsSingleton"
-    })
+    }, limit = "getCacheLimit()")
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
             Object[] values,
@@ -65,6 +65,10 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     protected boolean isSingleton(DynamicObject classToAllocate) {
         return Layouts.CLASS.getIsSingleton(classToAllocate);
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().ALLOCATE_CLASS_CACHE;
     }
 
 }

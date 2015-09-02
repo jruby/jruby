@@ -15,9 +15,12 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.posix.FileStat;
+
 import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -249,7 +252,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readStatNode = new ReadHeadObjectFieldNode(STAT_IDENTIFIER);
+            readStatNode = ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), STAT_IDENTIFIER, null, null);
         }
 
         public FileStat getStat(DynamicObject rubyStat) {

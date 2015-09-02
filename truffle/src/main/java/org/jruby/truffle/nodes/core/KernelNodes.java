@@ -531,7 +531,7 @@ public abstract class KernelNodes {
                 "isRubyString(source)",
                 "byteListsEqual(source, cachedSource)",
                 "!parseDependsOnDeclarationFrame(cachedRootNode)"
-        })
+        }, limit = "getCacheLimit()")
         public Object evalNoBindingCached(
                 VirtualFrame frame,
                 DynamicObject source,
@@ -645,6 +645,10 @@ public abstract class KernelNodes {
 
         protected CallTarget createCallTarget(RootNodeWrapper rootNode) {
             return Truffle.getRuntime().createCallTarget(rootNode.rootNode);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
         }
 
     }
@@ -1009,7 +1013,7 @@ public abstract class KernelNodes {
         }
 
         private Object instanceVariableGet(DynamicObject object, String name) {
-            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getCoreLibrary().getNilObject());
+            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), nil());
         }
 
     }
@@ -1119,6 +1123,10 @@ public abstract class KernelNodes {
 
         protected DynamicObject getMetaClass(VirtualFrame frame, Object object) {
             return metaClassNode.executeMetaClass(frame, object);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().IS_A_CACHE;
         }
 
     }
@@ -1432,12 +1440,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
-
-            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                dispatchNode.forceUncached();
-            }
         }
 
         @Specialization
@@ -1610,11 +1614,6 @@ public abstract class KernelNodes {
 
             dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
-
-            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                dispatch.forceUncached();
-                dispatchIgnoreVisibility.forceUncached();
-            }
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
