@@ -10,6 +10,7 @@ require 'optparse'
 require 'pp'
 require 'yaml'
 require 'fileutils'
+require 'shellwords'
 
 # TODO (pitr 01-Sep-2015): add pre stored run options combinations like -S irb, -I test
 
@@ -246,10 +247,11 @@ class JRubyTruffleRunner
 
     execute_cmd 'gem install bundler' unless bundle_installed
 
-    execute_cmd ['bundle install --standalone',
-                 "--path #{bundle_path}",
-                 ("--without #{@options[:setup][:without].join(' ')}" unless @options[:setup][:without].empty?)
-                ].join(' ')
+    execute_cmd ['bundle',
+                 'install',
+                 '--standalone',
+                 '--path', bundle_path,
+                 *(['--without', @options[:setup][:without].join(' ')] unless @options[:setup][:without].empty?)]
 
     link_path = "#{bundle_path}/jruby+truffle"
     FileUtils.rm link_path if File.exist? link_path
@@ -277,18 +279,22 @@ class JRubyTruffleRunner
         ('-X+T' unless @options[:run][:test]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
-        "-r ./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
+        '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
         *@options[:run][:load_path].map { |v| '-I ' + v },
         *@options[:run][:require].map { |v| '-r ' + v }
-    ].compact.join(' ')
+    ].compact
 
-    cmd = [("JAVACMD=#{@options[:global][:graal_path]}" if @options[:run][:graal]),
+    env            = {}
+    env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
+
+    cmd = [(env unless env.empty?),
            @options[:global][:jruby_truffle_path],
-           cmd_options,
+           *cmd_options,
            *rest
-    ].compact.join(' ')
+    ].compact
 
     execute_cmd(cmd, fail: false, print_always: true)
+    exit $?.exitstatus
   end
 
   def subcommand_clean(rest)
@@ -296,12 +302,27 @@ class JRubyTruffleRunner
   end
 
   def print_cmd(cmd, print_always)
-    puts '$ ' + cmd if verbose? || print_always
-    cmd
+    unless verbose? || print_always
+      return cmd
+    end
+
+    print = if String === cmd
+              cmd
+            else
+              cmd.map do |v|
+                if Hash === v
+                  v.map { |k, v| "#{k}=#{v}" }.join(' ')
+                else
+                  Shellwords.escape v
+                end
+              end.join(' ')
+            end
+    puts '$ ' + print
+    return cmd
   end
 
   def execute_cmd(cmd, fail: true, print_always: false)
-    result = system(print_cmd(cmd, print_always))
+    result = system(*print_cmd(cmd, print_always))
   ensure
     raise 'command failed' if fail && !result
   end
