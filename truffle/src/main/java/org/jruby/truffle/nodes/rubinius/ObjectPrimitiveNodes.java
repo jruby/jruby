@@ -41,17 +41,17 @@ public abstract class ObjectPrimitiveNodes {
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization(guards = "isNil(nil)")
-        public int objectID(Object nil) {
+        public long objectID(Object nil) {
             return ObjectIDOperations.NIL;
         }
 
         @Specialization(guards = "value")
-        public int objectIDTrue(boolean value) {
+        public long objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
         @Specialization(guards = "!value")
-        public int objectIDFalse(boolean value) {
+        public long objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }
 

@@ -40,10 +40,10 @@ import java.math.BigInteger;
  */
 public abstract class ObjectIDOperations {
 
-    public static final int FALSE = 0;
-    public static final int TRUE = 2;
-    public static final int NIL = 4;
-    public static final int FIRST_OBJECT_ID = 6;
+    public static final long FALSE = 0;
+    public static final long TRUE = 2;
+    public static final long NIL = 4;
+    public static final long FIRST_OBJECT_ID = 6;
 
     private static final BigInteger LARGE_FIXNUM_FLAG = BigInteger.ONE.shiftLeft(64);
     private static final BigInteger FLOAT_FLAG = BigInteger.ONE.shiftLeft(65);
