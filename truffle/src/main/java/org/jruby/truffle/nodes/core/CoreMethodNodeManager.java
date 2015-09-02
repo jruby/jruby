@@ -157,7 +157,7 @@ public class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required, optional, method.rest());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, context.getOptions().CORE_ALWAYS_CLONE);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 

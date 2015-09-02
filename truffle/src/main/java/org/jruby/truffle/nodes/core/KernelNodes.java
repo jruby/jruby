@@ -1432,12 +1432,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
-
-            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                dispatchNode.forceUncached();
-            }
         }
 
         @Specialization
@@ -1610,11 +1606,6 @@ public abstract class KernelNodes {
 
             dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
-
-            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                dispatch.forceUncached();
-                dispatchIgnoreVisibility.forceUncached();
-            }
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);

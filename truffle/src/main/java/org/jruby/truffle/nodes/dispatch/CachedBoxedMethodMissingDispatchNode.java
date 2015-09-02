@@ -19,7 +19,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -63,12 +62,12 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
              */
 
             if (callNode.isCallTargetCloningAllowed()
-                    && (getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+                    && (getContext().getOptions().METHODMISSING_ALWAYS_CLONE || method.getSharedMethodInfo().shouldAlwaysClone())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
 
-            if (callNode.isInlinable() && getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_INLINED) {
+            if (callNode.isInlinable() && getContext().getOptions().METHODMISSING_ALWAYS_INLINE) {
                 insert(callNode);
                 callNode.forceInlining();
             }
