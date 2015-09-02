@@ -31,10 +31,15 @@ public class Options {
     public final int METHOD_LOOKUP_CACHE = org.jruby.util.cli.Options.TRUFFLE_METHOD_LOOKUP_CACHE.load();
     public final int DISPATCH_CACHE = org.jruby.util.cli.Options.TRUFFLE_DISPATCH_CACHE.load();
     public final int YIELD_CACHE = org.jruby.util.cli.Options.TRUFFLE_YIELD_CACHE.load();
-    public final int TO_PROC_CACHE = org.jruby.util.cli.Options.TRUFFLE_TO_PROC_CACHE.load();
+    public final int METHOD_TO_PROC_CACHE = org.jruby.util.cli.Options.TRUFFLE_METHOD_TO_PROC_CACHE.load();
     public final int IS_A_CACHE = org.jruby.util.cli.Options.TRUFFLE_IS_A_CACHE.load();
     public final int BIND_CACHE = org.jruby.util.cli.Options.TRUFFLE_BIND_CACHE.load();
     public final int CONSTANT_LOOKUP_CACHE = org.jruby.util.cli.Options.TRUFFLE_CONSTANT_LOOKUP_CACHE.load();
+    public final int BINDING_LOCAL_VARIABLE_CACHE = org.jruby.util.cli.Options.TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE.load();
+    public final int SYMBOL_TO_PROC_CACHE = org.jruby.util.cli.Options.TRUFFLE_SYMBOL_TO_PROC_CACHE.load();
+    public final int ALLOCATE_CLASS_CACHE = org.jruby.util.cli.Options.TRUFFLE_ALLOCATE_CLASS_CACHE.load();
+    public final int PACK_CACHE = org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE.load();
+    public final int EVAL_CACHE = org.jruby.util.cli.Options.TRUFFLE_EVAL_CACHE.load();
 
     // Cloning and inlining
 
