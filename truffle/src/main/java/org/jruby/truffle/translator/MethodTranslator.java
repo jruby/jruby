@@ -215,26 +215,11 @@ public class MethodTranslator extends BodyTranslator {
         final RubyRootNode rootNode = new RubyRootNode(
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
-        if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            NodeUtil.printCompactTree(System.err, rootNode);
-        }
-
-        if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            NodeUtil.printTree(System.err, rootNode);
-        }
-
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
     }
 
     private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
-        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(sourceSection + " " + methodName);
-            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
-        }
-
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 

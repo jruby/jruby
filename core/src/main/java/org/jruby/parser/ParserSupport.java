@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.RubyBignum;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
@@ -53,7 +52,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
-import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
@@ -1378,9 +1376,7 @@ public class ParserSupport {
         return "";
     }
 
-    private static final String TRUFFLE_CORE_LOAD_PATH = Options.TRUFFLE_CORE_LOAD_PATH.load();
-
     public static boolean skipTruffleRubiniusWarnings(RubyLexer lexer) {
-        return lexer.getFile().startsWith(TRUFFLE_CORE_LOAD_PATH);
+        return lexer.getFile().startsWith(Options.TRUFFLE_CORE_LOAD_PATH.load());
     }
 }

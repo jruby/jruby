@@ -30,6 +30,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.cli.Options;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -234,10 +235,10 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, true,
-                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(),
                     MissingBehavior.CALL_METHOD_MISSING);
 
-            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();
             }
         }

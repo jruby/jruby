@@ -29,8 +29,6 @@ import java.util.Arrays;
 
 public abstract class ArrayBuilderNode extends Node {
 
-    public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
-
     private final RubyContext context;
 
     public ArrayBuilderNode(RubyContext context) {
@@ -67,7 +65,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[ARRAYS_UNINITIALIZED_SIZE];
+            return new Object[(int) Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load()];
         }
 
         @Override

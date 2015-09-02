@@ -32,9 +32,6 @@ import java.util.Arrays;
 
 public class ExceptionTranslatingNode extends RubyNode {
 
-    private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
-    private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
-
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
 
     @Child private RubyNode child;
@@ -93,7 +90,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(ArithmeticException exception) {
-        if (PRINT_JAVA_EXCEPTIONS) {
+        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -101,7 +98,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
-        if (PRINT_JAVA_EXCEPTIONS) {
+        if ((boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -166,7 +163,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public DynamicObject translate(Throwable throwable) {
-        if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
+        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load() || (boolean) Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load()) {
             throwable.printStackTrace();
         }
 

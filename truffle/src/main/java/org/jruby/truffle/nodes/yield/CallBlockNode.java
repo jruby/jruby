@@ -36,9 +36,6 @@ import com.oracle.truffle.api.source.SourceSection;
 })
 public abstract class CallBlockNode extends RubyNode {
 
-    private static final boolean INLINER_ALWAYS_CLONE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load();
-    private static final boolean INLINER_ALWAYS_INLINE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load();
-
     // Allowing the child to be Node.replace()'d.
     static class CallNodeWrapperNode extends Node {
         @Child DirectCallNode child;
@@ -88,10 +85,10 @@ public abstract class CallBlockNode extends RubyNode {
         final DirectCallNode callNode = Truffle.getRuntime().createDirectCallNode(callTarget);
         final CallNodeWrapperNode callNodeWrapperNode = new CallNodeWrapperNode(callNode);
 
-        if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
+        if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
-        if (INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
+        if (Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load() && callNode.isInlinable()) {
             callNode.forceInlining();
         }
         return callNodeWrapperNode;

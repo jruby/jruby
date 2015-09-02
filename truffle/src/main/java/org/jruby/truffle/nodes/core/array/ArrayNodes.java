@@ -71,8 +71,6 @@ import java.util.Arrays;
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
 
-    public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
-
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
@@ -4193,9 +4191,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < ARRAYS_SMALL; i++) {
+            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL.load(); i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL.load(); j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
@@ -4221,9 +4219,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < ARRAYS_SMALL; i++) {
+            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL.load(); i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL.load(); j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
@@ -4284,7 +4282,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(DynamicObject array) {
-            return Layouts.ARRAY.getSize(array) <= ARRAYS_SMALL;
+            return Layouts.ARRAY.getSize(array) <= Options.TRUFFLE_ARRAYS_SMALL.load();
         }
 
     }

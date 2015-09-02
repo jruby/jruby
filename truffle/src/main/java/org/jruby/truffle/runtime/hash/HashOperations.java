@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.cli.Options;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -86,11 +87,11 @@ public abstract class HashOperations {
 
             assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
         } else if (store instanceof Object[]) {
-            assert ((Object[]) store).length == PackedArrayStrategy.MAX_ENTRIES * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
+            assert ((Object[]) store).length == Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load() * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
 
             final Object[] packedStore = (Object[]) store;
 
-            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load(); n++) {
                 if (n < size) {
                     assert packedStore[n * 2] != null;
                     assert packedStore[n * 2 + 1] != null;

@@ -79,9 +79,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private static volatile RubyContext latestInstance;
 
-    private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
-    private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
-
     private final Ruby runtime;
 
     private final POSIX posix;
@@ -131,7 +128,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (TRUFFLE_COVERAGE) {
+        if ((boolean) Options.TRUFFLE_COVERAGE.load()) {
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -167,8 +164,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
-        if (INSTRUMENTATION_SERVER_PORT != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
+        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;

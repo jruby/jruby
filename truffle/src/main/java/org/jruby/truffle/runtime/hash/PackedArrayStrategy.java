@@ -20,9 +20,8 @@ import java.util.NoSuchElementException;
 
 public abstract class PackedArrayStrategy {
 
-    public static final int MAX_ENTRIES = Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load();
     public static final int ELEMENTS_PER_ENTRY = 3;
-    public static final int MAX_ELEMENTS = MAX_ENTRIES * ELEMENTS_PER_ENTRY;
+    public static final int MAX_ELEMENTS = Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load() * ELEMENTS_PER_ENTRY;
 
     public static Object[] createStore(int hashed, Object key, Object value) {
         final Object[] store = createStore();

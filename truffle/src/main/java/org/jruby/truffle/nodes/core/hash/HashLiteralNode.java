@@ -26,6 +26,7 @@ import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.cli.Options;
 
 public abstract class HashLiteralNode extends RubyNode {
 
@@ -56,7 +57,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= PackedArrayStrategy.MAX_ENTRIES * 2) {
+        } else if (keyValues.length <= Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load() * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);

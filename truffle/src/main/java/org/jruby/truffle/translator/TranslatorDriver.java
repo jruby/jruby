@@ -180,21 +180,6 @@ public class TranslatorDriver {
 
         // Shell result
 
-        if (MethodTranslator.PRINT_PARSE_TREE_METHOD_NAMES.contains("main")) {
-            System.err.println(source.getShortName() + " main");
-            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
-        }
-
-        if (MethodTranslator.PRINT_AST_METHOD_NAMES.contains("main")) {
-            System.err.println(source.getShortName() + " main");
-            NodeUtil.printCompactTree(System.err, truffleNode);
-        }
-
-        if (MethodTranslator.PRINT_FULL_AST_METHOD_NAMES.contains("main")) {
-            System.err.println(source.getShortName() + " main");
-            NodeUtil.printTree(System.err, truffleNode);
-        }
-
         return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 

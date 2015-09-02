@@ -75,6 +75,7 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -1432,10 +1433,10 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(),
                     MissingBehavior.CALL_METHOD_MISSING);
 
-            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatchNode.forceUncached();
             }
         }
@@ -1611,7 +1612,7 @@ public abstract class KernelNodes {
             dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
 
-            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();
                 dispatchIgnoreVisibility.forceUncached();
             }

@@ -28,9 +28,6 @@ import org.jruby.util.cli.Options;
 
 public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
-    private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
-    private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
-
     private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
@@ -66,12 +63,12 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
              */
 
             if (callNode.isCallTargetCloningAllowed()
-                    && (DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+                    && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load() || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
 
-            if (callNode.isInlinable() && DISPATCH_METHODMISSING_ALWAYS_INLINED) {
+            if (callNode.isInlinable() && Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load()) {
                 insert(callNode);
                 callNode.forceInlining();
             }

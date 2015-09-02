@@ -29,8 +29,6 @@ import org.jruby.util.cli.Options;
  */
 public class NNode extends PackNode {
 
-    private static final int PACK_UNROLL_LIMIT = Options.TRUFFLE_PACK_UNROLL_LIMIT.load();
-
     private final int repeats;
     @Child private PackNode child;
 
@@ -44,7 +42,7 @@ public class NNode extends PackNode {
     public Object execute(VirtualFrame frame) {
         if (CompilerDirectives.inCompiledCode()
                 && CompilerDirectives.isCompilationConstant(repeats)
-                && repeats <= PACK_UNROLL_LIMIT) {
+                && repeats <= Options.TRUFFLE_PACK_UNROLL_LIMIT.load()) {
             return executeExploded(frame);
         }
 
