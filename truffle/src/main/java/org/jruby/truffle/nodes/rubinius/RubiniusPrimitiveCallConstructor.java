@@ -39,11 +39,12 @@ public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstr
 
     @Override
     public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
-        return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
-                new LiteralNode(context, sourceSection, method),
-                new ReadAllArgumentsNode(context, sourceSection),
-                new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
-        });
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+                    new LiteralNode(context, sourceSection, method),
+                    new ReadAllArgumentsNode(context, sourceSection),
+                    new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+        }), returnID);
     }
 
     @Override

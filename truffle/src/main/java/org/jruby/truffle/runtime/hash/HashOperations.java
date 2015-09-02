@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
+import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;
@@ -21,11 +23,11 @@ import java.util.Map;
 
 public abstract class HashOperations {
 
-    public static boolean verifyStore(DynamicObject hash) {
-        return verifyStore(Layouts.HASH.getStore(hash), Layouts.HASH.getSize(hash), Layouts.HASH.getFirstInSequence(hash), Layouts.HASH.getLastInSequence(hash));
+    public static boolean verifyStore(RubyContext context, DynamicObject hash) {
+        return verifyStore(context, Layouts.HASH.getStore(hash), Layouts.HASH.getSize(hash), Layouts.HASH.getFirstInSequence(hash), Layouts.HASH.getLastInSequence(hash));
     }
 
-    public static boolean verifyStore(Object store, int size, Entry firstInSequence, Entry lastInSequence) {
+    public static boolean verifyStore(RubyContext context, Object store, int size, Entry firstInSequence, Entry lastInSequence) {
         assert store == null || store instanceof Object[] || store instanceof Entry[];
 
         if (store == null) {
@@ -86,11 +88,11 @@ public abstract class HashOperations {
 
             assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
         } else if (store instanceof Object[]) {
-            assert ((Object[]) store).length == PackedArrayStrategy.MAX_ENTRIES * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
+            assert ((Object[]) store).length == context.getOptions().HASH_PACKED_ARRAY_MAX * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
 
             final Object[] packedStore = (Object[]) store;
 
-            for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+            for (int n = 0; n < context.getOptions().HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     assert packedStore[n * 2] != null;
                     assert packedStore[n * 2 + 1] != null;

@@ -19,13 +19,8 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
 
 public abstract class DispatchNode extends RubyNode {
-
-    public static final int DISPATCH_POLYMORPHIC_MAX = Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load();
-    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load();
-    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load();
 
     private final DispatchAction dispatchAction;
 

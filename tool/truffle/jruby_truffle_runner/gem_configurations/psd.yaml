@@ -1,0 +1,4 @@
+---
+:setup:
+  :file:
+    nokogiri.rb: nil

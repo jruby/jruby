@@ -20,20 +20,17 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
 public class ExceptionTranslatingNode extends RubyNode {
-
-    private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
-    private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
 
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
 
@@ -93,7 +90,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(ArithmeticException exception) {
-        if (PRINT_JAVA_EXCEPTIONS) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -101,7 +98,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     private DynamicObject translate(UnsupportedSpecializationException exception) {
-        if (PRINT_JAVA_EXCEPTIONS) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -166,7 +163,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public DynamicObject translate(Throwable throwable) {
-        if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
+        if (getContext().getOptions().EXCEPTIONS_PRINT_JAVA || (boolean) getContext().getOptions().EXCEPTIONS_PRINT_UNCAUGHT_JAVA) {
             throwable.printStackTrace();
         }
 

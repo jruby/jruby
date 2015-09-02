@@ -10,10 +10,10 @@
 package org.jruby.truffle.nodes.yield;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -35,9 +35,6 @@ import com.oracle.truffle.api.source.SourceSection;
         @NodeChild(value = "arguments", type = RubyNode[].class)
 })
 public abstract class CallBlockNode extends RubyNode {
-
-    private static final boolean INLINER_ALWAYS_CLONE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load();
-    private static final boolean INLINER_ALWAYS_INLINE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load();
 
     // Allowing the child to be Node.replace()'d.
     static class CallNodeWrapperNode extends Node {
@@ -88,10 +85,10 @@ public abstract class CallBlockNode extends RubyNode {
         final DirectCallNode callNode = Truffle.getRuntime().createDirectCallNode(callTarget);
         final CallNodeWrapperNode callNodeWrapperNode = new CallNodeWrapperNode(callNode);
 
-        if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
+        if (getContext().getOptions().INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
-        if (INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
+        if (getContext().getOptions().INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
             callNode.forceInlining();
         }
         return callNodeWrapperNode;

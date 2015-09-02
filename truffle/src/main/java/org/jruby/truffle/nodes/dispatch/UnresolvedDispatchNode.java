@@ -18,6 +18,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -83,7 +84,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 final DispatchNode newDispathNode;
 
-                if (depth == DISPATCH_POLYMORPHIC_MAX) {
+                if (depth == getContext().getOptions().DISPATCH_POLYMORPHIC_MAX) {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
@@ -229,12 +230,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+                if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                     return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
             }
 
             default: {

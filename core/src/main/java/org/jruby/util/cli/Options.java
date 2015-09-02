@@ -126,35 +126,6 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Directory to load the Truffle core library from.");
-
-    public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
-    public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
-    public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
-    public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array_max", 3, "Maximum size of a Hash to use with the packed array storage strategy.");
-
-    public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
-    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
-    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
-    public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs");
-
-    public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
-
-    public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
-    public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");
-    public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_uncached", false, "Always use uncached dispatch for the metaprogramming methods #__send__, #send and #respond_to?, and for any call site that has to use #method_missing or #const_missing.");
-    public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_indirect", false, "Always use indirect calls for the metaprogramming methods #__send__ and #send, and for any call site that has to use #method_missing or #const_missing.");
-    public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED = bool(TRUFFLE, "truffle.call.method_missing_always_cloned", true, "Always clone #method_missing call targets.");
-    public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED = bool(TRUFFLE, "truffle.call.method_missing_always_inlined", true, "Always inline #method_missing call targets.");
-
-    public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
-
-    public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
-    public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");
-
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
     public static final Option<Boolean> FFI_COMPILE_DUMP = bool(NATIVE, "ffi.compile.dump", false, "Dump bytecode-generated FFI stubs to console.");
@@ -171,7 +142,7 @@ public class Options {
     public static final Option<Boolean> OBJECTSPACE_ENABLED = bool(MISCELLANEOUS, "objectspace.enabled", false, "Enable or disable ObjectSpace.each_object.");
     public static final Option<Boolean> SIPHASH_ENABLED = bool(MISCELLANEOUS, "siphash.enabled", false, "Enable or disable SipHash for String hash function.");
     public static final Option<Boolean> LAUNCH_INPROC = bool(MISCELLANEOUS, "launch.inproc", false, "Set in-process launching of e.g. system('ruby ...').");
-    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", new String[]{"1.5","1.6","1.7"}, SafePropertyAccessor.getProperty("java.specification.version", "1.5"), "Specify the major Java bytecode version.");
+    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", new String[]{"1.5", "1.6", "1.7"}, SafePropertyAccessor.getProperty("java.specification.version", "1.5"), "Specify the major Java bytecode version.");
     public static final Option<Boolean> MANAGEMENT_ENABLED = bool(MISCELLANEOUS, "management.enabled", false, "Set whether JMX management is enabled.");
     public static final Option<Boolean> JUMP_BACKTRACE = bool(MISCELLANEOUS, "jump.backtrace", false, "Make non-local flow jumps generate backtraces.");
     public static final Option<Boolean> PROCESS_NOUNWRAP = bool(MISCELLANEOUS, "process.noUnwrap", false, "Do not unwrap process streams (issue on some recent JVMs).");
@@ -179,7 +150,7 @@ public class Options {
     public static final Option<Boolean> REIFY_LOGERRORS = bool(MISCELLANEOUS, "reify.logErrors", false, "Log errors during reification (reify.classes=true).");
     public static final Option<Boolean> REFLECTED_HANDLES = bool(MISCELLANEOUS, "reflected.handles", false, "Use reflection for binding methods, not generated bytecode.");
     public static final Option<Boolean> BACKTRACE_COLOR = bool(MISCELLANEOUS, "backtrace.color", false, "Enable colorized backtraces.");
-    public static final Option<String> BACKTRACE_STYLE = string(MISCELLANEOUS, "backtrace.style", new String[]{"normal","raw","full","mri"}, "normal", "Set the style of exception backtraces.");
+    public static final Option<String> BACKTRACE_STYLE = string(MISCELLANEOUS, "backtrace.style", new String[]{"normal", "raw", "full", "mri"}, "normal", "Set the style of exception backtraces.");
     public static final Option<Boolean> BACKTRACE_MASK = bool(MISCELLANEOUS, "backtrace.mask", false, "Mask .java lines in Ruby backtraces.");
     public static final Option<String> THREAD_DUMP_SIGNAL = string(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
     public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
@@ -204,7 +175,7 @@ public class Options {
     public static final Option<Boolean> LOG_BACKTRACES = bool(DEBUG, "log.backtraces", false, "Log every time an exception backtrace is generated.");
     public static final Option<Boolean> LOG_CALLERS = bool(DEBUG, "log.callers", false, "Log every time a Kernel#caller backtrace is generated.");
     public static final Option<Boolean> LOG_WARNINGS = bool(DEBUG, "log.warnings", false, "Log every time a built-in warning backtrace is generated.");
-    public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[] {"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
+    public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
@@ -246,6 +217,34 @@ public class Options {
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
+    
+    public static final Option<String> TRUFFLE_CORE_LOAD_PATH = string(TRUFFLE, "truffle.core.load_path", "truffle:/jruby-truffle", "Directory to load the Truffle core library from.");
+
+    public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
+    public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
+    public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
+    public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array_max", 3, "Maximum size of a Hash to use with the packed array storage strategy.");
+
+    public static final Option<Integer> TRUFFLE_INSTRUMENTATION_SERVER_PORT = integer(TRUFFLE, "truffle.instrumentation_server_port", 0, "Port number to run an HTTP server on that provides instrumentation services");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_uncaught_java", false, "Print uncaught Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_COVERAGE = bool(TRUFFLE, "truffle.coverage", false, "Enable coverage (will be enabled by default in the future - currently has some bugs");
+
+    public static final Option<Boolean> TRUFFLE_BACKTRACES_HIDE_CORE_FILES = bool(TRUFFLE, "truffle.backtraces.hide_core_files", true, "Hide core source files in backtraces, like MRI does.");
+
+    public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
+    public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");
+    public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_uncached", false, "Always use uncached dispatch for the metaprogramming methods #__send__, #send and #respond_to?, and for any call site that has to use #method_missing or #const_missing.");
+    public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_indirect", false, "Always use indirect calls for the metaprogramming methods #__send__ and #send, and for any call site that has to use #method_missing or #const_missing.");
+    public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED = bool(TRUFFLE, "truffle.call.method_missing_always_cloned", true, "Always clone #method_missing call targets.");
+    public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED = bool(TRUFFLE, "truffle.call.method_missing_always_inlined", true, "Always inline #method_missing call targets.");
+
+    public static final Option<Integer> TRUFFLE_PACK_UNROLL_LIMIT = integer(TRUFFLE, "truffle.pack.unroll", 4, "If a pack expression has a loop less than this many iterations, unroll it.");
+
+    public static final Option<Boolean> TRUFFLE_METRICS_TIME = bool(TRUFFLE, "truffle.metrics.time", false, "Print the time at various stages of VM operation.");
+    public static final Option<Boolean> TRUFFLE_METRICS_MEMORY_USED_ON_EXIT = bool(TRUFFLE, "truffle.metrics.memory_used_on_exit", false, "Print the size of heap memory in use on exit.");
+
+    public static final Option<Boolean> TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = bool(TRUFFLE, "truffle.set_trace_func.include_core_file_callers", false, "Include internal core library calls in set_trace_func output.");
 
     public static String dump() {
         return "# JRuby configuration options with current values\n" +

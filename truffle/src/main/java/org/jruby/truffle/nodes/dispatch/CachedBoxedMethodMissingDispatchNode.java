@@ -19,17 +19,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
 
 public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
-
-    private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
-    private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
 
     private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
@@ -66,12 +63,12 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
              */
 
             if (callNode.isCallTargetCloningAllowed()
-                    && (DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+                    && (getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
 
-            if (callNode.isInlinable() && DISPATCH_METHODMISSING_ALWAYS_INLINED) {
+            if (callNode.isInlinable() && getContext().getOptions().DISPATCH_METHODMISSING_ALWAYS_INLINED) {
                 insert(callNode);
                 callNode.forceInlining();
             }

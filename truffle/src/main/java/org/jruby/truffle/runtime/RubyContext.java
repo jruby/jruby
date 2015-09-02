@@ -61,7 +61,6 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,10 +80,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private static volatile RubyContext latestInstance;
 
-    private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
-    private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
-
     private final Ruby runtime;
+
+    private final Options options;
 
     private final POSIX posix;
     private final NativeSockets nativeSockets;
@@ -121,6 +119,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
+        options = new Options();
+
         latestInstance = this;
 
         assert runtime != null;
@@ -141,7 +141,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (TRUFFLE_COVERAGE) {
+        if (options.COVERAGE) {
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -177,8 +177,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
-        if (INSTRUMENTATION_SERVER_PORT != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
+        if (options.INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, options.INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;
@@ -690,4 +690,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         return env.importSymbol(name.toString());
     }
+
+    public Options getOptions() {
+        return options;
+    }
+
 }

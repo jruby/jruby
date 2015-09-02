@@ -1432,10 +1432,10 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
                     MissingBehavior.CALL_METHOD_MISSING);
 
-            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatchNode.forceUncached();
             }
         }
@@ -1611,7 +1611,7 @@ public abstract class KernelNodes {
             dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
             dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
 
-            if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) getContext().getOptions().DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatch.forceUncached();
                 dispatchIgnoreVisibility.forceUncached();
             }

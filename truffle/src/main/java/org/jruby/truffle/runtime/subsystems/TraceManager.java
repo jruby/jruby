@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.RubySyntaxTag;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,8 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TraceManager {
-
-    public static final boolean INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC = Options.TRUFFLE_INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC.load();
 
     private final RubyContext context;
 
@@ -112,7 +109,7 @@ public class TraceManager {
                             final String filename = sourceSection.getSource().getName();
                             final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
-                            if (! INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
+                            if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                                 return context.getCoreLibrary().getNilObject();
                             }
 

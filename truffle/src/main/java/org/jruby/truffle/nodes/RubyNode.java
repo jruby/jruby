@@ -25,9 +25,9 @@ import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -172,8 +172,8 @@ public abstract class RubyNode extends Node {
         return getContext().getNativeSockets();
     }
 
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+    protected int getCacheLimit() {
+        return getContext().getOptions().DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Helper methods for caching

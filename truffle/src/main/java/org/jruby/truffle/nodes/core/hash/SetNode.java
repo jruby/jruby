@@ -25,6 +25,7 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -59,14 +60,14 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
     public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        Object store = PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value);
-        assert HashOperations.verifyStore(store, 1, null, null);
+        Object store = PackedArrayStrategy.createStore(getContext(), hashNode.hash(frame, key), key, value);
+        assert HashOperations.verifyStore(getContext(), store, 1, null, null);
         Layouts.HASH.setStore(hash, store);
         Layouts.HASH.setSize(hash, 1);
         Layouts.HASH.setFirstInSequence(hash, null);
         Layouts.HASH.setLastInSequence(hash, null);
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
         return value;
     }
 
@@ -83,14 +84,14 @@ public abstract class SetNode extends RubyNode {
     @ExplodeLoop
     @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
     public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         final int hashed = hashNode.hash(frame, key);
 
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);
 
-        for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+        for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
                 if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                     final boolean equal;
@@ -103,7 +104,7 @@ public abstract class SetNode extends RubyNode {
 
                     if (equal) {
                         PackedArrayStrategy.setValue(store, n, value);
-                        assert HashOperations.verifyStore(hash);
+                        assert HashOperations.verifyStore(getContext(), hash);
                         return value;
                     }
                 }
@@ -112,16 +113,16 @@ public abstract class SetNode extends RubyNode {
 
         extendProfile.enter();
 
-        if (strategyProfile.profile(size + 1 <= PackedArrayStrategy.MAX_ENTRIES)) {
+        if (strategyProfile.profile(size + 1 <= getContext().getOptions().HASH_PACKED_ARRAY_MAX)) {
             PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
             Layouts.HASH.setSize(hash, size + 1);
             return value;
         } else {
-            PackedArrayStrategy.promoteToBuckets(hash, store, size);
-            BucketsStrategy.addNewEntry(hash, hashed, key, value);
+            PackedArrayStrategy.promoteToBuckets(getContext(), hash, store, size);
+            BucketsStrategy.addNewEntry(getContext(), hash, hashed, key, value);
         }
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         return value;
     }
@@ -144,7 +145,7 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
     public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -184,13 +185,13 @@ public abstract class SetNode extends RubyNode {
             // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
 
             if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.LOAD_FACTOR)) {
-                BucketsStrategy.resize(hash);
+                BucketsStrategy.resize(getContext(), hash);
             }
         } else {
             entry.setKeyValue(result.getHashed(), key, value);
         }
 
-        assert HashOperations.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         return value;
     }
