@@ -27,13 +27,13 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -173,7 +173,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected static int getCacheLimit() {
-        return Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load();
+        return Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Helper methods for caching

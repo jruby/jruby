@@ -61,7 +61,6 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,7 +127,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if ((boolean) Options.TRUFFLE_COVERAGE.load()) {
+        if ((boolean) Options.TRUFFLE_COVERAGE) {
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -164,8 +163,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
-        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
+        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;

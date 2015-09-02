@@ -46,6 +46,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
 import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
@@ -59,7 +60,6 @@ import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -74,7 +74,7 @@ public class CoreLibrary {
 
     public static final String CORE_LOAD_PATH = getCoreLoadPath();
 
-    private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
+    private static final String CLI_RECORD_SEPARATOR = org.jruby.util.cli.Options.CLI_RECORD_SEPARATOR.load();
 
     private final RubyContext context;
 
@@ -180,7 +180,7 @@ public class CoreLibrary {
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
     private static String getCoreLoadPath() {
-        String path = Options.TRUFFLE_CORE_LOAD_PATH.load();
+        String path = Options.TRUFFLE_CORE_LOAD_PATH;
 
         while (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);

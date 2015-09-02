@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
 
 public abstract class DispatchNode extends RubyNode {
 

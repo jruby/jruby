@@ -48,6 +48,7 @@ import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
@@ -64,7 +65,6 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -4191,9 +4191,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL.load(); i++) {
+            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL.load(); j++) {
+                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
@@ -4219,9 +4219,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL.load(); i++) {
+            for (int i = 0; i < Options.TRUFFLE_ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL.load(); j++) {
+                    for (int j = i + 1; j < Options.TRUFFLE_ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
@@ -4282,7 +4282,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(DynamicObject array) {
-            return Layouts.ARRAY.getSize(array) <= Options.TRUFFLE_ARRAYS_SMALL.load();
+            return Layouts.ARRAY.getSize(array) <= Options.TRUFFLE_ARRAYS_SMALL;
         }
 
     }

@@ -13,8 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 /**
  * Repeats a child node N times.
@@ -42,7 +42,7 @@ public class NNode extends PackNode {
     public Object execute(VirtualFrame frame) {
         if (CompilerDirectives.inCompiledCode()
                 && CompilerDirectives.isCompilationConstant(repeats)
-                && repeats <= Options.TRUFFLE_PACK_UNROLL_LIMIT.load()) {
+                && repeats <= Options.TRUFFLE_PACK_UNROLL_LIMIT) {
             return executeExploded(frame);
         }
 

@@ -16,7 +16,6 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 import java.util.*;
 

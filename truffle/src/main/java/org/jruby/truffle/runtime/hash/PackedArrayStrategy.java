@@ -11,8 +11,8 @@ package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -21,7 +21,7 @@ import java.util.NoSuchElementException;
 public abstract class PackedArrayStrategy {
 
     public static final int ELEMENTS_PER_ENTRY = 3;
-    public static final int MAX_ELEMENTS = Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load() * ELEMENTS_PER_ENTRY;
+    public static final int MAX_ELEMENTS = Options.TRUFFLE_HASH_PACKED_ARRAY_MAX * ELEMENTS_PER_ENTRY;
 
     public static Object[] createStore(int hashed, Object key, Object value) {
         final Object[] store = createStore();

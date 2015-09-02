@@ -13,12 +13,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
-import org.jruby.util.cli.Options;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class BacktraceFormatter {
     public static BacktraceFormatter createDefaultFormatter(RubyContext context) {
         final EnumSet<FormattingFlags> flags = EnumSet.noneOf(FormattingFlags.class);
 
-        if (!Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES.load()) {
+        if (!Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES) {
             flags.add(FormattingFlags.INCLUDE_CORE_FILES);
         }
 

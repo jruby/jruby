@@ -25,10 +25,10 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 @ImportStatic(HashGuards.class)
 @NodeChildren({
@@ -91,7 +91,7 @@ public abstract class SetNode extends RubyNode {
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);
 
-        for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load(); n++) {
+        for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
                 if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                     final boolean equal;
@@ -113,7 +113,7 @@ public abstract class SetNode extends RubyNode {
 
         extendProfile.enter();
 
-        if (strategyProfile.profile(size + 1 <= Options.TRUFFLE_HASH_PACKED_ARRAY_MAX.load())) {
+        if (strategyProfile.profile(size + 1 <= Options.TRUFFLE_HASH_PACKED_ARRAY_MAX)) {
             PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
             Layouts.HASH.setSize(hash, size + 1);
             return value;

@@ -14,11 +14,11 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -65,7 +65,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[(int) Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load()];
+            return new Object[Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE];
         }
 
         @Override
