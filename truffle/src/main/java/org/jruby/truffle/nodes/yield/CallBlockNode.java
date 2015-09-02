@@ -93,4 +93,8 @@ public abstract class CallBlockNode extends RubyNode {
         return callNodeWrapperNode;
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().YIELD_CACHE;
+    }
+
 }

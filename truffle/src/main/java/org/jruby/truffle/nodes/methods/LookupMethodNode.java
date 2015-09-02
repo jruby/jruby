@@ -80,4 +80,8 @@ public abstract class LookupMethodNode extends RubyNode {
         return method;
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().METHOD_LOOKUP_CACHE;
+    }
+
 }

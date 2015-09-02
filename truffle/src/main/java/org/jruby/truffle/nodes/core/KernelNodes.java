@@ -1121,6 +1121,10 @@ public abstract class KernelNodes {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
+        protected int getCacheLimit() {
+            return getContext().getOptions().IS_A_CACHE;
+        }
+
     }
 
     @CoreMethod(names = "lambda", isModuleFunction = true, needsBlock = true)
