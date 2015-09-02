@@ -226,7 +226,13 @@ public class Options {
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array.max", 3, "Maximum size of a Hash to consider using the packed array storage strategy for.");
 
+    public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", 8, "Constant lookup cache size");
     public static final Option<Integer> TRUFFLE_DISPATCH_CACHE = integer(TRUFFLE, "truffle.dispatch.cache", 8, "Dispatch (various forms of method call) cache size.");
+    public static final Option<Integer> TRUFFLE_YIELD_CACHE = integer(TRUFFLE, "truffle.yield.cache", 8, "Yield cache size.");
+    public static final Option<Integer> TRUFFLE_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", 8, "Method#to_proc cache size");
+    public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", 8, "Kernel#is_a? and #kind_of? cache size");
+    public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", 8, "Test for being able to bind a method to a module cache size");
+    public static final Option<Integer> TRUFFLE_CONSTANT_LOOKUP_CACHE = integer(TRUFFLE, "truffle.constant_lookup.cache", 8, "Constant lookup cache size");
 
     public static final Option<Boolean> TRUFFLE_CORE_ALWAYS_CLONE = bool(TRUFFLE, "truffle.core.always_clone", true, "Always clone built-in core methods.");
     public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_CLONE = bool(TRUFFLE, "truffle.yield.always_clone", true, "Always clone yields.");

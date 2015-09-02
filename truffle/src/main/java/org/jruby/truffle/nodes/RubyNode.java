@@ -171,10 +171,6 @@ public abstract class RubyNode extends Node {
         return getContext().getNativeSockets();
     }
 
-    protected int getCacheLimit() {
-        return getContext().getOptions().DISPATCH_CACHE;
-    }
-
     // Helper methods for caching
 
     protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {

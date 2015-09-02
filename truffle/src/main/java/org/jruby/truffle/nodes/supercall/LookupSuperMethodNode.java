@@ -108,4 +108,8 @@ public abstract class LookupSuperMethodNode extends RubyNode {
         return superMethod;
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().METHOD_LOOKUP_CACHE;
+    }
+
 }

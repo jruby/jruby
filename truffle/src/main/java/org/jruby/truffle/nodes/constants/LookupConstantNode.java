@@ -105,4 +105,8 @@ public abstract class LookupConstantNode extends RubyNode {
         return ignoreVisibility || constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().CONSTANT_LOOKUP_CACHE;
+    }
+
 }
