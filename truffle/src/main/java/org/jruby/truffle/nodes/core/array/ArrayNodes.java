@@ -48,7 +48,6 @@ import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayMirror;
@@ -4191,9 +4190,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < getContext().getOptions().ARRAYS_SMALL; i++) {
+            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < getContext().getOptions().ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
@@ -4219,9 +4218,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < getContext().getOptions().ARRAYS_SMALL; i++) {
+            for (int i = 0; i < getContext().getOptions().ARRAY_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < getContext().getOptions().ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < getContext().getOptions().ARRAY_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
@@ -4282,7 +4281,7 @@ public abstract class ArrayNodes {
         }
 
         protected boolean isSmall(DynamicObject array) {
-            return Layouts.ARRAY.getSize(array) <= getContext().getOptions().ARRAYS_SMALL;
+            return Layouts.ARRAY.getSize(array) <= getContext().getOptions().ARRAY_SMALL;
         }
 
     }

@@ -60,7 +60,7 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
+                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone())
                         || (method.getDeclaringModule() != null
                         && Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);

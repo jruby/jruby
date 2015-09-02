@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.yield;
 
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -85,10 +84,10 @@ public abstract class CallBlockNode extends RubyNode {
         final DirectCallNode callNode = Truffle.getRuntime().createDirectCallNode(callTarget);
         final CallNodeWrapperNode callNodeWrapperNode = new CallNodeWrapperNode(callNode);
 
-        if (getContext().getOptions().INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
+        if (getContext().getOptions().YIELD_ALWAYS_CLONE && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
-        if (getContext().getOptions().INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
+        if (getContext().getOptions().YIELD_ALWAYS_INLINE && callNode.isInlinable()) {
             callNode.forceInlining();
         }
         return callNodeWrapperNode;
