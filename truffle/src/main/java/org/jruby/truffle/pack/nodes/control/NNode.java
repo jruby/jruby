@@ -42,7 +42,7 @@ public class NNode extends PackNode {
     public Object execute(VirtualFrame frame) {
         if (CompilerDirectives.inCompiledCode()
                 && CompilerDirectives.isCompilationConstant(repeats)
-                && repeats <= Options.TRUFFLE_PACK_UNROLL_LIMIT) {
+                && repeats <= Options.PACK_UNROLL_LIMIT) {
             return executeExploded(frame);
         }
 

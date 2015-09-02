@@ -235,10 +235,10 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, true,
-                    Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
+                    Options.DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT,
                     MissingBehavior.CALL_METHOD_MISSING);
 
-            if ((boolean) Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+            if ((boolean) Options.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatchNode.forceUncached();
             }
         }

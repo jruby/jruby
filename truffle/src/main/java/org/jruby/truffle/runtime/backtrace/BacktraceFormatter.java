@@ -39,7 +39,7 @@ public class BacktraceFormatter {
     public static BacktraceFormatter createDefaultFormatter(RubyContext context) {
         final EnumSet<FormattingFlags> flags = EnumSet.noneOf(FormattingFlags.class);
 
-        if (!Options.TRUFFLE_BACKTRACES_HIDE_CORE_FILES) {
+        if (!Options.BACKTRACES_HIDE_CORE_FILES) {
             flags.add(FormattingFlags.INCLUDE_CORE_FILES);
         }
 

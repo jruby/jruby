@@ -86,7 +86,7 @@ public abstract class HashNodes {
             final int size = Layouts.ARRAY.getSize(array);
             final Object[] newStore = PackedArrayStrategy.createStore();
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     final Object pair = store[n];
 
@@ -145,7 +145,7 @@ public abstract class HashNodes {
 
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
-            if (store.length > Options.TRUFFLE_HASH_PACKED_ARRAY_MAX) {
+            if (store.length > Options.HASH_PACKED_ARRAY_MAX) {
                 System.err.println("too long");
             }
 
@@ -171,7 +171,7 @@ public abstract class HashNodes {
 
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
-            if (store.length > Options.TRUFFLE_HASH_PACKED_ARRAY_MAX) {
+            if (store.length > Options.HASH_PACKED_ARRAY_MAX) {
                 return false;
             }
 
@@ -226,7 +226,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                         final boolean equal;
@@ -436,7 +436,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                         if (eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(store, n), "eql?", null, key)) {
@@ -534,7 +534,7 @@ public abstract class HashNodes {
             int count = 0;
 
             try {
-                for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+                for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
@@ -759,7 +759,7 @@ public abstract class HashNodes {
             Object resultStore = arrayBuilderNode.start(length);
 
             try {
-                for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+                for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                     if (n < length) {
                         final Object key = PackedArrayStrategy.getKey(store, n);
                         final Object value = PackedArrayStrategy.getValue(store, n);
@@ -909,11 +909,11 @@ public abstract class HashNodes {
 
             int conflictsCount = 0;
 
-            for (int a = 0; a < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; a++) {
+            for (int a = 0; a < Options.HASH_PACKED_ARRAY_MAX; a++) {
                 if (a < storeASize) {
                     boolean merge = true;
 
-                    for (int b = 0; b < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; b++) {
+                    for (int b = 0; b < Options.HASH_PACKED_ARRAY_MAX; b++) {
                         if (b < storeBSize) {
                             if (eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(storeA, a), "eql?", null, PackedArrayStrategy.getKey(storeB, b))) {
                                 conflictsCount++;
@@ -946,7 +946,7 @@ public abstract class HashNodes {
 
             final int mergedSize = storeBSize + mergeFromACount;
 
-            if (storeBSize + mergeFromACount <= Options.TRUFFLE_HASH_PACKED_ARRAY_MAX) {
+            if (storeBSize + mergeFromACount <= Options.HASH_PACKED_ARRAY_MAX) {
                 resultIsSmallProfile.enter();
 
                 final Object[] merged = PackedArrayStrategy.createStore();
@@ -1039,7 +1039,7 @@ public abstract class HashNodes {
             final Object[] hashStore = (Object[]) Layouts.HASH.getStore(hash);
             final int hashSize = Layouts.HASH.getSize(hash);
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < hashSize) {
                     setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(hashStore, n), PackedArrayStrategy.getValue(hashStore, n), isCompareByIdentity);
                 }
@@ -1073,7 +1073,7 @@ public abstract class HashNodes {
             final Object[] otherStore = (Object[]) Layouts.HASH.getStore(other);
             final int otherSize = Layouts.HASH.getSize(other);
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < otherSize) {
                     setNode.executeSet(frame, merged, PackedArrayStrategy.getKey(otherStore, n), PackedArrayStrategy.getValue(otherStore, n), isCompareByIdentity);
                 }
@@ -1310,7 +1310,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final int size = Layouts.HASH.getSize(hash);
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     PackedArrayStrategy.setHashed(store, n, hashNode.hash(frame, PackedArrayStrategy.getKey(store, n)));
                 }

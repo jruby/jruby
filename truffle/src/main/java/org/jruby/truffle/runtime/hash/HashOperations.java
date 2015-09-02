@@ -87,11 +87,11 @@ public abstract class HashOperations {
 
             assert foundSizeSequence == size : String.format("%d %d", foundSizeSequence, size);
         } else if (store instanceof Object[]) {
-            assert ((Object[]) store).length == Options.TRUFFLE_HASH_PACKED_ARRAY_MAX * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
+            assert ((Object[]) store).length == Options.HASH_PACKED_ARRAY_MAX * PackedArrayStrategy.ELEMENTS_PER_ENTRY : ((Object[]) store).length;
 
             final Object[] packedStore = (Object[]) store;
 
-            for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+            for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
                 if (n < size) {
                     assert packedStore[n * 2] != null;
                     assert packedStore[n * 2 + 1] != null;

@@ -91,7 +91,7 @@ public abstract class SetNode extends RubyNode {
         final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
         final int size = Layouts.HASH.getSize(hash);
 
-        for (int n = 0; n < Options.TRUFFLE_HASH_PACKED_ARRAY_MAX; n++) {
+        for (int n = 0; n < Options.HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
                 if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                     final boolean equal;
@@ -113,7 +113,7 @@ public abstract class SetNode extends RubyNode {
 
         extendProfile.enter();
 
-        if (strategyProfile.profile(size + 1 <= Options.TRUFFLE_HASH_PACKED_ARRAY_MAX)) {
+        if (strategyProfile.profile(size + 1 <= Options.HASH_PACKED_ARRAY_MAX)) {
             PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
             Layouts.HASH.setSize(hash, size + 1);
             return value;
