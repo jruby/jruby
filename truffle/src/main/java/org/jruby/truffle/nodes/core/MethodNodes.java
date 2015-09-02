@@ -271,7 +271,7 @@ public abstract class MethodNodes {
         }
 
         protected int getCacheLimit() {
-            return getContext().getOptions().TO_PROC_CACHE;
+            return getContext().getOptions().METHOD_TO_PROC_CACHE;
         }
 
     }

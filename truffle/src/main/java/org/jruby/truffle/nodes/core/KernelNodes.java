@@ -531,7 +531,7 @@ public abstract class KernelNodes {
                 "isRubyString(source)",
                 "byteListsEqual(source, cachedSource)",
                 "!parseDependsOnDeclarationFrame(cachedRootNode)"
-        })
+        }, limit = "getCacheLimit()")
         public Object evalNoBindingCached(
                 VirtualFrame frame,
                 DynamicObject source,
@@ -645,6 +645,10 @@ public abstract class KernelNodes {
 
         protected CallTarget createCallTarget(RootNodeWrapper rootNode) {
             return Truffle.getRuntime().createCallTarget(rootNode.rootNode);
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().EVAL_CACHE;
         }
 
     }

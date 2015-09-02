@@ -2446,7 +2446,7 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"})
+        @Specialization(guards = {"isRubyString(format)", "byteListsEqual(format, cachedFormat)"}, limit = "getCacheLimit()")
         public DynamicObject packCached(
                 VirtualFrame frame,
                 DynamicObject array,
@@ -2568,6 +2568,10 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().PACK_CACHE;
         }
 
     }
