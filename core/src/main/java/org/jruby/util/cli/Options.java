@@ -226,18 +226,20 @@ public class Options {
     public static final Option<Integer> TRUFFLE_ARRAY_SMALL = integer(TRUFFLE, "truffle.array.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASH_PACKED_ARRAY_MAX = integer(TRUFFLE, "truffle.hash.packed_array.max", 3, "Maximum size of a Hash to consider using the packed array storage strategy for.");
 
-    public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", 8, "Constant lookup cache size");
-    public static final Option<Integer> TRUFFLE_DISPATCH_CACHE = integer(TRUFFLE, "truffle.dispatch.cache", 8, "Dispatch (various forms of method call) cache size.");
-    public static final Option<Integer> TRUFFLE_YIELD_CACHE = integer(TRUFFLE, "truffle.yield.cache", 8, "Yield cache size.");
-    public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", 8, "Method#to_proc cache size");
-    public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", 8, "Kernel#is_a? and #kind_of? cache size");
-    public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", 8, "Test for being able to bind a method to a module cache size");
-    public static final Option<Integer> TRUFFLE_CONSTANT_LOOKUP_CACHE = integer(TRUFFLE, "truffle.constant_lookup.cache", 8, "Constant lookup cache size");
-    public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", 8, "Binding#local_variable_get/set cache size");
-    public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", 8, "Symbol#to_proc cache size");
-    public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", 8, "Allocation size class cache size");
-    public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", 8, "Array#pack cache size");
-    public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", 8, "eval lookup cache size");
+    public static final Option<Integer> TRUFFLE_DEFAULT_CACHE = integer(TRUFFLE, "truffle.default_cache", 8, "Default size for caches.");
+
+    public static final Option<Integer> TRUFFLE_METHOD_LOOKUP_CACHE = integer(TRUFFLE, "truffle.method_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant lookup cache size");
+    public static final Option<Integer> TRUFFLE_DISPATCH_CACHE = integer(TRUFFLE, "truffle.dispatch.cache", TRUFFLE_DEFAULT_CACHE.load(), "Dispatch (various forms of method call) cache size.");
+    public static final Option<Integer> TRUFFLE_YIELD_CACHE = integer(TRUFFLE, "truffle.yield.cache", TRUFFLE_DEFAULT_CACHE.load(), "Yield cache size.");
+    public static final Option<Integer> TRUFFLE_METHOD_TO_PROC_CACHE = integer(TRUFFLE, "truffle.to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Method#to_proc cache size");
+    public static final Option<Integer> TRUFFLE_IS_A_CACHE = integer(TRUFFLE, "truffle.is_a.cache", TRUFFLE_DEFAULT_CACHE.load(), "Kernel#is_a? and #kind_of? cache size");
+    public static final Option<Integer> TRUFFLE_BIND_CACHE = integer(TRUFFLE, "truffle.bind.cache", TRUFFLE_DEFAULT_CACHE.load(), "Test for being able to bind a method to a module cache size");
+    public static final Option<Integer> TRUFFLE_CONSTANT_LOOKUP_CACHE = integer(TRUFFLE, "truffle.constant_lookup.cache", TRUFFLE_DEFAULT_CACHE.load(), "Constant lookup cache size");
+    public static final Option<Integer> TRUFFLE_BINDING_LOCAL_VARIABLE_CACHE = integer(TRUFFLE, "truffle.binding_local_variable.cache", TRUFFLE_DEFAULT_CACHE.load(), "Binding#local_variable_get/set cache size");
+    public static final Option<Integer> TRUFFLE_SYMBOL_TO_PROC_CACHE = integer(TRUFFLE, "truffle.symbol_to_proc.cache", TRUFFLE_DEFAULT_CACHE.load(), "Symbol#to_proc cache size");
+    public static final Option<Integer> TRUFFLE_ALLOCATE_CLASS_CACHE = integer(TRUFFLE, "truffle.allocate_class.cache", TRUFFLE_DEFAULT_CACHE.load(), "Allocation size class cache size");
+    public static final Option<Integer> TRUFFLE_PACK_CACHE = integer(TRUFFLE, "truffle.pack.cache", TRUFFLE_DEFAULT_CACHE.load(), "Array#pack cache size");
+    public static final Option<Integer> TRUFFLE_EVAL_CACHE = integer(TRUFFLE, "truffle.eval.cache", TRUFFLE_DEFAULT_CACHE.load(), "eval lookup cache size");
 
     public static final Option<Boolean> TRUFFLE_CORE_ALWAYS_CLONE = bool(TRUFFLE, "truffle.core.always_clone", true, "Always clone built-in core methods.");
     public static final Option<Boolean> TRUFFLE_YIELD_ALWAYS_CLONE = bool(TRUFFLE, "truffle.yield.always_clone", true, "Always clone yields.");
