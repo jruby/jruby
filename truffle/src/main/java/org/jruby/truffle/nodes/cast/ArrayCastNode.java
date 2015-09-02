@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /*
- * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
+ * TODO(CS): could probably unify this with SplatCastNode with some final configuration Options.INSTANCE.
  */
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {

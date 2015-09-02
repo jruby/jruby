@@ -4191,9 +4191,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < Options.INSTANCE.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < Options.INSTANCE.ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
@@ -4219,9 +4219,9 @@ public abstract class ArrayNodes {
 
             // Selection sort - written very carefully to allow PE
 
-            for (int i = 0; i < Options.ARRAYS_SMALL; i++) {
+            for (int i = 0; i < Options.INSTANCE.ARRAYS_SMALL; i++) {
                 if (i < size) {
-                    for (int j = i + 1; j < Options.ARRAYS_SMALL; j++) {
+                    for (int j = i + 1; j < Options.INSTANCE.ARRAYS_SMALL; j++) {
                         if (j < size) {
                             if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
@@ -4282,7 +4282,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(DynamicObject array) {
-            return Layouts.ARRAY.getSize(array) <= Options.ARRAYS_SMALL;
+            return Layouts.ARRAY.getSize(array) <= Options.INSTANCE.ARRAYS_SMALL;
         }
 
     }

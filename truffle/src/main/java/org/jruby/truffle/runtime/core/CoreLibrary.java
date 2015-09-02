@@ -180,7 +180,7 @@ public class CoreLibrary {
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
     private static String getCoreLoadPath() {
-        String path = Options.CORE_LOAD_PATH;
+        String path = Options.INSTANCE.CORE_LOAD_PATH;
 
         while (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);

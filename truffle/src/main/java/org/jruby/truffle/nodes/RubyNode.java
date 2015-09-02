@@ -173,7 +173,7 @@ public abstract class RubyNode extends Node {
     }
 
     protected static int getCacheLimit() {
-        return Options.DISPATCH_POLYMORPHIC_MAX;
+        return Options.INSTANCE.DISPATCH_POLYMORPHIC_MAX;
     }
 
     // Helper methods for caching
