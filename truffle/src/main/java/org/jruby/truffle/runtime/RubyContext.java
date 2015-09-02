@@ -21,6 +21,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
+import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
@@ -70,6 +71,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
+import jnr.ffi.Runtime;
 
 /**
  * The global state of a running Ruby system.
@@ -84,6 +86,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final POSIX posix;
     private final NativeSockets nativeSockets;
+    private final MemoryManager memoryManager = Runtime.getSystemRuntime().getMemoryManager();
 
     private final CoreLibrary coreLibrary;
     private final FeatureLoader featureLoader;
@@ -682,4 +685,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return options;
     }
 
+    public MemoryManager getMemoryManager() {
+        return memoryManager;
+    }
 }

@@ -270,7 +270,8 @@ public abstract class IOPrimitiveNodes {
             final FDSet fdSet = fdSetFactory.create();
             fdSet.set(fd);
 
-            final Pointer timeout = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
+            // TODO CS 2-Sep-15 why are longs 8 bytes? Is that always the case?
+            final Pointer timeout = getContext().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
             timeout.putLong(0, 0);
             timeout.putLong(8, 0);
 
