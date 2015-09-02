@@ -288,7 +288,7 @@ class JRubyTruffleRunner
            *rest
     ].compact.join(' ')
 
-    exit execute_cmd(cmd, fail: false, print_always: true)
+    execute_cmd(cmd, fail: false, print_always: true)
   end
 
   def subcommand_clean(rest)
