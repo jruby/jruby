@@ -125,7 +125,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+            throw runtime.newIOErrorFromException(e);
 
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
@@ -169,7 +169,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, "problem when accepting");
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
@@ -201,7 +201,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 }
 
             } catch(IOException e) {
-                throw SocketUtils.sockerr(context.runtime, "problem when accepting");
+                throw runtime.newIOErrorFromException(e);
 
             } finally {
                 try {
