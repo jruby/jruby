@@ -280,8 +280,8 @@ class JRubyTruffleRunner
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
-        *@options[:run][:load_path].map { |v| ['-I', v] }.flatten,
-        *@options[:run][:require].map { |v| ['-r', v] }.flatten
+        *@options[:run][:load_path].flat_map { |v| ['-I', v] },
+        *@options[:run][:require].flat_map { |v| ['-r', v] }
     ].compact
 
     env            = {}
