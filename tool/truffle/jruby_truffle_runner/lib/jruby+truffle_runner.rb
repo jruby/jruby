@@ -243,7 +243,7 @@ class JRubyTruffleRunner
 
   def subcommand_setup(rest)
     bundle_path      = File.expand_path @options[:global][:truffle_bundle_path]
-    bundle_installed = execute_cmd 'command -v bundle 2>/dev/null', fail: false
+    bundle_installed = execute_cmd 'command -v bundle 1>&2 2>/dev/null', fail: false
 
     execute_cmd 'gem install bundler' unless bundle_installed
 
