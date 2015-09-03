@@ -246,8 +246,6 @@ public class Main {
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
 
-        doProcessArguments(in);
-
         Ruby _runtime;
 
         if (DripMain.DRIP_RUNTIME != null) {
