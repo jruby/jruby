@@ -281,7 +281,7 @@ public abstract class IOPrimitiveNodes {
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
-                rubyWithSelf(file, "IO::EAGAINWaitReadable.new");
+                rubyWithSelf(file, "raise IO::EAGAINWaitReadable");
             }
 
             if (res < 0) {
