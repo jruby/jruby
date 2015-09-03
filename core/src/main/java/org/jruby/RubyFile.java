@@ -176,6 +176,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // File::Constants module is included in IO.
         runtime.getIO().includeModule(constants);
 
+        if (Platform.IS_WINDOWS) {
+            // readlink is not available on Windows. See below and jruby/jruby#3287.
+            // TODO: MRI does not implement readlink on Windows, but perhaps we could?
+            fileClass.searchMethod("readlink").setNotImplemented(true);
+        }
+
         return fileClass;
     }
 
@@ -1044,6 +1050,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject readlink(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.runtime;
+
+        if (Platform.IS_WINDOWS) {
+            // readlink is not available on Windows. See above and jruby/jruby#3287.
+            // TODO: MRI does not implement readlink on Windows, but perhaps we could?
+            throw runtime.newNotImplementedError("readlink");
+        }
+
         JRubyFile link = file(path);
 
         try {
