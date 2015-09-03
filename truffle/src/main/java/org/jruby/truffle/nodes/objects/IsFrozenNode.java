@@ -10,21 +10,21 @@
 
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child")
 public abstract class IsFrozenNode extends RubyNode {
-
-    @Child private ReadHeadObjectFieldNode readFrozenNode;
 
     public IsFrozenNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -68,16 +68,16 @@ public abstract class IsFrozenNode extends RubyNode {
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
-    public boolean isFrozen(DynamicObject object) {
-        if (readFrozenNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            readFrozenNode = insert(new ReadHeadObjectFieldNode(Layouts.FROZEN_IDENTIFIER));
-        }
-
+    protected boolean isFrozen(DynamicObject object,
+            @Cached("createReadFrozenNode()") ReadHeadObjectFieldNode readFrozenNode) {
         try {
-            return readFrozenNode.isSet(object) && readFrozenNode.executeBoolean(object);
+            return readFrozenNode.executeBoolean(object);
         } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(readFrozenNode.execute(object).toString());
+            throw new UnsupportedOperationException(e);
         }
+    }
+
+    protected ReadHeadObjectFieldNode createReadFrozenNode() {
+        return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.FROZEN_IDENTIFIER, false, null);
     }
 }

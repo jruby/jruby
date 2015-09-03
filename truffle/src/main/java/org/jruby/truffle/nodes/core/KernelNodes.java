@@ -1013,7 +1013,7 @@ public abstract class KernelNodes {
         }
 
         private Object instanceVariableGet(DynamicObject object, String name) {
-            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getCoreLibrary().getNilObject());
+            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), nil());
         }
 
     }

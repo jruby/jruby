@@ -17,10 +17,12 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.ReadNode;
@@ -37,7 +39,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = new ReadHeadObjectFieldNode(name);
+        readNode = ReadHeadObjectFieldNodeGen.create(context, sourceSection, name, nil(), null);
         this.isGlobal = isGlobal;
     }
 
@@ -102,14 +104,8 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
         if (isGlobal) {
             final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
 
-            if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
+            if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
                 return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
-            } else if (readNode.isSet(receiverValue)) {
-                if (readNode.execute(receiverValue) == nil()) {
-                    return nil();
-                } else {
-                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
-                }
             } else {
                 return nil();
             }

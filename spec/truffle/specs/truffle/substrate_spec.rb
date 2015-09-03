@@ -11,7 +11,7 @@ require_relative '../../../ruby/spec_helper'
 describe "Truffle.substrate?" do
   
   it "returns a Boolean value" do
-    Truffle.graal?.should be_true_or_false
+    Truffle.substrate?.should be_true_or_false
   end
   
 end

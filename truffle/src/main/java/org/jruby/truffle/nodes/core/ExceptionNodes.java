@@ -18,6 +18,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -91,13 +92,14 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = new ReadHeadObjectFieldNode("@custom_backtrace");
+            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(context, sourceSection, "@custom_backtrace", null, null);
         }
 
         @Specialization
         public Object backtrace(DynamicObject exception) {
-            if (readCustomBacktrace.isSet(exception)) {
-                return readCustomBacktrace.execute(exception);
+            final Object customBacktrace = readCustomBacktrace.execute(exception);
+            if (customBacktrace != null) {
+                return customBacktrace;
             } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
                 return asRubyStringArray(exception);
             } else {
