@@ -38,7 +38,7 @@ class JRubyTruffleRunner
             debug_port:          ['--debug-port PORT', 'Debug port', assign_new_value, '51819'],
             debug_option:        ['--debug-option OPTION', 'Debug JVM option', assign_new_value,
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
-            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'jruby+truffle_bundle'],
+            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
                                   '../jruby/bin/jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
