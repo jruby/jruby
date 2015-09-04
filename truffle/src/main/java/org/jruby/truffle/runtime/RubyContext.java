@@ -119,6 +119,13 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         assert runtime != null;
 
+        String graalVersion = System.getProperty("graal.version", "unknown");
+        if (!graalVersion.equals("unknown") && !graalVersion.equals("0.7")) {
+            final String message = "When using Graal, you must use version 0.7 (found " + graalVersion + ")";
+            System.out.println(message + "\n");
+            throw new UnsupportedOperationException(message);
+        }
+
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
         if (compilerOptions.supportsOption("MinTimeThreshold")) {
