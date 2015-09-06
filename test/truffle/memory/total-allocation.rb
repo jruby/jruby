@@ -30,4 +30,4 @@ end
 
 allocated += on_exit
 
-puts "#{allocated/1024/1024} MB"
+puts "total-allocation: #{allocated/1024.0} KB"
