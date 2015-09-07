@@ -58,15 +58,9 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         	directArray = Message.WRITE.createNode();
         } else if (name.endsWith("=") && arity == 1) {
             directField = Message.WRITE.createNode();
-        } else if (name.endsWith("call")) {// arity + 1 for receiver
-        	directCall = Message.createExecute(arity + 1).createNode();
         } else if (name.endsWith("nil?")) {
         	nullCheck = Message.IS_NULL.createNode();
-        } else if (arity == 0) {
-        	directField = Message.READ.createNode();
         } else {
-            // do not forget to pass the receiver!
-            // EXECUTE(READ(rec, a0), a1<receiver>, ...)
             access = Message.createInvoke(arity + 1).createNode();
         }
         prepareArguments = new PrepareArguments(context, getSourceSection(), arity);

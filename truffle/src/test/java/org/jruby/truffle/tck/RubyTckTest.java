@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.tck;
 
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.TruffleVM;
 import com.oracle.truffle.tck.TruffleTCK;
 
@@ -27,8 +28,7 @@ public class RubyTckTest extends TruffleTCK {
 
     @Override
     protected TruffleVM prepareVM() throws Exception {
-        TruffleVM vm = TruffleVM.newVM().build();
-        vm.eval(mimeType(),
+        final Source source = Source.fromText(
                 "def sum(a, b)\n"
                         + " a + b\n"
                         + "end\n"
@@ -45,12 +45,23 @@ public class RubyTckTest extends TruffleTCK {
                         + "def apply_numbers(f)\n"
                         + " Truffle::Interop.execute(f, 18, 32) + 10\n"
                         + "end\n"
+                        + "def compound_object\n"
+                        + "  Module.new do\n"
+                        + "    def self.fourtyTwo; 42; end\n"
+                        + "    def self.plus(a, b); a + b; end\n"
+                        + "    def self.returnsNull; nil; end\n"
+                        + "    def self.returnsThis; self; end\n"
+                        + "  end\n"
+                        +  "end\n"
                         + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
                         + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
                         + "Truffle::Interop.export(\"ret_nil\", method(:ret_nil))\n"
                         + "Truffle::Interop.export(\"count_invocations\", method(:count_invocations))\n"
                         + "Truffle::Interop.export(\"apply_numbers\", method(:apply_numbers))\n"
-        );
+                        + "Truffle::Interop.export(\"compound_object\", method(:compound_object))\n", "test")
+                .withMimeType(mimeType());
+        final TruffleVM vm = TruffleVM.newVM().build();
+        vm.eval(source);
         return vm;
     }
 
@@ -88,5 +99,9 @@ public class RubyTckTest extends TruffleTCK {
     protected String invalidCode() {
         return "def something\n  ret urn 4.2\ne n d";
     }
-    
+
+    @Override
+    protected String compoundObject() {
+        return "compound_object";
+    }
 }
