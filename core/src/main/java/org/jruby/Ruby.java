@@ -3733,6 +3733,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EDESTADDRREQ"), func);
     }
 
+    public RaiseException newErrnoENETUNREACHError() {
+        return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
@@ -3984,6 +3988,8 @@ public final class Ruby implements Constantizable {
                 return newErrnoEMFILEError();
             } else if ("Too many open files in system".equals(e.getMessage())) {
                 return newErrnoENFILEError();
+            } else if ("Network is unreachable".equals(e.getMessage())) {
+                return newErrnoENETUNREACHError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {

@@ -38,7 +38,7 @@ class JRubyTruffleRunner
             debug_port:          ['--debug-port PORT', 'Debug port', assign_new_value, '51819'],
             debug_option:        ['--debug-option OPTION', 'Debug JVM option', assign_new_value,
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
-            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, 'jruby+truffle_bundle'],
+            truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
             jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
                                   '../jruby/bin/jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
@@ -243,7 +243,7 @@ class JRubyTruffleRunner
 
   def subcommand_setup(rest)
     bundle_path      = File.expand_path @options[:global][:truffle_bundle_path]
-    bundle_installed = execute_cmd 'command -v bundle 2>/dev/null', fail: false
+    bundle_installed = execute_cmd 'command -v bundle 1>&2 2>/dev/null', fail: false
 
     execute_cmd 'gem install bundler' unless bundle_installed
 
@@ -280,8 +280,8 @@ class JRubyTruffleRunner
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
-        *@options[:run][:load_path].map { |v| ['-I', v] }.flatten,
-        *@options[:run][:require].map { |v| ['-r', v] }.flatten
+        *@options[:run][:load_path].flat_map { |v| ['-I', v] },
+        *@options[:run][:require].flat_map { |v| ['-r', v] }
     ].compact
 
     env            = {}

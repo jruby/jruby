@@ -21,8 +21,10 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
@@ -214,13 +216,7 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
-    }
-
-    protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
-        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), self, evalFrame);
-        return getContext().eval(expression, binding, true, "inline-ruby", this);
+        return rubyWithSelf(RubyArguments.getSelf(frame.getArguments()), expression, arguments);
     }
 
     protected Object rubyWithSelf(Object self, String expression, Object... arguments) {

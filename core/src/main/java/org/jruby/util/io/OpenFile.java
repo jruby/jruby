@@ -2029,18 +2029,24 @@ public class OpenFile implements Finalizable {
         return;
     }
 
-    // io_fwrite
+    // MRI: io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
-        // TODO: Windows
-//        #ifdef _WIN32
-//        if (fptr->mode & FMODE_TTY) {
-//            long len = rb_w32_write_console(str, fptr->fd);
-//            if (len > 0) return len;
-//        }
-//        #endif
+        if (Platform.IS_WINDOWS && isStdio()) {
+            return rbW32WriteConsole((RubyString)str);
+        }
+
         str = doWriteconv(context, str);
         ByteList strByteList = ((RubyString)str).getByteList();
         return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+    }
+
+    // MRI: rb_w32_write_console
+    public static long rbW32WriteConsole(RubyString buffer) {
+        // The actual port in MRI uses win32 APIs, but System.console seems to do what we want. See jruby/jruby#3292.
+        // FIXME: This assumes the System.console() is the right one to write to. Can you have multiple active?
+        System.console().printf("%s", buffer.asJavaString());
+
+        return buffer.size();
     }
 
     // do_writeconv
