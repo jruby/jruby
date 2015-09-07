@@ -286,15 +286,15 @@ public abstract class IOPrimitiveNodes {
 
             if (res < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             final byte[] bytes = new byte[numberOfBytes];
-            final int bytesRead = getContext().getPosix().read(fd, bytes, numberOfBytes);
+            final int bytesRead = posix().read(fd, bytes, numberOfBytes);
 
             if (bytesRead == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             if (bytesRead == 0) {

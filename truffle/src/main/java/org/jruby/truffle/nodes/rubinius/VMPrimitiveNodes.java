@@ -166,7 +166,7 @@ public abstract class VMPrimitiveNodes {
         public DynamicObject vmGetUserHome(DynamicObject username) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
-            final Passwd passwd = getContext().getPosix().getpwnam(username.toString());
+            final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
