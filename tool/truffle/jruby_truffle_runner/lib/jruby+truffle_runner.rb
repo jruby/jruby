@@ -56,6 +56,8 @@ class JRubyTruffleRunner
             help:       ['-h', '--help', 'Show this message', assign_new_value, false],
             test:       ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
             graal:      ['-g', '--graal', 'Run on graal', assign_new_value, false],
+            build:      ['-b', '--build', 'Run `jt build` in JRuby', assign_new_value, false],
+            rebuild:    ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
@@ -275,8 +277,16 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(rest)
-    core_load_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../../truffle/src/main/ruby").
+    jruby_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../..").
         relative_path_from(Pathname('.')).to_s
+
+    if @options[:run][:build] || @options[:run][:rebuild]
+      Dir.chdir jruby_path do
+        execute_cmd "./tool/jt.rb #{'re' if @options[:run][:rebuild]}build"
+      end
+    end
+
+    core_load_path = "#{jruby_path}/truffle/src/main/ruby"
 
     cmd_options = [
         *(['-X+T', "-Xtruffle.core.load_path=#{core_load_path}"] unless @options[:run][:test]),
