@@ -61,6 +61,7 @@ class JRubyTruffleRunner
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
+            executable: ['-e', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception: ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
         clean:  {
@@ -286,6 +287,12 @@ class JRubyTruffleRunner
       end
     end
 
+    executable = if @options[:run][:executable]
+                   executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*")
+                   executables.find { |path| File.basename(path) == @options[:run][:executable] } or
+                       raise "no executable with name '#{@options[:run][:executable]}' found"
+                 end
+
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
 
     cmd_options = [
@@ -303,6 +310,7 @@ class JRubyTruffleRunner
     cmd = [(env unless env.empty?),
            @options[:global][:jruby_truffle_path],
            *cmd_options,
+           executable,
            *rest
     ].compact
 
