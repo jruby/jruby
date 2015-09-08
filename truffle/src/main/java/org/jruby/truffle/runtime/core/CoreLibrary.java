@@ -39,6 +39,7 @@ import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
+import org.jruby.truffle.nodes.ext.EtcNodesFactory;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -46,7 +47,6 @@ import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
 import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
@@ -432,6 +432,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
+        defineModule(truffleModule, "Etc");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
@@ -551,6 +552,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethods().get("__send__");
