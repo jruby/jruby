@@ -32,7 +32,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import java.awt.image.ByteLookupTable;
 import java.util.List;
 
 import org.jcodings.Encoding;
@@ -44,10 +43,8 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Represents a symbol (:symbol_name).
@@ -60,7 +57,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
         super(position, false);
         this.name = value.toString().intern();
         // FIXME: A full scan to determine whether we should back off to US-ASCII.  Lexer should just do this properly.
-        if (value.lengthEnc() == value.length()) {
+        if (value.getEncoding().isAsciiCompatible() && StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT) {
             this.encoding = USASCIIEncoding.INSTANCE;
         } else {
             this.encoding = value.getEncoding();
