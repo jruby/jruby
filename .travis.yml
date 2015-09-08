@@ -20,7 +20,6 @@ env:
     - TARGET='jruby-jars'
     - TARGET='complete'
     - TARGET='osgi'
-    - TARGET='test-jruby-jars'
     - TARGET='jruby-jars-extended'
     - TARGET='main-extended'
 
