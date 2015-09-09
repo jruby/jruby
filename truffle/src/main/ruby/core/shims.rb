@@ -112,6 +112,15 @@ module Rubinius
       @array[index]
     end
   end
+
+  class Mirror
+    module Process
+      def self.set_status_global(status)
+        # Rubinius has: `::Thread.current[:$?] = status`
+        Truffle::Primitive.set_global_status_variable status
+      end
+    end
+  end
 end
 
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we

@@ -7,14 +7,6 @@
   :file:
     shims.rb: |
               require 'minitest'
-              # mock diff, it calls not fully supported Kernel#system
-              module Minitest
-                module Assertions
-                  def self.diff
-                    nil
-                  end
-                end
-              end
               # mock load_plugins as it loads rubygems
               def Minitest.load_plugins
               end

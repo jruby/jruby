@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.ShortCircuit;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -19,12 +22,16 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import jnr.posix.SpawnFileAction;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.RubyString;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.ThreadLocalObjectNode;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -35,6 +42,7 @@ import org.jruby.truffle.runtime.cext.CExtSubsystem;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
@@ -46,6 +54,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Collections;
+import java.util.Arrays;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -563,6 +573,95 @@ public abstract class TrufflePrimitiveNodes {
             return nil();
         }
 
+    }
+
+    @CoreMethod(names = "spawn_process", onSingleton = true, required = 3)
+    public abstract static class SpawnProcess extends CoreMethodArrayArgumentsNode {
+
+        public SpawnProcess(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(command)",
+                "isRubyArray(arguments)",
+                "isRubyArray(environmentVariables)" })
+        public int spawn(DynamicObject command,
+                         DynamicObject arguments,
+                         DynamicObject environmentVariables) {
+
+            final long longPid = call(
+                    StringOperations.getString(command),
+                    toStringArray(arguments),
+                    toStringArray(environmentVariables));
+            assert longPid <= Integer.MAX_VALUE;
+            // VMWaitPidPrimitiveNode accepts only int
+            final int pid = (int) longPid;
+
+            if (pid == -1) {
+                // TODO (pitr 07-Sep-2015): needs compatibility improvements
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+            }
+
+            return pid;
+        }
+
+        private String[] toStringArray(DynamicObject rubyStrings) {
+            final int size = Layouts.ARRAY.getSize(rubyStrings);
+            final Object[] unconvertedStrings = ArrayOperations.toObjectArray(rubyStrings);
+            final String[] strings = new String[size];
+
+            for (int i = 0; i < size; i++) {
+                assert Layouts.STRING.isString(unconvertedStrings[i]);
+                strings[i] = StringOperations.getString((DynamicObject) unconvertedStrings[i]);
+            }
+
+            return strings;
+        }
+
+        @TruffleBoundary
+        private long call(String command, String[] arguments, String[] environmentVariables) {
+            // TODO (pitr 04-Sep-2015): only simple implementation, does not support file actions or other options
+            return getContext().getPosix().posix_spawnp(
+                    command,
+                    Collections.<SpawnFileAction>emptyList(),
+                    Arrays.asList(arguments),
+                    Arrays.asList(environmentVariables));
+
+        }
+    }
+
+    @CoreMethod(names = "set_global_status_variable", onSingleton = true, required = 1)
+    @NodeChild(value = "value", type = RubyNode.class)
+    public abstract static class SetGlobalStatusVariable extends CoreMethodNode {
+
+        @Child private WriteInstanceVariableNode writeNode;
+
+        public SetGlobalStatusVariable(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        abstract RubyNode getValue();
+
+        @ShortCircuit("value")
+        protected boolean needsValue() {
+            return false;
+        }
+
+        @Specialization
+        public DynamicObject set(VirtualFrame frame, boolean hasValue, DynamicObject value) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(
+                        new WriteInstanceVariableNode(getContext(), getSourceSection(), "$?",
+                                new ThreadLocalObjectNode(getContext(), getSourceSection()),
+                                getValue(),
+                                true));
+            }
+
+            writeNode.execute(frame);
+            return nil();
+        }
     }
 
 }

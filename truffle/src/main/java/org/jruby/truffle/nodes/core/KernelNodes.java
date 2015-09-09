@@ -1983,48 +1983,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class SystemNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toHashNode;
-
-        public SystemNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyString(command)")
-        public boolean system(VirtualFrame frame, DynamicObject command) {
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO(CS 5-JAN-15): very simplistic implementation
-
-            final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
-
-            final List<String> envp = new ArrayList<>();
-
-            // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
-            }
-
-            // We need to run via bash to get the variable and other expansion we expect
-            try {
-                Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            return true;
-        }
-
-    }
-
     @CoreMethod(names = "taint")
     public abstract static class KernelTaintNode extends CoreMethodArrayArgumentsNode {
 
