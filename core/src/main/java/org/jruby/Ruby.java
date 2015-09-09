@@ -3297,7 +3297,7 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        getThreadService().disposeCurrentThread();
+        getThreadService().getRubyThreadMap().clear();
 
         getBeanManager().unregisterCompiler();
         getBeanManager().unregisterConfig();
