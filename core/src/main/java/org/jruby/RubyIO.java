@@ -3496,7 +3496,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         long mode = ModeFlags.CREAT;
 
-        if (options == null || (options != null && options.isEmpty())) {
+        if (options == null || options.isEmpty()) {
             if (offset.isNil()) {
                 mode |= ModeFlags.WRONLY;
             } else {

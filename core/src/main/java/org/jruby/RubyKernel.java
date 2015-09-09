@@ -1788,7 +1788,6 @@ public class RubyKernel {
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         String dir = RubyFile.dirname(context, new File(context.gatherCallerBacktrace()[1].getFileName()).getAbsolutePath());
-        if (dir == null) return context.nil;
         return RubyString.newString(context.runtime, dir);
     }
 

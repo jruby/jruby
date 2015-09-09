@@ -428,7 +428,7 @@ public class LoadService {
 
     protected final RequireLocks requireLocks = new RequireLocks();
 
-    private class RequireLocks {
+    private static final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         private final ReentrantLock globalLock;
@@ -748,7 +748,7 @@ public class LoadService {
     @Deprecated
     public class ExtensionSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
-            return (state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("");
+            return (state.library == null || state.library instanceof JarredScript) && state.searchFile.length() > 0;
         }
 
         public boolean trySearch(SearchState state) {

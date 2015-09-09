@@ -535,7 +535,7 @@ public final class Ruby implements Constantizable {
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey(), varvalue);
+            getGlobalVariables().set('$' + entry.getKey(), varvalue);
         }
 
         if (filename.endsWith(".class")) {

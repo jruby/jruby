@@ -1394,42 +1394,12 @@ public class Helpers {
         return hash;
     }
 
-    public static IRubyObject undefMethod(ThreadContext context, Object nameArg) {
-        RubyModule module = null; // context.getRubyClass();
-        String name = (nameArg instanceof String) ?
-            (String) nameArg : nameArg.toString();
-
-        if (module == null) {
-            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
-        }
-
-        module.undef(context, name);
-
-        return context.runtime.getNil();
-    }
-
-    public static IRubyObject defineAlias(ThreadContext context, IRubyObject self, Object newNameArg, Object oldNameArg) {
-        Ruby runtime = context.runtime;
-        RubyModule module = null; // context.getRubyClass();
-
-        if (module == null || self instanceof RubyFixnum || self instanceof RubySymbol){
-            throw runtime.newTypeError("no class to make alias");
-        }
-
-        String newName = newNameArg.toString();
-        String oldName = oldNameArg.toString();
-
-        module.defineAlias(newName, oldName);
-        module.callMethod(context, "method_added", runtime.newSymbol(newName));
-
-        return runtime.getNil();
-    }
-
     public static IRubyObject negate(IRubyObject value, Ruby runtime) {
         if (value.isTrue()) return runtime.getFalse();
         return runtime.getTrue();
     }
 
+    @Deprecated // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
         if (value == null) return context.nil;
         return RubyString.newStringShared(context.runtime, value);
