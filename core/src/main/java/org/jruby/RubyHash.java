@@ -2073,7 +2073,7 @@ public class RubyHash extends RubyObject implements Map {
     public boolean equals(Object other) {
         if (!(other instanceof RubyHash)) return false;
         if (this == other) return true;
-        return op_equal(getRuntime().getCurrentContext(), (RubyHash)other).isTrue() ? true : false;
+        return op_equal(getRuntime().getCurrentContext(), (RubyHash)other).isTrue();
     }
 
     public Set keySet() {
