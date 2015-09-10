@@ -1164,8 +1164,9 @@ public class RubyModule extends RubyObject {
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
-        synchronized(methodLocation.getMethodsForWrite()) {
-            DynamicMethod method = (DynamicMethod) methodLocation.getMethodsForWrite().remove(name);
+        Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
+        synchronized (methodsForWrite) {
+            DynamicMethod method = (DynamicMethod) methodsForWrite.remove(name);
             if (method == null) {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
