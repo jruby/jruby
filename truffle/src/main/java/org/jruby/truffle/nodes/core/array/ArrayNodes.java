@@ -4315,6 +4315,8 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "zip", rest = true, required = 1)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
+        @Child private CallDispatchHeadNode zipInternalCall;
+
         public ZipNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -4380,21 +4382,24 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
         public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame);
+            return zipRuby(frame, array);
         }
 
         @Specialization(guards = { "!isRubyArray(other)" })
         public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame);
+            return zipRuby(frame, array);
         }
 
-        private Object zipRuby(VirtualFrame frame) {
-            DynamicObject proc = RubyArguments.getBlock(frame.getArguments());
-            if (proc == null) {
-                proc = nil();
+        private Object zipRuby(VirtualFrame frame, DynamicObject array) {
+            if (zipInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
+
+            final DynamicObject proc = RubyArguments.getBlock(frame.getArguments());
             final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
-            return ruby(frame, "zip_internal(*others, &block)", "others", Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), others, others.length), "block", proc);
+
+            return zipInternalCall.call(frame, array, "zip_internal", proc, others);
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
