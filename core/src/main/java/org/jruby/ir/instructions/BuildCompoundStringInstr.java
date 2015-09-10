@@ -20,7 +20,7 @@ import org.jruby.util.StringSupport;
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
 //     - "Hi #{name}"
-public class BuildCompoundStringInstr extends ResultBaseInstr {
+public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private Encoding encoding;
 
     public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding) {
@@ -62,7 +62,7 @@ public class BuildCompoundStringInstr extends ResultBaseInstr {
         ByteList bytes = new ByteList();
         bytes.setEncoding(encoding);
         RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
-        for (Operand p : operands) {
+        for (Operand p : getOperands()) {
             if ((p instanceof StringLiteral) && (isSameEncodingAndCodeRange(str, (StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);
                 str.setCodeRange(((StringLiteral)p).getCodeRange());

@@ -63,13 +63,12 @@ describe "String#slice! with index" do
     "hello".slice!(0.5).should == ?h
 
     obj = mock('1')
-    # MRI calls this twice so we can't use should_receive here.
-    def obj.to_int() 1 end
+    obj.should_receive(:to_int).at_least(1).and_return(1)
     "hello".slice!(obj).should == ?e
 
     obj = mock('1')
-    def obj.respond_to?(name, *) name == :to_int ? true : super; end
-    def obj.method_missing(name, *) name == :to_int ? 1 : super; end
+    obj.should_receive(:respond_to?).at_least(1).with(:to_int, true).and_return(true)
+    obj.should_receive(:method_missing).at_least(1).with(:to_int).and_return(1)
     "hello".slice!(obj).should == ?e
   end
 

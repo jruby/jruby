@@ -14,15 +14,16 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
-        @NodeChild(value="array", type=RubyNode.class),
-        @NodeChild(value="requiredCapacity", type=RubyNode.class)
+        @NodeChild(value = "array", type = RubyNode.class),
+        @NodeChild(value = "requiredCapacity", type = RubyNode.class)
 })
 @ImportStatic(ArrayGuards.class)
 public abstract class GeneralizeArrayNode extends RubyNode {
@@ -31,42 +32,41 @@ public abstract class GeneralizeArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeGeneralize(VirtualFrame frame, RubyBasicObject array, int requiredCapacity);
-
-    // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
+    public abstract Object executeGeneralize(VirtualFrame frame, DynamicObject array, int requiredCapacity);
 
     @Specialization(
-            guards={"isRubyArray(array)", "isNullArray(array)"}
+            guards = { "isRubyArray(array)", "isNullArray(array)" }
     )
-    public RubyBasicObject generalizeNull(RubyBasicObject array, int requiredCapacity) {
-        ArrayNodes.setStore(array, new Object[requiredCapacity], ArrayNodes.getSize(array));
+    public DynamicObject generalizeNull(DynamicObject array, int requiredCapacity) {
+        Object store = new Object[requiredCapacity];
+        Layouts.ARRAY.setStore(array, store);
         return array;
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isIntArray(array)"}
+            guards = { "isRubyArray(array)", "isIntArray(array)" }
     )
-    public RubyBasicObject generalizeInt(RubyBasicObject array, int requiredCapacity) {
-        final int[] intStore = (int[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+    public DynamicObject generalizeInt(DynamicObject array, int requiredCapacity) {
+        final int[] store = (int[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isLongArray(array)"}
+            guards = { "isRubyArray(array)", "isLongArray(array)" }
     )
-    public RubyBasicObject generalizeLong(RubyBasicObject array, int requiredCapacity) {
-        final long[] intStore = (long[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+    public DynamicObject generalizeLong(DynamicObject array, int requiredCapacity) {
+        final long[] store = (long[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 
     @Specialization(
-            guards={"isRubyArray(array)", "isDoubleArray(array)"}
+            guards = { "isRubyArray(array)", "isDoubleArray(array)" }
     )
-    public RubyBasicObject generalizeDouble(RubyBasicObject array, int requiredCapacity) {
-        final double[] intStore = (double[]) ArrayNodes.getStore(array);
-        ArrayNodes.setStore(array, ArrayUtils.boxExtra(intStore, requiredCapacity - intStore.length), ArrayNodes.getSize(array));
+    public DynamicObject generalizeDouble(DynamicObject array, int requiredCapacity) {
+        final double[] store = (double[]) Layouts.ARRAY.getStore(array);
+        Layouts.ARRAY.setStore(array, ArrayUtils.boxExtra(store, ArrayUtils.capacity(store.length, requiredCapacity) - store.length));
         return array;
     }
 

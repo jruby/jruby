@@ -13,9 +13,10 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.Function;
 import org.jruby.util.IdUtil;
@@ -26,8 +27,11 @@ import java.util.Map.Entry;
 
 public abstract class ModuleOperations {
 
-    public static boolean includesModule(RubyModule module, RubyModule other) {
-        for (RubyModule ancestor : module.ancestors()) {
+    public static boolean includesModule(DynamicObject module, DynamicObject other) {
+        assert RubyGuards.isRubyModule(module);
+        //assert RubyGuards.isRubyModule(other);
+
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
             if (ancestor == other) {
                 return true;
             }
@@ -36,30 +40,35 @@ public abstract class ModuleOperations {
         return false;
     }
 
-    public static boolean assignableTo(RubyClass thisClass, RubyModule otherClass) {
+    public static boolean assignableTo(DynamicObject thisClass, DynamicObject otherClass) {
         return includesModule(thisClass, otherClass);
     }
 
-    public static boolean canBindMethodTo(RubyModule origin, RubyModule module) {
-        if (!(origin instanceof RubyClass)) {
+    public static boolean canBindMethodTo(DynamicObject origin, DynamicObject module) {
+        assert RubyGuards.isRubyModule(origin);
+        assert RubyGuards.isRubyModule(module);
+
+        if (!(RubyGuards.isRubyClass(origin))) {
             return true;
         } else {
-            return ((module instanceof RubyClass) && ModuleOperations.assignableTo((RubyClass) module, origin));
+            return ((RubyGuards.isRubyClass(module)) && ModuleOperations.assignableTo(module, origin));
         }
     }
 
     @TruffleBoundary
-    public static Map<String, RubyConstant> getAllConstants(RubyModule module) {
+    public static Map<String, RubyConstant> getAllConstants(DynamicObject module) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyGuards.isRubyModule(module);
 
         final Map<String, RubyConstant> constants = new HashMap<>();
 
         // Look in the current module
-        constants.putAll(module.getConstants());
+        constants.putAll(Layouts.MODULE.getFields(module).getConstants());
 
         // Look in ancestors
-        for (RubyModule ancestor : module.prependedAndIncludedModules()) {
-            for (Map.Entry<String, RubyConstant> constant : ancestor.getConstants().entrySet()) {
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).prependedAndIncludedModules()) {
+            for (Map.Entry<String, RubyConstant> constant : Layouts.MODULE.getFields(ancestor).getConstants().entrySet()) {
                 if (!constants.containsKey(constant.getKey())) {
                     constants.put(constant.getKey(), constant.getValue());
                 }
@@ -69,65 +78,55 @@ public abstract class ModuleOperations {
         return constants;
     }
 
-    /**
-     * @param lexicalScope The surrounding LexicalScope (as in Constant),
-     *                     or null if it is ignored (as in Mod::Constant or ::Constant)
-     * @param module The receiver of the constant lookup.
-     *               Must be identical to lexicalScope.getLiveModule() if lexicalScope != null.
-     */
     @TruffleBoundary
-    public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyModule module, String name) {
+    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
         CompilerAsserts.neverPartOfCompilation();
-        assert lexicalScope == null || lexicalScope.getLiveModule() == module;
 
-        RubyConstant constant;
+        final DynamicObject module = lexicalScope.getLiveModule();
+
+        // Look in lexical scope
+        while (lexicalScope != context.getRootLexicalScope()) {
+            RubyConstant constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
+            if (constant != null) {
+                return constant;
+            }
+
+            lexicalScope = lexicalScope.getParent();
+        }
+
+        return lookupConstant(context, module, name);
+    }
+
+    @TruffleBoundary
+    public static RubyConstant lookupConstant(RubyContext context, DynamicObject module, String name) {
+        CompilerAsserts.neverPartOfCompilation();
+        assert RubyGuards.isRubyModule(module);
 
         // Look in the current module
-        constant = module.getConstants().get(name);
-
+        RubyConstant constant = Layouts.MODULE.getFields(module).getConstants().get(name);
         if (constant != null) {
             return constant;
         }
 
-        // Look in lexical scope
-        if (lexicalScope != null) {
-            if (lexicalScope != context.getRootLexicalScope()) {
-                // Already looked in the top lexical scope, which is module.
-                lexicalScope = lexicalScope.getParent();
-            }
-
-            while (lexicalScope != context.getRootLexicalScope()) {
-                constant = lexicalScope.getLiveModule().getConstants().get(name);
-
-                if (constant != null) {
-                    return constant;
-                }
-
-                lexicalScope = lexicalScope.getParent();
-            }
-        }
-
         // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
-            constant = ancestor.getConstants().get(name);
-
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).parentAncestors()) {
+            constant = Layouts.MODULE.getFields(ancestor).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
         }
 
         // Look in Object and its included modules
-        if (module.isOnlyAModule()) {
-            final RubyClass objectClass = context.getCoreLibrary().getObjectClass();
+        if (RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject)) {
+            final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
-            constant = objectClass.getConstants().get(name);
+            constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
 
-            for (RubyModule ancestor : objectClass.prependedAndIncludedModules()) {
-                constant = ancestor.getConstants().get(name);
-
+            for (DynamicObject ancestor : Layouts.MODULE.getFields(objectClass).prependedAndIncludedModules()) {
+                constant = Layouts.MODULE.getFields(ancestor).getConstants().get(name);
                 if (constant != null) {
                     return constant;
                 }
@@ -138,7 +137,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static RubyConstant lookupScopedConstant(RubyContext context, RubyModule module, String fullName, boolean inherit, Node currentNode) {
+    public static RubyConstant lookupScopedConstant(RubyContext context, DynamicObject module, String fullName, boolean inherit, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         int start = 0, next;
@@ -152,8 +151,8 @@ public abstract class ModuleOperations {
             RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
             if (constant == null) {
                 return null;
-            } else if (constant.getValue() instanceof RubyModule) {
-                module = (RubyModule) constant.getValue();
+            } else if (RubyGuards.isRubyModule(constant.getValue())) {
+                module = (DynamicObject) constant.getValue();
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(context.getCoreLibrary().typeError(fullName.substring(0, next) + " does not refer to class/module", currentNode));
@@ -165,25 +164,29 @@ public abstract class ModuleOperations {
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
     }
 
-    public static RubyConstant lookupConstantWithInherit(RubyContext context, RubyModule module, String name, boolean inherit, Node currentNode) {
+    public static RubyConstant lookupConstantWithInherit(RubyContext context, DynamicObject module, String name, boolean inherit, Node currentNode) {
+        assert RubyGuards.isRubyModule(module);
+
         if (!IdUtil.isValidConstantName19(name)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, currentNode));
         }
 
         if (inherit) {
-            return ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, name);
+            return ModuleOperations.lookupConstant(context, module, name);
         } else {
-            return module.getConstants().get(name);
+            return Layouts.MODULE.getFields(module).getConstants().get(name);
         }
     }
 
     @TruffleBoundary
-    public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
+    public static Map<String, InternalMethod> getAllMethods(DynamicObject module) {
+        assert RubyGuards.isRubyModule(module);
+
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.ancestors()) {
-            for (InternalMethod method : ancestor.getMethods().values()) {
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -194,16 +197,18 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Map<String, InternalMethod> getMethodsBeforeLogicalClass(RubyModule module) {
+    public static Map<String, InternalMethod> getMethodsBeforeLogicalClass(DynamicObject module) {
+        assert RubyGuards.isRubyModule(module);
+
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.ancestors()) {
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !Layouts.CLASS.getIsSingleton(ancestor)) {
                 break;
             }
 
-            for (InternalMethod method : ancestor.getMethods().values()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
@@ -214,18 +219,20 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Map<String, InternalMethod> getMethodsUntilLogicalClass(RubyModule module) {
+    public static Map<String, InternalMethod> getMethodsUntilLogicalClass(DynamicObject module) {
+        assert RubyGuards.isRubyModule(module);
+
         final Map<String, InternalMethod> methods = new HashMap<>();
 
-        for (RubyModule ancestor : module.ancestors()) {
-            for (InternalMethod method : ancestor.getMethods().values()) {
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
+            for (InternalMethod method : Layouts.MODULE.getFields(ancestor).getMethods().values()) {
                 if (!methods.containsKey(method.getName())) {
                     methods.put(method.getName(), method);
                 }
             }
 
             // When we find a class which is not a singleton class, we are done
-            if (ancestor instanceof RubyClass && !((RubyClass) ancestor).isSingleton()) {
+            if (RubyGuards.isRubyClass(ancestor) && !Layouts.CLASS.getIsSingleton(ancestor)) {
                 break;
             }
         }
@@ -245,12 +252,14 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static InternalMethod lookupMethod(RubyModule module, String name) {
+    public static InternalMethod lookupMethod(DynamicObject module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
+        assert RubyGuards.isRubyModule(module);
+
         // Look in ancestors
-        for (RubyModule ancestor : module.ancestors()) {
-            InternalMethod method = ancestor.getMethods().get(name);
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).ancestors()) {
+            InternalMethod method = Layouts.MODULE.getFields(ancestor).getMethods().get(name);
 
             if (method != null) {
                 return method;
@@ -261,43 +270,46 @@ public abstract class ModuleOperations {
         return null;
     }
 
-    public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, RubyClass objectMetaClass) {
-        String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
-
+    public static InternalMethod lookupSuperMethod(InternalMethod currentMethod, DynamicObject objectMetaClass) {
+        assert RubyGuards.isRubyClass(objectMetaClass);
+        final String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
         return lookupSuperMethod(currentMethod.getDeclaringModule(), name, objectMetaClass);
     }
 
     @TruffleBoundary
-    public static InternalMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
-        CompilerAsserts.neverPartOfCompilation();
+    public static InternalMethod lookupSuperMethod(DynamicObject declaringModule, String name, DynamicObject objectMetaClass) {
+        assert RubyGuards.isRubyModule(declaringModule);
+        assert RubyGuards.isRubyClass(objectMetaClass);
 
         boolean foundDeclaringModule = false;
-        for (RubyModule module : objectMetaClass.ancestors()) {
+        for (DynamicObject module : Layouts.MODULE.getFields(objectMetaClass).ancestors()) {
             if (module == declaringModule) {
                 foundDeclaringModule = true;
             } else if (foundDeclaringModule) {
-                InternalMethod method = module.getMethods().get(name);
+                InternalMethod method = Layouts.MODULE.getFields(module).getMethods().get(name);
 
                 if (method != null) {
                     return method;
                 }
             }
         }
-        assert foundDeclaringModule : "Did not find the declaring module in "+objectMetaClass.getName()+" ancestors";
+        assert foundDeclaringModule : "Did not find the declaring module in "+ Layouts.MODULE.getFields(objectMetaClass).getName() +" ancestors";
 
         return null;
     }
 
     @TruffleBoundary
-    public static Map<String, Object> getAllClassVariables(RubyModule module) {
+    public static Map<String, Object> getAllClassVariables(DynamicObject module) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyGuards.isRubyModule(module);
 
         final Map<String, Object> classVariables = new HashMap<>();
 
-        classVariableLookup(module, new Function<RubyModule, Object>() {
+        classVariableLookup(module, new Function<DynamicObject, Object>() {
             @Override
-            public Object apply(RubyModule module) {
-                classVariables.putAll(module.getClassVariables());
+            public Object apply(DynamicObject module) {
+                classVariables.putAll(Layouts.MODULE.getFields(module).getClassVariables());
                 return null;
             }
         });
@@ -306,22 +318,26 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static Object lookupClassVariable(RubyModule module, final String name) {
-        return classVariableLookup(module, new Function<RubyModule, Object>() {
+    public static Object lookupClassVariable(DynamicObject module, final String name) {
+        assert RubyGuards.isRubyModule(module);
+
+        return classVariableLookup(module, new Function<DynamicObject, Object>() {
             @Override
-            public Object apply(RubyModule module) {
-                return module.getClassVariables().get(name);
+            public Object apply(DynamicObject module) {
+                return Layouts.MODULE.getFields(module).getClassVariables().get(name);
             }
         });
     }
 
     @TruffleBoundary
-    public static void setClassVariable(RubyModule module, final String name, final Object value, final Node currentNode) {
-        RubyModule found = classVariableLookup(module, new Function<RubyModule, RubyModule>() {
+    public static void setClassVariable(DynamicObject module, final String name, final Object value, final Node currentNode) {
+        assert RubyGuards.isRubyModule(module);
+
+        DynamicObject found = classVariableLookup(module, new Function<DynamicObject, DynamicObject>() {
             @Override
-            public RubyModule apply(RubyModule module) {
-                if (module.getClassVariables().containsKey(name)) {
-                    module.setClassVariable(currentNode, name, value);
+            public DynamicObject apply(DynamicObject module) {
+                if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
+                    Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
                     return module;
                 } else {
                     return null;
@@ -331,11 +347,11 @@ public abstract class ModuleOperations {
 
         if (found == null) {
             // Not existing class variable - set in the current module
-            module.setClassVariable(currentNode, name, value);
+            Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
         }
     }
 
-    private static <R> R classVariableLookup(RubyModule module, Function<RubyModule, R> action) {
+    private static <R> R classVariableLookup(DynamicObject module, Function<DynamicObject, R> action) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module
@@ -345,10 +361,10 @@ public abstract class ModuleOperations {
         }
 
         // If singleton class, check attached module.
-        if (module instanceof RubyClass) {
-            RubyClass klass = (RubyClass) module;
-            if (klass.isSingleton() && klass.getAttached() != null) {
-                module = klass.getAttached();
+        if (RubyGuards.isRubyClass(module)) {
+            DynamicObject klass = (DynamicObject) module;
+            if (Layouts.CLASS.getIsSingleton(klass) && Layouts.CLASS.getAttached(klass) != null) {
+                module = Layouts.CLASS.getAttached(klass);
 
                 result = action.apply(module);
                 if (result != null) {
@@ -358,7 +374,7 @@ public abstract class ModuleOperations {
         }
 
         // Look in ancestors
-        for (RubyModule ancestor : module.parentAncestors()) {
+        for (DynamicObject ancestor : Layouts.MODULE.getFields(module).parentAncestors()) {
             result = action.apply(ancestor);
             if (result != null) {
                 return result;

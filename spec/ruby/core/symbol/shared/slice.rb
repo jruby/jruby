@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes.rb', __FILE__)
 
-describe :symbol_slice, :shared => true do
+describe :symbol_slice, shared: true do
   describe "with an Integer index" do
     it "returns the character code of the element at the index" do
       :symbol.send(@method, 1).should == ?y

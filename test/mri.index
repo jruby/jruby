@@ -76,6 +76,7 @@ ruby/test_rational2.rb
 ruby/test_readpartial.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
+ruby/test_refinement.rb
 ruby/test_rubyoptions.rb
 # Removed until we can implement the remaining features (#2143)
 #ruby/test_settracefunc.rb
@@ -101,6 +102,7 @@ ruby/test_unicode_escape.rb
 ruby/test_variable.rb
 ruby/test_whileuntil.rb
 ruby/test_yield.rb
+ruby/test_not.rb
 
 test_pp.rb
 test_cmath.rb

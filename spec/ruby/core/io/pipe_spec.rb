@@ -163,14 +163,14 @@ describe "IO.pipe" do
   end
 
   it "accepts an options Hash with one String encoding argument" do
-    IO.pipe("BOM|UTF-8:ISO-8859-1", :invalid => :replace) do |r, w|
+    IO.pipe("BOM|UTF-8:ISO-8859-1", invalid: :replace) do |r, w|
       r.external_encoding.should == Encoding::UTF_8
       r.internal_encoding.should == Encoding::ISO_8859_1
     end
   end
 
   it "accepts an options Hash with two String encoding arguments" do
-    IO.pipe("UTF-8", "ISO-8859-1", :invalid => :replace) do |r, w|
+    IO.pipe("UTF-8", "ISO-8859-1", invalid: :replace) do |r, w|
       r.external_encoding.should == Encoding::UTF_8
       r.internal_encoding.should == Encoding::ISO_8859_1
     end
@@ -178,7 +178,7 @@ describe "IO.pipe" do
 
   it "calls #to_hash to convert an options argument" do
     options = mock("io pipe encoding options")
-    options.should_receive(:to_hash).and_return({ :invalid => :replace })
+    options.should_receive(:to_hash).and_return({ invalid: :replace })
     IO.pipe("UTF-8", "ISO-8859-1", options) { |r, w| }
   end
 

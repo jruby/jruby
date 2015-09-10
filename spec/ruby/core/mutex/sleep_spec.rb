@@ -50,14 +50,17 @@ describe "Mutex#sleep" do
 
   it "relocks the mutex when woken by an exception being raised" do
     m = Mutex.new
+    locked = false
     th = Thread.new do
       m.lock
+      locked = true
       begin
         m.sleep
       rescue Exception
         m.locked?
       end
     end
+    Thread.pass until locked
     Thread.pass while th.status and th.status != "sleep"
     th.raise(Exception)
     th.value.should be_true

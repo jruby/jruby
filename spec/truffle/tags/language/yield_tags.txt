@@ -1,4 +1,0 @@
-fails:The yield call taking multiple arguments with a splat passes the arguments to the block
-fails:The yield call taking multiple arguments with a splat does not pass an argument value if the splatted argument is an empty Array
-fails:The yield call taking multiple arguments with a splat passes the Array elements as arguments if the splatted argument is a non-empty Array
-fails:The yield call taking multiple arguments with a splat does not pass an argument value if the splatted argument is nil

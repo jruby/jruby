@@ -11,17 +11,16 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "public", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PublicNode publicNode;
@@ -32,13 +31,13 @@ public abstract class MainNodes {
         }
 
         @Specialization
-        public RubyModule doPublic(VirtualFrame frame, Object[] args) {
-            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPublic(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return publicNode.executePublic(frame, object, args);
         }
     }
 
-    @CoreMethod(names = "private", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
     public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PrivateNode privateNode;
@@ -49,8 +48,8 @@ public abstract class MainNodes {
         }
 
         @Specialization
-        public RubyModule doPrivate(VirtualFrame frame, Object[] args) {
-            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPrivate(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return privateNode.executePrivate(frame, object, args);
         }
     }

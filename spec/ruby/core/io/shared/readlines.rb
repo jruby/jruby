@@ -1,4 +1,4 @@
-describe :io_readlines, :shared => true do
+describe :io_readlines, shared: true do
   it "raises TypeError if the first parameter is nil" do
     lambda { IO.send(@method, nil, &@object) }.should raise_error(TypeError)
   end
@@ -19,7 +19,7 @@ describe :io_readlines, :shared => true do
   end
 end
 
-describe :io_readlines_options_19, :shared => true do
+describe :io_readlines_options_19, shared: true do
   before :each do
     @filename = tmp("io readlines options")
   end
@@ -84,7 +84,7 @@ describe :io_readlines_options_19, :shared => true do
 
     describe "when the object is a Hash" do
       it "uses the value as the options hash" do
-        result = IO.send(@method, @name, :mode => "r", &@object)
+        result = IO.send(@method, @name, mode: "r", &@object)
         (result ? result : ScratchPad.recorded).should == IOSpecs.lines
       end
     end
@@ -94,13 +94,13 @@ describe :io_readlines_options_19, :shared => true do
     describe "when the first object is a Fixnum" do
       it "uses the second object as an options Hash" do
         lambda do
-          IO.send(@method, @filename, 10, :mode => "w", &@object)
+          IO.send(@method, @filename, 10, mode: "w", &@object)
         end.should raise_error(IOError)
       end
 
       it "calls #to_hash to convert the second object to a Hash" do
         options = mock("io readlines options Hash")
-        options.should_receive(:to_hash).and_return({ :mode => "w" })
+        options.should_receive(:to_hash).and_return({ mode: "w" })
         lambda do
           IO.send(@method, @filename, 10, options, &@object)
         end.should raise_error(IOError)
@@ -122,13 +122,13 @@ describe :io_readlines_options_19, :shared => true do
 
       it "uses the second object as an options Hash" do
         lambda do
-          IO.send(@method, @filename, " ", :mode => "w", &@object)
+          IO.send(@method, @filename, " ", mode: "w", &@object)
         end.should raise_error(IOError)
       end
 
       it "calls #to_hash to convert the second object to a Hash" do
         options = mock("io readlines options Hash")
-        options.should_receive(:to_hash).and_return({ :mode => "w" })
+        options.should_receive(:to_hash).and_return({ mode: "w" })
         lambda do
           IO.send(@method, @filename, " ", options, &@object)
         end.should raise_error(IOError)
@@ -139,12 +139,12 @@ describe :io_readlines_options_19, :shared => true do
       it "calls #to_str to convert the object to a String" do
         sep = mock("io readlines separator")
         sep.should_receive(:to_str).at_least(1).and_return(" ")
-        result = IO.send(@method, @name, sep, 10, :mode => "r", &@object)
+        result = IO.send(@method, @name, sep, 10, mode: "r", &@object)
         (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator_limit
       end
 
       it "uses the second object as a limit if it is a Fixnum" do
-        result = IO.send(@method, @name, " ", 10, :mode => "r", &@object)
+        result = IO.send(@method, @name, " ", 10, mode: "r", &@object)
         (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator_limit
       end
 
@@ -157,13 +157,13 @@ describe :io_readlines_options_19, :shared => true do
 
       it "uses the second object as an options Hash" do
         lambda do
-          IO.send(@method, @filename, " ", :mode => "w", &@object)
+          IO.send(@method, @filename, " ", mode: "w", &@object)
         end.should raise_error(IOError)
       end
 
       it "calls #to_hash to convert the second object to a Hash" do
         options = mock("io readlines options Hash")
-        options.should_receive(:to_hash).and_return({ :mode => "w" })
+        options.should_receive(:to_hash).and_return({ mode: "w" })
         lambda do
           IO.send(@method, @filename, " ", options, &@object)
         end.should raise_error(IOError)
@@ -175,27 +175,27 @@ describe :io_readlines_options_19, :shared => true do
     it "calls #to_path to convert the name object" do
       name = mock("io name to_path")
       name.should_receive(:to_path).and_return(@name)
-      result = IO.send(@method, name, " ", 10, :mode => "r", &@object)
+      result = IO.send(@method, name, " ", 10, mode: "r", &@object)
       (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator_limit
     end
 
     it "calls #to_str to convert the separator object" do
       sep = mock("io readlines separator")
       sep.should_receive(:to_str).at_least(1).and_return(" ")
-      result = IO.send(@method, @name, sep, 10, :mode => "r", &@object)
+      result = IO.send(@method, @name, sep, 10, mode: "r", &@object)
       (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator_limit
     end
 
     it "calls #to_int to convert the limit argument" do
       limit = mock("io readlines limit")
       limit.should_receive(:to_int).at_least(1).and_return(10)
-      result = IO.send(@method, @name, " ", limit, :mode => "r", &@object)
+      result = IO.send(@method, @name, " ", limit, mode: "r", &@object)
       (result ? result : ScratchPad.recorded).should == IOSpecs.lines_space_separator_limit
     end
 
     it "calls #to_hash to convert the options object" do
       options = mock("io readlines options Hash")
-      options.should_receive(:to_hash).and_return({ :mode => "w" })
+      options.should_receive(:to_hash).and_return({ mode: "w" })
       lambda do
         IO.send(@method, @filename, " ", 10, options, &@object)
       end.should raise_error(IOError)

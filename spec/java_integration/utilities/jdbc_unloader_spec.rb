@@ -15,8 +15,8 @@ describe "JDBCDriverUnloader" do
   it "unregisters the drivers" do
     # loading the driver causes it to be registered
     container.runScriptlet('Java::com.sqlmagic.tinysql.textFileDriver')
-    drivers.map {|d| d.java_class.name }.should include('com.sqlmagic.tinysql.textFileDriver')
+    expect(drivers.map {|d| d.java_class.name }).to include('com.sqlmagic.tinysql.textFileDriver')
     container.runScriptlet('JRuby.runtime.getJRubyClassLoader.getJDBCDriverUnloader.run')
-    drivers.should be_empty
+    expect(drivers).to be_empty
   end
 end

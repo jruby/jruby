@@ -24,10 +24,15 @@ public class Label extends Operand {
     public static Label getGlobalEnsureBlockLabel() { return GLOBAL_ENSURE_BLOCK_LABEL.clone(); }
 
     public Label(String prefix, int id) {
-        super(OperandType.LABEL);
+        super();
 
         this.prefix = prefix;
         this.id = id;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.LABEL;
     }
 
     @Override

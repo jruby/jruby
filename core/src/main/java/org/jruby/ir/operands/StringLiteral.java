@@ -33,16 +33,11 @@ public class StringLiteral extends Operand {
     final public int      coderange;
 
     public StringLiteral(ByteList val, int coderange) {
-        this(OperandType.STRING_LITERAL, val, coderange);
+        this(internedStringFromByteList(val), val, coderange);
     }
 
-    protected StringLiteral(OperandType type, ByteList val, int coderange) {
-        this(type, internedStringFromByteList(val), val, coderange);
-
-    }
-
-    protected StringLiteral(OperandType type, String string, ByteList bytelist, int coderange) {
-        super(type);
+    protected StringLiteral(String string, ByteList bytelist, int coderange) {
+        super();
 
         this.bytelist = bytelist;
         this.coderange = coderange;
@@ -64,12 +59,17 @@ public class StringLiteral extends Operand {
     }
 
     private StringLiteral(String string, ByteList byteList) {
-        super(OperandType.STRING_LITERAL);
+        super();
 
         this.bytelist = byteList;
         this.string = string;
         this.coderange = StringSupport.CR_7BIT;
      }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.STRING_LITERAL;
+    }
 
     @Override
     public boolean hasKnownValue() {

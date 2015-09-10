@@ -45,6 +45,11 @@ describe "Range#bsearch" do
         (0..4).bsearch { |x| x >= 2 }.should == 2
         (-1..4).bsearch { |x| x >= 1 }.should == 1
       end
+
+      it "returns the last element if the block returns true for the last element" do
+        (0..4).bsearch { |x| x >= 4 }.should == 4
+        (0...4).bsearch { |x| x >= 3 }.should == 3
+      end
     end
 
     context "with a block returning negative, zero, positive numbers" do

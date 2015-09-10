@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 require File.expand_path('../shared/open', __FILE__)
@@ -5,6 +7,7 @@ require File.expand_path('../shared/open', __FILE__)
 describe "File.open" do
   before :all do
     @file = tmp("file_open.txt")
+    @unicode_path = tmp("こんにちは.txt")
     @nonexistent = tmp("fake.txt")
     rm_r @file, @nonexistent
   end
@@ -19,7 +22,7 @@ describe "File.open" do
 
   after :each do
     @fh.close if @fh and not @fh.closed?
-    rm_r @file, @nonexistent
+    rm_r @file, @unicode_path, @nonexistent
   end
 
   describe "with a block" do
@@ -61,6 +64,12 @@ describe "File.open" do
     @fh = File.open(@file)
     @fh.should be_kind_of(File)
     File.exist?(@file).should == true
+  end
+
+  it "opens the file with unicode characters" do
+    @fh = File.open(@unicode_path, "w")
+    @fh.should be_kind_of(File)
+    File.exist?(@unicode_path).should == true
   end
 
   it "opens a file when called with a block" do
@@ -531,13 +540,13 @@ describe "File.open" do
   end
 
   it "uses the second argument as an options Hash" do
-    @fh = File.open(@file, :mode => "r")
+    @fh = File.open(@file, mode: "r")
     @fh.should be_an_instance_of(File)
   end
 
   it "calls #to_hash to convert the second argument to a Hash" do
     options = mock("file open options")
-    options.should_receive(:to_hash).and_return({ :mode => "r" })
+    options.should_receive(:to_hash).and_return({ mode: "r" })
 
     @fh = File.open(@file, options)
   end

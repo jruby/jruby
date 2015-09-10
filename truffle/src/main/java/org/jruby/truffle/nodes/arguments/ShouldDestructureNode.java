@@ -42,13 +42,13 @@ public class ShouldDestructureNode extends RubyNode {
         // If we don't accept any arguments, there's never any need to destructure
         // TODO(CS): is this guaranteed by the translator anyway?
 
-        if (!arity.allowsMore() && arity.getRequired() == 0 && arity.getOptional() == 0) {
+        if (!arity.hasRest() && arity.getRequired() == 0 && arity.getOptional() == 0) {
             return false;
         }
 
         // If we only accept one argument, there's never any need to destructure
 
-        if (!arity.allowsMore() && arity.getRequired() == 1 && arity.getOptional() == 0) {
+        if (!arity.hasRest() && arity.getRequired() == 1 && arity.getOptional() == 0) {
             return false;
         }
 
@@ -59,7 +59,7 @@ public class ShouldDestructureNode extends RubyNode {
         }
 
         // If the single argument is a RubyArray, destructure
-        // TODO(CS): can we not just reply on the respondToCheck? Should experiment.
+        // TODO(CS): can we not just rely on the respondToCheck? Should experiment.
 
         if (RubyGuards.isRubyArray(RubyArguments.getUserArgument(frame.getArguments(), 0))) {
             return true;

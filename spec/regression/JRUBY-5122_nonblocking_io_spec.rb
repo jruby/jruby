@@ -19,7 +19,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     wait_for_sleep_and_terminate(t) do
       s.write("foo\r\n")
     end
-    value.should == "foo\r\n"
+    expect(value).to eq("foo\r\n")
   end
 
   it "should not block for eof" do
@@ -33,7 +33,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     wait_for_sleep_and_terminate(t) do
       s.write("foo\r\n")
     end
-    value.should == false
+    expect(value).to eq(false)
   end
 
   it "should not block for getc" do
@@ -47,7 +47,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     wait_for_sleep_and_terminate(t) do
       s.write("f")
     end
-    value.should == ?f
+    expect(value).to eq(?f)
   end
 
   it "should not block for readlines" do
@@ -62,7 +62,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       s.write("foo\r\nbar\r\n")
       s.close
     end
-    value.should == ["foo\r\n", "bar\r\n"]
+    expect(value).to eq(["foo\r\n", "bar\r\n"])
   end
 
   it "should not block for read" do
@@ -77,7 +77,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       s.write("foo\r\nbar\r\nbaz")
       s.close
     end
-    value.should == "foo\r\nbar\r\nbaz"
+    expect(value).to eq("foo\r\nbar\r\nbaz")
   end
 
   it "should not block for read(n) where n is shorter than the buffer" do
@@ -89,10 +89,10 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("foo\r\n")
     end
-    value.should == "fo"
+    expect(value).to eq("fo")
   end
 
   it "should not block for read(n) where n is longer than the buffer" do
@@ -104,12 +104,12 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("f")
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("oo\r\n")
     end
-    value.should == "foo\r"
+    expect(value).to eq("foo\r")
   end
 
   it "should read 4 bytes for read(4)" do
@@ -126,7 +126,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
       s.write("1")
       s.write("2345")
       t.join
-      value.should == "1234"
+      expect(value).to eq("1234")
     end
   end
 
@@ -139,10 +139,10 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("foo\r\n")
     end
-    value.should == "fo"
+    expect(value).to eq("fo")
   end
 
   it "should not block for sysread" do
@@ -154,10 +154,10 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("foo\r\n")
     end
-    value.should == "fo"
+    expect(value).to eq("fo")
   end
 
   it "should not block for each_byte" do
@@ -171,11 +171,11 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("foobar")
       s.close
     end
-    value.should == 114
+    expect(value).to eq(114)
   end
 
   it "should not block for each_line" do
@@ -189,11 +189,11 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_sleep_and_terminate(t) do
-      t.alive?.should == true
+      expect(t.alive?).to eq(true)
       s.write("foo\r\nbar\r\nbaz")
       s.close
     end
-    value.should == "baz"
+    expect(value).to eq("baz")
   end
 
   # WRITE BLOCKAGE:
@@ -278,7 +278,7 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     }
     s = connect(server)
     wait_for_terminate(t)
-    value.should > 0
+    expect(value).to be > 0
   end
 
   def accept(server)

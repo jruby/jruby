@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes.RequireNode;
@@ -24,53 +25,50 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.IdUtil;
 
-@NodeChildren({
-        @NodeChild("module"), @NodeChild("name"),
-        @NodeChild(value = "lookupConstantNode", type = LookupConstantNode.class, executeWith = { "module", "name" })
-})
+@NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("constant") })
 public abstract class GetConstantNode extends RubyNode {
 
-    public GetConstantNode(RubyContext context, SourceSection sourceSection) {
+    private final RestartableReadConstantNode readConstantNode;
+
+    public GetConstantNode(RubyContext context, SourceSection sourceSection, RestartableReadConstantNode readConstantNode) {
         super(context, sourceSection);
+        this.readConstantNode = readConstantNode;
     }
 
-    public abstract RubyNode getModule();
-    public abstract LookupConstantNode getLookupConstantNode();
-
-    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name);
+    public abstract Object executeGetConstant(VirtualFrame frame, Object module, String name, RubyConstant constant);
 
     @Specialization(guards = { "constant != null", "!constant.isAutoload()" })
-    protected Object getConstant(RubyModule module, String name, RubyConstant constant) {
+    protected Object getConstant(DynamicObject module, String name, RubyConstant constant) {
         return constant.getValue();
     }
 
     @Specialization(guards = { "constant != null", "constant.isAutoload()" })
-    protected Object autoloadConstant(VirtualFrame frame, RubyModule module, String name, RubyConstant constant,
-            @Cached("createRequireNode()") RequireNode requireNode) {
+    protected Object autoloadConstant(VirtualFrame frame, DynamicObject module, String name, RubyConstant constant,
+            @Cached("createRequireNode()") RequireNode requireNode,
+            @Cached("deepCopyReadConstantNode()") RestartableReadConstantNode readConstantNode) {
 
-        final RubyBasicObject path = (RubyBasicObject) constant.getValue();
+        final DynamicObject path = (DynamicObject) constant.getValue();
 
         // The autoload constant must only be removed if everything succeeds.
         // We remove it first to allow lookup to ignore it and add it back if there was a failure.
-        constant.getDeclaringModule().removeConstant(this, name);
+        Layouts.MODULE.getFields(constant.getDeclaringModule()).removeConstant(this, name);
         try {
             requireNode.require(path);
-            return executeGetConstant(frame, module, name);
+            return readConstantNode.readConstant(frame, module, name);
         } catch (RaiseException e) {
-            constant.getDeclaringModule().setAutoloadConstant(this, name, path);
+            Layouts.MODULE.getFields(constant.getDeclaringModule()).setAutoloadConstant(this, name, path);
             throw e;
         }
     }
 
     @Specialization(guards = "constant == null")
-    protected Object missingConstant(VirtualFrame frame, RubyModule module, String name, Object constant,
+    protected Object missingConstant(VirtualFrame frame, DynamicObject module, String name, Object constant,
             @Cached("isValidConstantName(name)") boolean isValidConstantName,
             @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
-            @Cached("getSymbol(name)") RubyBasicObject symbolName) {
+            @Cached("getSymbol(name)") DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
@@ -80,6 +78,10 @@ public abstract class GetConstantNode extends RubyNode {
 
     protected RequireNode createRequireNode() {
         return KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), null);
+    }
+
+    protected RestartableReadConstantNode deepCopyReadConstantNode() {
+        return (RestartableReadConstantNode) readConstantNode.deepCopy();
     }
 
     protected boolean isValidConstantName(String name) {

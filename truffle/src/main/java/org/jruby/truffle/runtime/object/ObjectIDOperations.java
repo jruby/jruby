@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.runtime.object;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
-import org.jruby.truffle.nodes.core.BignumNodes;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -38,10 +40,10 @@ import java.math.BigInteger;
  */
 public abstract class ObjectIDOperations {
 
-    public static final int FALSE = 0;
-    public static final int TRUE = 2;
-    public static final int NIL = 4;
-    public static final int FIRST_OBJECT_ID = 6;
+    public static final long FALSE = 0;
+    public static final long TRUE = 2;
+    public static final long NIL = 4;
+    public static final long FIRST_OBJECT_ID = 6;
 
     private static final BigInteger LARGE_FIXNUM_FLAG = BigInteger.ONE.shiftLeft(64);
     private static final BigInteger FLOAT_FLAG = BigInteger.ONE.shiftLeft(65);
@@ -65,16 +67,16 @@ public abstract class ObjectIDOperations {
         return fixnum * 2 + 1;
     }
 
-    public static RubyBasicObject largeFixnumToID(RubyContext context, long fixnum) {
+    public static DynamicObject largeFixnumToID(RubyContext context, long fixnum) {
         assert !isSmallFixnum(fixnum);
         BigInteger big = unsignedBigInteger(fixnum);
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(LARGE_FIXNUM_FLAG));
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(LARGE_FIXNUM_FLAG));
     }
 
-    public static RubyBasicObject floatToID(RubyContext context, double value) {
+    public static DynamicObject floatToID(RubyContext context, double value) {
         long bits = Double.doubleToRawLongBits(value);
         BigInteger big = unsignedBigInteger(bits);
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), big.or(FLOAT_FLAG));
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), big.or(FLOAT_FLAG));
     }
 
     // ID => primitive
@@ -95,6 +97,10 @@ public abstract class ObjectIDOperations {
         return !id.and(FLOAT_FLAG).equals(BigInteger.ZERO);
     }
 
+    public static boolean isBasicObjectID(long id) {
+        return id >= FIRST_OBJECT_ID && id % 2 == 0;
+    }
+
     private static BigInteger unsignedBigInteger(long value) {
         BigInteger big = BigInteger.valueOf(value);
         if (value < 0) {
@@ -103,4 +109,17 @@ public abstract class ObjectIDOperations {
         return big;
     }
 
+    @CompilerDirectives.TruffleBoundary
+    public static long verySlowGetObjectID(DynamicObject object) {
+        // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
+        Property property = object.getShape().getProperty(Layouts.OBJECT_ID_IDENTIFIER);
+
+        if (property != null) {
+            return (long) property.get(object, false);
+        }
+
+        final long objectID = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(object)).getContext().getNextObjectID();
+        object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+        return objectID;
+    }
 }

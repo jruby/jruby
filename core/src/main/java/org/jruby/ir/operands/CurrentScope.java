@@ -24,8 +24,13 @@ public class CurrentScope extends Operand {
     private final int scopeNestingDepth;
 
     public CurrentScope(int scopeNestingDepth) {
-        super(OperandType.CURRENT_SCOPE);
+        super();
         this.scopeNestingDepth = scopeNestingDepth;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.CURRENT_SCOPE;
     }
 
     @Override

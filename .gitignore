@@ -64,6 +64,7 @@ release.properties
 share
 spaces test
 target
+test/pom.xml
 test/prawn
 test/rails
 test/testapp/testapp
@@ -75,6 +76,7 @@ tool/nailgun/ng
 reference.txt
 rubyspec_temp
 .polyglot.pom.rb
+tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
 
 # binaries
 !bin/gem

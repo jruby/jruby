@@ -1,4 +1,4 @@
-describe :sorted_set_add, :shared => true do
+describe :sorted_set_add, shared: true do
   before :each do
     @set = SortedSet.new
   end

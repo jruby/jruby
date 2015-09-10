@@ -1,11 +1,10 @@
 #-*- mode: ruby -*-
 
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'exam.version' => '3.0.3',
+properties( 'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13' )
 
-bundle 'org.jruby:jruby-complete', '@project.version@'
+bundle 'org.jruby:jruby-complete', '${jruby.version}'
 bundle 'org.jruby.osgi:gems-bundle', '1.0'
 bundle 'org.jruby.osgi:scripts-bundle', '1.0'
 

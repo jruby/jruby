@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :enum_with_index, :shared => true do
+describe :enum_with_index, shared: true do
 
   require File.expand_path('../../../fixtures/enumerator/classes', __FILE__)
 

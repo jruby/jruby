@@ -11,13 +11,14 @@
 package org.jruby.truffle.nodes.core;
 
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.rubinius.PointerNodes;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class PointerGuards {
 
-    public static boolean isNullPointer(RubyBasicObject pointer) {
-        return PointerNodes.getPointer(pointer) == PointerNodes.NULL_POINTER;
+    public static boolean isNullPointer(DynamicObject pointer) {
+        return Layouts.POINTER.getPointer(pointer) == PointerNodes.NULL_POINTER;
     }
 
 }

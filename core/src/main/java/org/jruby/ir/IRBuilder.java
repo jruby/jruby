@@ -229,6 +229,11 @@ public class IRBuilder {
                 if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
             }
 
+            // $! should be restored before the ensure block is run
+            if (savedGlobalException != null) {
+                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+            }
+
             // Clone instructions now
             builder.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
             builder.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
@@ -347,17 +352,23 @@ public class IRBuilder {
             // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
-            // $! should be restored before the ensure block is run
-            if (ebi.savedGlobalException != null) {
-                addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
-            }
-
             // Clone into host scope
             ebi.cloneIntoHostScope(this);
         }
     }
 
     private Operand buildOperand(Node node) throws NotCompilableException {
+        if (node.isNewline()) {
+            int currLineNum = node.getLine();
+            if (currLineNum != _lastProcessedLineNum) { // Do not emit multiple line number instrs for the same line
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
+                }
+                addInstr(manager.newLineNumber(currLineNum));
+                _lastProcessedLineNum = currLineNum;
+            }
+        }
+
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
             case ANDNODE: return buildAnd((AndNode) node);
@@ -416,7 +427,6 @@ public class IRBuilder {
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
             case MULTIPLEASGNNODE: return buildMultipleAsgn19((MultipleAsgnNode) node);
-            case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
             case NTHREFNODE: return buildNthRef((NthRefNode) node);
             case NILNODE: return buildNil();
@@ -469,26 +479,6 @@ public class IRBuilder {
 
     public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope) {
         return new IRBuilder(manager, newScope, null);
-    }
-
-    public Node skipOverNewlines(Node n) {
-        if (n.getNodeType() == NodeType.NEWLINENODE) {
-            // Do not emit multiple line number instrs for the same line
-            int currLineNum = n.getLine();
-            if (currLineNum != _lastProcessedLineNum) {
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), currLineNum));
-                }
-               addInstr(manager.newLineNumber(currLineNum));
-               _lastProcessedLineNum = currLineNum;
-            }
-        }
-
-        while (n.getNodeType() == NodeType.NEWLINENODE) {
-            n = ((NewlineNode) n).getNextNode();
-        }
-
-        return n;
     }
 
     public Operand build(Node node) {
@@ -1370,8 +1360,6 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
-        node = skipOverNewlines(node);
-
         // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
@@ -1831,10 +1819,10 @@ public class IRBuilder {
         int argIndex = 0;
 
         // Pre(-opt and rest) required args
-        ListNode preArgs = argsNode.getPre();
+        Node[] args = argsNode.getArgs();
         int preCount = signature.pre();
         for (int i = 0; i < preCount; i++, argIndex++) {
-            receiveRequiredArg(preArgs.get(i), argIndex, false, -1, -1);
+            receiveRequiredArg(args[i], argIndex, false, -1, -1);
         }
 
         // Fixup opt/rest
@@ -1842,11 +1830,11 @@ public class IRBuilder {
 
         // Now for opt args
         if (opt > 0) {
-            ListNode optArgs = argsNode.getOptArgs();
+            int optIndex = argsNode.getOptArgIndex();
             for (int j = 0; j < opt; j++, argIndex++) {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = getNewLabel();
-                OptArgNode n = (OptArgNode)optArgs.get(j);
+                OptArgNode n = (OptArgNode)args[optIndex + j];
                 String argName = n.getName();
                 Variable av = getNewLocalVariable(argName, 0);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
@@ -1878,10 +1866,10 @@ public class IRBuilder {
         }
 
         // Post(-opt and rest) required args
-        ListNode postArgs = argsNode.getPost();
-        int postCount = postArgs != null ? postArgs.size() : -1;
+        int postCount = argsNode.getPostCount();
+        int postIndex = argsNode.getPostIndex();
         for (int i = 0; i < postCount; i++) {
-            receiveRequiredArg(postArgs.get(i), i, true, signature.pre(), postCount);
+            receiveRequiredArg(args[postIndex + i], i, true, signature.pre(), postCount);
         }
     }
 
@@ -1933,11 +1921,13 @@ public class IRBuilder {
         receiveNonBlockArgs(argsNode);
 
         // 2.0 keyword args
-        ListNode keywords = argsNode.getKeywords();
+        Node[] args = argsNode.getArgs();
         int required = argsNode.getRequiredArgsCount();
-        if (keywords != null) {
-            for (Node knode : keywords.children()) {
-                KeywordArgNode kwarg = (KeywordArgNode)knode;
+        if (argsNode.hasKwargs()) {
+            int keywordIndex = argsNode.getKeywordsIndex();
+            int keywordsCount = argsNode.getKeywordCount();
+            for (int i = 0; i < keywordsCount; i++) {
+                KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                 AssignableNode kasgn = kwarg.getAssignable();
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = getNewLocalVariable(argName, 0);
@@ -2040,7 +2030,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 i++;
             }
@@ -2055,7 +2045,7 @@ public class IRBuilder {
             } else {
                 Variable rhsVal = createTemporaryVariable();
                 addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
-                assigns.add(new Tuple<Node, Variable>(restNode, rhsVal)); // rest of the argument array!
+                assigns.add(new Tuple<>(restNode, rhsVal)); // rest of the argument array!
             }
         }
 
@@ -2069,7 +2059,7 @@ public class IRBuilder {
                 } else {
                     Variable rhsVal = createTemporaryVariable();
                     addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
-                    assigns.add(new Tuple<Node, Variable>(an, rhsVal));
+                    assigns.add(new Tuple<>(an, rhsVal));
                 }
                 j++;
             }
@@ -2110,7 +2100,7 @@ public class IRBuilder {
     public void receiveBlockArgs(final IterNode node) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
-            scope.setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
+            ((IRClosure) scope).setArgumentDescriptors(Helpers.argsNodeToArgumentDescriptors(((ArgsNode) args)));
             receiveArgs((ArgsNode)args);
         } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
@@ -2237,12 +2227,13 @@ public class IRBuilder {
             getCurrentLoop(),
             activeRescuers.peek());
 
-        ensureBodyBuildStack.push(ebi);
-        // Restore $! if we the exception was rescued
+        // Record $! save var if we had a non-empty rescue node.
+        // $! will be restored from it where required.
         if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
-            addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             ebi.savedGlobalException = savedGlobalException;
         }
+
+        ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
         ensureBodyBuildStack.pop();
 
@@ -2264,6 +2255,8 @@ public class IRBuilder {
         // Clone the ensure body and jump to the end.
         // Don't bother if the protected body ended in a return
         // OR if we are really processing a rescue node
+        //
+        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
         if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
@@ -2279,8 +2272,14 @@ public class IRBuilder {
         addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
+        // Emit code to conditionally restore $!
+        Variable ret = createTemporaryVariable();
+        addInstr(new RuntimeHelperCall(ret, RESTORE_EXCEPTION_VAR, new Operand[]{exc, savedGlobalException} ));
+
         // Now emit the ensure body's stashed instructions
-        ebi.emitBody(this);
+        if (ensurerNode != null) {
+            ebi.emitBody(this);
+        }
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
@@ -2545,7 +2544,7 @@ public class IRBuilder {
     //     --- r is the result of the if expression --
     //
     public Operand buildIf(final IfNode ifNode) {
-        Node actualCondition = skipOverNewlines(ifNode.getCondition());
+        Node actualCondition = ifNode.getCondition();
 
         Variable result;
         Label    falseLabel = getNewLabel();
@@ -2754,10 +2753,6 @@ public class IRBuilder {
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine());
         return processBodyResult;
-    }
-
-    public Operand buildNewline(NewlineNode node) {
-        return build(skipOverNewlines(node));
     }
 
     public Operand buildNext(final NextNode nextNode) {
@@ -3099,12 +3094,12 @@ public class IRBuilder {
             addInstr(new JumpInstr(rEndLabel, true));
         }   //else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
-            // up execution of all necessary ensure blocks.  So, nothing to do here!
+            // up execution of all necessary ensure blocks. So, nothing to do here!
             //
-            // Additionally, the value in 'rv' will never be used, so need to set it to any specific value.
-            // So, we can leave it undefined.  If on the other hand, there was an exception in that block,
+            // Additionally, the value in 'rv' will never be used, so no need to set it to any specific value.
+            // So, we can leave it undefined. If on the other hand, there was an exception in that block,
             // 'rv' will get set in the rescue handler -- see the 'rv' being passed into
-            // buildRescueBodyInternal below.  So, in either case, we are good!
+            // buildRescueBodyInternal below. So, in either case, we are good!
             //}
 
         // Start of rescue logic
@@ -3171,7 +3166,7 @@ public class IRBuilder {
 
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
-        Node realBody = skipOverNewlines(rescueBodyNode.getBodyNode());
+        Node realBody = rescueBodyNode.getBodyNode();
         Operand x = build(realBody);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'

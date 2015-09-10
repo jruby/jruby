@@ -19,11 +19,6 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { getReturnValue(), new StringLiteral(methodName) };
-    }
-
-    @Override
     public String[] toStringNonOperandArgs() {
         return new String[] { "name: " + methodName };
     }

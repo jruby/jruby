@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_equal_value, :shared => true do
+describe :complex_equal_value, shared: true do
   describe "with Complex" do
     it "returns true when self and other have numerical equality" do
       Complex(1, 2).should == Complex(1, 2)

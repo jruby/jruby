@@ -9,20 +9,29 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+/**
+ * Caches {@link ModuleOperations#lookupSuperMethod}
+ * on an actual instance.
+ */
 @NodeChild("self")
 public abstract class LookupSuperMethodNode extends RubyNode {
 
@@ -41,42 +50,66 @@ public abstract class LookupSuperMethodNode extends RubyNode {
     // the current method's module are identical, which is non-trivial
     // if the current method's module is an (included) module and not a class.
 
-    @Specialization(
-            guards = {
-                    "getCurrentMethod(frame) == currentMethod",
-                    "metaClass(frame, self) == selfMetaClass"
-            },
-            assumptions = "selfMetaClass.getUnmodifiedAssumption()", // guards against include/prepend/method redefinition
+    @Specialization(guards = {
+            "getCurrentMethod(frame) == currentMethod",
+            "self.getShape() == cachedShape"
+    },
+            assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
-    protected InternalMethod lookupSuperMethodCached(VirtualFrame frame, Object self,
+    protected InternalMethod lookupSuperMethodCachedDynamicObject(VirtualFrame frame, DynamicObject self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
-            @Cached("metaClass(frame, self)") RubyClass selfMetaClass,
+            @Cached("self.getShape()") Shape cachedShape,
+            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
+            @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
+        return superMethod;
+    }
+
+    @Specialization(guards = {
+            "getCurrentMethod(frame) == currentMethod",
+            "!isDynamicObject(self)",
+            "self.getClass() == cachedClass"
+    },
+            assumptions = "getUnmodifiedAssumption(selfMetaClass)",
+            limit = "getCacheLimit()")
+    protected InternalMethod lookupSuperMethodCachedPrimitive(VirtualFrame frame, Object self,
+            @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
+            @Cached("self.getClass()") Class<?> cachedClass,
+            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
             @Cached("doLookup(currentMethod, selfMetaClass)") InternalMethod superMethod) {
         return superMethod;
     }
 
     @Specialization
     protected InternalMethod lookupSuperMethodUncached(VirtualFrame frame, Object self) {
-        InternalMethod currentMethod = getCurrentMethod(frame);
-        RubyClass selfMetaClass = metaClass(frame, self);
+        final InternalMethod currentMethod = getCurrentMethod(frame);
+        final DynamicObject selfMetaClass = metaClass(frame, self);
         return doLookup(currentMethod, selfMetaClass);
+    }
+
+    public Assumption getUnmodifiedAssumption(DynamicObject module) {
+        return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
     }
 
     protected InternalMethod getCurrentMethod(VirtualFrame frame) {
         return RubyArguments.getMethod(frame.getArguments());
     }
 
-    protected RubyClass metaClass(VirtualFrame frame, Object object) {
+    protected DynamicObject metaClass(VirtualFrame frame, Object object) {
         return metaClassNode.executeMetaClass(frame, object);
     }
 
-    protected InternalMethod doLookup(InternalMethod currentMethod, RubyClass selfMetaClass) {
+    protected InternalMethod doLookup(InternalMethod currentMethod, DynamicObject selfMetaClass) {
+        assert RubyGuards.isRubyClass(selfMetaClass);
         InternalMethod superMethod = ModuleOperations.lookupSuperMethod(currentMethod, selfMetaClass);
         // TODO (eregon, 12 June 2015): Is this correct?
         if (superMethod != null && superMethod.isUndefined()) {
             superMethod = null;
         }
         return superMethod;
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().METHOD_LOOKUP_CACHE;
     }
 
 }

@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -26,27 +26,17 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
 
-    public static EConv getEConv(RubyBasicObject encodingConverter) {
-        return ((RubyEncodingConverter) encodingConverter).econv;
-    }
-
-    public static void setEConv(RubyBasicObject encodingConverter, EConv econv) {
-        ((RubyEncodingConverter) encodingConverter).econv = econv;
-    }
-
-    public static RubyBasicObject createEncodingConverter(RubyClass rubyClass, EConv econv) {
-        return new RubyEncodingConverter(rubyClass, econv);
+    public static DynamicObject createEncodingConverter(DynamicObject rubyClass, EConv econv) {
+        return Layouts.ENCODING_CONVERTER.createEncodingConverter(Layouts.CLASS.getInstanceFactory(rubyClass), econv);
     }
 
     @RubiniusOnly
@@ -59,7 +49,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject initialize(RubyBasicObject self, Object source, Object destination, Object unusedOptions) {
+        public DynamicObject initialize(DynamicObject self, Object source, Object destination, Object unusedOptions) {
             // Adapted from RubyConverter - see attribution there
 
             Ruby runtime = getContext().getRuntime();
@@ -77,7 +67,7 @@ public abstract class EncodingConverterNodes {
             // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
             // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
             // we must override the flags after its had a pass in order to correct the bad flags value.
-            ecflags[0] = rubiniusToJRubyFlags((int) self.getInstanceVariable("@options"));
+            ecflags[0] = rubiniusToJRubyFlags((int) self.get("@options", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(self)).getContext().getCoreLibrary().getNilObject()));
 
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
@@ -97,7 +87,7 @@ public abstract class EncodingConverterNodes {
             econv.sourceEncoding = encs[0];
             econv.destinationEncoding = encs[1];
 
-            setEConv(self, econv);
+            Layouts.ENCODING_CONVERTER.setEconv(self, econv);
 
             return nil();
         }
@@ -152,11 +142,11 @@ public abstract class EncodingConverterNodes {
                     final TranscoderDB.Entry e = destinationEntry.value;
 
                     if (key == null) {
-                        final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.getSource())), "upcase", null);
+                        final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.getSource()), StringSupport.CR_UNKNOWN, null), "upcase", null);
                         key = toSymNode.call(frame, upcased, "to_sym", null);
                     }
 
-                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase", null);
+                    final Object upcasedLookupTableKey = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.getDestination()), StringSupport.CR_UNKNOWN, null), "upcase", null);
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
                     final Object lookupTableValue = newTranscodingNode.call(frame, getContext().getCoreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
                     lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);
@@ -169,12 +159,18 @@ public abstract class EncodingConverterNodes {
         }
     }
 
-    public static class EncodingConverterAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
             return createEncodingConverter(rubyClass, null);
         }
 
     }
+
 }

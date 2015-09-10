@@ -19,8 +19,8 @@ import org.jruby.truffle.runtime.RubyContext;
  * executes nodes here, things will break and you must implement the primitive in its respective parent.
  */
 public abstract class UndefinedPrimitiveNodes {
-    public final static String NAME = "undefined";
 
+    public final static String NAME = "undefined";
 
     @RubiniusPrimitive(name = NAME)
     public static abstract class UndefinedPrimitiveNode extends RubiniusPrimitiveNode {
@@ -31,7 +31,8 @@ public abstract class UndefinedPrimitiveNodes {
 
         @Specialization
         public Object undefined(Object args) {
-            throw new UnsupportedOperationException("Undefined Rubinius primitive.");
+            throw new UnsupportedOperationException(
+                    "Undefined Rubinius primitive: \"" + getSourceSection().toString().trim() + '"');
         }
 
     }

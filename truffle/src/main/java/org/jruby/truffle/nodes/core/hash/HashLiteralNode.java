@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.hash;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -20,10 +21,12 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
+import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class HashLiteralNode extends RubyNode {
 
@@ -54,7 +57,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= PackedArrayStrategy.MAX_ENTRIES * 2) {
+        } else if (keyValues.length <= context.getOptions().HASH_PACKED_ARRAY_MAX * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);
@@ -77,7 +80,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            return HashNodes.createEmptyHash(getContext().getCoreLibrary().getHashClass());
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, null, 0, null, null, false);
         }
 
     }
@@ -99,7 +102,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
-            final Object[] store = PackedArrayStrategy.createStore();
+            final Object[] store = PackedArrayStrategy.createStore(getContext());
 
             int size = 0;
 
@@ -135,7 +138,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 size++;
             }
 
-            return HashNodes.createHash(getContext().getCoreLibrary().getHashClass(), store, size);
+            return Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, store, size, null, null, false);
         }
 
     }
@@ -155,7 +158,10 @@ public abstract class HashLiteralNode extends RubyNode {
                 setNode = insert(SetNodeGen.create(getContext(), getEncapsulatingSourceSection(), null, null, null, null));
             }
 
-            final RubyBasicObject hash = BucketsStrategy.create(getContext().getCoreLibrary().getHashClass(), keyValues.length / 2);
+            final int bucketsCount = BucketsStrategy.capacityGreaterThan(keyValues.length / 2) * BucketsStrategy.OVERALLOCATE_FACTOR;
+            final Entry[] newEntries = new Entry[bucketsCount];
+
+            final DynamicObject hash = Layouts.HASH.createHash(getContext().getCoreLibrary().getHashFactory(), null, null, newEntries, 0, null, null, false);
 
             for (int n = 0; n < keyValues.length; n += 2) {
                 final Object key = keyValues[n].execute(frame);

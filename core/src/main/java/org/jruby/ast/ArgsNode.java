@@ -53,14 +53,16 @@ import org.jruby.runtime.Helpers;
  * b       = block arg
  */
 public class ArgsNode extends Node {
-    private final ListNode pre;
-    private final ListNode optArgs;
+    private Node[] args;
+    private short optIndex;
+    private short postIndex;
+    private short keywordsIndex;
+
     protected final ArgumentNode restArgNode;
-    private final ListNode post;
-    private final ListNode keywords;
     private final KeywordRestArgNode keyRest;
     private final BlockArgNode blockArgNode;
 
+    private static final Node[] NO_ARGS = new Node[] {};
     /**
      * Construct a new ArgsNode with no keyword arguments.
      */
@@ -82,13 +84,41 @@ public class ArgsNode extends Node {
                         keyRest != null && keyRest.containsVariableAssignment() ||
                         blockArgNode != null && blockArgNode.containsVariableAssignment());
 
-        this.pre = pre;
-        this.post = post;
-        this.optArgs = optionalArguments;
+        int preSize = pre != null ? pre.size() : 0;
+        int optSize = optionalArguments != null ? optionalArguments.size() : 0;
+        int postSize = post != null ? post.size() : 0;
+        int keywordsSize = keywords != null ? keywords.size() : 0;
+        int size = preSize + optSize + postSize + keywordsSize;
+
+        args = size > 0 ? new Node[size] : NO_ARGS;
+        optIndex = (short) (preSize != 0 ? preSize : 0);
+        postIndex = (short) (optSize != 0 ? optIndex + optSize : optIndex);
+        keywordsIndex = (short) (postSize != 0 ? postIndex + postSize : postIndex);
+
+        if (preSize > 0) System.arraycopy(pre.children(), 0,  args, 0, preSize);
+        if (optSize > 0) System.arraycopy(optionalArguments.children(), 0, args, optIndex, optSize);
+        if (postSize > 0) System.arraycopy(post.children(), 0, args, postIndex, postSize);
+        if (keywordsSize > 0) System.arraycopy(keywords.children(), 0, args, keywordsIndex, keywordsSize);
+
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
-        this.keywords = keywords;
         this.keyRest = keyRest;
+    }
+
+    public Node[] getArgs() {
+        return args;
+    }
+
+    public int getOptArgIndex() {
+        return optIndex;
+    }
+
+    public int getPostIndex() {
+        return postIndex;
+    }
+
+    public int getKeywordsIndex() {
+        return keywordsIndex;
     }
 
     @Override
@@ -97,16 +127,18 @@ public class ArgsNode extends Node {
     }
 
     public boolean hasKwargs() {
-        return keywords != null || keyRest != null;
+        boolean keywords = getKeywordCount() > 0;
+        return keywords || keyRest != null;
     }
     
     public int countKeywords() {
         if (hasKwargs()) {
-            if (keywords == null) {
+            boolean keywords = args.length - keywordsIndex > 0;
+            if (keywords) {
                 // Rest keyword argument
                 return 0;
             }
-            return keywords.size();
+            return args.length - keywordsIndex;
         } else {
             return 0;
         }
@@ -129,7 +161,7 @@ public class ArgsNode extends Node {
      * Gets the required arguments at the beginning of the argument definition
      */
     public ListNode getPre() {
-        return pre;
+        return new ListNode(getPosition()).addAll(args, 0, getPreCount());
     }
 
     public int getRequiredArgsCount() {
@@ -137,11 +169,11 @@ public class ArgsNode extends Node {
     }
 
     public int getOptionalArgsCount() {
-        return optArgs == null ? 0 : optArgs.size();
+        return postIndex - optIndex;
     }
 
     public ListNode getPost() {
-        return post;
+        return new ListNode(getPosition()).addAll(args, postIndex, getPostCount());
     }
 
     public int getMaxArgumentsCount() {
@@ -153,7 +185,7 @@ public class ArgsNode extends Node {
      * @return Returns a ListNode
      */
     public ListNode getOptArgs() {
-        return optArgs;
+        return new ListNode(getPosition()).addAll(args, optIndex, getOptionalArgsCount());
     }
 
     /**
@@ -174,15 +206,15 @@ public class ArgsNode extends Node {
     }
 
     public int getPostCount() {
-        return post == null ? 0 : post.size();
+        return keywordsIndex - postIndex;
     }
 
     public int getPreCount() {
-        return pre == null ? 0 : pre.size();
+        return optIndex;
     }
 
     public ListNode getKeywords() {
-        return keywords;
+        return new ListNode(getPosition()).addAll(args, keywordsIndex, getKeywordCount());
     }
 
     public KeywordRestArgNode getKeyRest() {
@@ -196,6 +228,12 @@ public class ArgsNode extends Node {
     // FIXME: This is a hot mess and I think we will still have some extra nulls inserted
     @Override
     public List<Node> childNodes() {
+        ListNode post = getPost();
+        ListNode keywords = getKeywords();
+        ListNode pre = getPre();
+        ListNode optArgs = getOptArgs();
+
+
         if (post != null) {
             if (keywords != null) {
                 if (keyRest != null) return Node.createList(pre, optArgs, restArgNode, post, keywords, keyRest, blockArgNode);
@@ -216,18 +254,18 @@ public class ArgsNode extends Node {
     }
 
     public int getKeywordCount() {
-        return keywords == null ? 0 : keywords.size();
+        return args.length - keywordsIndex;
     }
 
     /**
      * How many of the keywords listed happen to be required keyword args.  Note: total kwargs - req kwarg = opt kwargs.
      */
     public int getRequiredKeywordCount() {
-        if (keywords == null) return 0;
+        if (getKeywordCount() < 1) return 0;
 
         int count = 0;
-        for (Node keyWordNode : getKeywords().children()) {
-            for (Node asgnNode : keyWordNode.childNodes()) {
+        for (int i = 0; i < getKeywordCount(); i++) {
+            for (Node asgnNode : args[keywordsIndex + i].childNodes()) {
                 if (Helpers.isRequiredKeywordArgumentValueNode(asgnNode)) count++;
             }
         }

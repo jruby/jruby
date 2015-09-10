@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :string_encode, :shared => true do
+describe :string_encode, shared: true do
   describe "when passed no options" do
     it "transcodes to Encoding.default_internal when set" do
       Encoding.default_internal = Encoding::UTF_8
@@ -75,13 +75,13 @@ describe :string_encode, :shared => true do
 
   describe "when passed options" do
     it "does not process transcoding options if not transcoding" do
-      result = "あ\ufffdあ".send(@method, :undef => :replace)
+      result = "あ\ufffdあ".send(@method, undef: :replace)
       result.should == "あ\ufffdあ"
     end
 
     it "calls #to_hash to convert the object" do
       options = mock("string encode options")
-      options.should_receive(:to_hash).and_return({ :undef => :replace })
+      options.should_receive(:to_hash).and_return({ undef: :replace })
 
       result = "あ\ufffdあ".send(@method, options)
       result.should == "あ\ufffdあ"
@@ -90,20 +90,20 @@ describe :string_encode, :shared => true do
     it "transcodes to Encoding.default_internal when set" do
       Encoding.default_internal = Encoding::UTF_8
       str = "\xA4\xA2".force_encoding Encoding::EUC_JP
-      str.send(@method, :invalid => :replace).should == "あ"
+      str.send(@method, invalid: :replace).should == "あ"
     end
 
-    it "raises an Encoding::ConverterNotFoundError when no conversion is possible despite ':invalid => :replace, :undef => :replace'" do
+    it "raises an Encoding::ConverterNotFoundError when no conversion is possible despite 'invalid: :replace, undef: :replace'" do
       Encoding.default_internal = Encoding::Emacs_Mule
       str = "\x80".force_encoding Encoding::ASCII_8BIT
       lambda do
-        str.send(@method, :invalid => :replace, :undef => :replace)
+        str.send(@method, invalid: :replace, undef: :replace)
       end.should raise_error(Encoding::ConverterNotFoundError)
     end
 
     ruby_version_is "2.1" do
       it "replaces invalid characters when replacing Emacs-Mule encoded strings" do
-        got = "\x80".force_encoding('Emacs-Mule').send(@method, :invalid => :replace)
+        got = "\x80".force_encoding('Emacs-Mule').send(@method, invalid: :replace)
 
         got.should == "?".encode('Emacs-Mule')
       end
@@ -132,17 +132,17 @@ describe :string_encode, :shared => true do
 
   describe "when passed to, options" do
     it "replaces undefined characters in the destination encoding" do
-      result = "あ?あ".send(@method, Encoding::EUC_JP, :undef => :replace)
+      result = "あ?あ".send(@method, Encoding::EUC_JP, undef: :replace)
       result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
     end
 
     it "replaces invalid characters in the destination encoding" do
-      "ab\xffc".send(@method, Encoding::ISO_8859_1, :invalid => :replace).should == "ab?c"
+      "ab\xffc".send(@method, Encoding::ISO_8859_1, invalid: :replace).should == "ab?c"
     end
 
     it "calls #to_hash to convert the options object" do
       options = mock("string encode options")
-      options.should_receive(:to_hash).and_return({ :undef => :replace })
+      options.should_receive(:to_hash).and_return({ undef: :replace })
 
       result = "あ?あ".send(@method, Encoding::EUC_JP, options)
       result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
@@ -152,13 +152,13 @@ describe :string_encode, :shared => true do
   describe "when passed to, from, options" do
     it "replaces undefined characters in the destination encoding" do
       str = "あ?あ".force_encoding Encoding::ASCII_8BIT
-      result = str.send(@method, "euc-jp", "utf-8", :undef => :replace)
+      result = str.send(@method, "euc-jp", "utf-8", undef: :replace)
       result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
     end
 
     it "replaces invalid characters in the destination encoding" do
       str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
-      str.send(@method, "iso-8859-1", "utf-8", :invalid => :replace).should == "ab?c"
+      str.send(@method, "iso-8859-1", "utf-8", invalid: :replace).should == "ab?c"
     end
 
     it "calls #to_str to convert the to object to an encoding" do
@@ -166,7 +166,7 @@ describe :string_encode, :shared => true do
       to.should_receive(:to_str).and_return("iso-8859-1")
 
       str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
-      str.send(@method, to, "utf-8", :invalid => :replace).should == "ab?c"
+      str.send(@method, to, "utf-8", invalid: :replace).should == "ab?c"
     end
 
     it "calls #to_str to convert the from object to an encoding" do
@@ -174,67 +174,67 @@ describe :string_encode, :shared => true do
       from.should_receive(:to_str).and_return("utf-8")
 
       str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
-      str.send(@method, "iso-8859-1", from, :invalid => :replace).should == "ab?c"
+      str.send(@method, "iso-8859-1", from, invalid: :replace).should == "ab?c"
     end
 
     it "calls #to_hash to convert the options object" do
       options = mock("string encode options")
-      options.should_receive(:to_hash).and_return({ :invalid => :replace })
+      options.should_receive(:to_hash).and_return({ invalid: :replace })
 
       str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
       str.send(@method, "iso-8859-1", "utf-8", options).should == "ab?c"
     end
   end
 
-  describe "given the :xml => :text option" do
+  describe "given the xml: :text option" do
     it "replaces all instances of '&' with '&amp;'" do
-      '& and &'.send(@method, "UTF-8", :xml => :text).should == '&amp; and &amp;'
+      '& and &'.send(@method, "UTF-8", xml: :text).should == '&amp; and &amp;'
     end
 
     it "replaces all instances of '<' with '&lt;'" do
-      '< and <'.send(@method, "UTF-8", :xml => :text).should == '&lt; and &lt;'
+      '< and <'.send(@method, "UTF-8", xml: :text).should == '&lt; and &lt;'
     end
 
     it "replaces all instances of '>' with '&gt;'" do
-      '> and >'.send(@method, "UTF-8", :xml => :text).should == '&gt; and &gt;'
+      '> and >'.send(@method, "UTF-8", xml: :text).should == '&gt; and &gt;'
     end
 
     it "does not replace '\"'" do
-      '" and "'.send(@method, "UTF-8", :xml => :text).should == '" and "'
+      '" and "'.send(@method, "UTF-8", xml: :text).should == '" and "'
     end
 
     it "replaces undefined characters with their upper-case hexadecimal numeric character references" do
-      'ürst'.send(@method, Encoding::US_ASCII, :xml => :text).should == '&#xFC;rst'
+      'ürst'.send(@method, Encoding::US_ASCII, xml: :text).should == '&#xFC;rst'
     end
   end
 
-  describe "given the :xml => :attr option" do
+  describe "given the xml: :attr option" do
     it "surrounds the encoded text with double-quotes" do
-      'abc'.send(@method, "UTF-8", :xml => :attr).should == '"abc"'
+      'abc'.send(@method, "UTF-8", xml: :attr).should == '"abc"'
     end
 
     it "replaces all instances of '&' with '&amp;'" do
-      '& and &'.send(@method, "UTF-8", :xml => :attr).should == '"&amp; and &amp;"'
+      '& and &'.send(@method, "UTF-8", xml: :attr).should == '"&amp; and &amp;"'
     end
 
     it "replaces all instances of '<' with '&lt;'" do
-      '< and <'.send(@method, "UTF-8", :xml => :attr).should == '"&lt; and &lt;"'
+      '< and <'.send(@method, "UTF-8", xml: :attr).should == '"&lt; and &lt;"'
     end
 
     it "replaces all instances of '>' with '&gt;'" do
-      '> and >'.send(@method, "UTF-8", :xml => :attr).should == '"&gt; and &gt;"'
+      '> and >'.send(@method, "UTF-8", xml: :attr).should == '"&gt; and &gt;"'
     end
 
     it "replaces all instances of '\"' with '&quot;'" do
-      '" and "'.send(@method, "UTF-8", :xml => :attr).should == '"&quot; and &quot;"'
+      '" and "'.send(@method, "UTF-8", xml: :attr).should == '"&quot; and &quot;"'
     end
 
     it "replaces undefined characters with their upper-case hexadecimal numeric character references" do
-      'ürst'.send(@method, Encoding::US_ASCII, :xml => :attr).should == '"&#xFC;rst"'
+      'ürst'.send(@method, Encoding::US_ASCII, xml: :attr).should == '"&#xFC;rst"'
     end
   end
 
   it "raises ArgumentError if the value of the :xml option is not :text or :attr" do
-    lambda { ''.send(@method, "UTF-8", :xml => :other) }.should raise_error(ArgumentError)
+    lambda { ''.send(@method, "UTF-8", xml: :other) }.should raise_error(ArgumentError)
   end
 end

@@ -1,4 +1,4 @@
-describe :process_exec, :shared => true do
+describe :process_exec, shared: true do
   it "raises Errno::ENOENT for an empty string" do
     lambda { @object.exec "" }.should raise_error(Errno::ENOENT)
   end
@@ -30,12 +30,12 @@ describe :process_exec, :shared => true do
   end
 
   it "runs the specified command, replacing current process" do
-    ruby_exe('exec "echo hello"; puts "fail"', :escape => true).should == "hello\n"
+    ruby_exe('exec "echo hello"; puts "fail"', escape: true).should == "hello\n"
   end
 
   it "sets the current directory when given the :chdir option" do
     tmpdir = tmp("")[0..-2]
-    ruby_exe("exec(\"pwd\", :chdir => #{tmpdir.inspect})", :escape => true).should == "#{tmpdir}\n"
+    ruby_exe("exec(\"pwd\", chdir: #{tmpdir.inspect})", escape: true).should == "#{tmpdir}\n"
   end
 
   it "flushes STDOUT upon exit when it's not set to sync" do
@@ -43,7 +43,7 @@ describe :process_exec, :shared => true do
   end
 
   it "flushes STDERR upon exit when it's not set to sync" do
-    ruby_exe("STDERR.sync = false; STDERR.write 'hello'", :args => "2>&1").should == "hello"
+    ruby_exe("STDERR.sync = false; STDERR.write 'hello'", args: "2>&1").should == "hello"
   end
 
   describe "with a single argument" do
@@ -62,18 +62,18 @@ describe :process_exec, :shared => true do
     end
 
     it "subjects the specified command to shell expansion" do
-      result = ruby_exe('exec "echo *"', :escape => true, :dir => @dir)
+      result = ruby_exe('exec "echo *"', escape: true, dir: @dir)
       result.chomp.should == @name
     end
 
     it "creates an argument array with shell parsing semantics for whitespace" do
-      ruby_exe('exec "echo a b  c   d"', :escape => true).should == "a b c d\n"
+      ruby_exe('exec "echo a b  c   d"', escape: true).should == "a b c d\n"
     end
   end
 
   describe "with multiple arguments" do
     it "does not subject the arguments to shell expansion" do
-      ruby_exe('exec "echo", "*"', :escape => true).should == "*\n"
+      ruby_exe('exec "echo", "*"', escape: true).should == "*\n"
     end
   end
 
@@ -87,29 +87,29 @@ describe :process_exec, :shared => true do
     end
 
     it "sets environment variables in the child environment" do
-      ruby_exe('exec({"FOO" => "BAR"}, "echo $FOO")', :escape => true).should == "BAR\n"
+      ruby_exe('exec({"FOO" => "BAR"}, "echo $FOO")', escape: true).should == "BAR\n"
     end
 
     it "unsets environment variables whose value is nil" do
-      ruby_exe('exec({"FOO" => nil}, "echo $FOO")', :escape => true).should == "\n"
+      ruby_exe('exec({"FOO" => nil}, "echo $FOO")', escape: true).should == "\n"
     end
 
     it "coerces environment argument using to_hash" do
-      ruby_exe('o = Object.new; def o.to_hash; {"FOO" => "BAR"}; end; exec(o, "echo $FOO")', :escape => true).should == "BAR\n"
+      ruby_exe('o = Object.new; def o.to_hash; {"FOO" => "BAR"}; end; exec(o, "echo $FOO")', escape: true).should == "BAR\n"
     end
 
     it "unsets other environment variables when given a true :unsetenv_others option" do
-      ruby_exe('exec("echo $FOO", :unsetenv_others => true)', :escape => true).should == "\n"
+      ruby_exe('exec("echo $FOO", unsetenv_others: true)', escape: true).should == "\n"
     end
   end
 
   describe "with a command array" do
     it "uses the first element as the command name and the second as the argv[0] value" do
-      ruby_exe('exec(["/bin/sh", "argv_zero"], "-c", "echo $0")', :escape => true).should == "argv_zero\n"
+      ruby_exe('exec(["/bin/sh", "argv_zero"], "-c", "echo $0")', escape: true).should == "argv_zero\n"
     end
 
     it "coerces the argument using to_ary" do
-      ruby_exe('o = Object.new; def o.to_ary; ["/bin/sh", "argv_zero"]; end; exec(o, "-c", "echo $0")', :escape => true).should == "argv_zero\n"
+      ruby_exe('o = Object.new; def o.to_ary; ["/bin/sh", "argv_zero"]; end; exec(o, "-c", "echo $0")', escape: true).should == "argv_zero\n"
     end
 
     it "raises an ArgumentError if the Array does not have exactly two elements" do
@@ -139,7 +139,7 @@ describe :process_exec, :shared => true do
           exec "#{RUBY_EXE}", "#{map_fd_fixture}", child_fd.to_s, { child_fd => f }
           EOC
 
-        ruby_exe(cmd, :escape => true)
+        ruby_exe(cmd, escape: true)
         child_fd = IO.read(@child_fd_file).to_i
         child_fd.to_i.should > STDERR.fileno
 

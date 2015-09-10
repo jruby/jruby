@@ -13,14 +13,18 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 /**
  * Yield to the current block.
@@ -47,7 +51,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyBasicObject block = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
@@ -66,7 +70,7 @@ public class YieldNode extends RubyNode {
         // TOOD(CS): what is the error behaviour here?
         assert argumentsObjects.length == 1;
         assert RubyGuards.isRubyArray(argumentsObjects[0]);
-        return ArrayNodes.slowToArray(((RubyBasicObject) argumentsObjects[0]));
+        return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
     }
 
     @Override
@@ -74,7 +78,7 @@ public class YieldNode extends RubyNode {
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return createString("yield");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("yield", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

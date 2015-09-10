@@ -18,26 +18,23 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
-import org.jcodings.Encoding;
-import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.dispatch.DispatchNode;
+
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.util.ByteList;
-
-import java.nio.ByteBuffer;
+import org.jruby.util.StringSupport;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -63,7 +60,7 @@ public abstract class RubyNode extends Node {
     public abstract Object execute(VirtualFrame frame);
 
     public Object isDefined(VirtualFrame frame) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), "expression");
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("expression", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     // Execute without returning the result
@@ -114,26 +111,6 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRange.IntegerFixnumRange) {
-            return (RubyRange.IntegerFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyRange.LongFixnumRange executeLongFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyRange.LongFixnumRange) {
-            return (RubyRange.LongFixnumRange) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
     public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
@@ -144,33 +121,11 @@ public abstract class RubyNode extends Node {
         }
     }
 
-    public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
+    public DynamicObject executeDynamicObject(VirtualFrame frame) throws UnexpectedResultException {
         final Object value = execute(frame);
 
-        if (value instanceof RubyModule) {
-            return (RubyModule) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    // If you try to make this RubyBasicObject things break in the DSL
-
-    public RubyHash executeRubyHash(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (RubyGuards.isRubyHash(value)) {
-            return (RubyHash) value;
-        } else {
-            throw new UnexpectedResultException(value);
-        }
-    }
-
-    public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) throws UnexpectedResultException {
-        final Object value = execute(frame);
-
-        if (value instanceof RubyBasicObject) {
-            return (RubyBasicObject) value;
+        if (value instanceof DynamicObject) {
+            return (DynamicObject) value;
         } else {
             throw new UnexpectedResultException(value);
         }
@@ -198,64 +153,16 @@ public abstract class RubyNode extends Node {
 
     // Helpers methods for terseness
 
-    protected RubyBasicObject nil() {
+    protected DynamicObject nil() {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    public RubyBasicObject getSymbol(String name) {
+    public DynamicObject getSymbol(String name) {
         return getContext().getSymbol(name);
     }
 
-    public RubyBasicObject getSymbol(ByteList name) {
+    public DynamicObject getSymbol(ByteList name) {
         return getContext().getSymbol(name);
-    }
-
-    protected RubyBasicObject createEmptyString() {
-        return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
-    }
-
-    protected RubyBasicObject createString(String string) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string);
-    }
-
-    protected RubyBasicObject createString(String string, Encoding encoding) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), string, encoding);
-    }
-
-    protected RubyBasicObject createString(byte[] bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
-    }
-
-    protected RubyBasicObject createString(ByteBuffer bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
-    }
-
-    protected RubyBasicObject createString(ByteList bytes) {
-        return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
-    }
-
-    protected RubyBasicObject createEmptyArray() {
-        return ArrayNodes.createEmptyArray(getContext().getCoreLibrary().getArrayClass());
-    }
-
-    protected RubyBasicObject createArray(Object... store) {
-        return createArray(store, store.length);
-    }
-
-    protected RubyBasicObject createArray(int[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
-    }
-
-    protected RubyBasicObject createArray(long[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
-    }
-
-    protected RubyBasicObject createArray(double[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
-    }
-
-    protected RubyBasicObject createArray(Object[] store, int size) {
-        return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), store, size);
     }
 
     protected POSIX posix() {
@@ -266,8 +173,10 @@ public abstract class RubyNode extends Node {
         return getContext().getNativeSockets();
     }
 
-    protected static int getCacheLimit() {
-        return DispatchNode.DISPATCH_POLYMORPHIC_MAX;
+    // Helper methods for caching
+
+    protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
+        return Layouts.CLASS.getInstanceFactory(rubyClass);
     }
 
     // Instrumentation
@@ -307,17 +216,12 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return rubyWithSelf(frame, RubyArguments.getSelf(frame.getArguments()), expression, arguments);
+        return rubyWithSelf(RubyArguments.getSelf(frame.getArguments()), expression, arguments);
     }
 
-    protected Object rubyWithSelf(VirtualFrame frame, Object self, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupFrame(RubyArguments.getSelf(frame.getArguments()), arguments);
-
-        final RubyBasicObject binding = BindingNodes.createRubyBinding(
-                getContext().getCoreLibrary().getBindingClass(),
-                self,
-                evalFrame);
-
+    protected Object rubyWithSelf(Object self, String expression, Object... arguments) {
+        final MaterializedFrame evalFrame = setupFrame(self, arguments);
+        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), self, evalFrame);
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }
 

@@ -1,4 +1,4 @@
-describe :file_sticky, :shared => true do
+describe :file_sticky, shared: true do
   before :each do
     @dir = tmp('sticky_dir')
     Dir.rmdir(@dir) if File.exist?(@dir)
@@ -20,7 +20,7 @@ describe :file_sticky, :shared => true do
   it "accepts an object that has a #to_path method"
 end
 
-describe :file_sticky_missing, :shared => true do
+describe :file_sticky_missing, shared: true do
   platform_is_not :windows do
     it "returns false if the file dies not exist" do
       @object.send(@method, 'fake_file').should == false

@@ -1,6 +1,6 @@
 require File.expand_path('../enumerable_enumeratorized', __FILE__)
 
-describe :enumerable_find_all, :shared => true do
+describe :enumerable_find_all, shared: true do
   before :each do
     ScratchPad.record []
     @elements = (1..10).to_a

@@ -1,4 +1,4 @@
-describe :array_pack_hex, :shared => true do
+describe :array_pack_hex, shared: true do
   it "encodes no bytes when passed zero as the count modifier" do
     ["abc"].pack(pack_format(0)).should == ""
   end

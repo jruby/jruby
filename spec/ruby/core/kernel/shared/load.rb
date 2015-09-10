@@ -1,4 +1,4 @@
-describe :kernel_load, :shared => true do
+describe :kernel_load, shared: true do
   before :each do
     CodeLoadingSpecs.spec_setup
     @path = File.expand_path "load_fixture.rb", CODE_LOADING_DIR

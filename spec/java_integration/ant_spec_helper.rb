@@ -92,12 +92,12 @@ class Ant
           true
         end
 
-        def failure_message_for_should
+        def failure_message
           require 'pp'
           "expected #{@actual.name} to have structure:\n#{@expected.pretty_inspect}\n#{@message}"
         end
 
-        def failure_message_for_should_not
+        def failure_message_when_negated
           require 'pp'
           "expected #{@actual.name} to not have structure:\n#{@expected.pretty_inspect}\n#{@message}"
         end

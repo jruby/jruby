@@ -12,9 +12,13 @@ package org.jruby.truffle.nodes.interop;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
 
@@ -33,7 +37,7 @@ public abstract class IndexLabelToRubyNode extends TargetableRubyNode {
     }
 
     @TruffleBoundary
-    private RubyBasicObject toString(String index) {
-        return createString(index);
+    private DynamicObject toString(String index) {
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(index, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 }

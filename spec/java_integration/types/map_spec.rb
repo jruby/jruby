@@ -62,7 +62,7 @@ describe "a java.util.Map instance" do
     test_equal(3, h.length)
     h.delete(1)
     test_equal(2, h.length)
-    expect( h.member?(3) ).to be_true
+    expect( h.member?(3) ).to be_truthy
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
 
     h1 = java.util.LinkedHashMap.new
@@ -269,7 +269,7 @@ describe "a java.util.Map instance" do
 
     map[4] = 0.1; map[1] = 1
     expect( h[1] ).to eql '1'
-    expect( h.key?(4) ).to be_false
+    expect( h.key?(4) ).to be false
 
     expect( map.to_h ).to eql({ 1 => 1, 2 => :dva, 3 => 3, 4 => 0.1 })
   end
@@ -287,19 +287,19 @@ describe "a java.util.Map instance" do
   end
 
   def test_equal(obj, exp)
-    exp.should == obj
+    expect(exp).to eq(obj)
   end
 
   def test_ok(obj)
-    obj.should be_true
+    expect(obj).to be_truthy
   end
 
   def test_exception(exc, &block)
-    lambda { block.call }.should raise_exception(exc)
+    expect { block.call }.to raise_exception(exc)
   end
 
   def test_no_exception(&block)
-    lambda { block.call }.should_not raise_exception
+    expect { block.call }.not_to raise_exception
   end
 
 end

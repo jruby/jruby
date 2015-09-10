@@ -15,6 +15,6 @@ describe 'GH-2264: Illegal hex characters in escape pattern' do
   end
 
   it 'can glob directories' do
-    Dir.glob("#{dir_name}/**/*").size.should eq 1
+    expect(Dir.glob("#{dir_name}/**/*").size).to eq 1
   end
 end

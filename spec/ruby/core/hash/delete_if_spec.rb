@@ -11,13 +11,13 @@ describe "Hash#delete_if" do
   end
 
   it "removes every entry for which block is true and returns self" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
     h.delete_if { |k,v| v % 2 == 1 }.should equal(h)
-    h.should == new_hash(:b => 2, :d => 4)
+    h.should == new_hash(b: 2, d: 4)
   end
 
   it "processes entries with the same order as each()" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
 
     each_pairs = []
     delete_pairs = []

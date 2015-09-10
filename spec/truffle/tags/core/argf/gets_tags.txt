@@ -2,3 +2,4 @@ fails:ARGF.gets sets $_ global variable with each line read
 fails:ARGF.gets modifies the files when in place edit mode is on
 fails:ARGF.gets modifies and backups two files when in place edit mode is on
 slow:ARGF.gets reads all lines of stdin
+fails:ARGF.gets reads all lines of stdin

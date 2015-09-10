@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class WriteHeadObjectFieldNode extends Node {
 
@@ -22,19 +22,19 @@ public class WriteHeadObjectFieldNode extends Node {
         first = new UninitializedWriteObjectFieldNode(name);
     }
 
-    public void execute(RubyBasicObject object, int value) {
+    public void execute(DynamicObject object, int value) {
         first.execute(object, value);
     }
 
-    public void execute(RubyBasicObject object, long value) {
+    public void execute(DynamicObject object, long value) {
         first.execute(object, value);
     }
 
-    public void execute(RubyBasicObject object, double value) {
+    public void execute(DynamicObject object, double value) {
         first.execute(object, value);
     }
 
-    public void execute(RubyBasicObject object, Object value) {
+    public void execute(DynamicObject object, Object value) {
         first.execute(object, value);
     }
 

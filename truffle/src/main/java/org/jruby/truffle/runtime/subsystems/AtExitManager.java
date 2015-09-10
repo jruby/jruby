@@ -9,15 +9,17 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -25,14 +27,14 @@ public class AtExitManager {
 
     private final RubyContext context;
 
-    private final Deque<RubyBasicObject> runOnExit = new ConcurrentLinkedDeque<>();
-    private final Deque<RubyBasicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> runOnExit = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
 
     public AtExitManager(RubyContext context) {
         this.context = context;
     }
 
-    public void add(RubyBasicObject block, boolean always) {
+    public void add(DynamicObject block, boolean always) {
         assert RubyGuards.isRubyProc(block);
 
         if (always) {
@@ -52,9 +54,9 @@ public class AtExitManager {
         }
     }
 
-    private void runExitHooks(Deque<RubyBasicObject> stack) {
+    private void runExitHooks(Deque<DynamicObject> stack) {
         while (true) {
-            RubyBasicObject block;
+            DynamicObject block;
             try {
                 block = stack.pop();
             } catch (NoSuchElementException e) {
@@ -64,15 +66,19 @@ public class AtExitManager {
             try {
                 ProcNodes.rootCall(block);
             } catch (RaiseException e) {
-                final RubyException rubyException = e.getRubyException();
-
-                for (String line : Backtrace.DISPLAY_FORMATTER.format(context, rubyException, rubyException.getBacktrace())) {
-                    System.err.println(line);
-                }
+                final Object rubyException = e.getRubyException();
+                BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public List<DynamicObject> getHandlers() {
+        final List<DynamicObject> handlers = new ArrayList<>();
+        handlers.addAll(runOnExit);
+        handlers.addAll(runOnExitAlways);
+        return handlers;
     }
 
 }

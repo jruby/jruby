@@ -135,7 +135,6 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
         return new HandleMethod(
                 implementationClass,
                 desc1.anno.visibility(),
-                CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
                 targetsGenerator,
                 (min == max) ?
                         org.jruby.runtime.Signature.from(min, 0, 0, 0, 0, org.jruby.runtime.Signature.Rest.NONE, false) :

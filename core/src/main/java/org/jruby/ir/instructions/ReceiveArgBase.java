@@ -8,11 +8,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Argument receive in IRExecution scopes.
  */
-public abstract class ReceiveArgBase extends ResultBaseInstr {
+public abstract class ReceiveArgBase extends NoOperandResultBaseInstr {
     protected int argIndex;
 
     public ReceiveArgBase(Operation op, Variable result, int argIndex) {
-        super(op, result, EMPTY_OPERANDS);
+        super(op, result);
 
         assert result != null: "ReceiveArgBase result is null";
 

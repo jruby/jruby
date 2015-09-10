@@ -8,7 +8,7 @@ if RUBY_VERSION > '1.9'
         # using "UTF-16LE", "UTF-8", "Shift_JIS", and other available encodings
         a = 'ABC'.encode(enc)
         b = 'ABC'.encode(enc)
-        b.casecmp(a).should be_true
+        expect(b.casecmp(a)).to be_truthy
       end
     end
   end

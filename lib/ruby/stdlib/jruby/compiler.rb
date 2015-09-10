@@ -125,7 +125,7 @@ module JRuby::Compiler
     # The compilation code
     compile_proc = proc do |filename|
       begin
-        file = File.open(filename)
+        file = File.open(filename, "r:ASCII-8BIT")
 
         if options[:sha1]
           pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(File.read(filename)).upcase

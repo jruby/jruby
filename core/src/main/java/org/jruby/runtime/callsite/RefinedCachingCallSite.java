@@ -33,7 +33,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -56,7 +56,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -79,7 +79,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -102,7 +102,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -125,7 +125,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -148,7 +148,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -171,7 +171,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -194,7 +194,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -217,7 +217,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {
@@ -240,7 +240,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
         while (refinedScope != null &&
                 (
-                        (refinements = refinedScope.getModule().getRefinements()).isEmpty() ||
+                        (refinements = refinedScope.getOverlayModule(context).getRefinements()).isEmpty() ||
                                 (refinement = refinements.get(selfType)) == null ||
                                 (method = refinement.searchMethod(methodName)).isUndefined())
                 ) {

@@ -12,16 +12,17 @@ package org.jruby.truffle.nodes.ext;
 import com.jcraft.jzlib.JZlib;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
@@ -45,22 +46,22 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, NotProvided initial) {
-            final ByteList bytes = StringNodes.getByteList(message);
+        public long crc32(DynamicObject message, NotProvided initial) {
+            final ByteList bytes = Layouts.STRING.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return crc32.getValue();
         }
 
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, int initial) {
+        public long crc32(DynamicObject message, int initial) {
             return crc32(message, (long) initial);
         }
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public long crc32(RubyBasicObject message, long initial) {
-            final ByteList bytes = StringNodes.getByteList(message);
+        public long crc32(DynamicObject message, long initial) {
+            final ByteList bytes = Layouts.STRING.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return JZlib.crc32_combine(initial, crc32.getValue(), bytes.length());
@@ -68,7 +69,7 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(message)", "isRubyBignum(initial)"})
-        public long crc32(RubyBasicObject message, RubyBasicObject initial) {
+        public long crc32(DynamicObject message, DynamicObject initial) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
         }
 
@@ -85,10 +86,10 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject deflate(RubyBasicObject message, int level) {
+        public DynamicObject deflate(DynamicObject message, int level) {
             final Deflater deflater = new Deflater(level);
 
-            final ByteList messageBytes = StringNodes.getByteList(message);
+            final ByteList messageBytes = Layouts.STRING.getByteList(message);
             deflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);
@@ -103,7 +104,7 @@ public abstract class ZlibNodes {
 
             deflater.end();
 
-            return createString(outputBytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -117,10 +118,10 @@ public abstract class ZlibNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
-        public RubyBasicObject inflate(RubyBasicObject message) {
+        public DynamicObject inflate(DynamicObject message) {
             final Inflater inflater = new Inflater();
 
-            final ByteList messageBytes = StringNodes.getByteList(message);
+            final ByteList messageBytes = Layouts.STRING.getByteList(message);
             inflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);
@@ -141,7 +142,7 @@ public abstract class ZlibNodes {
 
             inflater.end();
 
-            return createString(outputBytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
         }
 
     }

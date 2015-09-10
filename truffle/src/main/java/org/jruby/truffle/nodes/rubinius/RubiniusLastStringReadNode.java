@@ -10,6 +10,7 @@
 
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,9 +33,14 @@ public class RubiniusLastStringReadNode extends RubyNode {
         final FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
         try {
             final ThreadLocalObject threadLocalObject = (ThreadLocalObject) callerFrame.getObject(slot);
-            return threadLocalObject.get();
+            return getThreadLocal(threadLocalObject);
         } catch (FrameSlotTypeException e) {
             throw new UnsupportedOperationException(e);
         }
+    }
+
+    @TruffleBoundary
+    private static Object getThreadLocal(ThreadLocalObject threadLocalObject) {
+        return threadLocalObject.get();
     }
 }

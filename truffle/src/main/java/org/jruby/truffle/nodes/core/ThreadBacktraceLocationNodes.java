@@ -11,37 +11,22 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-
-import java.util.EnumSet;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
-    private static final HiddenKey ACTIVATION_IDENTIFIER = new HiddenKey("activation");
-    private static final Property ACTIVATION_PROPERTY;
-    private static final DynamicObjectFactory THREAD_BACKTRACE_LOCATION_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        ACTIVATION_PROPERTY = Property.create(ACTIVATION_IDENTIFIER, allocator.locationForType(Activation.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.EMPTY_SHAPE.addProperty(ACTIVATION_PROPERTY);
-        THREAD_BACKTRACE_LOCATION_FACTORY = shape.createFactory();
-    }
-
-    public static RubyBasicObject createRubyThreadBacktraceLocation(RubyClass rubyClass, Activation activation) {
-        return new RubyBasicObject(rubyClass, THREAD_BACKTRACE_LOCATION_FACTORY.newInstance(activation));
-    }
-
-    protected static Activation getActivation(RubyBasicObject threadBacktraceLocation) {
-        assert threadBacktraceLocation.getDynamicObject().getShape().hasProperty(ACTIVATION_IDENTIFIER);
-        return (Activation) ACTIVATION_PROPERTY.get(threadBacktraceLocation.getDynamicObject(), true);
+    public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
+        return ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(rubyClass), activation);
     }
 
     @CoreMethod(names = { "absolute_path", "path" })
@@ -54,18 +39,18 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject absolutePath(RubyBasicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+        public DynamicObject absolutePath(DynamicObject threadBacktraceLocation) {
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return createString(sourceSection.getShortDescription());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            return createString(sourceSection.getSource().getPath());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -79,8 +64,8 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public int lineno(RubyBasicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+        public int lineno(DynamicObject threadBacktraceLocation) {
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
@@ -98,19 +83,19 @@ public class ThreadBacktraceLocationNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject threadBacktraceLocation) {
-            final Activation activation = getActivation(threadBacktraceLocation);
+        public DynamicObject toS(DynamicObject threadBacktraceLocation) {
+            final Activation activation = ThreadBacktraceLocationLayoutImpl.INSTANCE.getActivation(threadBacktraceLocation);
 
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return createString(sourceSection.getShortDescription());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
-            return createString(String.format("%s:%d:in `%s'",
-                        sourceSection.getSource().getShortName(),
-                        sourceSection.getStartLine(),
-                        sourceSection.getIdentifier()));
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(String.format("%s:%d:in `%s'",
+                    sourceSection.getSource().getShortName(),
+                    sourceSection.getStartLine(),
+                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

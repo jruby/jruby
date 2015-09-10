@@ -11,7 +11,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
-public class CheckArityInstr extends Instr implements FixedArityInstr {
+public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final boolean rest;
@@ -19,7 +19,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int restKey;
 
     public CheckArityInstr(int required, int opt, boolean rest, boolean receivesKeywords, int restKey) {
-        super(Operation.CHECK_ARITY, EMPTY_OPERANDS);
+        super(Operation.CHECK_ARITY);
 
         this.required = required;
         this.opt = opt;

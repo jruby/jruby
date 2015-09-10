@@ -41,7 +41,7 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
 
     public DelegatingDynamicMethod(DynamicMethod delegate) {
-        super(delegate.getImplementationClass(), delegate.getVisibility(), delegate.getCallConfig());
+        super(delegate.getImplementationClass(), delegate.getVisibility());
         this.delegate = delegate;
     }
 
@@ -104,11 +104,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
-        delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik);
-    }
-
-    @Override
     public void setIsBuiltin(boolean isBuiltin) {
         delegate.setIsBuiltin(isBuiltin);
     }
@@ -116,11 +111,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public void setImplementationClass(RubyModule implClass) {
         delegate.setImplementationClass(implClass);
-    }
-
-    @Override
-    public void setCallConfig(CallConfiguration callConfig) {
-        delegate.setCallConfig(callConfig);
     }
 
     @Override
@@ -159,11 +149,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public NativeCall getNativeCall() {
-        return delegate.getNativeCall();
-    }
-
-    @Override
     public RubyModule getImplementationClass() {
         return delegate.getImplementationClass();
     }
@@ -171,11 +156,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public boolean isImplementedBy(RubyModule other) {
         return delegate.isImplementedBy(other);
-    }
-
-    @Override
-    public CallConfiguration getCallConfig() {
-        return delegate.getCallConfig();
     }
 
     @Override
@@ -216,21 +196,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public Object getHandle() {
         return delegate.getHandle();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
-        delegate.setNativeCall(args, block, nativeCall);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public NativeCall getNativeCall(int args, boolean block) {
-        return delegate.getNativeCall(args, block);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void setNativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik, boolean java) {
-        delegate.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, java);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

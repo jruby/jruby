@@ -1,4 +1,4 @@
-describe :kernel_lambda, :shared => true do
+describe :kernel_lambda, shared: true do
   it "returns a Proc object" do
     send(@method) { true }.kind_of?(Proc).should == true
   end
@@ -9,7 +9,7 @@ describe :kernel_lambda, :shared => true do
 
 end
 
-describe :kernel_lambda_return_like_method, :shared => true do
+describe :kernel_lambda_return_like_method, shared: true do
   it "returns from the #{@method} itself, not the creation site of the #{@method}" do
     @reached_end_of_method = nil
     def test

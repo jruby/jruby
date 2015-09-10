@@ -16,7 +16,12 @@ public class UnexecutableNil extends Nil {
     public static final UnexecutableNil U_NIL = new UnexecutableNil();
 
     private UnexecutableNil() {
-        super(OperandType.UNEXECUTABLE_NIL);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.UNEXECUTABLE_NIL;
     }
 
     @Override

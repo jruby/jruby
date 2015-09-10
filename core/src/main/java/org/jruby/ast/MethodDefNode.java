@@ -34,21 +34,20 @@ package org.jruby.ast;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Signature;
 
 public abstract class MethodDefNode extends Node implements INameNode {
-	protected final ArgumentNode nameNode;
+	protected final String name;
 	protected final ArgsNode argsNode;
 	protected final StaticScope scope;
 	protected final Node bodyNode;
 
-	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
+	public MethodDefNode(ISourcePosition position, String name, ArgsNode argsNode,
 	        StaticScope scope, Node bodyNode) {
-        super(position, argsNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+        super(position, bodyNode.containsVariableAssignment());
 
         assert bodyNode != null : "bodyNode must not be null";
             
-        this.nameNode = nameNode;
+        this.name = name;
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
@@ -82,18 +81,10 @@ public abstract class MethodDefNode extends Node implements INameNode {
 	}
 
 	/**
-	 * Gets the name's node.
-	 * @return Returns an ArgumentNode
-	 */
-	public ArgumentNode getNameNode() {
-	    return nameNode;
-	}
-
-	/**
 	 * Gets the name.
 	 * @return Returns a String
 	 */
 	public String getName() {
-	    return nameNode.getName();
+	    return name;
 	}
 }

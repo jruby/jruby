@@ -1,4 +1,4 @@
-describe :regexp_new_ascii, :shared => true do
+describe :regexp_new_ascii, shared: true do
   it "requires one argument and creates a new regular expression object" do
     Regexp.send(@method, '').is_a?(Regexp).should == true
   end
@@ -22,7 +22,7 @@ describe :regexp_new_ascii, :shared => true do
   end
 end
 
-describe :regexp_new_string_ascii, :shared => true do
+describe :regexp_new_string_ascii, shared: true do
   it "uses the String argument as an unescaped literal to construct a Regexp object" do
     Regexp.send(@method, "^hi{2,3}fo.o$").should == /^hi{2,3}fo.o$/
   end
@@ -395,7 +395,7 @@ describe :regexp_new_string_ascii, :shared => true do
   end
 end
 
-describe :regexp_new_regexp_ascii, :shared => true do
+describe :regexp_new_regexp_ascii, shared: true do
   it "uses the argument as a literal to construct a Regexp object" do
     Regexp.send(@method, /^hi{2,3}fo.o$/).should == /^hi{2,3}fo.o$/
   end

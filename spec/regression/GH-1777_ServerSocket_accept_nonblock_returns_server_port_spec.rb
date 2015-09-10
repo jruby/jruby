@@ -18,7 +18,7 @@ describe 'ServerSocket#accept_nonblock' do
     IO.select([server_socket])
     client_socket, client_sockaddr = server_socket.accept_nonblock
     port = Socket.unpack_sockaddr_in(client_sockaddr).first
-    port.should eq(client_socket.remote_address.ip_port)
-    port.should_not eq(server_port)
+    expect(port).to eq(client_socket.remote_address.ip_port)
+    expect(port).not_to eq(server_port)
   end
 end if RUBY_VERSION > '1.9'

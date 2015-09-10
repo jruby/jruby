@@ -24,7 +24,7 @@ project 'JRuby Dist' do
       file( :exists => '../jruby' )
     end
 
-    repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+    repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
                 :id => 'rubygems-releases' )
   end
 

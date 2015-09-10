@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.core.BignumNodes;
@@ -19,7 +20,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -41,17 +42,17 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject coerce(int a, int b) {
-            return createArray(new int[]{b, a}, 2);
+        public DynamicObject coerce(int a, int b) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{b, a}, 2);
         }
 
         @Specialization
-        public RubyBasicObject coerce(long a, int b) {
-            return createArray(new long[]{b, a}, 2);
+        public DynamicObject coerce(long a, int b) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new long[]{b, a}, 2);
         }
 
         @Specialization(guards = "!isInteger(b)")
-        public RubyBasicObject coerce(int a, Object b) {
+        public DynamicObject coerce(int a, Object b) {
             return null; // Primitive failure
         }
 
@@ -93,7 +94,7 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(int a, RubyBasicObject b) {
+        public Object powBignum(int a, DynamicObject b) {
             return powBignum((long) a, b);
         }
 
@@ -139,7 +140,7 @@ public abstract class FixnumPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyBignum(b)")
-        public Object powBignum(long a, RubyBasicObject b) {
+        public Object powBignum(long a, DynamicObject b) {
             if (a == 0) {
                 return 0;
             }
@@ -149,14 +150,14 @@ public abstract class FixnumPrimitiveNodes {
             }
 
             if (a == -1) {
-                if (BignumNodes.getBigIntegerValue(b).testBit(0)) {
+                if (Layouts.BIGNUM.getValue(b).testBit(0)) {
                     return -1;
                 } else {
                     return 1;
                 }
             }
 
-            if (BignumNodes.getBigIntegerValue(b).compareTo(BigInteger.ZERO) < 0) {
+            if (Layouts.BIGNUM.getValue(b).compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
@@ -167,12 +168,12 @@ public abstract class FixnumPrimitiveNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object pow(int a, RubyBasicObject b) {
+        public Object pow(int a, DynamicObject b) {
             return null; // Primitive failure
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object pow(long a, RubyBasicObject b) {
+        public Object pow(long a, DynamicObject b) {
             return null; // Primitive failure
         }
 

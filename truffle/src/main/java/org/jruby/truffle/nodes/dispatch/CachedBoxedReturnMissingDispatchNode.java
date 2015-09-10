@@ -12,34 +12,38 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final RubyClass expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
+            Shape expectedShape,
+            DynamicObject expectedClass,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
-        assert expectedClass != null;
-        this.expectedClass = expectedClass;
-        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        assert RubyGuards.isRubyClass(expectedClass);
+        this.expectedShape = expectedShape;
+        unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override
@@ -67,7 +71,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }

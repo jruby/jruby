@@ -11,50 +11,22 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.object.BasicObjectType;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-
-import java.util.EnumSet;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    public static class ByteArrayType extends BasicObjectType {
-
-    }
-
-    public static final ByteArrayType BYTE_ARRAY_TYPE = new ByteArrayType();
-
-    private static final HiddenKey BYTES_IDENTIFIER = new HiddenKey("bytes");
-    public static final Property BYTES_PROPERTY;
-    private static final DynamicObjectFactory BYTE_ARRAY_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        BYTES_PROPERTY = Property.create(BYTES_IDENTIFIER, allocator.locationForType(ByteList.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(BYTE_ARRAY_TYPE).addProperty(BYTES_PROPERTY);
-        BYTE_ARRAY_FACTORY = shape.createFactory();
-    }
-
-    public static RubyBasicObject createByteArray(RubyClass rubyClass, ByteList bytes) {
-        return new RubyBasicObject(rubyClass, BYTE_ARRAY_FACTORY.newInstance(bytes));
-    }
-
-    public static ByteList getBytes(RubyBasicObject byteArray) {
-        assert RubyGuards.isRubiniusByteArray(byteArray);
-        assert byteArray.getDynamicObject().getShape().hasProperty(BYTES_IDENTIFIER);
-        return (ByteList) BYTES_PROPERTY.get(byteArray.getDynamicObject(), true);
+    public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
+        return Layouts.BYTE_ARRAY.createByteArray(Layouts.CLASS.getInstanceFactory(rubyClass), bytes);
     }
 
     @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
@@ -65,8 +37,8 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int getByte(RubyBasicObject bytes, int index) {
-            return getBytes(bytes).get(index);
+        public int getByte(DynamicObject bytes, int index) {
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index) & 0xff;
         }
 
     }
@@ -79,13 +51,13 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject prepend(RubyBasicObject bytes, RubyBasicObject string) {
-            final int prependLength = StringNodes.getByteList(string).getUnsafeBytes().length;
-            final int originalLength = getBytes(bytes).getUnsafeBytes().length;
+        public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
+            final int prependLength = Layouts.STRING.getByteList(string).getUnsafeBytes().length;
+            final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(StringNodes.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
-            System.arraycopy(getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
+            System.arraycopy(Layouts.STRING.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
         }
 
@@ -99,14 +71,14 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public Object setByte(RubyBasicObject bytes, int index, int value) {
-            if (index < 0 || index >= getBytes(bytes).getRealSize()) {
+        public Object setByte(DynamicObject bytes, int index, int value) {
+            if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
             }
 
-            getBytes(bytes).set(index, value);
-            return getBytes(bytes).get(index);
+            Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index);
         }
 
     }
@@ -119,8 +91,8 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization
-        public int size(RubyBasicObject bytes) {
-            return getBytes(bytes).getRealSize();
+        public int size(DynamicObject bytes) {
+            return Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize();
         }
 
     }
@@ -133,13 +105,13 @@ public abstract class ByteArrayNodes {
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object getByte(RubyBasicObject bytes, RubyBasicObject pattern, int start, int length) {
-            final int index = new ByteList(getBytes(bytes), start, length).indexOf(StringNodes.getByteList(pattern));
+        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(Layouts.STRING.getByteList(pattern));
 
             if (index == -1) {
                 return nil();
             } else {
-                return start + index + StringNodes.length(pattern);
+                return start + index + StringOperations.length(pattern);
             }
         }
 

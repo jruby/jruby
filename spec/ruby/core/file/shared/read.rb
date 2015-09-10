@@ -1,6 +1,6 @@
 require File.expand_path('../../../dir/fixtures/common', __FILE__)
 
-describe :file_read_directory, :shared => true do
+describe :file_read_directory, shared: true do
   platform_is :darwin, :linux do
     it "raises an Errno::EISDIR when passed a path that is a directory" do
       lambda { @object.send(@method, ".") }.should raise_error(Errno::EISDIR)

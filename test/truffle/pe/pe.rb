@@ -1,7 +1,7 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -61,9 +61,14 @@ failed = 0
 errored = 0
 timedout = 0
 
+def report(status, code, message = nil)
+  format_str = '%7s: %s'
+  puts message ? format(format_str + "\n         %s", status, code, message) : format('%7s: %s', status, code)
+end
+
 EXAMPLES.each do |code, expected_constant, tagged|
   next if tagged
-  
+
   finished = false
 
   test_thread = Thread.new do
@@ -80,18 +85,22 @@ EXAMPLES.each do |code, expected_constant, tagged|
       end
 
       if constant.nil?
-        puts "ERROR: #{code} errored in some unexpected way: #{e.message}"
+        report 'ERROR', code, "errored in some unexpected way: #{e.message}"
         errored += 1
       else
         if expected_constant
           unless constant
-            puts "FAILURE: #{code} wasn't constant"
+            report 'FAILED', code, "wasn't constant"
             failed += 1
+          else
+            report 'OK', code
           end
         else
           if constant
-            puts "QUERY: #{code} wasn't supposed to be constant but it was"
+            report 'QUERY', code, "wasn't supposed to be constant but it was"
             failed += 1
+          else
+            report 'OK', code
           end
         end
       end
@@ -103,7 +112,7 @@ EXAMPLES.each do |code, expected_constant, tagged|
   test_thread.join(5)
 
   unless finished
-    puts "TIMEOUT: #{code} didn't compile in time so I don't know if it's constant or not"
+    report 'TIMEOUT', code, "didn't compile in time so I don't know if it's constant or not"
     timedout += 1
   end
 end

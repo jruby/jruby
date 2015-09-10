@@ -9,14 +9,16 @@
  */
 package org.jruby.truffle.nodes.exceptions;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
@@ -32,18 +34,21 @@ public class TopLevelRaiseHandler extends RubyNode {
         try {
             return body.execute(frame);
         } catch (RaiseException e) {
-            final RubyException rubyException = e.getRubyException();
-
-            for (String line : Backtrace.DISPLAY_FORMATTER.format(getContext(), rubyException, rubyException.getBacktrace())) {
-                System.err.println(line);
-            }
-
-            System.exit(1);
+            handleException(e);
         } catch (ThreadExitException e) {
             // Ignore
         }
 
         return nil();
+    }
+
+    @TruffleBoundary
+    private void handleException(RaiseException e) {
+        final Object rubyException = e.getRubyException();
+
+        BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+
+        System.exit(1);
     }
 
 }

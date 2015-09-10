@@ -27,12 +27,12 @@ RSpec::Matchers.define :have_strings_or_symbols do |*strings|
     @missing.empty?
   end
 
-  failure_message_for_should do |container|
+  failure_message do |container|
     "expected array of #{container.length} elements to include #{@missing.inspect}.\n" +
       "#{closest_match_message(@missing, container)}"
   end
 
-  failure_message_for_should_not do |container|
+  failure_message_when_negated do |container|
     "expected array of #{container.length} elements to not include #{@included.inspect}."
   end
 

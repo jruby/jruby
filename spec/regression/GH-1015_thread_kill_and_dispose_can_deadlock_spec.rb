@@ -18,6 +18,6 @@ describe 'A thread dying naturally while being killed' do
       ary << :ok
     end
 
-    ary.should == [:ok] * n
+    expect(ary).to eq([:ok] * n)
   end
 end

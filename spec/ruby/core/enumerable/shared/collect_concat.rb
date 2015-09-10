@@ -1,9 +1,9 @@
 require File.expand_path('../enumerable_enumeratorized', __FILE__)
 
-describe :enumerable_collect_concat, :shared => true do
+describe :enumerable_collect_concat, shared: true do
   it "yields elements to the block and flattens one level" do
-    numerous = EnumerableSpecs::Numerous.new(1, [2, 3], [4, [5, 6]], {:foo => :bar})
-    numerous.send(@method) { |i| i }.should == [1, 2, 3, 4, [5, 6], {:foo => :bar}]
+    numerous = EnumerableSpecs::Numerous.new(1, [2, 3], [4, [5, 6]], {foo: :bar})
+    numerous.send(@method) { |i| i }.should == [1, 2, 3, 4, [5, 6], {foo: :bar}]
   end
 
   it "appends non-Array elements that do not define #to_ary" do

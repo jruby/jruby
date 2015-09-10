@@ -24,7 +24,7 @@ describe "A private subclass of a public superclass with interfaces" do
     # test that add can handle values other than string, since a
     # once-upon-a-time change caused child classes to only bind
     # unique methods, which in this case would be private boolean add(String)
-    sub_without.add(1).should == true
+    expect(sub_without.add(1)).to eq(true)
   end
 end
 
@@ -34,7 +34,7 @@ describe "A private subclass with interfaces" do
 
     sub_without_cls = sub_without.class
 
-    sub_without_cls.instance_methods.should have_strings_or_symbols "run"
+    expect(sub_without_cls.instance_methods).to have_strings_or_symbols "run"
   end
 end
 
@@ -45,6 +45,6 @@ describe "A public subclass with interfaces extending a superclass that duplicat
     # test that add can handle values other than string, since a
     # once-upon-a-time change caused child classes to only bind
     # unique methods, which in this case would be private boolean add(String)
-    sub_with.add(1).should == true
+    expect(sub_with.add(1)).to eq(true)
   end
 end

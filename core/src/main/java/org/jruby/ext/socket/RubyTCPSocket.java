@@ -135,7 +135,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ":" + String.valueOf(localPort));
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
+            throw runtime.newIOErrorFromException(e);
 
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());

@@ -36,7 +36,7 @@ describe "Dir.entries" do
   end
 
   it "accepts an options Hash" do
-    a = Dir.entries("#{DirSpecs.mock_dir}/deeply/nested", :encoding => "utf-8").sort
+    a = Dir.entries("#{DirSpecs.mock_dir}/deeply/nested", encoding: "utf-8").sort
     a.should == %w|. .. .dotfile.ext directory|
   end
 
@@ -52,7 +52,7 @@ describe "Dir.entries" do
 
   it "returns entries encoded with the specified encoding" do
     dir = File.join(DirSpecs.mock_dir, 'special')
-    entries = Dir.entries dir, :encoding => "euc-jp"
+    entries = Dir.entries dir, encoding: "euc-jp"
     entries.first.encoding.should equal(Encoding::EUC_JP)
   end
 

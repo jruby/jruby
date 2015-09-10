@@ -11,13 +11,13 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.methods.Arity;
 
 import java.util.Map;
@@ -46,17 +46,17 @@ public class CheckArityNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         final Object[] frameArguments = frame.getArguments();
         final int given;
-        final RubyBasicObject keywordArguments;
-        
-        //TODO (MS): Check merge 
+        final DynamicObject keywordArguments;
+
+        //TODO (MS): Check merge
         if (RubyArguments.isKwOptimized(frame.getArguments())) {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments())
-                    - arity.getCountKeywords() - 2;
+                    - arity.getKeywordsCount() - 2;
         } else {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments());
         }
 
-        if (arity.hasKeywords()) {
+        if (arity.acceptsKeywords()) {
             keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired());
         } else {
             keywordArguments = null;
@@ -68,7 +68,7 @@ public class CheckArityNode extends RubyNode {
         }
 
         if (!keywordsRest && keywordArguments != null) {
-            for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(keywordArguments)) {
+            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
@@ -77,14 +77,14 @@ public class CheckArityNode extends RubyNode {
         }
     }
 
-    private boolean checkArity(VirtualFrame frame, int given, RubyBasicObject keywordArguments) {
+    private boolean checkArity(VirtualFrame frame, int given, DynamicObject keywordArguments) {
         if (keywordArguments != null) {
             given -= 1;
         }
 
         if (arity.getRequired() != 0 && given < arity.getRequired()) {
             return false;
-        } else if (!arity.allowsMore() && given > arity.getRequired() + arity.getOptional()) {
+        } else if (!arity.hasRest() && given > arity.getRequired() + arity.getOptional()) {
             return false;
         } else {
             return true;

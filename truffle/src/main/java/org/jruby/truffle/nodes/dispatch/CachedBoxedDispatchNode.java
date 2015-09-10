@@ -15,15 +15,18 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final RubyClass expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
 
     private final InternalMethod method;
@@ -34,14 +37,17 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
+            Shape expectedShape,
+            DynamicObject expectedClass,
             InternalMethod method,
             boolean indirect,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
-        this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        assert RubyGuards.isRubyClass(expectedClass);
+
+        this.expectedShape = expectedShape;
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
 
@@ -51,9 +57,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit())
+                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone())
                         || (method.getDeclaringModule() != null
-                        && method.getDeclaringModule().getName().equals("TruffleInterop"))) {
+                        && Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -64,8 +70,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     @Override
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override
@@ -93,7 +99,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -108,7 +114,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -117,7 +123,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }
@@ -134,7 +140,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public String toString() {
         return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                expectedClass.getName(), expectedClass.hashCode(),
+                expectedShape, expectedShape.hashCode(),
                 method == null ? "null" : method.toString());
     }
 

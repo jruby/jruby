@@ -12,13 +12,16 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 import java.util.Locale;
 
@@ -36,7 +39,7 @@ public abstract class FloatPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject dToA(double value) {
+        public DynamicObject dToA(double value) {
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 
             if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
@@ -62,8 +65,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(),
-                    new Object[]{createString(string), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(string, UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), decimal, sign, string.length()}, 4);
         }
 
     }

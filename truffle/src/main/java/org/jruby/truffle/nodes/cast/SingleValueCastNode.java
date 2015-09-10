@@ -13,11 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class SingleValueCastNode extends RubyNode {
@@ -29,7 +30,7 @@ public abstract class SingleValueCastNode extends RubyNode {
     public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
     @Specialization(guards = "noArguments(args)")
-    protected RubyBasicObject castNil(Object[] args) {
+    protected DynamicObject castNil(Object[] args) {
         return nil();
     }
 
@@ -40,8 +41,8 @@ public abstract class SingleValueCastNode extends RubyNode {
 
     @TruffleBoundary
     @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
-    protected RubyBasicObject castMany(Object[] args) {
-        return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
+    protected DynamicObject castMany(Object[] args) {
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), args, args.length);
     }
 
     protected boolean noArguments(Object[] args) {

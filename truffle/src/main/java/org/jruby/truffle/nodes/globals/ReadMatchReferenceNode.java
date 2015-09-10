@@ -9,12 +9,18 @@
  */
 package org.jruby.truffle.nodes.globals;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 public class ReadMatchReferenceNode extends RubyNode {
 
@@ -32,18 +38,22 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        return readMatchReference();
+    }
 
-        final Object match = getContext().getThreadManager().getCurrentThread().getThreadLocals().getInstanceVariable("$~");
+    @TruffleBoundary
+    private Object readMatchReference() {
+        DynamicObject receiver = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final Object match = receiver.get("$~", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
 
         if (match == null || match == nil()) {
             return nil();
         }
 
-        final RubyMatchData matchData = (RubyMatchData) match;
+        final DynamicObject matchData = (DynamicObject) match;
 
         if (index > 0) {
-            final Object[] values = matchData.getValues();
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
 
             if (index >= values.length) {
                 return nil();
@@ -51,13 +61,13 @@ public class ReadMatchReferenceNode extends RubyNode {
                 return values[index];
             }
         } else if (index == PRE) {
-            return matchData.getPre();
+            return Layouts.MATCH_DATA.getPre(matchData);
         } else if (index == POST) {
-            return matchData.getPost();
+            return Layouts.MATCH_DATA.getPost(matchData);
         } else if (index == GLOBAL) {
-            return matchData.getGlobal();
+            return Layouts.MATCH_DATA.getGlobal(matchData);
         } else if (index == HIGHEST) {
-            final Object[] values = matchData.getValues();
+            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
 
             for (int n = values.length - 1; n >= 0; n--)
                 if (values[n] != nil()) {
@@ -73,7 +83,7 @@ public class ReadMatchReferenceNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         if (execute(frame) != nil()) {
-            return createString("global-variable");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         } else {
             return nil();
         }

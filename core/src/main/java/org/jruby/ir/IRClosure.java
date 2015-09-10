@@ -9,6 +9,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -28,6 +29,9 @@ public class IRClosure extends IRScope {
 
     private Signature signature;
 
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
+
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
 
@@ -35,8 +39,8 @@ public class IRClosure extends IRScope {
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
-    protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
-        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, String prefix) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
 
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
@@ -71,7 +75,7 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
+        this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
 
@@ -289,5 +293,17 @@ public class IRClosure extends IRScope {
 
     public Handle getHandle() {
         return handle;
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+
+    /**
+     * Set upon completion of IRBuild of this IRClosure.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 }

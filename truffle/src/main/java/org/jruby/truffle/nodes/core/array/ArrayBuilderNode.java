@@ -12,11 +12,12 @@ package org.jruby.truffle.nodes.core.array;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
 
@@ -27,8 +28,6 @@ import java.util.Arrays;
 
 public abstract class ArrayBuilderNode extends Node {
 
-    public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
-
     private final RubyContext context;
 
     public ArrayBuilderNode(RubyContext context) {
@@ -38,13 +37,9 @@ public abstract class ArrayBuilderNode extends Node {
     public abstract Object start();
     public abstract Object start(int length);
     public abstract Object ensure(Object store, int length);
-    public abstract Object appendArray(Object store, int index, RubyBasicObject array);
+    public abstract Object appendArray(Object store, int index, DynamicObject array);
     public abstract Object appendValue(Object store, int index, Object value);
     public abstract Object finish(Object store, int length);
-
-    public RubyBasicObject finishAndCreate(RubyClass arrayClass, Object store, int length) {
-        return ArrayNodes.createGeneralArray(arrayClass, finish(store, length), length);
-    }
 
     protected RubyContext getContext() {
         return context;
@@ -69,7 +64,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[ARRAYS_UNINITIALIZED_SIZE];
+            return new Object[getContext().getOptions().ARRAY_UNINITIALIZED_SIZE];
         }
 
         @Override
@@ -85,10 +80,10 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
             CompilerDirectives.transferToInterpreter();
 
-            for (Object value : ArrayNodes.slowToArray(array)) {
+            for (Object value : ArrayOperations.toIterable(array)) {
                 store = appendValue(store, index, value);
                 index++;
             }
@@ -151,7 +146,7 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
-        @CompilationFinal private boolean hasAppendedIntegerArray = false;
+        private final ConditionProfile hasAppendedIntegerArray = ConditionProfile.createBinaryProfile();
 
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -193,33 +188,22 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
-            Object otherStore = ArrayNodes.getStore(array);
+        public Object appendArray(Object store, int index, DynamicObject array) {
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
-            if (hasAppendedIntegerArray && otherStore instanceof int[]) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
-                return store;
-            }
-
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            if (otherStore instanceof int[]) {
-                hasAppendedIntegerArray = true;
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
+            if (hasAppendedIntegerArray.profile(otherStore instanceof int[])) {
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
             CompilerDirectives.transferToInterpreter();
 
-            replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-            final Object[] newStore = ArrayUtils.box((int[]) store);
-            System.arraycopy(otherStore, 0, newStore, index, ArrayNodes.getSize(array));
-
-            return newStore;
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((int[]) store), index, array);
         }
 
         @Override
@@ -259,6 +243,7 @@ public abstract class ArrayBuilderNode extends Node {
     public static class LongArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
+        private final ConditionProfile otherLongStoreProfile = ConditionProfile.createBinaryProfile();
 
         public LongArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -290,8 +275,22 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
-            throw new UnsupportedOperationException();
+        public Object appendArray(Object store, int index, DynamicObject array) {
+            Object otherStore = Layouts.ARRAY.getStore(array);
+
+            if (otherStore == null) {
+                return store;
+            }
+
+            if (otherLongStoreProfile.profile(otherStore instanceof long[])) {
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
+                return store;
+            }
+
+            CompilerDirectives.transferToInterpreter();
+
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((long[]) store), index, array);
         }
 
         @Override
@@ -323,6 +322,7 @@ public abstract class ArrayBuilderNode extends Node {
     public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
+        private final ConditionProfile otherDoubleStoreProfile = ConditionProfile.createBinaryProfile();
 
         public DoubleArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -349,14 +349,34 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object ensure(Object store, int length) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+            if (length > ((double[]) store).length) {
+                CompilerDirectives.transferToInterpreter();
+                final Object[] newStore = ArrayUtils.box((double[]) store);
+                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+                replace(newNode);
+                newNode.resume(newStore);
+                return newNode.ensure(newStore, length);
+            }
+            return store;
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
+        public Object appendArray(Object store, int index, DynamicObject array) {
+            Object otherStore = Layouts.ARRAY.getStore(array);
+
+            if (otherStore == null) {
+                return store;
+            }
+
+            if (otherDoubleStoreProfile.profile(otherStore instanceof double[])) {
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
+                return store;
+            }
+
             CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+
+            return replace(new ObjectArrayBuilderNode(getContext(), expectedLength)).
+                    appendArray(ArrayUtils.box((double[]) store), index, array);
         }
 
         @Override
@@ -427,15 +447,15 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public Object appendArray(Object store, int index, RubyBasicObject array) {
-            Object otherStore = ArrayNodes.getStore(array);
+        public Object appendArray(Object store, int index, DynamicObject array) {
+            Object otherStore = Layouts.ARRAY.getStore(array);
 
             if (otherStore == null) {
                 return store;
             }
 
             if (hasAppendedObjectArray && otherStore instanceof Object[]) {
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
@@ -443,7 +463,7 @@ public abstract class ArrayBuilderNode extends Node {
                 final Object[] objectStore = (Object[]) store;
                 final int[] otherIntStore = (int[]) otherStore;
 
-                for (int n = 0; n < ArrayNodes.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     objectStore[index + n] = otherIntStore[n];
                 }
 
@@ -454,7 +474,7 @@ public abstract class ArrayBuilderNode extends Node {
 
             if (otherStore instanceof int[]) {
                 hasAppendedIntArray = true;
-                for (int n = 0; n < ArrayNodes.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((int[]) otherStore)[n];
                 }
 
@@ -462,7 +482,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof long[]) {
-                for (int n = 0; n < ArrayNodes.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((long[]) otherStore)[n];
                 }
 
@@ -470,7 +490,7 @@ public abstract class ArrayBuilderNode extends Node {
             }
 
             if (otherStore instanceof double[]) {
-                for (int n = 0; n < ArrayNodes.getSize(array); n++) {
+                for (int n = 0; n < Layouts.ARRAY.getSize(array); n++) {
                     ((Object[]) store)[index + n] = ((double[]) otherStore)[n];
                 }
 
@@ -479,19 +499,15 @@ public abstract class ArrayBuilderNode extends Node {
 
             if (otherStore instanceof Object[]) {
                 hasAppendedObjectArray = true;
-                System.arraycopy(otherStore, 0, store, index, ArrayNodes.getSize(array));
+                System.arraycopy(otherStore, 0, store, index, Layouts.ARRAY.getSize(array));
                 return store;
             }
 
-            throw new UnsupportedOperationException(ArrayNodes.getStore(array).getClass().getName());
+            throw new UnsupportedOperationException(Layouts.ARRAY.getStore(array).getClass().getName());
         }
 
         @Override
         public Object appendValue(Object store, int index, Object value) {
-            if (index >= ((Object[]) store).length) {
-                new Exception().printStackTrace();
-            }
-
             ((Object[]) store)[index] = value;
             return store;
         }

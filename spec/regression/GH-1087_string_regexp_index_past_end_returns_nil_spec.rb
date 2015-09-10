@@ -6,10 +6,10 @@ describe 'String#index given a Regexp and an index past the last character' do
   it "returns nil" do
     # without multibyte
     str = "strings - strings"
-    str.index(/\b/, 18).should == nil
+    expect(str.index(/\b/, 18)).to eq(nil)
     
     # with multibyte
     str = "ßt®íngß — ßt®íngß"
-    str.index(/\b/, 18).should == nil
+    expect(str.index(/\b/, 18)).to eq(nil)
   end
 end if RUBY_VERSION > "1.9"

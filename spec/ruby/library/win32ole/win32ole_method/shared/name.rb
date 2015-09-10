@@ -1,7 +1,7 @@
 platform_is :windows do
   require 'win32ole'
 
-  describe :win32ole_method_name, :shared => true do
+  describe :win32ole_method_name, shared: true do
     before :each do
       ole_type = WIN32OLE_TYPE.new("Microsoft Scripting Runtime", "File")
       @m_file_name = WIN32OLE_METHOD.new(ole_type, "name")

@@ -75,12 +75,12 @@ ruby -S bundle exec rspec spec/helpers/ruby_exe_spec.rb
 
 ## Documentation
 
-See http://rubyspec.org
+See http://ruby.github.io/rubyspec.github.io/
 
 
 ## Source Code
 
-See https://github.com/rubyspec/mspec
+See https://github.com/ruby/mspec
 
 
 ## License

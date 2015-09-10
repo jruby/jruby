@@ -107,6 +107,10 @@ describe "Module#const_get" do
     lambda { ConstantSpecs.const_get(:'ClassA::CS_CONST10') }.should raise_error(NameError)
   end
 
+  it "does read private constants" do
+     ConstantSpecs.const_get(:CS_PRIVATE).should == :cs_private
+  end
+
   describe "with statically assigned constants" do
     it "searches the immediate class or module first" do
       ConstantSpecs::ClassA.const_get(:CS_CONST10).should == :const10_10

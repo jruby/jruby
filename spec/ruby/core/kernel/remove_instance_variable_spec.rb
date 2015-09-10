@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_remove_instance_variable, :shared => true do
+describe :kernel_remove_instance_variable, shared: true do
   it "returns the instance variable's value" do
     value = @instance.send :remove_instance_variable, @object
     value.should == "hello"

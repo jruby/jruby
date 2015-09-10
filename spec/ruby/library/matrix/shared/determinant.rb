@@ -1,6 +1,6 @@
 require 'matrix'
 
-describe :determinant, :shared => true do
+describe :determinant, shared: true do
   it "returns the determinant of a square Matrix" do
     m = Matrix[ [7,6], [3,9] ]
     m.send(@method).should == 45

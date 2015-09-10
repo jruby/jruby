@@ -369,13 +369,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Arity.optional().getValue(),
                     javaMethodName,
                     desc1.isStatic,
-                    CallConfiguration.getCallConfigByAnno(anno),
                     desc1.anno.notImplemented(),
                     desc1.getDeclaringClass(),
                     desc1.name,
                     desc1.getReturnClass(),
-                    desc1.getParameterClasses(),
-                    CallConfiguration.getCallerCallConfigByAnno(anno));
+                    desc1.getParameterClasses());
             return ic;
         } catch(Exception e) {
             e.printStackTrace();
@@ -487,13 +485,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Arity.fromAnnotation(desc.anno, desc.actualRequired).getValue(),
                     javaMethodName,
                     desc.isStatic,
-                    CallConfiguration.getCallConfigByAnno(desc.anno),
                     desc.anno.notImplemented(),
                     desc.getDeclaringClass(),
                     desc.name,
                     desc.getReturnClass(),
-                    desc.getParameterClasses(),
-                    CallConfiguration.getCallerCallConfigByAnno(desc.anno));
+                    desc.getParameterClasses());
             return ic;
         } catch(Exception e) {
             e.printStackTrace();

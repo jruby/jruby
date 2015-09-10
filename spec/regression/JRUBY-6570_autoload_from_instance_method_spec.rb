@@ -10,7 +10,7 @@ describe "JRUBY-6570: autoload called from instance method" do
     end
     
     obj = cls.new
-    obj.go.should == 'time'
-    cls.autoload?(:Time).should == 'time'
+    expect(obj.go).to eq('time')
+    expect(cls.autoload?(:Time)).to eq('time')
   end
 end

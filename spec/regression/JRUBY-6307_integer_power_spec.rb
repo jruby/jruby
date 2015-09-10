@@ -8,7 +8,7 @@ describe "JRUBY-6307: Powering operation of Integer sometimes gets a wrong calcu
     values.each do |v|
       power            = v**2
       multiply_by_self = v*v
-      power.should == multiply_by_self
+      expect(power).to eq(multiply_by_self)
     end
   end
 end

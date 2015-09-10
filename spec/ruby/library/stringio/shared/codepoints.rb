@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :stringio_codepoints, :shared => true do
+describe :stringio_codepoints, shared: true do
   before :each do
     @io = StringIO.new("∂φ/∂x = gaîté")
     @enum = @io.send(@method)

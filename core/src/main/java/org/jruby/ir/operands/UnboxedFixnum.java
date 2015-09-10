@@ -27,8 +27,13 @@ public class UnboxedFixnum extends ImmutableLiteral {
     final public long value;
 
     public UnboxedFixnum(long val) {
-        super(OperandType.UNBOXED_FIXNUM);
+        super();
         value = val;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.UNBOXED_FIXNUM;
     }
 
     @Override

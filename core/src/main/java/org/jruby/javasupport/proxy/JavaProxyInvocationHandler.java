@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,17 +28,20 @@
 
 package org.jruby.javasupport.proxy;
 
-import java.lang.reflect.InvocationHandler;
-
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * A proxy invocation handler for JRuby.
+ *
+ * @see java.lang.reflect.InvocationHandler
+ */
 public interface JavaProxyInvocationHandler {
 
     IRubyObject getOrig();
-    
+
     /**
-     * Similar to java.lang.reflect.InvocationHandler
-     * 
+     * Similar to {@link java.lang.reflect.InvocationHandler}
+     *
      * @param receiver
      * @param method
      * @param args

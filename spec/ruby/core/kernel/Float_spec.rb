@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_float, :shared => true do
+describe :kernel_float, shared: true do
   it "returns the identical Float for numeric Floats" do
     float = 1.12
     float2 = @object.send(:Float, float)
@@ -161,7 +161,7 @@ describe :kernel_float, :shared => true do
     end
 
     it "returns Infinity for '2#{e}1000'" do
-      @object.send(:Float, "2#{e}1000").should == (1.0/0)
+      @object.send(:Float, "2#{e}1000").should == Float::INFINITY
     end
 
     it "returns 0 for '2#{e}-1000'" do

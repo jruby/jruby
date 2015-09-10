@@ -79,7 +79,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -93,7 +92,6 @@ import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
@@ -177,6 +175,7 @@ import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -536,7 +535,7 @@ public final class Ruby implements Constantizable {
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey(), varvalue);
+            getGlobalVariables().set('$' + entry.getKey(), varvalue);
         }
 
         if (filename.endsWith(".class")) {
@@ -549,7 +548,9 @@ public final class Ruby implements Constantizable {
             return;
         }
 
+        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
+        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -843,7 +844,9 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
+            Main.printTruffleTimeMetric("before-run");
             getTruffleContext().execute((RootNode) rootNode);
+            Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
             return Interpreter.getInstance().execute(this, rootNode, self);
@@ -891,6 +894,8 @@ public final class Ruby implements Constantizable {
     }
 
     private TruffleContextInterface loadTruffleContext() {
+        Main.printTruffleTimeMetric("before-load-truffle-context");
+
         final Class<?> clazz;
 
         try {
@@ -909,6 +914,8 @@ public final class Ruby implements Constantizable {
         }
 
         truffleContext.initialize();
+
+        Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
     }
@@ -1381,7 +1388,7 @@ public final class Ruby implements Constantizable {
 
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         if (config.getKernelGsubDefined()) {
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE) {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -2930,8 +2937,6 @@ public final class Ruby implements Constantizable {
         InputStream readStream = in;
 
         Script script = null;
-        ScriptAndCode scriptAndCode = null;
-        String className = null;
 
         try {
             // read full contents of file, hash it, and try to load that class first
@@ -2943,12 +2948,12 @@ public final class Ruby implements Constantizable {
             }
             buffer = baos.toByteArray();
             String hash = JITCompiler.getHashForBytes(buffer);
-            className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
+            final String className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
 
             // FIXME: duplicated from ClassCache
             Class contents;
             try {
-                contents = jrubyClassLoader.loadClass(className);
+                contents = getJRubyClassLoader().loadClass(className);
                 if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
                     LOG.info("found jitted code for " + filename + " at class: " + className);
                 }
@@ -2974,7 +2979,9 @@ public final class Ruby implements Constantizable {
         // script was not found in cache above, so proceed to compile
         RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
         if (script == null) {
-            scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
+            ScriptAndCode scriptAndCode = tryCompile(scriptNode,
+                new ClassDefiningJRubyClassLoader(getJRubyClassLoader())
+            );
             if (scriptAndCode != null) script = scriptAndCode.script();
         }
 
@@ -3307,7 +3314,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        tearDownClassLoader();
+        // NOTE: its intentional that we're not doing releaseClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3332,9 +3339,18 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void tearDownClassLoader() {
-        if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().tearDown(isDebug());
+    /**
+     * By default {@link #tearDown(boolean)} does not release the class-loader's
+     * resources as threads might be still running accessing the classes/packages
+     * even after the runtime has been torn down.
+     *
+     * This method exists to handle such cases, e.g. with embedded uses we always
+     * release the runtime loader but not otherwise - you should do that manually.
+     */
+    public void releaseClassLoader() {
+        if ( jrubyClassLoader != null ) {
+            getJRubyClassLoader().close();
+            jrubyClassLoader = null;
         }
     }
 
@@ -3720,6 +3736,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EDESTADDRREQ"), func);
     }
 
+    public RaiseException newErrnoENETUNREACHError() {
+        return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
@@ -3971,6 +3991,8 @@ public final class Ruby implements Constantizable {
                 return newErrnoEMFILEError();
             } else if ("Too many open files in system".equals(e.getMessage())) {
                 return newErrnoENFILEError();
+            } else if ("Network is unreachable".equals(e.getMessage())) {
+                return newErrnoENETUNREACHError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {
@@ -5105,7 +5127,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private WeakHashMap<RubyString, WeakReference<RubyString>> dedupMap = new WeakHashMap<RubyString, WeakReference<RubyString>>();
+    private Map<RubyString, WeakReference<RubyString>> dedupMap = Collections.synchronizedMap(new WeakHashMap<RubyString, WeakReference<RubyString>>());
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();

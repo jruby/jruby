@@ -166,52 +166,116 @@ public class CallableSelector {
                 Class<?>[] msTypes = mostSpecific.getParameterTypes();
                 boolean ambiguous = false;
 
-                OUTER: for ( int c = 1; c < size; c++ ) {
+                final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
+                int mostSpecificArity = Integer.MIN_VALUE;
+
+                final int procArity;
+                if ( lastArg instanceof RubyProc ) {
+                    final Method implMethod; final int last = msTypes.length - 1;
+                    if ( last >= 0 && msTypes[last].isInterface() &&
+                        ( implMethod = getFunctionalInterfaceMethod(msTypes[last]) ) != null ) {
+                        mostSpecificArity = implMethod.getParameterTypes().length;
+                    }
+                    procArity = ((RubyProc) lastArg).getBlock().getSignature().arityValue();
+                }
+                else {
+                    procArity = Integer.MIN_VALUE;
+                }
+
+                /* OUTER: */
+                for ( int c = 1; c < size; c++ ) {
                     final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
 
-                    for ( int i = 0; i < msTypes.length; i++ ) {
-                        final Class<?> msType = msTypes[i], cType = cTypes[i];
-                        if ( msType != cType && msType.isAssignableFrom(cType) ) {
-                            mostSpecific = candidate;
-                            msTypes = cTypes;
-                            ambiguous = false; continue OUTER;
+                    // TODO still need to handle var-args better Class<?> lastType;
+
+                    final boolean lastArgProc = procArity != Integer.MIN_VALUE;
+                    final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
+                    if ( (Object) moreSpecific == Boolean.TRUE ) {
+                        mostSpecific = candidate; msTypes = cTypes;
+                        ambiguous = false; continue /* OUTER */;
+                    }
+                    else { // if ( (Object) moreSpecific == Boolean.FALSE ) {
+                        // none more specific; check for ambiguities
+                        for ( int i = 0; i < msTypes.length; i++ ) {
+                            // TODO if lastArgProc (and we're not dealing with RubyProc.class)
+                            // then comparing last arg should not be needed, right?
+                            // ... same applies for moreSpecificTypes method ...
+                            final Class<?> msType = msTypes[i], cType = cTypes[i];
+                            if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
+                                ambiguous = false; break; // continue OUTER;
+                            }
+                            else if ( cType.isPrimitive() && msType.isAssignableFrom(getBoxType(cType)) ) {
+                                ambiguous = false; break; // continue OUTER;
+                            }
+                            else {
+                                ambiguous = true;
+                            }
                         }
                     }
-                    // none more specific; check for ambiguities
-                    for ( int i = 0; i < msTypes.length; i++ ) {
-                        final Class<?> msType = msTypes[i], cType = cTypes[i];
-                        if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
-                            ambiguous = false; continue OUTER;
-                        }
-                        else if ( cType.isPrimitive() && msType.isAssignableFrom(getBoxType(cType)) ) {
-                            ambiguous = false; continue OUTER;
-                        }
-                        else {
-                            ambiguous = true;
+
+                    // special handling if we're dealing with Proc#impl :
+                    if ( lastArgProc ) {  // lastArg instanceof RubyProc
+                        // cases such as (both ifaces - differ in arg count) :
+                        // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
+                        // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
+                        final Method implMethod; final int last = cTypes.length - 1;
+                        if ( last >= 0 && cTypes[last].isInterface() && ( implMethod = getFunctionalInterfaceMethod(cTypes[last]) ) != null ) {
+                            // we're sure to have an interface in the end - match arg count :
+                            // NOTE: implMethod.getParameterCount() on Java 8 would do ...
+                            final int methodArity = implMethod.getParameterTypes().length;
+                            if ( methodArity == procArity ) {
+                                if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                // TODO we could try to match parameter types with arg types
+                                else {
+                                    mostSpecific = candidate; msTypes = cTypes;
+                                    mostSpecificArity = procArity; ambiguous = false;
+                                }
+                                continue; /* OUTER */ // we want to check all
+                            }
+                            else if ( mostSpecificArity != procArity ) {
+                                if ( methodArity < procArity ) { // not ideal but still usable
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    else if ( mostSpecificArity < methodArity ) { // candidate is "better" match
+                                        mostSpecific = candidate; msTypes = cTypes;
+                                        mostSpecificArity = methodArity; ambiguous = false;
+                                    }
+                                    continue; /* OUTER */
+                                }
+                                else if ( procArity < 0 && methodArity >= -(procArity + 1) ) { // *splat that fits
+                                    if ( mostSpecificArity == methodArity ) ambiguous = true; // 2 with same arity
+                                    else {
+                                        final int msa = mostSpecificArity + procArity;
+                                        final int ma = methodArity + procArity;
+                                        if ( ( msa < 0 && ma < 0 && msa < ma ) ||
+                                             ( msa >= 0 && ma >= 0 && msa > ma ) ||
+                                             ( msa > ma ) ) {
+                                            mostSpecific = candidate; msTypes = cTypes;
+                                            mostSpecificArity = methodArity; // ambiguous = false;
+                                        }
+                                        ambiguous = false;
+                                    }
+                                    continue; /* OUTER */
+                                }
+                            }
+                            else { // we're not a match and if there's something else matched than it's not really ambiguous
+                                ambiguous = false; /* continue; /* OUTER */
+                            }
                         }
                     }
 
                     // somehow we can still decide e.g. if we got a RubyFixnum
                     // then (int) constructor should be preferred over (float)
                     if ( ambiguous ) {
-                        // special handling if we're dealing with Proc#impl :
-                        final IRubyObject lastArg = args.length > 0 ? args[ args.length - 1 ] : null;
-                        final T procToIfaceMatch = matchProcToInterfaceCandidate(lastArg, candidates);
-                        if ( procToIfaceMatch != null ) {
-                            mostSpecific = procToIfaceMatch; ambiguous = false;
+                        int msPref = 0, cPref = 0;
+                        for ( int i = 0; i < msTypes.length; i++ ) {
+                            final Class<?> msType = msTypes[i], cType = cTypes[i];
+                            msPref += calcTypePreference(msType, args[i]);
+                            cPref += calcTypePreference(cType, args[i]);
                         }
-                        else {
-                            int msPref = 0, cPref = 0;
-                            for ( int i = 0; i < msTypes.length; i++ ) {
-                                final Class<?> msType = msTypes[i], cType = cTypes[i];
-                                msPref += calcTypePreference(msType, args[i]);
-                                cPref += calcTypePreference(cType, args[i]);
-                            }
-                            // for backwards compatibility we do not switch to cType as
-                            // the better fit - we seem to lack tests on this front ...
-                            if ( msPref > cPref ) ambiguous = false; // continue OUTER;
-                        }
+                        // for backwards compatibility we do not switch to cType as
+                        // the better fit - we seem to lack tests on this front ...
+                        if ( msPref > cPref ) ambiguous = false; // continue OUTER;
                     }
                 }
                 method = mostSpecific;
@@ -224,55 +288,70 @@ public class CallableSelector {
 
         // fall back on old ways
         if (method == null) {
-            method = findCallable(methods, Exact, args);
-            if (method == null) {
-                method = findCallable(methods, AssignableAndPrimitivable, args);
-                if (method == null) {
-                    method = findCallable(methods, AssignableOrDuckable, args);
-                    if (method == null) {
-                        method = findCallable(methods, AssignableOrDuckable, args);
-                        if (method == null) {
-                            method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
-                        }
-                    }
-                }
-            }
+            method = findMatchingCallableForArgsFallback(runtime, methods, args);
         }
 
         return method;
     }
 
-    private static <T extends ParameterTypes> T matchProcToInterfaceCandidate(
-            final IRubyObject lastArg, final List<T> candidates) {
-        if ( lastArg instanceof RubyProc ) {
-            // cases such as (both ifaces - differ in arg count) :
-            // java.io.File#listFiles(java.io.FileFilter) ... accept(File)
-            // java.io.File#listFiles(java.io.FilenameFilter) ... accept(File, String)
-            final int arity = ((RubyProc) lastArg).getBlock().arity().getValue();
-            T match = null;
-            for ( int i = 0; i < candidates.size(); i++ ) {
-                final T method = candidates.get(i);
+    private static Boolean moreSpecificTypes(final Class[] msTypes, final Class[] cTypes,
+        final boolean lastArgProc) {
 
-                final Class<?>[] params = method.getParameterTypes();
+        final int last = msTypes.length - 1;
+        int moreSpecific = 0; Class<?> msType, cType;
+        for ( int i = 0; i < last; i++ ) {
+             msType = msTypes[i]; cType = cTypes[i];
+            if ( msType == cType ) ;
+            else if ( msType.isAssignableFrom(cType) ) {
+                moreSpecific++; /* continue; */
+            }
+            else if ( cType.isAssignableFrom(msType) ) {
+                moreSpecific--; /* continue; */
+            }
+            /* return false; */
+        }
 
-                if ( params.length == 0 ) return null; // can not match (no args)
-                final Class<?> lastParam = params[ params.length - 1 ];
+        if ( last >= 0 ) { // last argument :
+            msType = msTypes[last]; cType = cTypes[last];
+            if ( lastArgProc ) {
+                if ( cType.isAssignableFrom(RubyProc.class) ) {
+                    if ( ! msType.isAssignableFrom(RubyProc.class) ) moreSpecific++;
+                    // return moreSpecific > 0;
+                }
+                else {
+                    // NOTE: maybe this needs some implMethod arity matching here?
+                    return null; // interface matching logic (can not decide)
+                }
+            }
+            else {
+                if ( msType == cType ) ;
+                else if ( msType.isAssignableFrom(cType) ) {
+                    moreSpecific++;
+                }
+                else if ( cType.isAssignableFrom(msType) ) {
+                    moreSpecific--;
+                }
+            }
+        }
+        return moreSpecific > 0 ? Boolean.TRUE : Boolean.FALSE;
+    }
 
-                if ( ! lastParam.isInterface() ) return null; // can not match
-
-                final Method implMethod = getFunctionalInterfaceMethod(lastParam);
-                if ( implMethod != null ) {
-                    // we're sure to have an interface in the end - match arg count :
-                    // NOTE: implMethod.getParameterCount() on Java 8 would do ...
-                    if ( implMethod.getParameterTypes().length == arity ) {
-                        if ( match != null ) return null; // 2 with same arity (can not match)
-                        match = method; // do not break here we want to check all
+    private static <T extends ParameterTypes> T findMatchingCallableForArgsFallback(final Ruby runtime,
+        final T[] methods, final IRubyObject... args) {
+        T method = findCallable(methods, Exact, args);
+        if (method == null) {
+            method = findCallable(methods, AssignableAndPrimitivable, args);
+            if (method == null) {
+                method = findCallable(methods, AssignableOrDuckable, args);
+                if (method == null) {
+                    method = findCallable(methods, AssignableOrDuckable, args);
+                    if (method == null) {
+                        method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
                     }
                 }
             }
-            return match;
         }
-        return null;
+        return method;
     }
 
     private static <T extends ParameterTypes> T findCallable(T[] callables, CallableAcceptor acceptor, IRubyObject[] args) {
@@ -304,24 +383,61 @@ public class CallableSelector {
         ParameterTypes[] incoming = callables.clone();
 
         for ( int i = 0; i < args.length; i++ ) {
-            retained.clear();
-            for ( final Matcher matcher : NON_EXACT_MATCH_SEQUENCE ) {
+            retained.clear(); // non-exact match sequence :
+            // PRIMITIVABLE :
+            for ( int c = 0; c < incoming.length; c++ ) {
+                ParameterTypes callable = incoming[c];
+                if ( callable == null ) continue; // removed (matched)
+
+                Class[] types = callable.getParameterTypes();
+
+                if ( PRIMITIVABLE.match( types[i], args[i] ) ) {
+                    retained.add((T) callable);
+                    incoming[c] = null; // retaining - remove
+                }
+            }
+            // ASSIGNABLE :
+            for ( int c = 0; c < incoming.length; c++ ) {
+                ParameterTypes callable = incoming[c];
+                if ( callable == null ) continue; // removed (matched)
+
+                Class[] types = callable.getParameterTypes();
+
+                if ( ASSIGNABLE.match( types[i], args[i] ) ) {
+                    retained.add((T) callable);
+                    incoming[c] = null; // retaining - remove
+                }
+            }
+            if ( retained.isEmpty() ) {
+                // DUCKABLE :
                 for ( int c = 0; c < incoming.length; c++ ) {
                     ParameterTypes callable = incoming[c];
                     if ( callable == null ) continue; // removed (matched)
 
                     Class[] types = callable.getParameterTypes();
 
-                    if ( matcher.match( types[i], args[i] ) ) {
+                    if ( DUCKABLE.match( types[i], args[i] ) ) {
                         retained.add((T) callable);
-                        incoming[c] = null; // retaining - remove
+                        //incoming[c] = null; // retaining - remove
                     }
                 }
             }
             incoming = retained.toArray( new ParameterTypes[retained.size()] );
         }
 
-        return retained;
+        // final step rule out argument length mismatch :
+        int j = 0; for ( int i = 0; i < retained.size(); i++ ) {
+            T callable = retained.get(i);
+            if ( callable.isVarArgs() ) {
+                if ( callable.getArity() > args.length - 1 ) continue;
+            }
+            else {
+                if ( callable.getArity() != args.length ) continue;
+            }
+            retained.set(j++, callable);
+        }
+
+        return j < retained.size() ? retained.subList(0, j) : retained;
     }
 
     private static int calcExactnessScore(final ParameterTypes callable, final IRubyObject[] args) {
@@ -411,9 +527,6 @@ public class CallableSelector {
         }
         @Override public String toString() { return "DUCKABLE"; } // for debugging
     };
-
-    //private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
-    private static final Matcher[] NON_EXACT_MATCH_SEQUENCE = new Matcher[] { PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
 
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();

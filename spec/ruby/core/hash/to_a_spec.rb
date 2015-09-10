@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#to_a" do
   it "returns a list of [key, value] pairs with same order as each()" do
-    h = new_hash(:a => 1, 1 => :a, 3 => :b, :b => 5)
+    h = new_hash(a: 1, 1 => :a, 3 => :b, b: 5)
     pairs = []
 
     h.each_pair do |key, value|
@@ -15,7 +15,7 @@ describe "Hash#to_a" do
   end
 
   it "is called for Enumerable#entries" do
-    h = new_hash(:a => 1, 1 => :a, 3 => :b, :b => 5)
+    h = new_hash(a: 1, 1 => :a, 3 => :b, b: 5)
     pairs = []
 
     h.each_pair do |key, value|

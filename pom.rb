@@ -51,7 +51,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   properties( 'its.j2ee' => 'j2ee*/pom.xml',
               'its.osgi' => 'osgi*/pom.xml',
-              'rspec-core.version' => '2.14.2',
+              'rspec-core.version' => '3.3.2',
               'jruby.basedir' => '${project.basedir}',
               'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
@@ -61,23 +61,23 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'project.build.sourceEncoding' => 'utf-8',
               'jruby-launcher.version' => '1.1.1',
               'asm.version' => '5.0.3',
-              'rspec-expectations.version' => '2.14.0',
+              'rspec-expectations.version' => '3.3.1',
               'base.javac.version' => '1.7',
               'krypt.version' => '0.0.2.rc1',
               'rdoc.version' => '4.1.0',
               'polyglot.dump.pom' => 'pom.xml',
-              'rspec.version' => '2.14.1',
+              'rspec.version' => '3.3.0',
               'base.java.version' => '1.7',
               'polyglot.dump.readonly' => 'true',
-              'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.9',
+              'rspec-mocks.version' => '3.3.2',
+              'jruby.plugins.version' => '1.0.10',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.5',
+              'joda.time.version' => '2.8.2',
               'test-unit.version' => '3.0.3',
               'power_assert.version' => '0.2.3' )
 
@@ -130,9 +130,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
-            'settingsFile' =>  '${basedir}/src/it/settings.xml',
-            'localRepositoryPath' =>  '${project.build.directory}/local-repo',
-            'properties' => { 'project.version' => '${project.version}' },
+            'properties' => { 'jruby.version' => '${project.version}',
+                              'jruby.plugins.version' => '${jruby.plugins.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
             'pomExcludes' => [ 'extended/pom.xml', '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',
@@ -298,6 +297,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       property :name => 'invoker.test'
     end
     properties 'invoker.skip' => false
+  end
+
+  profile 'jdk8' do
+    activation do
+      jdk '1.8'
+    end
+    plugin :javadoc, :additionalparam => '-Xdoclint:none'
   end
 
   reporting do

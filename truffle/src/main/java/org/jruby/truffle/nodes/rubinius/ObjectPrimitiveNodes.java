@@ -10,15 +10,23 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeGen;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
@@ -36,17 +44,17 @@ public abstract class ObjectPrimitiveNodes {
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization(guards = "isNil(nil)")
-        public int objectID(Object nil) {
+        public long objectID(Object nil) {
             return ObjectIDOperations.NIL;
         }
 
         @Specialization(guards = "value")
-        public int objectIDTrue(boolean value) {
+        public long objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
         @Specialization(guards = "!value")
-        public int objectIDFalse(boolean value) {
+        public long objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }
 
@@ -60,20 +68,10 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.smallFixnumToIDOverflow(value);
         }
 
-        /* TODO: Ideally we would have this instead of the code below to speculate better. [GRAAL-903]
-        @Specialization(guards = "isSmallFixnum")
-        public long objectIDSmallFixnum(long value) {
-            return ObjectIDOperations.smallFixnumToID(value);
-        }
-
-        @Specialization(guards = "!isSmallFixnum")
-        public Object objectIDLargeFixnum(long value) {
-            return ObjectIDOperations.largeFixnumToID(getContext(), value);
-        } */
-
         @Specialization
-        public Object objectID(long value) {
-            if (isSmallFixnum(value)) {
+        public Object objectID(long value,
+                               @Cached("createCountingProfile()") ConditionProfile smallProfile) {
+            if (smallProfile.profile(ObjectIDOperations.isSmallFixnum(value))) {
                 return ObjectIDOperations.smallFixnumToID(value);
             } else {
                 return ObjectIDOperations.largeFixnumToID(getContext(), value);
@@ -86,13 +84,31 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public long objectID(RubyBasicObject object) {
-            // TODO: CS 22-Mar-15 need to write this using nodes
-            return object.verySlowGetObjectID();
+        public long objectID(DynamicObject object,
+                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
+                @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
+            final long id;
+            try {
+                id = readObjectIdNode.executeLong(object);
+            } catch (UnexpectedResultException e) {
+                throw new UnsupportedOperationException(e);
+            }
+
+            if (id == 0) {
+                final long newId = getContext().getNextObjectID();
+                writeObjectIdNode.execute(object, newId);
+                return newId;
+            }
+
+            return (long) id;
         }
 
-        protected boolean isSmallFixnum(long fixnum) {
-            return ObjectIDOperations.isSmallFixnum(fixnum);
+        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
+            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
+        }
+
+        protected WriteHeadObjectFieldNode createWriteObjectIDNode() {
+            return new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }

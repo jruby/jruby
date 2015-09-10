@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_sqrt, :shared => true do
+describe :complex_math_sqrt, shared: true do
   it "returns the square root for positive numbers" do
     @object.send(:sqrt, 4).should == 2
     @object.send(:sqrt, 19.36).should == 4.4
@@ -17,7 +17,7 @@ describe :complex_math_sqrt, :shared => true do
   end
 end
 
-describe :complex_math_sqrt_bang, :shared => true do
+describe :complex_math_sqrt_bang, shared: true do
   it "returns the square root for positive numbers" do
     @object.send(:sqrt!, 4).should == 2
     @object.send(:sqrt!, 19.36).should == 4.4

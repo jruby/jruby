@@ -27,17 +27,15 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
 
     @Override
     protected DynamicMethod searchMethodCommon(String name) {
-        // this module is special and only searches itself; do not go to superclasses
-        // except for special methods
+        // this module is special and only searches itself;
 
+        // do not go to superclasses except for special methods :
         if (name.equals("__constants__")) {
             return superClass.searchMethodInner("constants");
         }
-
         if (name.equals("__methods__")) {
             return superClass.searchMethodInner("methods");
         }
-
         if (KEEP.matcher(name).find()) {
             return superClass.searchMethodInner(name);
         }
@@ -45,5 +43,8 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
         return NullMethod.getInstance();
     }
 
-    private static final Pattern KEEP = Pattern.compile("^(__|<|>|=)|^(class|initialize_copy|singleton_method_added|const_missing|inspect|method_missing|to_s)$|(\\?|!|=)$");
+    private static final Pattern KEEP = Pattern.compile(
+        "^(__|<|>|=)|" +
+        "^(class|initialize_copy|singleton_method_added|const_missing|method_missing|inspect|to_s|object_id)$|" +
+        "(\\?|!|=)$");
 }

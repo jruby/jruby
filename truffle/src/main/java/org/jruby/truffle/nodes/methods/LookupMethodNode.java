@@ -9,27 +9,28 @@
  */
 package org.jruby.truffle.nodes.methods;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
- * A cache for {@link ModuleOperations#lookupMethod(RubyModule, String)}.
+ * Caches {@link ModuleOperations#lookupMethod(DynamicObject, String)}
+ * on an actual instance.
  */
-@NodeChildren({
-        @NodeChild("self"),
-        @NodeChild("name")
-})
+@NodeChildren({ @NodeChild("self"), @NodeChild("name") })
 public abstract class LookupMethodNode extends RubyNode {
 
     @Child MetaClassNode metaClassNode;
@@ -46,32 +47,41 @@ public abstract class LookupMethodNode extends RubyNode {
                     "metaClass(frame, self) == selfMetaClass",
                     "name == cachedName"
             },
-            assumptions = "selfMetaClass.getUnmodifiedAssumption()",
+            assumptions = "getUnmodifiedAssumption(selfMetaClass)",
             limit = "getCacheLimit()")
     protected InternalMethod lookupMethodCached(VirtualFrame frame, Object self, String name,
-            @Cached("metaClass(frame, self)") RubyClass selfMetaClass,
+            @Cached("metaClass(frame, self)") DynamicObject selfMetaClass,
             @Cached("name") String cachedName,
             @Cached("doLookup(selfMetaClass, name)") InternalMethod method) {
         return method;
     }
 
+    public Assumption getUnmodifiedAssumption(DynamicObject module) {
+        return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
+    }
+
     @Specialization
     protected InternalMethod lookupMethodUncached(VirtualFrame frame, Object self, String name) {
-        RubyClass selfMetaClass = metaClass(frame, self);
+        final DynamicObject selfMetaClass = metaClass(frame, self);
         return doLookup(selfMetaClass, name);
     }
 
-    protected RubyClass metaClass(VirtualFrame frame, Object object) {
+    protected DynamicObject metaClass(VirtualFrame frame, Object object) {
         return metaClassNode.executeMetaClass(frame, object);
     }
 
-    protected InternalMethod doLookup(RubyClass selfMetaClass, String name) {
+    protected InternalMethod doLookup(DynamicObject selfMetaClass, String name) {
+        assert RubyGuards.isRubyClass(selfMetaClass);
         InternalMethod method = ModuleOperations.lookupMethod(selfMetaClass, name);
         // TODO (eregon, 26 June 2015): Is this OK for all usages?
         if (method != null && method.isUndefined()) {
             method = null;
         }
         return method;
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().METHOD_LOOKUP_CACHE;
     }
 
 }

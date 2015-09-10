@@ -10,31 +10,34 @@
 package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.joda.time.DateTimeZone;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.constants.ReadConstantNode;
+import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
-    @Child private ReadConstantNode envNode;
+    @Child private ReadLiteralConstantNode envNode;
     
-    private final RubyBasicObject TZ;
+    private final DynamicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        envNode = new ReadConstantNode(context, sourceSection, "ENV",
-                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()),
-                LexicalScope.NONE);
-        TZ = createString("TZ");
+        envNode = new ReadLiteralConstantNode(context, sourceSection,
+                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
+        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     @Override
@@ -44,7 +47,8 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tz == nil()) {
-            return createString("UTC");
+            final String zone = DateTimeZone.getDefault().toString();
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(zone, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         } else if (RubyGuards.isRubyString(tz)) {
             return tz;
         } else {

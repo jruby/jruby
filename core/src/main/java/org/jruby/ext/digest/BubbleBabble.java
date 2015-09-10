@@ -65,6 +65,13 @@ public class BubbleBabble {
                             ((((int) (message[begin + 2 * i])) * 7) +
                                     ((int) (message[begin + (2 * i) + 1])))) % 36;
                 }
+            } else {
+                idx0 = seed % 6;
+                idx1 = 16;
+                idx2 = seed / 6;
+                retval.append(vowels[idx0]);
+                retval.append(consonants[idx1]);
+                retval.append(vowels[idx2]);
             }
         }
         retval.append('x');

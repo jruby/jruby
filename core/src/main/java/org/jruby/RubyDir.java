@@ -84,6 +84,8 @@ public class RubyDir extends RubyObject {
 
     private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
+    private static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
+
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -308,7 +310,7 @@ public class RubyDir extends RubyObject {
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
         String realPath = null;
         String oldCwd = runtime.getCurrentDirectory();
-        if (adjustedPath.startsWith("uri:")){
+        if (PROTOCOL_PATTERN.matcher(adjustedPath).matches()) {
             realPath = adjustedPath;
         }
         else {
@@ -558,9 +560,9 @@ public class RubyDir extends RubyObject {
         Ruby runtime = getRuntime();
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":");
+        part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
-        part.append(">");
+        part.append('>');
 
         return runtime.newString(part.toString());
     }
@@ -805,11 +807,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject systemHash = runtime.getObject().getConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject home = null;
-
-        if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("HOME"));
-        }
+        IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));
 
         if (home == null || home.isNil()) {
             home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));

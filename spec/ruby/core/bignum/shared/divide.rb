@@ -1,4 +1,4 @@
-describe :bignum_divide, :shared => true do
+describe :bignum_divide, shared: true do
   before :each do
     @bignum = bignum_value(88)
   end

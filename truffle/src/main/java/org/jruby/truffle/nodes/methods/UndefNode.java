@@ -12,10 +12,11 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class UndefNode extends RubyNode {
 
@@ -32,15 +33,15 @@ public class UndefNode extends RubyNode {
     public void executeVoid(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyModule moduleObject;
+        final DynamicObject moduleObject;
 
         try {
-            moduleObject = module.executeRubyModule(frame);
+            moduleObject = module.executeDynamicObject(frame);
         } catch (UnexpectedResultException e) {
             throw new RuntimeException(e);
         }
 
-        moduleObject.undefMethod(this, name);
+        Layouts.MODULE.getFields(moduleObject).undefMethod(this, name);
     }
 
     @Override

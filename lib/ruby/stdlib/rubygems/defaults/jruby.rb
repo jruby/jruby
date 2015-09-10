@@ -12,8 +12,7 @@ module Gem
     def ruby
       ruby_path = original_ruby
       if jarred_path?(ruby_path)
-        # use quote as the original_ruby does it
-        ruby_path = "\"#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}\""
+        ruby_path = "#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}"
       end
       ruby_path
     end
@@ -21,7 +20,7 @@ module Gem
     def jarred_path?(p)
       p =~ /^(file|uri|jar|classpath):/
     end
-    
+
     # A jar path looks like this on non-Windows platforms:
     #   file:/path/to/file.jar!/path/within/jar/to/file.txt
     # and like this on Windows:
@@ -108,11 +107,14 @@ class Gem::Specification
     end
 
     def spec_directories_from_classpath
-      stuff = JRuby::Util.classloader_resources("specifications")
+      stuff = [ 'uri:classloader://specifications' ]
+      JRuby.runtime.instance_config.extra_gem_paths.each do |path|
+        stuff << File.join(path, 'specifications')
+      end
+      stuff += JRuby::Util.classloader_resources('specifications')
       # some classloader return directory info. use only the "protocols"
       # which jruby understands
-      stuff.select! { |s| File.directory?( s ) }
-      [ 'uri:classloader://specifications' ] + stuff
+      stuff.select { |s| File.directory?( s ) }
     end
   end
 end

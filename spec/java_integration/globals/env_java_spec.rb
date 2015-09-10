@@ -10,16 +10,16 @@ describe "ENV_JAVA" do
   end
 
   it "writes to system properties" do
-    java.lang.System.getProperty('env.java.spec').should == nil
+    expect(java.lang.System.getProperty('env.java.spec')).to eq(nil)
     ENV_JAVA['env.java.spec'] = 'foo'
-    ENV_JAVA['env.java.spec'].should == 'foo'
-    java.lang.System.getProperty('env.java.spec').should == 'foo'
+    expect(ENV_JAVA['env.java.spec']).to eq('foo')
+    expect(java.lang.System.getProperty('env.java.spec')).to eq('foo')
   end
 
   it "reflects changes to system properties" do
-    ENV_JAVA['env.java.spec'].should == nil
+    expect(ENV_JAVA['env.java.spec']).to eq(nil)
     java.lang.System.setProperty('env.java.spec', 'foo')
-    ENV_JAVA['env.java.spec'].should == 'foo'
-    java.lang.System.getProperty('env.java.spec').should == 'foo'
+    expect(ENV_JAVA['env.java.spec']).to eq('foo')
+    expect(java.lang.System.getProperty('env.java.spec')).to eq('foo')
   end
 end

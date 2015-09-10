@@ -15,10 +15,15 @@ public class Symbol extends ImmutableLiteral {
     private final Encoding encoding;
 
     public Symbol(String name, Encoding encoding) {
-        super(OperandType.SYMBOL);
+        super();
 
         this.name = name;
         this.encoding = encoding;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.SYMBOL;
     }
 
     public String getName() {

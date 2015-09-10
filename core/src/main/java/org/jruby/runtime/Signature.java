@@ -29,22 +29,22 @@ public class Signature {
     public static final Signature TWO_REQUIRED = new Signature(2, 0, 0, Rest.NORM, 0, 0, false);
     public static final Signature THREE_REQUIRED = new Signature(3, 0, 0, Rest.NORM, 0, 0, false);
 
-    private final int pre;
-    private final int opt;
+    private final short pre;
+    private final short opt;
     private final Rest rest;
-    private final int post;
-    private final int kwargs;
-    private final int requiredKwargs;
+    private final short post;
+    private final short kwargs;
+    private final short requiredKwargs;
     private final Arity arity;
     private final boolean restKwargs;
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, boolean restKwargs) {
-        this.pre = pre;
-        this.opt = opt;
-        this.post = post;
+        this.pre = (short) pre;
+        this.opt = (short) opt;
+        this.post = (short) post;
         this.rest = rest;
-        this.kwargs = kwargs;
-        this.requiredKwargs = requiredKwargs;
+        this.kwargs = (short) kwargs;
+        this.requiredKwargs = (short) requiredKwargs;
         this.restKwargs = restKwargs;
 
         // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the

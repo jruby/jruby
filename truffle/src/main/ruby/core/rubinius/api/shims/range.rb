@@ -26,20 +26,6 @@
 
 class Range
 
-  def include?(value)
-    if @begin.respond_to?(:to_int) ||
-        @end.respond_to?(:to_int) ||
-        @begin.kind_of?(Numeric) ||
-        @end.kind_of?(Numeric)
-      cover? value
-    else
-      # super # MODIFIED inlined this because of local jump error
-      each_internal { |val| return true if val == value }
-      false
-    end
-  end
-
-  alias_method :member?, :include?
 
   def to_a_internal # MODIFIED called from java to_a
     return to_a_from_enumerable unless @begin.kind_of? Fixnum and @end.kind_of? Fixnum

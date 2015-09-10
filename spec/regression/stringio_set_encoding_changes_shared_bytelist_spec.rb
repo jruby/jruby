@@ -7,7 +7,7 @@ unless RUBY_VERSION =~ /1\.8/
       StringIO.new.set_encoding('UTF-16LE')
       empty_utf8 = ''
       utf8_matches = empty_utf8.scan(/(.*)/)[0]
-      utf8_matches[0].encoding.to_s.should_not == 'UTF-16LE'
+      expect(utf8_matches[0].encoding.to_s).not_to eq('UTF-16LE')
     end
   end
 end

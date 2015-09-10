@@ -15,24 +15,26 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.BindingNodes;
-import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class TraceNode extends RubyNode {
 
     private final RubyContext context;
 
     @CompilationFinal private Assumption traceAssumption;
-    @CompilationFinal private RubyBasicObject traceFunc;
+    @CompilationFinal private DynamicObject traceFunc;
     @Child private DirectCallNode callNode;
 
-    private final RubyBasicObject event;
-    private final RubyBasicObject file;
+    private final DynamicObject event;
+    private final DynamicObject file;
     private final int line;
 
     public TraceNode(RubyContext context, SourceSection sourceSection) {
@@ -41,8 +43,8 @@ public class TraceNode extends RubyNode {
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
-        event = createString("line");
-        file = createString(sourceSection.getSource().getName());
+        event = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         line = sourceSection.getStartLine();
     }
 
@@ -65,7 +67,7 @@ public class TraceNode extends RubyNode {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(ProcNodes.getCallTargetForBlocks(traceFunc)));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
             } else {
                 callNode = null;
             }
@@ -80,12 +82,12 @@ public class TraceNode extends RubyNode {
                         file,
                         line,
                         context.getCoreLibrary().getNilObject(),
-                        BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
+                        Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
                         context.getCoreLibrary().getNilObject()
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(ProcNodes.getMethod(traceFunc), ProcNodes.getDeclarationFrame(traceFunc), ProcNodes.getSelfCapturedInScope(traceFunc), ProcNodes.getBlockCapturedInScope(traceFunc), args));
+                    callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(traceFunc), Layouts.PROC.getDeclarationFrame(traceFunc), Layouts.PROC.getSelf(traceFunc), Layouts.PROC.getBlock(traceFunc), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

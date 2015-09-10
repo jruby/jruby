@@ -8,6 +8,6 @@ describe 'Process#copy_stream when given a popen-based "from"' do
 
     IO.copy_stream(from, to)
 
-    to.read(5).should == "test\n"
+    expect(to.read(5)).to eq("test\n")
   end
 end if RUBY_VERSION > "1.9"

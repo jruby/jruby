@@ -72,7 +72,7 @@ describe "Kernel#autoload" do
     end
 
     it "raises a RuntimeError before defining the constant" do
-      ruby_exe(@script, :args => "2>&1", :escape => true).should == "RuntimeError - nil"
+      ruby_exe(@script, args: "2>&1", escape: true).should == "RuntimeError - nil"
     end
   end
 end

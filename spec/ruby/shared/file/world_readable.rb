@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :file_world_readable, :shared => true do
+describe :file_world_readable, shared: true do
 
   before :each do
     @file = tmp('world-readable')

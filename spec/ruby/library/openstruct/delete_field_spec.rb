@@ -3,7 +3,7 @@ require 'ostruct'
 
 describe "OpenStruct#delete_field" do
   before :each do
-    @os = OpenStruct.new(:name => "John Smith", :age => 70, :pension => 300)
+    @os = OpenStruct.new(name: "John Smith", age: 70, pension: 300)
   end
 
   it "removes the named field from self's method/value table" do

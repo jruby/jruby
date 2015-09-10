@@ -9,74 +9,75 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 
 public class StringCodeRangeableWrapper implements CodeRangeable {
 
-    private final RubyBasicObject string;
+    private final DynamicObject string;
 
-    public StringCodeRangeableWrapper(RubyBasicObject string) {
+    public StringCodeRangeableWrapper(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         this.string = string;
     }
 
     @Override
     public int getCodeRange() {
-        return StringNodes.getCodeRange(string);
+        return Layouts.STRING.getCodeRange(string);
     }
 
     @Override
     public int scanForCodeRange() {
-        return StringNodes.scanForCodeRange(string);
+        return StringOperations.scanForCodeRange(string);
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        return StringNodes.isCodeRangeValid(string);
+        return StringOperations.isCodeRangeValid(string);
     }
 
     @Override
     public final void setCodeRange(int newCodeRange) {
-        StringNodes.setCodeRange(string, newCodeRange);
+        Layouts.STRING.setCodeRange(string, newCodeRange);
     }
 
     @Override
     public final void clearCodeRange() {
-        StringNodes.clearCodeRange(string);
+        StringOperations.clearCodeRange(string);
     }
 
     @Override
     public final void keepCodeRange() {
-        StringNodes.keepCodeRange(string);
+        StringOperations.keepCodeRange(string);
     }
 
     @Override
     public final void modify() {
-        StringNodes.modify(string);
+        StringOperations.modify(string);
     }
 
     @Override
     public final void modify(int length) {
-        StringNodes.modify(string, length);
+        StringOperations.modify(string, length);
     }
 
     @Override
     public final void modifyAndKeepCodeRange() {
-        StringNodes.modifyAndKeepCodeRange(string);
+        StringOperations.modifyAndKeepCodeRange(string);
     }
 
     @Override
     public Encoding checkEncoding(CodeRangeable other) {
-        return StringNodes.checkEncoding(string, other);
+        return StringOperations.checkEncoding(string, other);
     }
 
     @Override
     public ByteList getByteList() {
-        return StringNodes.getByteList(string);
+        return Layouts.STRING.getByteList(string);
     }
 
 }

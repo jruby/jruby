@@ -1,7 +1,7 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 require 'matrix'
 
-describe :collect, :shared => true do
+describe :collect, shared: true do
   before :all do
     @m = Matrix[ [1, 2], [1, 2] ]
   end

@@ -10,3 +10,4 @@ windows:The DATA constant exists when the main script contains __END__
 windows:The DATA constant does not exist when the main script contains no __END__
 windows:The DATA constant does not change when an included files also has a __END__
 fails:The DATA constant exists when the main script contains __END__
+fails:The DATA constant does not exist when the main script contains no __END__

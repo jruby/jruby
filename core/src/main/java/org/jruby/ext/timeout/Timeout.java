@@ -85,15 +85,7 @@ public class Timeout implements Library {
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            switch (args.length) {
-            case 1:
-                return Timeout.timeout(context, self, args[0], block);
-            case 2:
-                return Timeout.timeout(context, self, args[0], args[1], block);
-            default:
-                Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
-                return context.runtime.getNil();
-            }
+            return Helpers.invoke(context, context.runtime.getModule("Timeout"), "timeout", args, block);
         }
     }
 

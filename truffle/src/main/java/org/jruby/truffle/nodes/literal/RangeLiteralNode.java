@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -22,7 +23,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.CoreLibrary;
-import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
 public abstract class RangeLiteralNode extends RubyNode {
@@ -37,18 +38,18 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public RubyRange.IntegerFixnumRange intRange(int begin, int end) {
-        return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public DynamicObject intRange(int begin, int end) {
+        return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
     }
 
     @Specialization(guards = { "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
-    public RubyRange.IntegerFixnumRange longFittingIntRange(long begin, long end) {
-        return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), (int) begin, (int) end, excludeEnd);
+    public DynamicObject longFittingIntRange(long begin, long end) {
+        return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
     }
 
     @Specialization(guards = "!fitsIntoInteger(begin) || !fitsIntoInteger(end)")
-    public RubyRange.LongFixnumRange longRange(long begin, long end) {
-        return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public DynamicObject longRange(long begin, long end) {
+        return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(getContext().getCoreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
     }
 
     @Specialization(guards = { "!isIntOrLong(begin) || !isIntOrLong(end)" })
@@ -69,7 +70,9 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        return new RubyRange.ObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+        final DynamicObject rangeClass = getContext().getCoreLibrary().getRangeClass();
+
+        return Layouts.OBJECT_RANGE.createObjectRange(Layouts.CLASS.getInstanceFactory(rangeClass), excludeEnd, begin, end);
     }
 
     protected boolean fitsIntoInteger(long value) {

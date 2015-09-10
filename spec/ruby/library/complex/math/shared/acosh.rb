@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_acosh, :shared => true do
+describe :complex_math_acosh, shared: true do
   it "returns the principle value of the inverse hyperbolic cosine of the argument" do
     @object.send(:acosh, 14.2).should be_close(3.345146999647, TOLERANCE)
     @object.send(:acosh, 1.0).should be_close(0.0, TOLERANCE)
@@ -19,7 +19,7 @@ describe :complex_math_acosh, :shared => true do
   end
 end
 
-describe :complex_math_acosh_bang, :shared => true do
+describe :complex_math_acosh_bang, shared: true do
   it "returns the principle value of the inverse hyperbolic cosine of the argument" do
     @object.send(:acosh!, 14.2).should be_close(3.345146999647, TOLERANCE)
     @object.send(:acosh!, 1.0).should be_close(0.0, TOLERANCE)

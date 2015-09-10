@@ -1,6 +1,6 @@
 require 'scanf'
 
-describe :scanf_io_block_scanf, :shared => true do
+describe :scanf_io_block_scanf, shared: true do
   before :each do
     @data= File.open(File.dirname(__FILE__) + '/../fixtures/date.txt', 'r')
   end

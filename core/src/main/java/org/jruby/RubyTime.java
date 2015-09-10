@@ -537,8 +537,6 @@ public class RubyTime extends RubyObject {
     }
 
     private int cmp(RubyTime other) {
-        Ruby runtime = getRuntime();
-
         long millis = getTimeInMillis();
 		long millis_other = other.getTimeInMillis();
         // ignore < usec on 1.8
@@ -858,13 +856,13 @@ public class RubyTime extends RubyObject {
             int hourOffset  = Integer.valueOf(offsetMatcher.group(2));
 
             if (zone.equals("+00:00")) {
-                zone = "GMT";
+                zone = "UTC";
             } else {
                 // try non-localized time zone name
                 zone = dt.getZone().getNameKey(dt.getMillis());
                 if (zone == null) {
                     char sign = minus_p ? '+' : '-';
-                    zone = "GMT" + sign + hourOffset;
+                    zone = "UTC" + sign + hourOffset;
                 }
             }
         }
@@ -1253,21 +1251,23 @@ public class RubyTime extends RubyObject {
 
         int offset = 0;
         if (offsetVar != null && offsetVar.respondsTo("to_int")) {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+            final IRubyObject $ex = runtime.getCurrentContext().getErrorInfo();
             try {
                 offset = offsetVar.convertToInteger().getIntValue() * 1000;
-            } catch (RaiseException typeError) {
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+            }
+            catch (RaiseException typeError) {
+                runtime.getCurrentContext().setErrorInfo($ex); // restore $!
             }
         }
 
         String zone = "";
         if (zoneVar != null && zoneVar.respondsTo("to_str")) {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+            final IRubyObject $ex = runtime.getCurrentContext().getErrorInfo();
             try {
                 zone = zoneVar.convertToString().toString();
-            } catch (RaiseException typeError) {
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+            }
+            catch (RaiseException typeError) {
+                runtime.getCurrentContext().setErrorInfo($ex); // restore $!
             }
         }
 

@@ -9,43 +9,44 @@
  */
 package org.jruby.truffle.nodes.core.array;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class ArrayGuards {
 
     // Storage strategies
 
-    public static boolean isNullArray(RubyBasicObject array) {
+    public static boolean isNullArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) == null;
+        return Layouts.ARRAY.getStore(array) == null;
     }
 
-    public static boolean isIntArray(RubyBasicObject array) {
+    public static boolean isIntArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof int[];
+        return Layouts.ARRAY.getStore(array) instanceof int[];
     }
 
-    public static boolean isLongArray(RubyBasicObject array) {
+    public static boolean isLongArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof long[];
+        return Layouts.ARRAY.getStore(array) instanceof long[];
     }
 
-    public static boolean isDoubleArray(RubyBasicObject array) {
+    public static boolean isDoubleArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof double[];
+        return Layouts.ARRAY.getStore(array) instanceof double[];
     }
 
-    public static boolean isObjectArray(RubyBasicObject array) {
+    public static boolean isObjectArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getStore(array) instanceof Object[];
+        return Layouts.ARRAY.getStore(array) instanceof Object[];
     }
 
     // Higher level properties
 
-    public static boolean isEmptyArray(RubyBasicObject array) {
+    public static boolean isEmptyArray(DynamicObject array) {
         assert RubyGuards.isRubyArray(array);
-        return ArrayNodes.getSize(array) == 0;
+        return Layouts.ARRAY.getSize(array) == 0;
     }
 
 }

@@ -22,7 +22,6 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.passes.OptimizeTempVarsPass;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -38,7 +37,7 @@ public class IRManager {
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
+    private final IRModuleBody object = new IRClassBody(this, null, "Object", 0, null);
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);

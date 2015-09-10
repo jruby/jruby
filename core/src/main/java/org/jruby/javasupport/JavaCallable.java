@@ -45,6 +45,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -151,6 +152,12 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     protected final IRubyObject handleThrowable(ThreadContext context, final Throwable ex) {
+        if ( ex instanceof JumpException ) {
+            // RaiseException (from the Ruby side) is expected to already
+            // have its stack-trace rewritten - no need to do it again ...
+            throw (JumpException) ex;
+        }
+
         if (REWRITE_JAVA_TRACE) {
             Helpers.rewriteStackTraceAndThrow(context, ex);
         }

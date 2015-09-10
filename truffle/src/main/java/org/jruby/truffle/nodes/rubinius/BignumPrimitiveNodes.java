@@ -11,11 +11,11 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
@@ -32,28 +32,28 @@ public abstract class BignumPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject pow(RubyBasicObject a, int b) {
+        public DynamicObject pow(DynamicObject a, int b) {
             return pow(a, (long) b);
         }
 
         @Specialization
-        public RubyBasicObject pow(RubyBasicObject a, long b) {
+        public DynamicObject pow(DynamicObject a, long b) {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return BignumNodes.createRubyBignum(getContext().getCoreLibrary().getBignumClass(), BignumNodes.getBigIntegerValue(a).pow((int) b));
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 
         @TruffleBoundary
         @Specialization
-        public double pow(RubyBasicObject a, double b) {
-            return Math.pow(BignumNodes.getBigIntegerValue(a).doubleValue(), b);
+        public double pow(DynamicObject a, double b) {
+            return Math.pow(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public Void pow(RubyBasicObject a, RubyBasicObject b) {
+        public Void pow(DynamicObject a, DynamicObject b) {
             throw new UnsupportedOperationException();
         }
 

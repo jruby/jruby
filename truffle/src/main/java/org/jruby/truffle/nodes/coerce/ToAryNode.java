@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -20,7 +21,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 
 @NodeChild(value = "child", type = RubyNode.class)
@@ -33,12 +34,12 @@ public abstract class ToAryNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public RubyBasicObject coerceRubyArray(RubyBasicObject array) {
+    public DynamicObject coerceRubyArray(DynamicObject array) {
         return array;
     }
 
     @Specialization(guards = "!isRubyArray(object)")
-    public RubyBasicObject coerceObject(VirtualFrame frame, Object object) {
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         if (toAryNode == null) {
             CompilerDirectives.transferToInterpreter();
             toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -49,7 +50,7 @@ public abstract class ToAryNode extends RubyNode {
         try {
             coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -59,7 +60,7 @@ public abstract class ToAryNode extends RubyNode {
             }
         }
         if (RubyGuards.isRubyArray(coerced)) {
-            return (RubyBasicObject) coerced;
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
 

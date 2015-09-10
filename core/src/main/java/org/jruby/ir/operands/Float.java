@@ -9,9 +9,14 @@ public class Float extends ImmutableLiteral {
     final public double value;
 
     public Float(double value) {
-        super(OperandType.FLOAT);
+        super();
 
         this.value = value;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.FLOAT;
     }
 
     @Override

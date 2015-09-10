@@ -1,4 +1,4 @@
-describe :date_commercial, :shared => true do
+describe :date_commercial, shared: true do
   it "creates a Date for Julian Day Number day 0 by default" do
     d = Date.send(@method)
     d.year.should  == -4712

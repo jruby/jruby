@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 // SSS FIXME: Split into 2 different instrs?
 // CON: Only appears to use self, so we can just early eval and use same logic
-public class GetClassVarContainerModuleInstr extends ResultBaseInstr implements FixedArityInstr {
+public class GetClassVarContainerModuleInstr extends NOperandResultBaseInstr implements FixedArityInstr {
     public GetClassVarContainerModuleInstr(Variable result, Operand startingScope, Variable object) {
         super(Operation.CLASS_VAR_MODULE, result, object == null ? new Operand[] {startingScope} : new Operand[] {startingScope, object});
 
@@ -27,11 +27,12 @@ public class GetClassVarContainerModuleInstr extends ResultBaseInstr implements 
     }
 
     public Variable getObject() {
+        Operand[] operands = getOperands();
         return (Variable) (operands.length >= 2 ? operands[1] : null);
     }
 
     public Operand getStartingScope() {
-        return operands[0];
+        return getOperands()[0];
     }
 
     @Override

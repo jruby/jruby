@@ -15,10 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBooleanDispatchNode extends CachedDispatchNode {
@@ -58,7 +58,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             if (!indirect) {
                 falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
 
-                if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysClone()) {
                     insert(falseCallDirect);
                     falseCallDirect.cloneCallTarget();
                 }
@@ -72,7 +72,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             if (!indirect) {
                 trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
 
-                if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysClone()) {
                     insert(trueCallDirect);
                     trueCallDirect.cloneCallTarget();
                 }
@@ -115,7 +115,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        (RubyBasicObject) blockObject,
+                        (DynamicObject) blockObject,
                         argumentsObjects,
                         "class modified");
             }
@@ -130,7 +130,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod,
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        (RubyBasicObject) blockObject,
+                                        (DynamicObject) blockObject,
                                         (Object[]) argumentsObjects));
                     } else {
                         return trueCallDirect.call(
@@ -139,7 +139,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod,
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        (RubyBasicObject) blockObject,
+                                        (DynamicObject) blockObject,
                                         (Object[]) argumentsObjects));
                     }
                 }
@@ -160,7 +160,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        (RubyBasicObject) blockObject,
+                        (DynamicObject) blockObject,
                         argumentsObjects,
                         "class modified");
             }
@@ -175,7 +175,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod,
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        (RubyBasicObject) blockObject,
+                                        (DynamicObject) blockObject,
                                         (Object[]) argumentsObjects));
                     } else {
                         return falseCallDirect.call(
@@ -184,7 +184,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod,
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        (RubyBasicObject) blockObject,
+                                        (DynamicObject) blockObject,
                                         (Object[]) argumentsObjects));
                     }
                 }

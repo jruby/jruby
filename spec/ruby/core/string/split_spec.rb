@@ -105,6 +105,12 @@ describe "String#split with String" do
     "a\x00a b".split(' ').should == ["a\x00a", "b"]
   end
 
+  describe "when limit is zero" do
+    it "ignores leading and continuous whitespace when string is a single space" do
+      " now's  the time  ".split(' ', 0).should == ["now's", "the", "time"]
+    end
+  end
+
   it "splits between characters when its argument is an empty string" do
     "hi!".split("").should == ["h", "i", "!"]
     "hi!".split("", -1).should == ["h", "i", "!", ""]

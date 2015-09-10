@@ -1,7 +1,7 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -53,7 +53,8 @@ require_relative 'core/rubinius/bootstrap/mirror'
 #require_relative 'core/rubinius/bootstrap/byte_array'
 #require_relative 'core/rubinius/bootstrap/call_site'
 #require_relative 'core/rubinius/bootstrap/call_custom_cache'
-require_relative 'core/rubinius/bootstrap/channel'
+#require_relative 'core/rubinius/bootstrap/channel'
+require_relative 'core/rubinius/api/shims/channel'
 require_relative 'core/rubinius/bootstrap/character'
 #require_relative 'core/rubinius/bootstrap/class'
 #require_relative 'core/rubinius/bootstrap/compact_lookup_table'
@@ -87,6 +88,7 @@ require_relative 'core/rubinius/bootstrap/stat'
 require_relative 'core/rubinius/bootstrap/string'
 require_relative 'core/rubinius/bootstrap/symbol'
 require_relative 'core/rubinius/bootstrap/thread'
+require_relative 'core/rubinius/api/shims/thread_bootstrap'
 #require_relative 'core/rubinius/bootstrap/thunk'
 require_relative 'core/rubinius/bootstrap/time'
 require_relative 'core/rubinius/bootstrap/true'
@@ -94,7 +96,7 @@ require_relative 'core/rubinius/bootstrap/true'
 require_relative 'core/rubinius/bootstrap/type'
 #require_relative 'core/rubinius/bootstrap/variable_scope'
 #require_relative 'core/rubinius/bootstrap/vm'
-#require_relative 'core/rubinius/bootstrap/weakref'
+require_relative 'core/rubinius/bootstrap/weakref'
 
 # Load platform (ordered according to Rubinius' load_order.txt)
 

@@ -1,4 +1,4 @@
-describe :proc_to_s, :shared => true do
+describe :proc_to_s, shared: true do
   describe "for a proc created with Proc.new" do
     it "returns a description optionally including file and line number" do
       Proc.new { "hello" }.send(@method).should =~ /^#<Proc:([^ ]*?)(@([^ ]*)\/to_s\.rb:4)?>$/

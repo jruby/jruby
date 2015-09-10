@@ -13,19 +13,22 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -61,13 +64,13 @@ public abstract class SplatCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization(guards = "isNil(nil)")
-    public RubyBasicObject splat(Object nil) {
+    public DynamicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             default: {
                 throw new UnsupportedOperationException();
@@ -76,14 +79,14 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public RubyBasicObject splat(VirtualFrame frame, RubyBasicObject array) {
+    public DynamicObject splat(VirtualFrame frame, DynamicObject array) {
         // TODO(cs): is it necessary to dup here in all cases?
         // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
         return dup.executeDup(frame, array);
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
-    public RubyBasicObject splat(VirtualFrame frame, Object object) {
+    public DynamicObject splat(VirtualFrame frame, Object object) {
         final String method;
 
         if (useToAry) {
@@ -93,15 +96,15 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, createString(method), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(method, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
             if (RubyGuards.isRubyArray(array)) {
-                return (RubyBasicObject) array;
+                return (DynamicObject) array;
             } else if (array == nil() || array == DispatchNode.MISSING) {
                 CompilerDirectives.transferToInterpreter();
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -109,7 +112,7 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
     }
 
 }

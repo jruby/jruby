@@ -1310,7 +1310,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         try {
             fptr.checkWritable(context);
 
-            str.setFrozen(true);
+            str = str.convertToString().dupFrozen();
 
             if (fptr.wbuf.len != 0) {
                 runtime.getWarnings().warn("syswrite for buffered IO");
@@ -3496,7 +3496,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         long mode = ModeFlags.CREAT;
 
-        if (options == null || (options != null && options.isEmpty())) {
+        if (options == null || options.isEmpty()) {
             if (offset.isNil()) {
                 mode |= ModeFlags.WRONLY;
             } else {

@@ -14,15 +14,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Take a Symbol or some object accepting #to_str
@@ -41,12 +41,12 @@ public abstract class NameToJavaStringNode extends RubyNode {
     public abstract String executeToJavaString(VirtualFrame frame, Object name);
 
     @Specialization(guards = "isRubySymbol(symbol)")
-    public String coerceRubySymbol(RubyBasicObject symbol) {
-        return SymbolNodes.getString(symbol);
+    public String coerceRubySymbol(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public String coerceRubyString(RubyBasicObject string) {
+    public String coerceRubyString(DynamicObject string) {
         return string.toString();
     }
 
@@ -57,7 +57,7 @@ public abstract class NameToJavaStringNode extends RubyNode {
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {

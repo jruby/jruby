@@ -21,7 +21,12 @@ public class FrozenString extends StringLiteral {
      * Used by persistence and by .freeze optimization
      */
     public FrozenString(ByteList byteList, int cr) {
-        super(OperandType.FROZEN_STRING, byteList, cr);
+        super(byteList, cr);
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.FROZEN_STRING;
     }
 
     /**

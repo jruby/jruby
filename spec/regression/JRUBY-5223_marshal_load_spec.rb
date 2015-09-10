@@ -8,27 +8,27 @@ describe "Marshal load behavior: JRUBY-5223" do
 
   it "should load string" do
     obj = Marshal.load(@src)
-    obj.should == @obj
-    obj.tainted?.should == false
+    expect(obj).to eq(@obj)
+    expect(obj.tainted?).to eq(false)
   end
 
   it "should propagate taintness" do
     @src.taint
     obj = Marshal.load(@src)
-    obj.should == @obj
-    obj.tainted?.should == true
+    expect(obj).to eq(@obj)
+    expect(obj.tainted?).to eq(true)
   end
 
   it "should load IO" do
     obj = Marshal.load(StringIO.new(@src))
-    obj.should == @obj
-    obj.tainted?.should == true
+    expect(obj).to eq(@obj)
+    expect(obj.tainted?).to eq(true)
   end
 
   it "should load string if it responds to :read" do
     def @src.read; end
     obj = Marshal.load(@src)
-    obj.should == @obj
+    expect(obj).to eq(@obj)
   end
 
   it "should try stringify with to_str" do
@@ -37,14 +37,14 @@ describe "Marshal load behavior: JRUBY-5223" do
       Marshal.dump([1, 2, 3])
     end
     obj = Marshal.load(dummy_src)
-    obj.should == @obj
+    expect(obj).to eq(@obj)
   end
 
   it "should try to set binmode if it seems IO" do
     dummy_src = StringIO.new(@src)
     def dummy_src.binmode; raise; end
-    proc {
+    expect {
       Marshal.load(dummy_src)
-    }.should raise_error RuntimeError
+    }.to raise_error RuntimeError
   end
 end

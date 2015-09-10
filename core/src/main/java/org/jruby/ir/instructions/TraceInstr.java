@@ -15,14 +15,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Instrumented trace.
  */
-public class TraceInstr extends Instr {
+public class TraceInstr extends NoOperandInstr {
     private final RubyEvent event;
     private final String name;
     private final String filename;
     private final int linenumber;
 
     public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
-        super(Operation.TRACE, EMPTY_OPERANDS);
+        super(Operation.TRACE);
 
         this.event = event;
         this.name = name;

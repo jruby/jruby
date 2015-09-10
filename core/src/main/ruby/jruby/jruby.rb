@@ -63,7 +63,7 @@ module JRuby
         content = content.to_str
         filename = filename.to_str unless default_filename
 
-        runtime.parse(reference0(content).byte_list, filename, nil, lineno, extra_position_info)
+        runtime.java_send :parse, [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean], reference0(content).byte_list, filename, nil, lineno, extra_position_info
       end
     end
     alias ast_for parse
@@ -90,7 +90,8 @@ module JRuby
       irscope = compile_ir(content, filename)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
-      bytes = visitor.compile_to_bytecode(irscope);
+      context = org.jruby.ir.targets.JVMVisitorMethodContext.new
+      bytes = visitor.compile_to_bytecode(irscope, context)
       static_scope = irscope.static_scope;
       top_self = runtime.top_self
       static_scope.module = top_self.class

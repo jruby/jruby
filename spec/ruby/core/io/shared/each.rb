@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :io_each, :shared => true do
+describe :io_each, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     ScratchPad.record []
@@ -107,7 +107,7 @@ describe :io_each, :shared => true do
   end
 end
 
-describe :io_each_default_separator, :shared => true do
+describe :io_each_default_separator, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     ScratchPad.record []

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -24,12 +25,10 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.hash.BucketsStrategy;
-import org.jruby.truffle.runtime.hash.Entry;
-import org.jruby.truffle.runtime.hash.HashLookupResult;
-import org.jruby.truffle.runtime.hash.PackedArrayStrategy;
+import org.jruby.truffle.runtime.hash.*;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @ImportStatic(HashGuards.class)
 @NodeChildren({
@@ -57,36 +56,42 @@ public abstract class SetNode extends RubyNode {
         equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
-    public abstract Object executeSet(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity);
+    public abstract Object executeSet(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity);
 
     @Specialization(guards = { "isNullHash(hash)", "!isRubyString(key)" })
-    public Object setNull(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
-        HashNodes.setStore(hash, PackedArrayStrategy.createStore(hashNode.hash(frame, key), key, value), 1, null, null);
-        assert HashNodes.verifyStore(hash);
+    public Object setNull(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
+        Object store = PackedArrayStrategy.createStore(getContext(), hashNode.hash(frame, key), key, value);
+        assert HashOperations.verifyStore(getContext(), store, 1, null, null);
+        Layouts.HASH.setStore(hash, store);
+        Layouts.HASH.setSize(hash, 1);
+        Layouts.HASH.setFirstInSequence(hash, null);
+        Layouts.HASH.setLastInSequence(hash, null);
+
+        assert HashOperations.verifyStore(getContext(), hash);
         return value;
     }
 
     @Specialization(guards = {"isNullHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setNullByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setNullByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setNull(frame, hash, (Object) key, value, byIdentity);
     }
 
     @Specialization(guards = {"isNullHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setNullNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setNullNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setNull(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 
     @ExplodeLoop
     @Specialization(guards = {"isPackedHash(hash)", "!isRubyString(key)"})
-    public Object setPackedArray(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
+    public Object setPackedArray(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
+        assert HashOperations.verifyStore(getContext(), hash);
 
         final int hashed = hashNode.hash(frame, key);
 
-        final Object[] store = (Object[]) HashNodes.getStore(hash);
-        final int size = HashNodes.getSize(hash);
+        final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+        final int size = Layouts.HASH.getSize(hash);
 
-        for (int n = 0; n < PackedArrayStrategy.MAX_ENTRIES; n++) {
+        for (int n = 0; n < getContext().getOptions().HASH_PACKED_ARRAY_MAX; n++) {
             if (n < size) {
                 if (hashed == PackedArrayStrategy.getHashed(store, n)) {
                     final boolean equal;
@@ -99,7 +104,7 @@ public abstract class SetNode extends RubyNode {
 
                     if (equal) {
                         PackedArrayStrategy.setValue(store, n, value);
-                        assert HashNodes.verifyStore(hash);
+                        assert HashOperations.verifyStore(getContext(), hash);
                         return value;
                     }
                 }
@@ -108,27 +113,27 @@ public abstract class SetNode extends RubyNode {
 
         extendProfile.enter();
 
-        if (strategyProfile.profile(size + 1 <= PackedArrayStrategy.MAX_ENTRIES)) {
+        if (strategyProfile.profile(size + 1 <= getContext().getOptions().HASH_PACKED_ARRAY_MAX)) {
             PackedArrayStrategy.setHashedKeyValue(store, size, hashed, key, value);
-            HashNodes.setSize(hash, size + 1);
+            Layouts.HASH.setSize(hash, size + 1);
             return value;
         } else {
-            PackedArrayStrategy.promoteToBuckets(hash, store, size);
-            BucketsStrategy.addNewEntry(hash, hashed, key, value);
+            PackedArrayStrategy.promoteToBuckets(getContext(), hash, store, size);
+            BucketsStrategy.addNewEntry(getContext(), hash, hashed, key, value);
         }
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         return value;
     }
 
     @Specialization(guards = {"isPackedHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setPackedArrayByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setPackedArray(frame, hash, key, value, byIdentity);
     }
 
     @Specialization(guards = {"isPackedHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setPackedArrayNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setPackedArrayNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setPackedArray(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 
@@ -139,8 +144,8 @@ public abstract class SetNode extends RubyNode {
     private final ConditionProfile resizeProfile = ConditionProfile.createBinaryProfile();
 
     @Specialization(guards = {"isBucketHash(hash)", "!isRubyString(key)"})
-    public Object setBuckets(VirtualFrame frame, RubyBasicObject hash, Object key, Object value, boolean byIdentity) {
-        assert HashNodes.verifyStore(hash);
+    public Object setBuckets(VirtualFrame frame, DynamicObject hash, Object key, Object value, boolean byIdentity) {
+        assert HashOperations.verifyStore(getContext(), hash);
 
         if (lookupEntryNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -152,7 +157,7 @@ public abstract class SetNode extends RubyNode {
         final Entry entry = result.getEntry();
 
         if (foundProfile.profile(entry == null)) {
-            final Entry[] entries = (Entry[]) HashNodes.getStore(hash);
+            final Entry[] entries = (Entry[]) Layouts.HASH.getStore(hash);
 
             final Entry newEntry = new Entry(result.getHashed(), key, value);
 
@@ -162,42 +167,42 @@ public abstract class SetNode extends RubyNode {
                 result.getPreviousEntry().setNextInLookup(newEntry);
             }
 
-            final Entry lastInSequence = HashNodes.getLastInSequence(hash);
+            final Entry lastInSequence = Layouts.HASH.getLastInSequence(hash);
 
             if (appendingProfile.profile(lastInSequence == null)) {
-                HashNodes.setFirstInSequence(hash, newEntry);
+                Layouts.HASH.setFirstInSequence(hash, newEntry);
             } else {
                 lastInSequence.setNextInSequence(newEntry);
                 newEntry.setPreviousInSequence(lastInSequence);
             }
 
-            HashNodes.setLastInSequence(hash, newEntry);
+            Layouts.HASH.setLastInSequence(hash, newEntry);
 
-            final int newSize = HashNodes.getSize(hash) + 1;
+            final int newSize = Layouts.HASH.getSize(hash) + 1;
 
-            HashNodes.setSize(hash, newSize);
+            Layouts.HASH.setSize(hash, newSize);
 
             // TODO CS 11-May-15 could store the next size for resize instead of doing a float operation each time
 
             if (resizeProfile.profile(newSize / (double) entries.length > BucketsStrategy.LOAD_FACTOR)) {
-                BucketsStrategy.resize(hash);
+                BucketsStrategy.resize(getContext(), hash);
             }
         } else {
             entry.setKeyValue(result.getHashed(), key, value);
         }
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(getContext(), hash);
 
         return value;
     }
 
     @Specialization(guards = {"isBucketHash(hash)", "byIdentity", "isRubyString(key)"})
-    public Object setBucketsByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setBucketsByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setBuckets(frame, hash, (Object) key, value, byIdentity);
     }
 
     @Specialization(guards = {"isBucketHash(hash)", "!byIdentity", "isRubyString(key)"})
-    public Object setBucketsNotByIdentity(VirtualFrame frame, RubyBasicObject hash, RubyBasicObject key, Object value, boolean byIdentity) {
+    public Object setBucketsNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
         return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
     }
 

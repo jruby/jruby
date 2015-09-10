@@ -10,20 +10,43 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.kenai.jffi.MemoryIO;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.PointerGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 public abstract class PointerPrimitiveNodes {
+
+    /*
+     * :pointer_allocate is not a real Rubinius primitive, but Rubinius provides no implementaiton
+     * of Pointer#allocate, so we define this primitive and use it in our own code in the core
+     * library to define that method.
+     */
+
+    @RubiniusPrimitive(name = "pointer_allocate")
+    public static abstract class PointerAllocatePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public PointerAllocatePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject pointerClass) {
+            return PointerNodes.createPointer(pointerClass, PointerNodes.NULL_POINTER);
+        }
+
+    }
 
     @RubiniusPrimitive(name = "pointer_malloc")
     public static abstract class PointerMallocPrimitiveNode extends RubiniusPrimitiveNode {
@@ -33,12 +56,12 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject malloc(RubyClass pointerClass, int size) {
+        public DynamicObject malloc(DynamicObject pointerClass, int size) {
             return malloc(pointerClass, (long) size);
         }
 
         @Specialization
-        public RubyBasicObject malloc(RubyClass pointerClass, long size) {
+        public DynamicObject malloc(DynamicObject pointerClass, long size) {
             return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
         }
 
@@ -52,8 +75,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject free(RubyBasicObject pointer) {
-            UnsafeHolder.U.freeMemory(PointerNodes.getPointer(pointer).address());
+        public DynamicObject free(DynamicObject pointer) {
+            UnsafeHolder.U.freeMemory(Layouts.POINTER.getPointer(pointer).address());
             return pointer;
         }
 
@@ -67,13 +90,13 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public long setAddress(RubyBasicObject pointer, int address) {
+        public long setAddress(DynamicObject pointer, int address) {
             return setAddress(pointer, (long) address);
         }
 
         @Specialization
-        public long setAddress(RubyBasicObject pointer, long address) {
-            PointerNodes.setPointer(pointer, getMemoryManager().newPointer(address));
+        public long setAddress(DynamicObject pointer, long address) {
+            Layouts.POINTER.setPointer(pointer, getMemoryManager().newPointer(address));
             return address;
         }
 
@@ -87,13 +110,13 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject add(RubyBasicObject a, int b) {
+        public DynamicObject add(DynamicObject a, int b) {
             return add(a, (long) b);
         }
 
         @Specialization
-        public RubyBasicObject add(RubyBasicObject a, long b) {
-            return PointerNodes.createPointer(a.getLogicalClass(), getMemoryManager().newPointer(PointerNodes.getPointer(a).address() + b));
+        public DynamicObject add(DynamicObject a, long b) {
+            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(a), getMemoryManager().newPointer(Layouts.POINTER.getPointer(a).address() + b));
         }
 
     }
@@ -106,8 +129,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "isSigned(signed)")
-        public int readInt(RubyBasicObject pointer, boolean signed) {
-            return PointerNodes.getPointer(pointer).getInt(0);
+        public int readInt(DynamicObject pointer, boolean signed) {
+            return Layouts.POINTER.getPointer(pointer).getInt(0);
         }
 
         protected boolean isSigned(boolean signed) {
@@ -124,10 +147,10 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject readString(RubyBasicObject pointer, int length) {
+        public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
-            PointerNodes.getPointer(pointer).get(0, bytes, 0, length);
-            return createString(bytes);
+            Layouts.POINTER.getPointer(pointer).get(0, bytes, 0, length);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -140,7 +163,7 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public boolean setAutorelease(RubyBasicObject pointer, boolean autorelease) {
+        public boolean setAutorelease(DynamicObject pointer, boolean autorelease) {
             // TODO CS 24-April-2015 let memory leak
             return autorelease;
         }
@@ -156,26 +179,26 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "type == TYPE_INT")
-        public int setAtOffsetInt(RubyBasicObject pointer, int offset, int type, int value) {
-            PointerNodes.getPointer(pointer).putInt(offset, value);
+        public int setAtOffsetInt(DynamicObject pointer, int offset, int type, int value) {
+            Layouts.POINTER.getPointer(pointer).putInt(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_LONG")
-        public long setAtOffsetLong(RubyBasicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLong(offset, value);
+        public long setAtOffsetLong(DynamicObject pointer, int offset, int type, long value) {
+            Layouts.POINTER.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
-        public long setAtOffsetULong(RubyBasicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLong(offset, value);
+        public long setAtOffsetULong(DynamicObject pointer, int offset, int type, long value) {
+            Layouts.POINTER.getPointer(pointer).putLong(offset, value);
             return value;
         }
 
         @Specialization(guards = "type == TYPE_ULL")
-        public long setAtOffsetULL(RubyBasicObject pointer, int offset, int type, long value) {
-            PointerNodes.getPointer(pointer).putLongLong(offset, value);
+        public long setAtOffsetULL(DynamicObject pointer, int offset, int type, long value) {
+            Layouts.POINTER.getPointer(pointer).putLongLong(offset, value);
             return value;
         }
 
@@ -189,8 +212,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject readPointer(RubyBasicObject pointer) {
-            return PointerNodes.createPointer(pointer.getLogicalClass(), PointerNodes.getPointer(pointer).getPointer(0));
+        public DynamicObject readPointer(DynamicObject pointer) {
+            return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), Layouts.POINTER.getPointer(pointer).getPointer(0));
         }
 
     }
@@ -203,8 +226,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public long address(RubyBasicObject pointer) {
-            return PointerNodes.getPointer(pointer).address();
+        public long address(DynamicObject pointer) {
+            return Layouts.POINTER.getPointer(pointer).address();
         }
 
     }
@@ -218,58 +241,59 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "type == TYPE_CHAR")
-        public int getAtOffsetChar(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getByte(offset);
+        public int getAtOffsetChar(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_UCHAR")
-        public int getAtOffsetUChar(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getByte(offset);
+        public int getAtOffsetUChar(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getByte(offset);
         }
 
         @Specialization(guards = "type == TYPE_INT")
-        public int getAtOffsetInt(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getInt(offset);
+        public int getAtOffsetInt(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getInt(offset);
         }
 
         @Specialization(guards = "type == TYPE_SHORT")
-        public int getAtOffsetShort(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getShort(offset);
+        public int getAtOffsetShort(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_USHORT")
-        public int getAtOffsetUShort(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getShort(offset);
+        public int getAtOffsetUShort(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getShort(offset);
         }
 
         @Specialization(guards = "type == TYPE_LONG")
-        public long getAtOffsetLong(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLong(offset);
+        public long getAtOffsetLong(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULONG")
-        public long getAtOffsetULong(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLong(offset);
+        public long getAtOffsetULong(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getLong(offset);
         }
 
         @Specialization(guards = "type == TYPE_ULL")
-        public long getAtOffsetULL(RubyBasicObject pointer, int offset, int type) {
-            return PointerNodes.getPointer(pointer).getLongLong(offset);
+        public long getAtOffsetULL(DynamicObject pointer, int offset, int type) {
+            return Layouts.POINTER.getPointer(pointer).getLongLong(offset);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
-        public RubyBasicObject getAtOffsetString(RubyBasicObject pointer, int offset, int type) {
-            return createString(PointerNodes.getPointer(pointer).getString(offset));
+        public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "type == TYPE_PTR")
-        public RubyBasicObject getAtOffsetPointer(RubyBasicObject pointer, int offset, int type) {
-            final Pointer readPointer = PointerNodes.getPointer(pointer).getPointer(offset);
+        public DynamicObject getAtOffsetPointer(DynamicObject pointer, int offset, int type) {
+            final Pointer readPointer = Layouts.POINTER.getPointer(pointer).getPointer(offset);
 
             if (readPointer == null) {
                 return nil();
             } else {
-                return PointerNodes.createPointer(pointer.getLogicalClass(), readPointer);
+                return PointerNodes.createPointer(Layouts.BASIC_OBJECT.getLogicalClass(pointer), readPointer);
             }
         }
 
@@ -283,10 +307,10 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public RubyBasicObject address(RubyBasicObject pointer, RubyBasicObject string, int maxLength) {
-            final ByteList bytes = StringNodes.getByteList(string);
+        public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
+            final ByteList bytes = Layouts.STRING.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
-            PointerNodes.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
+            Layouts.POINTER.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;
         }
 
@@ -301,13 +325,14 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization(guards = "isNullPointer(pointer)")
-        public RubyBasicObject readNullPointer(RubyBasicObject pointer) {
-            return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+        public DynamicObject readNullPointer(DynamicObject pointer) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
-        public RubyBasicObject readStringToNull(RubyBasicObject pointer) {
-            return createString(MemoryIO.getInstance().getZeroTerminatedByteArray(PointerNodes.getPointer(pointer).address()));
+        public DynamicObject readStringToNull(DynamicObject pointer) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -320,8 +345,8 @@ public abstract class PointerPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject address(RubyBasicObject pointer, int value) {
-            PointerNodes.getPointer(pointer).putInt(0, value);
+        public DynamicObject address(DynamicObject pointer, int value) {
+            Layouts.POINTER.getPointer(pointer).putInt(0, value);
             return pointer;
         }
 

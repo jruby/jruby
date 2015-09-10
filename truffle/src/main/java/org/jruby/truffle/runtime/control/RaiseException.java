@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import org.jruby.truffle.runtime.core.RubyException;
-
 /**
  * Ruby exceptions are just Ruby objects, so they cannot also be exceptions unless we made all Ruby
  * objects exceptions. A simpler approach is to wrap Ruby exceptions in Java exceptions when we want
@@ -21,9 +19,9 @@ public class RaiseException extends RuntimeException {
 
     // TODO CS 1-Mar-15 shouldn't this be a ControlFlowException?
 
-    private final RubyException rubyException;
+    private final Object rubyException;
 
-    public RaiseException(RubyException rubyException) {
+    public RaiseException(Object rubyException) {
         this.rubyException = rubyException;
     }
 
@@ -37,7 +35,7 @@ public class RaiseException extends RuntimeException {
         return rubyException.toString();
     }
 
-    public RubyException getRubyException() {
+    public Object getRubyException() {
         return rubyException;
     }
 

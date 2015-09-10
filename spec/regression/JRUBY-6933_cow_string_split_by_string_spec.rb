@@ -5,7 +5,7 @@ describe 'JRUBY-6933: A COWed String being split by another String' do
   it 'properly matches the split token' do
     "[âœ“:checkbox_name]" =~ /\[(.*?)\]/      
     ary = $1.split(':')
-    ary[0].should == "âœ“"
-    ary[1].should == "checkbox_name"
+    expect(ary[0]).to eq("âœ“")
+    expect(ary[1]).to eq("checkbox_name")
   end
 end

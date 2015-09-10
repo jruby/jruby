@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_block_given, :shared => true do
+describe :kernel_block_given, shared: true do
   it "returns true if and only if a block is supplied" do
     @object.accept_block {}.should == true
     @object.accept_block_as_argument {}.should == true

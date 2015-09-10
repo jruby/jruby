@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
@@ -19,7 +20,6 @@ import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 public class ParseEnvironment {
 
     private LexicalScope lexicalScope = null;
-    private long nextReturnID = 0;
 
     public ParseEnvironment(RubyContext context) {
     }
@@ -40,14 +40,8 @@ public class ParseEnvironment {
         lexicalScope = lexicalScope.getParent();
     }
 
-    public long allocateReturnID() {
-        if (nextReturnID == Long.MAX_VALUE) {
-            throw new RuntimeException("Return IDs exhausted");
-        }
-
-        final long allocated = nextReturnID;
-        nextReturnID++;
-        return allocated;
+    public ReturnID allocateReturnID() {
+        return new ReturnID();
     }
 
     public BreakID allocateBreakID() {

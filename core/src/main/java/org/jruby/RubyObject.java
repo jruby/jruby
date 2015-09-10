@@ -319,9 +319,9 @@ public class RubyObject extends RubyBasicObject {
     }
 
     /**
-     * This method is just a wrapper around the Ruby "==" method,
-     * provided so that RubyObjects can be used as keys in the Java
-     * HashMap object underlying RubyHash.
+     * This override does not do a "checked" dispatch.
+     *
+     * @see RubyBasicObject#equals(Object)
      */
     @Override
     public boolean equals(Object other) {
@@ -478,7 +478,7 @@ public class RubyObject extends RubyBasicObject {
         } else if (a instanceof RubySymbol) {
             return false;
         } else if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
-            return ((RubyFixnum)a).fastEqual((RubyFixnum)b);
+            return ((RubyFixnum)a).fastEqual((RubyFixnum) b);
         } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
             return ((RubyFloat)a).fastEqual((RubyFloat)b);
         } else {
@@ -504,24 +504,15 @@ public class RubyObject extends RubyBasicObject {
     }
 
     /**
-     * Override the Object#hashCode method to make sure that the Ruby
-     * hash is actually used as the hashcode for Ruby objects. If the
-     * Ruby "hash" method doesn't return a number, the Object#hashCode
-     * implementation will be used instead.
+     * This override does not do "checked" dispatch since Object usually has #hash defined.
+     *
+     * @see RubyBasicObject#hashCode()
      */
     @Override
     public int hashCode() {
         IRubyObject hashValue = invokedynamic(getRuntime().getCurrentContext(), this, HASH);
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
         return nonFixnumHashCode(hashValue);
-    }
-
-    private int nonFixnumHashCode(IRubyObject hashValue) {
-        RubyInteger integer = hashValue.convertToInteger();
-        if (integer instanceof RubyBignum) {
-            return integer.getBigIntegerValue().intValue();
-        }
-        return (int) integer.getLongValue();
     }
 
     /** rb_inspect

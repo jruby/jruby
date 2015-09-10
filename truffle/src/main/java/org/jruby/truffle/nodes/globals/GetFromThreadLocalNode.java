@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.globals;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
@@ -32,6 +33,7 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
         super(context, sourceSection);
     }
 
+    @TruffleBoundary
     @Specialization
     public Object get(ThreadLocalObject threadLocal) {
         return threadLocal.get();

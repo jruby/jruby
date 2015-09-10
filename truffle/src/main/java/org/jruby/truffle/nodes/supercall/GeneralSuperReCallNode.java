@@ -13,38 +13,47 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 /**
  * Represents a super call with implicit arguments (using the ones of the surrounding methods).
  */
 public class GeneralSuperReCallNode extends RubyNode {
 
-    private final boolean inBlock;
-    private final boolean isSplatted;
+    private final boolean hasRestParameter;
     @Children private final RubyNode[] reloadNodes;
     @Child private RubyNode block;
 
+    @Child ProcOrNullNode procOrNullNode;
     @Child LookupSuperMethodNode lookupSuperMethodNode;
     @Child CallMethodNode callMethodNode;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean inBlock, boolean isSplatted, RubyNode[] reloadNodes, RubyNode block) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, boolean hasRestParameter, RubyNode[] reloadNodes, RubyNode block) {
         super(context, sourceSection);
-        this.inBlock = inBlock;
-        this.isSplatted = isSplatted;
+        this.hasRestParameter = hasRestParameter;
         this.reloadNodes = reloadNodes;
         this.block = block;
 
+        procOrNullNode = ProcOrNullNodeGen.create(context, sourceSection, null);
         lookupSuperMethodNode = LookupSuperMethodNodeGen.create(context, sourceSection, null);
         callMethodNode = CallMethodNodeGen.create(context, sourceSection, null, new RubyNode[] {});
     }
@@ -56,39 +65,29 @@ public class GeneralSuperReCallNode extends RubyNode {
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
-        final Object[] originalArguments;
-        if (inBlock) {
-            originalArguments = RubyArguments.getDeclarationFrame(frame.getArguments()).getArguments();
-        } else {
-            originalArguments = frame.getArguments();
+        final Object[] originalArguments = frame.getArguments();
+
+        // Reload the arguments
+        Object[] superArguments = new Object[reloadNodes.length];
+        for (int n = 0; n < superArguments.length; n++) {
+            superArguments[n] = reloadNodes[n].execute(frame);
         }
 
-        Object[] superArguments = RubyArguments.extractUserArguments(originalArguments);
-
-        if (!inBlock) {
-            // Reload the arguments
-            superArguments = new Object[reloadNodes.length];
-            for (int n = 0; n < superArguments.length; n++) {
-                superArguments[n] = reloadNodes[n].execute(frame);
-            }
-
-            if (isSplatted) {
-                CompilerDirectives.transferToInterpreter();
-                assert superArguments.length == 1;
-                assert RubyGuards.isRubyArray(superArguments[0]);
-                superArguments = ArrayNodes.slowToArray(((RubyBasicObject) superArguments[0]));
-            }
+        if (hasRestParameter) {
+            CompilerDirectives.transferToInterpreter();
+            // TODO (eregon, 22 July 2015): Assumes rest arg is last, not true if post or keyword args.
+            final Object restArg = superArguments[superArguments.length - 1];
+            assert RubyGuards.isRubyArray(restArg);
+            final Object[] restArgs = ArrayOperations.toObjectArray((DynamicObject) restArg);
+            final int restArgIndex = reloadNodes.length - 1;
+            superArguments = Arrays.copyOf(superArguments, restArgIndex + restArgs.length);
+            ArrayUtils.arraycopy(restArgs, 0, superArguments, restArgIndex, restArgs.length);
         }
 
         // Execute or inherit the block
-        final RubyBasicObject blockObject;
+        final DynamicObject blockObject;
         if (block != null) {
-            final Object blockTempObject = block.execute(frame);
-            if (blockTempObject == nil()) {
-                blockObject = null;
-            } else {
-                blockObject = (RubyBasicObject) blockTempObject;
-            }
+            blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
         } else {
             blockObject = RubyArguments.getBlock(originalArguments);
         }
@@ -119,7 +118,7 @@ public class GeneralSuperReCallNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return createString("super");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("super", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

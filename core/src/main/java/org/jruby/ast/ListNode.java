@@ -129,6 +129,14 @@ public class ListNode extends Node {
         }
         return this;
     }
+
+    public ListNode addAll(Node[] other, int index, int length) {
+        for (int i = 0; i < length; i++) {
+            addInternal(other[index + i]);
+        }
+
+        return this;
+    }
     
     /**
      * Add other element to this list

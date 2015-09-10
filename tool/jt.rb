@@ -206,6 +206,7 @@ module Commands
     puts 'jt findbugs                                    run findbugs'
     puts 'jt findbugs report                             run findbugs and generate an HTML report'
     puts 'jt install ..../graal/mx/suite.py              install a JRuby distribution into an mx suite'
+    puts 'jt install-tool                                install the jruby+truffle tool for working with Ruby gems'
     puts
     puts 'you can also put build or rebuild in front of any command'
     puts
@@ -242,7 +243,7 @@ module Commands
 
   def run(*args)
     env_vars = args.first.is_a?(Hash) ? args.shift : {}
-    jruby_args = %w[-X+T]
+    jruby_args = %w[-X+T -Xtruffle.core.load_path=truffle/src/main/ruby]
 
     { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -395,7 +396,7 @@ module Commands
       else
         compilation_exceptions_behaviour = "-J-G:+TruffleCompilationExceptionsAreFatal"
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError #{compilation_exceptions_behaviour}"})
+      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-G:+TraceTruffleCompilation -J-G:+DumpOnError -J-G:-GraphPE #{compilation_exceptions_behaviour}"})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
@@ -423,13 +424,14 @@ module Commands
   end
 
   def check_ambiguous_arguments
+    ENV.delete "JRUBY_ECLIPSE" # never run from the Eclipse launcher here
     pom = "#{JRUBY_DIR}/truffle/pom.rb"
     contents = File.read(pom)
     contents.gsub!(/^(\s+)'source'\s*=>.+'1.7'.+,\n\s+'target'\s*=>.+\s*'1.7.+,\n/) do
       indent = $1
       $&.gsub("1.7", "1.8") + "#{indent}'fork' => 'true',\n"
     end
-    contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)/) do
+    contents.sub!(/^(\s+)('-J-Dfile.encoding=UTF-8')(.+\n)(?!\1'-parameters')/) do
       "#{$1}#{$2},\n#{$1}'-parameters'#{$3}"
     end
     File.write pom, contents
@@ -468,6 +470,22 @@ module Commands
       raise ArgumentError, kind
     end
   end
+
+  def install_tool
+    Dir.chdir(JRUBY_DIR) do
+      Dir.chdir('tool/truffle/jruby_truffle_runner') do
+        raw_sh('gem', 'build', 'jruby+truffle_runner.gemspec')
+        raw_sh('gem', 'install', 'jruby+truffle_runner-0.0.1.gem')
+
+        begin
+          system('rbenv', 'rehash')
+        rescue
+        end
+      end
+    end
+  end
+
+  alias_method :"install-tool", :install_tool
 end
 
 class JT

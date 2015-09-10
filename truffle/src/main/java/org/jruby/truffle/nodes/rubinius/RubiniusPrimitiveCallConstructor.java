@@ -9,40 +9,42 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.NodeArrayToObjectArrayNode;
 import org.jruby.truffle.nodes.arguments.ReadAllArgumentsNode;
 import org.jruby.truffle.nodes.arguments.ReadBlockNode;
-import org.jruby.truffle.nodes.core.MethodNodes;
 import org.jruby.truffle.nodes.core.MethodNodesFactory.CallNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RubiniusPrimitiveCallConstructor implements RubiniusPrimitiveConstructor {
 
-    private final RubyBasicObject method;
+    private final DynamicObject method;
 
-    public RubiniusPrimitiveCallConstructor(RubyBasicObject method) {
+    public RubiniusPrimitiveCallConstructor(DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
         this.method = method;
     }
 
     @Override
     public int getPrimitiveArity() {
-        return MethodNodes.getMethod(method).getSharedMethodInfo().getArity().getRequired();
+        return Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArity().getPreRequired();
     }
 
     @Override
-    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, long returnID) {
-        return CallNodeFactory.create(context, sourceSection, new RubyNode[] {
-                new LiteralNode(context, sourceSection, method),
-                new ReadAllArgumentsNode(context, sourceSection),
-                new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
-        });
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID) {
+        return new CallRubiniusPrimitiveNode(context, sourceSection,
+                CallNodeFactory.create(context, sourceSection, new RubyNode[] {
+                    new LiteralNode(context, sourceSection, method),
+                    new ReadAllArgumentsNode(context, sourceSection),
+                    new ReadBlockNode(context, sourceSection, NotProvided.INSTANCE)
+        }), returnID);
     }
 
     @Override

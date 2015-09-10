@@ -48,7 +48,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
@@ -104,7 +103,7 @@ public class RubyKernel {
         private final CallType callType;
 
         public MethodMissingMethod(RubyModule implementationClass, Visibility visibility, CallType callType) {
-            super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone);
+            super(implementationClass, Visibility.PRIVATE);
 
             this.callType = callType;
             this.visibility = visibility;
@@ -600,12 +599,12 @@ public class RubyKernel {
         return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod(name = "respond_to_missing?", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
     public static IRubyObject respond_to_missing_p(ThreadContext context, IRubyObject recv, IRubyObject symbol, IRubyObject isPrivate) {
         return context.runtime.getFalse();
     }
@@ -1789,7 +1788,6 @@ public class RubyKernel {
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         String dir = RubyFile.dirname(context, new File(context.gatherCallerBacktrace()[1].getFileName()).getAbsolutePath());
-        if (dir == null) return context.nil;
         return RubyString.newString(context.runtime, dir);
     }
 

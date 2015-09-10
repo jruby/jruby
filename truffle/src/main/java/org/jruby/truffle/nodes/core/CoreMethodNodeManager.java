@@ -14,7 +14,9 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.*;
@@ -27,8 +29,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -40,10 +41,11 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private final RubyClass objectClass;
+    private final DynamicObject objectClass;
     private final SingletonClassNode singletonClassNode;
 
-    public CoreMethodNodeManager(RubyClass objectClass, SingletonClassNode singletonClassNode) {
+    public CoreMethodNodeManager(DynamicObject objectClass, SingletonClassNode singletonClassNode) {
+        assert RubyGuards.isRubyClass(objectClass);
         this.objectClass = objectClass;
         this.singletonClassNode = singletonClassNode;
     }
@@ -61,14 +63,14 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private RubyClass getSingletonClass(Object object) {
+    private DynamicObject getSingletonClass(Object object) {
         return singletonClassNode.executeSingletonClass(null, object);
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = objectClass.getContext();
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(objectClass)).getContext();
 
-        RubyModule module;
+        DynamicObject module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
@@ -77,13 +79,13 @@ public class CoreMethodNodeManager {
             module = objectClass;
 
             for (String moduleName : fullName.split("::")) {
-                final RubyConstant constant = ModuleOperations.lookupConstant(context, LexicalScope.NONE, module, moduleName);
+                final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
 
                 if (constant == null) {
                     throw new RuntimeException(String.format("Module %s not found when adding core library", moduleName));
                 }
 
-                module = (RubyModule) constant.getValue();
+                module = (DynamicObject) constant.getValue();
             }
         }
 
@@ -106,12 +108,12 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!module.isOnlyAModule()) {
+            if (!(RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject))) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
         if (method.onSingleton() && method.constructor()) {
-            System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
+            System.err.println("WARNING: Either onSingleton or constructor for " + methodDetails.getIndicativeName());
         }
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
@@ -126,7 +128,9 @@ public class CoreMethodNodeManager {
         }
     }
 
-    private static void addMethod(RubyModule module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+    private static void addMethod(DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+        assert RubyGuards.isRubyModule(module);
+
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
@@ -138,7 +142,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            module.addMethod(null, method.withVisibility(visibility).withName(name));
+            Layouts.MODULE.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
         }
     }
 
@@ -148,17 +152,11 @@ public class CoreMethodNodeManager {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), method.names()[0]);
 
         final int required = method.required();
-        final int optional;
+        final int optional = method.optional();
 
-        if (method.argumentsAsArray()) {
-            optional = 0;
-        } else {
-            optional = method.optional();
-        }
+        final Arity arity = new Arity(required, optional, method.rest());
 
-        final Arity arity = new Arity(required,  optional, method.argumentsAsArray(), false, false, 0);
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, true);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, methodDetails.getIndicativeName(), false, null, context.getOptions().CORE_ALWAYS_CLONE);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
@@ -180,22 +178,21 @@ public class CoreMethodNodeManager {
             argumentsNodes.add(readSelfNode);
         }
 
-        if (method.argumentsAsArray()) {
-            argumentsNodes.add(new ReadAllArgumentsNode(context, sourceSection));
-        } else {
-            for (int n = 0; n < arity.getRequired() + arity.getOptional(); n++) {
-                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+        for (int n = 0; n < arity.getPreRequired() + arity.getOptional(); n++) {
+            RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
-                if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
-                    readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
-                }
-
-                if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
-                }
-
-                argumentsNodes.add(readArgumentNode);
+            if (ArrayUtils.contains(method.lowerFixnumParameters(), n)) {
+                readArgumentNode = FixnumLowerNodeGen.create(context, sourceSection, readArgumentNode);
             }
+
+            if (ArrayUtils.contains(method.raiseIfFrozenParameters(), n)) {
+                readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
+            }
+
+            argumentsNodes.add(readArgumentNode);
+        }
+        if (method.rest()) {
+            argumentsNodes.add(new ReadRemainingArgumentsNode(context, sourceSection, arity.getPreRequired() + arity.getOptional()));
         }
 
         if (method.needsBlock()) {
@@ -243,6 +240,13 @@ public class CoreMethodNodeManager {
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
+    public void allMethodInstalled() {
+        if (System.getenv("TRUFFLE_CHECK_AMBIGUOUS_OPTIONAL_ARGS") != null &&
+            !AmbiguousOptionalArgumentChecker.SUCCESS) {
+            System.exit(1);
+        }
+    }
+
     public static class MethodDetails {
 
         private final CoreClass classAnnotation;
@@ -278,6 +282,7 @@ public class CoreMethodNodeManager {
     private static class AmbiguousOptionalArgumentChecker {
 
         private static final Method GET_PARAMETERS = checkParametersNamesAvailable();
+        private static boolean SUCCESS = true;
 
         private static Method checkParametersNamesAvailable() {
             try {
@@ -285,29 +290,25 @@ public class CoreMethodNodeManager {
             } catch (NoSuchMethodException | SecurityException e) {
                 // Java 7 or could not find how to get names of method parameters
                 System.err.println("Could not find method Method.getParameters()");
+                System.exit(1);
                 return null;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArguments(MethodDetails methodDetails) {
-            if (GET_PARAMETERS == null) {
-                System.exit(1);
-            }
-
             try {
                 verifyNoAmbiguousOptionalArgumentsWithReflection(methodDetails);
             } catch (Exception e) {
                 e.printStackTrace();
-                System.exit(1);
+                SUCCESS = false;
             }
         }
 
         private static void verifyNoAmbiguousOptionalArgumentsWithReflection(MethodDetails methodDetails) throws ReflectiveOperationException {
-            boolean success = true;
-
-            if (methodDetails.getMethodAnnotation().optional() > 0) {
-                int opt = methodDetails.getMethodAnnotation().optional();
-                if (methodDetails.getMethodAnnotation().needsBlock()) {
+            final CoreMethod methodAnnotation = methodDetails.getMethodAnnotation();
+            if (methodAnnotation.optional() > 0 || methodAnnotation.needsBlock()) {
+                int opt = methodAnnotation.optional();
+                if (methodAnnotation.needsBlock()) {
                     opt++;
                 }
 
@@ -321,6 +322,9 @@ public class CoreMethodNodeManager {
                             // count from the end to ignore optional VirtualFrame in front.
                             Class<?>[] parameterTypes = method.getParameterTypes();
                             int n = parameterTypes.length - i;
+                            if (methodAnnotation.rest()) {
+                                n--; // ignore final Object[] argument
+                            }
                             Class<?> parameterType = parameterTypes[n];
                             Object[] parameters = (Object[]) GET_PARAMETERS.invoke(method);
 
@@ -332,7 +336,7 @@ public class CoreMethodNodeManager {
                             }
                             String name = (String) parameter.getClass().getMethod("getName").invoke(parameter);
 
-                            if (parameterType == Object.class && !name.startsWith("unused")) {
+                            if (parameterType == Object.class && !name.startsWith("unused") && !name.equals("maybeBlock")) {
                                 String[] guards = method.getAnnotation(Specialization.class).guards();
                                 if (!isGuarded(name, guards)) {
                                     unguardedObjectArgument = true;
@@ -343,15 +347,11 @@ public class CoreMethodNodeManager {
                     }
 
                     if (unguardedObjectArgument) {
-                        success = false;
+                        SUCCESS = false;
                         System.err.println("Ambiguous optional argument in " + node.getCanonicalName() + ":");
                         System.err.println(errors);
                     }
                 }
-            }
-
-            if (!success) {
-                System.exit(1);
             }
         }
 

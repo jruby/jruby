@@ -9,17 +9,16 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
@@ -36,21 +35,16 @@ public abstract class AliasNode extends RubyNode {
         this.oldName = oldName;
     }
 
-    public Object noClass() {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
-    }
-
-    @Specialization
-    public Object alias(RubyModule module) {
-        module.alias(this, newName, oldName);
+    @Specialization(guards = "isRubyModule(module)")
+    public Object alias(DynamicObject module) {
+        Layouts.MODULE.getFields(module).alias(this, newName, oldName);
         return module;
     }
 
     // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
     @Specialization(guards = "!isRubyModule(object)")
     public Object alias(VirtualFrame frame, Object object) {
-        singletonClassNode.executeSingletonClass(frame, object).alias(this, newName, oldName);
+        Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, object)).alias(this, newName, oldName);
         return object;
     }
 

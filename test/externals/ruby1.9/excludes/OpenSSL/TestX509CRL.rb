@@ -1,1 +1,0 @@
-exclude :test_extension, 'Can not guarantee extension order using Java APIs'

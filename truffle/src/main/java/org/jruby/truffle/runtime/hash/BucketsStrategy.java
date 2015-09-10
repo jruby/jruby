@@ -10,12 +10,11 @@
 package org.jruby.truffle.runtime.hash;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.hash.HashGuards;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
-import org.jruby.truffle.runtime.DebugOperations;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.*;
 
@@ -31,14 +30,8 @@ public abstract class BucketsStrategy {
 
     private static final int[] CAPACITIES = Arrays.copyOf(org.jruby.RubyHash.MRI_PRIMES, org.jruby.RubyHash.MRI_PRIMES.length - 1);
 
-    public static RubyBasicObject create(RubyClass hashClass, int capacity) {
-        final int bucketsCount = capacityGreaterThan(capacity) * OVERALLOCATE_FACTOR;
-        final Entry[] newEntries = new Entry[bucketsCount];
-
-        return HashNodes.createHash(hashClass, null, null, newEntries, 0, null, null);
-    }
-
-    public static RubyBasicObject create(RubyClass hashClass, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
+    @TruffleBoundary
+    public static DynamicObject create(RubyContext context, Collection<Map.Entry<Object, Object>> entries, boolean byIdentity) {
         int actualSize = entries.size();
 
         final int bucketsCount = capacityGreaterThan(entries.size()) * OVERALLOCATE_FACTOR;
@@ -51,10 +44,10 @@ public abstract class BucketsStrategy {
             Object key = entry.getKey();
 
             if (!byIdentity && RubyGuards.isRubyString(key)) {
-                key = DebugOperations.send(hashClass.getContext(), DebugOperations.send(hashClass.getContext(), key, "dup", null), "freeze", null);
+                key = context.send(context.send(key, "dup", null), "freeze", null);
             }
 
-            final int hashed = HashNodes.slowHashKey(hashClass.getContext(), key);
+            final int hashed = hashKey(context, key);
             Entry newEntry = new Entry(hashed, key, entry.getValue());
 
             final int index = BucketsStrategy.getBucketIndex(hashed, newEntries.length);
@@ -67,7 +60,7 @@ public abstract class BucketsStrategy {
 
                 while (bucketEntry != null) {
                     if (hashed == bucketEntry.getHashed()
-                            && HashNodes.slowAreKeysEqual(hashClass.getContext(), bucketEntry.getKey(), key, byIdentity)) {
+                            && areKeysEqual(context, bucketEntry.getKey(), key, byIdentity)) {
                         bucketEntry.setValue(entry.getValue());
 
                         actualSize--;
@@ -114,7 +107,7 @@ public abstract class BucketsStrategy {
             lastInSequence = newEntry;
         }
 
-        return HashNodes.createHash(hashClass, null, null, newEntries, actualSize, firstInSequence, lastInSequence);
+        return Layouts.HASH.createHash(context.getCoreLibrary().getHashFactory(), null, null, newEntries, actualSize, firstInSequence, lastInSequence, false);
     }
 
     public static int capacityGreaterThan(int size) {
@@ -131,22 +124,22 @@ public abstract class BucketsStrategy {
         return (hashed & SIGN_BIT_MASK) % bucketsCount;
     }
 
-    public static void addNewEntry(RubyBasicObject hash, int hashed, Object key, Object value) {
+    public static void addNewEntry(RubyContext context, DynamicObject hash, int hashed, Object key, Object value) {
         assert HashGuards.isBucketHash(hash);
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
 
-        final Entry[] buckets = (Entry[]) HashNodes.getStore(hash);
+        final Entry[] buckets = (Entry[]) Layouts.HASH.getStore(hash);
 
         final Entry entry = new Entry(hashed, key, value);
 
-        if (HashNodes.getFirstInSequence(hash) == null) {
-            HashNodes.setFirstInSequence(hash, entry);
+        if (Layouts.HASH.getFirstInSequence(hash) == null) {
+            Layouts.HASH.setFirstInSequence(hash, entry);
         } else {
-            HashNodes.getLastInSequence(hash).setNextInSequence(entry);
-            entry.setPreviousInSequence(HashNodes.getLastInSequence(hash));
+            Layouts.HASH.getLastInSequence(hash).setNextInSequence(entry);
+            entry.setPreviousInSequence(Layouts.HASH.getLastInSequence(hash));
         }
 
-        HashNodes.setLastInSequence(hash, entry);
+        Layouts.HASH.setLastInSequence(hash, entry);
 
         final int bucketIndex = BucketsStrategy.getBucketIndex(hashed, buckets.length);
 
@@ -162,20 +155,20 @@ public abstract class BucketsStrategy {
             previousInLookup.setNextInLookup(entry);
         }
 
-        HashNodes.setSize(hash, HashNodes.getSize(hash) + 1);
+        Layouts.HASH.setSize(hash, Layouts.HASH.getSize(hash) + 1);
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
     }
 
     @TruffleBoundary
-    public static void resize(RubyBasicObject hash) {
+    public static void resize(RubyContext context, DynamicObject hash) {
         assert HashGuards.isBucketHash(hash);
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
 
-        final int bucketsCount = capacityGreaterThan(HashNodes.getSize(hash)) * OVERALLOCATE_FACTOR;
+        final int bucketsCount = capacityGreaterThan(Layouts.HASH.getSize(hash)) * OVERALLOCATE_FACTOR;
         final Entry[] newEntries = new Entry[bucketsCount];
 
-        Entry entry = HashNodes.getFirstInSequence(hash);
+        Entry entry = Layouts.HASH.getFirstInSequence(hash);
 
         while (entry != null) {
             final int bucketIndex = getBucketIndex(entry.getHashed(), bucketsCount);
@@ -195,9 +188,16 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(hash, newEntries, HashNodes.getSize(hash), HashNodes.getFirstInSequence(hash), HashNodes.getLastInSequence(hash));
+        int size = Layouts.HASH.getSize(hash);
+        Entry firstInSequence = Layouts.HASH.getFirstInSequence(hash);
+        Entry lastInSequence = Layouts.HASH.getLastInSequence(hash);
+        assert HashOperations.verifyStore(context, newEntries, size, firstInSequence, lastInSequence);
+        Layouts.HASH.setStore(hash, newEntries);
+        Layouts.HASH.setSize(hash, size);
+        Layouts.HASH.setFirstInSequence(hash, firstInSequence);
+        Layouts.HASH.setLastInSequence(hash, lastInSequence);
 
-        assert HashNodes.verifyStore(hash);
+        assert HashOperations.verifyStore(context, hash);
     }
 
     public static Iterator<Map.Entry<Object, Object>> iterateKeyValues(final Entry firstInSequence) {
@@ -261,19 +261,19 @@ public abstract class BucketsStrategy {
         };
     }
 
-    public static void copyInto(RubyBasicObject from, RubyBasicObject to) {
+    public static void copyInto(RubyContext context, DynamicObject from, DynamicObject to) {
         assert RubyGuards.isRubyHash(from);
         assert HashGuards.isBucketHash(from);
-        assert HashNodes.verifyStore(from);
+        assert HashOperations.verifyStore(context, from);
         assert RubyGuards.isRubyHash(to);
-        assert HashNodes.verifyStore(to);
+        assert HashOperations.verifyStore(context, to);
 
-        final Entry[] newEntries = new Entry[((Entry[]) HashNodes.getStore(from)).length];
+        final Entry[] newEntries = new Entry[((Entry[]) Layouts.HASH.getStore(from)).length];
 
         Entry firstInSequence = null;
         Entry lastInSequence = null;
 
-        Entry entry = HashNodes.getFirstInSequence(from);
+        Entry entry = Layouts.HASH.getFirstInSequence(from);
 
         while (entry != null) {
             final Entry newEntry = new Entry(entry.getHashed(), entry.getKey(), entry.getValue());
@@ -297,7 +297,43 @@ public abstract class BucketsStrategy {
             entry = entry.getNextInSequence();
         }
 
-        HashNodes.setStore(to, newEntries, HashNodes.getSize(from), firstInSequence, lastInSequence);
+        int size = Layouts.HASH.getSize(from);
+        assert HashOperations.verifyStore(context, newEntries, size, firstInSequence, lastInSequence);
+        Layouts.HASH.setStore(to, newEntries);
+        Layouts.HASH.setSize(to, size);
+        Layouts.HASH.setFirstInSequence(to, firstInSequence);
+        Layouts.HASH.setLastInSequence(to, lastInSequence);
+
+    }
+
+    private static int hashKey(RubyContext context, Object key) {
+        final Object hashValue = context.send(key, "hash", null);
+
+        if (hashValue instanceof Integer) {
+            return (int) hashValue;
+        } else if (hashValue instanceof Long) {
+            return (int) (long) hashValue;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static boolean areKeysEqual(RubyContext context, Object a, Object b, boolean byIdentity) {
+        final String method;
+
+        if (byIdentity) {
+            method = "equal?";
+        } else {
+            method = "eql?";
+        }
+
+        final Object equalityResult = context.send(a, method, null, b);
+
+        if (equalityResult instanceof Boolean) {
+            return (boolean) equalityResult;
+        }
+
+        throw new UnsupportedOperationException();
     }
 
 }

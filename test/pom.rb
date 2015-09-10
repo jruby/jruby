@@ -32,13 +32,11 @@ end
 
 project 'JRuby Integration Tests' do
 
-  model_version '4.0.0' 
+  model_version '4.0.0'
 
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-              :id => 'tb-rubygems-releases' )
   repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
 
@@ -47,11 +45,10 @@ project 'JRuby Integration Tests' do
     releases 'false'
     snapshots 'true'
   end
-  plugin_repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-                     :id => 'rubygems-releases' )
+  plugin_repository( :id => 'rubygems-releases',
+                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
               'jruby.home' => '${basedir}/..',
               'gem.home' => '${jruby.home}/lib/ruby/gems/shared' )
 
@@ -311,7 +308,7 @@ project 'JRuby Integration Tests' do
                      :id => 'rake',
                      :phase => 'test',
                      :configuration => [ xml(
-                      '<target>' + 
+                      '<target>' +
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
                           '<arg value="-X+T" />' +

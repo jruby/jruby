@@ -26,9 +26,14 @@ public class Array extends Operand {
     }
 
     public Array(Operand[] elts) {
-        super(OperandType.ARRAY);
+        super();
 
         this.elts = elts == null ? EMPTY_ARRAY : elts;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.ARRAY;
     }
 
     public boolean isBlank() {

@@ -7,13 +7,13 @@ describe "A Java method returning/receiving uncoercible Java types" do
   it "wraps the objects in Ruby object wrappers" do
     # static
     obj = JavaTypeMethods.staticNewObject
-    obj.class.to_s.should == "Java::JavaLang::Object"
-    obj.java_object.should_not == nil
+    expect(obj.class.to_s).to eq("Java::JavaLang::Object")
+    expect(obj.java_object).not_to eq(nil)
 
     # instance
     obj = JavaTypeMethods.new.newObject
-    obj.class.to_s.should == "Java::JavaLang::Object"
-    obj.java_object.should_not == nil
+    expect(obj.class.to_s).to eq("Java::JavaLang::Object")
+    expect(obj.java_object).not_to eq(nil)
   end
 
   it "registers the wrapper and reuses it when object returns" do
@@ -22,8 +22,8 @@ describe "A Java method returning/receiving uncoercible Java types" do
     JavaTypeMethods.staticSetObject(obj)
     obj2 = JavaTypeMethods.staticGetObject
 
-    obj.should == obj2
-    obj.object_id.should == obj2.object_id
+    expect(obj).to eq(obj2)
+    expect(obj.object_id).to eq(obj2.object_id)
 
     # instance
     jtm = JavaTypeMethods.new
@@ -31,8 +31,8 @@ describe "A Java method returning/receiving uncoercible Java types" do
     jtm.setObject(obj)
     obj2 = jtm.getObject
 
-    obj.should == obj2
-    obj.object_id.should == obj2.object_id
+    expect(obj).to eq(obj2)
+    expect(obj.object_id).to eq(obj2.object_id)
   end
 
   describe "when receiving Ruby subtypes of Java types" do
@@ -47,10 +47,10 @@ describe "A Java method returning/receiving uncoercible Java types" do
       JavaTypeMethods.staticSetObject(rsojo)
       rsojo2 = JavaTypeMethods.staticGetObject
 
-      rsojo.should == rsojo2
-      rsojo.object_id.should == rsojo2.object_id
-      rsojo.foo.should == true
-      rsojo2.foo.should == true
+      expect(rsojo).to eq(rsojo2)
+      expect(rsojo.object_id).to eq(rsojo2.object_id)
+      expect(rsojo.foo).to eq(true)
+      expect(rsojo2.foo).to eq(true)
 
       # instance
       rsojo = RubySubtypeOfJavaObject.new
@@ -58,10 +58,10 @@ describe "A Java method returning/receiving uncoercible Java types" do
       jtm.setObject(rsojo)
       rsojo2 = jtm.getObject
 
-      rsojo.should == rsojo2
-      rsojo.object_id.should == rsojo2.object_id
-      rsojo.foo.should == true
-      rsojo2.foo.should == true
+      expect(rsojo).to eq(rsojo2)
+      expect(rsojo.object_id).to eq(rsojo2.object_id)
+      expect(rsojo.foo).to eq(true)
+      expect(rsojo2.foo).to eq(true)
     end
   end
 end
@@ -72,9 +72,9 @@ describe "Java::JavaObject.wrap" do
     str = Java::JavaObject.wrap(java.lang.String.new)
     cls = Java::JavaObject.wrap(java.lang.Class.forName('java.lang.String'))
 
-    obj.class.should == Java::JavaObject
-    str.class.should == Java::JavaObject
-    cls.class.should == Java::JavaClass
+    expect(obj.class).to eq(Java::JavaObject)
+    expect(str.class).to eq(Java::JavaObject)
+    expect(cls.class).to eq(Java::JavaClass)
   end
 end
 
@@ -90,13 +90,13 @@ describe "Java::newInterfaceImpl" do
   it "should use the same generated class for wrapping, on different classloaders" do
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
     expected2 = InterfaceWrapper.give_me_back(BugTest.new)
-    expected1.java_class.class_loader.should_not == expected2.java_class.class_loader
-    expected1.java_class.to_s.should == expected2.java_class.to_s
+    expect(expected1.java_class.class_loader).not_to eq(expected2.java_class.class_loader)
+    expect(expected1.java_class.to_s).to eq(expected2.java_class.to_s)
   end
 
   it "should not mix classes when generating new types for interfaces" do
     expected1 = InterfaceWrapper.give_me_back(BugTest.new)
     expected2 = InterfaceWrapper.give_me_back(Bolt.new)
-    expected1.java_class.should_not == expected2.java_class
+    expect(expected1.java_class).not_to eq(expected2.java_class)
   end
 end

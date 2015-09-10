@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2006-2008 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -37,9 +37,9 @@ import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
@@ -84,10 +84,10 @@ public class JITCompiler implements JITCompilerMBean {
 
     private final JITCounts counts = new JITCounts();
     private final ExecutorService executor;
-    
+
     private final Ruby runtime;
     private final RubyInstanceConfig config;
-    
+
     public JITCompiler(Ruby runtime) {
         this.runtime = runtime;
         this.config = runtime.getInstanceConfig();
@@ -120,19 +120,19 @@ public class JITCompiler implements JITCompilerMBean {
     public long getAbandonCount() {
         return counts.abandonCount.get();
     }
-    
+
     public long getCodeSize() {
         return counts.codeSize.get();
     }
-    
+
     public long getAverageCodeSize() {
         return counts.averageCodeSize.get();
     }
-    
+
     public long getAverageCompileTime() {
         return counts.averageCompileTime.get() / 1000;
     }
-    
+
     public long getLargestCodeSize() {
         return counts.largestCodeSize.get();
     }
@@ -243,7 +243,8 @@ public class JITCompiler implements JITCompilerMBean {
                 JVMVisitor visitor = new JVMVisitor();
                 JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, visitor);
 
-                generator.compile();
+                JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+                generator.compile(context);
 
                 // FIXME: reinstate active bytecode size check
                 // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
@@ -274,8 +275,8 @@ public class JITCompiler implements JITCompilerMBean {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "done jitting");
                 }
 
-                Map<Integer, MethodType> signatures = ((IRMethod)method.getIRScope()).getNativeSignatures();
-                String jittedName = ((IRMethod)method.getIRScope()).getJittedName();
+                Map<Integer, MethodType> signatures = context.getNativeSignatures();
+                String jittedName = context.getJittedName();
                 if (signatures.size() == 1) {
                     // only variable-arity
                     method.completeBuild(
@@ -324,17 +325,16 @@ public class JITCompiler implements JITCompilerMBean {
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA1");
             sha1.update(bytes);
-            byte[] digest = sha1.digest();
             StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < digest.length; i++) {
-                builder.append(Integer.toString( ( digest[i] & 0xff ) + 0x100, 16).substring( 1 ));
+            for (byte aByte : sha1.digest()) {
+                builder.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
             }
             return builder.toString().toUpperCase(Locale.ENGLISH);
         } catch (NoSuchAlgorithmException nsae) {
             throw new RuntimeException(nsae);
         }
     }
-    
+
     public static class JITClassGenerator {
         public JITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
@@ -345,7 +345,7 @@ public class JITCompiler implements JITCompilerMBean {
                 // Also, invokedynamic forces us to make jitted bytecode unique to each runtime, since the call sites cache
                 // at class level rather than at our runtime level. This makes it impossible to share jitted bytecode
                 // across runtimes.
-                
+
                 digestString = key + Math.abs(ruby.hashCode());
             } else {
                 digestString = key;
@@ -356,11 +356,11 @@ public class JITCompiler implements JITCompilerMBean {
             this.method = method;
             this.visitor = visitor;
         }
-        
+
         @SuppressWarnings("unchecked")
-        protected void compile() {
+        protected void compile(JVMVisitorMethodContext context) {
             if (bytecode != null) return;
-            
+
             // Time the compilation
             long start = System.nanoTime();
 
@@ -374,7 +374,7 @@ public class JITCompiler implements JITCompilerMBean {
 
             // This may not be ok since we'll end up running passes specific to JIT
             // CON FIXME: Really should clone scope before passes in any case
-            bytecode = visitor.compileToBytecode(method.getIRScope());
+            bytecode = visitor.compileToBytecode(method.getIRScope(), context);
 
             compileTime = System.nanoTime() - start;
         }
@@ -392,10 +392,11 @@ public class JITCompiler implements JITCompilerMBean {
             }
         }
 
+        // FIXME: Does anything call this?  If so we should document it.
         public void generate() {
-            compile();
+            compile(new JVMVisitorMethodContext());
         }
-        
+
         public byte[] bytecode() {
             return bytecode;
         }
@@ -429,15 +430,15 @@ public class JITCompiler implements JITCompilerMBean {
         name = isBlock ? "" : "." + name;
 
         StringBuilder builder = new StringBuilder(message + ":" + className + name + " at " + file + ":" + line);
-        
+
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (int i = 0; i < reason.length; i++) {
-                builder.append(reason[i]);
+            for (String aReason : reason) {
+                builder.append(aReason);
             }
             builder.append('"');
         }
-        
+
         LOG.info(builder.toString());
     }
 }

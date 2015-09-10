@@ -15,12 +15,13 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Truffle::Interop")
 public abstract class TruffleInteropNodes {
@@ -165,21 +166,21 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier);
         }
 
         @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier) {
+        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier) {
             return node.executeForeign(frame, receiver, slowPathToString(identifier));
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyBasicObject identifier) {
+        private static String slowPathToString(DynamicObject identifier) {
             assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
@@ -209,21 +210,21 @@ public abstract class TruffleInteropNodes {
         @CompilationFinal private String identifier;
 
         @Specialization(guards = "isRubySymbol(identifier)")
-        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier,  Object value) {
+        public Object executeForeignSymbol(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier,  Object value) {
             if (this.identifier == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                this.identifier = SymbolNodes.getString(identifier).intern();
+                this.identifier = Layouts.SYMBOL.getString(identifier).intern();
             }
             return node.executeForeign(frame, receiver, this.identifier, value);
         }
 
         @Specialization(guards = "isRubyString(identifier)")
-        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, RubyBasicObject identifier, Object value) {
+        public Object executeForeignString(VirtualFrame frame, TruffleObject receiver, DynamicObject identifier, Object value) {
             return node.executeForeign(frame, receiver, slowPathToString(identifier), value);
         }
 
         @TruffleBoundary
-        private static String slowPathToString(RubyBasicObject identifier) {
+        private static String slowPathToString(DynamicObject identifier) {
             assert RubyGuards.isRubyString(identifier);
             return identifier.toString();
         }
@@ -246,8 +247,8 @@ public abstract class TruffleInteropNodes {
         }
 
     }
-    // TODO: remove maxArgs - hits an assertion if maxArgs is removed - trying argumentsAsArray = true (CS)
-    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, argumentsAsArray = true)
+
+    @CoreMethod(names = "execute", isModuleFunction = true, needsSelf = false, required = 1, rest = true)
     public abstract static class ExecuteNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ForeignObjectAccessNode node;

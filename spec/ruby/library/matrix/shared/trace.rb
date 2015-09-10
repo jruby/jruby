@@ -1,6 +1,6 @@
 require 'matrix'
 
-describe :trace, :shared => true do
+describe :trace, shared: true do
   it "returns the sum of diagonal elements in a square Matrix" do
     Matrix[[7,6], [3,9]].trace.should == 16
   end

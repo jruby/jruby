@@ -67,7 +67,7 @@ describe "Array#-" do
 
   it "removes an identical item even when its #eql? isn't reflexive" do
     x = mock('x')
-    x.should_receive(:hash).any_number_of_times.and_return(42)
+    x.should_receive(:hash).at_least(1).and_return(42)
     x.stub!(:eql?).and_return(false) # Stubbed for clarity and latitude in implementation; not actually sent by MRI.
 
     ([x] - [x]).should == []

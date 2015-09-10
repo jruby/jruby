@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ProcNodes;
+import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -26,24 +27,23 @@ import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
  */
 public class BlockDefinitionNode extends RubyNode {
 
+    private final Type type;
     private final SharedMethodInfo sharedMethodInfo;
 
-    // TODO(CS, 10-Jan-15) having three call targets isn't ideal, but they all have different semantics, and we don't
+    // TODO(CS, 10-Jan-15) having two call targets isn't ideal, but they all have different semantics, and we don't
     // want to move logic into the call site
 
-    private final CallTarget callTargetForBlocks;
     private final CallTarget callTargetForProcs;
     private final CallTarget callTargetForLambdas;
 
     private final BreakID breakID;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, SharedMethodInfo sharedMethodInfo,
-                               CallTarget callTargetForBlocks,
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, Type type, SharedMethodInfo sharedMethodInfo,
                                CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID) {
         super(context, sourceSection);
+        this.type = type;
         this.sharedMethodInfo = sharedMethodInfo;
 
-        this.callTargetForBlocks = callTargetForBlocks;
         this.callTargetForProcs = callTargetForProcs;
         this.callTargetForLambdas = callTargetForLambdas;
         this.breakID = breakID;
@@ -55,9 +55,8 @@ public class BlockDefinitionNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcClass(), ProcNodes.Type.PROC, sharedMethodInfo,
-                callTargetForBlocks, callTargetForProcs, callTargetForLambdas,
-                frame.materialize(),
+        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), type, sharedMethodInfo,
+                callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame.getArguments()),
                 RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));

@@ -1,4 +1,4 @@
-describe :net_httpheader_each_name, :shared => true do
+describe :net_httpheader_each_name, shared: true do
   before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
     @headers["My-Header"] = "test"

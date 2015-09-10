@@ -4,7 +4,6 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Signature;
 
 /**

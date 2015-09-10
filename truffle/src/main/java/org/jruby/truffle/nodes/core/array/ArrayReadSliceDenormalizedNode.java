@@ -14,10 +14,12 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
@@ -32,16 +34,16 @@ public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract Object executeReadSlice(VirtualFrame frame, RubyBasicObject array, int index, int length);
+    public abstract Object executeReadSlice(VirtualFrame frame, DynamicObject array, int index, int length);
 
     @Specialization(guards = "isRubyArray(array)")
-    public Object read(VirtualFrame frame, RubyBasicObject array, int index, int length) {
+    public Object read(VirtualFrame frame, DynamicObject array, int index, int length) {
         if (readNode == null) {
             CompilerDirectives.transferToInterpreter();
             readNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
         }
 
-        final int normalizedIndex = ArrayNodes.normalizeIndex(array, index);
+        final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
 
         return readNode.executeReadSlice(frame, array, normalizedIndex, length);
     }

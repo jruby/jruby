@@ -37,13 +37,15 @@
  */
 package org.jruby.truffle.runtime.rubinius;
 
+import com.oracle.truffle.api.object.DynamicObject;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.FileStat;
-import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.core.StringNodes;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -154,18 +156,18 @@ public abstract class DefaultRubiniusConfiguration {
         configuration.config("rbx.platform.io.SEEK_CUR", 1);
         configuration.config("rbx.platform.io.SEEK_END", 2);
 
-        configuration.config("rbx.platform.socket.AI_PASSIVE", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
-        configuration.config("rbx.platform.socket.AF_UNSPEC", StringNodes.createString(context.getCoreLibrary().getStringClass(), "0"));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
-        configuration.config("rbx.platform.socket.SOCK_STREAM", StringNodes.createString(context.getCoreLibrary().getStringClass(), "1"));
+        configuration.config("rbx.platform.socket.AI_PASSIVE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.AF_UNSPEC", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
+        configuration.config("rbx.platform.socket.SOCK_STREAM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("1", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null));
     }
 
-    protected static RubyBasicObject newBignum(RubyContext context, String value) {
-        return BignumNodes.createRubyBignum(context.getCoreLibrary().getBignumClass(), new BigInteger(value));
+    protected static DynamicObject newBignum(RubyContext context, String value) {
+        return Layouts.BIGNUM.createBignum(context.getCoreLibrary().getBignumFactory(), new BigInteger(value));
     }
 
-    protected static RubyBasicObject string(RubyContext context, String value) {
-        return StringNodes.createString(context.getCoreLibrary().getStringClass(), value);
+    protected static DynamicObject string(RubyContext context, String value) {
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist(value, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
 }

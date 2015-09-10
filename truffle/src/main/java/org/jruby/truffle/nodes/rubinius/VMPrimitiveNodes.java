@@ -41,31 +41,35 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.StringSupport;
 import org.jruby.util.io.PosixShim;
-import sun.misc.Signal;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -86,7 +90,7 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldDispatchHeadNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child private WriteInstanceVariableNode clearExceptionVariableNode;
+        @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -102,7 +106,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyProc(block)")
-        public Object doCatch(VirtualFrame frame, Object tag, RubyBasicObject block) {
+        public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             try {
@@ -111,18 +115,8 @@ public abstract class VMPrimitiveNodes {
                 if (areSame(frame, e.getTag(), tag)) {
                     if (clearExceptionVariableNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        RubyContext context = getContext();
-                        SourceSection sourceSection = getSourceSection();
-                        clearExceptionVariableNode = insert(
-                                new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
-                                        new LiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
-                                        new DefinedWrapperNode(context, sourceSection,
-                                                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                                                "nil"),
-                                        true)
-                        );
+                        clearExceptionVariableNode = insert(new ClearExceptionVariableNode(getContext(), getSourceSection()));
                     }
-
                     clearExceptionVariableNode.execute(frame);
                     return e.getValue();
                 } else {
@@ -140,15 +134,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGCStart() {
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-            try {
-                System.gc();
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
-
+        public DynamicObject vmGCStart() {
+            System.gc();
             return nil();
         }
 
@@ -162,8 +149,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject vmGetModuleName(RubyModule module) {
-            return createString(module.getName());
+        public DynamicObject vmGetModuleName(DynamicObject module) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -176,15 +163,15 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(username)")
-        public RubyBasicObject vmGetUserHome(RubyBasicObject username) {
+        public DynamicObject vmGetUserHome(DynamicObject username) {
             CompilerDirectives.transferToInterpreter();
             // TODO BJF 30-APR-2015 Review the more robust getHomeDirectoryPath implementation
-            final Passwd passwd = getContext().getPosix().getpwnam(username.toString());
+            final Passwd passwd = posix().getpwnam(username.toString());
             if (passwd == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return createString(passwd.getHome());
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -200,7 +187,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
+        public DynamicObject vmObjectClass(VirtualFrame frame, Object object) {
             return classNode.executeGetClass(frame, object);
         }
 
@@ -233,8 +220,8 @@ public abstract class VMPrimitiveNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
-        @Specialization
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyModule rubyClass) {
+        @Specialization(guards = "isRubyModule(rubyClass)")
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, DynamicObject rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
         }
 
@@ -280,8 +267,8 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject vmRaiseException(RubyException exception) {
+        @Specialization(guards = "isRubyException(exception)")
+        public DynamicObject vmRaiseException(DynamicObject exception) {
             throw new RaiseException(exception);
         }
     }
@@ -309,7 +296,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton((DynamicObject) object);
         }
 
     }
@@ -349,8 +336,9 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public RubyBasicObject times() {
+        public DynamicObject times() {
             // Copied from org/jruby/RubyProcess.java - see copyright and license information there
 
             Times tms = posix().times();
@@ -382,19 +370,18 @@ public abstract class VMPrimitiveNodes {
             final double tutime = 0;
             final double tstime = 0;
 
-            return createArray(new double[]{
-                    utime,
-                    stime,
-                    cutime,
-                    cstime,
-                    tutime,
-                    tstime
-            }, 6);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new double[]{
+                        utime,
+                        stime,
+                        cutime,
+                        cstime,
+                        tutime,
+                        tstime
+                }, 6);
         }
 
     }
 
-    @SuppressWarnings("restriction")
     @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
     public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -403,29 +390,26 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isRubyString(action)"})
-        public boolean watchSignal(RubyBasicObject signalName, RubyBasicObject action) {
+        public boolean watchSignal(DynamicObject signalName, DynamicObject action) {
             if (!action.toString().equals("DEFAULT")) {
                 throw new UnsupportedOperationException();
             }
 
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchDefaultForSignal(signal);
             return true;
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isNil(nil)"})
-        public boolean watchSignal(RubyBasicObject signalName, Object nil) {
+        public boolean watchSignal(DynamicObject signalName, Object nil) {
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
             return true;
         }
 
         @Specialization(guards = {"isRubyString(signalName)", "isRubyProc(proc)"})
-        public boolean watchSignalProc(RubyBasicObject signalName, RubyBasicObject proc) {
+        public boolean watchSignalProc(DynamicObject signalName, DynamicObject proc) {
             Signal signal = new Signal(signalName.toString());
-
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
             return true;
         }
@@ -441,7 +425,7 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(key)")
-        public Object get(RubyBasicObject key) {
+        public Object get(DynamicObject key) {
             final Object value = getContext().getRubiniusConfiguration().get(key.toString());
 
             if (value == null) {
@@ -462,25 +446,25 @@ public abstract class VMPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(section)")
-        public RubyBasicObject getSection(RubyBasicObject section) {
-            final List<RubyBasicObject> sectionKeyValues = new ArrayList<>();
+        public DynamicObject getSection(DynamicObject section) {
+            final List<DynamicObject> sectionKeyValues = new ArrayList<>();
 
             for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
                 Object value = getContext().getRubiniusConfiguration().get(key);
                 final String stringValue;
                 if (RubyGuards.isRubyBignum(value)) {
-                    stringValue = BignumNodes.getBigIntegerValue((RubyBasicObject) value).toString();
+                    stringValue = Layouts.BIGNUM.getValue((DynamicObject) value).toString();
                 } else {
                     // This toString() is fine as we only have boolean, int, long and RubyString in config.
                     stringValue = value.toString();
                 }
 
-                sectionKeyValues.add(ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        createString(key),
-                        createString(stringValue)));
+                Object[] objects = new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(key, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(stringValue, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null)};
+                sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());
+            Object[] objects = sectionKeyValues.toArray();
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -508,7 +492,7 @@ public abstract class VMPrimitiveNodes {
             final int finalOptions = options;
 
             // retry:
-            pid = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            pid = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return posix().waitpid(input_pid, statusReference, finalOptions);
@@ -549,7 +533,8 @@ public abstract class VMPrimitiveNodes {
                 stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(), output, termsig, stopsig, pid);
+            Object[] objects = new Object[]{output, termsig, stopsig, pid};
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
 
     }
@@ -561,11 +546,10 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
-        public RubyBasicObject setClass(RubyBasicObject object, RubyClass newClass) {
-            // TODO CS 17-Apr-15 - what about the @CompilationFinals on the class in RubyBasicObject?
-            CompilerDirectives.bailout("We're not sure how vm_set_class (Rubinius::Unsafe.set_class) will interact with compilation");
-            object.unsafeChangeLogicalClass(newClass);
+        @Specialization(guards = "isRubyClass(newClass)")
+        public DynamicObject setClass(DynamicObject object, DynamicObject newClass) {
+            Layouts.BASIC_OBJECT.setLogicalClass(object, newClass);
+            Layouts.BASIC_OBJECT.setMetaClass(object, newClass);
             return object;
         }
 

@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
-public class BuildDynRegExpInstr extends ResultBaseInstr {
+public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
     final private RegexpOptions options;
 
     // Cached regexp
@@ -35,7 +35,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     public Operand[] getPieces() {
-       return operands;
+       return getOperands();
     }
 
     public RegexpOptions getOptions() {
@@ -57,6 +57,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        Operand[] operands = getOperands();
         int length = operands.length;
         RubyString[] strings = new RubyString[length];
         for (int i = 0; i < length; i++) {

@@ -17,14 +17,13 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.CoreLibrary;
 
 /**
  * Translates module and class nodes.
@@ -45,18 +44,11 @@ class ModuleTranslator extends BodyTranslator {
     public MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            body = new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil");
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         if (environment.getFlipFlopStates().size() > 0) {
@@ -91,11 +83,11 @@ class ModuleTranslator extends BodyTranslator {
         String methodName = node.getName();
         boolean rubiniusMethodRename = false;
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/array.rb")) {
             rubiniusMethodRename = methodName.equals("zip");
-        } else if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/float.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/float.rb")) {
             rubiniusMethodRename = methodName.equals("round");
-        } else if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
             rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
         }
 

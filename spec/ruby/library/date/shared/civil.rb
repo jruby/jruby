@@ -1,4 +1,4 @@
-describe :date_civil, :shared => true do
+describe :date_civil, shared: true do
   it "creates a Date for -4712 by default" do
     # the #chomp calls are necessary because of RSpec
     d = Date.send(@method)

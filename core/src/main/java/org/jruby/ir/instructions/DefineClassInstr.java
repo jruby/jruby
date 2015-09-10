@@ -15,11 +15,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr {
+public class DefineClassInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
     private final IRClassBody newIRClassBody;
 
     public DefineClassInstr(Variable result, IRClassBody newIRClassBody, Operand container, Operand superClass) {
-        super(Operation.DEF_CLASS, result, new Operand[] { container, superClass == null ? UndefinedValue.UNDEFINED : superClass });
+        super(Operation.DEF_CLASS, result, container, superClass == null ? UndefinedValue.UNDEFINED : superClass);
 
         assert result != null: "DefineClassInstr result is null";
 
@@ -31,11 +31,11 @@ public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     public Operand getContainer() {
-        return operands[0];
+        return getOperand1();
     }
 
     public Operand getSuperClass() {
-        return operands[1];
+        return getOperand2();
     }
 
     @Override

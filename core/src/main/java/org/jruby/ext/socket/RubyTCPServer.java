@@ -101,6 +101,8 @@ public class RubyTCPServer extends RubyTCPSocket {
             InetAddress addr = InetAddress.getByName(host);
 
             ServerSocketChannel ssc = ServerSocketChannel.open();
+            ssc.socket().setReuseAddress(true);
+
             InetSocketAddress socket_address = new InetSocketAddress(addr, port);
 
             ssc.socket().bind(socket_address);
@@ -123,7 +125,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+            throw runtime.newIOErrorFromException(e);
 
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
@@ -167,7 +169,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             }
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(runtime, "problem when accepting");
+            throw runtime.newIOErrorFromException(e);
         }
     }
 
@@ -199,7 +201,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 }
 
             } catch(IOException e) {
-                throw SocketUtils.sockerr(context.runtime, "problem when accepting");
+                throw runtime.newIOErrorFromException(e);
 
             } finally {
                 try {

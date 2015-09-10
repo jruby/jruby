@@ -1,34 +1,41 @@
 package org.jruby.runtime.backtrace;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.runtime.InterpretedIRBlockBody;
 
 public enum FrameType {
     METHOD, BLOCK, EVAL, CLASS, MODULE, METACLASS, ROOT;
-    public static final Set<String> INTERPRETED_CLASSES = new HashSet<String>();
-    public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>();
+
+    private static final Set<String> INTERPRETED_CLASSES = new HashSet<String>(4, 1);
 
     static {
         INTERPRETED_CLASSES.add(Interpreter.class.getName());
         INTERPRETED_CLASSES.add(MixedModeIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRBodyMethod.class.getName());
-
-        INTERPRETED_FRAMES.put("INTERPRET_METHOD", FrameType.METHOD);
-        INTERPRETED_FRAMES.put("INTERPRET_EVAL", FrameType.EVAL);
-        INTERPRETED_FRAMES.put("INTERPRET_CLASS", FrameType.CLASS);
-        INTERPRETED_FRAMES.put("INTERPRET_MODULE", FrameType.MODULE);
-        INTERPRETED_FRAMES.put("INTERPRET_METACLASS", FrameType.METACLASS);
-        INTERPRETED_FRAMES.put("INTERPRET_BLOCK", FrameType.BLOCK);
-        INTERPRETED_FRAMES.put("INTERPRET_ROOT", FrameType.ROOT);
     }
+
+    public static boolean isInterpreterFrame(final String className, final String methodName) {
+        if ( ! INTERPRETED_CLASSES.contains(className) ) return false;
+        return getInterpreterFrame(methodName) != null;
+    }
+
+    public static FrameType getInterpreterFrame(final String methodName) {
+        switch ( methodName ) {
+            case "INTERPRET_METHOD" : return FrameType.METHOD;
+            case "INTERPRET_EVAL" : return FrameType.EVAL;
+            case "INTERPRET_CLASS" : return FrameType.CLASS;
+            case "INTERPRET_MODULE" : return FrameType.MODULE;
+            case "INTERPRET_METACLASS" : return FrameType.METACLASS;
+            case "INTERPRET_BLOCK" : return FrameType.BLOCK;
+            case "INTERPRET_ROOT" : return FrameType.ROOT;
+        }
+        return null;
+    }
+
 }

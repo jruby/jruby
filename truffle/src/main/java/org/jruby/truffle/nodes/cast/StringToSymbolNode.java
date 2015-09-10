@@ -11,10 +11,10 @@ package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Creates a symbol from a string.
@@ -27,7 +27,7 @@ public abstract class StringToSymbolNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public RubyBasicObject doString(RubyBasicObject string) {
+    public DynamicObject doString(DynamicObject string) {
         return getSymbol(string.toString());
     }
 

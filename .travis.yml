@@ -7,6 +7,8 @@ sudo: false
 #    - $HOME/.m2
 
 before_script:
+  - export MAVEN_SKIP_RC=true
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
@@ -77,7 +79,7 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: COMMAND=test/truffle/run.sh
-    - env: COMMAND=tool/truffle-findbugs.sh
+    - env: PHASE='-Ptruffle-mri-tests'
 
 
 branches:
@@ -98,6 +100,7 @@ notifications:
     on_failure: always
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+    skip_join: true
 
   # update jruby-head installed on Travis CI
   webhooks:

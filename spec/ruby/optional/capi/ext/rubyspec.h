@@ -295,6 +295,7 @@
 #define HAVE_RB_HASH_FREEZE                1
 #define HAVE_RB_HASH_AREF                  1
 #define HAVE_RB_HASH_ASET                  1
+#define HAVE_RB_HASH_CLEAR                 1
 #define HAVE_RB_HASH_DELETE                1
 #define HAVE_RB_HASH_DELETE_IF             1
 #define HAVE_RB_HASH_FOREACH               1

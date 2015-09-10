@@ -2,24 +2,20 @@ gemfile
 
 packaging 'bundle'
 
-properties( 'tesla.dump.pom' => 'pom.xml',
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',
-            'jruby.version' => '@project.version@' )
+            # needed by felix-bundle-plugin
+            'polyglot.dump.pom' => 'pom.xml' )
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-jruby_plugin! :gem, :includeRubygemsInResources => true
+model.repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases', :id => 'rubygems-releases' )
 
-# ruby-maven will dump an equivalent pom.xml
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'jruby.home' => '../../../../../' )
-
-execute 'jrubydir', 'process-resources' do |ctx|
-  require 'jruby/commands'
-  JRuby::Commands.generate_dir_info( ctx.project.build.directory.to_pathname + '/rubygems' )
-end
+jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
 
 # add some ruby scripts to bundle
 resource :directory => 'src/main/ruby'
@@ -67,7 +63,7 @@ scope :test do
     jar 'org.apache.felix:org.apache.felix.framework:3.2.2'
   end
   profile :id => 'knoplerfish' do
-    repository( :id => :knoplerfish, 
+    repository( :id => :knoplerfish,
                 :url => 'http://www.knopflerfish.org/maven2' )
     jar 'org.knopflerfish:framework:5.1.6'
   end

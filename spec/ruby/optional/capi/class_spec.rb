@@ -5,7 +5,7 @@ load_extension("class")
 
 autoload :ClassUnderAutoload, "#{object_path}/class_under_autoload_spec"
 
-describe :rb_path_to_class, :shared => true do
+describe :rb_path_to_class, shared: true do
   it "returns a class or module from a scoped String" do
     @s.send(@method, "CApiClassSpecs::A::B").should equal(CApiClassSpecs::A::B)
   end
@@ -205,6 +205,33 @@ describe "C-API Class function" do
       CApiClassSpecs::Super.should_receive(:inherited)
       cls = @s.rb_define_class_under(CApiClassSpecs,
                                      "ClassUnder4", CApiClassSpecs::Super)
+    end
+
+    it "raises a TypeError when given a non class object to superclass" do
+      lambda { @s.rb_define_class_under(CApiClassSpecs,
+                                        "ClassUnder5",
+                                        Module.new)
+      }.should raise_error(TypeError)
+    end
+
+    ruby_version_is "2.3" do
+      it "raises a TypeError when given a mismatched class to superclass" do
+        CApiClassSpecs::ClassUnder6 = Class.new(CApiClassSpecs::Super)
+        lambda { @s.rb_define_class_under(CApiClassSpecs,
+                                          "ClassUnder6",
+                                          Class.new)
+        }.should raise_error(TypeError)
+      end
+    end
+
+    ruby_version_is ""..."2.3" do
+      it "raises a NameError when given a mismatched class to superclass" do
+        CApiClassSpecs::ClassUnder6 = Class.new(CApiClassSpecs::Super)
+        lambda { @s.rb_define_class_under(CApiClassSpecs,
+                                          "ClassUnder6",
+                                          Class.new)
+        }.should raise_error(NameError)
+      end
     end
 
     it "defines a class for an existing Autoload" do

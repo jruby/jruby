@@ -1,4 +1,4 @@
-describe :argf_each_byte, :shared => true do
+describe :argf_each_byte, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"

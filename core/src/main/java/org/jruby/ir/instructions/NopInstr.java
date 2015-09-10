@@ -8,11 +8,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class NopInstr extends Instr implements FixedArityInstr {
+public class NopInstr extends NoOperandInstr implements FixedArityInstr {
     public static NopInstr NOP = new NopInstr();
 
     private NopInstr() {
-        super(Operation.NOP, EMPTY_OPERANDS);
+        super(Operation.NOP);
         this.markDead();
     }
 

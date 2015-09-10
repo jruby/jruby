@@ -18,7 +18,7 @@
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -53,7 +53,7 @@ public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
         runtime.setComparable(comparableModule);
-        
+
         comparableModule.defineAnnotatedMethods(RubyComparable.class);
 
         return comparableModule;
@@ -61,11 +61,11 @@ public class RubyComparable {
 
     /*  ================
      *  Utility Methods
-     *  ================ 
+     *  ================
      */
 
     /** rb_cmpint
-     * 
+     *
      */
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val.isNil()) cmperr(a, b);
@@ -85,7 +85,7 @@ public class RubyComparable {
         if (val instanceof RubyBignum) return ((RubyBignum) val).getValue().signum() == -1 ? -1 : 1;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
-        
+
         if (val.callMethod(context, ">", zero).isTrue()) return 1;
         if (val.callMethod(context, "<", zero).isTrue()) return -1;
 
@@ -93,7 +93,7 @@ public class RubyComparable {
     }
 
     /** rb_cmperr
-     * 
+     *
      */
     public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
         IRubyObject target;
@@ -125,11 +125,11 @@ public class RubyComparable {
 
     /*  ================
      *  Module Methods
-     *  ================ 
+     *  ================
      */
 
     /** cmp_equal (cmp_eq inlined here)
-     * 
+     *
      */
     public static IRubyObject op_equal(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return op_equal19(context, recv, other);
@@ -142,11 +142,10 @@ public class RubyComparable {
 
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
         final Ruby runtime = context.runtime;
-        
+
         if (recv == other) return runtime.getTrue();
 
-        IRubyObject savedError = runtime.getGlobalVariables().get("$!");
-
+        final IRubyObject $ex = context.getErrorInfo();
         try {
             IRubyObject result = runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
                 @Override
@@ -157,20 +156,18 @@ public class RubyComparable {
             }, recv);
 
             // This is only to prevent throwing exceptions by cmperr - it has poor performance
-            if (result.isNil()) {
-                return returnValueOnError;
-            }
+            if ( result.isNil() ) return returnValueOnError;
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
-        } catch (RaiseException e) {
+        }
+        catch (RaiseException e) {
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
                 cmpFailed(context);
                 // clear error info resulting from failure to compare (JRUBY-3292)
-                runtime.getGlobalVariables().set("$!", savedError);
+                context.setErrorInfo($ex); // restore previous $! error (if any)
                 return returnValueOnError;
-            } else {
-                throw e;
             }
+            throw e;
         }
     }
 
@@ -182,32 +179,32 @@ public class RubyComparable {
     }
 
     /** cmp_gt
-     * 
+     *
      */
-    // <=> may return nil in many circumstances, e.g. 3 <=> NaN        
+    // <=> may return nil in many circumstances, e.g. 3 <=> NaN
     @JRubyMethod(name = ">", required = 1)
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
-        
+
         if (result.isNil()) cmperr(recv, other);
 
         return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) > 0);
     }
 
     /** cmp_ge
-     * 
+     *
      */
     @JRubyMethod(name = ">=", required = 1)
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
-        
+
         if (result.isNil()) cmperr(recv, other);
 
         return RubyBoolean.newBoolean(context.runtime, cmpint(context, result, recv, other) >= 0);
     }
 
     /** cmp_lt
-     * 
+     *
      */
     @JRubyMethod(name = "<", required = 1)
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
@@ -219,7 +216,7 @@ public class RubyComparable {
     }
 
     /** cmp_le
-     * 
+     *
      */
     @JRubyMethod(name = "<=", required = 1)
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
@@ -231,7 +228,7 @@ public class RubyComparable {
     }
 
     /** cmp_between
-     * 
+     *
      */
     @JRubyMethod(name = "between?", required = 2)
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {

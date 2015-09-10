@@ -55,7 +55,7 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
      */
     public ProcMethod(RubyModule implementationClass, RubyProc proc, Visibility visibility) {
         // FIXME: set up a call configuration for this
-        super(implementationClass, visibility, null);
+        super(implementationClass, visibility);
         this.proc = proc;
     }
 

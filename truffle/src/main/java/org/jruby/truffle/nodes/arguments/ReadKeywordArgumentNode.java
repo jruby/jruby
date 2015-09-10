@@ -11,15 +11,15 @@ package org.jruby.truffle.nodes.arguments;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.hash.HashNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.hash.HashOperations;
 
 import java.util.Map;
 
@@ -56,7 +56,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
                 return kwarg;
             }
         } else {
-            final RubyBasicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+            final DynamicObject hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
             if (defaultProfile.profile(hash == null)) {
                 return defaultValue.execute(frame);
@@ -73,10 +73,10 @@ public class ReadKeywordArgumentNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private Object lookupKeywordInHash(RubyBasicObject hash) {
+    private Object lookupKeywordInHash(DynamicObject hash) {
         assert RubyGuards.isRubyHash(hash);
 
-        for (Map.Entry<Object, Object> keyValue : HashNodes.iterableKeyValues(hash)) {
+        for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(hash)) {
             if (keyValue.getKey().toString().equals(name)) {
                 return keyValue.getValue();
             }

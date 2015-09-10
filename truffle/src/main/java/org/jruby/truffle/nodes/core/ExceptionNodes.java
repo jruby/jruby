@@ -9,18 +9,60 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
+
+import java.util.EnumSet;
+import java.util.List;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
+
+    @TruffleBoundary
+    public static DynamicObject asRubyStringArray(DynamicObject exception) {
+        assert RubyGuards.isRubyException(exception);
+        assert Layouts.EXCEPTION.getBacktrace(exception) != null;
+
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext();
+
+        final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
+                .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
+
+        final Object[] array = new Object[lines.size()];
+
+        for (int n = 0;n < lines.size(); n++) {
+            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        }
+
+        return Layouts.ARRAY.createArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+    }
+
+    public static void setMessage(DynamicObject exception, Object message) {
+        Layouts.EXCEPTION.setMessage(exception, message);
+    }
+
+    public static DynamicObject createRubyException(DynamicObject rubyClass) {
+        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), null, null);
+    }
+
+    public static DynamicObject createRubyException(DynamicObject rubyClass, Object message, Backtrace backtrace) {
+        return Layouts.EXCEPTION.createException(Layouts.CLASS.getInstanceFactory(rubyClass), message, backtrace);
+    }
 
     @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
@@ -30,14 +72,14 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject initialize(RubyException exception, NotProvided message) {
-            exception.initialize(nil());
+        public DynamicObject initialize(DynamicObject exception, NotProvided message) {
+            setMessage(exception, nil());
             return exception;
         }
 
         @Specialization(guards = "wasProvided(message)")
-        public RubyBasicObject initialize(RubyException exception, Object message) {
-            exception.initialize(message);
+        public DynamicObject initialize(DynamicObject exception, Object message) {
+            setMessage(exception, message);
             return exception;
         }
 
@@ -50,15 +92,16 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = new ReadHeadObjectFieldNode("@custom_backtrace");
+            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(context, sourceSection, "@custom_backtrace", null, null);
         }
 
         @Specialization
-        public Object backtrace(RubyException exception) {
-            if (readCustomBacktrace.isSet(exception)) {
-                return readCustomBacktrace.execute(exception);
-            } else if (exception.getBacktrace() != null) {
-                return exception.asRubyStringArray();
+        public Object backtrace(DynamicObject exception) {
+            final Object customBacktrace = readCustomBacktrace.execute(exception);
+            if (customBacktrace != null) {
+                return customBacktrace;
+            } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
+                return asRubyStringArray(exception);
             } else {
                 return nil();
             }
@@ -75,14 +118,14 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyException exception, NotProvided offset) {
+        public DynamicObject captureBacktrace(DynamicObject exception, NotProvided offset) {
             return captureBacktrace(exception, 1);
         }
 
         @Specialization
-        public RubyBasicObject captureBacktrace(RubyException exception, int offset) {
+        public DynamicObject captureBacktrace(DynamicObject exception, int offset) {
             Backtrace backtrace = RubyCallStack.getBacktrace(this, offset);
-            exception.setBacktrace(backtrace);
+            Layouts.EXCEPTION.setBacktrace(exception, backtrace);
             return nil();
         }
 
@@ -96,10 +139,29 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public Object message(RubyException exception) {
-            return exception.getMessage();
+        public Object message(DynamicObject exception) {
+            final Object message = Layouts.EXCEPTION.getMessage(exception);
+            if (message == null) {
+                final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            } else {
+                return message;
+            }
         }
 
     }
 
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return createRubyException(rubyClass);
+        }
+
+    }
 }

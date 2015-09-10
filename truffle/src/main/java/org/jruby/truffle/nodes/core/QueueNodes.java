@@ -15,56 +15,38 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.object.BasicObjectType;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-import java.util.EnumSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 @CoreClass(name = "Queue")
 public abstract class QueueNodes {
 
-    private static class QueueType extends BasicObjectType {
-    }
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-    public static final QueueType QUEUE_TYPE = new QueueType();
-
-    private static final HiddenKey QUEUE_IDENTIFIER = new HiddenKey("queue");
-    private static final Property QUEUE_PROPERTY;
-    private static final DynamicObjectFactory QUEUE_FACTORY;
-
-    static {
-        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-        QUEUE_PROPERTY = Property.create(QUEUE_IDENTIFIER, allocator.locationForType(LinkedBlockingQueue.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        Shape shape = RubyBasicObject.LAYOUT.createShape(QUEUE_TYPE).addProperty(QUEUE_PROPERTY);
-        QUEUE_FACTORY = shape.createFactory();
-    }
-
-    public static class QueueAllocator implements Allocator {
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, QUEUE_FACTORY.newInstance(new LinkedBlockingQueue<Object>()));
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
-    }
 
-    @SuppressWarnings("unchecked")
-    private static BlockingQueue<Object> getQueue(RubyBasicObject queue) {
-        assert queue.getDynamicObject().getShape().hasProperty(QUEUE_IDENTIFIER);
-        return (BlockingQueue<Object>) QUEUE_PROPERTY.get(queue.getDynamicObject(), true);
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return Layouts.QUEUE.createQueue(Layouts.CLASS.getInstanceFactory(rubyClass), new LinkedBlockingQueue());
+        }
+
     }
 
     @CoreMethod(names = { "push", "<<", "enq" }, required = 1)
@@ -74,18 +56,12 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public RubyBasicObject push(RubyBasicObject self, final Object value) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public DynamicObject push(DynamicObject self, final Object value) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
-                    queue.put(value);
-                    return SUCCESS;
-                }
-            });
-
+            queue.add(value);
             return self;
         }
 
@@ -107,11 +83,12 @@ public abstract class QueueNodes {
             return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, nonBlocking);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "!nonBlocking")
-        public Object popBlocking(RubyBasicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public Object popBlocking(DynamicObject self, boolean nonBlocking) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
-            return getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Object>() {
+            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
                 @Override
                 public Object block() throws InterruptedException {
                     return queue.take();
@@ -119,9 +96,10 @@ public abstract class QueueNodes {
             });
         }
 
+        @TruffleBoundary
         @Specialization(guards = "nonBlocking")
-        public Object popNonBlock(RubyBasicObject self, boolean nonBlocking) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public Object popNonBlock(DynamicObject self, boolean nonBlocking) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final Object value = queue.poll();
             if (value == null) {
@@ -134,6 +112,57 @@ public abstract class QueueNodes {
 
     }
 
+    @RubiniusOnly
+    @CoreMethod(names = "receive_timeout", required = 1, visibility = Visibility.PRIVATE)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "queue"),
+            @NodeChild(type = RubyNode.class, value = "duration")
+    })
+    public abstract static class ReceiveTimeoutNode extends CoreMethodNode {
+
+        public ReceiveTimeoutNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object receiveTimeout(DynamicObject self, int duration) {
+            return receiveTimeout(self, (double) duration);
+        }
+
+        @Specialization
+        public Object receiveTimeout(DynamicObject self, double duration) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
+
+            final long durationInMillis = (long) (duration * 1000.0);
+            final long start = System.currentTimeMillis();
+
+            return getContext().getThreadManager().runUntilResult(this, new BlockingAction<Object>() {
+                @Override
+                public Object block() throws InterruptedException {
+                    long now = System.currentTimeMillis();
+                    long waited = now - start;
+                    if (waited >= durationInMillis) {
+                        // Try again to make sure we at least tried once
+                        final Object result = queue.poll();
+                        if (result == null) {
+                            return false;
+                        } else {
+                            return result;
+                        }
+                    }
+
+                    final Object result = queue.poll(durationInMillis, TimeUnit.MILLISECONDS);
+                    if (result == null) {
+                        return false;
+                    } else {
+                        return result;
+                    }
+                }
+            });
+        }
+
+    }
+
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodArrayArgumentsNode {
 
@@ -141,9 +170,10 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public boolean empty(RubyBasicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public boolean empty(DynamicObject self) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             return queue.isEmpty();
         }
 
@@ -156,9 +186,10 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public int size(RubyBasicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public int size(DynamicObject self) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             return queue.size();
         }
 
@@ -171,9 +202,10 @@ public abstract class QueueNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public RubyBasicObject clear(RubyBasicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public DynamicObject clear(DynamicObject self) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
             queue.clear();
             return self;
         }
@@ -189,7 +221,7 @@ public abstract class QueueNodes {
 
         @Specialization
         @TruffleBoundary
-        public Object marshal_dump(RubyBasicObject self) {
+        public Object marshal_dump(DynamicObject self) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDump(self, this));
         }
 
@@ -207,14 +239,14 @@ public abstract class QueueNodes {
 
         @SuppressWarnings("restriction")
         @Specialization
-        public int num_waiting(RubyBasicObject self) {
-            final BlockingQueue<Object> queue = getQueue(self);
+        public int num_waiting(DynamicObject self) {
+            final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;
             final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
             final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
 
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();

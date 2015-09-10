@@ -32,8 +32,13 @@ public class Bignum extends ImmutableLiteral {
     final public BigInteger value;
 
     public Bignum(BigInteger value) {
-        super(OperandType.BIGNUM);
+        super();
         this.value = value;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.BIGNUM;
     }
 
     @Override

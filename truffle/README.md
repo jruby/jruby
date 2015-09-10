@@ -42,10 +42,8 @@ You can then run JRuby with GraalVM
     JAVACMD=path/to/graal/java bin/jruby -X+T ...
 
 If you want to develop against the latest version of Graal, you should use the
-`truffle-head` branch of JRuby. Follow the
-[instructions](https://wiki.openjdk.java.net/display/Graal/Instructions) on the
-Graal wiki, then additionally execute `./mx.sh maven-install-truffle`, before
-you build JRuby.
+`truffle-head` branch of JRuby and you will need to
+[build Graal for yourself](https://wiki.openjdk.java.net/display/Graal/Instructions).
 
 ### What to expect
 
@@ -55,7 +53,7 @@ run they are unlikely to run fast yet due to requiring new functionality to be
 tuned. We are at least a year away from being able to run significant programs
 without needing new methods to be implemented.
 
-Windows support is more limited than Mac and Linux support.
+Windows is currently not supported.
 
 ### How we benchmark
 
@@ -97,7 +95,7 @@ http://lafo.ssw.uni-linz.ac.at/graalvm/jruby/doc/. `Truffle::Debug.break` will
 enter a shell and allow to introspect the program.
 
 If you don't want to modify the program to include a call to
-`Truffle::Debug.break` you can break the main thread externally. run with the
+`Truffle::Debug.break` you can break the main thread externally. Run with the
 instrumentation server enabled, `-Xtruffle.instrumentation_server_port=8080`.
 Then you can send a message to the runtime to break at the current location:
 

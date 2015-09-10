@@ -14,11 +14,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityInstr {
+public class SetCapturedVarInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final String varName;
 
     public SetCapturedVarInstr(Variable result, Operand match2Result, String varName) {
-        super(Operation.SET_CAPTURED_VAR, result, new Operand[] { match2Result });
+        super(Operation.SET_CAPTURED_VAR, result, match2Result);
 
         assert result != null: "SetCapturedVarInstr result is null";
 
@@ -26,7 +26,7 @@ public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityIn
     }
 
     public Operand getMatch2Result() {
-        return operands[0];
+        return getOperand1();
     }
 
     public String getVarName() {

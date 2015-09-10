@@ -1,4 +1,4 @@
-describe :strscan_pos, :shared => true do
+describe :strscan_pos, shared: true do
   before :each do
     @s = StringScanner.new("This is a test")
   end
@@ -24,7 +24,7 @@ describe :strscan_pos, :shared => true do
   end
 end
 
-describe :strscan_pos_set, :shared => true do
+describe :strscan_pos_set, shared: true do
   before :each do
     @s = StringScanner.new("This is a test")
   end

@@ -5,9 +5,9 @@ describe "A Fiber" do
     it "propagates that exception to any resuming thread" do
       f = Fiber.new { raise java.lang.Exception.new }
 
-      lambda do
+      expect do
         f.resume
-      end.should raise_error(java.lang.Exception)
+      end.to raise_error(java.lang.Exception)
     end
 
     it "shuts down its internal queue so no further resumes are possible" do
@@ -18,9 +18,9 @@ describe "A Fiber" do
       rescue java.lang.Exception
       end
 
-      lambda do
+      expect do
         f.resume
-      end.should raise_error(FiberError)
+      end.to raise_error(FiberError)
     end
   end
   
@@ -38,7 +38,7 @@ describe "A Fiber" do
       
       Thread.pass while t.status
       
-      t.status.should == false # dead
+      expect(t.status).to eq(false) # dead
     end
   end
 end if RUBY_VERSION >= "1.9"

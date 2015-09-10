@@ -13,14 +13,16 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
+/**
+ * Caches {@link ModuleOperations#canBindMethodTo} for a method.
+ */
 @NodeChildren({
         @NodeChild("method"),
         @NodeChild("module")
@@ -31,26 +33,30 @@ public abstract class CanBindMethodToModuleNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract boolean executeCanBindMethodToModule(VirtualFrame frame, InternalMethod method, RubyModule module);
+    public abstract boolean executeCanBindMethodToModule(InternalMethod method, DynamicObject module);
 
     @Specialization(
-            guards = { "method.getDeclaringModule() == declaringModule", "module == cachedModule" },
+            guards = { "isRubyModule(module)", "method.getDeclaringModule() == declaringModule", "module == cachedModule" },
             limit = "getCacheLimit()")
-    protected boolean canBindMethodToCached(VirtualFrame frame, InternalMethod method, RubyModule module,
-            @Cached("method.getDeclaringModule()") RubyModule declaringModule,
-            @Cached("module") RubyModule cachedModule,
+    protected boolean canBindMethodToCached(InternalMethod method, DynamicObject module,
+            @Cached("method.getDeclaringModule()") DynamicObject declaringModule,
+            @Cached("module") DynamicObject cachedModule,
             @Cached("canBindMethodTo(declaringModule, cachedModule)") boolean canBindMethodTo) {
         return canBindMethodTo;
     }
 
-    @Specialization
-    protected boolean canBindMethodToUncached(VirtualFrame frame, InternalMethod method, RubyModule module) {
-        final RubyModule declaringModule = method.getDeclaringModule();
+    @Specialization(guards = "isRubyModule(module)")
+    protected boolean canBindMethodToUncached(InternalMethod method, DynamicObject module) {
+        final DynamicObject declaringModule = method.getDeclaringModule();
         return canBindMethodTo(declaringModule, module);
     }
 
-    protected boolean canBindMethodTo(RubyModule declaringModule, RubyModule module) {
+    protected boolean canBindMethodTo(DynamicObject declaringModule, DynamicObject module) {
         return ModuleOperations.canBindMethodTo(declaringModule, module);
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().BIND_CACHE;
     }
 
 }

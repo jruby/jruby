@@ -53,7 +53,7 @@ class TestLoad < Test::Unit::TestCase
   ensure
     $LOAD_PATH << '.'
   end
-  
+
   # GH-2972
   def test_require_relative_via_uri_classloader_protocol
     $CLASSPATH << './test/jruby'
@@ -109,6 +109,15 @@ class TestLoad < Test::Unit::TestCase
       java_import "test.HelloThere"
       HelloThere.new.message
     }
+  end
+
+  def test_require_nested_jar_defines_packages_for_classes_in_that_jar
+    assert_equal "test", run_in_sub_runtime(%{
+      require 'test/jruby/jar_with_nested_classes_jar'
+      require 'jar_with_classes'
+      java_import "test.HelloThere"
+      HelloThere.java_class.package.name
+    })
   end
 
   def call_extern_load_foo_bar(classpath = nil)

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -22,7 +23,6 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
@@ -35,7 +35,7 @@ public abstract class ToSNode extends RubyNode {
         callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }
 
-    protected RubyBasicObject kernelToS(VirtualFrame frame, Object object) {
+    protected DynamicObject kernelToS(VirtualFrame frame, Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {null}));
@@ -44,27 +44,27 @@ public abstract class ToSNode extends RubyNode {
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public RubyBasicObject toS(RubyBasicObject string) {
+    public DynamicObject toS(DynamicObject string) {
         return string;
     }
 
     @Specialization(guards = "!isRubyString(object)", rewriteOn = UnexpectedResultException.class)
-    public RubyBasicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
+    public DynamicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
         if (RubyGuards.isRubyString(value)) {
-            return (RubyBasicObject) value;
+            return (DynamicObject) value;
         }
 
         throw new UnexpectedResultException(value);
     }
 
     @Specialization(guards = "!isRubyString(object)")
-    public RubyBasicObject toSFallback(VirtualFrame frame, Object object) {
+    public DynamicObject toSFallback(VirtualFrame frame, Object object) {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
         if (RubyGuards.isRubyString(value)) {
-            return (RubyBasicObject) value;
+            return (DynamicObject) value;
         } else {
             return kernelToS(frame, object);
         }

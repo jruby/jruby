@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class CheckStdoutVariableTypeNode extends RubyNode {
 
@@ -32,7 +33,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
         final Object childValue = child.execute(frame);
 
         if (childValue == nil() || ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(childValue), "write") == null) {
-            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", getContext().getCoreLibrary().getLogicalClass(childValue).getName()), this));
+            throw new RaiseException(getContext().getCoreLibrary().typeError(String.format("$stdout must have write method, %s given", Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(childValue)).getName()), this));
         }
 
         return childValue;

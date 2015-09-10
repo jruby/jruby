@@ -22,7 +22,7 @@ describe "Hash#select" do
   end
 
   it "processes entries with the same order as reject" do
-    h = new_hash(:a => 9, :c => 4, :b => 5, :d => 2)
+    h = new_hash(a: 9, c: 4, b: 5, d: 2)
 
     select_pairs = []
     reject_pairs = []
@@ -51,7 +51,7 @@ describe "Hash#select!" do
   end
 
   it "is equivalent to keep_if if changes are made" do
-    h = new_hash(:a => 2)
+    h = new_hash(a: 2)
     h.select! { |k,v| v <= 1 }.should equal h
 
     h = new_hash(1 => 2, 3 => 4)
@@ -61,7 +61,7 @@ describe "Hash#select!" do
   end
 
   it "returns nil if no changes were made" do
-    new_hash(:a => 1).select! { |k,v| v <= 1 }.should == nil
+    new_hash(a: 1).select! { |k,v| v <= 1 }.should == nil
   end
 
   it "raises a RuntimeError if called on an empty frozen instance" do

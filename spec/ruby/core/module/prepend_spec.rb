@@ -8,6 +8,10 @@ describe "Module#prepend" do
     end
   end
 
+  it "does not affect the superclass" do
+    Class.new { prepend Module.new }.superclass.should == Object
+  end
+
   it "calls #prepend_features(self) in reversed order on each module" do
     ScratchPad.record []
 
@@ -135,7 +139,7 @@ describe "Module#prepend" do
     parent = Class.new { def chain; [:parent]; end }
     child = Class.new(parent) { def chain; super << :child; end }
     mod = Module.new { def chain; super << :mod; end }
-    parent.prepend mod
+    parent.send(:prepend, mod)
     parent.ancestors[0,2].should == [mod, parent]
     child.ancestors[0,3].should == [child, mod, parent]
 

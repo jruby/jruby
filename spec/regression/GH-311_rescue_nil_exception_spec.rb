@@ -9,10 +9,10 @@ describe 'nested rescue of java exception' do
       rescue javax.naming.NameNotFoundException
       end
     rescue Exception => ex
-      ex.should_not be_nil
-      ex.message.should == 'success'
+      expect(ex).to_not be_nil
+      expect(ex.message).to eq('success')
       caught = true
     end
-    caught.should be_true
+    expect(caught).to be true
   end
 end

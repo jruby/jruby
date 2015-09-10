@@ -1,4 +1,4 @@
-describe :date_valid_civil?, :shared => true do
+describe :date_valid_civil?, shared: true do
 
   # reference:
   # October 1582 (the Gregorian calendar, Civil Date)

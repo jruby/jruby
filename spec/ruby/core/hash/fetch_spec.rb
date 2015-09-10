@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#fetch" do
   it "returns the value for key" do
-    new_hash(:a => 1, :b => -1).fetch(:b).should == -1
+    new_hash(a: 1, b: -1).fetch(:b).should == -1
   end
 
   it "raises a KeyError if key is not found" do
@@ -15,7 +15,7 @@ describe "Hash#fetch" do
   it "returns default if key is not found when passed a default" do
     new_hash.fetch(:a, nil).should == nil
     new_hash.fetch(:a, 'not here!').should == "not here!"
-    new_hash(:a => nil).fetch(:a, 'not here!').should == nil
+    new_hash(a: nil).fetch(:a, 'not here!').should == nil
   end
 
   it "returns value of block if key is not found when passed a block" do

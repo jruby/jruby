@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
@@ -36,7 +37,7 @@ public class TranslatorEnvironment {
 
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
-    private final long returnID;
+    private final ReturnID returnID;
     private final boolean isBlock;
     private BreakID breakID;
 
@@ -55,7 +56,7 @@ public class TranslatorEnvironment {
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
-            long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
             SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock, BreakID breakID,
             FrameDescriptor frameDescriptor) {
         this.context = context;
@@ -72,7 +73,7 @@ public class TranslatorEnvironment {
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
-            long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
             SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock, BreakID breakID) {
         this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock, breakID,
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
@@ -188,7 +189,7 @@ public class TranslatorEnvironment {
         return name;
     }
 
-    public long getReturnID() {
+    public ReturnID getReturnID() {
         return returnID;
     }
 

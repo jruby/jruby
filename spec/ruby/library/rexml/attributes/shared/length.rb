@@ -1,7 +1,7 @@
 require File.expand_path('../../../../../spec_helper', __FILE__)
 require 'rexml/document'
 
-describe :rexml_attribute_length, :shared => true do
+describe :rexml_attribute_length, shared: true do
   it "returns the number of attributes" do
     e = REXML::Element.new("root")
     e.attributes.send(@method).should == 0

@@ -13,7 +13,12 @@ public class Self extends LocalVariable {
     private static final String NAME = "%self";
 
     private Self() {
-        super(OperandType.SELF, NAME, 0, 0);
+        super(NAME, 0, 0);
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.SELF;
     }
 
     public boolean isSelf() {

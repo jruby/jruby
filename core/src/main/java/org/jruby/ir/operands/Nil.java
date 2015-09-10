@@ -13,12 +13,12 @@ import org.jruby.runtime.ThreadContext;
  */
 public class Nil extends ImmutableLiteral {
     public Nil() {
-        super(OperandType.NIL);
+        super();
     }
 
-    // For UnexecutableNil
-    protected Nil(OperandType type) {
-        super(type);
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.LOCAL_VARIABLE;
     }
 
     @Override

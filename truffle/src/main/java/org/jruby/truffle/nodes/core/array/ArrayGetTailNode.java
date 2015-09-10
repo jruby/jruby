@@ -14,11 +14,12 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 @ImportStatic(ArrayGuards.class)
@@ -32,53 +33,53 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isNullArray(array)"})
-    public RubyBasicObject getTailNull(RubyBasicObject array) {
+    public DynamicObject getTailNull(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        return createEmptyArray();
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isIntArray(array)"})
-    public RubyBasicObject getTailIntegerFixnum(RubyBasicObject array) {
+    public DynamicObject getTailIntegerFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
-            return createEmptyArray();
+        if (index >= Layouts.ARRAY.getSize(array)) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
-            return createArray(ArrayUtils.extractRange((int[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((int[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isLongArray(array)"})
-    public RubyBasicObject getTailLongFixnum(RubyBasicObject array) {
+    public DynamicObject getTailLongFixnum(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
-            return createEmptyArray();
+        if (index >= Layouts.ARRAY.getSize(array)) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
-            return createArray(ArrayUtils.extractRange((long[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((long[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isDoubleArray(array)"})
-    public RubyBasicObject getTailFloat(RubyBasicObject array) {
+    public DynamicObject getTailFloat(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
-            return createEmptyArray();
+        if (index >= Layouts.ARRAY.getSize(array)) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
-            return createArray(ArrayUtils.extractRange((double[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((double[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 
     @Specialization(guards = {"isRubyArray(array)", "isObjectArray(array)"})
-    public RubyBasicObject getTailObject(RubyBasicObject array) {
+    public DynamicObject getTailObject(DynamicObject array) {
         CompilerDirectives.transferToInterpreter();
 
-        if (index >= ArrayNodes.getSize(array)) {
-            return createEmptyArray();
+        if (index >= Layouts.ARRAY.getSize(array)) {
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
         } else {
-            return createArray(ArrayUtils.extractRange((Object[]) ArrayNodes.getStore(array), index, ArrayNodes.getSize(array)), ArrayNodes.getSize(array) - index);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ArrayUtils.extractRange((Object[]) Layouts.ARRAY.getStore(array), index, Layouts.ARRAY.getSize(array)), Layouts.ARRAY.getSize(array) - index);
         }
     }
 

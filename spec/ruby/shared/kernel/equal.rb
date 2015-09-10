@@ -1,5 +1,5 @@
 # These examples hold for BasicObject#equal?, BasicObject#== and Kernel#eql?
-describe :object_equal, :shared => true do
+describe :object_equal, shared: true do
   it "returns true if other is identical to self" do
     obj = Object.new
     obj.__send__(@method, obj).should be_true

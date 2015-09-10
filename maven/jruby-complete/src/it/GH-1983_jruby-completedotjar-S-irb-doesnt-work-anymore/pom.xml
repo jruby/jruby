@@ -4,43 +4,46 @@
   <version>1</version>
   <modelVersion>4.0.0</modelVersion>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-complete</artifactId>
-      <version>@project.version@</version>
-      <type>jar</type>
-    </dependency>
-  </dependencies>
-
   <build>
-    <resources>
-      <resource>  
-	<directory>../../local-repo/org/jruby/jruby-complete/@project.version@</directory>
-        <includes>
-          <include>jruby-complete-*.jar</include>
-        </includes>
-        <targetPath>${project.basedir}</targetPath>
-      </resource>
-    </resources>
     <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy jruby-complete.jar</id>
+            <phase>process-resources</phase>
+            <goals><goal>copy</goal></goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-complete</artifactId>
+                  <version>${jruby.version}</version>
+                  <type>jar</type>
+                  <outputDirectory>${project.basedir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2</version>
-	<executions>
-	  <execution>
-	    <phase>package</phase>
-	    <goals><goal>exec</goal></goals>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>exec</goal></goals>
             <configuration>
               <executable>sh</executable>
-	      <arguments>
-		<argument>irb.sh</argument>
-		<argument>@project.version@</argument>
-	      </arguments>
-	    </configuration>
-	  </execution>
-	</executions>
+              <arguments>
+                <argument>irb.sh</argument>
+                <argument>${jruby.version}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

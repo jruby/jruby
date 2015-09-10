@@ -23,21 +23,21 @@ describe "A pipe from IO.pipe" do
   end
   
   it "can be closed when not being read from" do
-    lambda do
+    expect do
       @io_r.close
-    end.should_not raise_error
+    end.not_to raise_error
   end
 
   it "can be closed by a timeout thread when not being read from" do
-    lambda do
+    expect do
       Timeout::timeout(2){ @io_r.close }
-    end.should_not raise_error
+    end.not_to raise_error
   end
   
   it "can be closed by a timeout thread when being read from" do
     start_read()
-    lambda do
+    expect do
       Timeout::timeout(2){ @io_r.close }
-    end.should_not raise_error
+    end.not_to raise_error
   end
 end

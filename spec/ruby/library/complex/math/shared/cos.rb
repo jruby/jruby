@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_cos, :shared => true do
+describe :complex_math_cos, shared: true do
   it "returns the cosine of the argument expressed in radians" do
     @object.send(:cos, CMath::PI).should be_close(-1.0, TOLERANCE)
     @object.send(:cos, 0).should be_close(1.0, TOLERANCE)
@@ -15,7 +15,7 @@ describe :complex_math_cos, :shared => true do
   end
 end
 
-describe :complex_math_cos_bang, :shared => true do
+describe :complex_math_cos_bang, shared: true do
   it "returns the cosine of the argument expressed in radians" do
     @object.send(:cos!, CMath::PI).should be_close(-1.0, TOLERANCE)
     @object.send(:cos!, 0).should be_close(1.0, TOLERANCE)

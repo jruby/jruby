@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :stringio_each_char, :shared => true do
+describe :stringio_each_char, shared: true do
   before :each do
     old_kcode, $KCODE = "UTF-8", $KCODE
     @io = StringIO.new("xyz äöü")
@@ -26,7 +26,7 @@ describe :stringio_each_char, :shared => true do
   end
 end
 
-describe :stringio_each_char_not_readable, :shared => true do
+describe :stringio_each_char_not_readable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("xyz", "w")
     lambda { io.send(@method) { |b| b } }.should raise_error(IOError)

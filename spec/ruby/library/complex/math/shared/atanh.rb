@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_atanh_complex, :shared => true do
+describe :complex_math_atanh_complex, shared: true do
   it "returns the inverse hyperbolic tangent as a Complex number for arguments greater than 1.0" do
     value = Complex(18.36840028483855, 1.5707963267948966)
     @object.send(@method, 1.0 + Float::EPSILON).should be_close(value, TOLERANCE)
@@ -23,7 +23,7 @@ describe :complex_math_atanh_complex, :shared => true do
   end
 end
 
-describe :complex_math_atanh_no_complex, :shared => true do
+describe :complex_math_atanh_no_complex, shared: true do
   it "raises a TypeError when passed a Complex number" do
     lambda { @object.send(:atanh!, Complex(4, 5)) }.should raise_error(TypeError)
   end

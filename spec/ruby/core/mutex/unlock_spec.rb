@@ -16,6 +16,7 @@ describe "Mutex#unlock" do
     end
 
     # avoid race on mutex.lock
+    Thread.pass until mutex.locked?
     Thread.pass while th.status and th.status != "sleep"
 
     lambda { mutex.unlock }.should raise_error(ThreadError)

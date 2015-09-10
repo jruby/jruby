@@ -7,7 +7,7 @@ describe "CApiNumericSpecs" do
     @s = CApiNumericSpecs.new
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     describe "rb_num2int" do
       it "raises a TypeError if passed nil" do
         lambda { @s.rb_num2int(nil) }.should raise_error(TypeError)
@@ -45,7 +45,7 @@ describe "CApiNumericSpecs" do
     end
   end
 
-  platform_is :wordsize => 64 do
+  platform_is wordsize: 64 do
     describe "rb_num2uint" do
       it "raises a TypeError if passed nil" do
         lambda { @s.rb_num2uint(nil) }.should raise_error(TypeError)
@@ -110,7 +110,7 @@ describe "CApiNumericSpecs" do
       @s.rb_num2long(5).should == 5
     end
 
-    platform_is :wordsize => 32 do
+    platform_is wordsize: 32 do
       it "converts -1 to an signed number" do
         @s.rb_num2long(-1).should == -1
       end
@@ -124,7 +124,7 @@ describe "CApiNumericSpecs" do
       end
     end
 
-    platform_is :wordsize => 64 do
+    platform_is wordsize: 64 do
       it "converts -1 to an signed number" do
         @s.rb_num2long(-1).should == -1
       end
@@ -164,7 +164,7 @@ describe "CApiNumericSpecs" do
       @s.rb_int2num(5).should == 5
     end
 
-    platform_is_not :wordsize => 32 do
+    platform_is_not wordsize: 32 do
       # INT2NUM used to use `long` prior to MRI 1.9. With 1.9 it has been changed
       # to use `int` instead.
       it "converts 0xFFFFFFFF to -1" do
@@ -190,7 +190,7 @@ describe "CApiNumericSpecs" do
       @s.rb_num2ulong(5).should == 5
     end
 
-    platform_is :wordsize => 32 do
+    platform_is wordsize: 32 do
       it "converts -1 to an unsigned number" do
         @s.rb_num2ulong(-1).should == 4294967295
       end
@@ -204,7 +204,7 @@ describe "CApiNumericSpecs" do
       end
     end
 
-    platform_is :wordsize => 64 do
+    platform_is wordsize: 64 do
       it "converts -1 to an unsigned number" do
         @s.rb_num2ulong(-1).should == 18446744073709551615
       end

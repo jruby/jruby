@@ -34,8 +34,8 @@ describe "Truffle::Runtime.java_class_of" do
     Truffle::Runtime.java_class_of(3.14).should == 'Double'
   end
 
-  it "returns 'RubyString' for a String" do
-    Truffle::Runtime.java_class_of('test').should == 'RubyString'
+  it "returns 'DynamicObject*' for a String" do
+    Truffle::Runtime.java_class_of('test').start_with?('DynamicObject').should be_true
   end
 
 end

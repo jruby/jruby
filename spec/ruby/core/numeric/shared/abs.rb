@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :numeric_abs, :shared => true do
+describe :numeric_abs, shared: true do
   before :each do
     @obj = NumericSpecs::Subclass.new
   end

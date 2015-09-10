@@ -1,6 +1,6 @@
 require File.expand_path('../enumeratorized', __FILE__)
 
-describe :enumerable_enumeratorized_with_unknown_size, :shared => true do
+describe :enumerable_enumeratorized_with_unknown_size, shared: true do
   describe "Enumerable with size" do
     before :all do
       @object = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4)
@@ -16,7 +16,7 @@ describe :enumerable_enumeratorized_with_unknown_size, :shared => true do
   end
 end
 
-describe :enumerable_enumeratorized_with_origin_size, :shared => true do
+describe :enumerable_enumeratorized_with_origin_size, shared: true do
   describe "Enumerable with size" do
     before :all do
       @object = EnumerableSpecs::NumerousWithSize.new(1, 2, 3, 4)

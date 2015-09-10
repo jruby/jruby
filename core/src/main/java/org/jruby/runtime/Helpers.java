@@ -19,7 +19,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -28,7 +27,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -154,7 +152,7 @@ public class Helpers {
         }
     }
 
-    // TODO: Only used by interface implementation; eliminate it
+    @Deprecated // no longer used - only been used by interface implementation
     public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
         ThreadContext context = receiver.getRuntime().getCurrentContext();
 
@@ -445,6 +443,11 @@ public class Helpers {
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return self.getMetaClass().finvokeChecked(context, self, name);
+    }
+
+    // MRI: rb_check_funcall
+    public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
+        return self.getMetaClass().finvokeChecked(context, self, name, args);
     }
 
     /**
@@ -1391,42 +1394,12 @@ public class Helpers {
         return hash;
     }
 
-    public static IRubyObject undefMethod(ThreadContext context, Object nameArg) {
-        RubyModule module = null; // context.getRubyClass();
-        String name = (nameArg instanceof String) ?
-            (String) nameArg : nameArg.toString();
-
-        if (module == null) {
-            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
-        }
-
-        module.undef(context, name);
-
-        return context.runtime.getNil();
-    }
-
-    public static IRubyObject defineAlias(ThreadContext context, IRubyObject self, Object newNameArg, Object oldNameArg) {
-        Ruby runtime = context.runtime;
-        RubyModule module = null; // context.getRubyClass();
-
-        if (module == null || self instanceof RubyFixnum || self instanceof RubySymbol){
-            throw runtime.newTypeError("no class to make alias");
-        }
-
-        String newName = newNameArg.toString();
-        String oldName = oldNameArg.toString();
-
-        module.defineAlias(newName, oldName);
-        module.callMethod(context, "method_added", runtime.newSymbol(newName));
-
-        return runtime.getNil();
-    }
-
     public static IRubyObject negate(IRubyObject value, Ruby runtime) {
         if (value.isTrue()) return runtime.getFalse();
         return runtime.getTrue();
     }
 
+    @Deprecated // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
         if (value == null) return context.nil;
         return RubyString.newStringShared(context.runtime, value);
@@ -2311,20 +2284,27 @@ public class Helpers {
     /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
     public static ArgumentDescriptor[] argsNodeToArgumentDescriptors(ArgsNode argsNode) {
         ArrayList<ArgumentDescriptor> descs = new ArrayList<>();
+        Node[] args = argsNode.getArgs();
+        int preCount = argsNode.getPreCount();
 
-        if (argsNode.getPre() != null) {
-            for (Node preNode : argsNode.getPre().children()) {
-                if (preNode instanceof MultipleAsgnNode) {
+        if (preCount > 0) {
+            for (int i = 0; i < preCount; i++) {
+                if (args[i] instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
-                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) preNode).getName()));
+                    descs.add(new ArgumentDescriptor(ArgumentType.req, ((ArgumentNode) args[i]).getName()));
                 }
             }
         }
 
-        if (argsNode.getOptArgs() != null) {
-            for (Node optNode : argsNode.getOptArgs().children()) {
+
+        int optCount = argsNode.getOptionalArgsCount();
+        if (optCount > 0) {
+            int optIndex = argsNode.getOptArgIndex();
+
+            for (int i = 0; i < optCount; i++) {
                 ArgumentType type = ArgumentType.opt;
+                Node optNode = args[optIndex + i];
                 String name = null;
                 if (optNode instanceof OptArgNode) {
                     name = ((OptArgNode)optNode).getName();
@@ -2348,8 +2328,11 @@ public class Helpers {
             }
         }
 
-        if (argsNode.getPost() != null) {
-            for (Node postNode : argsNode.getPost().children()) {
+        int postCount = argsNode.getPostCount();
+        if (postCount > 0) {
+            int postIndex = argsNode.getPostIndex();
+            for (int i = 0; i < postCount; i++) {
+                Node postNode = args[postIndex + i];
                 if (postNode instanceof MultipleAsgnNode) {
                     descs.add(new ArgumentDescriptor(ArgumentType.anonreq));
                 } else {
@@ -2358,8 +2341,11 @@ public class Helpers {
             }
         }
 
-        if (argsNode.getKeywords() != null) {
-            for (Node keyWordNode : argsNode.getKeywords().children()) {
+        int keywordsCount = argsNode.getKeywordCount();
+        if (keywordsCount > 0) {
+            int keywordsIndex = argsNode.getKeywordsIndex();
+            for (int i = 0; i < keywordsCount; i++) {
+                Node keyWordNode = args[keywordsIndex + i];
                 for (Node asgnNode : keyWordNode.childNodes()) {
                     if (isRequiredKeywordArgumentValueNode(asgnNode)) {
                         descs.add(new ArgumentDescriptor(ArgumentType.keyreq, ((INameNode) asgnNode).getName()));

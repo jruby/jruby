@@ -13,3 +13,21 @@ class Symbol
   end
 
 end
+
+# Rubinius doesn't define Pointer#allocate, so we added a new primitive,
+# :pointer_allocate, and define the method here. Needs to be before
+# their primitive code is run as they create some instances during the
+# class definition.
+
+module Rubinius
+  module FFI
+    class Pointer
+
+      def self.allocate
+        Rubinius.primitive :pointer_allocate
+        raise PrimitiveFailure, "FFI::Pointer.allocate primitive failed"
+      end
+
+    end
+  end
+end

@@ -13,16 +13,18 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class AddMethodNode extends RubyNode {
@@ -39,17 +41,17 @@ public class AddMethodNode extends RubyNode {
     }
 
     @Override
-    public RubyBasicObject execute(VirtualFrame frame) {
+    public DynamicObject execute(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         final Object receiverObject = receiver.execute(frame);
 
         final InternalMethod methodObject = (InternalMethod) methodNode.execute(frame);
 
-        RubyModule module;
+        DynamicObject module;
 
-        if (receiverObject instanceof RubyModule) {
-            module = (RubyModule) receiverObject;
+        if (RubyGuards.isRubyModule(receiverObject)) {
+            module = (DynamicObject) receiverObject;
         } else {
             module = singletonClassNode.executeSingletonClass(frame, receiverObject);
         }
@@ -58,10 +60,10 @@ public class AddMethodNode extends RubyNode {
         final InternalMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
-            module.addMethod(this, method.withVisibility(Visibility.PRIVATE));
-            singletonClassNode.executeSingletonClass(frame, module).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
-            module.addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(this, method);
         }
 
         return getSymbol(method.getName());
@@ -88,7 +90,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility findVisibility(Frame frame) {
-        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID);
         if (slot == null) {
             return null;
         } else {

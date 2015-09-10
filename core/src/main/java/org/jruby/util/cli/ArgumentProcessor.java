@@ -57,7 +57,7 @@ import java.util.HashSet;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
-    private final class Argument {
+    private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
         public Argument(String value, boolean dashed) {
@@ -649,6 +649,10 @@ public class ArgumentProcessor {
         if (result != null) return scriptName;// use relative filename
                 result = resolve(config.getJRubyHome() + "/bin", scriptName);
         if (result != null) return result;
+        // since the current directory is also on the classpath we
+        // want to find it on filesystem first
+        result = resolve(config.getCurrentDirectory() + "/bin", scriptName);
+        if (result != null) return result;
         result = resolve("uri:classloader:/bin", scriptName);
         if (result != null) return result;
 
@@ -712,38 +716,62 @@ public class ArgumentProcessor {
     }
 
     public static void checkGraalVersion() {
-        if (Options.TRUFFLE_RUNTIME_VERSION_CHECK.load()) {
-            final String graalVersion = System.getProperty("graal.version", "unknown");
-            final String expectedGraalVersion = "0.7";
+        final String graalVersion = System.getProperty("graal.version", "unknown");
+        final String expectedGraalVersion = "0.7";
 
-            if (graalVersion.equals("unknown")) {
-                return;
-            } else if (!graalVersion.equals(expectedGraalVersion)) {
-                throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
-            }
+        if (graalVersion.equals("unknown")) {
+            return;
+        } else if (!graalVersion.equals(expectedGraalVersion)) {
+            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion +
+                    " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
         }
     }
 
-    private void checkProperties() {
-        final Set<String> propertyNames = new HashSet<>();
-        propertyNames.addAll(Options.getPropertyNames());
-        propertyNames.add("jruby.home");
-        propertyNames.add("jruby.script");
-        propertyNames.add("jruby.shell");
-        propertyNames.add("jruby.lib");
-        propertyNames.add("jruby.bindir");
-        propertyNames.add("jruby.jar");
-        propertyNames.add("jruby.compat.version");
-        propertyNames.add("jruby.reflection");
-        propertyNames.add("jruby.thread.pool.enabled");
+    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>();
 
+    static {
+        KNOWN_PROPERTIES.addAll(Options.getPropertyNames());
+        KNOWN_PROPERTIES.add("jruby.home");
+        KNOWN_PROPERTIES.add("jruby.script");
+        KNOWN_PROPERTIES.add("jruby.shell");
+        KNOWN_PROPERTIES.add("jruby.lib");
+        KNOWN_PROPERTIES.add("jruby.bindir");
+        KNOWN_PROPERTIES.add("jruby.jar");
+        KNOWN_PROPERTIES.add("jruby.compat.version");
+        KNOWN_PROPERTIES.add("jruby.reflection");
+        KNOWN_PROPERTIES.add("jruby.thread.pool.enabled");
+        KNOWN_PROPERTIES.add("jruby.memory.max");
+        KNOWN_PROPERTIES.add("jruby.stack.max");
+    }
+
+    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>();
+
+    static {
+        KNOWN_PROPERTY_PREFIXES.add("jruby.openssl.");
+    }
+
+    private void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {
-                if (!propertyNames.contains(propertyName)) {
+                if (!isPropertySupported(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }
             }
         }
+    }
+
+    private boolean isPropertySupported(String propertyName) {
+        if (KNOWN_PROPERTIES.contains(propertyName)) {
+            return true;
+        }
+
+        for (String prefix : KNOWN_PROPERTY_PREFIXES) {
+            if (propertyName.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

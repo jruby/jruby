@@ -10,22 +10,19 @@
 package org.jruby.truffle.runtime.signal;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
-@SuppressWarnings("restriction")
 public class ProcSignalHandler implements SignalHandler {
 
     private final RubyContext context;
-    private final RubyBasicObject proc;
+    private final DynamicObject proc;
 
-    public ProcSignalHandler(RubyContext context, RubyBasicObject proc) {
+    public ProcSignalHandler(RubyContext context, DynamicObject proc) {
         assert RubyGuards.isRubyProc(proc);
 
         this.context = context;
@@ -34,10 +31,10 @@ public class ProcSignalHandler implements SignalHandler {
 
     @Override
     public void handle(Signal signal) {
-        Thread mainThread = context.getThreadManager().getRootThread().getCurrentFiberJavaThread();
+        Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
         context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
             @Override
-            public void run(RubyThread thread, Node currentNode) {
+            public void run(DynamicObject thread, Node currentNode) {
                 ProcNodes.rootCall(proc);
             }
         });

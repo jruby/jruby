@@ -1,6 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
@@ -36,12 +37,13 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected int callCount = 0;
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
+        super(implementationClass, visibility, method.getName());
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.signature = getStaticScope().getSignature();
 
-        // FIXME: Enable no full build promotion option (perhaps piggy back JIT threshold)
+        // -1 jit.threshold is way of having interpreter not promote full builds.
+        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
     }
 
     public IRScope getIRScope() {
@@ -58,7 +60,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return method.getArgumentDescriptors();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
     public Signature getSignature() {
@@ -271,7 +273,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public DynamicMethod dup() {
-        return new InterpretedIRMethod(method, visibility, implementationClass);
+        return new InterpretedIRMethod(method, getVisibility(), implementationClass);
     }
 
     public String getClassName(ThreadContext context) {

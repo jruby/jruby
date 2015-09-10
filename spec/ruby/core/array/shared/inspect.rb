@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/encoded_strings', __FILE__)
 
-describe :array_inspect, :shared => true do
+describe :array_inspect, shared: true do
   it "returns a string" do
     [1, 2, 3].send(@method).should be_an_instance_of(String)
   end

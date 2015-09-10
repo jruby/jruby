@@ -18,7 +18,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a method. That is, store the definition of a method and when executed
+ * Define a method from a method literal (def mymethod ... end).
+ * That is, store the definition of a method and when executed
  * produce the executable object that results.
  */
 public class MethodDefinitionNode extends RubyNode {
@@ -37,7 +38,8 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, frame.materialize());
+        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget,
+                frame.materialize() /* Currently used for visibility, will be fixed when we keep visibility in some better place */);
     }
 
     @Override

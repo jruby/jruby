@@ -65,6 +65,11 @@ public abstract class NativeFunctionPrimitiveNodes {
             }
         }
 
+        @Specialization
+        public Object fallback(Object type) {
+            return null; // Primitive failure
+        }
+
     }
 
 }

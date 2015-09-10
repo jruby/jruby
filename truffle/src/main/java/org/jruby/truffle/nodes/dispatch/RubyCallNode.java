@@ -15,7 +15,10 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.arguments.OptionalKeywordArgMissingNode;
@@ -24,7 +27,6 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.hash.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -32,8 +34,9 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -143,14 +146,14 @@ public class RubyCallNode extends RubyNode {
             argumentsObjects = executeArguments(frame);
         }
 
-        final RubyBasicObject blockObject = executeBlock(frame);
+        final DynamicObject blockObject = executeBlock(frame);
 
         return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private RubyBasicObject executeBlock(VirtualFrame frame) {
+    private DynamicObject executeBlock(VirtualFrame frame) {
         if (block != null) {
-            return (RubyBasicObject) block.execute(frame);
+            return (DynamicObject) block.execute(frame);
         } else {
             return null;
         }
@@ -196,9 +199,9 @@ public class RubyCallNode extends RubyNode {
             throw new UnsupportedOperationException(argument.getClass().toString());
         }
 
-        final RubyBasicObject array = (RubyBasicObject) argument;
-        final int size = ArrayNodes.getSize(array);
-        final Object store = ArrayNodes.getStore(array);
+        final DynamicObject array = (DynamicObject) argument;
+        final int size = Layouts.ARRAY.getSize(array);
+        final Object store = Layouts.ARRAY.getStore(array);
 
         if (seenNullInUnsplat && store == null) {
             return new Object[]{};
@@ -238,8 +241,7 @@ public class RubyCallNode extends RubyNode {
         final RubyNode[] result;
 
         boolean shouldExpand = true;
-        if (method == null
-                || method.getSharedMethodInfo().getArity().getKeywordArguments() == null) {
+        if (method == null || !method.getSharedMethodInfo().getArity().acceptsKeywords()) {
             // no keyword arguments in method definition
             shouldExpand = false;
         } else if (argumentNodes.length != 0
@@ -250,7 +252,7 @@ public class RubyCallNode extends RubyNode {
                 || method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
             shouldExpand = false;
         } else if (isSplatted
-                || method.getSharedMethodInfo().getArity().allowsMore()) {
+                || method.getSharedMethodInfo().getArity().hasRest()) {
             // TODO: make optimization work if splat arguments are involed
             // the problem is that Markers and keyword args are used when
             // reading splatted args
@@ -258,9 +260,9 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (shouldExpand) {
-            List<String> kwargs = method.getSharedMethodInfo().getArity().getKeywordArguments();
+            String[] kwargs = method.getSharedMethodInfo().getArity().getKeywordArguments();
 
-            int countArgNodes = argumentNodes.length + kwargs.size() + 1;
+            int countArgNodes = argumentNodes.length + kwargs.length + 1;
             if (argumentNodes.length == 0) {
                 countArgNodes++;
             }
@@ -315,7 +317,7 @@ public class RubyCallNode extends RubyNode {
             result[i++] = new MarkerNode(getContext(), null);
 
             if (restKeywordLabels.size() > 0
-                    && !method.getSharedMethodInfo().getArity().hasKeyRest()) {
+                    && !method.getSharedMethodInfo().getArity().hasKeywordsRest()) {
                 result[firstMarker] = new UnknownArgumentErrorNode(getContext(), null, restKeywordLabels.get(0));
             } else if (restKeywordLabels.size() > 0) {
                 i = 0;
@@ -384,7 +386,7 @@ public class RubyCallNode extends RubyNode {
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (method == null) {
-            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, createString(methodName));
+            final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(methodName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false);
 
             if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
                 return nil();
@@ -395,7 +397,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return createString("method");
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("method", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     public String getName() {

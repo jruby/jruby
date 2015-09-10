@@ -84,7 +84,6 @@ class MSpecScript
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/syslog",
-    "^spec/ruby/library/weakref",
 
     # Doesn't exist as Ruby code - basically need to write from scratch
     "^spec/ruby/library/win32ole",

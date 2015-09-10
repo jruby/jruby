@@ -11,10 +11,10 @@ package org.jruby.truffle.nodes.interop;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.core.SymbolNodes;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 
@@ -24,13 +24,13 @@ public abstract class RubyToIndexLabelNode extends TargetableRubyNode {
 
     @CompilerDirectives.TruffleBoundary
     @Specialization(guards = "isRubyString(index)")
-    public Object doRubyString(RubyBasicObject index) {
+    public Object doRubyString(DynamicObject index) {
         return index.toString();
     }
 
     @Specialization(guards = "isRubySymbol(index)")
-    public Object doRubySymbol(RubyBasicObject index) {
-        return SymbolNodes.getString(index);
+    public Object doRubySymbol(DynamicObject index) {
+        return Layouts.SYMBOL.getString(index);
     }
 
     @Specialization(guards = "!isRubySymbol(index)")

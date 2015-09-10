@@ -1,4 +1,4 @@
-describe :sorted_set_union, :shared => true do
+describe :sorted_set_union, shared: true do
   before :each do
     @set = SortedSet["a", "b", "c"]
   end

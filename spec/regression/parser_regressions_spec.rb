@@ -5,12 +5,12 @@ describe "The Parsing experience" do
     cond = true
     x = '('
     a = cond ? x + ')': ''
-    a.should eq('()')
+    expect(a).to eq('()')
   end
 
   it "parse the stabby lambda even if args params separated by space" do
     a = -> () { 1 }
-    a.call.should eq(1)
+    expect(a.call).to eq(1)
   end
 
   it "parses a jumbled mess of nestng" do
@@ -24,7 +24,7 @@ describe "The Parsing experience" do
                       }
                     end)
 
-    res.should eq("11")
+    expect(res).to eq("11")
   end
 
   it "parses a block do inside of a call arg list" do
@@ -32,7 +32,7 @@ describe "The Parsing experience" do
     res = foo (10.times.to_a.map do |i|
                  7 + i
                end)
-    res.should eq([7,8,9,10,11,12,13,14,15,16])
+    expect(res).to eq([7,8,9,10,11,12,13,14,15,16])
   end
 
   it "parses a do block with magical combo of stuff before it" do
@@ -46,7 +46,7 @@ describe "The Parsing experience" do
   end
 
   it "parses weird embexpr bug GH #1887" do
-    Class.new do
+    expect(Class.new do
       include Module.new{
         def a
           "#{b}"
@@ -61,7 +61,7 @@ describe "The Parsing experience" do
       def b
         1
       end
-    end.new.a.should eq("1")
+    end.new.a).to eq("1")
   end
 
   it "parses method with block in embedded hash/kwarg. GH #3085." do
@@ -70,7 +70,7 @@ describe "The Parsing experience" do
         yield r
       end
     end.new.foo one: proc {}, two: 1 do |s|
-      s[:two].should eq(1)
+      expect(s[:two]).to eq(1)
     end
   end
 end

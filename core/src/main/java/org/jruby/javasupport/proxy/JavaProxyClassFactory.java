@@ -197,23 +197,25 @@ public class JavaProxyClassFactory {
             Field proxy_class = clazz.getDeclaredField(PROXY_CLASS_FIELD_NAME);
             proxy_class.setAccessible(true);
             return (JavaProxyClass) proxy_class.get(clazz);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             InternalError ie = new InternalError();
             ie.initCause(ex);
             throw ie;
         }
     }
 
-    private static String targetClassName(final Class clazz) {
+    private static String targetClassName(final Class<?> clazz) {
         // We always prepend an org.jruby.proxy package to the beginning
         // because java and javax packages are protected and signed
         // jars prevent us generating new classes with those package
         // names. See JRUBY-2439.
-        final String pkgName = proxyPackageName(clazz);
         final String fullName = clazz.getName();
-        int ix = fullName.lastIndexOf('.');
-        String className = ix == -1 ? fullName : fullName.substring(ix + 1);
-        return pkgName + '.' + className + "$Proxy" + nextId();
+        final int idx = fullName.lastIndexOf('.');
+        String className = idx == -1 ? fullName : fullName.substring(idx + 1);
+        return proxyPackageName(fullName)
+                .append('.').append(className)
+                .append("$Proxy").append(nextId()).toString();
     }
 
     private static final Method defineClassMethod;
@@ -266,12 +268,17 @@ public class JavaProxyClassFactory {
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
 
-        cw.visitField(Opcodes.ACC_PRIVATE, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE.getDescriptor(), null, null).visitEnd();
+        // private final JavaProxyInvocationHandler __handler;
+        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                INVOCATION_HANDLER_FIELD_NAME,
+                INVOCATION_HANDLER_TYPE.getDescriptor(), null, null
+        ).visitEnd();
 
-        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-                PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE.getDescriptor(), null,
-                null).visitEnd();
+        // private static JavaProxyClass __proxy_class;
+        cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                PROXY_CLASS_FIELD_NAME,
+                PROXY_CLASS_TYPE.getDescriptor(), null, null
+        ).visitEnd();
 
         return cw;
     }
@@ -282,6 +289,7 @@ public class JavaProxyClassFactory {
         for (int i = 0; i < interfaces.length; i++) {
             interfaceNames[i] = toInternalClassName(interfaces[i]);
         }
+        // all proxies implement our InternalJavaProxy interface :
         interfaceNames[interfaces.length] = toInternalClassName(InternalJavaProxy.class);
 
         return interfaceNames;
@@ -296,8 +304,11 @@ public class JavaProxyClassFactory {
         }
     }
 
+    /**
+     * @see InternalJavaProxy
+     */
     private void generateGetInvocationHandler(Type selfType, ClassVisitor cw) {
-        // make getter for handler
+        // make getter for handler (due implements InternalJavaProxy)
         GeneratorAdapter gh = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getInvocationHandler",
                         INVOCATION_HANDLER_TYPE, EMPTY_TYPE_ARRAY), null,
@@ -309,8 +320,11 @@ public class JavaProxyClassFactory {
         gh.endMethod();
     }
 
+    /**
+     * @see InternalJavaProxy
+     */
     private void generateGetProxyClass(Type selfType, ClassVisitor cw) {
-        // make getter for proxy class
+        // make getter for proxy class (due implements InternalJavaProxy)
         GeneratorAdapter gpc = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getProxyClass",
                         PROXY_CLASS_TYPE, EMPTY_TYPE_ARRAY), null,
@@ -486,6 +500,7 @@ public class JavaProxyClassFactory {
 
         ga.loadThis();
         ga.loadArg(superConstructorParameterTypes.length);
+
         ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // do a void return
@@ -795,11 +810,12 @@ public class JavaProxyClassFactory {
         return clazzName.substring(0, idx);
     }
 
-    private static String proxyPackageName(Class clazz) {
-        String clazzName = clazz.getName();
-        int idx = clazzName.lastIndexOf('.');
-        if ( idx == -1 ) return "org.jruby.proxy";
-        return "org.jruby.proxy." + clazzName.substring(0, idx);
+    private static StringBuilder proxyPackageName(final String className) {
+        final String proxyPackagePrefix = "org.jruby.proxy";
+        final StringBuilder str = new StringBuilder(proxyPackagePrefix.length() + className.length() + 8);
+        final int idx = className.lastIndexOf('.');
+        str.append(proxyPackagePrefix);
+        return idx == -1 ? str : str.append('.').append(className.substring(0, idx));
     }
 
     /**

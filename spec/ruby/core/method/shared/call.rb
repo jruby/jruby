@@ -1,4 +1,4 @@
-describe :method_call, :shared => true do
+describe :method_call, shared: true do
   it "invokes the method with the specified arguments, returning the method's return value" do
     m = 12.method("+")
     m.send(@method, 3).should == 15

@@ -32,7 +32,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       end
     end
   end
-  
+
   # TODO -l: no idea what line ending processing is
   def test_dash_little_n_wraps_script_with_while_gets
     # FIXME: currently fails on windows and IBM JDK
@@ -89,7 +89,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
   end
 
-  # This test is difficult to indicate meaning with. I am calling 
+  # This test is difficult to indicate meaning with. I am calling
   # jgem, as it should not exist outside the jruby.bin directory.
   def test_dash_big_S_executes_script_in_jruby_bin_dir
     assert_match /^\d+\.\d+\.\d+/, `#{RUBY} -S jgem --version`
@@ -106,7 +106,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_big_S_resolves_relative___FILE___correctly
-    
+
     with_temp_script(%q{puts __FILE__}) do |s|
       Dir.chdir(Dir.tmpdir) do
         relative_tmp = File.basename(s.path)
@@ -177,7 +177,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
         assert_match /warning/, jruby("-W2 #{s.path} 2>&1")
         assert_equal 0, $?.exitstatus
       end
-    end    
+    end
   end
 
   def test_dash_big_x_sets_extended_options
@@ -221,7 +221,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
     end
 
     # JRUBY-2648 [Note: Originally these tests had tests for default vm and
-    # also for -J options in addition to jruby options (-J-client versus 
+    # also for -J options in addition to jruby options (-J-client versus
     # --client).  In other tests we test that -J works and passes thru and
     # we should not assume to know what versions of Java will have as their
     # default VM.
@@ -255,7 +255,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       ENV['RUBYOPT'] = rubyopt_org
     end
   end
-  
+
   # JRUBY-2821
   def test_with_interesting_file_names
     names = ["test-q", "test-d", "test--", "test-_", "test_U", "test_S_", "___D_",
@@ -306,7 +306,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
       end
     end
   end
-  
+
   # JRUBY-4290
   if (WINDOWS)
     def test_uppercase_in_process
@@ -320,7 +320,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   def test_rubyopts_with_require
     rubyopt_org = ENV['RUBYOPT']
     ENV['RUBYOPT'] = '-r rubygems'
-    
+
     args = "-e 'p 0'"
     assert_nothing_raised { jruby(args) }
   ensure
@@ -329,7 +329,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   # JRUBY-5517
   def test_rubyopts_benchmark_cleared_in_child
-    return if IS_JAR_EXECUTION
+    return skip('jar execution') if IS_JAR_EXECUTION
     rubyopt_org = ENV['RUBYOPT']
     ENV['RUBYOPT'] = '-r benchmark'
 

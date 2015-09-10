@@ -18,10 +18,15 @@ public class WrappedIRClosure extends Operand {
     private final IRClosure closure;
 
     public WrappedIRClosure(Variable self, IRClosure closure) {
-        super(OperandType.WRAPPED_IR_CLOSURE);
+        super();
 
         this.self = self;
         this.closure = closure;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.WRAPPED_IR_CLOSURE;
     }
 
     @Override

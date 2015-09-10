@@ -27,9 +27,14 @@ public class SValue extends Operand {
     final private Operand array;
 
     public SValue(Operand array) {
-        super(OperandType.SVALUE);
+        super();
 
         this.array = array;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.SVALUE;
     }
 
     public Operand getArray() {

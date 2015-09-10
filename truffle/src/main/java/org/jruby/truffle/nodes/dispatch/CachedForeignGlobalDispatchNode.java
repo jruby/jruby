@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.Read;
@@ -19,7 +20,6 @@ import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
 
@@ -49,7 +49,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (receiverObject instanceof  RubyBasicObject) {
+        if (receiverObject instanceof  DynamicObject) {
             Object[] arguments = (Object[]) argumentsObjects;
             if (arguments.length == numberOfArguments) {
                 Object[] args = new Object[arguments.length + 2];

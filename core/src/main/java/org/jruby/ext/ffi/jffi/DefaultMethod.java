@@ -5,7 +5,6 @@ import com.kenai.jffi.CallContext;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.CacheableMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -27,7 +26,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
 
     public DefaultMethod(RubyModule implementationClass, Function function,
                          Signature signature, NativeInvoker defaultInvoker) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+        super(implementationClass, Visibility.PUBLIC);
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
         this.defaultInvoker = defaultInvoker;

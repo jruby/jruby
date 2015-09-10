@@ -62,7 +62,7 @@ describe "Kernel#sprintf" do
 
   describe "with format string that contains %{} sections" do
     it "substitutes values for named references" do
-      sprintf("%{foo}f", {:foo => 1}).should == "1f"
+      sprintf("%{foo}f", {foo: 1}).should == "1f"
     end
 
     it "raises KeyError when no matching key is in second argument" do
@@ -72,7 +72,7 @@ describe "Kernel#sprintf" do
 
   describe "with format string that contains %<> sections" do
     it "formats values for named references" do
-      sprintf("%<foo>f", {:foo => 1}).should == "1.000000"
+      sprintf("%<foo>f", {foo: 1}).should == "1.000000"
     end
 
     it "raises KeyError when no matching key is in second argument" do

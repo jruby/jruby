@@ -1,4 +1,4 @@
-describe :queue_empty?, :shared => true do
+describe :queue_empty?, shared: true do
   it "returns true on an empty Queue" do
     queue = @object
     queue.empty?.should be_true

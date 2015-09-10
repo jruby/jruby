@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_floor, :shared => true do
+describe :rational_floor, shared: true do
   before do
     @rational = Rational(2200, 7)
   end

@@ -10,6 +10,10 @@ describe "Kernel#respond_to_missing?" do
     Kernel.should have_private_instance_method(:respond_to_missing?, false)
   end
 
+  it "is only an instance method" do
+    Kernel.method(:respond_to_missing?).owner.should == Kernel
+  end
+
   it "is not called when #respond_to? would return true" do
     obj = mock('object')
     obj.stub!(:glark)

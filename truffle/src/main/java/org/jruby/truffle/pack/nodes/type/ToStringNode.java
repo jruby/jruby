@@ -15,12 +15,12 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -30,7 +30,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -94,16 +94,16 @@ public abstract class ToStringNode extends PackNode {
     }
 
     @Specialization(guards = "isRubyString(string)")
-    public ByteList toStringString(VirtualFrame frame, RubyBasicObject string) {
+    public ByteList toStringString(VirtualFrame frame, DynamicObject string) {
         if (taintedProfile.profile(isTaintedNode.executeIsTainted(string))) {
             setTainted(frame);
         }
 
-        return StringNodes.getByteList(string);
+        return Layouts.STRING.getByteList(string);
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public ByteList toString(VirtualFrame frame, RubyBasicObject array) {
+    public ByteList toString(VirtualFrame frame, DynamicObject array) {
         if (toSNode == null) {
             CompilerDirectives.transferToInterpreter();
             toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true, MissingBehavior.RETURN_MISSING));
@@ -116,7 +116,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return StringNodes.getByteList((RubyBasicObject) value);
+            return Layouts.STRING.getByteList((DynamicObject) value);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -142,7 +142,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return StringNodes.getByteList((RubyBasicObject) value);
+            return Layouts.STRING.getByteList((DynamicObject) value);
         }
 
         if (inspectOnConversionFailure) {
@@ -152,7 +152,7 @@ public abstract class ToStringNode extends PackNode {
                         getEncapsulatingSourceSection(), new RubyNode[]{null}));
             }
 
-            return StringNodes.getByteList(inspectNode.toS(frame, object));
+            return Layouts.STRING.getByteList(inspectNode.toS(frame, object));
         }
 
         CompilerDirectives.transferToInterpreter();

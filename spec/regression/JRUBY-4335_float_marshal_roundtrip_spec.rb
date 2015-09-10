@@ -5,7 +5,7 @@ describe 'A simple float' do
       ma = Marshal.dump(a)
       b = Marshal.load(ma)
     
-      a.should == b
+      expect(a).to eq(b)
     }
   end
 end
@@ -16,7 +16,7 @@ describe 'A calculated float' do
       a = (x.to_f + y.to_f / z.to_f) * Math.exp(w.to_f / (x.to_f + y.to_f / z.to_f))
       ma = Marshal.dump(a)
       b = Marshal.load(ma)
-      a.should == b
+      expect(a).to eq(b)
     }
   end
 end
@@ -31,7 +31,7 @@ describe 'A long-mantissa float' do
       7.44220139694665e+15].each do |a|
       ma = Marshal.dump(a)
       b = Marshal.load(ma)
-      a.should == b
+      expect(a).to eq(b)
     end
   end
 end

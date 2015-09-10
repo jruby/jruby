@@ -35,7 +35,7 @@ describe "Array#shuffle" do
     obj = mock("array_shuffle_random")
     obj.should_receive(:rand).at_least(1).times.and_return(0.5)
 
-    result = [1, 2].shuffle(:random => obj)
+    result = [1, 2].shuffle(random: obj)
     result.size.should == 2
     result.should include(1, 2)
   end
@@ -43,7 +43,7 @@ describe "Array#shuffle" do
   it "ignores an Object passed for the RNG if it does not define #rand" do
     obj = mock("array_shuffle_random")
 
-    result = [1, 2].shuffle(:random => obj)
+    result = [1, 2].shuffle(random: obj)
     result.size.should == 2
     result.should include(1, 2)
   end
@@ -52,7 +52,7 @@ describe "Array#shuffle" do
     random = mock("array_shuffle_random")
     random.should_receive(:rand).at_least(1).times.and_return(0.3)
 
-    [1, 2].shuffle(:random => random).should be_an_instance_of(Array)
+    [1, 2].shuffle(random: random).should be_an_instance_of(Array)
   end
 
   it "calls #to_int on the Object returned by #rand" do
@@ -61,7 +61,7 @@ describe "Array#shuffle" do
     random = mock("array_shuffle_random")
     random.should_receive(:rand).at_least(1).times.and_return(value)
 
-    [1, 2].shuffle(:random => random).should be_an_instance_of(Array)
+    [1, 2].shuffle(random: random).should be_an_instance_of(Array)
   end
 
   it "raises a RangeError if the value is less than zero" do
@@ -70,7 +70,7 @@ describe "Array#shuffle" do
     random = mock("array_shuffle_random")
     random.should_receive(:rand).and_return(value)
 
-    lambda { [1, 2].shuffle(:random => random) }.should raise_error(RangeError)
+    lambda { [1, 2].shuffle(random: random) }.should raise_error(RangeError)
   end
 
   it "raises a RangeError if the value is equal to one" do
@@ -79,7 +79,7 @@ describe "Array#shuffle" do
     random = mock("array_shuffle_random")
     random.should_receive(:rand).at_least(1).times.and_return(value)
 
-    lambda { [1, 2].shuffle(:random => random) }.should raise_error(RangeError)
+    lambda { [1, 2].shuffle(random: random) }.should raise_error(RangeError)
   end
 end
 

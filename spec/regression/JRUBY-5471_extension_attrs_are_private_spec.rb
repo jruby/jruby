@@ -10,7 +10,7 @@ if File.exist?(File.join(path, 'dummy'))
     it "gets its own frame with public visibility" do
       d = XYZ_Dummy_XYZ.new
       d.dummy_attr = 'foo'
-      d.dummy_attr.should == 'foo'
+      expect(d.dummy_attr).to eq('foo')
     end
   end
 end

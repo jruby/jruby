@@ -7,11 +7,11 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 
-public class LineNumberInstr extends Instr implements FixedArityInstr {
+public class LineNumberInstr extends NoOperandInstr implements FixedArityInstr {
     public final int lineNumber;
 
     public LineNumberInstr(int lineNumber) {
-        super(Operation.LINE_NUM, EMPTY_OPERANDS);
+        super(Operation.LINE_NUM);
 
         this.lineNumber = lineNumber;
     }

@@ -13,71 +13,28 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.object.BasicObjectType;
-
-import java.util.EnumSet;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
-
-    public static class MethodType extends BasicObjectType {
-
-    }
-
-    public static final MethodType UNBOUND_METHOD_TYPE = new MethodType();
-
-    private static final HiddenKey ORIGIN_IDENTIFIER = new HiddenKey("origin");
-    public static final Property ORIGIN_PROPERTY;
-
-    private static final HiddenKey METHOD_IDENTIFIER = new HiddenKey("method");
-    public static final Property METHOD_PROPERTY;
-
-    private static final DynamicObjectFactory UNBOUND_METHOD_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        ORIGIN_PROPERTY = Property.create(ORIGIN_IDENTIFIER, allocator.locationForType(RubyModule.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-        METHOD_PROPERTY = Property.create(METHOD_IDENTIFIER, allocator.locationForType(InternalMethod.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
-
-        final Shape shape = RubyBasicObject.LAYOUT.createShape(UNBOUND_METHOD_TYPE)
-                .addProperty(ORIGIN_PROPERTY)
-                .addProperty(METHOD_PROPERTY);
-
-        UNBOUND_METHOD_FACTORY = shape.createFactory();
-    }
-
-    public static RubyBasicObject createUnboundMethod(RubyClass rubyClass, RubyModule origin, InternalMethod method) {
-        return new RubyBasicObject(rubyClass, UNBOUND_METHOD_FACTORY.newInstance(origin, method));
-    }
-
-    public static RubyModule getOrigin(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(ORIGIN_IDENTIFIER);
-        return (RubyModule) ORIGIN_PROPERTY.get(method.getDynamicObject(), true);
-    }
-
-    public static InternalMethod getMethod(RubyBasicObject method) {
-        assert method.getDynamicObject().getShape().hasProperty(METHOD_IDENTIFIER);
-        return (InternalMethod) METHOD_PROPERTY.get(method.getDynamicObject(), true);
-    }
 
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodArrayArgumentsNode {
@@ -87,12 +44,12 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization(guards = "isRubyUnboundMethod(other)")
-        boolean equal(RubyBasicObject self, RubyBasicObject other) {
-            return getMethod(self) == getMethod(other) && getOrigin(self) == getOrigin(other);
+        boolean equal(DynamicObject self, DynamicObject other) {
+            return Layouts.UNBOUND_METHOD.getMethod(self) == Layouts.UNBOUND_METHOD.getMethod(other) && Layouts.UNBOUND_METHOD.getOrigin(self) == Layouts.UNBOUND_METHOD.getOrigin(other);
         }
 
         @Specialization(guards = "!isRubyUnboundMethod(other)")
-        boolean equal(RubyBasicObject self, Object other) {
+        boolean equal(DynamicObject self, Object other) {
             return false;
         }
 
@@ -106,8 +63,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public int arity(RubyBasicObject method) {
-            return getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
+        public int arity(DynamicObject method) {
+            return Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }
@@ -125,25 +82,25 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject bind(VirtualFrame frame, RubyBasicObject unboundMethod, Object object) {
-            final RubyClass objectMetaClass = metaClass(frame, object);
+        public DynamicObject bind(VirtualFrame frame, DynamicObject unboundMethod, Object object) {
+            final DynamicObject objectMetaClass = metaClass(frame, object);
 
-            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(frame, getMethod(unboundMethod), objectMetaClass)) {
+            if (!canBindMethodToModuleNode.executeCanBindMethodToModule(Layouts.UNBOUND_METHOD.getMethod(unboundMethod), objectMetaClass)) {
                 CompilerDirectives.transferToInterpreter();
-                final RubyModule declaringModule = getMethod(unboundMethod).getDeclaringModule();
-                if (declaringModule instanceof RubyClass && ((RubyClass) declaringModule).isSingleton()) {
+                final DynamicObject declaringModule = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
+                if (RubyGuards.isRubyClass(declaringModule) && Layouts.CLASS.getIsSingleton(declaringModule)) {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
                             "singleton method called for a different object", this));
                 } else {
                     throw new RaiseException(getContext().getCoreLibrary().typeError(
-                            "bind argument must be an instance of " + declaringModule.getName(), this));
+                            "bind argument must be an instance of " + Layouts.MODULE.getFields(declaringModule).getName(), this));
                 }
             }
 
-            return MethodNodes.createMethod(getContext().getCoreLibrary().getMethodClass(), object, getMethod(unboundMethod));
+            return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), object, Layouts.UNBOUND_METHOD.getMethod(unboundMethod));
         }
 
-        protected RubyClass metaClass(VirtualFrame frame, Object object) {
+        protected DynamicObject metaClass(VirtualFrame frame, Object object) {
             return metaClassNode.executeMetaClass(frame, object);
         }
 
@@ -157,8 +114,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyBasicObject name(RubyBasicObject unboundMethod) {
-            return getSymbol(getMethod(unboundMethod).getName());
+        public DynamicObject name(DynamicObject unboundMethod) {
+            return getSymbol(Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getName());
         }
 
     }
@@ -172,8 +129,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule origin(RubyBasicObject unboundMethod) {
-            return getOrigin(unboundMethod);
+        public DynamicObject origin(DynamicObject unboundMethod) {
+            return Layouts.UNBOUND_METHOD.getOrigin(unboundMethod);
         }
 
     }
@@ -186,8 +143,8 @@ public abstract class UnboundMethodNodes {
         }
 
         @Specialization
-        public RubyModule owner(RubyBasicObject unboundMethod) {
-            return getMethod(unboundMethod).getDeclaringModule();
+        public DynamicObject owner(DynamicObject unboundMethod) {
+            return Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getDeclaringModule();
         }
 
     }
@@ -201,8 +158,8 @@ public abstract class UnboundMethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject parameters(RubyBasicObject method) {
-            final ArgsNode argsNode = getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+        public DynamicObject parameters(DynamicObject method) {
+            final ArgsNode argsNode = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
 
             final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
 
@@ -221,15 +178,15 @@ public abstract class UnboundMethodNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object sourceLocation(RubyBasicObject unboundMethod) {
-            SourceSection sourceSection = getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
+        public Object sourceLocation(DynamicObject unboundMethod) {
+            SourceSection sourceSection = Layouts.UNBOUND_METHOD.getMethod(unboundMethod).getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                RubyBasicObject file = createString(sourceSection.getSource().getName());
-                return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                        file, sourceSection.getStartLine());
+                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                Object[] objects = new Object[]{file, sourceSection.getStartLine()};
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
         }
 

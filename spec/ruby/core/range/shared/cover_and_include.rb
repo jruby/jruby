@@ -1,7 +1,7 @@
 # -*- encoding: ascii-8bit -*-
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :range_cover_and_include, :shared => true do
+describe :range_cover_and_include, shared: true do
   it "returns true if other is an element of self" do
     (0..5).send(@method, 2).should == true
     (-5..5).send(@method, 0).should == true

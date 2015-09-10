@@ -50,4 +50,8 @@ public abstract class CallMethodNode extends RubyNode {
         return indirectCallNode.call(frame, method.getCallTarget(), frameArguments);
     }
 
+    protected int getCacheLimit() {
+        return getContext().getOptions().DISPATCH_CACHE;
+    }
+
 }

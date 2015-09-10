@@ -265,7 +265,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal "file:/foo/bar", File.expand_path("../../foo/bar", "file:/baz/quux")
       assert_equal "file:/foo/bar", File.expand_path("../../../foo/bar", "file:/baz/quux")
     end
-    
+
     def test_expand_path_with_jar_prefix
       jruby_specific_test
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("file:/my.jar!/foo/bar")
@@ -275,7 +275,7 @@ class TestFile < Test::Unit::TestCase
       assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../foo/bar", "file:/my.jar!/baz/quux")
       #assert_equal "file:/my.jar!/foo/bar", File.expand_path("../../../foo/bar", "file:/my.jar!/baz/quux")
     end
-    
+
     def test_expand_path_with_jar_file_prefix
       jruby_specific_test
       assert_equal "jar:file:/my.jar!/foo/bar", File.expand_path("jar:file:/my.jar!/foo/bar")
@@ -323,6 +323,21 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_file_url_relative_path
       jruby_specific_test
       assert_equal "file:#{Dir.pwd}/foo/bar", File.expand_path("file:foo/bar")
+    end
+
+    # GH-3150
+    def test_expand_path_with_pathname_and_uri_path
+      jruby_specific_test
+      assert_equal 'uri:classloader://foo', File.expand_path('foo', Pathname.new('uri:classloader:/'))
+    end
+
+    # GH-3176
+    def test_expand_path_with_relative_reference_and_inside_uri_classloader
+      jruby_specific_test
+      Dir.chdir( 'uri:classloader:/') do
+        assert_equal 'uri:classloader://something/foo', File.expand_path('foo', 'something')
+        assert_equal 'uri:classloader://foo', File.expand_path('foo', '.')
+      end
     end
 
     # JRUBY-5219

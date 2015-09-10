@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.constants;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
@@ -16,6 +17,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
@@ -24,34 +26,38 @@ import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
-@NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+/**
+ * Caches {@link ModuleOperations#lookupConstant}
+ * and checks visibility.
+ */
+@NodeChildren({
+        @NodeChild(value = "module", type = RubyNode.class),
+        @NodeChild(value = "name", type = RubyNode.class)
+})
 public abstract class LookupConstantNode extends RubyNode {
 
-    private final LexicalScope lexicalScope;
+    private final boolean ignoreVisibility;
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection, LexicalScope lexicalScope) {
+    public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility) {
         super(context, sourceSection);
-        this.lexicalScope = lexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
+        this.ignoreVisibility = ignoreVisibility;
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
 
     @Specialization(guards = {
+            "isRubyModule(module)",
             "module == cachedModule",
             "guardName(name, cachedName, sameNameProfile)"
-    }, assumptions = "cachedModule.getUnmodifiedAssumption()", limit = "getCacheLimit()")
-    protected RubyConstant lookupConstant(VirtualFrame frame, RubyModule module, String name,
-            @Cached("module") RubyModule cachedModule,
-            @Cached("name") String cachedName,
-            @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
-            @Cached("isVisible(cachedModule, constant)") boolean isVisible,
-            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+    }, assumptions = "getUnmodifiedAssumption(cachedModule)", limit = "getCacheLimit()")
+    protected RubyConstant lookupConstant(VirtualFrame frame, DynamicObject module, String name,
+                                          @Cached("module") DynamicObject cachedModule,
+                                          @Cached("name") String cachedName,
+                                          @Cached("doLookup(cachedModule, cachedName)") RubyConstant constant,
+                                          @Cached("isVisible(cachedModule, constant)") boolean isVisible,
+                                          @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
         if (!isVisible) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
@@ -59,9 +65,13 @@ public abstract class LookupConstantNode extends RubyNode {
         return constant;
     }
 
+    public Assumption getUnmodifiedAssumption(DynamicObject module) {
+        return Layouts.MODULE.getFields(module).getUnmodifiedAssumption();
+    }
+
     @TruffleBoundary
-    @Specialization
-    protected RubyConstant lookupConstantUncached(RubyModule module, String name) {
+    @Specialization(guards = "isRubyModule(module)")
+    protected RubyConstant lookupConstantUncached(DynamicObject module, String name) {
         RubyConstant constant = doLookup(module, name);
         boolean isVisible = isVisible(module, constant);
 
@@ -87,12 +97,16 @@ public abstract class LookupConstantNode extends RubyNode {
         }
     }
 
-    protected RubyConstant doLookup(RubyModule module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
+    protected RubyConstant doLookup(DynamicObject module, String name) {
+        return ModuleOperations.lookupConstant(getContext(), module, name);
     }
 
-    protected boolean isVisible(RubyModule module, RubyConstant constant) {
-        return constant == null || constant.isVisibleTo(getContext(), lexicalScope, module);
+    protected boolean isVisible(DynamicObject module, RubyConstant constant) {
+        return ignoreVisibility || constant == null || constant.isVisibleTo(getContext(), LexicalScope.NONE, module);
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CONSTANT_LOOKUP_CACHE;
     }
 
 }

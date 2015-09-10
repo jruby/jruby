@@ -1,4 +1,4 @@
-describe :extract_range, :shared => true do
+describe :extract_range, shared: true do
   it "returns an instance of String when passed a String subclass" do
     cls = Class.new(String)
     sub = cls.new("abc")

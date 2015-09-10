@@ -1,0 +1,1 @@
+fails:Thread::Backtrace::Location#inspect converts the call frame to a String

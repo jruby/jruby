@@ -1,4 +1,4 @@
-describe :file_identical, :shared => true do
+describe :file_identical, shared: true do
   before :each do
     @file1 = tmp('file_identical.txt')
     @file2 = tmp('file_identical2.txt')

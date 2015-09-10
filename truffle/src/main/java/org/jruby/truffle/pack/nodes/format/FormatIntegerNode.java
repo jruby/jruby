@@ -13,11 +13,11 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import org.jruby.truffle.nodes.core.BignumNodes;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -52,8 +52,8 @@ public abstract class FormatIntegerNode extends PackNode {
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public ByteList format(RubyBasicObject value) {
-        final BigInteger bigInteger = BignumNodes.getBigIntegerValue(value);
+    public ByteList format(DynamicObject value) {
+        final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
 

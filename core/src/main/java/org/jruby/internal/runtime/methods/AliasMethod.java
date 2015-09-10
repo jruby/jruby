@@ -45,7 +45,7 @@ public class AliasMethod extends DynamicMethod {
     private String oldName;
 
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
-        super(implementationClass, oldMethod.getVisibility(), null);
+        super(implementationClass, oldMethod.getVisibility());
 
         this.oldName = oldName;
         this.oldMethod = oldMethod;
@@ -122,20 +122,5 @@ public class AliasMethod extends DynamicMethod {
     @Override
     public long getSerialNumber() {
         return oldMethod.getSerialNumber();
-    }
-    
-    @Override
-    public NativeCall getNativeCall(int args, boolean block) {
-        return oldMethod.getNativeCall(args, block);
-    }
-    
-    @Override
-    public void setNativeCall(int args, boolean block, NativeCall nativeCall) {
-        oldMethod.setNativeCall(args, block, nativeCall);
-    }
-    
-    @Override
-    public CallConfiguration getCallConfig() {
-        return oldMethod.getCallConfig();
     }
 }

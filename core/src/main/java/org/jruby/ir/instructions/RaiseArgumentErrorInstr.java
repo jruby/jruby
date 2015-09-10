@@ -11,14 +11,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
+public class RaiseArgumentErrorInstr extends NoOperandInstr implements FixedArityInstr {
     private final int required;
     private final int opt;
     private final boolean rest;
     private final int numArgs;
 
     public RaiseArgumentErrorInstr(int required, int opt, boolean rest, int numArgs) {
-        super(Operation.RAISE_ARGUMENT_ERROR, EMPTY_OPERANDS);
+        super(Operation.RAISE_ARGUMENT_ERROR);
 
         this.required = required;
         this.opt = opt;

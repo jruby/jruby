@@ -7,11 +7,11 @@ describe "The -W command line option" do
   end
 
   it "with 0 sets $VERBOSE to nil" do
-    ruby_exe(@script, :options => "-W0").chomp.should == "nil"
+    ruby_exe(@script, options: "-W0").chomp.should == "nil"
   end
 
   it "with 1 sets $VERBOSE to false" do
-    ruby_exe(@script, :options => "-W1").chomp.should == "false"
+    ruby_exe(@script, options: "-W1").chomp.should == "false"
   end
 end
 

@@ -15,10 +15,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
@@ -38,7 +39,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, indirect, dispatchAction);
 
-        unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
+        unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
 
         if (method != null) {
@@ -47,7 +48,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             } else {
                 callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
                     insert(callNode);
                     callNode.cloneCallTarget();
                 }
@@ -85,7 +86,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyBasicObject) blockObject,
+                    (DynamicObject) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -100,7 +101,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
@@ -109,7 +110,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    (RubyBasicObject) blockObject,
+                                    (DynamicObject) blockObject,
                                     (Object[]) argumentsObjects));
                 }
             }

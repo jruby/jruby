@@ -157,7 +157,7 @@ public class RubyException extends RubyObject {
 
         if (exception.isEmpty()) return getRuntime().newString(rubyClass.getName());
         StringBuilder sb = new StringBuilder("#<");
-        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
+        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append('>');
         return getRuntime().newString(sb.toString());
     }
 

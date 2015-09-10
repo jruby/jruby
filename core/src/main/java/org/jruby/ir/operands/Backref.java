@@ -17,8 +17,13 @@ public class Backref extends Reference {
     final public char type;
 
     public Backref(char t) {
-        super(OperandType.BACKREF, "$" + t);
+        super("$" + t);
         type = t;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.BACKREF;
     }
 
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {

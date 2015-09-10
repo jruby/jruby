@@ -1,4 +1,4 @@
-describe :time_gm, :shared => true do
+describe :time_gm, shared: true do
   it "creates a time based on given values, interpreted as UTC (GMT)" do
     Time.send(@method, 2000,"jan",1,20,15,1).inspect.should == "2000-01-01 20:15:01 UTC"
   end

@@ -44,10 +44,6 @@ execute 'copy jruby.jar', 'prepare-package' do |ctx|
                 File.join( ctx.project.basedir.to_pathname, 
                            'lib',
                            "jruby-core-#{ctx.project.version}-complete.jar" ) )
-  FileUtils.cp( Dir[ File.join( source, "lib/jruby-truffle.jar" ) ].first,
-                File.join( ctx.project.basedir.to_pathname, 
-                           'lib',
-                           "jruby-truffle-#{ctx.project.version}-complete.jar" ) )
 end
 
 # do not push the gem during deploy phase

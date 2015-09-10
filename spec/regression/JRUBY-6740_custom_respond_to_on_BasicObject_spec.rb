@@ -6,6 +6,6 @@ describe "A custom respond_to? on a BasicObject subclass" do
       def respond_to?(meth); false; end
     end
 
-    cls.new.respond_to?(:hello).should == false
+    expect(cls.new.respond_to?(:hello)).to eq(false)
   end
 end

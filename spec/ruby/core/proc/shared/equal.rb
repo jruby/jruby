@@ -1,7 +1,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/common', __FILE__)
 
-describe :proc_equal, :shared => true do
+describe :proc_equal, shared: true do
   it "is a public method" do
     Proc.should have_public_instance_method(@method, false)
   end
@@ -82,7 +82,7 @@ describe :proc_equal, :shared => true do
   end
 end
 
-describe :proc_equal_undefined, :shared => true do
+describe :proc_equal_undefined, shared: true do
   it "is not defined" do
     Proc.should_not have_instance_method(@method, false)
   end

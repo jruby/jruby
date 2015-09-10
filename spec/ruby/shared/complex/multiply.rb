@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_multiply, :shared => true do
+describe :complex_multiply, shared: true do
   describe "with Complex" do
     it "multiplies according to the usual rule for complex numbers: (a + bi) * (c + di) = ac - bd + (ad + bc)i" do
       (Complex(1, 2) * Complex(10, 20)).should == Complex((1 * 10) - (2 * 20), (1 * 20) + (2 * 10))

@@ -16,15 +16,15 @@ import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.StandardInstrumentListener;
 import com.oracle.truffle.api.instrument.StandardSyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.tools.LineToProbesMap;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,14 +46,14 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public synchronized void attach(String file, int line, final RubyBasicObject block) {
+    public synchronized void attach(String file, int line, final DynamicObject block) {
         assert RubyGuards.isRubyProc(block);
 
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override
             public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final RubyBasicObject binding = BindingNodes.createRubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
                 ProcNodes.rootCall(block, binding);
             }
 
@@ -71,7 +71,7 @@ public class AttachmentsManager {
 
         }, String.format("Truffle::Primitive.attach@%s:%d", file, line));
 
-        final Source source = context.getSourceManager().forFileBestFuzzily(file);
+        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 
         final LineLocation lineLocation = source.createLineLocation(line);
 
@@ -95,7 +95,7 @@ public class AttachmentsManager {
     }
 
     public synchronized void detach(String file, int line) {
-        final Source source = context.getSourceManager().forFileBestFuzzily(file);
+        final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 
         final LineLocation lineLocation = source.createLineLocation(line);
 

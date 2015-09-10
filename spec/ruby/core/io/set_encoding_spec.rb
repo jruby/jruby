@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 with_feature :encoding do
-  describe :io_set_encoding_write, :shared => true do
+  describe :io_set_encoding_write, shared: true do
     it "sets the encodings to nil" do
       @io = new_io @name, "#{@object}:ibm437:ibm866"
       @io.set_encoding nil, nil

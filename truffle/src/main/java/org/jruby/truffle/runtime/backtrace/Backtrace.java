@@ -9,19 +9,11 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import org.jruby.TruffleContextInterface;
-import org.jruby.util.cli.Options;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class Backtrace {
-
-    public static final BacktraceFormatter DISPLAY_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
-    public static final BacktraceFormatter EXCEPTION_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_EXCEPTION_FORMAT.load());
-    public static final BacktraceFormatter DEBUG_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DEBUG_FORMAT.load());
-    public static final BacktraceFormatter PANIC_FORMATTER = getFormatter(Options.TRUFFLE_BACKTRACE_DISPLAY_FORMAT.load());
 
     private final Activation[] activations;
 
@@ -31,19 +23,6 @@ public class Backtrace {
 
     public List<Activation> getActivations() {
         return Collections.unmodifiableList(Arrays.asList(activations));
-    }
-
-    private static BacktraceFormatter getFormatter(TruffleContextInterface.BacktraceFormatter formatter) {
-        switch (formatter) {
-            case MRI:
-                return new MRIBacktraceFormatter();
-            case DEBUG:
-                return new DebugBacktraceFormatter();
-            case IMPL_DEBUG:
-                return new ImplementationDebugBacktraceFormatter();
-            default:
-                throw new UnsupportedOperationException();
-        }
     }
 
 }

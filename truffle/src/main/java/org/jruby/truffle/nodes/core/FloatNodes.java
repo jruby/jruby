@@ -13,16 +13,19 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -59,8 +62,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double add(double a, RubyBasicObject b) {
-            return a + BignumNodes.getBigIntegerValue(b).doubleValue();
+        public double add(double a, DynamicObject b) {
+            return a + Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
     }
@@ -83,12 +86,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double sub(double a, RubyBasicObject b) {
-            return a - BignumNodes.getBigIntegerValue(b).doubleValue();
+        public double sub(double a, DynamicObject b) {
+            return a - Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object subCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+        public Object subCoerced(VirtualFrame frame, double a, DynamicObject b) {
             return ruby(frame, "redo_coerced :-, b", "b", b);
         }
 
@@ -112,12 +115,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double mul(double a, RubyBasicObject b) {
-            return a * BignumNodes.getBigIntegerValue(b).doubleValue();
+        public double mul(double a, DynamicObject b) {
+            return a * Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object mulCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+        public Object mulCoerced(VirtualFrame frame, double a, DynamicObject b) {
             return ruby(frame, "redo_coerced :*, b", "b", b);
         }
 
@@ -158,12 +161,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double pow(double a, RubyBasicObject b) {
-            return Math.pow(a, BignumNodes.getBigIntegerValue(b).doubleValue());
+        public double pow(double a, DynamicObject b) {
+            return Math.pow(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object powCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+        public Object powCoerced(VirtualFrame frame, double a, DynamicObject b) {
             return ruby(frame, "redo_coerced :**, b", "b", b);
         }
 
@@ -189,8 +192,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double div(double a, RubyBasicObject b) {
-            return a / BignumNodes.getBigIntegerValue(b).doubleValue();
+        public double div(double a, DynamicObject b) {
+            return a / Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = {
@@ -240,8 +243,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public double mod(double a, RubyBasicObject b) {
-            return mod(a, BignumNodes.getBigIntegerValue(b).doubleValue());
+        public double mod(double a, DynamicObject b) {
+            return mod(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
     }
@@ -257,18 +260,18 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public RubyBasicObject divMod(double a, long b) {
+        public DynamicObject divMod(double a, long b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyBasicObject divMod(double a, double b) {
+        public DynamicObject divMod(double a, double b) {
             return divModNode.execute(a, b);
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public RubyBasicObject divMod(double a, RubyBasicObject b) {
-            return divModNode.execute(a, BignumNodes.getBigIntegerValue(b));
+        public DynamicObject divMod(double a, DynamicObject b) {
+            return divModNode.execute(a, Layouts.BIGNUM.getValue(b));
         }
 
     }
@@ -291,8 +294,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean lessBignum(double a, RubyBasicObject b) {
-            return a < BignumNodes.getBigIntegerValue(b).doubleValue();
+        public boolean lessBignum(double a, DynamicObject b) {
+            return a < Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = {
@@ -323,8 +326,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean lessEqual(double a, RubyBasicObject b) {
-            return a <= BignumNodes.getBigIntegerValue(b).doubleValue();
+        public boolean lessEqual(double a, DynamicObject b) {
+            return a <= Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = {
@@ -376,12 +379,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean equal(double a, RubyBasicObject b) {
-            return a == BignumNodes.getBigIntegerValue(b).doubleValue();
+        public boolean equal(double a, DynamicObject b) {
+            return a == Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(b)")
-        public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
+        public Object equal(VirtualFrame frame, double a, DynamicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
@@ -399,12 +402,12 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isNaN(a)")
-        public RubyBasicObject compareFirstNaN(double a, Object b) {
+        public DynamicObject compareFirstNaN(double a, Object b) {
             return nil();
         }
 
         @Specialization(guards = "isNaN(b)")
-        public RubyBasicObject compareSecondNaN(Object a, double b) {
+        public DynamicObject compareSecondNaN(Object a, double b) {
             return nil();
         }
 
@@ -414,7 +417,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {"isInfinity(a)", "isRubyBignum(b)"})
-        public int compareInfinity(double a, RubyBasicObject b) {
+        public int compareInfinity(double a, DynamicObject b) {
             if (a < 0) {
                 return -1;
             } else {
@@ -423,8 +426,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {"!isNaN(a)", "!isInfinity(a)", "isRubyBignum(b)"})
-        public int compareBignum(double a, RubyBasicObject b) {
-            return Double.compare(a, BignumNodes.getBigIntegerValue(b).doubleValue());
+        public int compareBignum(double a, DynamicObject b) {
+            return Double.compare(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization(guards = {"!isNaN(a)", "!isNaN(b)"})
@@ -433,7 +436,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {"!isNaN(a)", "!isRubyBignum(b)"})
-        public RubyBasicObject compare(double a, RubyBasicObject b) {
+        public DynamicObject compare(double a, DynamicObject b) {
             return nil();
         }
 
@@ -457,8 +460,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greaterEqual(double a, RubyBasicObject b) {
-            return a >= BignumNodes.getBigIntegerValue(b).doubleValue();
+        public boolean greaterEqual(double a, DynamicObject b) {
+            return a >= Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = {
@@ -490,8 +493,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "isRubyBignum(b)")
-        public boolean greater(double a, RubyBasicObject b) {
-            return a > BignumNodes.getBigIntegerValue(b).doubleValue();
+        public boolean greater(double a, DynamicObject b) {
+            return a > Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
         @Specialization(guards = {
@@ -697,8 +700,8 @@ public abstract class FloatNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(double value) {
-            return createString(Double.toString(value), USASCIIEncoding.INSTANCE);
+        public DynamicObject toS(double value) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
 
     }

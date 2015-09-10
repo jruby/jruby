@@ -12,17 +12,15 @@ package org.jruby.truffle.nodes.exceptions;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RetryException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
@@ -33,7 +31,7 @@ public class TryNode extends RubyNode {
     @Child private ExceptionTranslatingNode tryPart;
     @Children final RescueNode[] rescueParts;
     @Child private RubyNode elsePart;
-    @Child private WriteInstanceVariableNode clearExceptionVariableNode;
+    @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
     private final BranchProfile controlFlowProfile = BranchProfile.create();
@@ -44,12 +42,7 @@ public class TryNode extends RubyNode {
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
-        clearExceptionVariableNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
-                new LiteralNode(context, sourceSection, context.getThreadManager().getCurrentThread().getThreadLocals()),
-                new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil"),
-                true);
+        clearExceptionVariableNode = new ClearExceptionVariableNode(context, sourceSection);
     }
 
     @Override
@@ -85,11 +78,11 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerDirectives.transferToInterpreter();
 
-        final RubyBasicObject threadLocals = getContext().getThreadManager().getCurrentThread().getThreadLocals();
-        RubyBasicObject.setInstanceVariable(threadLocals, "$!", exception.getRubyException());
+        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        threadLocals.define("$!", exception.getRubyException(), 0);
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, exception.getRubyException())) {
+            if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
                 return rescue.execute(frame);
             }
         }

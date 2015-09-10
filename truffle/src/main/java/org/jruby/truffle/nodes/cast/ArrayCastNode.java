@@ -13,20 +13,20 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /*
- * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
+ * TODO(CS): could probably unify this with SplatCastNode with some final configuration getContext().getOptions().
  */
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
@@ -48,32 +48,32 @@ public abstract class ArrayCastNode extends RubyNode {
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyBasicObject cast(boolean value) {
+    public DynamicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyBasicObject cast(int value) {
+    public DynamicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyBasicObject cast(long value) {
+    public DynamicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyBasicObject cast(double value) {
+    public DynamicObject cast(double value) {
         return nil();
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    public RubyBasicObject castBignum(RubyBasicObject value) {
+    public DynamicObject castBignum(DynamicObject value) {
         return nil();
     }
 
     @Specialization(guards = "isRubyArray(array)")
-    public RubyBasicObject castArray(RubyBasicObject array) {
+    public DynamicObject castArray(DynamicObject array) {
         return array;
     }
 
@@ -81,10 +81,10 @@ public abstract class ArrayCastNode extends RubyNode {
     public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return createEmptyArray();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return ArrayNodes.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;
@@ -96,7 +96,7 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyArray(object)"})
-    public Object cast(VirtualFrame frame, RubyBasicObject object) {
+    public Object cast(VirtualFrame frame, DynamicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {

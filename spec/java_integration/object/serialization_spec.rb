@@ -18,7 +18,7 @@ describe "A Ruby object" do
     
     obj2 = ois.readObject
     
-    obj2.class.should == Object
+    expect(obj2.class).to eq(Object)
   end
   
   # TODO: Need more specs and fixes for core JRuby classes that don't serialize yet

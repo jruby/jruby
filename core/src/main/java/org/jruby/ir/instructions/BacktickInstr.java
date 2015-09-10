@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this string operand could get converted to calls
-public class BacktickInstr extends ResultBaseInstr {
+public class BacktickInstr extends NOperandResultBaseInstr {
     public BacktickInstr(Variable result, Operand[] pieces) {
         super(Operation.BACKTICK_STRING, result, pieces);
     }
@@ -47,7 +47,7 @@ public class BacktickInstr extends ResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString newString = context.runtime.newString();
 
-        for (Operand p: operands) {
+        for (Operand p: getOperands()) {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
             newString.append19((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }

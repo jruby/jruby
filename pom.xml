@@ -16,7 +16,7 @@ DO NOT MODIFIY - GENERATED CODE
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.0.0.0-SNAPSHOT</version>
+  <version>9.0.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -105,7 +105,7 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <rspec-core.version>2.14.2</rspec-core.version>
+    <rspec-core.version>3.3.2</rspec-core.version>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
@@ -116,17 +116,17 @@ DO NOT MODIFIY - GENERATED CODE
     <rake.version>10.1.0</rake.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
-    <rspec-expectations.version>2.14.0</rspec-expectations.version>
+    <rspec-expectations.version>3.3.1</rspec-expectations.version>
     <asm.version>5.0.3</asm.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <base.javac.version>1.7</base.javac.version>
     <krypt.version>0.0.2.rc1</krypt.version>
     <test-unit.version>3.0.3</test-unit.version>
     <rdoc.version>4.1.0</rdoc.version>
-    <rspec.version>2.14.1</rspec.version>
+    <rspec.version>3.3.0</rspec.version>
     <base.java.version>1.7</base.java.version>
-    <rspec-mocks.version>2.14.1</rspec-mocks.version>
-    <jruby.plugins.version>1.0.9</jruby.plugins.version>
+    <rspec-mocks.version>3.3.2</rspec-mocks.version>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
     <power_assert.version>0.2.3</power_assert.version>
@@ -134,7 +134,7 @@ DO NOT MODIFIY - GENERATED CODE
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
-    <joda.time.version>2.5</joda.time.version>
+    <joda.time.version>2.8.2</joda.time.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencyManagement>
@@ -313,10 +313,9 @@ DO NOT MODIFIY - GENERATED CODE
             </execution>
           </executions>
           <configuration>
-            <settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-            <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
             <properties>
-              <project.version>${project.version}</project.version>
+              <jruby.version>${project.version}</jruby.version>
+              <jruby.plugins.version>${jruby.plugins.version}</jruby.plugins.version>
             </properties>
             <pomIncludes>
               <pomInclude>*/pom.xml</pomInclude>
@@ -871,6 +870,22 @@ DO NOT MODIFIY - GENERATED CODE
       <properties>
         <invoker.skip>false</invoker.skip>
       </properties>
+    </profile>
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

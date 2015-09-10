@@ -26,8 +26,6 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
 import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
 import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
-import org.jruby.truffle.nodes.defined.DefinedWrapperNode;
-import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -89,40 +87,45 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
+        final org.jruby.ast.Node[] args = node.getArgs();
+        final int preCount = node.getPreCount();
 
-        if (node.getPre() != null) {
+        if (preCount > 0) {
             state = State.PRE;
             index = 0;
-            for (org.jruby.ast.Node arg : node.getPre().children()) {
-                sequence.add(arg.accept(this));
-                ++index;
+            for (int i = 0; i < preCount; i++) {
+                sequence.add(args[i].accept(this));
+                index++;
                 required++;
             }
         }
 
-        if (node.getOptArgs() != null) {
+        final int optArgCount = node.getOptionalArgsCount();
+        if (optArgCount > 0) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
             state = State.OPT;
             index = argsNode.getPreCount();
-            for (org.jruby.ast.Node arg : node.getOptArgs().children()) {
-                sequence.add(arg.accept(this));
+            final int optArgIndex = node.getOptArgIndex();
+            for (int i = 0; i < optArgCount; i++) {
+                sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
         }
 
-        hasKeywordArguments = node.hasKwargs() && node.getKeywords() != null;
+        hasKeywordArguments = node.hasKwargs();
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
             sequence.add(node.getRestArgNode().accept(this));
         }
 
-        if (node.getPost() != null) {
+        int postCount = node.getPostCount();
+        if (postCount > 0) {
             state = State.POST;
             index = -1;
-            org.jruby.ast.Node[] children = node.getPost().children();
-            for (int i = children.length - 1; i >= 0; i--) {
-                sequence.add(children[i].accept(this));
+            int postIndex = node.getPostIndex();
+            for (int i = postCount - 1; i >= 0; i--) {
+                sequence.add(args[postIndex + i].accept(this));
                 required++;
                 index--;
             }
@@ -131,9 +134,11 @@ public class LoadArgumentsTranslator extends Translator {
         if (hasKeywordArguments) {
             kwIndex = 0;
             countKwArgs = 0;
-            
-            for (org.jruby.ast.Node arg : node.getKeywords().children()) {
-                sequence.add(arg.accept(this));
+            final int keywordIndex = node.getKeywordsIndex();
+            final int keywordCount = node.getKeywordCount();
+
+            for (int i = 0; i < keywordCount; i++) {
+                sequence.add(args[keywordIndex + i].accept(this));
                 kwIndex++;
                 countKwArgs++;
             }
@@ -164,47 +169,27 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name;
-        final RubyNode defaultValue;
-
         final org.jruby.ast.Node firstChild = node.childNodes().get(0);
+        final org.jruby.ast.AssignableNode asgnNode;
+        final String name;
 
         if (firstChild instanceof org.jruby.ast.LocalAsgnNode) {
-            final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
-            name = localAsgnNode.getName();
-
-            if (localAsgnNode.getValueNode() == null) {
-                defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
-            } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
-                /*
-                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
-                 * the semantic action of executing this node is to report an error, and we do the same thing.
-                 */
-                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            } else {
-                defaultValue = localAsgnNode.getValueNode().accept(this);
-            }
+            asgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
+            name = ((org.jruby.ast.LocalAsgnNode) firstChild).getName();
         } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) firstChild;
-            name = dAsgnNode.getName();
-
-            if (dAsgnNode.getValueNode() == null) {
-                defaultValue = new DefinedWrapperNode(context, sourceSection,
-                        new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                        "nil");
-            } else if (dAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
-                /*
-                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
-                 * the semantic action of executing this node is to report an error, and we do the same thing.
-                 */
-                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            }else {
-                defaultValue = dAsgnNode.getValueNode().accept(this);
-            }
+            asgnNode = (org.jruby.ast.DAsgnNode) firstChild;
+            name = ((org.jruby.ast.DAsgnNode) firstChild).getName();
         } else {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
+        }
+
+        final RubyNode defaultValue;
+        if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+            /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
+             * the semantic action of executing this node is to report an error, and we do the same thing. */
+            defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
+        } else {
+            defaultValue = translateNodeOrNil(sourceSection, asgnNode.getValueNode());
         }
 
         excludedKeywords.add(name);
@@ -413,9 +398,7 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         for (String parameterToClear : parametersToClearCollector.getParameters()) {
-            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new DefinedWrapperNode(context, sourceSection,
-                    new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                    "nil")));
+            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(nilNode(sourceSection)));
         }
 
         if (!childNodes.isEmpty()) {
@@ -433,9 +416,7 @@ public class LoadArgumentsTranslator extends Translator {
                 new IfNode(context, sourceSection,
                         new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        notNil == null ? new DefinedWrapperNode(context, sourceSection,
-                                new LiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                                "nil") : notNil));
+                        notNil == null ? nilNode(sourceSection) : notNil));
     }
 
     @Override

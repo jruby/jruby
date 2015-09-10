@@ -12,10 +12,10 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.array.ArrayUtils;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -29,7 +29,7 @@ public final class RubyArguments {
     public static final int BLOCK_INDEX = 3;
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
-    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, RubyBasicObject block, Object[] arguments) {
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, DynamicObject block, Object[] arguments) {
         assert block == null || RubyGuards.isRubyProc(block);
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
@@ -42,7 +42,7 @@ public final class RubyArguments {
 
         return packed;
     }
-    
+
     public static Object getOptimizedKeywordArgument(Object[] arguments,
             int index) {
         return arguments[arguments.length - 1 + index];
@@ -60,16 +60,20 @@ public final class RubyArguments {
         return arguments[SELF_INDEX];
     }
 
-    public static RubyBasicObject getBlock(Object[] arguments) {
-        return (RubyBasicObject) arguments[BLOCK_INDEX];
+    public static DynamicObject getBlock(Object[] arguments) {
+        return (DynamicObject) arguments[BLOCK_INDEX];
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
+    public static Object[] extractUserArgumentsFrom(Object[] arguments, int start) {
+        return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT + start, arguments.length);
+    }
+
     public static Object[] extractUserArgumentsWithUnshift(Object first, Object[] arguments) {
-        final Object[] range = ArrayUtils.extractRange(arguments, BLOCK_INDEX, arguments.length);
+        final Object[] range = ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT - 1, arguments.length);
         range[0] = first;
         return range;
     }
@@ -82,7 +86,7 @@ public final class RubyArguments {
         if (isKwOptimized(internalArguments)) {
             return getUserArgumentsCount(internalArguments)
                     - getMethod(internalArguments).getSharedMethodInfo().getArity()
-                            .getKeywordArguments().size() - 1;
+                            .getKeywordsCount() - 1;
         } else {
             return getUserArgumentsCount(internalArguments);
         }
@@ -96,7 +100,7 @@ public final class RubyArguments {
         internalArguments[RUNTIME_ARGUMENT_COUNT + index] = value;
     }
 
-    public static RubyBasicObject getUserKeywordsHash(Object[] internalArguments, int minArgumentCount) {
+    public static DynamicObject getUserKeywordsHash(Object[] internalArguments, int minArgumentCount) {
         final int argumentCount = getUserArgumentsCount(internalArguments);
 
         if (argumentCount <= minArgumentCount) {
@@ -106,7 +110,7 @@ public final class RubyArguments {
         final Object lastArgument = getUserArgument(internalArguments, argumentCount - 1);
 
         if (RubyGuards.isRubyHash(lastArgument)) {
-            return (RubyBasicObject) lastArgument;
+            return (DynamicObject) lastArgument;
         }
 
         return null;

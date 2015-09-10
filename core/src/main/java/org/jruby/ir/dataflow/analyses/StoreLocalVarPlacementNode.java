@@ -35,8 +35,29 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
     @Override
     public void applyPreMeetHandler() {
+        BasicBlock bb = getBB();
+
         // For rescue entries, <in> is handled specially
-        if (!getBB().isRescueEntry()) inDirtyVars = new HashSet<LocalVariable>();
+        if (!bb.isRescueEntry()) {
+            inDirtyVars = new HashSet<LocalVariable>();
+
+            // If this is the exit BB, we need a binding store on exit only for vars that are both:
+            //
+            //   (a) dirty,
+            //   (b) live on exit from the closure
+            //       condition reqd. because the variable could be dirty but not used outside.
+            //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
+            //       i,j are dirty inside the block, but not used outside
+            if (bb.isExitBB()) {
+                LiveVariablesProblem lvp = problem.getScope().getLiveVariablesProblem();
+                java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
+                if (liveVars != null) {
+                    inDirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+                } else {
+                    inDirtyVars.clear();
+                }
+            }
+        }
     }
 
     @Override
@@ -97,6 +118,27 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 }
                 dirtyVars = newDirtyVars;
             }
+        } else if (i instanceof ReturnBase || i instanceof BreakInstr) {
+            // Wherever control leaves the scope (returns, breaks)
+            // we need a binding store on exit only for vars that are both:
+            //
+            //   (a) dirty,
+            //   (b) live on exit.
+            //       condition useful because the variable could be dirty but not used outside.
+            //         Ex: s=0; a.each { |i| j = i+1; sum += j; return if j < 5; sum += 1; }; puts sum
+            //       i,j are dirty inside the block, but not used outside
+            //
+            // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
+
+            if (!getBB().isExitBB()) {
+                LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
+                java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
+                if (liveVars != null) {
+                    dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+                } else {
+                    dirtyVars.clear();
+                }
+            }
         }
 
         if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
@@ -117,8 +159,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             if (v instanceof LocalVariable && !v.isSelf()) dirtyVars.add((LocalVariable) v);
         }
-
-        if (i.getOperation().isReturn()) dirtyVars.clear();
     }
 
     @Override
@@ -146,24 +186,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
 
         initSolution();
-
-        // If this is the exit BB, we need a binding store on exit only for vars that are both:
-        //
-        //   (a) dirty,
-        //   (b) live on exit from the closure
-        //       condition reqd. because the variable could be dirty but not used outside.
-        //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
-        //       i,j are dirty inside the block, but not used outside
-
-        if (basicBlock.isExitBB()) {
-            LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
-            java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
-            if (liveVars != null) {
-                dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
-            } else {
-                dirtyVars.clear();
-            }
-        }
 
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -228,13 +250,13 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     dirtyVars = newDirtyVars;
                     instrs.next();
                 }
-            } else if ((isClosure && (i instanceof ReturnInstr)) || (i instanceof BreakInstr)) {
-                // At closure return and break instructions (both of which are exits from the closure),
+            } else if (i instanceof ReturnBase || i instanceof BreakInstr) {
+                // Wherever control leaves the scope (returns, breaks)
                 // we need a binding store on exit only for vars that are both:
                 //
                 //   (a) dirty,
-                //   (b) live on exit from the closure
-                //       condition reqd. because the variable could be dirty but not used outside.
+                //   (b) live on exit.
+                //       condition useful because the variable could be dirty but not used outside.
                 //         Ex: s=0; a.each { |i| j = i+1; sum += j; return if j < 5; sum += 1; }; puts sum
                 //       i,j are dirty inside the block, but not used outside
                 //
@@ -242,7 +264,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
                 if (!basicBlock.isExitBB()) {
                     LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
-                    java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
+                    java.util.Collection<LocalVariable> liveVars = lvp.getLocalVarsLiveOnScopeEntry();
                     if (liveVars != null) {
                         dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
                     } else {
@@ -252,7 +274,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
                 // Add before call
                 instrs.previous();
-                boolean f = problem.addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
+                boolean f = problem.addScopeExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
                 addedStores = addedStores || f;
                 instrs.next();
 
@@ -260,10 +282,8 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 dirtyVars.clear();
             }
 
-            if (
-                    (scopeBindingHasEscaped && i.getOperation() == Operation.PUT_GLOBAL_VAR)
-                    || i.getOperation() == Operation.THREAD_POLL
-                    ) {
+            if ((scopeBindingHasEscaped && i.getOperation() == Operation.PUT_GLOBAL_VAR)
+                || i.getOperation() == Operation.THREAD_POLL) {
                 // 1. Global-var tracing can execute closures set up in previous trace-var calls
                 // in which case we would have the 'scopeBindingHasEscaped' flag set to true.
                 // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
@@ -311,7 +331,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         if (basicBlock.isExitBB()) {
             // Last instr could be a return -- so, move iterator one position back
             if (instrs.hasPrevious()) instrs.previous();
-            boolean f = problem.addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
+            boolean f = problem.addScopeExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
             addedStores = addedStores || f;
         }
 

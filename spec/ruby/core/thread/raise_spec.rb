@@ -42,6 +42,13 @@ describe "Thread#raise on a sleeping thread" do
     ScratchPad.recorded.message.should == "get to work"
   end
 
+  it "raises the given exception and the backtrace is the one of the interrupted thread" do
+    @thr.raise Exception
+    Thread.pass while @thr.status
+    ScratchPad.recorded.should be_kind_of(Exception)
+    ScratchPad.recorded.backtrace[0].should include("sleep")
+  end
+
   it "is captured and raised by Thread#value" do
     t = Thread.new do
       sleep

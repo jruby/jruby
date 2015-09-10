@@ -12,14 +12,14 @@ package org.jruby.truffle.nodes.control;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 
 public class WhenSplatNode extends RubyNode {
 
@@ -40,10 +40,10 @@ public class WhenSplatNode extends RubyNode {
 
         final Object caseExpression = readCaseExpression.execute(frame);
 
-        final RubyBasicObject array;
+        final DynamicObject array;
 
         try {
-            array = splat.executeRubyBasicObject(frame);
+            array = splat.executeDynamicObject(frame);
         } catch (UnexpectedResultException e) {
             throw new UnsupportedOperationException();
         }
@@ -53,7 +53,7 @@ public class WhenSplatNode extends RubyNode {
             throw new UnsupportedOperationException();
         }
 
-        for (Object value : ArrayNodes.slowToArray(array)) {
+        for (Object value : ArrayOperations.toIterable(array)) {
             if (dispatchCaseEqual.callBoolean(frame, caseExpression, "===", null, value)) {
                 return true;
             }

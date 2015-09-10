@@ -56,6 +56,7 @@ import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -148,8 +149,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final SleepTask2 sleepTask = new SleepTask2();
 
     private static final boolean DEBUG = false;
-    private static final int RUBY_MIN_THREAD_PRIORITY = -3;
-    private static final int RUBY_MAX_THREAD_PRIORITY = 3;
+    public static final int RUBY_MIN_THREAD_PRIORITY = -3;
+    public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
     /** Thread statuses */
     public static enum Status { 
@@ -1106,26 +1107,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyFixnum.newFixnum(getRuntime(), iPriority);
     }
      
-    /* helper methods to translate java thread priority (1-10) to
-     * Ruby thread priority (-3 to 3) using a quadratic polynoimal ant its
-     * inverse
+    /* helper methods to translate Java thread priority (1-10) to
+     * Ruby thread priority (-3 to 3) using a quadratic polynomial ant its
+     * inverse passing by (Ruby,Java): (-3,1), (0,5) and (3,10)
      * i.e., j = r^2/18 + 3*r/2 + 5
      *       r = 3/2*sqrt(8*j + 41) - 27/2
      */
-    private int javaPriorityToRubyPriority(int javaPriority) {
-        double d; // intermediate value
-        d = 1.5 * Math.sqrt(8.0*javaPriority + 41) - 13.5;
+    public static int javaPriorityToRubyPriority(int javaPriority) {
+        double d = 1.5 * Math.sqrt(8.0 * javaPriority + 41) - 13.5;
         return Math.round((float) d);
     }
-    
-    private int rubyPriorityToJavaPriority(int rubyPriority) {
-        double d;
-        if (rubyPriority < RUBY_MIN_THREAD_PRIORITY) {
-            rubyPriority = RUBY_MIN_THREAD_PRIORITY;
-        } else if (rubyPriority > RUBY_MAX_THREAD_PRIORITY) {
-            rubyPriority = RUBY_MAX_THREAD_PRIORITY;
-        }
-        d = Math.pow(rubyPriority, 2.0)/18.0 + 1.5 * rubyPriority + 5;
+
+    public static int rubyPriorityToJavaPriority(int rubyPriority) {
+        double d = (rubyPriority * rubyPriority) / 18.0 + 1.5 * rubyPriority + 5;
         return Math.round((float) d);
     }
     
@@ -1303,7 +1297,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * The sleep is interrupted by releasing a permit. All permits are drained again on exit to ensure
      * the next sleep blocks.
      */
-    private class SleepTask2 implements Task<Object, Long> {
+    private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
         long millis;
         {semaphore.drainPermits();}
@@ -1499,7 +1493,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         Ruby runtime = getRuntime();
         if (abortOnException(runtime) && exception instanceof Error) {
             // re-propagate on main thread
-            runtime.getThreadService().getMainThread().getNativeThread().stop(exception);
+            runtime.getThreadService().getMainThread().raise(JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
         } else {
             // just rethrow on this thread, let system handlers report it
             Helpers.throwException(exception);

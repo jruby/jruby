@@ -8,11 +8,11 @@ describe ".const_get" do
 
   context "with leading colons" do
     it "finds the toplevel constant" do
-      Object.const_get("::Example").should == Example
+      expect(Object.const_get("::Example")).to eq(Example)
     end
 
     it "works with arbitrarily nested constants" do
-      Object.const_get("::Example::Foo::Bar").should == "bar"
+      expect(Object.const_get("::Example::Foo::Bar")).to eq("bar")
     end
   end
 

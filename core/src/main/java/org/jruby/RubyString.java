@@ -1950,8 +1950,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
-        ThreadContext context = runtime.getCurrentContext();
-
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();
@@ -3438,7 +3436,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
-        int range = ptr + len;
         byte[]bytes = value.getUnsafeBytes();
 
         RubyArray result = runtime.newArray();
@@ -3676,8 +3673,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int last = -1, prev = 0;
         int[] startp = {0};
         byte[] pBytes = value.unsafeBytes();
-        int p = value.begin();
-        int len = value.realSize();
+        final int len = value.realSize();
 
 
         pat = getPatternQuoted(context, pat, true);

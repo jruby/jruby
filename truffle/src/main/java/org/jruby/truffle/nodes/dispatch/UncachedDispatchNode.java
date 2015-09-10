@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
@@ -24,8 +25,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class UncachedDispatchNode extends DispatchNode {
@@ -64,7 +63,7 @@ public class UncachedDispatchNode extends DispatchNode {
             Object argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
-        final RubyClass callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
+        final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
         final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
                 ignoreVisibility);
@@ -78,7 +77,7 @@ public class UncachedDispatchNode extends DispatchNode {
                                 method,
                                 method.getDeclarationFrame(),
                                 receiverObject,
-                                (RubyBasicObject) blockObject,
+                                (DynamicObject) blockObject,
                                 (Object[]) argumentsObjects));
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return true;
@@ -121,7 +120,7 @@ public class UncachedDispatchNode extends DispatchNode {
                             missingMethod,
                             missingMethod.getDeclarationFrame(),
                             receiverObject,
-                            (RubyBasicObject) blockObject,
+                            (DynamicObject) blockObject,
                             modifiedArgumentsObjects));
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;

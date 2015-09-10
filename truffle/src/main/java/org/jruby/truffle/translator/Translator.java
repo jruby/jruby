@@ -14,18 +14,13 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 import java.util.*;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
-    protected static final boolean YIELDS = Options.TRUFFLE_YIELDS.load();
-
-    public static final Set<String> PRINT_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_AST.load().split(",")));
-    public static final Set<String> PRINT_FULL_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_FULL_AST.load().split(",")));
-    public static final Set<String> PRINT_PARSE_TREE_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE.load().split(",")));
     public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
 
@@ -59,6 +54,20 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         } else {
             return source.createSection(identifier, sourcePosition.getLine() + 1);
         }
+    }
+
+    protected RubyNode nilNode(SourceSection sourceSection) {
+        return new NilNode(context, sourceSection);
+    }
+
+    protected RubyNode translateNodeOrNil(SourceSection sourceSection, org.jruby.ast.Node node) {
+        final RubyNode rubyNode;
+        if (node != null) {
+            rubyNode = node.accept(this);
+        } else {
+            rubyNode = nilNode(sourceSection);
+        }
+        return rubyNode;
     }
 
     protected abstract String getIdentifier();

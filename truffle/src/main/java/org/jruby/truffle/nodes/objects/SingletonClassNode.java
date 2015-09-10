@@ -14,13 +14,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ClassNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -35,89 +37,89 @@ public abstract class SingletonClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract RubyClass executeSingletonClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeSingletonClass(VirtualFrame frame, Object value);
 
     @Specialization(guards = "value")
-    protected RubyClass singletonClassTrue(boolean value) {
+    protected DynamicObject singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
     @Specialization(guards = "!value")
-    protected RubyClass singletonClassFalse(boolean value) {
+    protected DynamicObject singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization(guards = "isNil(value)")
-    protected RubyClass singletonClassNil(RubyBasicObject value) {
+    protected DynamicObject singletonClassNil(DynamicObject value) {
         return getContext().getCoreLibrary().getNilClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(int value) {
+    protected DynamicObject singletonClass(int value) {
         return noSingletonClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(long value) {
+    protected DynamicObject singletonClass(long value) {
         return noSingletonClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(double value) {
+    protected DynamicObject singletonClass(double value) {
         return noSingletonClass();
     }
 
     @Specialization(guards = "isRubyBignum(value)")
-    protected RubyClass singletonClassBignum(RubyBasicObject value) {
+    protected DynamicObject singletonClassBignum(DynamicObject value) {
         return noSingletonClass();
     }
 
     @Specialization(guards = "isRubySymbol(value)")
-    protected RubyClass singletonClassSymbol(RubyBasicObject value) {
+    protected DynamicObject singletonClassSymbol(DynamicObject value) {
         return noSingletonClass();
     }
 
-    @Specialization
-    protected RubyClass singletonClass(RubyClass rubyClass) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        return rubyClass.getSingletonClass();
+    @Specialization(guards = "isRubyClass(rubyClass)")
+    protected DynamicObject singletonClassClass(DynamicObject rubyClass) {
+        return ClassNodes.getSingletonClass(rubyClass);
     }
 
     @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)", "!isRubyClass(object)" })
-    protected RubyClass singletonClass(RubyBasicObject object) {
+    protected DynamicObject singletonClass(DynamicObject object) {
         return getNormalObjectSingletonClass(object);
     }
 
-    public RubyClass getNormalObjectSingletonClass(RubyBasicObject object) {
+    public DynamicObject getNormalObjectSingletonClass(DynamicObject object) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (object instanceof RubyClass) { // For the direct caller
-            return ((RubyClass) object).getSingletonClass();
+        if (RubyGuards.isRubyClass(object)) { // For the direct caller
+            return ClassNodes.getSingletonClass(object);
         }
 
-        if (object.getMetaClass().isSingleton()) {
-            return object.getMetaClass();
+        if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(object))) {
+            return Layouts.BASIC_OBJECT.getMetaClass(object);
         }
 
         CompilerDirectives.transferToInterpreter();
-        final RubyClass logicalClass = object.getLogicalClass();
+        final DynamicObject logicalClass = Layouts.BASIC_OBJECT.getLogicalClass(object);
 
-        RubyModule attached = null;
-        if (object instanceof RubyModule) {
-            attached = (RubyModule) object;
+        DynamicObject attached = null;
+        if (RubyGuards.isRubyModule(object)) {
+            attached = object;
         }
 
-        String name = String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), object.verySlowGetObjectID());
-        RubyClass singletonClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
+        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), ObjectIDOperations.verySlowGetObjectID(object));
+        final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
-        object.setMetaClass(singletonClass);
+        Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
 
         return singletonClass;
     }
 
-    private void propagateFrozen(Object object, RubyClass singletonClass) {
+    private void propagateFrozen(Object object, DynamicObject singletonClass) {
+        assert RubyGuards.isRubyClass(singletonClass);
+
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
@@ -129,7 +131,7 @@ public abstract class SingletonClassNode extends RubyNode {
         }
     }
 
-    private RubyClass noSingletonClass() {
+    private DynamicObject noSingletonClass() {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeErrorCantDefineSingleton(this));
     }

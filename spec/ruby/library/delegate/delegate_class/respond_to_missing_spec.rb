@@ -2,7 +2,6 @@ require 'delegate'
 
 describe "DelegateClass#respond_to_missing?" do
   it "is used for respond_to? behavior of late-bound delegated methods" do
-    
     # From jruby/jruby#3151:
     # DelegateClass subtracts Delegate's public API from the target class's instance_methods
     # to determine which methods to eagerly delegate. If respond_to_missing? shows up in

@@ -12,9 +12,9 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +68,8 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(IOPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(IOBufferPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ExceptionPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(ChannelPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(ThreadPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(WeakRefPrimitiveNodesFactory.getFactories());
 
         // This comes last as a catch-all
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
@@ -82,7 +83,7 @@ public class RubiniusPrimitiveManager {
     }
 
     @TruffleBoundary
-    public void installPrimitive(String name, RubyBasicObject method) {
+    public void installPrimitive(String name, DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
         addPrimitive(name, new RubiniusPrimitiveCallConstructor(method));
     }

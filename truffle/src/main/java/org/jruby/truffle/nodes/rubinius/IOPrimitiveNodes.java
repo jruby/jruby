@@ -41,100 +41,33 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.*;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
-import jnr.ffi.byref.IntByReference;
-import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.StringNodes;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.FDSet;
 import org.jruby.truffle.runtime.sockets.FDSetFactory;
 import org.jruby.truffle.runtime.sockets.FDSetFactoryFactory;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 import org.jruby.util.Dir;
+import org.jruby.util.StringSupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.nio.ByteBuffer;
-import java.util.EnumSet;
 
 public abstract class IOPrimitiveNodes {
 
     private static int STDOUT = 1;
-
-    private static final String IBUFFER_IDENTIFIER = "@ibuffer";
-    private static final Property IBUFFER_PROPERTY;
-
-    private static final String LINENO_IDENTIFIER = "@lineno";
-    private static final Property LINENO_PROPERTY;
-
-    private static final String DESCRIPTOR_IDENTIFIER = "@descriptor";
-    private static final Property DESCRIPTOR_PROPERTY;
-
-    private static final String MODE_IDENTIFIER = "@mode";
-    private static final Property MODE_PROPERTY;
-
-    private static final DynamicObjectFactory IO_FACTORY;
-
-    static {
-        final Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
-
-        IBUFFER_PROPERTY = Property.create(IBUFFER_IDENTIFIER, allocator.locationForType(RubyBasicObject.class, EnumSet.of(LocationModifier.NonNull)), 0);
-        LINENO_PROPERTY = Property.create(LINENO_IDENTIFIER, allocator.locationForType(int.class), 0);
-        DESCRIPTOR_PROPERTY = Property.create(DESCRIPTOR_IDENTIFIER, allocator.locationForType(int.class), 0);
-        MODE_PROPERTY = Property.create(MODE_IDENTIFIER, allocator.locationForType(int.class), 0);
-
-        IO_FACTORY = RubyBasicObject.EMPTY_SHAPE
-                .addProperty(IBUFFER_PROPERTY)
-                .addProperty(LINENO_PROPERTY)
-                .addProperty(DESCRIPTOR_PROPERTY)
-                .addProperty(MODE_PROPERTY)
-                .createFactory();
-    }
-
-    public static class IOAllocator implements Allocator {
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyBasicObject(rubyClass, IO_FACTORY.newInstance(context.getCoreLibrary().getNilObject(), 0, 0, 0));
-        }
-    }
-
-    public static int getDescriptor(RubyBasicObject io) {
-        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
-        return (int) DESCRIPTOR_PROPERTY.get(io.getDynamicObject(), true);
-    }
-
-    public static void setDescriptor(RubyBasicObject io, int newDescriptor) {
-        assert io.getDynamicObject().getShape().hasProperty(DESCRIPTOR_IDENTIFIER);
-
-        try {
-            DESCRIPTOR_PROPERTY.set(io.getDynamicObject(), newDescriptor, io.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
-
-    public static void setMode(RubyBasicObject io, int newMode) {
-        assert io.getDynamicObject().getShape().hasProperty(MODE_IDENTIFIER);
-
-        try {
-            MODE_PROPERTY.set(io.getDynamicObject(), newMode, io.getDynamicObject().getShape());
-        } catch (IncompatibleLocationException | FinalLocationException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
 
     @RubiniusPrimitive(name = "io_allocate")
     public static abstract class IOAllocatePrimitiveNode extends RubiniusPrimitiveNode {
@@ -147,9 +80,9 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject allocate(VirtualFrame frame, RubyClass classToAllocate) {
-            final Object buffer = newBufferNode.call(frame, getContext().getCoreLibrary().getIOBufferClass(), "new", null);
-            return new RubyBasicObject(classToAllocate, IO_FACTORY.newInstance(buffer, 0, 0, 0));
+        public DynamicObject allocate(VirtualFrame frame, DynamicObject classToAllocate) {
+            final DynamicObject buffer = (DynamicObject) newBufferNode.call(frame, getContext().getCoreLibrary().getInternalBufferClass(), "new", null);
+            return Layouts.IO.createIO(Layouts.CLASS.getInstanceFactory(classToAllocate), buffer, 0, 0, 0);
         }
 
     }
@@ -167,7 +100,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public boolean connectPipe(VirtualFrame frame, RubyBasicObject lhs, RubyBasicObject rhs) {
+        public boolean connectPipe(VirtualFrame frame, DynamicObject lhs, DynamicObject rhs) {
             final int[] fds = new int[2];
 
             if (posix().pipe(fds) == -1) {
@@ -178,15 +111,16 @@ public abstract class IOPrimitiveNodes {
             newOpenFd(fds[0]);
             newOpenFd(fds[1]);
 
-            setDescriptor(lhs, fds[0]);
-            setMode(lhs, RDONLY);
+            Layouts.IO.setDescriptor(lhs, fds[0]);
+            Layouts.IO.setMode(lhs, RDONLY);
 
-            setDescriptor(rhs, fds[1]);
-            setMode(rhs, WRONLY);
+            Layouts.IO.setDescriptor(rhs, fds[1]);
+            Layouts.IO.setMode(rhs, WRONLY);
 
             return true;
         }
 
+        @TruffleBoundary
         private void newOpenFd(int newFd) {
             final int FD_CLOEXEC = 1;
 
@@ -216,8 +150,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(path)")
-        public int open(RubyBasicObject path, int mode, int permission) {
-            return posix().open(StringNodes.getByteList(path), mode, permission);
+        public int open(DynamicObject path, int mode, int permission) {
+            return posix().open(StringOperations.getString(path), mode, permission);
         }
 
     }
@@ -231,15 +165,13 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization(guards = "isRubyString(path)")
-        public int truncate(RubyBasicObject path, int length) {
+        public int truncate(DynamicObject path, int length) {
             return truncate(path, (long) length);
         }
 
         @Specialization(guards = "isRubyString(path)")
-        public int truncate(RubyBasicObject path, long length) {
-            final ByteList byteList = StringNodes.getByteList(path);
-            final String pathString = RubyEncoding.decodeUTF8(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            final int result = posix().truncate(pathString, length);
+        public int truncate(DynamicObject path, long length) {
+            final int result = posix().truncate(StringOperations.getString(path), length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -257,13 +189,13 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public int ftruncate(VirtualFrame frame, RubyBasicObject io, int length) {
+        public int ftruncate(VirtualFrame frame, DynamicObject io, int length) {
             return ftruncate(frame, io, (long) length);
         }
 
         @Specialization
-        public int ftruncate(VirtualFrame frame, RubyBasicObject io, long length) {
-            final int fd = getDescriptor(io);
+        public int ftruncate(VirtualFrame frame, DynamicObject io, long length) {
+            final int fd = Layouts.IO.getDescriptor(io);
             return posix().ftruncate(fd, length);
         }
 
@@ -278,13 +210,15 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
-        public boolean fnmatch(RubyBasicObject pattern, RubyBasicObject path, int flags) {
-            return Dir.fnmatch(StringNodes.getByteList(pattern).getUnsafeBytes(),
-                    StringNodes.getByteList(pattern).getBegin(),
-                    StringNodes.getByteList(pattern).getBegin() + StringNodes.getByteList(pattern).getRealSize(),
-                    StringNodes.getByteList(path).getUnsafeBytes(),
-                    StringNodes.getByteList(path).getBegin(),
-                    StringNodes.getByteList(path).getBegin() + StringNodes.getByteList(path).getRealSize(),
+        public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
+            final ByteList patternBytes = Layouts.STRING.getByteList(pattern);
+            final ByteList pathBytes = Layouts.STRING.getByteList(path);
+            return Dir.fnmatch(patternBytes.getUnsafeBytes(),
+                    patternBytes.getBegin(),
+                    patternBytes.getBegin() + patternBytes.getRealSize(),
+                    pathBytes.getUnsafeBytes(),
+                    pathBytes.getBegin(),
+                    pathBytes.getBegin() + pathBytes.getRealSize(),
                     flags) != Dir.FNM_NOMATCH;
         }
 
@@ -298,9 +232,9 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject ensureOpen(VirtualFrame frame, RubyBasicObject file) {
+        public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
             // TODO BJF 13-May-2015 Handle nil case
-            final int fd = getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
             if(fd == -1){
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
@@ -324,47 +258,52 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object readIfAvailable(RubyBasicObject file, int numberOfBytes) {
+        public Object readIfAvailable(DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                        new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
-            final int fd = getDescriptor(file);
+            final int fd = Layouts.IO.getDescriptor(file);
 
             final FDSet fdSet = fdSetFactory.create();
             fdSet.set(fd);
 
-            final Pointer timeout = jnr.ffi.Runtime.getSystemRuntime().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
+            // TODO CS 2-Sep-15 why are longs 8 bytes? Is that always the case?
+            final Pointer timeout = getContext().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
             timeout.putLong(0, 0);
             timeout.putLong(8, 0);
 
-            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(), PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+            final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
+                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(Errno.EAGAIN.intValue(), this));
+                rubyWithSelf(file, "raise IO::EAGAINWaitReadable");
             }
 
             if (res < 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             final byte[] bytes = new byte[numberOfBytes];
-            final int bytesRead = getContext().getPosix().read(fd, bytes, numberOfBytes);
+            final int bytesRead = posix().read(fd, bytes, numberOfBytes);
 
             if (bytesRead == -1) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().errnoError(getContext().getPosix().errno(), this));
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
 
             if (bytesRead == 0) {
-                return StringNodes.createEmptyString(getContext().getCoreLibrary().getStringClass());
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                        new ByteList(), StringSupport.CR_UNKNOWN, null);
             }
 
-            return StringNodes.createString(getContext().getCoreLibrary().getStringClass(), bytes);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
+                    new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -379,10 +318,10 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization
-        public Object reopen(VirtualFrame frame, RubyBasicObject file, RubyBasicObject io) {
-            final int fd = getDescriptor(file);
-            final int fdOther = getDescriptor(io);
+        @TruffleBoundary
+        private void performReopen(DynamicObject file, DynamicObject io) {
+            final int fd = Layouts.IO.getDescriptor(file);
+            final int fdOther = Layouts.IO.getDescriptor(io);
 
             final int result = posix().dup2(fd, fdOther);
             if (result == -1) {
@@ -395,7 +334,12 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            setMode(file, mode);
+            Layouts.IO.setMode(file, mode);
+        }
+
+        @Specialization
+        public Object reopen(VirtualFrame frame, DynamicObject file, DynamicObject io) {
+            performReopen(file, io);
 
             resetBufferingNode.call(frame, io, "reset_buffering", null);
 
@@ -414,10 +358,10 @@ public abstract class IOPrimitiveNodes {
             resetBufferingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @Specialization(guards = "isRubyString(path)")
-        public Object reopenPath(VirtualFrame frame, RubyBasicObject file, RubyBasicObject path, int mode) {
-            int fd = getDescriptor(file);
-            final String pathString = path.toString();
+        @TruffleBoundary
+        public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
+            int fd = Layouts.IO.getDescriptor(file);
+            final String pathString = StringOperations.getString(path);
 
             int otherFd = posix().open(pathString, mode, 666);
             if (otherFd < 0) {
@@ -429,7 +373,7 @@ public abstract class IOPrimitiveNodes {
             if (result == -1) {
                 final int errno = posix().errno();
                 if (errno == Errno.EBADF.intValue()) {
-                    setDescriptor(file, otherFd);
+                    Layouts.IO.setDescriptor(file, otherFd);
                     fd = otherFd;
                 } else {
                     if (otherFd > 0) {
@@ -449,7 +393,12 @@ public abstract class IOPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
-            setMode(file, newMode);
+            Layouts.IO.setMode(file, newMode);
+        }
+
+        @Specialization(guards = "isRubyString(path)")
+        public Object reopenPath(VirtualFrame frame, DynamicObject file, DynamicObject path, int mode) {
+            performReopenPath(file, path, mode);
 
             resetBufferingNode.call(frame, file, "reset_buffering", null);
 
@@ -465,18 +414,18 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
-        public int write(VirtualFrame frame, RubyBasicObject file, RubyBasicObject string) {
-            final int fd = getDescriptor(file);
+        public int write(DynamicObject file, DynamicObject string) {
+            final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = StringNodes.getByteList(string);
+            final ByteList byteList = Layouts.STRING.getByteList(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
                 getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
                 return byteList.length();
             }
 
-            // We have to copy here as write starts at byte[0], and the ByteList may not
             // TODO (eregon, 11 May 2015): review consistency under concurrent modification
             final ByteBuffer buffer = ByteBuffer.wrap(byteList.unsafeBytes(), byteList.begin(), byteList.length());
 
@@ -488,7 +437,8 @@ public abstract class IOPrimitiveNodes {
                 int written = posix().write(fd, buffer, buffer.remaining());
 
                 if (written == -1) {
-                    throw new UnsupportedOperationException();
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
                 }
 
                 buffer.position(buffer.position() + written);
@@ -512,16 +462,17 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public int close(VirtualFrame frame, RubyBasicObject io) {
+        public int close(VirtualFrame frame, DynamicObject io) {
             ensureOpenNode.call(frame, io, "ensure_open", null);
 
-            final int fd = getDescriptor(io);
+            final int fd = Layouts.IO.getDescriptor(io);
 
             if (fd == -1) {
                 return 0;
             }
 
-            setDescriptor(io, -1);
+            int newDescriptor = -1;
+            Layouts.IO.setDescriptor(io, newDescriptor);
 
             if (fd < 3) {
                 return 0;
@@ -547,8 +498,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public int seek(VirtualFrame frame, RubyBasicObject io, int amount, int whence) {
-            final int fd = getDescriptor(io);
+        public int seek(VirtualFrame frame, DynamicObject io, int amount, int whence) {
+            final int fd = Layouts.IO.getDescriptor(io);
             return posix().lseek(fd, amount, whence);
         }
 
@@ -561,12 +512,13 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public int accept(VirtualFrame frame, RubyBasicObject io) {
-            final int fd = getDescriptor(io);
+        public int accept(DynamicObject io) {
+            final int fd = Layouts.IO.getDescriptor(io);
 
-            final IntByReference addressLength = new IntByReference(16);
-            final long address = UnsafeHolder.U.allocateMemory(addressLength.intValue());
+            final int[] addressLength = {16};
+            final long address = UnsafeHolder.U.allocateMemory(addressLength[0]);
 
             final int newFd;
 
@@ -594,8 +546,8 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBasicObject sysread(VirtualFrame frame, RubyBasicObject file, int length) {
-            final int fd = getDescriptor(file);
+        public DynamicObject sysread(VirtualFrame frame, DynamicObject file, int length) {
+            final int fd = Layouts.IO.getDescriptor(file);
 
             final ByteBuffer buffer = ByteBuffer.allocate(length);
 
@@ -609,7 +561,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return createString(buffer);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(buffer.array()), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -625,8 +577,8 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
-        public Object select(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
-            final Object[] readableObjects = ArrayNodes.slowToArray(readables);
+        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
+            final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
 
             final FDSet readableSet = fdSetFactory.create();
@@ -635,7 +587,7 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(
@@ -651,16 +603,17 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                     getSetObjects(readableObjects, readableFds, readableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
         @TruffleBoundary
         @Specialization(guards = { "isNil(readables)", "isRubyArray(writables)", "isNil(errorables)" })
-        public Object selectNilReadables(RubyBasicObject readables, RubyBasicObject writables, RubyBasicObject errorables, int timeout) {
-            final Object[] writableObjects = ArrayNodes.slowToArray(writables);
+        public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
+            final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
 
             final FDSet writableSet = fdSetFactory.create();
@@ -669,7 +622,7 @@ public abstract class IOPrimitiveNodes {
                 writableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Integer>() {
+            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return nativeSockets().select(
@@ -685,25 +638,26 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass(),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()),
-                    getSetObjects(writableObjects, writableFds, writableSet),
-                    ArrayNodes.fromObjects(getContext().getCoreLibrary().getArrayClass()));
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
+                            getSetObjects(writableObjects, writableFds, writableSet),
+                            Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    3);
         }
 
-        private int[] getFileDescriptors(RubyBasicObject fileDescriptorArray) {
+        private int[] getFileDescriptors(DynamicObject fileDescriptorArray) {
             assert RubyGuards.isRubyArray(fileDescriptorArray);
 
-            final Object[] objects = ArrayNodes.slowToArray(fileDescriptorArray);
+            final Object[] objects = ArrayOperations.toObjectArray(fileDescriptorArray);
 
             final int[] fileDescriptors = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                if (!(objects[n] instanceof RubyBasicObject)) {
+                if (!(objects[n] instanceof DynamicObject)) {
                     throw new UnsupportedOperationException();
                 }
 
-                fileDescriptors[n] = getDescriptor((RubyBasicObject) objects[n]);
+                fileDescriptors[n] = Layouts.IO.getDescriptor((DynamicObject) objects[n]);
             }
 
             return fileDescriptors;
@@ -721,7 +675,7 @@ public abstract class IOPrimitiveNodes {
             return max;
         }
 
-        private RubyBasicObject getSetObjects(Object[] objects, int[] fds, FDSet set) {
+        private DynamicObject getSetObjects(Object[] objects, int[] fds, FDSet set) {
             final Object[] setObjects = new Object[objects.length];
             int setFdsCount = 0;
 
@@ -732,7 +686,7 @@ public abstract class IOPrimitiveNodes {
                 }
             }
 
-            return createArray(setObjects, setFdsCount);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), setObjects, setFdsCount);
         }
 
     }

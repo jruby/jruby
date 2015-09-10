@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -29,6 +30,11 @@ public class DeadNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException(reason);
+        throw exception();
+    }
+
+    @TruffleBoundary
+    private RuntimeException exception() {
+        return new UnsupportedOperationException(reason);
     }
 }

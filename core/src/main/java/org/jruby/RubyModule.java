@@ -68,6 +68,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -105,6 +106,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -558,13 +560,13 @@ public class RubyModule extends RubyObject {
     }
 
 
-    @JRubyMethod(name = "refine", required = 1)
+    @JRubyMethod(name = "refine", required = 1, reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject classArg, Block block) {
         if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
         if (!(classArg instanceof RubyClass)) throw context.runtime.newTypeError(classArg, context.runtime.getClassClass());
-        if (refinements == Collections.EMPTY_MAP) refinements = new HashMap<>();
-        if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = new HashMap<>();
+        if (refinements == Collections.EMPTY_MAP) refinements = new IdentityHashMap<>();
+        if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = new IdentityHashMap<>();
 
         RubyClass classWeAreRefining = (RubyClass) classArg;
         RubyModule refinement = refinements.get(classWeAreRefining);
@@ -582,7 +584,8 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyModule createNewRefinedModule(ThreadContext context, RubyClass classWeAreRefining) {
-        RubyModule newRefinement = new RubyModule(context.runtime, classWeAreRefining);
+        RubyModule newRefinement = new RubyModule(context.runtime);
+        newRefinement.setSuperClass(classWeAreRefining);
         newRefinement.setFlag(REFINED_MODULE_F, true);
         newRefinement.setFlag(RubyObject.USER7_F, false); // Refinement modules should not do implementer check
         newRefinement.refinedClass = classWeAreRefining;
@@ -604,14 +607,14 @@ public class RubyModule extends RubyObject {
     // 3. refinement is already in the refinementwrapper so we do not need to add it to the wrapper again: return null
     private RubyClass getAlreadyActivatedRefinementWrapper(RubyClass classWeAreRefining, RubyModule refinement) {
         // We have already encountered at least one refine on this class.  Return that wrapper.
-        RubyClass moduleWrapperForRefinment = activatedRefinements.get(classWeAreRefining);
-        if (moduleWrapperForRefinment == null) return classWeAreRefining;
+        RubyClass moduleWrapperForRefinement = activatedRefinements.get(classWeAreRefining);
+        if (moduleWrapperForRefinement == null) return classWeAreRefining;
 
-        for (RubyModule c = moduleWrapperForRefinment; c != null && c.isIncluded(); c = c.getSuperClass()) {
+        for (RubyModule c = moduleWrapperForRefinement; c != null && c.isIncluded(); c = c.getSuperClass()) {
             if (c.getNonIncludedClass() == refinement) return null;
         }
 
-        return moduleWrapperForRefinment;
+        return moduleWrapperForRefinement;
     }
 
     /*
@@ -621,24 +624,34 @@ public class RubyModule extends RubyObject {
      */
     // MRI: add_activated_refinement
     private void addActivatedRefinement(ThreadContext context, RubyClass classWeAreRefining, RubyModule refinement) {
-        RubyClass superClass = getAlreadyActivatedRefinementWrapper(classWeAreRefining, refinement);
-        if (superClass == null) return; // already been refined and added to refinementwrapper
-
+//        RubyClass superClass = getAlreadyActivatedRefinementWrapper(classWeAreRefining, refinement);
+//        if (superClass == null) return; // already been refined and added to refinementwrapper
+        RubyClass superClass = null;
+        RubyClass c = activatedRefinements.get(classWeAreRefining);
+        if (c != null) {
+            superClass = c;
+            while (c != null && c.isIncluded()) {
+                if (((IncludedModuleWrapper)c).getNonIncludedClass() == refinement) {
+            		/* already used refinement */
+                    return;
+                }
+                c = c.getSuperClass();
+            }
+        }
         refinement.setFlag(IS_OVERLAID_F, true);
         IncludedModuleWrapper iclass = new IncludedModuleWrapper(context.runtime, superClass, refinement);
-        RubyClass c = iclass;
+        c = iclass;
         c.refinedClass = classWeAreRefining;
         for (refinement = refinement.getSuperClass(); refinement != null; refinement = refinement.getSuperClass()) {
             refinement.setFlag(IS_OVERLAID_F, true);
-            RubyClass superClazz = c.getSuperClass();
-            c.setModuleSuperClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
+            c.setSuperClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
+            c = c.getSuperClass();
             c.refinedClass = classWeAreRefining;
-            c = superClazz;
         }
         activatedRefinements.put(classWeAreRefining, iclass);
     }
 
-    @JRubyMethod(name = "using", required = 1, frame = true)
+    @JRubyMethod(name = "using", required = 1, frame = true, reads = SCOPE)
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
         // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...
@@ -647,7 +660,9 @@ public class RubyModule extends RubyObject {
         }
 
         // I pass the cref even though I don't need to so that the concept is simpler to read
-        usingModule(context, this, refinedModule);
+        StaticScope staticScope = context.getCurrentStaticScope();
+        RubyModule overlayModule = staticScope.getOverlayModule(context);
+        usingModule(context, overlayModule, refinedModule);
 
         return this;
     }
@@ -1485,29 +1500,29 @@ public class RubyModule extends RubyObject {
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
         DynamicMethod method = deepMethodSearch(name, runtime);
 
-        if (method instanceof JavaMethod) {
-            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-            // We warn because we treat certain method names as "special" for purposes of
-            // optimization. Hopefully this will be enough to convince people not to alias
-            // them.
-            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
-
-            if (callerReq.framing() != Framing.None ||
-                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
-                char refChar = '#';
-                String simpleName = getSimpleName();
-
-                if (baseName == null && this instanceof MetaClass) {
-                    IRubyObject attached = ((MetaClass)this).getAttached();
-                    if (attached instanceof RubyModule) {
-                        simpleName = ((RubyModule)attached).getSimpleName();
-                        refChar = '.';
-                    }
-                }
-
-                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
-            }
-        }
+//        if (method instanceof JavaMethod) {
+//            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+//            // We warn because we treat certain method names as "special" for purposes of
+//            // optimization. Hopefully this will be enough to convince people not to alias
+//            // them.
+//            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
+//
+//            if (callerReq.framing() != Framing.None ||
+//                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
+//                char refChar = '#';
+//                String simpleName = getSimpleName();
+//
+//                if (baseName == null && this instanceof MetaClass) {
+//                    IRubyObject attached = ((MetaClass)this).getAttached();
+//                    if (attached instanceof RubyModule) {
+//                        simpleName = ((RubyModule)attached).getSimpleName();
+//                        refChar = '.';
+//                    }
+//                }
+//
+//                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
+//            }
+//        }
 
         return method;
     }
@@ -1608,12 +1623,12 @@ public class RubyModule extends RubyObject {
 
         final String variableName = ("@" + internedName).intern();
         if (readable) {
-            addMethod(internedName, new AttrReaderMethod(methodLocation, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
+            addMethod(internedName, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
         if (writeable) {
             internedName = (internedName + "=").intern();
-            addMethod(internedName, new AttrWriterMethod(methodLocation, visibility, CallConfiguration.FrameNoneScopeNone, variableName));
+            addMethod(internedName, new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
         }
     }
@@ -1703,14 +1718,21 @@ public class RubyModule extends RubyObject {
             return site.call(context, self, self, args, block);
         }
 
+        @Override
         public boolean equals(Object other) {
-            if (!(other instanceof RespondToMissingMethod)) return false;
+            if ( ! (other instanceof RespondToMissingMethod) ) return false;
 
-            RespondToMissingMethod rtmm = (RespondToMissingMethod)other;
+            RespondToMissingMethod that = (RespondToMissingMethod) other;
 
-            return this.site.methodName.equals(rtmm.site.methodName) &&
-                    isImplementedBy(rtmm.getImplementationClass());
+            return this.site.methodName.equals(that.site.methodName) &&
+                    isImplementedBy(that.getImplementationClass());
         }
+
+        @Override
+        public int hashCode() {
+            return /* getImplementationClass().hashCode() + */ 7 * this.site.methodName.hashCode();
+        }
+
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
@@ -4232,7 +4254,7 @@ public class RubyModule extends RubyObject {
      * 'Module#autoload' creates this object and stores it in autoloadMap.
      * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
      */
-    private class Autoload {
+    private static final class Autoload {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
         // The lock for test-and-set the ctx.

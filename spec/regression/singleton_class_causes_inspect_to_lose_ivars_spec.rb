@@ -10,9 +10,9 @@ describe 'A class on which singleton_class has been called' do
       end
     end
 
-    cls.new(false).inspect.should =~ /@a=1/
-    cls.new(false).inspect.should =~ /@b=2/
-    cls.new(true).inspect.should =~ /@a=1/
-    cls.new(true).inspect.should =~ /@b=2/
+    expect(cls.new(false).inspect).to match(/@a=1/)
+    expect(cls.new(false).inspect).to match(/@b=2/)
+    expect(cls.new(true).inspect).to match(/@a=1/)
+    expect(cls.new(true).inspect).to match(/@b=2/)
   end
 end

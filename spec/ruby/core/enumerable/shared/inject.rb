@@ -1,4 +1,4 @@
-describe :enumerable_inject, :shared => true do
+describe :enumerable_inject, shared: true do
   it "with argument takes a block with an accumulator (with argument as initial value) and the current element. Value of block becomes new accumulator" do
     a = []
     EnumerableSpecs::Numerous.new.send(@method, 0) { |memo, i| a << [memo, i]; i }

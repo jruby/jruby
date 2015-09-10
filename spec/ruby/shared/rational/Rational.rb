@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/rational', __FILE__)
 
-describe :kernel_Rational, :shared => true do
+describe :kernel_Rational, shared: true do
   describe "passed Integer" do
     # Guard against the Mathn library
     conflicts_with :Prime do

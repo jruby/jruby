@@ -18,25 +18,27 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
 import org.joni.exception.ValueException;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.*;
 
 import java.nio.ByteBuffer;
@@ -49,13 +51,14 @@ import static org.jruby.util.StringSupport.CR_7BIT;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
-    public static RubyBasicObject makeString(RubyBasicObject source, int start, int length) {
+    @TruffleBoundary
+    public static DynamicObject makeString(DynamicObject source, int start, int length) {
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = new ByteList(StringNodes.getByteList(source), start, length);
-        final RubyBasicObject ret = StringNodes.createString(source.getLogicalClass(), bytes);
+        final ByteList bytes = new ByteList(Layouts.STRING.getByteList(source), start, length);
+        final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(source)), bytes, StringSupport.CR_UNKNOWN, null);
 
-        StringNodes.setCodeRange(ret, StringNodes.getCodeRange(source));
+        Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(source));
 
         return ret;
     }
@@ -75,40 +78,25 @@ public abstract class RegexpNodes {
         }
     }
 
-    public static Regex getRegex(RubyBasicObject regexp) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        return ((RubyRegexp) regexp).regex;
-    }
-
-    public static ByteList getSource(RubyBasicObject regexp) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        return ((RubyRegexp) regexp).source;
-    }
-
-    public static RegexpOptions getOptions(RubyBasicObject regexp) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        return ((RubyRegexp) regexp).options;
-    }
-
     @TruffleBoundary
-    public static Object matchCommon(RubyBasicObject regexp, RubyBasicObject source, boolean operator, boolean setNamedCaptures) {
+    public static Object matchCommon(DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
         return matchCommon(regexp, source, operator, setNamedCaptures, 0);
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyBasicObject regexp, RubyBasicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
+    public static Object matchCommon(DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, int startPos) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final byte[] stringBytes = StringNodes.getByteList(source).bytes();
+        final byte[] stringBytes = Layouts.STRING.getByteList(source).bytes();
 
-        final ByteList bl = getSource(regexp);
-        final Encoding enc = checkEncoding(regexp, StringNodes.getCodeRangeable(source), true);
-        final ByteList preprocessed = RegexpSupport.preprocess(regexp.getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+        final ByteList bl = Layouts.REGEXP.getSource(regexp);
+        final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeable(source), true);
+        final ByteList preprocessed = RegexpSupport.preprocess(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
-        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringNodes.getCodeRangeable(source), true));
+        final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeable(source), true));
         final Matcher matcher = r.matcher(stringBytes);
         int range = stringBytes.length;
 
@@ -116,31 +104,31 @@ public abstract class RegexpNodes {
     }
 
     @TruffleBoundary
-    public static Object matchCommon(RubyBasicObject regexp, RubyBasicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+    public static Object matchCommon(DynamicObject regexp, DynamicObject source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final ByteList bytes = StringNodes.getByteList(source);
-        final RubyContext context = regexp.getContext();
+        final ByteList bytes = Layouts.STRING.getByteList(source);
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
-        final Frame frame = RubyCallStack.getCallerFrame(regexp.getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final int match = matcher.search(startPos, range, Option.DEFAULT);
 
-        final RubyBasicObject nil = regexp.getContext().getCoreLibrary().getNilObject();
+        final DynamicObject nil = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
 
         if (match == -1) {
             setThread(regexp, "$~", nil);
 
-            if (setNamedCaptures && getRegex(regexp).numberOfNames() > 0) {
-                for (Iterator<NameEntry> i = getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
+            if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
+                for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                     final NameEntry e = i.next();
                     final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
-                    setFrame(frame, name, regexp.getContext().getCoreLibrary().getNilObject());
+                    setFrame(frame, name, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject());
                 }
             }
 
-            return regexp.getContext().getCoreLibrary().getNilObject();
+            return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
         }
 
         final Region region = matcher.getEagerRegion();
@@ -156,30 +144,30 @@ public abstract class RegexpNodes {
                 if (start > -1 && end > -1) {
                     groupString = makeString(source, start, end - start);
                 } else {
-                    groupString = regexp.getContext().getCoreLibrary().getNilObject();
+                    groupString = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 }
 
                 values[n] = groupString;
             } else {
                 if (start == -1 || end == -1) {
-                    values[n] = regexp.getContext().getCoreLibrary().getNilObject();
+                    values[n] = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 } else {
                     values[n] = makeString(source, start, end - start);
                 }
             }
         }
 
-        final RubyBasicObject pre = makeString(source, 0, region.beg[0]);
-        final RubyBasicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
-        final RubyBasicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
+        final DynamicObject pre = makeString(source, 0, region.beg[0]);
+        final DynamicObject post = makeString(source, region.end[0], bytes.length() - region.end[0]);
+        final DynamicObject global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
-        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd());
+        final DynamicObject matchObject = Layouts.MATCH_DATA.createMatchData(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getMatchDataClass()), source, regexp, region, values, pre, post, global, matcher.getBegin(), matcher.getEnd(), false, null, null);
 
         if (operator) {
             if (values.length > 0) {
                 int nonNil = values.length - 1;
 
-                while (values[nonNil] == regexp.getContext().getCoreLibrary().getNilObject()) {
+                while (values[nonNil] == Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject()) {
                     nonNil--;
                 }
             }
@@ -187,25 +175,25 @@ public abstract class RegexpNodes {
 
         setThread(regexp, "$~", matchObject);
 
-        if (setNamedCaptures && getRegex(regexp).numberOfNames() > 0) {
-            for (Iterator<NameEntry> i = getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
+        if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
+            for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
                 final String name = new String(e.name, e.nameP, e.nameEnd - e.nameP, StandardCharsets.UTF_8).intern();
-                int nth = getRegex(regexp).nameToBackrefNumber(e.name, e.nameP, e.nameEnd, region);
+                int nth = Layouts.REGEXP.getRegex(regexp).nameToBackrefNumber(e.name, e.nameP, e.nameEnd, region);
 
                 final Object value;
 
                 // Copied from jruby/RubyRegexp - see copyright notice there
 
                 if (nth >= region.numRegs || (nth < 0 && (nth+=region.numRegs) <= 0)) {
-                    value = regexp.getContext().getCoreLibrary().getNilObject();
+                    value = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                 } else {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
                         value = makeString(source, start, end - start);
                     } else {
-                        value = regexp.getContext().getCoreLibrary().getNilObject();
+                        value = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getCoreLibrary().getNilObject();
                     }
                 }
 
@@ -220,27 +208,27 @@ public abstract class RegexpNodes {
         }
     }
 
-    public static void setThread(RubyBasicObject regexp, String name, Object value) {
+    public static void setThread(DynamicObject regexp, String name, Object value) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert value != null;
-        RubyBasicObject.setInstanceVariable(regexp.getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
+        Layouts.THREAD.getThreadLocals(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getThreadManager().getCurrentThread()).define(name, value, 0);
     }
 
     @TruffleBoundary
-    public static RubyBasicObject gsub(RubyBasicObject regexp, RubyBasicObject string, String replacement) {
+    public static DynamicObject gsub(DynamicObject regexp, DynamicObject string, String replacement) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
-        final RubyContext context = regexp.getContext();
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
-        final byte[] stringBytes = StringNodes.getByteList(string).bytes();
+        final byte[] stringBytes = Layouts.STRING.getByteList(string).bytes();
 
-        final Encoding encoding = StringNodes.getByteList(string).getEncoding();
-        final Matcher matcher = getRegex(regexp).matcher(stringBytes);
+        final Encoding encoding = Layouts.STRING.getByteList(string).getEncoding();
+        final Matcher matcher = Layouts.REGEXP.getRegex(regexp).matcher(stringBytes);
 
-        int p = StringNodes.getByteList(string).getBegin();
+        int p = Layouts.STRING.getByteList(string).getBegin();
         int end = 0;
-        int range = p + StringNodes.getByteList(string).getRealSize();
+        int range = p + Layouts.STRING.getByteList(string).getRealSize();
         int lastMatchEnd = 0;
 
         // We only ever care about the entire matched string, not each of the matched parts, so we can hard-code the index.
@@ -266,28 +254,28 @@ public abstract class RegexpNodes {
             builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(replacement.getBytes(StandardCharsets.UTF_8))));
 
             lastMatchEnd = regionEnd;
-            end = StringSupport.positionEndForScan(StringNodes.getByteList(string), matcher, encoding, p, range);
+            end = StringSupport.positionEndForScan(Layouts.STRING.getByteList(string), matcher, encoding, p, range);
         }
 
-        return StringNodes.createString(context.getCoreLibrary().getStringClass(), builder.toString());
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist(builder.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
     @TruffleBoundary
-    public static RubyBasicObject[] split(RubyBasicObject regexp, final RubyBasicObject string, final boolean useLimit, final int limit) {
+    public static DynamicObject[] split(DynamicObject regexp, final DynamicObject string, final boolean useLimit, final int limit) {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(string);
 
-        final RubyContext context = regexp.getContext();
+        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext();
 
-        final ByteList bytes = StringNodes.getByteList(string);
+        final ByteList bytes = Layouts.STRING.getByteList(string);
         final byte[] byteArray = bytes.bytes();
         final int begin = bytes.getBegin();
         final int len = bytes.getRealSize();
         final int range = begin + len;
-        final Encoding encoding = StringNodes.getByteList(string).getEncoding();
-        final Matcher matcher = getRegex(regexp).matcher(byteArray);
+        final Encoding encoding = Layouts.STRING.getByteList(string).getEncoding();
+        final Matcher matcher = Layouts.REGEXP.getRegex(regexp).matcher(byteArray);
 
-        final ArrayList<RubyBasicObject> strings = new ArrayList<>();
+        final ArrayList<DynamicObject> strings = new ArrayList<>();
 
         int end, beg = 0;
         int i = 1;
@@ -301,12 +289,12 @@ public abstract class RegexpNodes {
             while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
                 if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
                     if (len == 0) {
-                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), ""));
+                        strings.add(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist("", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
                         break;
 
                     } else if (lastNull) {
                         final int substringLength = StringSupport.length(encoding, byteArray, begin + beg, range);
-                        strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, substringLength).dup()));
+                        strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, substringLength).dup(), StringSupport.CR_UNKNOWN, null));
                         beg = start - begin;
 
                     } else {
@@ -315,7 +303,7 @@ public abstract class RegexpNodes {
                         continue;
                     }
                 } else {
-                    strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, end - beg).dup()));
+                    strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, end - beg).dup(), StringSupport.CR_UNKNOWN, null));
                     beg = matcher.getEnd();
                     start = begin + beg;
                 }
@@ -326,18 +314,18 @@ public abstract class RegexpNodes {
             }
 
             if (len > 0 && (useLimit || len > beg || limit < 0)) {
-                strings.add(StringNodes.createString(context.getCoreLibrary().getStringClass(), bytes.makeShared(beg, len - beg).dup()));
+                strings.add(Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes.makeShared(beg, len - beg).dup(), StringSupport.CR_UNKNOWN, null));
             }
         }
 
         // Suppress trailing empty fields if not using a limit and the supplied limit isn't negative.
         if (!useLimit && limit == 0) {
-            while (! strings.isEmpty() && (StringNodes.length(strings.get(strings.size() - 1)) == 0)) {
+            while (! strings.isEmpty() && (StringOperations.length(strings.get(strings.size() - 1)) == 0)) {
                 strings.remove(strings.size() - 1);
             }
         }
 
-        return strings.toArray(new RubyString[strings.size()]);
+        return strings.toArray(new DynamicObject[strings.size()]);
     }
 
     @TruffleBoundary
@@ -390,36 +378,31 @@ public abstract class RegexpNodes {
         }
     }
 
-    public static Object getCachedNames(RubyBasicObject regexp) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        return ((RubyRegexp) regexp).cachedNames;
+    public static Object getCachedNames(DynamicObject regexp) {
+        return Layouts.REGEXP.getCachedNames(regexp);
     }
 
-    public static void setCachedNames(RubyBasicObject regexp, Object cachedNames) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        ((RubyRegexp) regexp).cachedNames = cachedNames;
+    public static void setCachedNames(DynamicObject regexp, Object cachedNames) {
+        Layouts.REGEXP.setCachedNames(regexp, cachedNames);
     }
 
-    public static void setRegex(RubyBasicObject regexp, Regex regex) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        ((RubyRegexp) regexp).regex = regex;
+    public static void setRegex(DynamicObject regexp, Regex regex) {
+        Layouts.REGEXP.setRegex(regexp, regex);
     }
 
-    public static void setSource(RubyBasicObject regexp, ByteList source) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        ((RubyRegexp) regexp).source = source;
+    public static void setSource(DynamicObject regexp, ByteList source) {
+        Layouts.REGEXP.setSource(regexp, source);
     }
 
-    public static void setOptions(RubyBasicObject regexp, RegexpOptions options) {
-        assert RubyGuards.isRubyRegexp(regexp);
-        ((RubyRegexp) regexp).options = options;
+    public static void setOptions(DynamicObject regexp, RegexpOptions options) {
+        Layouts.REGEXP.setOptions(regexp, options);
     }
 
     // TODO (nirvdrum 03-June-15) Unify with JRuby in RegexpSupport.
-    public static Encoding checkEncoding(RubyBasicObject regexp, CodeRangeable str, boolean warn) {
+    public static Encoding checkEncoding(DynamicObject regexp, CodeRangeable str, boolean warn) {
         assert RubyGuards.isRubyRegexp(regexp);
 
-        final Regex pattern = getRegex(regexp);
+        final Regex pattern = Layouts.REGEXP.getRegex(regexp);
 
         /*
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -432,7 +415,7 @@ public abstract class RegexpNodes {
             if (enc != pattern.getEncoding()) {
                 //encodingMatchError(getRuntime(), pattern, enc);
             }
-        } else if (getOptions(regexp).isFixed()) {
+        } else if (Layouts.REGEXP.getOptions(regexp).isFixed()) {
             /*
             if (enc != pattern.getEncoding() &&
                     (!pattern.getEncoding().isAsciiCompatible() ||
@@ -450,42 +433,39 @@ public abstract class RegexpNodes {
         return enc;
     }
 
-    public static void initialize(RubyBasicObject regexp, Node currentNode, ByteList setSource, int options) {
+    public static void initialize(DynamicObject regexp, Node currentNode, ByteList setSource, int options) {
         assert RubyGuards.isRubyRegexp(regexp);
         setSource(regexp, setSource);
         setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
-        setRegex(regexp, compile(currentNode, regexp.getContext(), setSource, getOptions(regexp)));
+        setRegex(regexp, compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext(), setSource, Layouts.REGEXP.getOptions(regexp)));
     }
 
-    public static void initialize(RubyBasicObject regexp, Regex setRegex, ByteList setSource) {
+    public static void initialize(DynamicObject regexp, Regex setRegex, ByteList setSource) {
         assert RubyGuards.isRubyRegexp(regexp);
         setRegex(regexp, setRegex);
         setSource(regexp, setSource);
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
-        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
-        RegexpNodes.setOptions(regexp, options);
-        RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, options), regex);
-        return regexp;
+    public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, RegexpOptions options) {
+        return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), RegexpNodes.compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexpClass)).getContext(), regex, options), regex, options, null);
     }
 
-    public static RubyBasicObject createRubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
-        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
+    public static DynamicObject createRubyRegexp(Node currentNode, DynamicObject regexpClass, ByteList regex, int options) {
+        final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, RegexpOptions.fromEmbeddedOptions(options));
-        RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, regexpClass.getContext(), regex, RegexpNodes.getOptions(regexp)), regex);
+        RegexpNodes.initialize(regexp, RegexpNodes.compile(currentNode, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexpClass)).getContext(), regex, Layouts.REGEXP.getOptions(regexp)), regex);
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options) {
-        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
+    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source, RegexpOptions options) {
+        final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.setOptions(regexp, options);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
 
-    public static RubyBasicObject createRubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
-        final RubyBasicObject regexp = new RubyRegexp(regexpClass);
+    public static DynamicObject createRubyRegexp(DynamicObject regexpClass, Regex regex, ByteList source) {
+        final DynamicObject regexp = Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(regexpClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         RegexpNodes.initialize(regexp, regex, source);
         return regexp;
     }
@@ -501,27 +481,27 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object match(RubyBasicObject regexp, RubyBasicObject string) {
+        public Object match(DynamicObject regexp, DynamicObject string) {
             return matchCommon(regexp, string, true, true);
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")
-        public Object match(VirtualFrame frame, RubyBasicObject regexp, RubyBasicObject symbol) {
+        public Object match(VirtualFrame frame, DynamicObject regexp, DynamicObject symbol) {
             if (toSNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toSNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return match(regexp, (RubyBasicObject) toSNode.call(frame, symbol, "to_s", null));
+            return match(regexp, (DynamicObject) toSNode.call(frame, symbol, "to_s", null));
         }
 
         @Specialization(guards = "isNil(nil)")
-        public Object match(RubyBasicObject regexp, Object nil) {
+        public Object match(DynamicObject regexp, Object nil) {
             return nil();
         }
 
         @Specialization(guards = { "!isRubyString(other)", "!isRubySymbol(other)", "!isNil(other)" })
-        public Object matchGeneric(VirtualFrame frame, RubyBasicObject regexp, RubyBasicObject other) {
+        public Object matchGeneric(VirtualFrame frame, DynamicObject regexp, DynamicObject other) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -541,8 +521,8 @@ public abstract class RegexpNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
-        public RubyBasicObject escape(RubyBasicObject pattern) {
-            return createString(org.jruby.RubyRegexp.quote19(new ByteList(StringNodes.getByteList(pattern)), true).toString());
+        public DynamicObject escape(DynamicObject pattern) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(org.jruby.RubyRegexp.quote19(new ByteList(Layouts.STRING.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -555,9 +535,9 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public int hash(RubyBasicObject regexp) {
-            int options = getRegex(regexp).getOptions() & ~32 /* option n, NO_ENCODING in common/regexp.rb */;
-            return options ^ getSource(regexp).hashCode();
+        public int hash(DynamicObject regexp) {
+            int options = Layouts.REGEXP.getRegex(regexp).getOptions() & ~32 /* option n, NO_ENCODING in common/regexp.rb */;
+            return options ^ Layouts.REGEXP.getSource(regexp).hashCode();
         }
 
     }
@@ -571,10 +551,10 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object matchStart(RubyBasicObject regexp, RubyBasicObject string, int startPos) {
+        public Object matchStart(DynamicObject regexp, DynamicObject string, int startPos) {
             final Object matchResult = matchCommon(regexp, string, false, false, startPos);
-            if (matchResult instanceof RubyMatchData && ((RubyMatchData) matchResult).getNumberOfRegions() > 0
-                && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
+            if (RubyGuards.isRubyMatchData(matchResult) && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).numRegs > 0
+                && Layouts.MATCH_DATA.getRegion((DynamicObject) matchResult).beg[0] == startPos) {
                 return matchResult;
             }
             return nil();
@@ -590,14 +570,14 @@ public abstract class RegexpNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(raw)")
-        public RubyBasicObject quoteString(RubyBasicObject raw) {
-            boolean isAsciiOnly = StringNodes.getByteList(raw).getEncoding().isAsciiCompatible() && StringNodes.scanForCodeRange(raw) == CR_7BIT;
-            return createString(org.jruby.RubyRegexp.quote19(StringNodes.getByteList(raw), isAsciiOnly));
+        public DynamicObject quoteString(DynamicObject raw) {
+            boolean isAsciiOnly = Layouts.STRING.getByteList(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), org.jruby.RubyRegexp.quote19(Layouts.STRING.getByteList(raw), isAsciiOnly), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
-        public RubyBasicObject quoteSymbol(RubyBasicObject raw) {
-            return quoteString(StringNodes.createString(raw.getContext().getCoreLibrary().getStringClass(), SymbolNodes.getString(raw)));
+        public DynamicObject quoteSymbol(DynamicObject raw) {
+            return quoteString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(raw)).getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         }
 
     }
@@ -611,7 +591,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = "isRubyString(string)")
-        public Object searchFrom(RubyBasicObject regexp, RubyBasicObject string, int startPos) {
+        public Object searchFrom(DynamicObject regexp, DynamicObject string, int startPos) {
             return matchCommon(regexp, string, false, false, startPos);
         }
     }
@@ -624,8 +604,8 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyBasicObject source(RubyBasicObject regexp) {
-            return createString(getSource(regexp).dup());
+        public DynamicObject source(DynamicObject regexp) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.REGEXP.getSource(regexp).dup(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -637,9 +617,10 @@ public abstract class RegexpNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
-        public RubyBasicObject toS(RubyBasicObject regexp) {
-            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), getSource(regexp), getRegex(regexp).getOptions()).to_s()).getByteList());
+        public DynamicObject toS(DynamicObject regexp) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -656,12 +637,12 @@ public abstract class RegexpNodes {
         }
 
         @Specialization(guards = "!anyNames(regexp)")
-        public RubyBasicObject rubiniusNamesNoCaptures(RubyBasicObject regexp) {
+        public DynamicObject rubiniusNamesNoCaptures(DynamicObject regexp) {
             return nil();
         }
 
         @Specialization(guards = "anyNames(regexp)")
-        public Object rubiniusNames(VirtualFrame frame, RubyBasicObject regexp) {
+        public Object rubiniusNames(VirtualFrame frame, DynamicObject regexp) {
             if (getCachedNames(regexp) != null) {
                 return getCachedNames(regexp);
             }
@@ -678,12 +659,12 @@ public abstract class RegexpNodes {
 
             final Object namesLookupTable = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-            for (final Iterator<NameEntry> i = getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
+            for (final Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
                 final NameEntry e = i.next();
-                final RubyBasicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
+                final DynamicObject name = getSymbol(new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, false));
 
                 final int[] backrefs = e.getBackRefs();
-                final RubyBasicObject backrefsRubyArray = ArrayNodes.createArray(getContext().getCoreLibrary().getArrayClass(), backrefs, backrefs.length);
+                final DynamicObject backrefsRubyArray = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), backrefs, backrefs.length);
 
                 lookupTableWriteNode.call(frame, namesLookupTable, "[]=", null, name, backrefsRubyArray);
             }
@@ -693,16 +674,21 @@ public abstract class RegexpNodes {
             return namesLookupTable;
         }
 
-        public static boolean anyNames(RubyBasicObject regexp) {
-            return getRegex(regexp).numberOfNames() > 0;
+        public static boolean anyNames(DynamicObject regexp) {
+            return Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0;
         }
     }
 
-    public static class RegexpAllocator implements Allocator {
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
-            return new RubyRegexp(rubyClass);
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return Layouts.REGEXP.createRegexp(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, RegexpOptions.NULL_OPTIONS, null);
         }
 
     }

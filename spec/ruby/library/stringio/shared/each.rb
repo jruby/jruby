@@ -1,4 +1,4 @@
-describe :stringio_each_separator, :shared => true do
+describe :stringio_each_separator, shared: true do
   before :each do
     @io = StringIO.new("a b c d e\n1 2 3 4 5")
   end
@@ -44,7 +44,7 @@ describe :stringio_each_separator, :shared => true do
   end
 end
 
-describe :stringio_each_no_arguments, :shared => true do
+describe :stringio_each_no_arguments, shared: true do
   before :each do
     @io = StringIO.new("a b c d e\n1 2 3 4 5")
   end
@@ -93,7 +93,7 @@ describe :stringio_each_no_arguments, :shared => true do
   end
 end
 
-describe :stringio_each_not_readable, :shared => true do
+describe :stringio_each_not_readable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("a b c d e", "w")
     lambda { io.send(@method) { |b| b } }.should raise_error(IOError)
