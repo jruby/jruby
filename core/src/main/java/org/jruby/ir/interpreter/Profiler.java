@@ -65,7 +65,7 @@ public class Profiler {
     public static IRCallSite callerSite = new IRCallSite();
 
     private static int inlineCount = 0;
-    private static int clockCount = 0;
+    private static int globalClockCount = 0;
     private static int codeModificationsCount = 0;
     private static int numCyclesWithNoModifications = 0;
     private static int versionCount = 1;
@@ -236,8 +236,8 @@ public class Profiler {
         callProfile = new HashMap<Long, CallSiteProfile>();
 
         // Every 1M thread polls, discard stats
-        if (clockCount % 1000000 == 0)  {
-            clockCount = 0;
+        if (globalClockCount % 1000000 == 0)  {
+            globalClockCount = 0;
         }
     }
 
@@ -263,7 +263,7 @@ public class Profiler {
 
         /*
         LOG.info("------------------------");
-        LOG.info("Stats after " + clockCount + " thread polls:");
+        LOG.info("Stats after " + globalClockCount + " thread polls:");
         LOG.info("------------------------");
         LOG.info("# instructions: " + interpInstrsCount);
         LOG.info("# code modifications in this period : " + codeModificationsCount);
@@ -273,7 +273,7 @@ public class Profiler {
         float f1 = 0.0f;
         for (IRScope s: scopes) {
             long n = scopeThreadPollCounts.get(s).count;
-            float p1 =  ((n*1000)/ clockCount)/10.0f;
+            float p1 =  ((n*1000)/ globalClockCount)/10.0f;
             String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
             if (s instanceof IRClosure) {
                 IRMethod m = s.getNearestMethod();
@@ -294,19 +294,19 @@ public class Profiler {
         codeModificationsCount = 0;
 
         // Every 1M thread polls, discard stats by reallocating the thread-poll count map
-         if (clockCount % 1000000 == 0)  {
+         if (globalClockCount % 1000000 == 0)  {
             //System.out.println("---- resetting thread-poll counters ----");
             scopeThreadPollCounts = new HashMap<IRScope, Counter>();
-            clockCount = 0;
+            globalClockCount = 0;
         }
     }
 
     public static int initProfiling(IRScope scope) {
         /* SSS: Not being used currently
-        tpCount = scopeThreadPollCounts.get(scope);
-        if (tpCount == null) {
-            tpCount = new Counter();
-            scopeThreadPollCounts.put(scope, tpCount);
+        scopeClockCount = scopeThreadPollCounts.get(scope);
+        if (scopeClockCount == null) {
+            scopeClockCount = new Counter();
+            scopeThreadPollCounts.put(scope, scopeClockCount);
         }
         */
 
@@ -342,8 +342,8 @@ public class Profiler {
     }
 
     public static void clockTick() {
-        // tpCount.count++; // SSS: Not being used currently
-        if (clockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
+        // scopeClockCount.count++;
+        if (globalClockCount++ % PROFILE_PERIOD == 0) analyzeProfile();
     }
 
     public static void instrTick(Operation operation) {
