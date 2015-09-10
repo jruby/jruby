@@ -42,17 +42,11 @@ public abstract class RangeNodes {
         @Specialization(guards = { "isIntegerFixnumRange(range)", "isRubyProc(block)" })
         public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
-            int result;
-            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
-            } else {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
-            }
-            final int exclusiveEnd = result;
-            final int length = exclusiveEnd - begin;
+            final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
+            final boolean excludedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
+            final int length = (excludedEnd ? end : end + 1) - begin;
 
             Object store = arrayBuilder.start(length);
-
             int count = 0;
 
             try {
@@ -61,7 +55,7 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
+                    store = arrayBuilder.appendValue(store, n, yield(frame, block, begin + n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
