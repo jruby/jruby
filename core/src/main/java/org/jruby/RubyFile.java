@@ -1733,7 +1733,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     throw context.runtime.newArgumentError("user " + user + " does not exist");
                 }
 
-                path = "" + dir + (pathLength == userEnd ? "" : path.substring(userEnd));
+                path = dir + (pathLength == userEnd ? "" : path.substring(userEnd));
                 
                 // getpwd (or /etc/passwd fallback) returns a home which is not absolute!!! [mecha-unlikely]
                 if (raiseOnRelativePath && !isAbsolutePath(path)) throw context.runtime.newArgumentError("non-absolute home of " + user);

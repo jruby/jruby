@@ -2864,7 +2864,7 @@ public final class Ruby implements Constantizable {
 
             IRubyObject cc = c.getConstant(str);
             if(!(cc instanceof RubyModule)) {
-                throw newTypeError("" + path + " does not refer to class/module");
+                throw newTypeError(path + " does not refer to class/module");
             }
             c = (RubyModule)cc;
         }

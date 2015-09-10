@@ -2129,7 +2129,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyFixnum) {
             long c = RubyNumeric.num2long(other);
             if (c < 0) {
-                throw runtime.newRangeError("" + c + " out of char range");
+                throw runtime.newRangeError(c + " out of char range");
             }
             return concatNumeric(runtime, (int)(c & 0xFFFFFFFF));
         } else if (other instanceof RubyBignum) {
