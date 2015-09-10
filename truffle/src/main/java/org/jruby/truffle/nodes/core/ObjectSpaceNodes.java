@@ -67,7 +67,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization(guards = "isBasicObjectID(id)")
         public Object id2Ref(final VirtualFrame frame, final long id,
-                @Cached("createReadObjectIDNode()") final ReadHeadObjectFieldNode readObjectIdNode) {
+                             @Cached("createReadObjectIDNode()") final ReadHeadObjectFieldNode readObjectIdNode) {
             CompilerDirectives.transferToInterpreter();
 
             final Memo<Object> result = new Memo<Object>(nil());
@@ -177,7 +177,7 @@ public abstract class ObjectSpaceNodes {
         public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
             if (respondToNode.executeBoolean(frame, finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
-                Object[] objects = new Object[]{0, finalizer};
+                Object[] objects = new Object[]{ 0, finalizer };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();
