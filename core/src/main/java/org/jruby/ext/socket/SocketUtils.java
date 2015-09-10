@@ -565,12 +565,7 @@ public class SocketUtils {
         return ret;
     }
 
-    private static String getHostAddress(ThreadContext context, InetAddress addr) {
-        return getHostAddress(context, addr, null);
-    }
-
-    private static final Pattern STRING_IPV4_ADDRESS_PATTERN =
-            Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
+    private static final Pattern STRING_IPV4_ADDRESS_PATTERN = Pattern.compile("((.*)\\/)?([\\.0-9]+)(:([0-9]+))?");
 
     private static final int IPV4_HOST_GROUP = 3;
     private static final int IPV4_PORT_GROUP = 5;
