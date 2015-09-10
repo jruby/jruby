@@ -64,13 +64,12 @@ public class CallbackInfo extends Type {
      * @return The newly created ruby class
      */
     public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        final RubyClass Type = module.getClass("Type");
+        RubyClass result = module.defineClassUnder(CLASS_NAME, Type, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(CallbackInfo.class);
         result.defineAnnotatedConstants(CallbackInfo.class);
 
-        module.getClass("Type").setConstant("Function", result);
+        Type.setConstant("Function", result);
         return result;
     }
     

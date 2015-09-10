@@ -29,8 +29,8 @@ public final class MappedType extends Type {
     private final CachingCallSite fromNativeCallSite = new FunctionalCachingCallSite("from_native");
 
     public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass convClass = ffiModule.getClass("Type").defineClassUnder("Mapped", ffiModule.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        final RubyClass Type = ffiModule.getClass("Type");
+        RubyClass convClass = Type.defineClassUnder("Mapped", Type, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         convClass.defineAnnotatedMethods(MappedType.class);
         convClass.defineAnnotatedConstants(MappedType.class);
 
