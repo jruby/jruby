@@ -177,7 +177,7 @@ public class CallbackInfo extends Type {
 
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(64);
         sb.append("#<FFI::CallbackInfo [ ");
         for (int i = 0; i < parameterTypes.length; ++i) {
             sb.append(parameterTypes[i].toString().toLowerCase());
@@ -185,12 +185,12 @@ public class CallbackInfo extends Type {
                 sb.append(", ");
             }
         }
-        sb.append(" ], " + returnType.toString().toLowerCase() + ">");
+        sb.append(" ], ").append(returnType.toString().toLowerCase()).append('>');
         return context.runtime.newString(sb.toString());
     }
     @Override
     public final String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(64);
         sb.append("CallbackInfo[parameters=[");
         for (int i = 0; i < parameterTypes.length; ++i) {
             sb.append(parameterTypes[i].toString().toLowerCase());
