@@ -1696,7 +1696,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public Reader getReader() {
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.READER)) {
-            return (Reader) getAttributeMap().get(AttributeName.READER);
+            return (Reader) map.get(AttributeName.READER);
         }
         return null;
     }
@@ -1761,7 +1761,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public Writer getWriter() {
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.WRITER)) {
-            return (Writer) getAttributeMap().get(AttributeName.WRITER);
+            return (Writer) map.get(AttributeName.WRITER);
         }
         return null;
     }
@@ -1825,7 +1825,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public Writer getErrorWriter() {
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.ERROR_WRITER)) {
-            return (Writer) getAttributeMap().get(AttributeName.ERROR_WRITER);
+            return (Writer) map.get(AttributeName.ERROR_WRITER);
         }
         return null;
     }
