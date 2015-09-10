@@ -353,11 +353,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
 
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
+        final String path = getPath();
+        if ( ! new File(path).exists() ) {
+            throw context.runtime.newErrnoENOENTError(path);
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chmod(getPath(), mode));
+        return context.runtime.newFixnum(context.runtime.getPosix().chmod(path, mode));
     }
 
     @JRubyMethod(required = 2)
@@ -373,11 +374,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             group = RubyNumeric.num2int(arg2);
         }
 
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
+        final String path = getPath();
+        if ( ! new File(path).exists() ) {
+            throw context.runtime.newErrnoENOENTError(path);
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chown(getPath(), owner, group));
+        return context.runtime.newFixnum(context.runtime.getPosix().chown(path, owner, group));
     }
 
     @JRubyMethod
@@ -436,8 +438,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
         IRubyObject newPath = context.runtime.getNil();
-        if (getPath() != null) {
-            newPath = context.runtime.newString(getPath());
+        final String path = getPath();
+        if (path != null) {
+            newPath = context.runtime.newString(path);
             newPath.setTaint(true);
         }
         return newPath;
