@@ -679,8 +679,8 @@ public class RubyDir extends RubyObject {
         // dir can't be read, so we check permissions first
 
         // no permission
-        if (directory.getParentFile().exists() &&
-                !directory.getParentFile().canWrite()) {
+        File parentFile = directory.getParentFile();
+        if (parentFile.exists() && ! parentFile.canWrite()) {
             throw runtime.newErrnoEACCESError(path);
         }
 
