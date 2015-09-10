@@ -529,7 +529,7 @@ public class SocketUtils {
         StringBuilder sb = new StringBuilder();
         sb.append(msg);
         for (int i = 0, il = trace.length; i < il; i++) {
-            sb.append(eol + trace[i].toString());
+            sb.append(eol).append(trace[i].toString());
         }
         return new RaiseException(runtime, runtime.getClass("SocketError"), sb.toString(), true);
     }
