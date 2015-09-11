@@ -552,7 +552,8 @@ public class RubyModule extends RubyObject {
     private String calculateAnonymousName() {
         if (anonymousName == null) {
             // anonymous classes get the #<Class:0xdeadbeef> format
-            StringBuilder anonBase = new StringBuilder("#<" + metaClass.getRealClass().getName() + ":0x");
+            StringBuilder anonBase = new StringBuilder(24);
+            anonBase.append("#<").append(metaClass.getRealClass().getName()).append(":0x");
             anonBase.append(Integer.toHexString(System.identityHashCode(this))).append('>');
             anonymousName = anonBase.toString();
         }
@@ -1163,8 +1164,9 @@ public class RubyModule extends RubyObject {
 
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
-        synchronized(methodLocation.getMethodsForWrite()) {
-            DynamicMethod method = (DynamicMethod) methodLocation.getMethodsForWrite().remove(name);
+        Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
+        synchronized (methodsForWrite) {
+            DynamicMethod method = (DynamicMethod) methodsForWrite.remove(name);
             if (method == null) {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
@@ -4254,7 +4256,7 @@ public class RubyModule extends RubyObject {
      * 'Module#autoload' creates this object and stores it in autoloadMap.
      * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
      */
-    private class Autoload {
+    private static final class Autoload {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
         // The lock for test-and-set the ctx.

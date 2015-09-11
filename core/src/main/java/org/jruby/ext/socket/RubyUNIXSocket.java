@@ -147,7 +147,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         // TODO: type and protocol
 
@@ -156,17 +156,17 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         try {
             sp = UnixSocketChannel.pair();
 
-            RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+            final RubyClass UNIXSocket = runtime.getClass("UNIXSocket");
+            RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock.init_sock(runtime, sp[0], "");
 
-            RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+            RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock2.init_sock(runtime, sp[1], "");
 
             return runtime.newArray(sock, sock2);
 
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
-
         }
     }
 

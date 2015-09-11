@@ -472,7 +472,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
+            return interpreter.execute(this, rootNode, context.getFrameSelf());
         } finally {
             context.postEvalScriptlet();
         }
@@ -535,7 +535,7 @@ public final class Ruby implements Constantizable {
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey(), varvalue);
+            getGlobalVariables().set('$' + entry.getKey(), varvalue);
         }
 
         if (filename.endsWith(".class")) {
@@ -835,7 +835,7 @@ public final class Ruby implements Constantizable {
             throw new UnsupportedOperationException();
         }
 
-        return Interpreter.getInstance().execute(this, parseResult, self);
+        return interpreter.execute(this, parseResult, self);
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
@@ -849,7 +849,7 @@ public final class Ruby implements Constantizable {
             Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
-            return Interpreter.getInstance().execute(this, rootNode, self);
+            return interpreter.execute(this, rootNode, self);
         }
     }
 
@@ -2864,7 +2864,7 @@ public final class Ruby implements Constantizable {
 
             IRubyObject cc = c.getConstant(str);
             if(!(cc instanceof RubyModule)) {
-                throw newTypeError("" + path + " does not refer to class/module");
+                throw newTypeError(path + " does not refer to class/module");
             }
             c = (RubyModule)cc;
         }
@@ -3348,7 +3348,10 @@ public final class Ruby implements Constantizable {
      * release the runtime loader but not otherwise - you should do that manually.
      */
     public void releaseClassLoader() {
-        if ( jrubyClassLoader != null ) getJRubyClassLoader().close();
+        if ( jrubyClassLoader != null ) {
+            getJRubyClassLoader().close();
+            jrubyClassLoader = null;
+        }
     }
 
     /**
@@ -5133,6 +5136,8 @@ public final class Ruby implements Constantizable {
     private final org.jruby.management.Runtime runtimeBean;
 
     private final FilenoUtil filenoUtil = new FilenoUtil();
+
+    private Interpreter interpreter = new Interpreter();
 
     /**
      * A representation of this runtime as a JIT-optimizable constant. Used for e.g. invokedynamic binding of runtime

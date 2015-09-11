@@ -173,12 +173,9 @@ public class JavaObject extends RubyObject {
 
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
         if (dataStruct != null) {
-            String stringValue = dataStruct.toString();
-            if (stringValue != null) {
-                return RubyString.newUnicodeString(runtime, dataStruct.toString());
-            }
-
-            return runtime.getNil();
+            final String stringValue = dataStruct.toString();
+            if ( stringValue == null ) return runtime.getNil();
+            return RubyString.newUnicodeString(runtime, stringValue);
         }
         return RubyString.newEmptyString(runtime);
     }

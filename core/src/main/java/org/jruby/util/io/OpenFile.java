@@ -78,8 +78,6 @@ public class OpenFile implements Finalizable {
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
 
     public void ascii8bitBinmode(Ruby runtime) {
-        Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
-
         if (readconv != null) {
             readconv.close();
             readconv = null;
@@ -1521,14 +1519,14 @@ public class OpenFile implements Finalizable {
     }
 
     // io_shift_cbuf
-    public IRubyObject shiftCbuf(ThreadContext context, int len, IRubyObject strp) {
+    public IRubyObject shiftCbuf(ThreadContext context, final int len, final IRubyObject strp) {
         boolean locked = lock();
         try {
             IRubyObject str = null;
             if (strp != null) {
                 str = strp;
                 if (str.isNil()) {
-                    strp = str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
+                    str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
                 } else {
                     ((RubyString) str).cat(cbuf.ptr, cbuf.off, len);
                 }

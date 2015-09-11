@@ -206,17 +206,19 @@ public class Ifaddr extends RubyObject {
 
     private String ipAddress() {
         if (address instanceof Inet4Address) {
-            return address.toString().substring(1, address.toString().length());
+            final String addr = address.toString();
+            return addr.substring(1, addr.length());
         } else if ((address instanceof Inet6Address)) {
-            return address.toString().substring(1, address.toString().length()).split("%")[0];
+            final String addr = address.toString();
+            return addr.substring(1, addr.length()).split("%")[0];
         }
         return "";
     }
 
     private String getBroadcastAsString() {
-        if (broadcast == null) {
-            return "";
-        }
-        return broadcast.toString().substring(1, broadcast.toString().length());
+        if (broadcast == null) return "";
+        final String brdc = broadcast.toString();
+        return brdc.substring(1, brdc.length());
     }
+
 }

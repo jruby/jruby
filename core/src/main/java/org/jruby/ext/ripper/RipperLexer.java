@@ -2943,7 +2943,7 @@ public class RipperLexer {
             buffer.append(h1);
 
             hexValue <<= 4;
-            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+            hexValue |= Integer.parseInt(String.valueOf((char) h1), 16) & 15;
         }
 
         // No hex value after the 'x'.
@@ -2969,7 +2969,7 @@ public class RipperLexer {
             }
 
             hexValue <<= 4;
-            hexValue |= Integer.parseInt("" + (char) h1, 16) & 15;
+            hexValue |= Integer.parseInt(String.valueOf((char) h1), 16) & 15;
         }
 
         // No hex value after the 'x'.
@@ -2990,7 +2990,7 @@ public class RipperLexer {
             }
 
             value <<= 3;
-            value |= Integer.parseInt("" + (char) c, 8);
+            value |= Integer.parseInt(String.valueOf((char) c), 8);
         }
 
         return value;

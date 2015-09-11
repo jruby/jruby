@@ -50,9 +50,9 @@ public class BasicCompilerPassListener implements CompilerPassListener {
 
     private String getScopeUUID(IRScope scope) {
         if (scope instanceof IRScriptBody || scope instanceof IRClosure) {
-            return "" + scope.getFileName() + "#" + scope.getLineNumber() + "#";
+            return scope.getFileName() + '#' + scope.getLineNumber() + '#';
         }
 
-        return "" + scope.getFileName() + "#" + scope.getLineNumber() + "#" + scope.getName();
+        return scope.getFileName() + '#' + scope.getLineNumber() + '#' + scope.getName();
     }
 }

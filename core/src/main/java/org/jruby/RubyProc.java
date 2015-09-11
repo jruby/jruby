@@ -211,13 +211,14 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16));
-        String file = block.getBody().getFile();
+        StringBuilder sb = new StringBuilder(32);
+        sb.append("#<Proc:0x").append(Integer.toString(block.hashCode(), 16));
 
+        String file = block.getBody().getFile();
         if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
 
         if (isLambda()) sb.append(" (lambda)");
-        sb.append(">");
+        sb.append('>');
 
         IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
 

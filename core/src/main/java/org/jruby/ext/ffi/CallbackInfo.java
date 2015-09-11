@@ -64,13 +64,12 @@ public class CallbackInfo extends Type {
      * @return The newly created ruby class
      */
     public static RubyClass createCallbackInfoClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        final RubyClass Type = module.getClass("Type");
+        RubyClass result = module.defineClassUnder(CLASS_NAME, Type, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         result.defineAnnotatedMethods(CallbackInfo.class);
         result.defineAnnotatedConstants(CallbackInfo.class);
 
-        module.getClass("Type").setConstant("Function", result);
+        Type.setConstant("Function", result);
         return result;
     }
     
@@ -177,7 +176,7 @@ public class CallbackInfo extends Type {
 
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(64);
         sb.append("#<FFI::CallbackInfo [ ");
         for (int i = 0; i < parameterTypes.length; ++i) {
             sb.append(parameterTypes[i].toString().toLowerCase());
@@ -185,12 +184,12 @@ public class CallbackInfo extends Type {
                 sb.append(", ");
             }
         }
-        sb.append(" ], " + returnType.toString().toLowerCase() + ">");
+        sb.append(" ], ").append(returnType.toString().toLowerCase()).append('>');
         return context.runtime.newString(sb.toString());
     }
     @Override
     public final String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(64);
         sb.append("CallbackInfo[parameters=[");
         for (int i = 0; i < parameterTypes.length; ++i) {
             sb.append(parameterTypes[i].toString().toLowerCase());

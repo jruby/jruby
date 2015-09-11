@@ -1667,7 +1667,6 @@ public class RubyEnumerable {
     public static IRubyObject zipCommon19(ThreadContext context, IRubyObject self,
             IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
-        final int aLen = args.length + 1;
         RubyClass array = runtime.getArray();
 
         final IRubyObject[] newArgs = new IRubyObject[args.length];

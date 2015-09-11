@@ -62,10 +62,6 @@ public final class TypeResolver {
         return type;
     }
 
-    private Type lookupType(Ruby runtime, IRubyObject name) {
-        return lookupType(runtime, name, null);
-    }
-
     private Type lookupType(Ruby runtime, IRubyObject name, IRubyObject typeMap) {
         IRubyObject type = ffi.typedefs.fastARef(name);
         if (type instanceof Type) {

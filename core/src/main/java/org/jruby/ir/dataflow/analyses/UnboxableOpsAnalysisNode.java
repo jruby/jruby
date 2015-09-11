@@ -15,7 +15,7 @@ import org.jruby.ir.representations.CFG;
 import java.util.*;
 
 public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysisProblem, UnboxableOpsAnalysisNode> {
-    private class UnboxState {
+    private static class UnboxState {
         Map<Variable, Class> types;        // known types of variables
         Map<Variable, Class> unboxedVars;  // variables that exist in unboxed form of a specific type
         Set<Variable> unboxedDirtyVars;    // variables that exist in unboxed form and are dirty

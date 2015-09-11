@@ -24,6 +24,9 @@
 	    <goals><goal>initialize</goal></goals>
 	  </execution>
 	</executions>
+        <configuration>
+          <jrubyVersion>1.7.22</jrubyVersion>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

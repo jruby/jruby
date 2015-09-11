@@ -3496,7 +3496,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         long mode = ModeFlags.CREAT;
 
-        if (options == null || (options != null && options.isEmpty())) {
+        if (options == null || options.isEmpty()) {
             if (offset.isNil()) {
                 mode |= ModeFlags.WRONLY;
             } else {
@@ -4319,19 +4319,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected IOOptions updateIOOptionsFromOptions(ThreadContext context, RubyHash options, IOOptions ioOptions) {
         if (options == null || options.isNil()) return ioOptions;
 
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        if (options.containsKey(runtime.newSymbol("mode"))) {
-            ioOptions = parseIOOptions(options.fastARef(runtime.newSymbol("mode")));
+        final RubySymbol mode = runtime.newSymbol("mode");
+        if (options.containsKey(mode)) {
+            ioOptions = parseIOOptions(options.fastARef(mode));
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        if (options.containsKey(runtime.newSymbol("binmode")) &&
-                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-
+        final RubySymbol binmode = runtime.newSymbol("binmode");
+        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
@@ -4339,24 +4339,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        if (options.containsKey(runtime.newSymbol("binmode")) &&
-                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-
+        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
-        if (options.containsKey(runtime.newSymbol("textmode")) &&
-                options.fastARef(runtime.newSymbol("textmode")).isTrue()) {
-
+        final RubySymbol textmode = runtime.newSymbol("textmode");
+        if (options.containsKey(textmode) && options.fastARef(textmode).isTrue()) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
 
+        final RubySymbol open_args = runtime.newSymbol("open_args");
         // TODO: Waaaay different than MRI.  They uniformly have all opening logic
         // do a scan of args before anything opens.  We do this logic in a less
         // consistent way.  We should consider re-impling all IO/File construction
         // logic.
-        if (options.containsKey(runtime.newSymbol("open_args"))) {
-            IRubyObject args = options.fastARef(runtime.newSymbol("open_args"));
+        if (options.containsKey(open_args)) {
+            IRubyObject args = options.fastARef(open_args);
 
             RubyArray openArgs = args.convertToArray();
 
@@ -4667,11 +4665,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime.getCurrentContext(), runtime.newString(separator), limit, null);
-    }
-
-    @Deprecated
-    private IRubyObject getline(ThreadContext context, IRubyObject separator, ByteListCache cache) {
-        return getline(context, separator, -1, cache);
     }
 
     @Deprecated
