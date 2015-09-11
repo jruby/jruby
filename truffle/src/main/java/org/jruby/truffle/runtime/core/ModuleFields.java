@@ -27,12 +27,13 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ModuleFields implements ModuleChain {
+public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public static void debugModuleChain(DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
@@ -596,4 +597,28 @@ public class ModuleFields implements ModuleChain {
         return Layouts.BASIC_OBJECT.getLogicalClass(rubyModuleObject);
     }
 
+    @Override
+    public Set<DynamicObject> getAdjacentObjects() {
+        final Set<DynamicObject> adjacent = new HashSet<>();
+
+        if (lexicalParent != null) {
+            adjacent.add(lexicalParent);
+        }
+
+        for (RubyConstant constant : constants.values()) {
+            final Object value = constant.getValue();
+
+            if (value instanceof DynamicObject) {
+                adjacent.add((DynamicObject) value);
+            }
+        }
+
+        for (Object value : classVariables.values()) {
+            if (value instanceof DynamicObject) {
+                adjacent.add((DynamicObject) value);
+            }
+        }
+
+        return adjacent;
+    }
 }

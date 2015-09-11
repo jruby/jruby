@@ -19,10 +19,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectGraph;
-import org.jruby.truffle.runtime.object.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
-import org.jruby.truffle.runtime.object.StopVisitingObjectsException;
-import org.jruby.util.Memo;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -65,32 +62,26 @@ public abstract class ObjectSpaceNodes {
             return ObjectIDOperations.toFixnum(id);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isBasicObjectID(id)")
-        public Object id2Ref(final VirtualFrame frame, final long id,
-                @Cached("createReadObjectIDNode()") final ReadHeadObjectFieldNode readObjectIdNode) {
-            CompilerDirectives.transferToInterpreter();
+        public DynamicObject id2Ref(
+                final long id,
+                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
+                final long objectID;
 
-            final Memo<Object> result = new Memo<Object>(nil());
-
-            new ObjectGraph(getContext()).visitObjects(new ObjectGraphVisitor() {
-                @Override
-                public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
-                    final long objectID;
-                    try {
-                        objectID = readObjectIdNode.executeLong(object);
-                    } catch (UnexpectedResultException e) {
-                        throw new UnsupportedOperationException(e);
-                    }
-
-                    if (objectID == id) {
-                        result.set(object);
-                        throw new StopVisitingObjectsException();
-                    }
-                    return true;
+                try {
+                    objectID = readObjectIdNode.executeLong(object);
+                } catch (UnexpectedResultException e) {
+                    throw new UnsupportedOperationException(e);
                 }
-            });
 
-            return result.get();
+                if (objectID == id) {
+                    return object;
+                }
+            }
+
+            return nil();
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
@@ -130,7 +121,7 @@ public abstract class ObjectSpaceNodes {
 
             int count = 0;
 
-            for (DynamicObject object : new ObjectGraph(getContext()).getObjects()) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
                 if (!isHidden(object)) {
                     yield(frame, block, object);
                     count++;
@@ -146,7 +137,7 @@ public abstract class ObjectSpaceNodes {
 
             int count = 0;
 
-            for (DynamicObject object : new ObjectGraph(getContext()).getObjects()) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
                 if (!isHidden(object) && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(object), ofClass)) {
                     yield(frame, block, object);
                     count++;

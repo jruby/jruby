@@ -9,18 +9,27 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 @NodeChildren({
         @NodeChild("classToAllocate"),
@@ -41,7 +50,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
             "!cachedIsSingleton"
-    }, limit = "getCacheLimit()")
+    }, assumptions = "getTracingAssumption()", limit = "getCacheLimit()")
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
             Object[] values,
@@ -52,15 +61,60 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization(contains = "allocateCached", guards = "!isSingleton(classToAllocate)")
+    @Specialization(
+            contains = "allocateCached",
+            guards = "!isSingleton(classToAllocate)",
+            assumptions = "getTracingAssumption()")
     public DynamicObject allocateUncached(DynamicObject classToAllocate, Object[] values) {
         return getInstanceFactory(classToAllocate).newInstance(values);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    @Specialization(guards = {"!isSingleton(classToAllocate)", "isTracing()"})
+    public DynamicObject allocateTracing(DynamicObject classToAllocate, Object[] values) {
+        final DynamicObject object = getInstanceFactory(classToAllocate).newInstance(values);
+
+        final Node caller = RubyCallStack.getTopMostUserCallNode();
+        final SourceSection callerSource = caller.getEncapsulatingSourceSection();
+
+        final String callerMethod;
+
+        if (caller.getRootNode() instanceof RubyRootNode) {
+            callerMethod = ((RubyRootNode) caller.getRootNode()).getSharedMethodInfo().getName();
+        } else {
+            callerMethod = "(unknown)";
+        }
+
+        getContext().getObjectSpaceManager().traceAllocation(
+                object,
+                string(Layouts.CLASS.getFields(classToAllocate).getName()),
+                string(callerMethod),
+                string(callerSource.getSource().getShortName()),
+                callerSource.getStartLine());
+
+        return object;
+    }
+
+    private DynamicObject string(String value) {
+        return Layouts.STRING.createString(
+                getContext().getCoreLibrary().getStringFactory(),
+                RubyString.encodeBytelist(value, UTF8Encoding.INSTANCE),
+                StringSupport.CR_UNKNOWN,
+                null);
     }
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+    }
+
+    protected Assumption getTracingAssumption() {
+        return getContext().getObjectSpaceManager().getTracingAssumption();
+    }
+
+    protected boolean isTracing() {
+        return !getContext().getObjectSpaceManager().getTracingAssumption().isValid();
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {

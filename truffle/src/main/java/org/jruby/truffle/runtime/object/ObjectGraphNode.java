@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,7 +9,12 @@
  */
 package org.jruby.truffle.runtime.object;
 
-import com.oracle.truffle.api.nodes.ControlFlowException;
+import com.oracle.truffle.api.object.DynamicObject;
 
-public class StopVisitingObjectsException extends ControlFlowException {
+import java.util.Set;
+
+public interface ObjectGraphNode {
+
+    Set<DynamicObject> getAdjacentObjects();
+
 }

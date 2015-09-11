@@ -14,50 +14,88 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.ModuleFields;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ObjectGraph {
+public abstract class ObjectGraph {
 
-    private final RubyContext context;
+    public static Set<DynamicObject> stopAndGetAllObjects(
+            Node currentNode, final RubyContext context) {
+        final Set<DynamicObject> visited = new HashSet<>();
 
-    public ObjectGraph(RubyContext context) {
-        this.context = context;
-    }
+        final Thread stoppingThread = Thread.currentThread();
 
-    public Set<DynamicObject> getObjects() {
-        return visitObjects(new ObjectGraphVisitor() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
 
             @Override
-            public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
-                return true;
+            public void run(DynamicObject thread, Node currentNode) {
+                synchronized (visited) {
+                    final Deque<DynamicObject> stack = new ArrayDeque<>();
+
+                    stack.add(thread);
+
+                    if (Thread.currentThread() == stoppingThread) {
+                        stack.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
+                        stack.addAll(context.getAtExitManager().getHandlers());
+                        stack.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
+                    }
+
+                    final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+                    if (currentFrame != null) {
+                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+                    }
+
+                    Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+
+                        @Override
+                        public Object visitFrame(FrameInstance frameInstance) {
+                            stack.addAll(getObjectsInFrame(frameInstance
+                                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+
+                            return null;
+                        }
+
+                    });
+
+                    while (!stack.isEmpty()) {
+                        final DynamicObject object = stack.pop();
+
+                        if (visited.add(object)) {
+                            stack.addAll(ObjectGraph.getAdjacentObjects(object));
+                        }
+                    }
+                }
             }
 
         });
+
+        return visited;
     }
 
-    public Set<DynamicObject> visitObjects(final ObjectGraphVisitor visitor) {
+    public static Set<DynamicObject> stopAndGetRootObjects(Node currentNode, final RubyContext context) {
         final Set<DynamicObject> objects = new HashSet<>();
 
-        visitRoots(new ObjectGraphVisitor() {
+        final Thread stoppingThread = Thread.currentThread();
+
+        context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
 
             @Override
-            public boolean visit(DynamicObject object) throws StopVisitingObjectsException {
-                if (objects.add(object)) {
-                    visitor.visit(object);
-                    return true;
-                } else {
-                    return false;
+            public void run(DynamicObject thread, Node currentNode) {
+                objects.add(thread);
+
+                if (Thread.currentThread() == stoppingThread) {
+                    objects.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
+                    objects.addAll(context.getAtExitManager().getHandlers());
+                    objects.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
                 }
             }
 
@@ -66,138 +104,65 @@ public class ObjectGraph {
         return objects;
     }
 
-    private void visitRoots(final ObjectGraphVisitor visitor) {
-        final Thread mainThread = Thread.currentThread();
+    public static Set<DynamicObject> getAdjacentObjects(DynamicObject object) {
+        final Set<DynamicObject> reachable = new HashSet<>();
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, false, new SafepointAction() {
+        reachable.add(Layouts.BASIC_OBJECT.getLogicalClass(object));
+        reachable.add(Layouts.BASIC_OBJECT.getMetaClass(object));
 
-            boolean keepVisiting = true;
+        for (Property property : object.getShape().getPropertyListInternal(false)) {
+            final Object propertyValue = property.get(object, object.getShape());
 
-            @Override
-            public void run(DynamicObject thread, Node currentNode) {
-                synchronized (this) {
-                    if (!keepVisiting) {
-                        return;
-                    }
-
-                    try {
-                        // We only visit the global variables and other global state from the root thread
-
-                        if (Thread.currentThread() == mainThread) {
-                            visitObject(context.getCoreLibrary().getGlobalVariablesObject(), visitor);
-
-                            for (DynamicObject handler : context.getAtExitManager().getHandlers()) {
-                                visitObject(handler, visitor);
-                            }
-
-                            for (DynamicObject handler : context.getObjectSpaceManager().getFinalizerHandlers()) {
-                                visitObject(handler, visitor);
-                            }
+            if (propertyValue instanceof DynamicObject) {
+                reachable.add((DynamicObject) propertyValue);
+            } else if (propertyValue instanceof Entry[]) {
+                for (Entry bucket : (Entry[]) propertyValue) {
+                    while (bucket != null) {
+                        if (bucket.getKey() instanceof DynamicObject) {
+                            reachable.add((DynamicObject) bucket.getKey());
                         }
 
-                        // All threads visit their thread object
-
-                        visitObject(thread, visitor);
-
-                        // All threads visit their call stack
-
-                        if (Truffle.getRuntime().getCurrentFrame() != null) {
-                            visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
+                        if (bucket.getValue() instanceof DynamicObject) {
+                            reachable.add((DynamicObject) bucket.getValue());
                         }
 
-                        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-
-                            @Override
-                            public Object visitFrame(FrameInstance frameInstance) {
-                                try {
-                                    visitFrameInstance(frameInstance, visitor);
-                                } catch (StopVisitingObjectsException e) {
-                                    return new Object();
-                                }
-                                return null;
-                            }
-
-                        });
-                    } catch (StopVisitingObjectsException e) {
-                        keepVisiting = false;
+                        bucket = bucket.getNextInLookup();
                     }
                 }
-            }
-
-        });
-    }
-
-    private void visitObject(DynamicObject object, ObjectGraphVisitor visitor) throws StopVisitingObjectsException {
-        if (visitor.visit(object)) {
-            // Visiting the meta class will also visit the logical class eventually
-
-            visitObject(Layouts.BASIC_OBJECT.getMetaClass(object), visitor);
-
-            // Visit all properties
-
-            for (Property property : object.getShape().getPropertyListInternal(false)) {
-                visitObject(property.get(object, object.getShape()), visitor);
-            }
-
-            // Visit specific objects that we're managing
-
-            if (RubyGuards.isRubyModule(object)) {
-                visitModule(object, visitor);
+            } else if (propertyValue instanceof Object[]) {
+                for (Object element : (Object[]) propertyValue) {
+                    if (element instanceof DynamicObject) {
+                        reachable.add((DynamicObject) element);
+                    }
+                }
+            } else if (propertyValue instanceof Frame) {
+                reachable.addAll(getObjectsInFrame((Frame) propertyValue));
+            } else if (propertyValue instanceof ObjectGraphNode) {
+                reachable.addAll(((ObjectGraphNode) propertyValue).getAdjacentObjects());
             }
         }
+
+        return reachable;
     }
 
-    private void visitModule(DynamicObject module, ObjectGraphVisitor visitor) {
-        final ModuleFields fields = Layouts.MODULE.getFields(module);
+    public static Set<DynamicObject> getObjectsInFrame(Frame frame) {
+        final Set<DynamicObject> objects = new HashSet<>();
 
-        for (DynamicObject ancestor : fields.ancestors()) {
-            visitObject(ancestor, visitor);
+        final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame.getArguments());
+
+        if (lexicalParentFrame != null) {
+            objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
 
-        for (RubyConstant constant : fields.getConstants().values()) {
-            visitObject(constant.getValue(), visitor);
-        }
-    }
-
-    private void visitObject(Object object, ObjectGraphVisitor visitor) throws StopVisitingObjectsException {
-        if (object instanceof DynamicObject) {
-            visitObject((DynamicObject) object, visitor);
-        } else if (object instanceof Object[]) {
-            for (Object child : (Object[]) object) {
-                visitObject(child, visitor);
-            }
-        } else if (object instanceof Entry) {
-            final Entry entry = (Entry) object;
-            visitObject(entry.getKey(), visitor);
-            visitObject(entry.getValue(), visitor);
-            visitObject(entry.getNextInLookup(), visitor);
-        } else if (object instanceof Frame) {
-            visitFrame((Frame) object, visitor);
-        } else if (object instanceof InternalMethod) {
-            final InternalMethod method = (InternalMethod) object;
-            visitObject(method.getDeclarationFrame(), visitor);
-        }
-    }
-
-    private void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) throws StopVisitingObjectsException {
-        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true), visitor);
-    }
-
-    private void visitFrame(Frame frame, ObjectGraphVisitor visitor) throws StopVisitingObjectsException {
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-            visitObject(frame.getValue(slot), visitor);
+            final Object slotValue = frame.getValue(slot);
+
+            if (slotValue instanceof DynamicObject) {
+                objects.add((DynamicObject) slotValue);
+            }
         }
 
-        Frame declarationFrame;
-
-        try {
-            declarationFrame = RubyArguments.getDeclarationFrame(frame.getArguments());
-        } catch (Exception e) {
-            declarationFrame = null;
-        }
-
-        if (declarationFrame != null) {
-            visitFrame(declarationFrame, visitor);
-        }
+        return objects;
     }
+
 }

@@ -124,6 +124,21 @@ public class SafepointManager {
         }
     }
 
+    public void pauseAllThreadsAndExecuteOnOneThread(Node currentNode, boolean deferred, final SafepointAction action) {
+        final Thread mainThread = Thread.currentThread();
+
+        pauseAllThreadsAndExecute(currentNode, deferred, new SafepointAction() {
+
+            @Override
+            public void run(DynamicObject thread, Node currentNode) {
+                if (Thread.currentThread() == mainThread) {
+                    action.run(thread, currentNode);
+                }
+            }
+
+        });
+    }
+
     public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
