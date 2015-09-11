@@ -510,11 +510,9 @@ public class Pack {
         byte lPadding;
         if (encodingType == 'u') {
             if (charCount >= lTranslationTable.length) {
-                throw runtime.newArgumentError(
-                    ""
-                        + charCount
-                        + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
-                        + lTranslationTable.length);
+                throw runtime.newArgumentError(charCount
+                    + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
+                    + lTranslationTable.length);
             }
             io2Append.append(lTranslationTable[charCount]);
             lPadding = '`';

@@ -12,7 +12,7 @@ public abstract class GetInstr extends OneOperandResultBaseInstr implements Fixe
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
         super(op, result, source);
 
-        assert result != null: "" + getClass().getSimpleName() + " result is null";
+        assert result != null: getClass().getSimpleName() + " result is null";
 
         this.ref = ref;
     }
