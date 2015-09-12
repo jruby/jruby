@@ -55,11 +55,11 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         if (name.equals("[]")) {
             directArray = Message.READ.createNode();
         } else if (name.equals("[]=")) {
-        	directArray = Message.WRITE.createNode();
+            directArray = Message.WRITE.createNode();
         } else if (name.endsWith("=") && arity == 1) {
             directField = Message.WRITE.createNode();
         } else if (name.endsWith("nil?")) {
-        	nullCheck = Message.IS_NULL.createNode();
+            nullCheck = Message.IS_NULL.createNode();
         } else {
             access = Message.createInvoke(arity + 1).createNode();
         }

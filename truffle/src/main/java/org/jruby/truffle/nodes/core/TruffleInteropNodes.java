@@ -316,7 +316,7 @@ public abstract class TruffleInteropNodes {
         }
 
         protected static String rubyStringToString(DynamicObject rubyString) {
-        	return rubyString.toString();
+            return rubyString.toString();
         }
     }
 
