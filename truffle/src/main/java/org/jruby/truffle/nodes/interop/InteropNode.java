@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.interop;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -129,12 +130,33 @@ public abstract class InteropNode extends RubyNode {
             callNode = Truffle.getRuntime().createIndirectCallNode();
         }
         
+        @Specialization(guards = {"isRubyProc(proc)", "proc == cachedProc"})
+        protected Object doCallProc(VirtualFrame frame, DynamicObject proc,
+                                @Cached("proc") DynamicObject cachedProc,
+                                @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            Object[] args = faArgs.toArray();
+            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(cachedProc), Layouts.PROC.getDeclarationFrame(cachedProc), Layouts.PROC.getSelf(cachedProc), null, args));
+        }
+        
+        @Specialization(guards = "isRubyProc(proc)")
+        protected Object doCallProc(VirtualFrame frame, DynamicObject proc) {
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            Object[] args = faArgs.toArray();
+            return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(
+                    Layouts.PROC.getMethod(proc),
+                    Layouts.PROC.getDeclarationFrame(proc),
+                    Layouts.PROC.getSelf(proc),
+                    null,
+                    args));
+        }
+        
         @Specialization(guards = {"isRubyMethod(method)", "method == cachedMethod"})
         protected Object doCall(VirtualFrame frame, DynamicObject method,
                                 @Cached("method") DynamicObject cachedMethod,
                                 @Cached("getMethod(cachedMethod)") InternalMethod internalMethod,
                                 @Cached("create(getMethod(cachedMethod).getCallTarget())") DirectCallNode callNode) {
-                        final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
             // skip first argument; it's the receiver but a RubyMethod knows its receiver
             Object[] args = faArgs.subList(1, faArgs.size()).toArray();
             return callNode.call(frame, RubyArguments.pack(internalMethod, internalMethod.getDeclarationFrame(), Layouts.METHOD.getReceiver(cachedMethod), null, args));
@@ -143,7 +165,7 @@ public abstract class InteropNode extends RubyNode {
         @Specialization(guards = "isRubyMethod(method)")
         protected Object doCall(VirtualFrame frame, DynamicObject method) {
             final InternalMethod internalMethod = Layouts.METHOD.getMethod(method);
-                        final List<Object> faArgs = ForeignAccess.getArguments(frame);
+            final List<Object> faArgs = ForeignAccess.getArguments(frame);
             // skip first argument; it's the receiver but a RubyMethod knows its receiver
             Object[] args = faArgs.subList(1, faArgs.size()).toArray();
             return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(
@@ -152,6 +174,14 @@ public abstract class InteropNode extends RubyNode {
                     Layouts.METHOD.getReceiver(method),
                     null,
                     args));
+        }
+
+        protected InternalMethod getMethodFromProc(DynamicObject proc) {
+            return Layouts.PROC.getMethod(proc);
+        }
+
+        protected CallTarget getCallTarget(DynamicObject proc) {
+            return Layouts.PROC.getCallTargetForType(proc);
         }
 
         protected InternalMethod getMethod(DynamicObject method) {
@@ -167,7 +197,8 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return RubyGuards.isRubyMethod(ForeignAccess.getReceiver(frame));
+            final Object receiver = ForeignAccess.getReceiver(frame);
+            return RubyGuards.isRubyMethod(receiver) || RubyGuards.isRubyProc(receiver);
         }
 
     }

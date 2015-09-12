@@ -46,6 +46,8 @@ public class RubyObjectType extends ObjectType {
     public ForeignAccess getForeignAccessFactory() {
         if (Layouts.METHOD.isMethod(this)) {
             return RubyMethodForeignAccessFactory.create(getContext());
+        } else if (Layouts.PROC.isProc(this)) {
+            return RubyMethodForeignAccessFactory.create(getContext());
         } else if (Layouts.ARRAY.isArray(this)) {
             return ArrayForeignAccessFactory.create(getContext());
         } else if (Layouts.HASH.isHash(this)) {
