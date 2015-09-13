@@ -43,6 +43,7 @@ end
 example "14"
 counter_example "rand"
 
+require_relative 'language/controlflow_pe.rb'
 require_relative 'language/closures_pe.rb'
 require_relative 'language/constant_pe.rb'
 require_relative 'language/metaprogramming_pe.rb'
@@ -54,6 +55,10 @@ require_relative 'core/symbol_pe.rb'
 require_relative 'core/method_pe.rb'
 require_relative 'core/array_pe.rb'
 require_relative 'core/hash_pe.rb'
+require_relative 'core/eval_pe.rb'
+require_relative 'core/send_pe.rb'
+require_relative 'core/objectid_pe.rb'
+require_relative 'core/binding_pe.rb'
 require_relative 'macro/pushing_pixels_pe.rb'
 
 tested = 0

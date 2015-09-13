@@ -26,7 +26,6 @@ module MetaprogrammingFixtures
 
 end
 
-# all fail due to calls not being inlined
 example "MetaprogrammingFixtures::MethodMissing.new.does_not_exist"
 example "MetaprogrammingFixtures::ClassWithExistingMethod.new.respond_to?(:existing_method)"
 example "MetaprogrammingFixtures::ClassWithExistingMethod.new.send(:existing_method, 14)"
