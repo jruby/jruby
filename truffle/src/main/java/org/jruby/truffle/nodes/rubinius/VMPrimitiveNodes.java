@@ -540,4 +540,20 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "vm_gc_start", needsSelf = false)
+    public static abstract class VMGCStartPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMGCStartPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject vmGCStart() {
+            System.gc();
+            return nil();
+        }
+
+    }
+
+
 }

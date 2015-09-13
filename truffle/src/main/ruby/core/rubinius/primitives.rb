@@ -33,11 +33,15 @@ module Rubinius
 
     Truffle::Primitive.install_rubinius_primitive method(:module_mirror)
 
-    def self.vm_gc_start(obj)
-      Truffle::Java::System.gc.static_call
-    end
+    if Truffle::Primitive.substrate?
 
-    Truffle::Primitive.install_rubinius_primitive method(:vm_gc_start)
+      def self.vm_gc_start(force)
+        Truffle::Interop.execute(Truffle::Interop.read_property(Truffle::Java::System, :gc))
+      end
+
+      Truffle::Primitive.install_rubinius_primitive method(:vm_gc_start)
+
+    end
 
   end
 end

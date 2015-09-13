@@ -41,10 +41,6 @@ public class RubiniusPrimitiveManager {
         return constructor;
     }
 
-    private void addPrimitive(String name, RubiniusPrimitiveConstructor constructor) {
-        primitives.putIfAbsent(name, constructor);
-    }
-
     public void addAnnotatedPrimitives() {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
@@ -78,13 +74,13 @@ public class RubiniusPrimitiveManager {
             final GeneratedBy generatedBy = nodeFactory.getClass().getAnnotation(GeneratedBy.class);
             final Class<?> nodeClass = generatedBy.value();
             final RubiniusPrimitive annotation = nodeClass.getAnnotation(RubiniusPrimitive.class);
-            addPrimitive(annotation.name(), new RubiniusPrimitiveNodeConstructor(annotation, nodeFactory));
+            primitives.putIfAbsent(annotation.name(), new RubiniusPrimitiveNodeConstructor(annotation, nodeFactory));
         }
     }
 
     @TruffleBoundary
     public void installPrimitive(String name, DynamicObject method) {
         assert RubyGuards.isRubyMethod(method);
-        addPrimitive(name, new RubiniusPrimitiveCallConstructor(method));
+        primitives.put(name, new RubiniusPrimitiveCallConstructor(method));
     }
 }
