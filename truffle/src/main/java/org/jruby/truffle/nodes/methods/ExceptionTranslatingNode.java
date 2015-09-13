@@ -52,13 +52,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         try {
-            assert assertArgumentsShouldBeVisible(frame);
-
-            final Object result = child.execute(frame);
-
-            assert shouldObjectBeVisible(result) : "result@" + getEncapsulatingSourceSection().getShortDescription();
-
-            return result;
+            return child.execute(frame);
         } catch (StackOverflowError error) {
             // TODO: we might want to do sth smarter here to avoid consuming frames when we are almost out of it.
             CompilerDirectives.transferToInterpreter();
@@ -171,36 +165,6 @@ public class ExceptionTranslatingNode extends RubyNode {
             return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
         } else {
             return getContext().getCoreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
-        }
-    }
-    private boolean shouldObjectBeVisible(Object object) {
-        return object instanceof TruffleObject
-                || object instanceof Boolean
-                || object instanceof Integer
-                || object instanceof Long
-                || object instanceof Double;
-    }
-
-    private boolean assertArgumentsShouldBeVisible(VirtualFrame frame) {
-        final Object self = RubyArguments.getSelf(frame.getArguments());
-
-        assert shouldObjectBeVisible(self) : "self=" + (self == null ? "null" : self.getClass()) + "@" + getEncapsulatingSourceSection().getShortDescription();
-
-        final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
-
-        for (int n = 0; n < arguments.length; n++) {
-            final Object argument = arguments[n];
-            assert shouldObjectBeVisible(argument) : "arg[" + n + "]=" + (argument == null ? "null" : argument.getClass() + "=" + toString(argument)) + "@" + getEncapsulatingSourceSection().getShortDescription();
-        }
-
-        return true;
-    }
-
-    private String toString(Object object) {
-        if (object instanceof Object[]) {
-            return Arrays.toString((Object[]) object);
-        } else {
-            return object.toString();
         }
     }
 

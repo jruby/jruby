@@ -773,10 +773,16 @@ public class CoreLibrary {
             } else {
                 return falseClass;
             }
+        } else if (object instanceof Byte) {
+            return fixnumClass;
+        } else if (object instanceof Short) {
+            return fixnumClass;
         } else if (object instanceof Integer) {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
+        } else if (object instanceof Float) {
+            return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {
@@ -796,10 +802,16 @@ public class CoreLibrary {
             } else {
                 return falseClass;
             }
+        } else if (object instanceof Byte) {
+            return fixnumClass;
+        } else if (object instanceof Short) {
+            return fixnumClass;
         } else if (object instanceof Integer) {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
+        } else if (object instanceof Float) {
+            return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {
