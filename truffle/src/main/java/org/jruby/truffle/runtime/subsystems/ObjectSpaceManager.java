@@ -58,7 +58,7 @@ public class ObjectSpaceManager {
     private final ReferenceQueue<DynamicObject> finalizerQueue = new ReferenceQueue<>();
     private DynamicObject finalizerThread;
 
-    private final CyclicAssumption tracingAssumption = new CyclicAssumption("objspec-tracing");
+    private final CyclicAssumption tracingAssumption = new CyclicAssumption("objspace-tracing");
     private int tracingAssumptionActivations = 0;
     private boolean tracingPaused = false;
 
