@@ -67,8 +67,8 @@ errored = 0
 timedout = 0
 
 def report(status, code, message = nil)
-  format_str = '%7s: %s'
-  puts message ? format(format_str + "\n         %s", status, code, message) : format('%7s: %s', status, code)
+  format_str = '%14s: %s'
+  puts message ? format(format_str + "\n         %s", status, code, message) : format('%14s: %s', status, code)
 end
 
 EXAMPLES.each do |code, expected_constant, tagged|
@@ -105,7 +105,7 @@ EXAMPLES.each do |code, expected_constant, tagged|
             report 'QUERY', code, "wasn't supposed to be constant but it was"
             failed += 1
           else
-            report 'OK', code
+            report 'OK (counter)', code
           end
         end
       end
