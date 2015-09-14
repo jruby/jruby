@@ -45,7 +45,6 @@ module ObjectSpace
     def count_nodes_method(method, nodes)
       count_nodes_tree Truffle::Primitive.ast(method), nodes
     end
-
     private :count_nodes_method
 
     def count_nodes_tree(tree, nodes)
@@ -58,7 +57,6 @@ module ObjectSpace
         count_nodes_tree child, nodes
       end
     end
-
     private :count_nodes_tree
 
   end
@@ -73,13 +71,11 @@ module ObjectSpace
     hash[:TOTAL] = total
     hash
   end
-
   module_function :count_objects_size
 
   def count_tdata_objects(hash = {})
     hash
   end
-
   module_function :count_tdata_objects
 
   def dump(object, output: :string)
@@ -126,7 +122,6 @@ module ObjectSpace
         nil
     end
   end
-
   module_function :dump
 
   def dump_all(output: :file)
@@ -150,13 +145,11 @@ module ObjectSpace
         nil
     end
   end
-
   module_function :dump_all
 
   def memsize_of(object)
     Truffle::ObjSpace.memsize_of(object)
   end
-
   module_function :memsize_of
 
   def memsize_of_all(klass = BasicObject)
@@ -166,19 +159,16 @@ module ObjectSpace
     end
     total
   end
-
   module_function :memsize_of_all
 
   def reachable_objects_from(object)
     Truffle::ObjSpace.adjacent_objects(object)
   end
-
   module_function :reachable_objects_from
 
   def reachable_objects_from_root
     {"roots" => Truffle::ObjSpace.root_objects}
   end
-
   module_function :reachable_objects_from_root
 
   def trace_object_allocations
@@ -190,31 +180,26 @@ module ObjectSpace
       trace_object_allocations_stop
     end
   end
-
   module_function :trace_object_allocations
 
   def trace_object_allocations_clear
     ALLOCATIONS.clear
   end
-
   module_function :trace_object_allocations_clear
 
   def trace_object_allocations_debug_start
     trace_object_allocations_start
   end
-
   module_function :trace_object_allocations_debug_start
 
   def trace_object_allocations_start
     Truffle::ObjSpace.trace_allocations_start
   end
-
   module_function :trace_object_allocations_start
 
   def trace_object_allocations_stop
     Truffle::ObjSpace.trace_allocations_stop
   end
-
   module_function :trace_object_allocations_stop
 
   def allocation_class_path(object)
@@ -222,7 +207,6 @@ module ObjectSpace
     return nil if allocation.nil?
     allocation.class_path
   end
-
   module_function :allocation_class_path
 
   def allocation_generation(object)
@@ -230,7 +214,6 @@ module ObjectSpace
     return nil if allocation.nil?
     0
   end
-
   module_function :allocation_generation
 
   def allocation_method_id(object)
@@ -238,7 +221,6 @@ module ObjectSpace
     return nil if allocation.nil?
     allocation.method_id
   end
-
   module_function :allocation_method_id
 
   def allocation_sourcefile(object)
@@ -246,7 +228,6 @@ module ObjectSpace
     return nil if allocation.nil?
     allocation.sourcefile
   end
-
   module_function :allocation_sourcefile
 
   def allocation_sourceline(object)
@@ -254,18 +235,15 @@ module ObjectSpace
     return nil if allocation.nil?
     allocation.sourceline
   end
-
   module_function :allocation_sourceline
 
   Allocation = Struct.new(:class_path, :method_id, :sourcefile, :sourceline)
 
-  ALLOCATIONS = {}
-  ALLOCATIONS.compare_by_identity
+  ALLOCATIONS = {}.compare_by_identity
 
   def trace_allocation(object, class_path, method_id, sourcefile, sourceline)
     ALLOCATIONS[object] = Allocation.new(class_path, method_id, sourcefile, sourceline)
   end
-
   module_function :trace_allocation
 
 end
