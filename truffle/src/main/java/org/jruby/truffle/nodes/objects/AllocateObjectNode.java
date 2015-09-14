@@ -49,7 +49,8 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
-            "!cachedIsSingleton"
+            "!cachedIsSingleton",
+            "!isTracing()"
     }, assumptions = "getTracingAssumption()", limit = "getCacheLimit()")
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
@@ -63,14 +64,15 @@ public abstract class AllocateObjectNode extends RubyNode {
     @CompilerDirectives.TruffleBoundary
     @Specialization(
             contains = "allocateCached",
-            guards = "!isSingleton(classToAllocate)",
+            guards = {"!isSingleton(classToAllocate)", "!isTracing()"},
             assumptions = "getTracingAssumption()")
     public DynamicObject allocateUncached(DynamicObject classToAllocate, Object[] values) {
         return getInstanceFactory(classToAllocate).newInstance(values);
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization(guards = {"!isSingleton(classToAllocate)", "isTracing()"})
+    @Specialization(guards = {"!isSingleton(classToAllocate)", "isTracing()"},
+                    assumptions = "getTracingAssumption()")
     public DynamicObject allocateTracing(DynamicObject classToAllocate, Object[] values) {
         final DynamicObject object = getInstanceFactory(classToAllocate).newInstance(values);
 
@@ -114,7 +116,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     protected boolean isTracing() {
-        return !getContext().getObjectSpaceManager().getTracingAssumption().isValid();
+        return getContext().getObjectSpaceManager().isTracing();
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {

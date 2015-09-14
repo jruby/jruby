@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.AssumedValue;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
 import org.jruby.truffle.nodes.core.ThreadNodes;
@@ -60,6 +61,7 @@ public class ObjectSpaceManager {
     private DynamicObject finalizerThread;
 
     private final CyclicAssumption tracingAssumption = new CyclicAssumption("objspace-tracing");
+    @CompilerDirectives.CompilationFinal private boolean isTracing = false;
     private int tracingAssumptionActivations = 0;
     private boolean tracingPaused = false;
 
@@ -147,7 +149,8 @@ public class ObjectSpaceManager {
         tracingAssumptionActivations++;
 
         if (tracingAssumptionActivations == 1) {
-            tracingAssumption.getAssumption().invalidate();
+            isTracing = true;
+            tracingAssumption.invalidate();
         }
     }
 
@@ -155,6 +158,7 @@ public class ObjectSpaceManager {
         tracingAssumptionActivations--;
 
         if (tracingAssumptionActivations == 0) {
+            isTracing = false;
             tracingAssumption.invalidate();
         }
     }
@@ -175,6 +179,10 @@ public class ObjectSpaceManager {
 
     public Assumption getTracingAssumption() {
         return tracingAssumption.getAssumption();
+    }
+
+    public boolean isTracing() {
+        return isTracing;
     }
 
 }
