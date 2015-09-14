@@ -82,6 +82,7 @@ branches:
   only:
     - master
     - jruby-1_7
+    - truffle-head
     - /^test-.*$/
     - /^ha-feature/
 
