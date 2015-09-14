@@ -217,7 +217,7 @@ module ObjectSpace
   def allocation_generation(object)
     allocation = ALLOCATIONS[object]
     return nil if allocation.nil?
-    0
+    allocation.generation
   end
   module_function :allocation_generation
 
@@ -242,12 +242,12 @@ module ObjectSpace
   end
   module_function :allocation_sourceline
 
-  Allocation = Struct.new(:class_path, :method_id, :sourcefile, :sourceline)
+  Allocation = Struct.new(:class_path, :method_id, :sourcefile, :sourceline, :generation)
 
   ALLOCATIONS = {}.compare_by_identity
 
-  def trace_allocation(object, class_path, method_id, sourcefile, sourceline)
-    ALLOCATIONS[object] = Allocation.new(class_path, method_id, sourcefile, sourceline)
+  def trace_allocation(object, class_path, method_id, sourcefile, sourceline, generation)
+    ALLOCATIONS[object] = Allocation.new(class_path, method_id, sourcefile, sourceline, generation)
   end
   module_function :trace_allocation
 

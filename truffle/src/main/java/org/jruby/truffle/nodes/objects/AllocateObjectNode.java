@@ -89,7 +89,7 @@ public abstract class AllocateObjectNode extends RubyNode {
                 object,
                 string(Layouts.CLASS.getFields(classToAllocate).getName()),
                 string(callerMethod),
-                string(callerSource.getSource().getShortName()),
+                string(callerSource.getSource().getName()),
                 callerSource.getStartLine());
 
         return object;

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.RubyGC;
 import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -166,7 +167,7 @@ public class ObjectSpaceManager {
         tracingPaused = true;
 
         try {
-            context.send(context.getCoreLibrary().getObjectSpaceModule(), "trace_allocation", null, object, classPath, methodId, sourcefile, sourceline);
+            context.send(context.getCoreLibrary().getObjectSpaceModule(), "trace_allocation", null, object, classPath, methodId, sourcefile, sourceline, RubyGC.getCollectionCount());
         } finally {
             tracingPaused = false;
         }
