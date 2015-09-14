@@ -47,15 +47,19 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    public static Object rootCall(DynamicObject proc, Object... args) {
-        assert RubyGuards.isRubyProc(proc);
-
-        return Layouts.PROC.getCallTargetForType(proc).call(RubyArguments.pack(
+    public static Object[] packArguments(DynamicObject proc, Object... args) {
+        return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
                 Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
-                args));
+                args);
+    }
+
+    public static Object rootCall(DynamicObject proc, Object... args) {
+        assert RubyGuards.isRubyProc(proc);
+
+        return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
     }
 
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
