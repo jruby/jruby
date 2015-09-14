@@ -766,7 +766,7 @@ public class BodyTranslator extends Translator {
                         final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
                         comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
                     } else {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, NodeUtil.cloneNode(readTemp)));
+                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
                 }
 
