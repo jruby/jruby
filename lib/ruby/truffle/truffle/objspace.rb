@@ -74,6 +74,11 @@ module ObjectSpace
   module_function :count_objects_size
 
   def count_tdata_objects(hash = {})
+    ObjectSpace.each_object do |object|
+      object_type = Truffle::Primitive.object_type_of(object)
+      hash[object_type] ||= 0
+      hash[object_type] += 1
+    end
     hash
   end
   module_function :count_tdata_objects

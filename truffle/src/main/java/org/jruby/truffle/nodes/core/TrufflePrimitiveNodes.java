@@ -615,4 +615,18 @@ public abstract class TrufflePrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "object_type_of", onSingleton = true, required = 1)
+    public abstract static class ObjectTypeOfNode extends CoreMethodArrayArgumentsNode {
+
+        public ObjectTypeOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject objectTypeOf(DynamicObject value) {
+            return getSymbol(value.getShape().getObjectType().getClass().getSimpleName());
+        }
+
+    }
+
 }
