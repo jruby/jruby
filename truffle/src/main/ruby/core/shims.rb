@@ -117,7 +117,7 @@ module Rubinius
     module Process
       def self.set_status_global(status)
         # Rubinius has: `::Thread.current[:$?] = status`
-        Truffle::Primitive.set_global_status_variable status
+        $? = status
       end
     end
   end

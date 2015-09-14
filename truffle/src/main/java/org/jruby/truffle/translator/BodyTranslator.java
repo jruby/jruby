@@ -1442,9 +1442,12 @@ public class BodyTranslator extends Translator {
             return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
-        if (readOnlyGlobalVariables.contains(name)) {
+        final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+        if (!inCore && readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
-        } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+        }
+
+        if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {

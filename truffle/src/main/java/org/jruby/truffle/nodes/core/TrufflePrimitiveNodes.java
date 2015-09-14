@@ -9,11 +9,8 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.ShortCircuit;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -29,9 +26,6 @@ import org.jruby.RubyGC;
 import org.jruby.RubyString;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.ThreadLocalObjectNode;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -628,39 +622,6 @@ public abstract class TrufflePrimitiveNodes {
                     Arrays.asList(arguments),
                     Arrays.asList(environmentVariables));
 
-        }
-    }
-
-    @CoreMethod(names = "set_global_status_variable", onSingleton = true, required = 1)
-    @NodeChild(value = "value", type = RubyNode.class)
-    public abstract static class SetGlobalStatusVariable extends CoreMethodNode {
-
-        @Child private WriteInstanceVariableNode writeNode;
-
-        public SetGlobalStatusVariable(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        abstract RubyNode getValue();
-
-        @ShortCircuit("value")
-        protected boolean needsValue() {
-            return false;
-        }
-
-        @Specialization
-        public DynamicObject set(VirtualFrame frame, boolean hasValue, DynamicObject value) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(
-                        new WriteInstanceVariableNode(getContext(), getSourceSection(), "$?",
-                                new ThreadLocalObjectNode(getContext(), getSourceSection()),
-                                getValue(),
-                                true));
-            }
-
-            writeNode.execute(frame);
-            return nil();
         }
     }
 
