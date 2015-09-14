@@ -215,7 +215,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
-        private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

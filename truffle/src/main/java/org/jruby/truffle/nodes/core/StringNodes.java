@@ -1660,7 +1660,7 @@ public abstract class StringNodes {
     @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
-        private ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
 
         @Child private ToStrNode toStrNode;
 
