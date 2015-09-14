@@ -96,18 +96,19 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
-        providedMessage = "(" + excptnClass.getName() + ") " + msg;
+        providedMessage = '(' + excptnClass.getName() + ") " + msg;
         this.nativeException = nativeException;
         if (DEBUG) {
             Thread.dumpStack();
         }
+        final ThreadContext context = runtime.getCurrentContext();
         setException((RubyException) Helpers.invoke(
-                runtime.getCurrentContext(),
+                context,
                 excptnClass,
                 "new",
-                RubyString.newUnicodeString(excptnClass.getRuntime(), msg)),
+                RubyString.newUnicodeString(runtime, msg)),
                 nativeException);
-        preRaise(runtime.getCurrentContext());
+        preRaise(context);
     }
 
     public RaiseException(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace, boolean nativeException) {
@@ -115,18 +116,19 @@ public class RaiseException extends JumpException {
         if (msg == null) {
             msg = "No message available";
         }
-        providedMessage = "(" + excptnClass.getName() + ") " + msg;
+        providedMessage = '(' + excptnClass.getName() + ") " + msg;
         this.nativeException = nativeException;
         if (DEBUG) {
             Thread.dumpStack();
         }
+        final ThreadContext context = runtime.getCurrentContext();
         setException((RubyException) Helpers.invoke(
-                runtime.getCurrentContext(),
+                context,
                 excptnClass,
                 "new",
-                RubyString.newUnicodeString(excptnClass.getRuntime(), msg)),
+                RubyString.newUnicodeString(runtime, msg)),
                 nativeException);
-        preRaise(runtime.getCurrentContext(), backtrace);
+        preRaise(context, backtrace);
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {

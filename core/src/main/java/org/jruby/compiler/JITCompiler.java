@@ -429,7 +429,8 @@ public class JITCompiler implements JITCompilerMBean {
 
         name = isBlock ? "" : "." + name;
 
-        StringBuilder builder = new StringBuilder(message + ":" + className + name + " at " + file + ":" + line);
+        StringBuilder builder = new StringBuilder(32);
+        builder.append(message).append(':').append(className).append(name).append(" at ").append(file).append(':').append(line);
 
         if (reason.length > 0) {
             builder.append(" because of: \"");

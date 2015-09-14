@@ -85,7 +85,7 @@ public class StringTerm extends StrTerm {
         // FIXME: How much more obtuse can this be?
         // Heredoc already parsed this and saved string...Do not parse..just return
         if (flags == -1) {
-            lexer.setValue(new Token("" + end));
+            lexer.setValue(new Token(String.valueOf(end)));
             lexer.ignoreNextScanEvent = true;
             return Tokens.tSTRING_END;
         }
@@ -144,7 +144,7 @@ public class StringTerm extends StrTerm {
     }
 
     private String parseRegexpFlags(RipperLexer lexer, LexerSource src) throws IOException {
-        StringBuilder buf = new StringBuilder(""+end);
+        StringBuilder buf = new StringBuilder(end);
 
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);

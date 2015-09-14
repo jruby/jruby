@@ -2545,7 +2545,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(optional = 1, rest = true)
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
-        final int aLen = args.length + 1;
         RubyClass array = runtime.getArray();
 
         final IRubyObject[] newArgs = new IRubyObject[args.length];

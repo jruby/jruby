@@ -501,7 +501,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             position++;
             // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
             // TODO: StringIO needs a love, too.
-            return getRuntime().newString("" + (char) (value & 0xFF));
+            return getRuntime().newString(String.valueOf((char) (value & 0xFF)));
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         }

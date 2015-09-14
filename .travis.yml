@@ -77,15 +77,12 @@ matrix:
     - env: COMMAND=test/truffle/run.sh
       jdk: oraclejdk8
   fast_finish: true
-  allow_failures:
-    - env: COMMAND=test/truffle/run.sh
-    - env: PHASE='-Ptruffle-mri-tests'
-
 
 branches:
   only:
     - master
     - jruby-1_7
+    - truffle-head
     - /^test-.*$/
     - /^ha-feature/
 

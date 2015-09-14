@@ -1321,10 +1321,10 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder val = new StringBuilder("#<BigDecimal:");
 
-        val.append(Integer.toHexString(System.identityHashCode(this))).append(",");
-        val.append("'").append(callMethod(context, "to_s")).append("'").append(",");
-        val.append(getSignificantDigits().length()).append("(");
-        val.append(((getAllDigits().length() / 4) + 1) * 4).append(")").append(">");
+        val.append( Integer.toHexString(System.identityHashCode(this)) ).append(',');
+        val.append('\'').append( callMethod(context, "to_s") ).append('\'').append(',');
+        val.append( getSignificantDigits().length() ).append('(');
+        val.append( ((getAllDigits().length() / 4) + 1) * 4 ).append(')').append('>');
 
         return getRuntime().newString(val.toString());
     }

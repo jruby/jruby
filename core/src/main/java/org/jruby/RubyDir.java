@@ -560,9 +560,9 @@ public class RubyDir extends RubyObject {
         Ruby runtime = getRuntime();
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":");
+        part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
-        part.append(">");
+        part.append('>');
 
         return runtime.newString(part.toString());
     }
@@ -701,8 +701,8 @@ public class RubyDir extends RubyObject {
         // dir can't be read, so we check permissions first
 
         // no permission
-        if (directory.getParentFile().exists() &&
-                !directory.getParentFile().canWrite()) {
+        File parentFile = directory.getParentFile();
+        if (parentFile.exists() && ! parentFile.canWrite()) {
             throw runtime.newErrnoEACCESError(path);
         }
 
@@ -807,11 +807,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject systemHash = runtime.getObject().getConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject home = null;
-
-        if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("HOME"));
-        }
+        IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));
 
         if (home == null || home.isNil()) {
             home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));

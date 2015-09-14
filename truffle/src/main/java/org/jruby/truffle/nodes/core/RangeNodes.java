@@ -20,6 +20,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -27,7 +29,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
+    @CoreMethod(names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
@@ -37,20 +39,14 @@ public abstract class RangeNodes {
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "isRubyProc(block)" })
         public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
-            int result;
-            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
-            } else {
-                result = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range) + 1;
-            }
-            final int exclusiveEnd = result;
-            final int length = exclusiveEnd - begin;
+            final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
+            final boolean excludedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
+            final int length = (excludedEnd ? end : end + 1) - begin;
 
             Object store = arrayBuilder.start(length);
-
             int count = 0;
 
             try {
@@ -59,7 +55,7 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.appendValue(store, n, yield(frame, block, n));
+                    store = arrayBuilder.appendValue(store, n, yield(frame, block, begin + n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -75,11 +71,13 @@ public abstract class RangeNodes {
     @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode eachInternalCall;
+
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "isRubyProc(block)" })
         public Object eachInt(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             int result;
             if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
@@ -108,7 +106,7 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = {"isLongFixnumRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isLongFixnumRange(range)", "isRubyProc(block)" })
         public Object eachLong(VirtualFrame frame, DynamicObject range, DynamicObject block) {
             long result;
             if (Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
@@ -137,19 +135,28 @@ public abstract class RangeNodes {
             return range;
         }
 
+        private Object eachInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
+            if (eachInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                eachInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return eachInternalCall.call(frame, range, "each_internal", block);
+        }
+
         @Specialization(guards = "isLongFixnumRange(range)")
         public Object eachObject(VirtualFrame frame, DynamicObject range, NotProvided block) {
-            return ruby(frame, "each_internal(&block)", "block", nil());
+            return eachInternal(frame, range, null);
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object each(VirtualFrame frame, DynamicObject range, NotProvided block) {
-            return ruby(frame, "each_internal(&block)", "block", nil());
+            return eachInternal(frame, range, null);
         }
 
-        @Specialization(guards = {"isObjectRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isObjectRange(range)", "isRubyProc(block)" })
         public Object each(VirtualFrame frame, DynamicObject range, DynamicObject block) {
-            return ruby(frame, "each_internal(&block)", "block", block);
+            return eachInternal(frame, range, block);
         }
 
     }
@@ -251,11 +258,13 @@ public abstract class RangeNodes {
     @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode stepInternalCall;
+
         public StepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "step > 0", "isRubyProc(block)"})
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "step > 0", "isRubyProc(block)" })
         public Object stepInt(VirtualFrame frame, DynamicObject range, int step, DynamicObject block) {
             int count = 0;
 
@@ -282,7 +291,7 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = {"isLongFixnumRange(range)", "step > 0", "isRubyProc(block)"})
+        @Specialization(guards = { "isLongFixnumRange(range)", "step > 0", "isRubyProc(block)" })
         public Object stepLong(VirtualFrame frame, DynamicObject range, int step, DynamicObject block) {
             int count = 0;
 
@@ -309,70 +318,85 @@ public abstract class RangeNodes {
             return range;
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "wasProvided(step)", "isRubyProc(block)"})
-        public Object stepFallbackInt(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
-            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        private Object stepInternal(VirtualFrame frame, DynamicObject range, DynamicObject block) {
+            return stepInternal(frame, range, 1, block);
         }
 
-        @Specialization(guards = {"isLongFixnumRange(range)", "wasProvided(step)", "isRubyProc(block)"})
+        private Object stepInternal(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
+            if (stepInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                stepInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return stepInternalCall.call(frame, range, "step_internal", block, step);
+        }
+
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "wasProvided(step)", "isRubyProc(block)" })
+        public Object stepFallbackInt(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
+            return stepInternal(frame, range, step, block);
+        }
+
+        @Specialization(guards = { "isLongFixnumRange(range)", "wasProvided(step)", "isRubyProc(block)" })
         public Object stepFallbackLong(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
-            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+            return stepInternal(frame, range, step, block);
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object stepInt(VirtualFrame frame, DynamicObject range, NotProvided step, NotProvided block) {
-            return ruby(frame, "step_internal");
+            return stepInternal(frame, range, null);
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "isRubyProc(block)" })
         public Object stepInt(VirtualFrame frame, DynamicObject range, NotProvided step, DynamicObject block) {
-            return ruby(frame, "step_internal(&block)", "block", block);
+            return stepInternal(frame, range, block);
         }
 
-        @Specialization(guards = {"isIntegerFixnumRange(range)", "!isInteger(step)", "!isLong(step)", "wasProvided(step)"})
+        @Specialization(guards = { "isIntegerFixnumRange(range)", "!isInteger(step)", "!isLong(step)", "wasProvided(step)" })
         public Object stepInt(VirtualFrame frame, DynamicObject range, Object step, NotProvided block) {
-            return ruby(frame, "step_internal(step)", "step", step);
+            return stepInternal(frame, range, step, null);
         }
 
         @Specialization(guards = "isLongFixnumRange(range)")
         public Object stepLong(VirtualFrame frame, DynamicObject range, NotProvided step, NotProvided block) {
-            return ruby(frame, "step_internal");
+            return stepInternal(frame, range, null);
         }
 
-        @Specialization(guards = {"isLongFixnumRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isLongFixnumRange(range)", "isRubyProc(block)" })
         public Object stepLong(VirtualFrame frame, DynamicObject range, NotProvided step, DynamicObject block) {
-            return ruby(frame, "step_internal(&block)", "block", block);
+            return stepInternal(frame, range, block);
         }
 
-        @Specialization(guards = {"isLongFixnumRange(range)", "wasProvided(step)"})
+        @Specialization(guards = { "isLongFixnumRange(range)", "wasProvided(step)" })
         public Object stepLong(VirtualFrame frame, DynamicObject range, Object step, NotProvided block) {
-            return ruby(frame, "step_internal(step)", "step", step);
+            return stepInternal(frame, range, step, null);
         }
 
-        @Specialization(guards = {"isObjectRange(range)", "wasProvided(step)", "isRubyProc(block)"})
+        @Specialization(guards = { "isObjectRange(range)", "wasProvided(step)", "isRubyProc(block)" })
         public Object stepObject(VirtualFrame frame, DynamicObject range, Object step, DynamicObject block) {
-            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+            return stepInternal(frame, range, step, block);
         }
 
         @Specialization(guards = "isObjectRange(range)")
         public Object stepObject(VirtualFrame frame, DynamicObject range, NotProvided step, NotProvided block) {
-            return ruby(frame, "step_internal");
+            return stepInternal(frame, range, null);
         }
 
-        @Specialization(guards = {"isObjectRange(range)", "isRubyProc(block)"})
+        @Specialization(guards = { "isObjectRange(range)", "isRubyProc(block)" })
         public Object stepObject(VirtualFrame frame, DynamicObject range, NotProvided step, DynamicObject block) {
-            return ruby(frame, "step_internal(&block)", "block", block);
+            return stepInternal(frame, range, block);
         }
 
-        @Specialization(guards = {"isObjectRange(range)", "wasProvided(step)"})
+        @Specialization(guards = { "isObjectRange(range)", "wasProvided(step)" })
         public Object step(VirtualFrame frame, DynamicObject range, Object step, NotProvided block) {
-            return ruby(frame, "step_internal(step)", "step", step);
+            return stepInternal(frame, range, step, null);
         }
 
     }
 
     @CoreMethod(names = "to_a", lowerFixnumSelf = true)
     public abstract static class ToANode extends CoreMethodArrayArgumentsNode {
+
+        @Child private CallDispatchHeadNode toAInternalCall;
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -404,7 +428,12 @@ public abstract class RangeNodes {
 
         @Specialization(guards = "isObjectRange(range)")
         public Object toA(VirtualFrame frame, DynamicObject range) {
-            return ruby(frame, "to_a_internal");
+            if (toAInternalCall == null) {
+                CompilerDirectives.transferToInterpreter();
+                toAInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toAInternalCall.call(frame, range, "to_a_internal", null);
         }
 
     }
@@ -456,7 +485,8 @@ public abstract class RangeNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("excludeEnd") public RubyNode castToBoolean(RubyNode excludeEnd) {
+        @CreateCast("excludeEnd")
+        public RubyNode castToBoolean(RubyNode excludeEnd) {
             return BooleanCastNodeGen.create(getContext(), getSourceSection(), excludeEnd);
         }
 

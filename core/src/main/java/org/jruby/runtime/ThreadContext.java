@@ -747,17 +747,14 @@ public final class ThreadContext {
      * @return an Array with the backtrace
      */
     public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        BacktraceElement[] backtraceClone = backtrace.clone();
-        int backtraceIndex = this.backtraceIndex;
+        BacktraceElement[] backtrace = this.backtrace.clone(); // TODO do we need to clone?
         BacktraceElement[] newTrace = new BacktraceElement[backtraceIndex + 1];
-        for (int i = 0; i <= backtraceIndex; i++) {
-            newTrace[i] = backtraceClone[i];
-        }
+        System.arraycopy(backtrace, 0, newTrace, 0, newTrace.length);
         return newTrace;
     }
     
     private static String createRubyBacktraceString(StackTraceElement element) {
-        return element.getFileName() + ":" + element.getLineNumber() + ":in `" + element.getMethodName() + "'";
+        return element.getFileName() + ':' + element.getLineNumber() + ":in `" + element.getMethodName() + '\'';
     }
     
     public static String createRawBacktraceStringFromThrowable(Throwable t) {

@@ -1297,7 +1297,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * The sleep is interrupted by releasing a permit. All permits are drained again on exit to ensure
      * the next sleep blocks.
      */
-    private class SleepTask2 implements Task<Object, Long> {
+    private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
         long millis;
         {semaphore.drainPermits();}

@@ -511,7 +511,7 @@ public abstract class IRScope implements ParseResult {
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
 
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info("" + interpreterContext);
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
         return interpreterContext;
     }

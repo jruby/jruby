@@ -933,8 +933,6 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        protected abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
-
         @Specialization
         public Object rightShift(VirtualFrame frame, int a, int b) {
             if (b > 0) {
@@ -944,6 +942,8 @@ public abstract class FixnumNodes {
                     } else {
                         return 0;
                     }
+                } else if (b == 32) {
+                    return 0;
                 } else {
                     return a >> b;
                 }
@@ -966,6 +966,8 @@ public abstract class FixnumNodes {
                     } else {
                         return 0;
                     }
+                } else if (b == 32) {
+                    return 0;
                 } else {
                     return a >> b;
                 }

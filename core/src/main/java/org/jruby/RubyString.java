@@ -1950,8 +1950,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
-        ThreadContext context = runtime.getCurrentContext();
-
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();
@@ -2131,7 +2129,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (other instanceof RubyFixnum) {
             long c = RubyNumeric.num2long(other);
             if (c < 0) {
-                throw runtime.newRangeError("" + c + " out of char range");
+                throw runtime.newRangeError(c + " out of char range");
             }
             return concatNumeric(runtime, (int)(c & 0xFFFFFFFF));
         } else if (other instanceof RubyBignum) {
@@ -3438,7 +3436,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
-        int range = ptr + len;
         byte[]bytes = value.getUnsafeBytes();
 
         RubyArray result = runtime.newArray();
@@ -3676,8 +3673,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int last = -1, prev = 0;
         int[] startp = {0};
         byte[] pBytes = value.unsafeBytes();
-        int p = value.begin();
-        int len = value.realSize();
+        final int len = value.realSize();
 
 
         pat = getPatternQuoted(context, pat, true);
@@ -3719,19 +3715,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (patternSearch(context, pat, str, startp[0], true) >= 0) {
             match = (RubyMatchData)context.getBackRef();
-            if (match.begin(0) == match.end(0)) {
+            final int matchEnd = match.end(0);
+            if (match.begin(0) == matchEnd) {
                 Encoding enc = str.getEncoding();
                 /*
                  * Always consume at least one character of the input string
                  */
-                if (str.size() > match.end(0)) {
-                    startp[0] = match.end(0) + encFastMBCLen(str.value.unsafeBytes(), str.value.begin() + match.end(0),
-                            str.value.begin() + str.value.realSize(), enc);
+                if (str.size() > matchEnd) {
+                    final ByteList strValue = str.value;
+                    startp[0] = matchEnd + encFastMBCLen(strValue.unsafeBytes(), strValue.begin() + matchEnd,
+                            strValue.begin() + strValue.realSize(), enc);
                 } else {
-                    startp[0] = match.end(0) + 1;
+                    startp[0] = matchEnd + 1;
                 }
             } else {
-                startp[0] = match.end(0);
+                startp[0] = matchEnd;
             }
             if (match.numRegs() == 1) {
                 return RubyRegexp.nth_match(0, match);
@@ -5189,11 +5187,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyArray a = RubyComplex.str_to_c_internal(context, s);
 
-        if (!a.eltInternal(0).isNil()) {
-            return a.eltInternal(0);
-        } else {
-            return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
-        }
+        IRubyObject first = a.eltInternal(0);
+        if ( ! first.isNil() ) return first;
+
+        return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
     }
 
     /** string_to_r
@@ -5209,11 +5206,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         RubyArray a = RubyRational.str_to_r_internal(context, s);
 
-        if (!a.eltInternal(0).isNil()) {
-            return a.eltInternal(0);
-        } else {
-            return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
-        }
+        IRubyObject first = a.eltInternal(0);
+        if ( ! first.isNil() ) return first;
+
+        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
     }
 
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

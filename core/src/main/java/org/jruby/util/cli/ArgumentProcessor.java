@@ -57,7 +57,7 @@ import java.util.HashSet;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
-    private final class Argument {
+    private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
         public Argument(String value, boolean dashed) {
@@ -175,7 +175,7 @@ public class ArgumentProcessor {
                         } else {
                             try {
                                 int val = Integer.parseInt(temp, 8);
-                                config.setRecordSeparator("" + (char) val);
+                                config.setRecordSeparator(String.valueOf((char) val));
                             } catch (Exception e) {
                                 MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
                                 mee.setUsageError(true);

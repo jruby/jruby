@@ -8,6 +8,10 @@
   </Match>
 
   <Match>
+    <Class name="~.*NodesFactory.*" />
+  </Match>
+
+  <Match>
     <Class name="~.*NodeGen.*" />
   </Match>
 

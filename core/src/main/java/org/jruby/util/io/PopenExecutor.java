@@ -170,9 +170,9 @@ public class PopenExecutor {
                 eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
         if (status == -1) {
             if (runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
-                String[] newArgv = new String[argv.length + 1];
-                newArgv[1] = prog;
-                newArgv[0] = "sh";
+                //String[] newArgv = new String[argv.length + 1];
+                //newArgv[1] = prog;
+                //newArgv[0] = "sh";
                 status = runtime.getPosix().posix_spawnp(
                         "/bin/sh",
                         eargp.fileActions,

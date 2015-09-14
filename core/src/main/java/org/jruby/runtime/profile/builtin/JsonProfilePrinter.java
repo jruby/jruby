@@ -145,10 +145,6 @@ public class JsonProfilePrinter extends ProfilePrinter {
         return String.format("\"%d\"", num);
     }
 
-    private String quote(long num) {
-        return String.format("\"%d\"", num);
-    }
-
     private String toJsonArray(String... values) {
         StringBuffer buffer = new StringBuffer();
         buffer.append("[");

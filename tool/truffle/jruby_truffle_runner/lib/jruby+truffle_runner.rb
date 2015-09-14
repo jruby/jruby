@@ -11,6 +11,7 @@ require 'pp'
 require 'yaml'
 require 'fileutils'
 require 'shellwords'
+require 'pathname'
 
 # TODO (pitr 01-Sep-2015): add pre stored run options combinations like -S irb, -I test
 
@@ -42,7 +43,7 @@ class JRubyTruffleRunner
             jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
                                   '../jruby/bin/jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
-            mock_load_path:      ['--mock-load-path PATH', 'Root path for all mocks/monkey-patches which is prepended in $:',
+            mock_load_path:      ['--mock-load-path PATH', 'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
                                   assign_new_value, 'mocks']
         },
         setup:  {
@@ -55,10 +56,12 @@ class JRubyTruffleRunner
             help:       ['-h', '--help', 'Show this message', assign_new_value, false],
             test:       ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
             graal:      ['-g', '--graal', 'Run on graal', assign_new_value, false],
+            build:      ['-b', '--build', 'Run `jt build` in JRuby', assign_new_value, false],
+            rebuild:    ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
-            # TODO (pitr 01-Sep-2015): add option for prepended load paths to be able to replace ugly echo in the yaml file
+            executable: ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception: ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
         clean:  {
@@ -97,6 +100,7 @@ class JRubyTruffleRunner
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
 
       Runs file, -e expr, etc in setup environment on JRuby+Truffle
+      (options after -- are interpreted by ruby not by this tool)
       Examples: #{EXECUTABLE} run -- a_file.rb
                 #{EXECUTABLE} run -- -S irb
                 #{EXECUTABLE} run -- -e 'puts :v'
@@ -243,7 +247,7 @@ class JRubyTruffleRunner
 
   def subcommand_setup(rest)
     bundle_path      = File.expand_path @options[:global][:truffle_bundle_path]
-    bundle_installed = execute_cmd 'command -v bundle 1>&2 2>/dev/null', fail: false
+    bundle_installed = execute_cmd 'command -v bundle 2>/dev/null 1>&2', fail: false
 
     execute_cmd 'gem install bundler' unless bundle_installed
 
@@ -275,8 +279,25 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(rest)
+    jruby_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../..").
+        relative_path_from(Pathname('.')).to_s
+
+    if @options[:run][:build] || @options[:run][:rebuild]
+      Dir.chdir jruby_path do
+        execute_cmd "./tool/jt.rb #{'re' if @options[:run][:rebuild]}build"
+      end
+    end
+
+    executable = if @options[:run][:executable]
+                   executables = Dir.glob("#{@options[:global][:truffle_bundle_path]}/jruby+truffle/*/gems/*/{bin,exe}/*")
+                   executables.find { |path| File.basename(path) == @options[:run][:executable] } or
+                       raise "no executable with name '#{@options[:run][:executable]}' found"
+                 end
+
+    core_load_path = "#{jruby_path}/truffle/src/main/ruby"
+
     cmd_options = [
-        ('-X+T' unless @options[:run][:test]),
+        *(['-X+T', "-Xtruffle.core.load_path=#{core_load_path}"] unless @options[:run][:test]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
@@ -290,6 +311,7 @@ class JRubyTruffleRunner
     cmd = [(env unless env.empty?),
            @options[:global][:jruby_truffle_path],
            *cmd_options,
+           executable,
            *rest
     ].compact
 

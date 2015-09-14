@@ -131,14 +131,15 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization(guards = {"isRubyClass(ofClass)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyModule(ofClass)", "isRubyProc(block)" })
         public int eachObject(VirtualFrame frame, DynamicObject ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
             for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
-                if (!isHidden(object) && ModuleOperations.assignableTo(Layouts.BASIC_OBJECT.getLogicalClass(object), ofClass)) {
+                final DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(object);
+                if (!isHidden(object) && ModuleOperations.assignableTo(metaClass, ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }
@@ -167,7 +168,7 @@ public abstract class ObjectSpaceNodes {
         public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
             if (respondToNode.executeBoolean(frame, finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
-                Object[] objects = new Object[]{0, finalizer};
+                Object[] objects = new Object[]{ 0, finalizer };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             } else {
                 CompilerDirectives.transferToInterpreter();

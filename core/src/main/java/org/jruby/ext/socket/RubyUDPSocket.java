@@ -283,7 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
             byte[] buf2 = data.getBytes();
-            DatagramPacket sendDP = null;
+            DatagramPacket sendDP;
 
             int port;
             if (_port instanceof RubyString) {
