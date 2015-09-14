@@ -81,7 +81,7 @@ public abstract class ObjectSpaceNodes {
                 }
             }
 
-            return nil();
+            throw new RaiseException(getContext().getCoreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
         }
 
         @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
