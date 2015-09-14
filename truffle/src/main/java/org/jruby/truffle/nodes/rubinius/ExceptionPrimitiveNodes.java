@@ -36,11 +36,12 @@ public abstract class ExceptionPrimitiveNodes {
         protected final static int EINVAL = Errno.EINVAL.intValue();
         protected final static int EINPROGRESS = Errno.EINPROGRESS.intValue();
         protected final static int ENOTCONN = Errno.ENOTCONN.intValue();
+        protected final static int ECONNREFUSED = Errno.ECONNREFUSED.intValue();
 
         public static boolean isExceptionSupported(int errno) {
             return errno == EPERM || errno == ENOENT || errno == EBADF || errno == EEXIST || errno == EACCES
                     || errno == EFAULT || errno == ENOTDIR || errno == EINVAL || errno == EINPROGRESS
-                    || errno == ENOTCONN;
+                    || errno == ENOTCONN || errno == ECONNREFUSED;
         }
 
         public ExceptionErrnoErrorPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -119,6 +120,11 @@ public abstract class ExceptionPrimitiveNodes {
 
         @Specialization(guards = {"isRubyString(message)", "errno == ENOTCONN"})
         public DynamicObject enotconn(DynamicObject message, int errno) {
+            return getContext().getCoreLibrary().errnoError(errno, this);
+        }
+
+        @Specialization(guards = {"isRubyString(message)", "errno == ECONNREFUSED"})
+        public DynamicObject econnrefused(DynamicObject message, int errno) {
             return getContext().getCoreLibrary().errnoError(errno, this);
         }
 
