@@ -24,10 +24,6 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "Thread::Backtrace::Location")
 public class ThreadBacktraceLocationNodes {
 
-    public static DynamicObject createRubyThreadBacktraceLocation(DynamicObject rubyClass, Activation activation) {
-        return ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocation(Layouts.CLASS.getInstanceFactory(rubyClass), activation);
-    }
-
     @CoreMethod(names = { "absolute_path", "path" })
     // TODO (eregon, 8 July 2015): these two methods are slightly different (path can be relative if it is the main script)
     public abstract static class AbsolutePathNode extends UnaryCoreMethodNode {
@@ -92,7 +88,7 @@ public class ThreadBacktraceLocationNodes {
             }
 
             return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(String.format("%s:%d:in `%s'",
-                    sourceSection.getSource().getShortName(),
+                    sourceSection.getSource().getName(),
                     sourceSection.getStartLine(),
                     sourceSection.getIdentifier()), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }

@@ -43,6 +43,7 @@ end
 example "14"
 counter_example "rand"
 
+require_relative 'language/controlflow_pe.rb'
 require_relative 'language/closures_pe.rb'
 require_relative 'language/constant_pe.rb'
 require_relative 'language/metaprogramming_pe.rb'
@@ -54,6 +55,10 @@ require_relative 'core/symbol_pe.rb'
 require_relative 'core/method_pe.rb'
 require_relative 'core/array_pe.rb'
 require_relative 'core/hash_pe.rb'
+require_relative 'core/eval_pe.rb'
+require_relative 'core/send_pe.rb'
+require_relative 'core/objectid_pe.rb'
+require_relative 'core/binding_pe.rb'
 require_relative 'macro/pushing_pixels_pe.rb'
 
 tested = 0
@@ -62,8 +67,8 @@ errored = 0
 timedout = 0
 
 def report(status, code, message = nil)
-  format_str = '%7s: %s'
-  puts message ? format(format_str + "\n         %s", status, code, message) : format('%7s: %s', status, code)
+  format_str = '%14s: %s'
+  puts message ? format(format_str + "\n         %s", status, code, message) : format('%14s: %s', status, code)
 end
 
 EXAMPLES.each do |code, expected_constant, tagged|
@@ -100,7 +105,7 @@ EXAMPLES.each do |code, expected_constant, tagged|
             report 'QUERY', code, "wasn't supposed to be constant but it was"
             failed += 1
           else
-            report 'OK', code
+            report 'OK (counter)', code
           end
         end
       end

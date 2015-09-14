@@ -8,7 +8,6 @@
 
 example "[3, 1, 2][1]"
 
-# fails because of a call to <=> that is not inlined
 example "[3, 1, 2].sort[1]"
 
 # why does this fail but the next one work?
