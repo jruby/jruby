@@ -365,4 +365,18 @@ describe "The 'case'-construct with no target expression" do
         "bar"
     end.should == "bar"
   end
+
+  it "calls === even when private" do
+    klass = Class.new do
+      private
+      def ===(o)
+        !!o
+      end
+    end
+
+    case 1
+    when klass.new
+      :called
+    end.should == :called
+  end
 end
