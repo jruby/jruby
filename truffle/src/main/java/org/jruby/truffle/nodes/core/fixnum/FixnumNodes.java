@@ -837,17 +837,17 @@ public abstract class FixnumNodes {
 
         public abstract Object executeLeftShift(VirtualFrame frame, Object a, Object b);
 
-        @Specialization(guards = {"isPositive(b)", "canShiftIntoInt(a, b)"})
+        @Specialization(guards = { "b >= 0", "canShiftIntoInt(a, b)" })
         public int leftShift(int a, int b) {
             return a << b;
         }
 
-        @Specialization(guards = {"isPositive(b)", "canShiftIntoInt(a, b)"})
+        @Specialization(guards = { "b >= 0", "canShiftIntoInt(a, b)" })
         public int leftShift(int a, long b) {
             return a << b;
         }
 
-        @Specialization(guards = "isStrictlyNegative(b)")
+        @Specialization(guards = "b < 0")
         public int leftShiftNeg(int a, int b) {
             if (-b >= Integer.SIZE) {
                 return 0;
@@ -858,12 +858,12 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = {"isPositive(b)", "canShiftIntoLong(a, b)"})
+        @Specialization(guards = { "b >= 0", "canShiftIntoLong(a, b)" })
         public long leftShiftToLong(long a, int b) {
             return a << b;
         }
 
-        @Specialization(guards = {"isPositive(b)"})
+        @Specialization(guards = "b >= 0")
         public Object leftShiftWithOverflow(long a, int b) {
             if (canShiftIntoLong(a, b)) {
                 return leftShiftToLong(a, b);
@@ -872,7 +872,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = "isStrictlyNegative(b)")
+        @Specialization(guards = "b < 0")
         public long leftShiftNeg(long a, int b) {
             if (-b >= Integer.SIZE) {
                 return 0;
@@ -899,24 +899,8 @@ public abstract class FixnumNodes {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
 
-        static boolean canShiftIntoLong(int a, int b) {
-            return canShiftIntoLong((long) a, b);
-        }
-
         static boolean canShiftIntoLong(long a, int b) {
             return Long.numberOfLeadingZeros(a) - b > 0;
-        }
-
-        static boolean isPositive(int value) {
-            return value >= 0;
-        }
-
-        static boolean isPositive(long value) {
-            return value >= 0;
-        }
-
-        static boolean isStrictlyNegative(int value) {
-            return value < 0;
         }
 
     }
