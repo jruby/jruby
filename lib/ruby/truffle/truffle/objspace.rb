@@ -65,7 +65,7 @@ module ObjectSpace
     total = 0
     ObjectSpace.each_object(Class) do |klass|
       per_klass = memsize_of_all(klass)
-      hash[klass.name.to_sym] = per_klass
+      hash[klass.name.to_sym] = per_klass unless klass.name.nil?
       total += per_klass
     end
     hash[:TOTAL] = total
