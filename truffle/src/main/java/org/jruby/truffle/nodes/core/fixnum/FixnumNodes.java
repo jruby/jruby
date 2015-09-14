@@ -36,8 +36,6 @@ import java.math.BigInteger;
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
 
-    private static final int BITS = 64;
-
     @CoreMethod(names = "-@")
     public abstract static class NegNode extends CoreMethodArrayArgumentsNode {
 
@@ -936,14 +934,12 @@ public abstract class FixnumNodes {
         @Specialization
         public Object rightShift(VirtualFrame frame, int a, int b) {
             if (b > 0) {
-                if (b >= BITS - 1) {
+                if (b >= Integer.SIZE - 1) {
                     if (a < 0) {
                         return -1;
                     } else {
                         return 0;
                     }
-                } else if (b == 32) {
-                    return 0;
                 } else {
                     return a >> b;
                 }
@@ -960,14 +956,12 @@ public abstract class FixnumNodes {
         @Specialization
         public Object rightShift(VirtualFrame frame, int a, long b) {
             if (b > 0) {
-                if (b >= BITS - 1) {
+                if (b >= Integer.SIZE - 1) {
                     if (a < 0) {
                         return -1;
                     } else {
                         return 0;
                     }
-                } else if (b == 32) {
-                    return 0;
                 } else {
                     return a >> b;
                 }
@@ -984,7 +978,7 @@ public abstract class FixnumNodes {
         @Specialization
         public Object rightShift(VirtualFrame frame, long a, int b) {
             if (b > 0) {
-                if (b >= BITS - 1) {
+                if (b >= Long.SIZE - 1) {
                     if (a < 0) {
                         return -1;
                     } else {
