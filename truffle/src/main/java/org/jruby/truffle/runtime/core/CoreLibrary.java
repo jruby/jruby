@@ -916,11 +916,6 @@ public class CoreLibrary {
         return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
     }
 
-    public DynamicObject indexNegativeLength(int length, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return indexError(String.format("negative length (%d)", length), currentNode);
-    }
-
     public DynamicObject localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(localJumpErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
@@ -960,11 +955,6 @@ public class CoreLibrary {
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
-    }
-
-    public DynamicObject typeErrorNoClassToMakeAlias(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError("no class to make alias", currentNode);
     }
 
     public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
@@ -1010,11 +1000,6 @@ public class CoreLibrary {
                 badClassName,
                 coercionMethod,
                 Layouts.MODULE.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantCoerce(Object from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
     public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
@@ -1182,19 +1167,9 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public DynamicObject invalidArgumentError(String value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EINVAL), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Invalid argument -  %s", value), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
     public DynamicObject ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(ioErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject dirNotEmptyError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTEMPTY), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Directory not empty - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
