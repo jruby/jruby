@@ -61,7 +61,7 @@ class JRubyTruffleRunner
             debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
-            executable: ['-e', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
+            executable: ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception: ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
         clean:  {
@@ -100,6 +100,7 @@ class JRubyTruffleRunner
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
 
       Runs file, -e expr, etc in setup environment on JRuby+Truffle
+      (options after -- are interpreted by ruby not by this tool)
       Examples: #{EXECUTABLE} run -- a_file.rb
                 #{EXECUTABLE} run -- -S irb
                 #{EXECUTABLE} run -- -e 'puts :v'
