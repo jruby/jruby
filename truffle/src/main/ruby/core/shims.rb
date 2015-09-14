@@ -221,3 +221,16 @@ module Kernel
   def gem(*args)
   end
 end
+
+# Find out why Rubinius doesn't implement this
+class Rubinius::ARGFClass
+
+  def inplace_mode
+    @ext
+  end
+
+  def inplace_mode=(ext)
+    @ext = ext
+  end
+
+end
