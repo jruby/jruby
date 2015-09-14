@@ -32,6 +32,11 @@ public abstract class ObjSpaceNodes {
             super(context, sourceSection);
         }
 
+        @Specialization(guards = "isNil(nil)")
+        public int memsizeOf(Object nil) {
+            return 0;
+        }
+
         @Specialization
         public int memsizeOf(boolean object) {
             return 0;
@@ -67,7 +72,13 @@ public abstract class ObjSpaceNodes {
             return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.STRING.getByteList(object).getRealSize();
         }
 
-        @Specialization(guards = {"!isRubyArray(object)", "!isRubyHash(object)", "!isRubyString(object)"})
+        @Specialization(guards = "isRubyMatchData(object)")
+        public int memsizeOfMatchData(DynamicObject object) {
+            return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.MATCH_DATA.getValues(object).length;
+        }
+
+        @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)", "!isRubyHash(object)",
+                "!isRubyString(object)", "!isRubyMatchData(object)"})
         public int memsizeOfObject(DynamicObject object) {
             return 1 + object.getShape().getPropertyListInternal(false).size();
         }
