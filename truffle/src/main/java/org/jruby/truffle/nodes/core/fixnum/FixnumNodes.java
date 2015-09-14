@@ -18,10 +18,12 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory.RightShiftNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
@@ -825,14 +827,11 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "<<", required = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child private RightShiftNode rightShiftNode;
         @Child private CallDispatchHeadNode fallbackCallNode;
 
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        protected Object lower(BigInteger value) {
-            return fixnumOrBignum(value);
         }
 
         public abstract Object executeLeftShift(VirtualFrame frame, Object a, Object b);
@@ -847,17 +846,6 @@ public abstract class FixnumNodes {
             return a << b;
         }
 
-        @Specialization(guards = "b < 0")
-        public int leftShiftNeg(int a, int b) {
-            if (-b >= Integer.SIZE) {
-                return 0;
-            } else if (b == Integer.MIN_VALUE) {
-                return 0;
-            } else {
-                return a >> -b;
-            }
-        }
-
         @Specialization(guards = { "b >= 0", "canShiftIntoLong(a, b)" })
         public long leftShiftToLong(long a, int b) {
             return a << b;
@@ -868,26 +856,25 @@ public abstract class FixnumNodes {
             if (canShiftIntoLong(a, b)) {
                 return leftShiftToLong(a, b);
             } else {
-                return lower(BigInteger.valueOf(a).shiftLeft(b));
+                return fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
             }
         }
 
         @Specialization(guards = "b < 0")
-        public long leftShiftNeg(long a, int b) {
-            if (-b >= Integer.SIZE) {
-                return 0;
-            } else {
-                return a >> -b;
+        public Object leftShiftNeg(VirtualFrame frame, long a, int b) {
+            if (rightShiftNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rightShiftNode = insert(RightShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
             }
+            return rightShiftNode.executeRightShift(frame, a, -b);
         }
 
-        @Specialization(guards = {"!isInteger(b)", "!isLong(b)"})
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-
             return fallbackCallNode.call(frame, a, "left_shift_fallback", null, b);
         }
 
@@ -915,90 +902,70 @@ public abstract class FixnumNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        public abstract Object executeRightShift(VirtualFrame frame, Object a, Object b);
+
+        @Specialization(guards = "b >= 0")
         public Object rightShift(VirtualFrame frame, int a, int b) {
-            if (b > 0) {
-                if (b >= Integer.SIZE - 1) {
-                    if (a < 0) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    return a >> b;
-                }
+            if (b >= Integer.SIZE - 1) {
+                return a < 0 ? -1 : 0;
             } else {
-                if (leftShiftNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
-                }
-
-                return leftShiftNode.executeLeftShift(frame, a, -b);
+                return a >> b;
             }
         }
 
-        @Specialization
+        @Specialization(guards = "b >= 0")
         public Object rightShift(VirtualFrame frame, int a, long b) {
-            if (b > 0) {
-                if (b >= Integer.SIZE - 1) {
-                    if (a < 0) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    return a >> b;
-                }
+            if (b >= Integer.SIZE - 1) {
+                return a < 0 ? -1 : 0;
             } else {
-                if (leftShiftNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
-                }
-
-                return leftShiftNode.executeLeftShift(frame, a, -b);
+                return a >> b;
             }
         }
 
-        @Specialization
+        @Specialization(guards = "b >= 0")
         public Object rightShift(VirtualFrame frame, long a, int b) {
-            if (b > 0) {
-                if (b >= Long.SIZE - 1) {
-                    if (a < 0) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    return a >> b;
-                }
+            if (b >= Long.SIZE - 1) {
+                return a < 0 ? -1 : 0;
             } else {
-                if (leftShiftNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
-                }
-
-                return leftShiftNode.executeLeftShift(frame, a, -b);
+                return a >> b;
             }
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
-        public int rightShift(int a, DynamicObject b) {
-            return 0;
+        @Specialization(guards = "b < 0")
+        public Object rightShiftNeg(VirtualFrame frame, long a, int b) {
+            if (leftShiftNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
+            }
+            return leftShiftNode.executeLeftShift(frame, a, -b);
         }
 
-        @Specialization(guards = "isRubyBignum(b)")
+        @Specialization(guards = { "isRubyBignum(b)", "isPositive(b)" })
         public int rightShift(long a, DynamicObject b) {
             return 0;
         }
 
-        @Specialization(guards = {"!isInteger(b)", "!isLong(b)"})
+        @Specialization(guards = { "isRubyBignum(b)", "!isPositive(b)" })
+        public Object rightShiftNeg(VirtualFrame frame, long a, DynamicObject b) {
+            if (leftShiftNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                leftShiftNode = insert(FixnumNodesFactory.LeftShiftNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null }));
+            }
+            CompilerDirectives.transferToInterpreter();
+            return leftShiftNode.executeLeftShift(frame, a, Layouts.BIGNUM.getValue(b).negate());
+        }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
             }
-
             return fallbackCallNode.call(frame, a, "right_shift_fallback", null, b);
+        }
+
+        protected static boolean isPositive(DynamicObject b) {
+            return Layouts.BIGNUM.getValue(b).signum() >= 0;
         }
 
     }
