@@ -1,1 +1,0 @@
-fails:Enumerator::Lazy#select calls the block with a gathered array when yield with multiple arguments

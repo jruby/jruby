@@ -1,1 +1,0 @@
-fails:Enumerator::Lazy#enum_for passes given arguments to wrapped method

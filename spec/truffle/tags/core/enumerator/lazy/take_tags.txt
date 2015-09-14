@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#take when the returned lazy enumerator is evaluated by .force stops after specified times
-fails:Enumerator::Lazy#take on a nested Lazy when the returned lazy enumerator is evaluated by .force stops after specified times

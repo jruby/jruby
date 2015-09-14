@@ -1,1 +1,0 @@
-fails:Enumerator::Lazy#find_all calls the block with a gathered array when yield with multiple arguments
