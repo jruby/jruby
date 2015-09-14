@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -25,6 +26,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -76,21 +78,26 @@ public abstract class AllocateObjectNode extends RubyNode {
     public DynamicObject allocateTracing(DynamicObject classToAllocate, Object[] values) {
         final DynamicObject object = getInstanceFactory(classToAllocate).newInstance(values);
 
-        final Node caller = RubyCallStack.getTopMostUserCallNode();
-        final SourceSection callerSource = caller.getEncapsulatingSourceSection();
+        final Object callerSelf = RubyArguments.getSelf(RubyCallStack.getCallerFrame(
+                getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
+
+        final Node immediateCaller = Truffle.getRuntime().getCallerFrame().getCallNode();
 
         final String callerMethod;
 
-        if (caller.getRootNode() instanceof RubyRootNode) {
-            callerMethod = ((RubyRootNode) caller.getRootNode()).getSharedMethodInfo().getName();
+        if (immediateCaller.getRootNode() instanceof RubyRootNode) {
+            callerMethod = ((RubyRootNode) immediateCaller.getRootNode()).getSharedMethodInfo().getName();
         } else {
             callerMethod = "(unknown)";
         }
 
+        final Node caller = RubyCallStack.getTopMostUserCallNode();
+        final SourceSection callerSource = caller.getEncapsulatingSourceSection();
+
         getContext().getObjectSpaceManager().traceAllocation(
                 object,
-                string(Layouts.CLASS.getFields(classToAllocate).getName()),
-                string(callerMethod),
+                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(callerSelf)).getName()),
+                getSymbol(callerMethod),
                 string(callerSource.getSource().getName()),
                 callerSource.getStartLine());
 
