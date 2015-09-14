@@ -67,6 +67,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.KCode;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.cli.Options;
 
@@ -264,7 +265,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     private void initRubyInstanceConfig() throws RaiseException {
-        String home = SystemPropertyCatcher.findJRubyHome(this);
+        String home = SafePropertyAccessor.getenv("JRUBY_HOME");
         if (home != null) {
         	provider.getRubyInstanceConfig().setJRubyHome(home);
         }

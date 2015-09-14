@@ -305,12 +305,15 @@ public class RubyInstanceConfig {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
         }
 
+        if (newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
+            newJRubyHome = "uri:classloader://META-INF/jruby.home";
+        }
         if (newJRubyHome != null) {
             // verify it if it's there
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SystemPropertyCatcher.findJRubyHome(this);
+                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
