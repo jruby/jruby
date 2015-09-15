@@ -64,11 +64,13 @@ below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
  The Rubinius API implementation in truffle/src/main/ruby/core/rubinius/api
  is copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD license.
 
- The Rubinius core library implementation
- in truffle/src/main/ruby/core/rubinius/bootstrap
- and truffle/src/main/ruby/core/rubinius/common is
- copyright (c) 2007-2014, Evan Phoenix and contributors,
- and released under the 3-clause BSD license.
+ The Rubinius core library implementation in truffle/src/main/ruby/core/rubinius
+ is copyright (c) 2007-2015, Evan Phoenix and contributors, and released under
+ the 3-clause BSD license.
+
+ Some parts of the Truffle Java code is derived from Rubinius C++ code which is
+ copyright (c) 2007-2015, Evan Phoenix and contributors, and released under the
+ 3-clause BSD license.
 
  Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
  are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
