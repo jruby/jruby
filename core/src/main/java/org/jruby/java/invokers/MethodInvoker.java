@@ -11,13 +11,11 @@ import org.jruby.javasupport.JavaMethod;
 public abstract class MethodInvoker extends RubyToJavaInvoker {
 
     MethodInvoker(RubyModule host, List<Method> methods) {
-        super(host, methods.toArray(new Method[methods.size()]));
-        trySetAccessible(getAccessibleObjects());
+        super(host, setAccessible( methods.toArray(new Method[methods.size()]) ) );
     }
 
     MethodInvoker(RubyModule host, Method method) {
-        super(host, new Method[] { method });
-        trySetAccessible(getAccessibleObjects());
+        super(host, new Method[] { setAccessible(method) });
     }
 
     @Override

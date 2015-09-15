@@ -221,11 +221,20 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         return (JavaProxy) self;
     }
 
-    static void trySetAccessible(AccessibleObject... accesibles) {
+    static <T extends AccessibleObject> T setAccessible(T accessible) {
         if ( ! Ruby.isSecurityRestricted() ) {
-            try { AccessibleObject.setAccessible(accesibles, true); }
-            catch(SecurityException e) {}
+            try { accessible.setAccessible(true); }
+            catch (SecurityException e) {}
         }
+        return accessible;
+    }
+
+    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+        if ( ! Ruby.isSecurityRestricted() ) {
+            try { AccessibleObject.setAccessible(accessibles, true); }
+            catch (SecurityException e) {}
+        }
+        return accessibles;
     }
 
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
