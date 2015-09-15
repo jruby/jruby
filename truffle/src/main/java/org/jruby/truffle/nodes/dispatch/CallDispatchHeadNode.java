@@ -21,8 +21,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
-    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        super(context, ignoreVisibility, indirect, missingBehavior, DispatchAction.CALL_METHOD);
+    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+        super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
     public Object call(
@@ -49,7 +49,6 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             CompilerDirectives.transferToInterpreter();
             booleanCastNode = insert(BooleanCastNodeGen.create(context, getSourceSection(), null));
         }
-
         return booleanCastNode.executeBoolean(frame,
                 dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects));
     }

@@ -13,7 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -35,8 +34,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
     @Child private DirectCallNode trueCallDirect;
 
-    @Child private IndirectCallNode indirectCallNode;
-
     public CachedBooleanDispatchNode(
             RubyContext context,
             Object cachedName,
@@ -47,21 +44,18 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Assumption trueUnmodifiedAssumption,
             Object trueValue,
             InternalMethod trueMethod,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
 
         if (falseMethod != null) {
-            if (!indirect) {
-                falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
+            falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
 
-                if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysClone()) {
-                    insert(falseCallDirect);
-                    falseCallDirect.cloneCallTarget();
-                }
+            if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysClone()) {
+                insert(falseCallDirect);
+                falseCallDirect.cloneCallTarget();
             }
         }
 
@@ -69,18 +63,12 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
         this.trueMethod = trueMethod;
 
         if (trueMethod != null) {
-            if (!indirect) {
                 trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
 
                 if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysClone()) {
                     insert(trueCallDirect);
                     trueCallDirect.cloneCallTarget();
                 }
-            }
-        }
-
-        if (indirect) {
-            indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         }
     }
 
@@ -121,29 +109,15 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             }
 
             switch (getDispatchAction()) {
-                case CALL_METHOD: {
-                    if (isIndirect()) {
-                        return indirectCallNode.call(
-                                frame,
-                                trueMethod.getCallTarget(),
-                                RubyArguments.pack(
-                                        trueMethod,
-                                        trueMethod.getDeclarationFrame(),
-                                        receiverObject,
-                                        (DynamicObject) blockObject,
-                                        (Object[]) argumentsObjects));
-                    } else {
-                        return trueCallDirect.call(
-                                frame,
-                                RubyArguments.pack(
-                                        trueMethod,
-                                        trueMethod.getDeclarationFrame(),
-                                        receiverObject,
-                                        (DynamicObject) blockObject,
-                                        (Object[]) argumentsObjects));
-                    }
-                }
-
+                case CALL_METHOD:
+                    return trueCallDirect.call(
+                            frame,
+                            RubyArguments.pack(
+                                    trueMethod,
+                                    trueMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    (DynamicObject) blockObject,
+                                    (Object[]) argumentsObjects));
                 case RESPOND_TO_METHOD:
                     return true;
 
@@ -166,28 +140,15 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             }
 
             switch (getDispatchAction()) {
-                case CALL_METHOD: {
-                    if (isIndirect()) {
-                        return indirectCallNode.call(
-                                frame,
-                                falseMethod.getCallTarget(),
-                                RubyArguments.pack(
-                                        falseMethod,
-                                        falseMethod.getDeclarationFrame(),
-                                        receiverObject,
-                                        (DynamicObject) blockObject,
-                                        (Object[]) argumentsObjects));
-                    } else {
-                        return falseCallDirect.call(
-                                frame,
-                                RubyArguments.pack(
-                                        falseMethod,
-                                        falseMethod.getDeclarationFrame(),
-                                        receiverObject,
-                                        (DynamicObject) blockObject,
-                                        (Object[]) argumentsObjects));
-                    }
-                }
+                case CALL_METHOD:
+                    return falseCallDirect.call(
+                            frame,
+                            RubyArguments.pack(
+                                    falseMethod,
+                                    falseMethod.getDeclarationFrame(),
+                                    receiverObject,
+                                    (DynamicObject) blockObject,
+                                    (Object[]) argumentsObjects));
 
                 case RESPOND_TO_METHOD:
                     return true;

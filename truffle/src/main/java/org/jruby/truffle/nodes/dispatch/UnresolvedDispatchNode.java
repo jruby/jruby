@@ -39,7 +39,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private int depth = 0;
 
     private final boolean ignoreVisibility;
-    private final boolean indirect;
     private final MissingBehavior missingBehavior;
 
     @Child private SingletonClassNode singletonClassNode;
@@ -47,12 +46,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     public UnresolvedDispatchNode(
             RubyContext context,
             boolean ignoreVisibility,
-            boolean indirect,
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
-        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
     }
 
@@ -160,11 +157,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             return new CachedBooleanDispatchNode(getContext(),
                     methodName, first,
                     falseUnmodifiedAssumption, null, falseMethod,
-                    trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
+                    trueUnmodifiedAssumption, null, trueMethod, getDispatchAction());
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
+                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
         }
     }
 
@@ -198,13 +195,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DynamicObject receiverMetaClass = getContext().getCoreLibrary().getMetaClass(receiverObject);
         if (RubyGuards.isRubySymbol(receiverObject)) {
-            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
+            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, getDispatchAction());
         } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
             return new CachedSingletonDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject),
-                    receiverMetaClass, method, indirect, getDispatchAction());
+                    receiverMetaClass, method, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
-                    receiverMetaClass, method, indirect, getDispatchAction());
+                    receiverMetaClass, method, getDispatchAction());
         }
     }
 
@@ -245,7 +242,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), getDispatchAction());
             }
 
             case CALL_METHOD_MISSING: {
@@ -257,7 +254,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, false, getDispatchAction());
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, getDispatchAction());
             }
 
             default: {

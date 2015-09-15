@@ -235,7 +235,6 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, true,
-                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 

@@ -17,7 +17,6 @@ public class DispatchHeadNodeFactory {
         return new CallDispatchHeadNode(
                 context,
                 false,
-                false,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
@@ -29,14 +28,12 @@ public class DispatchHeadNodeFactory {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
-                false,
                 MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
         return new CallDispatchHeadNode(
                 context,
-                false,
                 false,
                 missingBehavior);
     }
@@ -45,7 +42,6 @@ public class DispatchHeadNodeFactory {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
-                false,
                 missingBehavior);
     }
 

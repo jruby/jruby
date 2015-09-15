@@ -19,7 +19,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
     private final DynamicObject cachedNameAsSymbol;
-    private final boolean indirect;
 
     @Child protected DispatchNode next;
 
@@ -29,7 +28,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            boolean indirect,
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
 
@@ -45,8 +43,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-
-        this.indirect = indirect;
 
         this.next = next;
     }
@@ -77,9 +73,5 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     protected DynamicObject getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
-    }
-
-    public boolean isIndirect() {
-        return indirect;
     }
 }

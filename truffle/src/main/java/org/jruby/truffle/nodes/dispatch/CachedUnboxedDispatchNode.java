@@ -13,7 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -28,7 +27,6 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
-    @Child private IndirectCallNode indirectCallNode;
 
     public CachedUnboxedDispatchNode(
             RubyContext context,
@@ -37,23 +35,18 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             Class<?> expectedClass,
             Assumption unmodifiedAssumption,
             InternalMethod method,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
 
         if (method != null) {
-            if (indirect) {
-                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-            } else {
-                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if (Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop")) {
-                    insert(callNode);
-                    callNode.cloneCallTarget();
-                }
+            if (Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop")) {
+                insert(callNode);
+                callNode.cloneCallTarget();
             }
         }
     }
@@ -96,26 +89,14 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
         }
 
         switch (getDispatchAction()) {
-            case CALL_METHOD: {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject, (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject, (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                }
-            }
+            case CALL_METHOD:
+                return callNode.call(
+                        frame,
+                        RubyArguments.pack(
+                                method,
+                                method.getDeclarationFrame(),
+                                receiverObject, (DynamicObject) blockObject,
+                                (Object[]) argumentsObjects));
 
             case RESPOND_TO_METHOD:
                 return true;

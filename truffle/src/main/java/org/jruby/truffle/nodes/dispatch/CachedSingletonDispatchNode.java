@@ -13,7 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 
@@ -34,7 +33,6 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
 
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
-    @Child private IndirectCallNode indirectCallNode;
 
     public CachedSingletonDispatchNode(
             RubyContext context,
@@ -43,9 +41,8 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
             DynamicObject expectedReceiver,
             DynamicObject expectedClass,
             InternalMethod method,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
 
         assert RubyGuards.isRubyClass(expectedClass);
 
@@ -55,17 +52,13 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
         this.method = method;
 
         if (method != null) {
-            if (indirect) {
-                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-            } else {
-                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-                if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone())
-                        || (method.getDeclaringModule() != null
-                        && Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
-                    insert(callNode);
-                    callNode.cloneCallTarget();
-                }
+            if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone())
+                    || (method.getDeclaringModule() != null
+                    && Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
+                insert(callNode);
+                callNode.cloneCallTarget();
             }
         }
     }
@@ -107,28 +100,15 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
         }
 
         switch (getDispatchAction()) {
-            case CALL_METHOD: {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    expectedReceiver,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    expectedReceiver,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                }
-            }
+            case CALL_METHOD:
+                return callNode.call(
+                        frame,
+                        RubyArguments.pack(
+                                method,
+                                method.getDeclarationFrame(),
+                                expectedReceiver,
+                                (DynamicObject) blockObject,
+                                (Object[]) argumentsObjects));
 
             case RESPOND_TO_METHOD:
                 return true;

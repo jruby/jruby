@@ -1442,7 +1442,6 @@ public abstract class KernelNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, false,
-                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 
@@ -1614,8 +1613,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
+            dispatch = new DoesRespondDispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING, null);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING, null);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);

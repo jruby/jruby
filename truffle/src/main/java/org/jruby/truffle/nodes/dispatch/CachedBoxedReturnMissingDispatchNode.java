@@ -30,9 +30,8 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
             DispatchNode next,
             Shape expectedShape,
             DynamicObject expectedClass,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
         assert RubyGuards.isRubyClass(expectedClass);
         this.expectedShape = expectedShape;
         unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();

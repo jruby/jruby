@@ -33,7 +33,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
     @Child private PrepareArguments prepareArguments;
 
     public CachedForeignDispatchNode(RubyContext context, DispatchNode next, Object cachedName, int arity) {
-        super(context, cachedName, next, false, DispatchAction.CALL_METHOD);
+        super(context, cachedName, next, DispatchAction.CALL_METHOD);
 
         this.name = cachedName.toString();
         this.arity = arity;
