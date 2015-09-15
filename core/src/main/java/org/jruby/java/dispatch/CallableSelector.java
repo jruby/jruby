@@ -529,7 +529,7 @@ public class CallableSelector {
     };
 
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
+        final Class[] types = paramTypes.getParameterTypes();
 
         if (args.length != types.length) return false;
 
@@ -542,7 +542,7 @@ public class CallableSelector {
     }
 
     private static boolean assignableAndPrimitivable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
+        final Class[] types = paramTypes.getParameterTypes();
 
         if (args.length != types.length) return false;
 
@@ -555,7 +555,7 @@ public class CallableSelector {
     }
 
     private static boolean assignableOrDuckable(ParameterTypes paramTypes, IRubyObject... args) {
-        Class[] types = paramTypes.getParameterTypes();
+        final Class[] types = paramTypes.getParameterTypes();
 
         if (args.length != types.length) return false;
 
@@ -568,31 +568,30 @@ public class CallableSelector {
     }
 
     private static boolean assignableAndPrimitivableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
-        // bail out if this is not a varargs method
-        if (!paramTypes.isVarArgs()) return false;
+        if ( ! paramTypes.isVarArgs() ) return false; // bail out if this is not a varargs method
 
-        Class[] types = paramTypes.getParameterTypes();
-
-        Class varArgArrayType = types[types.length - 1];
-        Class varArgType = varArgArrayType.getComponentType();
+        final Class[] types = paramTypes.getParameterTypes();
 
         // if there's no args, we only match when there's just varargs
         if ( args.length == 0 ) return types.length <= 1;
 
+        final int last = types.length - 1;
+
+        if ( args.length < last ) return false; // can't match - paramTypes method is not usable!
+        for ( int i = 0; i < last; i++ ) { // first check non-vararg argument types match
+            if (!(ASSIGNABLE.match(types[i], args[i]) || PRIMITIVABLE.match(types[i], args[i]))) {
+                return false;
+            }
+        }
+
+        final Class varArgType = types[last].getComponentType();
         // dig out as many trailing args as will fit, ensuring they match varargs type
-        int nonVarargs = types.length - 1;
-        for (int i = args.length - 1; i >= nonVarargs; i--) {
+        for ( int i = last; i < args.length; i++ ) {
             if (!(ASSIGNABLE.match(varArgType, args[i]) || PRIMITIVABLE.match(varArgType, args[i]))) {
                 return false;
             }
         }
 
-        // check remaining args
-        for (int i = 0; i < nonVarargs; i++) {
-            if (!(ASSIGNABLE.match(types[i], args[i]) || PRIMITIVABLE.match(types[i], args[i]))) {
-                return false;
-            }
-        }
         return true;
     }
 
