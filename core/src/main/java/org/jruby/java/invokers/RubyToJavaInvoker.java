@@ -32,7 +32,6 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
     protected final JavaCallable[] javaVarargsCallables; /* != null if any var args callables */
-    protected final int minVarargsArity;
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
@@ -43,16 +42,16 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     RubyToJavaInvoker(RubyModule host, Member member) {
         super(host, Visibility.PUBLIC);
         this.runtime = host.getRuntime();
-        // we set all Java methods to optional, since many/most have overloads
-        setArity(Arity.OPTIONAL);
 
         final JavaCallable callable;
         JavaCallable[] varargsCallables = null;
-        int varArgsArity = Integer.MAX_VALUE;
+        int minVarArgsArity = -1;
 
         callable = createCallable(runtime, member);
-        if ( callable.isVarArgs() ) {
+        int minArity = callable.getArity();
+        if ( callable.isVarArgs() ) { // TODO does it need to happen?
             varargsCallables = createCallableArray(callable);
+            minVarArgsArity = getMemberArity(member) - 1;
         }
 
         cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
@@ -60,43 +59,44 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         this.javaCallable = callable;
         this.javaCallables = null;
         this.javaVarargsCallables = varargsCallables;
-        this.minVarargsArity = varArgsArity; // TODO
 
+        setArity(minArity, minArity, minVarArgsArity);
         setupNativeCall();
     }
 
     RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC);
         this.runtime = host.getRuntime();
-        // we set all Java methods to optional, since many/most have overloads
-        setArity(Arity.OPTIONAL);
 
         // initialize all the callables for this method
         final JavaCallable callable;
         final JavaCallable[][] callables;
         JavaCallable[] varargsCallables = null;
-        int varArgsArity = Integer.MAX_VALUE;
+        int minVarArgsArity = -1; int maxArity, minArity;
 
         final int length = members.length;
         if ( length == 1 ) {
             callable = createCallable(runtime, members[0]);
+            maxArity = minArity = callable.getArity();
             if ( callable.isVarArgs() ) {
                 varargsCallables = createCallableArray(callable);
+                minVarArgsArity = getMemberArity(members[0]) - 1;
             }
             callables = null;
 
             cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
         }
         else {
-            callable = null;
+            callable = null; maxArity = -1; minArity = Integer.MAX_VALUE;
 
             IntHashMap<ArrayList<JavaCallable>> arityMap = new IntHashMap<ArrayList<JavaCallable>>(length, 1);
 
-            ArrayList<JavaCallable> varArgs = null; int maxArity = 0;
+            ArrayList<JavaCallable> varArgs = null;
             for ( int i = 0; i < length; i++ ) {
                 final Member method = members[i];
-                final int currentArity = getMemberParameterTypes(method).length;
+                final int currentArity = getMemberArity(method);
                 maxArity = Math.max(currentArity, maxArity);
+                minArity = Math.min(currentArity, minArity);
 
                 final JavaCallable javaMethod = createCallable(runtime, method);
 
@@ -110,7 +110,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 }
                 methodsForArity.add(javaMethod);
 
-                if ( isMemberVarArgs(method) ) {
+                if ( javaMethod.isVarArgs() ) {
                     final int usableArity = currentArity - 1;
                     // (String, Object...) has usable arity == 1 ... (String)
                     if ((methodsForArity = arityMap.get(usableArity)) == null) {
@@ -122,7 +122,8 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                     if (varArgs == null) varArgs = new ArrayList<JavaCallable>(length);
                     varArgs.add(javaMethod);
 
-                    varArgsArity = Math.min(usableArity, varArgsArity);
+                    if ( minVarArgsArity == -1 ) minVarArgsArity = Integer.MAX_VALUE;
+                    minVarArgsArity = Math.min(usableArity, minVarArgsArity);
                 }
             }
 
@@ -144,9 +145,23 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         this.javaCallable = callable;
         this.javaCallables = callables;
         this.javaVarargsCallables = varargsCallables;
-        this.minVarargsArity = varArgsArity;
 
+        setArity(minArity, maxArity, minVarArgsArity);
         setupNativeCall();
+    }
+
+    private void setArity(final int minArity,  final int maxArity, final int minVarArgsArity) {
+        if ( minVarArgsArity == -1 ) { // no var-args
+            if ( minArity == maxArity ) {
+                setArity( Arity.fixed(minArity) );
+            }
+            else { // multiple overloads
+                setArity( Arity.required(minArity) ); // but <= maxArity
+            }
+        }
+        else {
+            setArity( Arity.required(minVarArgsArity < minArity ? minVarArgsArity : minArity) );
+        }
     }
 
     final void setupNativeCall() { // if it's not overloaded, set up a NativeCall
@@ -186,11 +201,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     protected abstract Class[] getMemberParameterTypes(Member member);
 
+    @Deprecated // no longer used!
     protected abstract boolean isMemberVarArgs(Member member);
 
-    //final int getMemberArity(Member member) {
-    //    return getMemberParameterTypes(member).length;
-    //}
+    final int getMemberArity(Member member) {
+        return getMemberParameterTypes(member).length;
+    }
 
     public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args) {
         final Class<?>[] paramTypes = method.getParameterTypes();
