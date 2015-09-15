@@ -39,11 +39,34 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     final IntHashMap<JavaCallable> cache;
 
     private final Ruby runtime;
-    private final Member[] members;
+
+    RubyToJavaInvoker(RubyModule host, Member member) {
+        super(host, Visibility.PUBLIC);
+        this.runtime = host.getRuntime();
+        // we set all Java methods to optional, since many/most have overloads
+        setArity(Arity.OPTIONAL);
+
+        final JavaCallable callable;
+        JavaCallable[] varargsCallables = null;
+        int varArgsArity = Integer.MAX_VALUE;
+
+        callable = createCallable(runtime, member);
+        if ( callable.isVarArgs() ) {
+            varargsCallables = createCallableArray(callable);
+        }
+
+        cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+
+        this.javaCallable = callable;
+        this.javaCallables = null;
+        this.javaVarargsCallables = varargsCallables;
+        this.minVarargsArity = varArgsArity; // TODO
+
+        setupNativeCall();
+    }
 
     RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC);
-        this.members = members;
         this.runtime = host.getRuntime();
         // we set all Java methods to optional, since many/most have overloads
         setArity(Arity.OPTIONAL);
@@ -123,7 +146,10 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         this.javaVarargsCallables = varargsCallables;
         this.minVarargsArity = varArgsArity;
 
-        // if it's not overloaded, set up a NativeCall
+        setupNativeCall();
+    }
+
+    final void setupNativeCall() { // if it's not overloaded, set up a NativeCall
         if (javaCallable != null) {
             // no constructor support yet
             if (javaCallable instanceof org.jruby.javasupport.JavaMethod) {
@@ -148,14 +174,6 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             return true;
         }
         return false;
-    }
-
-    protected final Member[] getMembers() {
-        return members;
-    }
-
-    protected AccessibleObject[] getAccessibleObjects() {
-        return (AccessibleObject[]) getMembers();
     }
 
     protected abstract JavaCallable createCallable(Ruby runtime, Member member);

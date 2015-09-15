@@ -15,7 +15,7 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
     }
 
     MethodInvoker(RubyModule host, Method method) {
-        super(host, new Method[] { setAccessible(method) });
+        super(host, setAccessible(method));
     }
 
     @Override
