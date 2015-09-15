@@ -269,6 +269,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             if (num.value == value) {
                 return true;
             }
+        } else if (other instanceof RubyFloat) {
+            return (double)value == ((RubyFloat) other).getDoubleValue();
         }
         
         return false;
