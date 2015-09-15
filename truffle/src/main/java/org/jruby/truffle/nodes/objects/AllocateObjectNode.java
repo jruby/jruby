@@ -16,7 +16,9 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -39,8 +41,15 @@ import org.jruby.util.StringSupport;
 })
 public abstract class AllocateObjectNode extends RubyNode {
 
+    private final boolean useCallerFrame;
+
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, true);
+    }
+
+    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrame) {
         super(context, sourceSection);
+        this.useCallerFrame = useCallerFrame;
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
@@ -78,28 +87,29 @@ public abstract class AllocateObjectNode extends RubyNode {
     public DynamicObject allocateTracing(DynamicObject classToAllocate, Object[] values) {
         final DynamicObject object = getInstanceFactory(classToAllocate).newInstance(values);
 
-        final Object callerSelf = RubyArguments.getSelf(RubyCallStack.getCallerFrame(
-                getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
+        final FrameInstance allocatingFrameInstance;
+        final Node allocatingNode;
 
-        final Node immediateCaller = Truffle.getRuntime().getCallerFrame().getCallNode();
-
-        final String callerMethod;
-
-        if (immediateCaller.getRootNode() instanceof RubyRootNode) {
-            callerMethod = ((RubyRootNode) immediateCaller.getRootNode()).getSharedMethodInfo().getName();
+        if (useCallerFrame) {
+            allocatingFrameInstance = RubyCallStack.getCallerFrame(getContext());
+            allocatingNode = RubyCallStack.getTopMostUserCallNode();
         } else {
-            callerMethod = "(unknown)";
+            allocatingFrameInstance = Truffle.getRuntime().getCurrentFrame();
+            allocatingNode = this;
         }
 
-        final Node caller = RubyCallStack.getTopMostUserCallNode();
-        final SourceSection callerSource = caller.getEncapsulatingSourceSection();
+        final Frame allocatingFrame = allocatingFrameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
 
+        final Object allocatingSelf = RubyArguments.getSelf(allocatingFrame.getArguments());
+        final String allocatingMethod = RubyArguments.getMethod(allocatingFrame.getArguments()).getName();
+        final SourceSection allocatingSourceSection = allocatingNode.getEncapsulatingSourceSection();
+        
         getContext().getObjectSpaceManager().traceAllocation(
                 object,
-                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(callerSelf)).getName()),
-                getSymbol(callerMethod),
-                string(callerSource.getSource().getName()),
-                callerSource.getStartLine());
+                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(allocatingSelf)).getName()),
+                getSymbol(allocatingMethod),
+                string(allocatingSourceSection.getSource().getName()),
+                allocatingSourceSection.getStartLine());
 
         return object;
     }
