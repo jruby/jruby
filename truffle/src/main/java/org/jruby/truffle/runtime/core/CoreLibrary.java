@@ -906,6 +906,18 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(errnoObj.description(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject errnoError(int errno, String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
+        }
+
+        final DynamicObject errorMessage = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, RubyCallStack.getBacktrace(currentNode));
+    }
+
     public DynamicObject indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(indexErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));

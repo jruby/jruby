@@ -9,12 +9,9 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import jnr.constants.platform.Errno;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -31,7 +28,7 @@ public abstract class ExceptionPrimitiveNodes {
 
         @Specialization
         public DynamicObject exceptionErrnoError(DynamicObject message, int errno) {
-            return getContext().getCoreLibrary().errnoError(errno, this);
+            return getContext().getCoreLibrary().errnoError(errno, message.toString(), this);
         }
 
     }
