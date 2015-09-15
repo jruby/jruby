@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -43,7 +42,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     private final Member[] members;
 
     RubyToJavaInvoker(RubyModule host, Member[] members) {
-        super(host, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+        super(host, Visibility.PUBLIC);
         this.members = members;
         this.runtime = host.getRuntime();
         // we set all Java methods to optional, since many/most have overloads
