@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeVisitor;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -39,11 +42,13 @@ import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
+import java.util.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -567,6 +572,68 @@ public abstract class TrufflePrimitiveNodes {
             return nil();
         }
 
+    }
+
+    @CoreMethod(names = "ast", onSingleton = true, required = 1)
+    public abstract static class ASTNode extends CoreMethodArrayArgumentsNode {
+
+        public ASTNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyMethod(method)")
+        public DynamicObject astMethod(DynamicObject method) {
+            return ast(Layouts.METHOD.getMethod(method));
+        }
+
+        @Specialization(guards = "isRubyUnboundMethod(method)")
+        public DynamicObject astUnboundMethod(DynamicObject method) {
+            return ast(Layouts.UNBOUND_METHOD.getMethod(method));
+        }
+
+        @Specialization(guards = "isRubyProc(proc)")
+        public DynamicObject astProc(DynamicObject proc) {
+            return ast(Layouts.PROC.getMethod(proc));
+        }
+
+        @TruffleBoundary
+        private DynamicObject ast(InternalMethod method) {
+            if (method.getCallTarget() instanceof RootCallTarget) {
+                return ast(((RootCallTarget) method.getCallTarget()).getRootNode());
+            } else {
+                return nil();
+            }
+        }
+
+        private DynamicObject ast(Node node) {
+            if (node == null) {
+                return nil();
+            }
+
+            final List<Object> array = new ArrayList<>();
+
+            array.add(getSymbol(node.getClass().getSimpleName()));
+
+            for (Node child : node.getChildren()) {
+                array.add(ast(child));
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), array.toArray(), array.size());
+        }
+
+    }
+
+    @CoreMethod(names = "object_type_of", onSingleton = true, required = 1)
+    public abstract static class ObjectTypeOfNode extends CoreMethodArrayArgumentsNode {
+
+        public ObjectTypeOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject objectTypeOf(DynamicObject value) {
+            return getSymbol(value.getShape().getObjectType().getClass().getSimpleName());
+        }
     }
 
     @CoreMethod(names = "spawn_process", onSingleton = true, required = 3)

@@ -9,9 +9,14 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.AssumedValue;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.RubyGC;
 import org.jruby.truffle.nodes.core.ThreadNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
@@ -54,6 +59,11 @@ public class ObjectSpaceManager {
     private final Map<DynamicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<DynamicObject> finalizerQueue = new ReferenceQueue<>();
     private DynamicObject finalizerThread;
+
+    private final CyclicAssumption tracingAssumption = new CyclicAssumption("objspace-tracing");
+    @CompilerDirectives.CompilationFinal private boolean isTracing = false;
+    private int tracingAssumptionActivations = 0;
+    private boolean tracingPaused = false;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -133,6 +143,46 @@ public class ObjectSpaceManager {
         }
 
         return handlers;
+    }
+
+    public void traceAllocationsStart() {
+        tracingAssumptionActivations++;
+
+        if (tracingAssumptionActivations == 1) {
+            isTracing = true;
+            tracingAssumption.invalidate();
+        }
+    }
+
+    public void traceAllocationsStop() {
+        tracingAssumptionActivations--;
+
+        if (tracingAssumptionActivations == 0) {
+            isTracing = false;
+            tracingAssumption.invalidate();
+        }
+    }
+
+    public void traceAllocation(DynamicObject object, DynamicObject classPath, DynamicObject methodId, DynamicObject sourcefile, int sourceline) {
+        if (tracingPaused) {
+            return;
+        }
+
+        tracingPaused = true;
+
+        try {
+            context.send(context.getCoreLibrary().getObjectSpaceModule(), "trace_allocation", null, object, classPath, methodId, sourcefile, sourceline, RubyGC.getCollectionCount());
+        } finally {
+            tracingPaused = false;
+        }
+    }
+
+    public Assumption getTracingAssumption() {
+        return tracingAssumption.getAssumption();
+    }
+
+    public boolean isTracing() {
+        return isTracing;
     }
 
 }

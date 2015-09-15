@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
+import org.jruby.truffle.nodes.ext.ObjSpaceNodesFactory;
 import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.ext.EtcNodesFactory;
 import org.jruby.truffle.nodes.objects.FreezeNode;
@@ -161,6 +162,7 @@ public class CoreLibrary {
     private final DynamicObject internalBufferClass;
     private final DynamicObject weakRefClass;
     private final DynamicObjectFactory weakRefFactory;
+    private final DynamicObject objectSpaceModule;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -416,7 +418,7 @@ public class CoreLibrary {
         defineModule("GC");
         kernelModule = defineModule("Kernel");
         defineModule("Math");
-        defineModule("ObjectSpace");
+        objectSpaceModule = defineModule("ObjectSpace");
         signalModule = defineModule("Signal");
 
         // The rest
@@ -432,6 +434,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
+        defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
@@ -552,6 +555,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.allMethodInstalled();
 
@@ -1561,6 +1565,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getWeakRefFactory() {
         return weakRefFactory;
+    }
+
+    public Object getObjectSpaceModule() {
+        return objectSpaceModule;
     }
 
 }

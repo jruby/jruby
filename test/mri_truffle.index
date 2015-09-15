@@ -486,7 +486,7 @@ logger/test_severity.rb
 # mkmf/test_signedness.rb
 # mkmf/test_sizeof.rb
 # net/ftp/test_buffered_socket.rb
-# objspace/test_objspace.rb
+objspace/test_objspace.rb
 # open-uri/test_open-uri.rb
 # open-uri/test_ssl.rb
 # openssl/test_fips.rb

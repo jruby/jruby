@@ -116,6 +116,20 @@ public final class RubyArguments {
         return null;
     }
 
+    public static MaterializedFrame tryGetDeclarationFrame(Object[] arguments) {
+        if (DECLARATION_FRAME_INDEX >= arguments.length) {
+            return null;
+        }
+
+        final Object frame = arguments[DECLARATION_FRAME_INDEX];
+
+        if (frame instanceof MaterializedFrame) {
+            return (MaterializedFrame) frame;
+        }
+
+        return null;
+    }
+
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
     }

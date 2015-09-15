@@ -9,18 +9,31 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 @NodeChildren({
         @NodeChild("classToAllocate"),
@@ -28,8 +41,15 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 })
 public abstract class AllocateObjectNode extends RubyNode {
 
+    private final boolean useCallerFrame;
+
     public AllocateObjectNode(RubyContext context, SourceSection sourceSection) {
+        this(context, sourceSection, true);
+    }
+
+    public AllocateObjectNode(RubyContext context, SourceSection sourceSection, boolean useCallerFrame) {
         super(context, sourceSection);
+        this.useCallerFrame = useCallerFrame;
     }
 
     public DynamicObject allocate(DynamicObject classToAllocate, Object... values) {
@@ -40,8 +60,9 @@ public abstract class AllocateObjectNode extends RubyNode {
 
     @Specialization(guards = {
             "cachedClassToAllocate == classToAllocate",
-            "!cachedIsSingleton"
-    }, limit = "getCacheLimit()")
+            "!cachedIsSingleton",
+            "!isTracing()"
+    }, assumptions = "getTracingAssumption()", limit = "getCacheLimit()")
     public DynamicObject allocateCached(
             DynamicObject classToAllocate,
             Object[] values,
@@ -52,15 +73,67 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization(contains = "allocateCached", guards = "!isSingleton(classToAllocate)")
+    @Specialization(
+            contains = "allocateCached",
+            guards = {"!isSingleton(classToAllocate)", "!isTracing()"},
+            assumptions = "getTracingAssumption()")
     public DynamicObject allocateUncached(DynamicObject classToAllocate, Object[] values) {
         return getInstanceFactory(classToAllocate).newInstance(values);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    @Specialization(guards = {"!isSingleton(classToAllocate)", "isTracing()"},
+                    assumptions = "getTracingAssumption()")
+    public DynamicObject allocateTracing(DynamicObject classToAllocate, Object[] values) {
+        final DynamicObject object = getInstanceFactory(classToAllocate).newInstance(values);
+
+        final FrameInstance allocatingFrameInstance;
+        final Node allocatingNode;
+
+        if (useCallerFrame) {
+            allocatingFrameInstance = RubyCallStack.getCallerFrame(getContext());
+            allocatingNode = RubyCallStack.getTopMostUserCallNode();
+        } else {
+            allocatingFrameInstance = Truffle.getRuntime().getCurrentFrame();
+            allocatingNode = this;
+        }
+
+        final Frame allocatingFrame = allocatingFrameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+
+        final Object allocatingSelf = RubyArguments.getSelf(allocatingFrame.getArguments());
+        final String allocatingMethod = RubyArguments.getMethod(allocatingFrame.getArguments()).getName();
+        final SourceSection allocatingSourceSection = allocatingNode.getEncapsulatingSourceSection();
+        
+        getContext().getObjectSpaceManager().traceAllocation(
+                object,
+                string(Layouts.CLASS.getFields(getContext().getCoreLibrary().getLogicalClass(allocatingSelf)).getName()),
+                getSymbol(allocatingMethod),
+                string(allocatingSourceSection.getSource().getName()),
+                allocatingSourceSection.getStartLine());
+
+        return object;
+    }
+
+    private DynamicObject string(String value) {
+        return Layouts.STRING.createString(
+                getContext().getCoreLibrary().getStringFactory(),
+                RubyString.encodeBytelist(value, UTF8Encoding.INSTANCE),
+                StringSupport.CR_UNKNOWN,
+                null);
     }
 
     @Specialization(guards = "isSingleton(classToAllocate)")
     public DynamicObject allocateSingleton(DynamicObject classToAllocate, Object[] values) {
         CompilerDirectives.transferToInterpreter();
         throw new RaiseException(getContext().getCoreLibrary().typeError("can't create instance of singleton class", this));
+    }
+
+    protected Assumption getTracingAssumption() {
+        return getContext().getObjectSpaceManager().getTracingAssumption();
+    }
+
+    protected boolean isTracing() {
+        return getContext().getObjectSpaceManager().isTracing();
     }
 
     protected boolean isSingleton(DynamicObject classToAllocate) {
