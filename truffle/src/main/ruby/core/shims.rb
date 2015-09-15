@@ -1,7 +1,7 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -112,6 +112,15 @@ module Rubinius
       @array[index]
     end
   end
+
+  class Mirror
+    module Process
+      def self.set_status_global(status)
+        # Rubinius has: `::Thread.current[:$?] = status`
+        $? = status
+      end
+    end
+  end
 end
 
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
@@ -197,12 +206,16 @@ unless ENV['HOME']
   end
 end
 
-class Exception 
+class Exception
 
   def locations
     # These should be Rubinius::Location
     # and use the internal backtrace, never the custom one.
-    backtrace.each { |s| def s.position; self; end }
+    backtrace.each do |s|
+      def s.position
+        self
+      end
+    end
   end
 
   def to_s

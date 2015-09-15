@@ -1663,7 +1663,7 @@ public abstract class BigDecimalNodes {
     @CoreMethod(names = "sign")
     public abstract static class SignNode extends BigDecimalCoreMethodArrayArgumentsNode {
 
-        final private ConditionProfile positive = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile positive = ConditionProfile.createBinaryProfile();
         @Child private GetIntegerConstantNode sign;
 
         public SignNode(RubyContext context, SourceSection sourceSection) {

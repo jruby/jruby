@@ -17,9 +17,11 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -87,7 +89,7 @@ public class TraceNode extends RubyNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(traceFunc), Layouts.PROC.getDeclarationFrame(traceFunc), Layouts.PROC.getSelf(traceFunc), Layouts.PROC.getBlock(traceFunc), args));
+                    callNode.call(frame, ProcNodes.packArguments(traceFunc, args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

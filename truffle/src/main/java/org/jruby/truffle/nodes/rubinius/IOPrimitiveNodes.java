@@ -557,6 +557,16 @@ public abstract class IOPrimitiveNodes {
                 getContext().getSafepointManager().poll(this);
 
                 final int readIteration = posix().read(fd, buffer, toRead);
+
+                if (readIteration == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+
+                if (readIteration == 0) {
+                    return nil();
+                }
+
                 buffer.position(readIteration);
                 toRead -= readIteration;
             }

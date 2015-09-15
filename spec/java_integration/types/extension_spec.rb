@@ -98,7 +98,7 @@ describe "A Ruby subclass of a Java concrete class" do
     end.new
 
     expect(ReceivesArrayList.new.receive_array_list(my_arraylist)).to eq(100)
-    
+
     thread = java.lang.Thread.new(my_arraylist)
     thread.start
     thread.join
@@ -121,19 +121,19 @@ describe "A Ruby subclass of a Java concrete class" do
     expect(my_arraylist.class.superclass).to eq(java.util.ArrayList)
     expect(my_arraylist.to_java).to eq(my_arraylist)
   end
-  
+
   it "raises argument error when super does not match superclass constructor arity" do
     my_arraylist_cls = Class.new(java.util.ArrayList) do
       def initialize
         super('foo', 'foo', 'foo')
       end
     end
-    
+
     expect do
       my_arraylist_cls.new
     end.to raise_error(ArgumentError)
   end
-  
+
   # JRUBY-4788
   it "raises argument error if no matching arity method has been implemented on class or superclass" do
     my_cwam_cls = Class.new(ClassWithAbstractMethods) do
@@ -143,12 +143,12 @@ describe "A Ruby subclass of a Java concrete class" do
       end
     end
     my_cwam = my_cwam_cls.new
-    
+
     expect do
       ClassWithAbstractMethods.callFoo1(my_cwam, "ok")
     end.to raise_error(ArgumentError)
   end
-  
+
   it "dispatches to other-arity superclass methods if arities mismatch" do
     my_cwam_cls = Class.new(ClassWithAbstractMethods) do
       # arity should be 2, mismatch is intentional
@@ -157,7 +157,7 @@ describe "A Ruby subclass of a Java concrete class" do
       end
     end
     my_cwam = my_cwam_cls.new
-    
+
     expect(ClassWithAbstractMethods.callFoo2(my_cwam, "x", "y")).to eq("ok")
   end
 end
@@ -165,7 +165,7 @@ end
 describe "A final Java class" do
   it "should not be allowed as a superclass" do
     expect do
-      substring = Class.new(java.lang.String)
+      Class.new(java.lang.String)
     end.to raise_error(TypeError)
   end
 end

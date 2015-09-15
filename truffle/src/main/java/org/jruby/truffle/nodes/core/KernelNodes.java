@@ -126,7 +126,7 @@ public abstract class KernelNodes {
 
             try {
                 // We need to run via bash to get the variable and other expansion we expect
-                process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
+                process = Runtime.getRuntime().exec(new String[]{ "bash", "-c", command.toString() }, envp.toArray(new String[envp.size()]));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -232,14 +232,14 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"<=>"}, required = 1)
+    @CoreMethod(names = { "<=>" }, required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
         @Child private SameOrEqualNode equalNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{ null, null });
         }
 
         @Specialization
@@ -326,7 +326,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = "caller_locations", isModuleFunction = true, optional = 2, lowerFixnumParameters = { 0, 1 })
     public abstract static class CallerLocationsNode extends CoreMethodArrayArgumentsNode {
 
         public CallerLocationsNode(RubyContext context, SourceSection sourceSection) {
@@ -498,7 +498,8 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
-        @CreateCast("source") public RubyNode coerceSourceToString(RubyNode source) {
+        @CreateCast("source")
+        public RubyNode coerceSourceToString(RubyNode source) {
             return ToStrNodeGen.create(getContext(), getSourceSection(), source);
         }
 
@@ -597,7 +598,7 @@ public abstract class KernelNodes {
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
-                "isRubyString(filename)"})
+                "isRubyString(filename)" })
         public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                           NotProvided lineNumber) {
             return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
@@ -607,7 +608,7 @@ public abstract class KernelNodes {
         @Specialization(guards = {
                 "isRubyString(source)",
                 "isRubyBinding(binding)",
-                "isRubyString(filename)"})
+                "isRubyString(filename)" })
         public Object evalBindingFilenameLine(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber) {
             return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
@@ -616,7 +617,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
-                "!isRubyBinding(badBinding)"})
+                "!isRubyBinding(badBinding)" })
         public Object evalBadBinding(DynamicObject source, DynamicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
@@ -1044,7 +1045,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"instance_variables", "__instance_variables__"})
+    @CoreMethod(names = { "instance_variables", "__instance_variables__" })
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -1072,7 +1073,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"is_a?", "kind_of?"}, required = 1)
+    @CoreMethod(names = { "is_a?", "kind_of?" }, required = 1)
     public abstract static class IsANode extends CoreMethodArrayArgumentsNode {
 
         @Child MetaClassNode metaClassNode;
@@ -1084,14 +1085,14 @@ public abstract class KernelNodes {
 
         public abstract boolean executeIsA(VirtualFrame frame, Object self, DynamicObject rubyClass);
 
-        @Specialization(guards = {"isNil(nil)", "!isRubyModule(nil)"})
+        @Specialization(guards = { "isNil(nil)", "!isRubyModule(nil)" })
         public boolean isANil(DynamicObject self, Object nil) {
             return false;
         }
 
         @Specialization(
                 limit = "getCacheLimit()",
-                guards = {"isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule"},
+                guards = { "isRubyModule(module)", "getMetaClass(frame, self) == cachedMetaClass", "module == cachedModule" },
                 assumptions = "getUnmodifiedAssumption(cachedModule)")
         public boolean isACached(VirtualFrame frame,
                                  Object self,
@@ -1288,7 +1289,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "regular")
         public DynamicObject methodsRegular(VirtualFrame frame, Object self, boolean regular,
-                @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
+                                            @Cached("createMetaClassNode()") MetaClassNode metaClassNode) {
             final DynamicObject metaClass = metaClassNode.executeMetaClass(frame, self);
 
             CompilerDirectives.transferToInterpreter();
@@ -1298,7 +1299,7 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "!regular")
         public DynamicObject methodsSingleton(VirtualFrame frame, Object self, boolean regular,
-                @Cached("createSingletonMethodsNode()") SingletonMethodsNode singletonMethodsNode) {
+                                              @Cached("createSingletonMethodsNode()") SingletonMethodsNode singletonMethodsNode) {
             return singletonMethodsNode.executeSingletonMethods(frame, self, false);
         }
 
@@ -1871,7 +1872,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"format", "sprintf"}, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
+    @CoreMethod(names = { "format", "sprintf" }, isModuleFunction = true, rest = true, required = 1, taintFromParameter = 0)
     @ImportStatic(StringCachingGuards.class)
     public abstract static class FormatNode extends CoreMethodArrayArgumentsNode {
 
@@ -1891,7 +1892,7 @@ public abstract class KernelNodes {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, new Object[] { arguments, arguments.length });
+                result = (PackResult) callPackNode.call(frame, new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1909,7 +1910,7 @@ public abstract class KernelNodes {
             final PackResult result;
 
             try {
-                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[] { arguments, arguments.length });
+                result = (PackResult) callPackNode.call(frame, compileFormat(format), new Object[]{ arguments, arguments.length });
             } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw handleException(e);
@@ -1979,48 +1980,6 @@ public abstract class KernelNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
-        }
-
-    }
-
-    @CoreMethod(names = "system", isModuleFunction = true, needsSelf = false, required = 1)
-    public abstract static class SystemNode extends CoreMethodArrayArgumentsNode {
-
-        @Child private CallDispatchHeadNode toHashNode;
-
-        public SystemNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization(guards = "isRubyString(command)")
-        public boolean system(VirtualFrame frame, DynamicObject command) {
-            if (toHashNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toHashNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            CompilerDirectives.transferToInterpreter();
-
-            // TODO(CS 5-JAN-15): very simplistic implementation
-
-            final DynamicObject env = getContext().getCoreLibrary().getENV();
-            final DynamicObject envAsHash = (DynamicObject) toHashNode.call(frame, env, "to_hash", null);
-
-            final List<String> envp = new ArrayList<>();
-
-            // TODO(CS): cast
-            for (Map.Entry<Object, Object> keyValue : HashOperations.iterableKeyValues(envAsHash)) {
-                envp.add(keyValue.getKey().toString() + "=" + keyValue.getValue().toString());
-            }
-
-            // We need to run via bash to get the variable and other expansion we expect
-            try {
-                Runtime.getRuntime().exec(new String[]{"bash", "-c", command.toString()}, envp.toArray(new String[envp.size()]));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            return true;
         }
 
     }
@@ -2100,8 +2059,8 @@ public abstract class KernelNodes {
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = ClassNodeGen.create(context, sourceSection, null);
-            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
+            toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{ null });
         }
 
         public abstract DynamicObject executeToS(VirtualFrame frame, Object self);

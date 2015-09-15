@@ -75,7 +75,7 @@ public class GeneralSuperCallNode extends RubyNode {
         if (block != null) {
             blockObject = procOrNullNode.executeProcOrNull(block.execute(frame));
         } else {
-            blockObject = null;
+            blockObject = RubyArguments.getBlock(frame.getArguments());
         }
 
         final Object[] argumentsArray;

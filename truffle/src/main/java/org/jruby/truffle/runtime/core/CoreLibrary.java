@@ -910,6 +910,18 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(errnoObj.description(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject errnoError(int errno, String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
+        }
+
+        final DynamicObject errorMessage = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, RubyCallStack.getBacktrace(currentNode));
+    }
+
     public DynamicObject indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(indexErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
@@ -918,11 +930,6 @@ public class CoreLibrary {
     public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
-    }
-
-    public DynamicObject indexNegativeLength(int length, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return indexError(String.format("negative length (%d)", length), currentNode);
     }
 
     public DynamicObject localJumpError(String message, Node currentNode) {
@@ -964,11 +971,6 @@ public class CoreLibrary {
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
-    }
-
-    public DynamicObject typeErrorNoClassToMakeAlias(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError("no class to make alias", currentNode);
     }
 
     public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
@@ -1014,11 +1016,6 @@ public class CoreLibrary {
                 badClassName,
                 coercionMethod,
                 Layouts.MODULE.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantCoerce(Object from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
     public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
@@ -1186,55 +1183,9 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public DynamicObject invalidArgumentError(String value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EINVAL), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Invalid argument -  %s", value), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
     public DynamicObject ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(ioErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject badAddressError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EFAULT), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("Bad address", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-
-    public DynamicObject badFileDescriptor(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EBADF), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("Bad file descriptor", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject fileExistsError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EEXIST), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("File exists - %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject fileNotFoundError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOENT), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("No such file or directory -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject dirNotEmptyError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTEMPTY), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Directory not empty - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject operationNotPermittedError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EPERM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Operation not permitted - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject permissionDeniedError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EACCES), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Permission denied - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject notDirectoryError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTDIR), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Not a directory - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {

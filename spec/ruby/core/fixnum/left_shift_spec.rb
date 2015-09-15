@@ -7,6 +7,8 @@ describe "Fixnum#<< with n << m" do
 
   it "returns n shifted left m bits when n < 0, m > 0" do
     (-1 << 1).should == -2
+    (-7 << 1).should == -14
+    (-42 << 2).should == -168
   end
 
   it "returns n shifted right m bits when n > 0, m < 0" do
@@ -29,8 +31,24 @@ describe "Fixnum#<< with n << m" do
     (-1 << 0).should == -1
   end
 
-  it "returns 0 when m < 0 and m == p where 2**p > n >= 2**(p-1)" do
-    (4 << -3).should == 0
+  it "returns 0 when n > 0, m < 0 and n < 2**-m" do
+    (3 << -2).should == 0
+    (7 << -3).should == 0
+    (127 << -7).should == 0
+
+    # To make sure the exponent is not truncated
+    (7 << -32).should == 0
+    (7 << -64).should == 0
+  end
+
+  it "returns -1 when n < 0, m < 0 and n > -(2**-m)" do
+    (-3 << -2).should == -1
+    (-7 << -3).should == -1
+    (-127 << -7).should == -1
+
+    # To make sure the exponent is not truncated
+    (-7 << -32).should == -1
+    (-7 << -64).should == -1
   end
 
   not_compliant_on :rubinius, :jruby do

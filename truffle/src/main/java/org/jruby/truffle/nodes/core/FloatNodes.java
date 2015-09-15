@@ -66,6 +66,11 @@ public abstract class FloatNodes {
             return a + Layouts.BIGNUM.getValue(b).doubleValue();
         }
 
+        // TODO (pitr 14-Sep-2015): all coerces should be replaced with a CallDispatchHeadNodes to speed up things like `5 + rational`
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object addCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :+, b", "b", b);
+        }
     }
 
     @CoreMethod(names = "-", required = 1)
@@ -215,7 +220,7 @@ public abstract class FloatNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodArrayArgumentsNode {
 
-        private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -247,6 +252,11 @@ public abstract class FloatNodes {
             return mod(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object modCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :mod, b", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "divmod", required = 1)
@@ -272,6 +282,11 @@ public abstract class FloatNodes {
         @Specialization(guards = "isRubyBignum(b)")
         public DynamicObject divMod(double a, DynamicObject b) {
             return divModNode.execute(a, Layouts.BIGNUM.getValue(b));
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object divModCoerced(VirtualFrame frame, double a, DynamicObject b) {
+            return ruby(frame, "redo_coerced :divmod, b", "b", b);
         }
 
     }
