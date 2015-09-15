@@ -368,10 +368,10 @@ describe "The 'case'-construct with no target expression" do
 
   it "calls === even when private" do
     klass = Class.new do
-      private
       def ===(o)
-        !!o
+        true
       end
+      private :===
     end
 
     case 1
