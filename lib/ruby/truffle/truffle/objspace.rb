@@ -43,21 +43,20 @@ module ObjectSpace
   class << self
 
     def count_nodes_method(method, nodes)
-      count_nodes_tree Truffle::Primitive.ast(method), nodes
-    end
-    private :count_nodes_method
+      node_stack = [Truffle::Primitive.ast(method)]
 
-    def count_nodes_tree(tree, nodes)
-      return if tree.nil?
-      name = tree.first
-      children = tree.drop(1)
-      nodes[name] ||= 0
-      nodes[name] += 1
-      children.each do |child|
-        count_nodes_tree child, nodes
+      until node_stack.empty?
+        node = node_stack.pop
+        next if node.nil?
+
+        name = node.first
+        children = node.drop(1)
+        nodes[name] ||= 0
+        nodes[name] += 1
+        node_stack.push(*children)
       end
     end
-    private :count_nodes_tree
+    private :count_nodes_method
 
   end
 
