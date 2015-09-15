@@ -75,6 +75,8 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 final int currentArity = getMemberParameterTypes(method).length;
                 maxArity = Math.max(currentArity, maxArity);
 
+                final JavaCallable javaMethod = createCallable(runtime, method);
+
                 ArrayList<JavaCallable> methodsForArity = arityMap.get(currentArity);
                 if (methodsForArity == null) {
                     // most calls have 2-3 callables length (a.k.a. overrides)
@@ -83,14 +85,21 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                     methodsForArity = new ArrayList<JavaCallable>(length);
                     arityMap.put(currentArity, methodsForArity);
                 }
-
-                final JavaCallable javaMethod = createCallable(runtime, method);
                 methodsForArity.add(javaMethod);
 
                 if ( isMemberVarArgs(method) ) {
-                    varArgsArity = Math.min(currentArity - 1, varArgsArity);
+                    final int usableArity = currentArity - 1;
+                    // (String, Object...) has usable arity == 1 ... (String)
+                    if ((methodsForArity = arityMap.get(usableArity)) == null) {
+                        methodsForArity = new ArrayList<JavaCallable>(length);
+                        arityMap.put(usableArity, methodsForArity);
+                    }
+                    methodsForArity.add(javaMethod);
+
                     if (varArgs == null) varArgs = new ArrayList<JavaCallable>(length);
                     varArgs.add(javaMethod);
+
+                    varArgsArity = Math.min(usableArity, varArgsArity);
                 }
             }
 

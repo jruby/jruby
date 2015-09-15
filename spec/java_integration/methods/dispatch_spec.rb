@@ -24,7 +24,7 @@ describe "An overloaded Java static method" do
     expect(CoreTypeMethods.getType(1.0, obj)).to eq("double,object")
     expect(CoreTypeMethods.getType(1.0, obj, obj)).to eq("double,object,object")
     expect(CoreTypeMethods.getType(1.0, obj, obj, obj)).to eq("double,object,object,object")
-    
+
     obj = "foo"
     expect(CoreTypeMethods.getType(1)).to eq("long")
     expect(CoreTypeMethods.getType(1, obj)).to eq("long,string")
@@ -34,6 +34,7 @@ describe "An overloaded Java static method" do
     expect(CoreTypeMethods.getType(1.0, obj)).to eq("double,string")
     expect(CoreTypeMethods.getType(1.0, obj, obj)).to eq("double,string,string")
     expect(CoreTypeMethods.getType(1.0, obj, obj, obj)).to eq("double,string,string,string")
+    expect(CoreTypeMethods.getType(1.0, obj.to_java)).to eq("double,string")
   end
 
   it "should raise error when called with too many args" do
@@ -41,7 +42,7 @@ describe "An overloaded Java static method" do
       obj = java.lang.Integer.new(1)
       CoreTypeMethods.getType(1, obj, obj, obj, obj)
     end.to raise_error(ArgumentError)
-      
+
     expect do
       obj = "foo"
       CoreTypeMethods.getType(1, obj, obj, obj, obj)
@@ -68,7 +69,7 @@ describe "The return value of an overridden Java static method" do
   end
   it "should be of the correct type" do
     expect(@return_value).to be_an_instance_of(StaticMethodSelection)
-  end 
+  end
 end
 
 describe "An overloaded Java instance method" do
@@ -83,7 +84,7 @@ describe "An overloaded Java instance method" do
     expect(ctm.getTypeInstance(1.0, obj)).to eq("double,object")
     expect(ctm.getTypeInstance(1.0, obj, obj)).to eq("double,object,object")
     expect(ctm.getTypeInstance(1.0, obj, obj, obj)).to eq("double,object,object,object")
-    
+
     obj = "foo"
     ctm = CoreTypeMethods.new
     expect(ctm.getTypeInstance(1)).to eq("long")
@@ -101,7 +102,7 @@ describe "An overloaded Java instance method" do
       obj = java.lang.Integer.new(1)
       CoreTypeMethods.new.getTypeInstance(1, obj, obj, obj, obj)
     end.to raise_error(ArgumentError)
-      
+
     expect do
       obj = "foo"
       CoreTypeMethods.new.getTypeInstance(1, obj, obj, obj, obj)
@@ -159,16 +160,16 @@ describe "A class with varargs constructors" do
     obj = ClassWithVarargs.new('foo', 'bar', 'baz', 1, 2, 3, 4)
     expect(obj.constructor).to eq("3: [1, 2, 3, 4]")
 
-    skip("needs better type-driven ranking of overloads") do
-      obj = ClassWithVarargs.new('foo')
-      expect(obj.constructor).to eq("1: []")
+    #skip("needs better type-driven ranking of overloads") do
+    obj = ClassWithVarargs.new('foo')
+    expect(obj.constructor).to eq("1: []")
 
-      obj = ClassWithVarargs.new('foo', 'bar')
-      expect(obj.constructor).to eq("2: []")
+    obj = ClassWithVarargs.new('foo', 'bar')
+    expect(obj.constructor).to eq("2: []")
 
-      obj = ClassWithVarargs.new('foo', 'bar', 'baz')
-      expect(obj.constructor).to eq("3: []")
-    end
+    obj = ClassWithVarargs.new('foo', 'bar', 'baz')
+    expect(obj.constructor).to eq("3: []")
+    #end
   end
 
   it "should be callable with an array" do
@@ -204,11 +205,11 @@ describe "A class with varargs instance methods" do
     expect(obj.varargs('foo', 'bar', 'baz', 1, 2, 3)).to eq("3: [1, 2, 3]");
     expect(obj.varargs('foo', 'bar', 'baz', 1, 2, 3, 4)).to eq("3: [1, 2, 3, 4]");
 
-    skip("needs better type-driven ranking of overloads") do
-      expect(obj.varargs('foo')).to eq("1: []")
-      expect(obj.varargs('foo', 'bar')).to eq("2: []")
-      expect(obj.varargs('foo', 'bar', 'baz')).to eq("3: []")
-    end
+    #skip("needs better type-driven ranking of overloads") do
+    expect(obj.varargs('foo')).to eq("1: []")
+    expect(obj.varargs('foo', 'bar')).to eq("2: []")
+    expect(obj.varargs('foo', 'bar', 'baz')).to eq("3: []")
+    #end
   end
 
   it "should be callable with an array" do
@@ -243,11 +244,14 @@ describe "A class with varargs static methods" do
     expect(ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1, 2, 3)).to eq("3: [1, 2, 3]");
     expect(ClassWithVarargs.varargs_static('foo', 'bar', 'baz', 1, 2, 3, 4)).to eq("3: [1, 2, 3, 4]");
 
-    skip("needs better type-driven ranking of overloads") do
-      expect(ClassWithVarargs.varargs_static('foo')).to eq("1: []")
-      expect(ClassWithVarargs.varargs_static('foo', 'bar')).to eq("2: []")
-      expect(ClassWithVarargs.varargs_static('foo', 'bar')).to eq("3: []")
-    end
+    #skip("needs better type-driven ranking of overloads") do
+    expect(ClassWithVarargs.varargs_static('foo')).to eq("1: []")
+    expect(ClassWithVarargs.varargs_static('foo', 'bar')).to eq("2: []")
+    expect(ClassWithVarargs.varargs_static('foo', 'bar', 'baz')).to eq("3: []")
+    #end
+    expect(ClassWithVarargs.varargs_static('foo'.to_java)).to eq("1: []")
+    expect(ClassWithVarargs.varargs_static('foo'.to_java, 'bar')).to eq("2: []")
+    expect(ClassWithVarargs.varargs_static('foo'.to_java, 'bar'.to_java)).to eq("2: []")
   end
 
   it "should be callable with an array" do
