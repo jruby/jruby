@@ -374,7 +374,7 @@ module JRuby::Compiler
 
     def interface_string
       if @interfaces.size > 0
-        "implements " + @interfaces.join('.')
+        "implements " + @interfaces.join(', ')
       else
         ""
       end
