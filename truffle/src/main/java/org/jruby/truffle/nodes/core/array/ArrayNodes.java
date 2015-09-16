@@ -2250,12 +2250,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), null, array, null);
+                    maximumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2352,12 +2354,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), null, array, null);
+                    minimumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 

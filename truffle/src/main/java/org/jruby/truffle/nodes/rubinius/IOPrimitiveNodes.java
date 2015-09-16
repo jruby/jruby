@@ -256,9 +256,8 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public Object readIfAvailable(DynamicObject file, int numberOfBytes) {
+        public Object readIfAvailable(VirtualFrame frame, DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
@@ -281,7 +280,7 @@ public abstract class IOPrimitiveNodes {
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
-                rubyWithSelf(file, "raise IO::EAGAINWaitReadable");
+                ruby(frame, "raise IO::EAGAINWaitReadable");
             }
 
             if (res < 0) {

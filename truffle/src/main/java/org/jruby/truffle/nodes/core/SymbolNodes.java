@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -18,15 +19,18 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.StringSupport;
 
@@ -118,19 +122,19 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "cachedSymbol == symbol", limit = "getCacheLimit()")
-        public DynamicObject toProcCached(DynamicObject symbol,
+        public DynamicObject toProcCached(VirtualFrame frame, DynamicObject symbol,
                                      @Cached("symbol") DynamicObject cachedSymbol,
-                                     @Cached("createProc(symbol)") DynamicObject cachedProc) {
+                                     @Cached("createProc(frame, symbol)") DynamicObject cachedProc) {
             return cachedProc;
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject toProcUncached(DynamicObject symbol) {
-            return createProc(symbol);
+        public DynamicObject toProcUncached(VirtualFrame frame, DynamicObject symbol) {
+            return createProc(frame, symbol);
         }
 
-        protected DynamicObject createProc(DynamicObject symbol) {
+        protected DynamicObject createProc(VirtualFrame frame, DynamicObject symbol) {
+            CompilerDirectives.transferToInterpreter();
             final SourceSection sourceSection = RubyCallStack.getCallerFrame(getContext())
                     .getCallNode().getEncapsulatingSourceSection();
 
@@ -147,13 +151,14 @@ public abstract class SymbolNodes {
                             new SymbolProcNode(getContext(), sourceSection, Layouts.SYMBOL.getString(symbol))));
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
 
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcFactory(),
                     ProcNodes.Type.PROC,
                     sharedMethodInfo,
                     callTarget, callTarget, null,
-                    null, getContext().getCoreLibrary().getNilObject(),
+                    method, getContext().getCoreLibrary().getNilObject(),
                     null);
         }
 
