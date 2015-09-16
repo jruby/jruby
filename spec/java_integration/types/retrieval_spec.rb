@@ -61,12 +61,12 @@ describe "A Java class with inner classes" do
   it "should define constants for constantable classes" do
     InnerClasses.constants.should have_strings_or_symbols 'CapsInnerClass'
     InnerClasses::CapsInnerClass.value.should == 1
-    
+
     InnerClasses::CapsInnerClass.constants.should have_strings_or_symbols "CapsInnerClass2"
     InnerClasses::CapsInnerClass::CapsInnerClass2.value.should == 1
-    
+
     InnerClasses::CapsInnerClass.constants.should have_strings_or_symbols "CapsInnerInterface2"
-    
+
     InnerClasses::CapsInnerClass.constants.should_not have_strings_or_symbols 'lowerInnerClass2'
     InnerClasses::CapsInnerClass.constants.should_not have_strings_or_symbols 'lowerInnerInterface2'
 
@@ -94,7 +94,7 @@ describe "A Java class with inner classes" do
 
     InnerClasses.lowerInnerClass.methods.should have_strings_or_symbols 'lowerInnerInterface3'
     InnerClasses.lowerInnerClass.methods.should have_strings_or_symbols 'lowerInnerClass3'
-    
+
     InnerClasses.lowerInnerClass::lowerInnerClass3.value.should == 1
     InnerClasses.lowerInnerClass.lowerInnerClass3.value.should == 1
 
@@ -105,12 +105,24 @@ describe "A Java class with inner classes" do
     InnerClasses.lowerInnerInterface.constants.should have_strings_or_symbols 'CapsInnerInterface5'
 
     InnerClasses.lowerInnerInterface::CapsInnerClass5.value.should == 1
-    
+
     InnerClasses.lowerInnerInterface.methods.should have_strings_or_symbols 'lowerInnerInterface5'
     InnerClasses.lowerInnerInterface.methods.should have_strings_or_symbols 'lowerInnerClass5'
-    
+
     InnerClasses.lowerInnerInterface::lowerInnerClass5.value.should == 1
     InnerClasses.lowerInnerInterface.lowerInnerClass5.value.should == 1
+  end
+
+  it "defines constant for public inner classes" do
+    expect( java.awt.font.TextLayout.constants.map(&:to_sym) ).to include :CaretPolicy
+    java.awt.font.TextLayout::CaretPolicy
+  end
+
+  it "does not define constants for non-public inner classes" do
+    constants = InnerClasses.constants.map(&:to_sym)
+    expect( constants ).to_not include :PackageInner
+    expect( constants ).to_not include :ProtectedInner
+    expect( constants ).to_not include :PrivateInner
   end
 
   it "raises error importing lower-case names" do
