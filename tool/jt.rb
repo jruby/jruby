@@ -318,7 +318,7 @@ module Commands
 
     case path
     when nil
-      test_specs
+      test_specs('run')
       test_mri
     when 'pe' then test_pe(*rest)
     when 'specs' then test_specs(*rest)
@@ -327,7 +327,7 @@ module Commands
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
         test_mri(*args)
       else
-        test_specs(*args)
+        test_specs('run', *args)
       end
     end
   end
@@ -337,10 +337,24 @@ module Commands
   end
   private :test_pe
 
-  def test_specs(*args)
+  def test_specs(command, *args)
     env_vars = {}
+    options = []
 
-    options = %w[--excl-tag fails]
+    case command
+    when 'run'
+      options += %w[--excl-tag fails]
+    when 'tag'
+      options += %w[--add fails --fail]
+    when 'untag'
+      options += %w[--del fails --pass]
+      command = 'tag'
+    when 'tag_all'
+      options += %w[--unguarded --all --dry-run --add fails]
+      command = 'tag'
+    else
+      raise command
+    end
 
     if args.first == 'fast'
       args.shift
@@ -360,18 +374,18 @@ module Commands
       options << "-T#{JEXCEPTION}"
     end
 
-    mspec env_vars, 'run', *options, *args
+    mspec env_vars, command, *options, *args
   end
   private :test_specs
 
   def tag(path, *args)
     return tag_all(*args) if path == 'all'
-    mspec 'tag', '--add', 'fails', '--fail', path, *args
+    test_specs('tag', path, *args)
   end
 
   # Add tags to all given examples without running them. Useful to avoid file exclusions.
   def tag_all(*args)
-    mspec 'tag', *%w[--unguarded --all --dry-run --add fails], *args
+    test_specs('tag_all', *args)
   end
   private :tag_all
 
@@ -379,7 +393,7 @@ module Commands
     puts
     puts "WARNING: untag is currently not very reliable - run `jt test #{[path,*args] * ' '}` after and manually annotate any new failures"
     puts
-    mspec 'tag', '--del', 'fails', '--pass', path, *args
+    test_specs('untag', path, *args)
   end
 
   def bench(command, *args)
