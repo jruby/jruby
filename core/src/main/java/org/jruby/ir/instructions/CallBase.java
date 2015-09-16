@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -27,6 +28,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     protected String name;
     protected CallSite callSite;
     protected int argsCount;
+    protected boolean kwargs;
     protected boolean hasClosure;
 
     private boolean flagsComputed;
@@ -38,12 +40,18 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private boolean procNew;
     private boolean potentiallyRefined;
 
-    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
-                       boolean potentiallyRefined) {
-        super(op, getOperands(receiver, args, closure));
+    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args,
+                       Operand closure, boolean potentiallyRefined) {
+        this(op, callType, name, receiver, args, false, closure, potentiallyRefined);
+    }
+
+    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, boolean hasKwargs,
+                       Operand closure, boolean potentiallyRefined) {
+        super(op, buildAllArgs(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
         argsCount = args.length;
+        this.kwargs = hasKwargs;
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
@@ -78,11 +86,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // FIXME: Convert this to some Signature/Arity method
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity() {
-        return hasClosure ? -1*(argsCount + 1) : argsCount;
-    }
-
-    private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {
-        return buildAllArgs(receiver, arguments, closure);
+        return hasClosure ? -1 * (argsCount + 1) : argsCount;
     }
 
     public String getName() {
@@ -91,7 +95,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     /** From interface ClosureAcceptingInstr */
     public Operand getClosureArg() {
-        return hasClosure ? operands[argsCount + 1] : null;
+        return hasClosure ? operands[argsCount + (kwargs ? 1 : 0) + 1] : null;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {
@@ -115,6 +119,11 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return argsCount;
     }
 
+    // FIXME: Maybe rename this.
+    public Hash getKwargs() {
+        return kwargs ? (Hash)operands[REQUIRED_OPERANDS + argsCount] : null;
+    }
+
     // Warning: Potentially expensive.  Analysis should be written around retrieving operands.
     public Operand[] getCallArgs() {
         Operand[] callArgs = new Operand[argsCount];
@@ -122,6 +131,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         System.arraycopy(operands, 1, callArgs, 0, argsCount);
 
         return callArgs;
+    }
+
+    public HashPair getKwarg(int i) {
+        return (HashPair)operands[1 + argsCount + i];
     }
 
     public CallSite getCallSite() {
@@ -393,19 +406,20 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     private final static int REQUIRED_OPERANDS = 1;
     private static Operand[] buildAllArgs(Operand receiver, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + REQUIRED_OPERANDS + (closure != null ? 1 : 0)];
+        Operand[] allArgs = new Operand[REQUIRED_OPERANDS + callArgs.length + (closure != null ? 1 : 0)];
 
         assert receiver != null : "RECEIVER is null";
 
 
         allArgs[0] = receiver;
+
         for (int i = 0; i < callArgs.length; i++) {
             assert callArgs[i] != null : "ARG " + i + " is null";
 
-            allArgs[i + REQUIRED_OPERANDS] = callArgs[i];
+            allArgs[REQUIRED_OPERANDS + i] = callArgs[i];
         }
 
-        if (closure != null) allArgs[callArgs.length + REQUIRED_OPERANDS] = closure;
+        if (closure != null) allArgs[REQUIRED_OPERANDS + callArgs.length] = closure;
 
         return allArgs;
     }

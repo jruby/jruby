@@ -602,12 +602,24 @@ public class IRBuilder {
             case ARRAYNODE: {
                 Node[] children = ((ListNode) args).children();
                 int numberOfArgs = children.length;
+
+                if (numberOfArgs == 0) return Operand.EMPTY_ARRAY;
+
                 Operand[] builtArgs = new Operand[numberOfArgs];
                 boolean hasAssignments = args.containsVariableAssignment();
 
-                for (int i = 0; i < numberOfArgs; i++) {
-                    builtArgs[i] = buildWithOrder(children[i], hasAssignments);
+                // omit last argument; if it is a literal hash, we need to mark it and keep it direct below
+                int i = 0;
+                for (; i < numberOfArgs; i++) {
+                    Node curArg = children[i];
+                    if (i == numberOfArgs - 1 && curArg instanceof HashNode) {
+                        // last arg is a literal hash, put it directly in instr
+                        builtArgs[i] = buildHashArgs((HashNode) curArg);
+                    } else {
+                        builtArgs[i] = buildWithOrder(children[i], hasAssignments);
+                    }
                 }
+
                 return builtArgs;
             }
             case SPLATNODE:
@@ -1001,7 +1013,7 @@ public class IRBuilder {
         Operand[] args       = setupCallArgs(callArgsNode);
         Operand   block      = setupCallClosure(callNode.getIterNode());
         Variable  callResult = createTemporaryVariable();
-        CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
+        CallInstr callInstr  = CallInstr.create(scope, CallType.NORMAL, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
@@ -2494,6 +2506,14 @@ public class IRBuilder {
     }
 
     public Operand buildHash(HashNode hashNode) {
+        return buildHash(hashNode, false);
+    }
+
+    public Operand buildHashArgs(HashNode hashNode) {
+        return buildHash(hashNode, true);
+    }
+
+    private Operand buildHash(HashNode hashNode, boolean isKwargs) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
@@ -2504,7 +2524,7 @@ public class IRBuilder {
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
-                    hash = copyAndReturnValue(new Hash(args));
+                    hash = copyAndReturnValue(new Hash(args, isKwargs));
                     args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
@@ -2521,7 +2541,11 @@ public class IRBuilder {
         }
 
         if (hash == null) {           // non-**arg ordinary hash
-            hash = copyAndReturnValue(new Hash(args));
+            if (isKwargs) {
+                return new Hash(args, isKwargs);
+            } else {
+                hash = copyAndReturnValue(new Hash(args));
+            }
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
         }

@@ -9,6 +9,7 @@ import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -43,9 +44,8 @@ public class CallInstr extends CallBase implements ResultInstr {
             }
         }
 
-        return new CallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
+        return new CallInstr(Operation.CALL, callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
-
 
     public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
@@ -79,6 +79,8 @@ public class CallInstr extends CallBase implements ResultInstr {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
         int argsCount = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args:  " + argsCount);
+        int kwargsCount = d.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of kwargs:  " + argsCount);
         boolean hasClosureArg = argsCount < 0;
         int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args(2): " + argsLength);
@@ -87,6 +89,11 @@ public class CallInstr extends CallBase implements ResultInstr {
 
         for (int i = 0; i < argsLength; i++) {
             args[i] = d.decodeOperand();
+        }
+
+        Operand[] kwargs = new Operand[kwargsCount];
+        for (int i = 0; i < kwargsCount; i++) {
+            kwargs[i] = d.decodeOperand();
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;

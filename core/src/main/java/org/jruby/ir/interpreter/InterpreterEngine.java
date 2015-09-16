@@ -62,6 +62,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
+import java.util.Arrays;
 import java.util.Stack;
 
 /**

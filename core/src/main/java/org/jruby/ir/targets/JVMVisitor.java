@@ -2035,28 +2035,28 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Hash(Hash hash) {
-        List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
-        Iterator<KeyValuePair<Operand, Operand>> iter = pairs.iterator();
-        boolean kwargs = hash.isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY;
+        HashPair[] pairs = hash.getPairs();
+        int i = 0;
+        boolean kwargs = hash.isKWArgsHash && pairs[0].getKey() == Symbol.KW_REST_ARG_DUMMY;
 
         jvmMethod().loadContext();
         if (kwargs) {
-            visit(pairs.get(0).getValue());
+            visit(pairs[0].getValue());
             jvmAdapter().checkcast(p(RubyHash.class));
 
-            iter.next();
+            i++;
         }
 
-        for (; iter.hasNext() ;) {
-            KeyValuePair<Operand, Operand> pair = iter.next();
+        for (; i < pairs.length; i++) {
+            HashPair pair = pairs[i];
             visit(pair.getKey());
             visit(pair.getValue());
         }
 
         if (kwargs) {
-            jvmMethod().kwargsHash(pairs.size() - 1);
+            jvmMethod().kwargsHash(pairs.length - 1);
         } else {
-            jvmMethod().hash(pairs.size());
+            jvmMethod().hash(pairs.length);
         }
     }
 

@@ -81,7 +81,7 @@ public abstract class Instr {
         String[] extraArgs = toStringNonOperandArgs();
         if (extraArgs.length >= 1) {
             if (operands.length > 0) buf.append(' ');
-            buf.append(';');
+            buf.append("; ");
             toArgList(buf, extraArgs);
         }
         buf.append(')');
