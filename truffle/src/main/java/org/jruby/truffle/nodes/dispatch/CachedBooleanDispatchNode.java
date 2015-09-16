@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.runtime.RubyArguments;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -110,14 +110,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD:
-                    return trueCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    trueMethod,
-                                    trueMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
+                    return call(trueCallDirect, frame, trueMethod, receiverObject, blockObject, argumentsObjects);
                 case RESPOND_TO_METHOD:
                     return true;
 
@@ -141,14 +134,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD:
-                    return falseCallDirect.call(
-                            frame,
-                            RubyArguments.pack(
-                                    falseMethod,
-                                    falseMethod.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
+                    return call(falseCallDirect, frame, falseMethod, receiverObject, blockObject, argumentsObjects);
 
                 case RESPOND_TO_METHOD:
                     return true;

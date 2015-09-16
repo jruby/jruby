@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -32,7 +33,7 @@ public class UncachedDispatchNode extends DispatchNode {
     private final boolean ignoreVisibility;
     private final MissingBehavior missingBehavior;
 
-    @Child private IndirectCallNode callNode;
+    @Child private IndirectCallNode indirectCallNode;
     @Child private ToSymbolNode toSymbolNode;
     @Child private ToJavaStringNode toJavaStringNode;
     @Child private MetaClassNode metaClassNode;
@@ -43,7 +44,7 @@ public class UncachedDispatchNode extends DispatchNode {
         super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
-        callNode = Truffle.getRuntime().createIndirectCallNode();
+        indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeGen.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
         metaClassNode = MetaClassNodeGen.create(context, null, null);
@@ -65,20 +66,11 @@ public class UncachedDispatchNode extends DispatchNode {
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
 
-        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name),
-                ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toJavaStringNode.executeJavaString(frame, name), ignoreVisibility);
 
         if (method != null) {
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                return callNode.call(
-                        frame,
-                        method.getCallTarget(),
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                (DynamicObject) blockObject,
-                                (Object[]) argumentsObjects));
+                return call(frame, method, receiverObject, blockObject, argumentsObjects);
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return true;
             } else {
@@ -113,20 +105,24 @@ public class UncachedDispatchNode extends DispatchNode {
 
             ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
-            return callNode.call(
-                    frame,
-                    missingMethod.getCallTarget(),
-                    RubyArguments.pack(
-                            missingMethod,
-                            missingMethod.getDeclarationFrame(),
-                            receiverObject,
-                            (DynamicObject) blockObject,
-                            modifiedArgumentsObjects));
+            return call(frame, missingMethod, receiverObject, blockObject, modifiedArgumentsObjects);
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
             return false;
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private Object call(VirtualFrame frame, InternalMethod method, Object receiverObject, Object blockObject, Object argumentsObjects) {
+        return indirectCallNode.call(
+                frame,
+                method.getCallTarget(),
+                RubyArguments.pack(
+                        method,
+                        method.getDeclarationFrame(),
+                        receiverObject,
+                        (DynamicObject) blockObject,
+                        (Object[]) argumentsObjects));
     }
 
 }

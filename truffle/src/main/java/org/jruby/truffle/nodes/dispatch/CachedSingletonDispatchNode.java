@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -101,14 +100,7 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD:
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                expectedReceiver,
-                                (DynamicObject) blockObject,
-                                (Object[]) argumentsObjects));
+                return call(callNode, frame, method, expectedReceiver, blockObject, argumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return true;

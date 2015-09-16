@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -113,14 +112,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
                 ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                (DynamicObject) blockObject,
-                                modifiedArgumentsObjects));
+                return call(callNode, frame, method, receiverObject, blockObject, modifiedArgumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return false;

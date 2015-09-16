@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -86,14 +85,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD:
-                return callNode.call(
-                        frame,
-                        RubyArguments.pack(
-                                method,
-                                method.getDeclarationFrame(),
-                                receiverObject,
-                                (DynamicObject) blockObject,
-                                (Object[]) argumentsObjects));
+                return call(callNode, frame, method, receiverObject, blockObject, argumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return true;

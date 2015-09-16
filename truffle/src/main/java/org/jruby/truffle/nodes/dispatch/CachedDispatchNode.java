@@ -9,11 +9,16 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -73,5 +78,16 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     protected DynamicObject getCachedNameAsSymbol() {
         return cachedNameAsSymbol;
+    }
+
+    protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, Object block, Object arguments) {
+        return callNode.call(
+                frame,
+                RubyArguments.pack(
+                        method,
+                        method.getDeclarationFrame(),
+                        receiver,
+                        (DynamicObject) block,
+                        (Object[]) arguments));
     }
 }
