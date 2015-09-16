@@ -90,17 +90,17 @@ public abstract class RegexpNodes {
         assert RubyGuards.isRubyRegexp(regexp);
         assert RubyGuards.isRubyString(source);
 
-        final byte[] stringBytes = Layouts.STRING.getByteList(source).bytes();
+        final ByteList sourceByteList = Layouts.STRING.getByteList(source);
 
         final ByteList bl = Layouts.REGEXP.getSource(regexp);
         final Encoding enc = checkEncoding(regexp, StringOperations.getCodeRangeable(source), true);
         final ByteList preprocessed = RegexpSupport.preprocess(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(regexp)).getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
 
         final Regex r = new Regex(preprocessed.getUnsafeBytes(), preprocessed.getBegin(), preprocessed.getBegin() + preprocessed.getRealSize(), Layouts.REGEXP.getOptions(regexp).toJoniOptions(), checkEncoding(regexp, StringOperations.getCodeRangeable(source), true));
-        final Matcher matcher = r.matcher(stringBytes);
-        int range = stringBytes.length;
+        final Matcher matcher = r.matcher(sourceByteList.unsafeBytes(), sourceByteList.begin(), sourceByteList.begin() + sourceByteList.realSize());
+        int range = sourceByteList.begin() + sourceByteList.realSize();
 
-        return matchCommon(regexp, source, operator, setNamedCaptures, matcher, startPos, range);
+        return matchCommon(regexp, source, operator, setNamedCaptures, matcher, sourceByteList.begin() + startPos, range);
     }
 
     @TruffleBoundary
