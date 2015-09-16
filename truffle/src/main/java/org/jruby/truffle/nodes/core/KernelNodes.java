@@ -580,7 +580,7 @@ public abstract class KernelNodes {
                 "isNil(noBinding)",
                 "isRubyString(filename)"
         })
-        public Object evalNilBinding(VirtualFrame frame, DynamicObject source, Object noBinding,
+        public Object evalNilBinding(VirtualFrame frame, DynamicObject source, DynamicObject noBinding,
                                      DynamicObject filename, int lineNumber) {
             return evalNoBindingUncached(frame, source, NotProvided.INSTANCE, NotProvided.INSTANCE, NotProvided.INSTANCE);
         }
@@ -594,6 +594,16 @@ public abstract class KernelNodes {
             return getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
         }
 
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isNil(noFilename)",
+                "isNil(noLineNumber)"
+        })
+        public Object evalBinding(DynamicObject source, DynamicObject binding, DynamicObject noFilename, DynamicObject noLineNumber) {
+            return evalBinding(source, binding, NotProvided.INSTANCE, NotProvided.INSTANCE);
+        }
+
         @TruffleBoundary
         @Specialization(guards = {
                 "isRubyString(source)",
@@ -602,6 +612,16 @@ public abstract class KernelNodes {
         public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                           NotProvided lineNumber) {
             return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
+        }
+
+        @Specialization(guards = {
+                "isRubyString(source)",
+                "isRubyBinding(binding)",
+                "isRubyString(filename)",
+                "isNil(noLineNumber)"
+        })
+        public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename, DynamicObject noLineNumber) {
+            return evalBindingFilename(source, binding, filename, NotProvided.INSTANCE);
         }
 
         @TruffleBoundary

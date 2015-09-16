@@ -250,6 +250,7 @@ require_relative 'core/rubinius/delta/ffi'
 # Load JRuby+Truffle classes
 
 require_relative 'core/array'
+require_relative 'core/binding'
 require_relative 'core/fixnum'
 require_relative 'core/float'
 require_relative 'core/kernel'
