@@ -178,8 +178,8 @@ public abstract class BindingNodes {
         }, limit = "getCacheLimit()")
         public Object localVariableSetCached(DynamicObject binding, DynamicObject symbol, Object value,
                                              @Cached("symbol") DynamicObject cachedSymbol,
-                                             @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor,
-                                             @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteFrameSlotNode writeLocalVariableNode) {
+                                             @Cached("createWriteNode(findFrameSlot(binding, symbol))") WriteFrameSlotNode writeLocalVariableNode,
+                                             @Cached("getFrameDescriptor(binding)") FrameDescriptor cachedFrameDescriptor) {
             return writeLocalVariableNode.executeWrite(Layouts.BINDING.getFrame(binding), value);
         }
 
@@ -187,7 +187,7 @@ public abstract class BindingNodes {
         @Specialization(guards = {"isRubySymbol(symbol)", "!isLastLine(symbol)"})
         public Object localVariableSetUncached(DynamicObject binding, DynamicObject symbol, Object value) {
             final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-            final FrameSlot frameSlot = frame.getFrameDescriptor().findFrameSlot(Layouts.SYMBOL.getString(symbol));
+            final FrameSlot frameSlot = findFrameSlot(binding, symbol);
             frame.setObject(frameSlot, value);
             return value;
         }
