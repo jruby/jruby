@@ -10,7 +10,6 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;

@@ -42,7 +42,8 @@ public class MethodDefinitionNode extends RubyNode {
 
     public InternalMethod executeMethod(VirtualFrame frame) {
         final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
-        return new InternalMethod(sharedMethodInfo, name, dummyModule, null, false, callTarget,
+        final Visibility dummyVisibility = Visibility.PUBLIC;
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, callTarget,
                 frame.materialize() /* Currently used for visibility, will be fixed when we keep visibility in some better place */);
     }
 
