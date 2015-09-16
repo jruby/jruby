@@ -221,7 +221,7 @@ public abstract class RubyNode extends Node {
 
     protected Object rubyWithSelf(Object self, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(self, arguments);
-        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), self, evalFrame);
+        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), evalFrame);
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }
 

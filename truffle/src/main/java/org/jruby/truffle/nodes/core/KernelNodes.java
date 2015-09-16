@@ -294,7 +294,7 @@ public abstract class KernelNodes {
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(callerFrame.getArguments()), callerFrame);
+            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), callerFrame);
         }
     }
 
@@ -547,8 +547,8 @@ public abstract class KernelNodes {
         ) {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
-            final Object callerSelf = Layouts.BINDING.getSelf(callerBinding);
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
+            final Object callerSelf = RubyArguments.getSelf(parentFrame.getArguments());
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),

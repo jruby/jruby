@@ -59,7 +59,6 @@ public abstract class BindingNodes {
             final Object[] copiedArguments = RubyArguments.pack(method, Layouts.BINDING.getFrame(from), boundSelf, boundBlock, userArguments);
             final MaterializedFrame copiedFrame = Truffle.getRuntime().createMaterializedFrame(copiedArguments);
 
-            Layouts.BINDING.setSelf(self, Layouts.BINDING.getSelf(from));
             Layouts.BINDING.setFrame(self, copiedFrame);
 
             return self;
