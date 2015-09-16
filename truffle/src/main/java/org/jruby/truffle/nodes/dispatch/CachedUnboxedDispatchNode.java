@@ -41,6 +41,11 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
+            insert(callNode);
+            callNode.cloneCallTarget();
+        }
     }
 
     @Override
