@@ -42,7 +42,7 @@ public class InternalMethod implements ObjectGraphNode {
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
                           DynamicObject declaringModule, Visibility visibility, boolean undefined,
                           CallTarget callTarget, MaterializedFrame declarationFrame) {
-        assert declaringModule == null || RubyGuards.isRubyModule(declaringModule);
+        assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;

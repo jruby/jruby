@@ -11,7 +11,10 @@ package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -38,7 +41,8 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget,
+        final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, null, false, callTarget,
                 frame.materialize() /* Currently used for visibility, will be fixed when we keep visibility in some better place */);
     }
 
