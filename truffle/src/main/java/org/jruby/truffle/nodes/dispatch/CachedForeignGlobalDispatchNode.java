@@ -18,6 +18,7 @@ import com.oracle.truffle.interop.messages.Execute;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 
@@ -47,13 +48,12 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (receiverObject instanceof  DynamicObject) {
-            Object[] arguments = (Object[]) argumentsObjects;
-            if (arguments.length == numberOfArguments) {
-                Object[] args = new Object[arguments.length + 2];
-                ArrayUtils.arraycopy(arguments, 0, args, 2, arguments.length);
+            if (argumentsObjects.length == numberOfArguments) {
+                Object[] args = new Object[argumentsObjects.length + 2];
+                ArrayUtils.arraycopy(argumentsObjects, 0, args, 2, argumentsObjects.length);
                 args[0] = cachedName;
                 args[1] = language;
                 return access.executeForeign(frame, language, args);

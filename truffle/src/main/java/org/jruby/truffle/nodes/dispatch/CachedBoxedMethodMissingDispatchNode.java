@@ -78,8 +78,8 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -98,7 +98,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (DynamicObject) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -107,10 +107,9 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             case CALL_METHOD:
                 // When calling #method_missing we need to prepend the symbol
 
-                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
-                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+                final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
-                ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+                ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
                 return call(callNode, frame, method, receiverObject, blockObject, modifiedArgumentsObjects);
 

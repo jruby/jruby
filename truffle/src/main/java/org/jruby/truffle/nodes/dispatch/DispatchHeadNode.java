@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNode extends Node {
@@ -38,8 +40,8 @@ public class DispatchHeadNode extends Node {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         return first.executeDispatch(
                 frame,
                 receiverObject,

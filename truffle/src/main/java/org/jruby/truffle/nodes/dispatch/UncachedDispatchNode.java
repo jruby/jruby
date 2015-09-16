@@ -60,8 +60,8 @@ public class UncachedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object name,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final DynamicObject callerClass = ignoreVisibility ? null : metaClassNode.executeMetaClass(frame, RubyArguments.getSelf(frame.getArguments()));
@@ -97,13 +97,11 @@ public class UncachedDispatchNode extends DispatchNode {
         }
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
-            final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
-
-            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
+            final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
 
             modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
 
-            ArrayUtils.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
+            ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
             return call(frame, missingMethod, receiverObject, blockObject, modifiedArgumentsObjects);
         } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
@@ -113,7 +111,7 @@ public class UncachedDispatchNode extends DispatchNode {
         }
     }
 
-    private Object call(VirtualFrame frame, InternalMethod method, Object receiverObject, Object blockObject, Object argumentsObjects) {
+    private Object call(VirtualFrame frame, InternalMethod method, Object receiverObject, DynamicObject blockObject, Object[] argumentsObjects) {
         return indirectCallNode.call(
                 frame,
                 method.getCallTarget(),
@@ -121,8 +119,8 @@ public class UncachedDispatchNode extends DispatchNode {
                         method,
                         method.getDeclarationFrame(),
                         receiverObject,
-                        (DynamicObject) blockObject,
-                        (Object[]) argumentsObjects));
+                        blockObject,
+                        argumentsObjects));
     }
 
 }

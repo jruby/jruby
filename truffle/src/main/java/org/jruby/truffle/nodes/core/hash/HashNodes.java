@@ -395,7 +395,7 @@ public abstract class HashNodes {
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            return yieldNode.dispatch(frame, (DynamicObject) block, key);
+            return yieldNode.dispatch(frame, block, key);
         }
 
         @Specialization(guards = {"isPackedHash(hash)", "!isCompareByIdentity(hash)"})

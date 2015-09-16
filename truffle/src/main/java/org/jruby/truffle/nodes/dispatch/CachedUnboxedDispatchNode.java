@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -62,8 +63,8 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -82,7 +83,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (DynamicObject) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }

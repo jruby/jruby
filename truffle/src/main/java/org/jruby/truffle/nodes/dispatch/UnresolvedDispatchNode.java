@@ -63,8 +63,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final VirtualFrame frame,
             final Object receiverObject,
             final Object methodName,
-            Object blockObject,
-            final Object argumentsObjects) {
+            DynamicObject blockObject,
+            final Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
@@ -93,8 +93,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     depth++;
                     if (receiverObject instanceof DynamicObject) {
                         newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    }
-                    else if (RubyGuards.isForeignObject(receiverObject)) {
+                    } else if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
@@ -109,9 +108,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
-        Object[] args = (Object[]) argumentsObjects;
-        return new CachedForeignDispatchNode(getContext(), first, methodName, args.length);
+    private DispatchNode createForeign(Object[] argumentsObjects, DispatchNode first, Object methodName) {
+        return new CachedForeignDispatchNode(getContext(), first, methodName, argumentsObjects.length);
     }
 
     private DispatchNode doUnboxedObject(
@@ -170,7 +168,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName,
-            Object argumentsObjects) {
+            Object[] argumentsObjects) {
         final DynamicObject callerClass;
 
         if (ignoreVisibility) {
@@ -217,16 +215,15 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
     }
 
-    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first,  Object methodName, Object argumentsObjects) {
+    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first, Object methodName, Object[] argumentsObjects) {
         if (getContext().getMultilanguageObject() != null) {
             CompilerAsserts.neverPartOfCompilation();
             TruffleObject multilanguageObject = getContext().getMultilanguageObject();
             ForeignObjectAccessNode readLanguage = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
             TruffleObject language = (TruffleObject) readLanguage.executeForeign(frame, multilanguageObject, methodName);
-            Object[] arguments = (Object[]) argumentsObjects;
             if (language != null) {
                 // EXECUTE(READ(...),...) on language
-                return new CachedForeignGlobalDispatchNode(getContext(), first, methodName, language, arguments.length);
+                return new CachedForeignGlobalDispatchNode(getContext(), first, methodName, language, argumentsObjects.length);
             }
         }
         return null;

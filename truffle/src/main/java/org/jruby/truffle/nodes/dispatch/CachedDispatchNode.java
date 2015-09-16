@@ -80,14 +80,14 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return cachedNameAsSymbol;
     }
 
-    protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, Object block, Object arguments) {
+    protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
         return callNode.call(
                 frame,
                 RubyArguments.pack(
                         method,
                         method.getDeclarationFrame(),
                         receiver,
-                        (DynamicObject) block,
-                        (Object[]) arguments));
+                        block,
+                        arguments));
     }
 }

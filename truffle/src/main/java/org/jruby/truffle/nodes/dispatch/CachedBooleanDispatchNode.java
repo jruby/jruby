@@ -82,8 +82,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -103,7 +103,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        (DynamicObject) blockObject,
+                        blockObject,
                         argumentsObjects,
                         "class modified");
             }
@@ -127,7 +127,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        (DynamicObject) blockObject,
+                        blockObject,
                         argumentsObjects,
                         "class modified");
             }
