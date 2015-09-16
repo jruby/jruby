@@ -42,12 +42,13 @@ public class UncachedDispatchNode extends DispatchNode {
 
     public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
         super(context, dispatchAction);
+
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
-        indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-        toSymbolNode = ToSymbolNodeGen.create(context, null, null);
-        toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
-        metaClassNode = MetaClassNodeGen.create(context, null, null);
+        this.indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
+        this.toSymbolNode = ToSymbolNodeGen.create(context, null, null);
+        this.toJavaStringNode = ToJavaStringNodeGen.create(context, null, null);
+        this.metaClassNode = MetaClassNodeGen.create(context, null, null);
     }
 
     @Override
@@ -98,9 +99,7 @@ public class UncachedDispatchNode extends DispatchNode {
 
         if (dispatchAction == DispatchAction.CALL_METHOD) {
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
-
             modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
-
             ArrayUtils.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
             return call(frame, missingMethod, receiverObject, blockObject, modifiedArgumentsObjects);

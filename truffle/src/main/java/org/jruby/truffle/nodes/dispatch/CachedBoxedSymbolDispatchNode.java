@@ -36,16 +36,13 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
 
-        unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-        if (method != null) {
-            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-            if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
-                insert(callNode);
-                callNode.cloneCallTarget();
-            }
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
+            insert(callNode);
+            callNode.cloneCallTarget();
         }
     }
 

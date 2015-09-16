@@ -32,6 +32,7 @@ public final class CachedForeignGlobalDispatchNode extends CachedDispatchNode {
 
     public CachedForeignGlobalDispatchNode(RubyContext context, DispatchNode next, Object cachedName, TruffleObject language, int numberOfArguments) {
         super(context, cachedName, next, DispatchAction.CALL_METHOD);
+
         this.cachedName = cachedName;
         this.language = language;
         this.numberOfArguments = numberOfArguments;

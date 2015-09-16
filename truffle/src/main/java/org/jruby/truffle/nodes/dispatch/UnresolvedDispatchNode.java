@@ -126,7 +126,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         final String methodNameString = toString(methodName);
-
         final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
@@ -134,23 +133,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         if (receiverObject instanceof Boolean) {
-            final Assumption falseUnmodifiedAssumption =
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
 
-            final InternalMethod falseMethod =
-                    lookup(callerClass, false, methodNameString,
-                            ignoreVisibility);
-
-            final Assumption trueUnmodifiedAssumption =
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
-
-            final InternalMethod trueMethod =
-                    lookup(callerClass, true, methodNameString,
-                            ignoreVisibility);
-
-            if ((falseMethod == null) && (trueMethod == null)) {
-                throw new UnsupportedOperationException();
-            }
+            final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+            final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
+            assert falseMethod != null || trueMethod != null;
 
             return new CachedBooleanDispatchNode(getContext(),
                     methodName, first,

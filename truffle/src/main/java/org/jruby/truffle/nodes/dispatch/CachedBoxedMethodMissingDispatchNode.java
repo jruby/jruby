@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -41,12 +40,10 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
 
-        assert RubyGuards.isRubyClass(expectedClass);
         this.expectedShape = expectedShape;
-        unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.method = method;
-
-        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         /*
          * The way that #method_missing is used is usually as an indirection to call some other method, and

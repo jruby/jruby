@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -43,22 +42,15 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
 
-        assert RubyGuards.isRubyClass(expectedClass);
-
         this.expectedReceiver = expectedReceiver;
         this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
         this.method = method;
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
-        if (method != null) {
-            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-            if ((callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone())
-                    || (method.getDeclaringModule() != null
-                    && Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop"))) {
-                insert(callNode);
-                callNode.cloneCallTarget();
-            }
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
+            insert(callNode);
+            callNode.cloneCallTarget();
         }
     }
 
@@ -123,11 +115,4 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
         return false; //method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
     }
 
-    public InternalMethod getMethod() {
-        return method;
-    }
-
-    public Assumption getUnmodifiedAssumption() {
-        return unmodifiedAssumption;
-    }
 }

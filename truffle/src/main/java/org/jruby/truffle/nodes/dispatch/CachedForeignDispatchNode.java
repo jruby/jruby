@@ -44,9 +44,7 @@ public final class CachedForeignDispatchNode extends CachedDispatchNode {
         } else {
             this.nameForMessage = name;
         }
-
         initializeNodes(context, arity);
-
     }
 
     private void initializeNodes(RubyContext context, int arity) {

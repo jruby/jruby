@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedUnboxedDispatchNode extends CachedDispatchNode {
@@ -37,18 +36,11 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             InternalMethod method,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
+
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
-
-        if (method != null) {
-            callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-            if (Layouts.MODULE.getFields(method.getDeclaringModule()).getName().equals("TruffleInterop")) {
-                insert(callNode);
-                callNode.cloneCallTarget();
-            }
-        }
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
     @Override

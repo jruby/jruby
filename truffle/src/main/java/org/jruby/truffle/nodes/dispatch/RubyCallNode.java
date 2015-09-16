@@ -94,9 +94,9 @@ public class RubyCallNode extends RubyNode {
         this.isSplatted = isSplatted;
         this.isVCall = isVCall;
 
-        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
-        respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToMissingCast = BooleanCastNodeGen.create(context, section, null);
+        this.dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility);
+        this.respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
+        this.respondToMissingCast = BooleanCastNodeGen.create(context, section, null);
 
         this.ignoreVisibility = ignoreVisibility;
 
@@ -105,7 +105,7 @@ public class RubyCallNode extends RubyNode {
          * so we just allocate a lot up-front. In a future version of Truffle
          * @Children might not need to be final, which would fix this.
          */
-        keywordOptimizedArguments = new RubyNode[arguments.length + 32];
+        this.keywordOptimizedArguments = new RubyNode[arguments.length + 32];
     }
 
     @Override
