@@ -144,7 +144,7 @@ public abstract class SymbolNodes {
 
             final RubyRootNode rootNode = new RubyRootNode(
                     getContext(), sourceSection,
-                    new FrameDescriptor(),
+                    new FrameDescriptor(nil()),
                     sharedMethodInfo,
                     SequenceNode.sequence(getContext(), sourceSection,
                             new CheckArityNode(getContext(), sourceSection, Arity.AT_LEAST_ONE),

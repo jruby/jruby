@@ -171,8 +171,8 @@ public class CoreLibrary {
     private final DynamicObject rubiniusUndefined;
     private final DynamicObject digestClass;
 
-    private final ArrayNodes.MinBlock arrayMinBlock;
-    private final ArrayNodes.MaxBlock arrayMaxBlock;
+    @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
+    @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
 
     private final DynamicObject rubyInternalMethod;
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
@@ -476,9 +476,6 @@ public class CoreLibrary {
 
         globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
-        arrayMinBlock = new ArrayNodes.MinBlock(context);
-        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
-
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
     }
@@ -509,6 +506,9 @@ public class CoreLibrary {
     }
 
     private void addCoreMethods() {
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+
         // Bring in core method nodes
         CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(objectClass, node.getSingletonClassNode());
 

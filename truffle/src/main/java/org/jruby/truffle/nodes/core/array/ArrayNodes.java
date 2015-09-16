@@ -2306,7 +2306,7 @@ public abstract class ArrayNodes {
         public MaxBlock(RubyContext context) {
             final SourceSection sourceSection = new CoreSourceSection("Array", "max");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
@@ -2410,7 +2410,7 @@ public abstract class ArrayNodes {
         public MinBlock(RubyContext context) {
             final SourceSection sourceSection = new CoreSourceSection("Array", "min");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);

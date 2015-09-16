@@ -290,11 +290,10 @@ public abstract class KernelNodes {
         @Specialization
         public DynamicObject binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
-
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
 
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), callerFrame);
+            return BindingNodes.createBinding(getContext(), callerFrame);
         }
     }
 
@@ -591,7 +590,9 @@ public abstract class KernelNodes {
         })
         public Object evalBinding(DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
+            final Object result = getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
+            assert result != null;
+            return result;
         }
 
         @Specialization(guards = {

@@ -153,7 +153,7 @@ public final class RubyArguments {
      * current frame is 0.
      */
     @ExplodeLoop
-    private static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
+    public static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
         assert frame != null;
         assert level >= 0;
 
