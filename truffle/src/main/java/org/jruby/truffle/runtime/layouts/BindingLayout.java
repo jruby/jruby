@@ -26,6 +26,5 @@ public interface BindingLayout extends BasicObjectLayout {
     boolean isBinding(DynamicObject object);
 
     MaterializedFrame getFrame(DynamicObject object);
-    void setFrame(DynamicObject object, MaterializedFrame frame);
 
 }

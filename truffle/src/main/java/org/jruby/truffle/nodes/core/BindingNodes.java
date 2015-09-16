@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -19,6 +18,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
@@ -32,36 +32,26 @@ import org.jruby.truffle.runtime.ThreadLocalObject;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
 
-    @CoreMethod(names = "initialize_copy", required = 1)
-    public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = { "dup", "clone" })
+    public abstract static class DupNode extends UnaryCoreMethodNode {
 
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization(guards = "isRubyBinding(from)")
-        public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            if (self == from) {
-                return self;
-            }
-
-            final Object[] arguments = Layouts.BINDING.getFrame(from).getArguments();
-            final InternalMethod method = RubyArguments.getMethod(arguments);
-            final Object boundSelf = RubyArguments.getSelf(arguments);
-            final DynamicObject boundBlock = RubyArguments.getBlock(arguments);
-            final Object[] userArguments = RubyArguments.extractUserArguments(arguments);
-
-            final Object[] copiedArguments = RubyArguments.pack(method, Layouts.BINDING.getFrame(from), boundSelf, boundBlock, userArguments);
-            final MaterializedFrame copiedFrame = Truffle.getRuntime().createMaterializedFrame(copiedArguments);
-
-            Layouts.BINDING.setFrame(self, copiedFrame);
-
-            return self;
+        @Specialization
+        public DynamicObject dup(DynamicObject binding) {
+            DynamicObject copy = allocateObjectNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(binding),
+                    Layouts.BINDING.getFrame(binding));
+            return copy;
         }
 
     }
@@ -281,16 +271,14 @@ public abstract class BindingNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private AllocateObjectNode allocateObjectNode;
-
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null);
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }
