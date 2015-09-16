@@ -553,6 +553,12 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(required = 4, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            switch (args.length) {
+                case 1: return java_send(context, recv, args[0]);
+                case 2: return java_send(context, recv, args[0], args[1]);
+                case 3: return java_send(context, recv, args[0], args[1], args[2]);
+            }
+
             final Ruby runtime = context.runtime;
 
             String name = args[0].asJavaString();
