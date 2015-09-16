@@ -61,12 +61,12 @@ describe "A Java class with inner classes" do
   it "should define constants for constantable classes" do
     expect(InnerClasses.constants).to have_strings_or_symbols 'CapsInnerClass'
     expect(InnerClasses::CapsInnerClass.value).to eq(1)
-    
+
     expect(InnerClasses::CapsInnerClass.constants).to have_strings_or_symbols "CapsInnerClass2"
     expect(InnerClasses::CapsInnerClass::CapsInnerClass2.value).to eq(1)
-    
+
     expect(InnerClasses::CapsInnerClass.constants).to have_strings_or_symbols "CapsInnerInterface2"
-    
+
     expect(InnerClasses::CapsInnerClass.constants).not_to have_strings_or_symbols 'lowerInnerClass2'
     expect(InnerClasses::CapsInnerClass.constants).not_to have_strings_or_symbols 'lowerInnerInterface2'
 
@@ -94,7 +94,7 @@ describe "A Java class with inner classes" do
 
     expect(InnerClasses.lowerInnerClass.methods).to have_strings_or_symbols 'lowerInnerInterface3'
     expect(InnerClasses.lowerInnerClass.methods).to have_strings_or_symbols 'lowerInnerClass3'
-    
+
     expect(InnerClasses.lowerInnerClass::lowerInnerClass3.value).to eq(1)
     expect(InnerClasses.lowerInnerClass.lowerInnerClass3.value).to eq(1)
 
@@ -105,12 +105,24 @@ describe "A Java class with inner classes" do
     expect(InnerClasses.lowerInnerInterface.constants).to have_strings_or_symbols 'CapsInnerInterface5'
 
     expect(InnerClasses.lowerInnerInterface::CapsInnerClass5.value).to eq(1)
-    
+
     expect(InnerClasses.lowerInnerInterface.methods).to have_strings_or_symbols 'lowerInnerInterface5'
     expect(InnerClasses.lowerInnerInterface.methods).to have_strings_or_symbols 'lowerInnerClass5'
-    
+
     expect(InnerClasses.lowerInnerInterface::lowerInnerClass5.value).to eq(1)
     expect(InnerClasses.lowerInnerInterface.lowerInnerClass5.value).to eq(1)
+  end
+
+  it "defines constant for public inner classes" do
+    expect( java.awt.font.TextLayout.constants.map(&:to_sym) ).to include :CaretPolicy
+    java.awt.font.TextLayout::CaretPolicy
+  end
+
+  it "does not define constants for non-public inner classes" do
+    constants = InnerClasses.constants.map(&:to_sym)
+    expect( constants ).to_not include :PackageInner
+    expect( constants ).to_not include :ProtectedInner
+    expect( constants ).to_not include :PrivateInner
   end
 
   it "raises error importing lower-case names" do

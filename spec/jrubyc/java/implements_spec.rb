@@ -17,7 +17,7 @@ describe "A Ruby class generating a Java stub" do
       cls.interfaces[0].should == "Runnable"
 
       java = cls.to_s
-      java.should match /public class Foo implements Runnable/
+      java.should match /^public class Foo extends RubyObject implements Runnable/
 
       cls = generate("class Foo; java_implements 'Runnable', 'Serializable'; end").classes[0]
 
@@ -26,7 +26,7 @@ describe "A Ruby class generating a Java stub" do
       cls.interfaces[1].should == "Serializable"
 
       java = cls.to_s
-      java.should match /public class Foo implements Runnable, Serializable/
+      java.should match /^public class Foo extends RubyObject implements Runnable, Serializable/
     end
   end
 end
