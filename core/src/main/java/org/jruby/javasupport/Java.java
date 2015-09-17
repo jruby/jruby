@@ -1013,6 +1013,33 @@ public class Java implements Library {
 
     }
 
+    private static RubyModule getProxyUnderClass(final ThreadContext context,
+        final RubyModule enclosingClass, final String name) {
+        final Ruby runtime = context.runtime;
+
+        if ( name.length() == 0 ) throw runtime.newArgumentError("empty class name");
+
+        Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+
+        final String fullName = enclosing.getName() + '$' + name;
+
+        final RubyModule result = getProxyClassOrNull(runtime, fullName);
+        //if ( result != null && cacheMethod ) bindJavaPackageOrClassMethod(enclosingClass, name, result);
+        return result;
+    }
+
+    public static IRubyObject get_inner_class(final ThreadContext context,
+        final RubyModule self, final IRubyObject name) { // const_missing delegate
+        final String constName = name.asJavaString();
+
+        final RubyModule innerClass = getProxyUnderClass(context, self, constName);
+        if ( innerClass == null ) { // NOTE: probably better to just call super
+            final String fullName = self.getName() + "::" + constName;
+            throw context.runtime.newNameErrorObject("uninitialized constant " + fullName, context.runtime.newSymbol(fullName));
+        }
+        return cacheConstant(self, constName, innerClass, true); // hidden == true (private_constant)
+    }
+
     @JRubyMethod(meta = true)
     public static IRubyObject const_missing(final ThreadContext context,
         final IRubyObject self, final IRubyObject name) {
@@ -1021,18 +1048,23 @@ public class Java implements Library {
         // it's fine to not add the "cached" method here - when users sticking to
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
+        if ( packageOrClass == null ) return context.nil; // TODO compatibility (with packages)
+        return cacheConstant((RubyModule) self, constName, packageOrClass, false);
+    }
+
+    private static RubyModule cacheConstant(final RubyModule owner, // e.g. ::Java
+        final String constName, final RubyModule packageOrClass, final boolean hidden) {
         if ( packageOrClass != null ) {
-            final RubyModule Java = (RubyModule) self;
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
-            synchronized (Java) {
-                final IRubyObject alreadySet = Java.fetchConstant(constName);
+            synchronized (owner) {
+                final IRubyObject alreadySet = owner.fetchConstant(constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                Java.setConstant(constName, packageOrClass);
+                owner.setConstant(constName, packageOrClass, hidden);
             }
             return packageOrClass;
         }
-        return context.nil; // TODO compatibility - should be throwing instead, right !?
+        return null;
     }
 
     @JRubyMethod(name = "method_missing", meta = true, required = 1)

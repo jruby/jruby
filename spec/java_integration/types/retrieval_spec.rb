@@ -125,6 +125,34 @@ describe "A Java class with inner classes" do
     expect( constants ).to_not include :PrivateInner
   end
 
+  it "allows to retrieve non-public inner classes" do
+    # InnerClasses::PackageInner
+    expect( InnerClasses.const_get :PackageInner ).to_not be nil
+    class InnerClasses
+      PACKAGE_INNER = PackageInner
+    end
+    expect( InnerClasses.constants ).to_not include :PackageInner
+    expect( InnerClasses::PACKAGE_INNER ).to eql JavaUtilities.get_proxy_class('java_integration.fixtures.InnerClasses$PackageInner')
+
+    expect( InnerClasses.const_get :PrivateInner ).to_not be nil
+    expect( InnerClasses.const_get :ProtectedInner ).to_not be nil
+
+    class InnerClasses
+      PROTECTED_INNER = ProtectedInner
+    end
+
+    expect( InnerClasses::PROTECTED_INNER.const_get :Nested ).to_not be nil
+
+    expect { InnerClasses::MissingInner }.to raise_error(NameError)
+    begin
+      InnerClasses.const_get :MissingInner
+    rescue NameError => e
+      expect( e.message ).to start_with 'uninitialized constant Java::Java_integrationFixtures::InnerClasses::MissingInner'
+    else
+      fail 'did not raise!'
+    end
+  end
+
   it "raises error importing lower-case names" do
     expect do
       java_import InnerClasses::lowerInnerClass
