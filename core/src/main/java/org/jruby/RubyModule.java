@@ -3570,7 +3570,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstantQuiet(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false);
+        return setConstantCommon(name, value, false, false);
     }
 
     /**
@@ -3582,7 +3582,11 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
-        return setConstantCommon(name, value, true);
+        return setConstantCommon(name, value, false, true);
+    }
+
+    public IRubyObject setConstant(String name, IRubyObject value, boolean hidden) {
+        return setConstantCommon(name, value, hidden, true);
     }
 
     /**
@@ -3593,7 +3597,7 @@ public class RubyModule extends RubyObject {
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean warn) {
+    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
         if (oldValue != null) {
             if (oldValue == UNDEF) {
@@ -3602,10 +3606,14 @@ public class RubyModule extends RubyObject {
                 if (warn) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
-                storeConstant(name, value);
+                // might just call storeConstant(name, value, hidden) but to maintain
+                // backwards compatibility with calling #storeConstant overrides
+                if (hidden) storeConstant(name, value, true);
+                else storeConstant(name, value);
             }
         } else {
-            storeConstant(name, value);
+            if (hidden) storeConstant(name, value, true);
+            else storeConstant(name, value);
         }
 
         invalidateConstantCache(name);
@@ -3944,6 +3952,14 @@ public class RubyModule extends RubyObject {
         return constantTableStore(name, value);
     }
 
+    public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
+        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value, hidden);
+    }
+
     @Deprecated
     public IRubyObject fastStoreConstant(String internedName, IRubyObject value) {
         return storeConstant(internedName, value);
@@ -4038,6 +4054,12 @@ public class RubyModule extends RubyObject {
         ConstantEntry entry = constMap.get(name);
         if (entry != null) hidden = entry.hidden;
 
+        constMap.put(name, new ConstantEntry(value, hidden));
+        return value;
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        Map<String, ConstantEntry> constMap = getConstantMapForWrite();
         constMap.put(name, new ConstantEntry(value, hidden));
         return value;
     }
