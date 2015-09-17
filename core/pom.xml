@@ -539,6 +539,12 @@ DO NOT MODIFIY - GENERATED CODE
                     <include>${Constants.java}</include>
                   </includes>
                 </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>bin/jruby</include>
+                  </includes>
+                </fileset>
               </filesets>
               <failOnError>false</failOnError>
             </configuration>
