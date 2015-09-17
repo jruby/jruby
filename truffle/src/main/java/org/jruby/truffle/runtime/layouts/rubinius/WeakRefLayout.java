@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.layouts.rubinius;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
-import jnr.ffi.Pointer;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.runtime.layouts.BasicObjectLayout;
 
@@ -24,9 +23,9 @@ public interface WeakRefLayout extends BasicObjectLayout {
                                        DynamicObject metaClass);
 
     DynamicObject createWeakRef(DynamicObjectFactory factory,
-                                WeakReference reference);
+                                WeakReference<Object> reference);
 
-    WeakReference getReference(DynamicObject object);
-    void setReference(DynamicObject object, WeakReference reference);
+    WeakReference<Object> getReference(DynamicObject object);
+    void setReference(DynamicObject object, WeakReference<Object> reference);
 
 }
