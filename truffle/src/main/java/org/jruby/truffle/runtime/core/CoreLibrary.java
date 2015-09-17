@@ -715,29 +715,6 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
     }
 
-    public void loadRubyCore(String fileName, String prefix) {
-        final Source source;
-
-        try {
-            // TODO CS 28-Feb-15 need to use SourceManager here so that the debugger knows about the core files
-            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        context.load(source, node, NodeWrapper.IDENTITY);
-    }
-
-    public InputStream getRubyCoreInputStream(String fileName) {
-        final InputStream resource = getClass().getResourceAsStream("/" + fileName);
-
-        if (resource == null) {
-            throw new RuntimeException("couldn't load Truffle core library " + fileName);
-        }
-
-        return resource;
-    }
-
     public void initializeEncodingConstants() {
         getContext().getRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
             @Override
