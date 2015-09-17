@@ -92,15 +92,6 @@ public abstract class IntegerNodes {
 
         @Specialization(guards = "isDynamicObject(from) || isDynamicObject(to)")
         public Object downto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
-            return downtoInternal(frame, from, to, block);
-        }
-
-        @Specialization
-        public Object downto(VirtualFrame frame, Object from, Object to, NotProvided block) {
-            return downtoInternal(frame, from, to, null);
-        }
-
-        private Object downtoInternal(VirtualFrame frame, Object from, Object to, DynamicObject block) {
             if (downtoInternalCall == null) {
                 CompilerDirectives.transferToInterpreter();
                 downtoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -274,15 +265,6 @@ public abstract class IntegerNodes {
 
         @Specialization(guards = "isDynamicObject(from) || isDynamicObject(to)")
         public Object upto(VirtualFrame frame, Object from, Object to, DynamicObject block) {
-            return uptoInternal(frame, from, to, block);
-        }
-
-        @Specialization
-        public Object upto(VirtualFrame frame, Object from, Object to, NotProvided block) {
-            return uptoInternal(frame, from, to, null);
-        }
-
-        private Object uptoInternal(VirtualFrame frame, Object from, Object to, DynamicObject block) {
             if (uptoInternalCall == null) {
                 CompilerDirectives.transferToInterpreter();
                 uptoInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
