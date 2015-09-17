@@ -52,11 +52,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (falseMethod != null) {
             this.falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
-
-            if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysClone()) {
-                insert(falseCallDirect);
-                falseCallDirect.cloneCallTarget();
-            }
+            applySplittingStrategy(falseCallDirect, falseMethod);
         }
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
@@ -64,11 +60,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (trueMethod != null) {
             this.trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
-
-            if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysClone()) {
-                insert(trueCallDirect);
-                trueCallDirect.cloneCallTarget();
-            }
+            applySplittingStrategy(trueCallDirect, trueMethod);
         }
     }
 

@@ -80,6 +80,13 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return cachedNameAsSymbol;
     }
 
+    protected void applySplittingStrategy(DirectCallNode callNode, InternalMethod method) {
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
+            insert(callNode);
+            callNode.cloneCallTarget();
+        }
+    }
+
     protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
         return callNode.call(
                 frame,
