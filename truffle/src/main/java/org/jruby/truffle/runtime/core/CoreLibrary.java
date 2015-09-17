@@ -512,6 +512,7 @@ public class CoreLibrary {
         // Bring in core method nodes
         CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(objectClass, node.getSingletonClassNode());
 
+        Main.printTruffleTimeMetric("before-load-truffle-nodes");
         coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
@@ -557,6 +558,8 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
+        Main.printTruffleTimeMetric("after-load-truffle-nodes");
+
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethods().get("__send__");

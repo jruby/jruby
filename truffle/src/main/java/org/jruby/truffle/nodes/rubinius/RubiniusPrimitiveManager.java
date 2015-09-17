@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.Main;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 
@@ -48,6 +49,7 @@ public class RubiniusPrimitiveManager {
     public void addAnnotatedPrimitives() {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
+        Main.printTruffleTimeMetric("before-load-rubinius-nodes");
         nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ObjectPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(TimePrimitiveNodesFactory.getFactories());
@@ -70,6 +72,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(ExceptionPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ThreadPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(WeakRefPrimitiveNodesFactory.getFactories());
+        Main.printTruffleTimeMetric("after-load-rubinius-nodes");
 
         // This comes last as a catch-all
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());

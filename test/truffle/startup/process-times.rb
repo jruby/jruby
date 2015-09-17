@@ -10,14 +10,20 @@
 # Calculates where the time goes for important regions while running a program.
 
 # For example:
-# $ test/truffle/startup/jruby-timed -X+T -Xtruffle.metrics.time=true -e 'puts 14' 2>&1 | ruby test/truffle/startup/process-times.rb
+# $ test/truffle/startup/jruby-timed -X+T -Xtruffle.metrics.time=true -e 'puts 14' 2>&1 | ruby test/truffle/startup/process-times.rb foo
+
+NAME = ARGV[0]
+
+def print_time(region, time)
+  puts "time-#{region}-#{NAME}: #{(time*1000).round} ms"
+end
 
 before_times = {}
 after_times = {}
 nesting = 0
 accounted = 0
 
-ARGF.each do |line|
+$stdin.each_line do |line|
   if line =~ /([\w-]+) (\d+\.\d+)/
     id = $1.split('-')
     relative = id.first
@@ -37,7 +43,7 @@ ARGF.each do |line|
         accounted += elapsed
       end
 
-      puts "#{region} #{elapsed}"
+      print_time region, elapsed
       nesting -= 1
     end
   end
@@ -45,5 +51,5 @@ end
 
 total = after_times['launcher'] - before_times['launcher']
 
-puts "accounted #{accounted}"
-puts "unaccounted #{total - accounted}"
+print_time 'accounted', accounted
+print_time 'unaccounted', total - accounted

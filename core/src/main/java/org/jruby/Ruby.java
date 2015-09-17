@@ -548,9 +548,7 @@ public final class Ruby implements Constantizable {
             return;
         }
 
-        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -844,8 +842,9 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
+            final TruffleContextInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
-            getTruffleContext().execute((RootNode) rootNode);
+            truffleContext.execute((RootNode) rootNode);
             Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {

@@ -26,10 +26,7 @@ import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyNil;
-import org.jruby.RubyString;
-import org.jruby.TruffleContextInterface;
+import org.jruby.*;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -166,6 +163,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         threadManager = new ThreadManager(this);
         threadManager.initialize();
+
 
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
