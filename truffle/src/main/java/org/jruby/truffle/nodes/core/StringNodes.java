@@ -623,16 +623,17 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public DynamicObject bytes(DynamicObject string) {
-            final byte[] bytes = Layouts.STRING.getByteList(string).bytes();
+        public DynamicObject bytes(VirtualFrame frame, DynamicObject string) {
+            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final byte[] bytes = byteList.unsafeBytes();
 
-            final int[] store = new int[bytes.length];
+            final int[] store = new int[byteList.realSize()];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = ((int) bytes[n]) & 0xFF;
+                store[n] = ((int) bytes[n + byteList.begin()]) & 0xFF;
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, bytes.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
     }
