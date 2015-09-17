@@ -43,9 +43,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -511,6 +513,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @SuppressWarnings("restriction")
         @TruffleBoundary
         @Specialization
         public int accept(DynamicObject io) {
