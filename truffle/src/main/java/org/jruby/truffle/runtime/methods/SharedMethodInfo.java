@@ -10,7 +10,10 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Helpers;
 import org.jruby.truffle.runtime.LexicalScope;
 
 /**
@@ -25,10 +28,10 @@ public class SharedMethodInfo {
     /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final boolean isBlock;
-    private final org.jruby.ast.Node parseTree;
+    private final ArgumentDescriptor[] argumentDescriptors;
     private final boolean alwaysClone;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysClone) {
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, ArgumentDescriptor[] argumentDescriptors, boolean alwaysClone) {
         assert sourceSection != null;
         assert name != null;
 
@@ -37,7 +40,7 @@ public class SharedMethodInfo {
         this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
-        this.parseTree = parseTree;
+        this.argumentDescriptors = argumentDescriptors;
         this.alwaysClone = alwaysClone;
     }
 
@@ -61,8 +64,8 @@ public class SharedMethodInfo {
         return isBlock;
     }
 
-    public org.jruby.ast.Node getParseTree() {
-        return parseTree;
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argumentDescriptors;
     }
 
     public boolean shouldAlwaysClone() {
@@ -70,7 +73,7 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysClone);
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, argumentDescriptors, alwaysClone);
     }
 
     @Override
