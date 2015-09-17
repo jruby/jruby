@@ -39,10 +39,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object cachedName,
             DispatchNode next,
             Assumption falseUnmodifiedAssumption,
-            Object falseValue,
             InternalMethod falseMethod,
             Assumption trueUnmodifiedAssumption,
-            Object trueValue,
             InternalMethod trueMethod,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);

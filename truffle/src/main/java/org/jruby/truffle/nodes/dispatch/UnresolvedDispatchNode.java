@@ -142,8 +142,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             return new CachedBooleanDispatchNode(getContext(),
                     methodName, first,
-                    falseUnmodifiedAssumption, null, falseMethod,
-                    trueUnmodifiedAssumption, null, trueMethod, getDispatchAction());
+                    falseUnmodifiedAssumption, falseMethod,
+                    trueUnmodifiedAssumption, trueMethod,
+                    getDispatchAction());
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
