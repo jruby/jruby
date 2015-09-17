@@ -321,7 +321,7 @@ module Commands
       test_specs('run')
       test_mri
     when 'pe' then test_pe(*rest)
-    when 'specs' then test_specs(*rest)
+    when 'specs' then test_specs('run', *rest)
     when 'mri' then test_mri(*rest)
     else
       if File.expand_path(path).start_with?("#{JRUBY_DIR}/test")
