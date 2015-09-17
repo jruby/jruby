@@ -10,6 +10,7 @@
  */
 package org.jruby.util.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
@@ -25,6 +26,9 @@ public abstract class ChannelHelper {
     private ChannelHelper() { /* */ }
 
     public static ReadableByteChannel readableChannel(final InputStream inputStream) {
+        if (inputStream instanceof ByteArrayInputStream) {
+            return new SeekableByteChannelImpl((ByteArrayInputStream) inputStream);
+        }
         return Channels.newChannel(inputStream);
     }
 
