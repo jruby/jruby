@@ -67,42 +67,41 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.jcodings.Encoding;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.SelectExecutor;
-import org.jruby.util.io.IOOptions;
+import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
-
-import org.jruby.runtime.Arity;
+import org.jruby.util.io.SelectExecutor;
+import org.jruby.util.io.STDIO;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.internal.runtime.ThreadedRunnable;
-import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.ShellLauncher.POpenProcess;
-import org.jruby.util.io.IOEncodable;
+import static org.jruby.runtime.Visibility.*;
+import static org.jruby.util.io.ChannelHelper.*;
 
 /**
  *
@@ -134,7 +133,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
+        openFile.setFD(new ChannelFD(writableChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
         openFile.setAutoclose(autoclose);
     }
@@ -147,7 +146,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         openFile = MakeOpenFile();
-        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
+        openFile.setFD(new ChannelFD(readableChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
         openFile.setMode(OpenFile.READABLE);
     }
 
