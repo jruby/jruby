@@ -1115,4 +1115,19 @@ public abstract class PosixNodes {
 
     }
 
+    @CoreMethod(names = "close", isModuleFunction = true, required = 1)
+    public abstract static class CloseNode extends CoreMethodArrayArgumentsNode {
+
+        public CloseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public int close(int file) {
+            return posix().close(file);
+        }
+
+    }
+
 }
