@@ -128,7 +128,6 @@ public class RubyModule extends RubyObject {
 
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
-    protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -3877,7 +3876,6 @@ public class RubyModule extends RubyObject {
     }
 
     protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
-    protected static final String ERR_FROZEN_CVAR_TYPE = "class/module ";
 
     protected final String validateClassVariable(String name) {
         if (IdUtil.isValidClassVariableName(name)) {
@@ -3887,17 +3885,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureClassVariablesSettable() {
-        Ruby runtime = getRuntime();
-
-        if (!isFrozen()) {
-            return;
-        }
-
-        if (this instanceof RubyModule) {
-            throw runtime.newFrozenError(ERR_FROZEN_CONST_TYPE);
-        } else {
-            throw runtime.newFrozenError("");
-        }
+        checkAndRaiseIfFrozen();
     }
 
     //
@@ -4025,7 +4013,21 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureConstantsSettable() {
-        if (isFrozen()) throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
+        checkAndRaiseIfFrozen();
+    }
+
+    private void checkAndRaiseIfFrozen() throws RaiseException {
+        if ( isFrozen() ) {
+            if (this instanceof RubyClass) {
+                if (getBaseName() == null) { // anonymous
+                    // MRI 2.2.2 does get ugly ... as it skips this logic :
+                    // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
+                    throw getRuntime().newFrozenError(getName());
+                }
+                throw getRuntime().newFrozenError("#<Class:" + getName() + '>');
+            }
+            throw getRuntime().newFrozenError("Module");
+        }
     }
 
     protected boolean constantTableContains(String name) {
