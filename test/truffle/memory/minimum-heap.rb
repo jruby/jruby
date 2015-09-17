@@ -11,18 +11,19 @@
 # Not run it fast - just run it at all.
 
 # For example:
-# $ ruby test/truffle/memory/minimum-heap.rb bin/jruby "-X+T -e 'puts 14'"
+# $ ruby test/truffle/memory/minimum-heap.rb foo bin/jruby "-X+T -e 'puts 14'"
 
-COMMAND = ARGV[0]
-OPTIONS = ARGV[1]
+NAME = ARGV[0]
+COMMAND = ARGV[1]
+OPTIONS = ARGV[2]
 
-TOLERANCE = 1
+TOLERANCE = 1024
 UPPER_FACTOR = 4
 
 def can_run(heap)
-  print "trying #{heap} MB... "
+  print "trying #{heap} KB... "
 
-  output = `#{COMMAND} -J-Xmx#{heap}m #{OPTIONS} 2>&1`
+  output = `#{COMMAND} -J-Xmx#{heap}k #{OPTIONS} 2>&1`
   can_run = !output.include?('OutOfMemoryError')
 
   if can_run
@@ -37,14 +38,14 @@ end
 puts "looking for an upper bound..."
 
 lower = 0
-upper = 1
+upper = 1024
 
 while !can_run(upper)
   lower = upper
   upper *= UPPER_FACTOR
 end
 
-puts "binary search between #{lower} and #{upper} MB..."
+puts "binary search between #{lower} and #{upper} KB..."
 
 while upper - lower > TOLERANCE
   mid = lower + (upper - lower) / 2
@@ -56,4 +57,4 @@ while upper - lower > TOLERANCE
   end
 end
 
-puts "minimum heap: #{upper} MB"
+puts "#{NAME}: #{upper} KB"

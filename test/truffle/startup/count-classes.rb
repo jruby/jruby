@@ -10,11 +10,13 @@
 # Counts how many classes are loaded to run a program.
 
 # For example:
-# $ bin/jruby -X+T -J-XX:+TraceClassLoading -e 'puts 14' 2>&1 | ruby test/truffle/startup/count-classes.rb
+# $ bin/jruby -X+T -J-XX:+TraceClassLoading -e 'puts 14' 2>&1 | ruby test/truffle/startup/count-classes.rb foo
+
+NAME = ARGV[0]
 
 classes = 0
 
-ARGF.each do |line|
+$stdin.each_line do |line|
   if line.start_with? '[Loaded '
     classes += 1
   else
@@ -22,4 +24,4 @@ ARGF.each do |line|
   end
 end
 
-puts "classes-loaded #{classes}"
+puts "#{NAME}: #{classes}"
