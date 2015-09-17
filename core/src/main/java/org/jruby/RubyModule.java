@@ -3239,10 +3239,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = validateConstant(rubyName);
-
-            setConstantVisibility(context, name, true);
-            invalidateConstantCache(name);
+            private_constant(context, rubyName);
         }
         return this;
     }
@@ -3259,9 +3256,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = validateConstant(rubyName);
-            setConstantVisibility(context, name, false);
-            invalidateConstantCache(name);
+            public_constant(context, rubyName);
         }
         return this;
     }
@@ -3295,7 +3290,7 @@ public class RubyModule extends RubyObject {
             throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
         }
 
-        getConstantMapForWrite().put(name, new ConstantEntry(entry.value, hidden));
+        storeConstant(name, entry.value, hidden);
     }
 
     //
