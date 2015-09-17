@@ -34,6 +34,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -71,7 +72,7 @@ public class OpenFile implements Finalizable {
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
     public static final int PREP         = (1<<16);
-    
+
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
@@ -193,7 +194,7 @@ public class OpenFile implements Finalizable {
     public int getMode() {
         return mode;
     }
-    
+
     public String getModeAsString(Ruby runtime) {
         String modeString = getStringFromMode(mode);
 
@@ -203,10 +204,10 @@ public class OpenFile implements Finalizable {
 
         return modeString;
     }
-    
+
     public static int getModeFlagsAsIntFrom(int fmode) {
         int oflags = 0;
-        
+
         if ((fmode & READABLE) != 0) {
             if ((fmode & WRITABLE) != 0) {
                 oflags |= ModeFlags.RDWR;
@@ -216,13 +217,13 @@ public class OpenFile implements Finalizable {
         } else if ((fmode & WRITABLE) != 0) {
             oflags |= ModeFlags.WRONLY;
         }
-        
+
         if ((fmode & APPEND) != 0) oflags |= ModeFlags.APPEND;
         if ((fmode & CREATE) != 0) oflags |= ModeFlags.CREAT;
         if ((fmode & BINMODE) != 0) oflags |= ModeFlags.BINARY;
         if ((fmode & TEXTMODE) != 0) oflags |= ModeFlags.TEXT;
         if ((fmode & TRUNC) != 0) oflags |= ModeFlags.TRUNC;
-        
+
         return oflags;
     }
 
@@ -2257,7 +2258,7 @@ public class OpenFile implements Finalizable {
         return fd.chWrite;
     }
 
-    public FileChannel seekChannel() {
+    public SeekableByteChannel seekChannel() {
         return fd.chSeek;
     }
 
