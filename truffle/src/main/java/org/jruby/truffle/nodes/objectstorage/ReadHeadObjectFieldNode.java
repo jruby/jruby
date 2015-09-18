@@ -16,7 +16,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.*;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 
 @NodeChild("receiver")
@@ -141,7 +143,7 @@ public abstract class ReadHeadObjectFieldNode extends RubyNode {
     }
 
     protected int getCacheLimit() {
-        return getContext().getOptions().FIELD_LOOKUP_CACHE;
+        return Options.FIELD_LOOKUP_CACHE;
     }
 
 }
