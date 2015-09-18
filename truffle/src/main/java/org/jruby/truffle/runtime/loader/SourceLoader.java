@@ -49,7 +49,7 @@ public class SourceLoader {
             throw new FileNotFoundException(path);
         }
 
-        final Class relativeClass;
+        final Class<?> relativeClass;
         final String relativePath;
 
         if (path.startsWith(TRUFFLE_SCHEME)) {

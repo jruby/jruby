@@ -24,6 +24,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
@@ -2281,6 +2282,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2385,6 +2387,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
