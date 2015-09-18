@@ -53,12 +53,16 @@ public class RubyTckTest extends TruffleTCK {
                         + "  def object.returnsThis; self; end\n"
                         + "  object\n"
                         +  "end\n"
+                        + "def identity(value)\n"
+                        + "  value\n"
+                        + "end\n"
                         + "Truffle::Interop.export(\"sum_ints\", method(:sum))\n"
                         + "Truffle::Interop.export(\"fourty_two\", method(:fourty_two))\n"
                         + "Truffle::Interop.export(\"ret_nil\", method(:ret_nil))\n"
                         + "Truffle::Interop.export(\"count_invocations\", method(:count_invocations))\n"
                         + "Truffle::Interop.export(\"apply_numbers\", method(:apply_numbers))\n"
-                        + "Truffle::Interop.export(\"compound_object\", method(:compound_object))\n", "test")
+                        + "Truffle::Interop.export(\"compound_object\", method(:compound_object))\n"
+                        + "Truffle::Interop.export(\"identity\", method(:identity))\n", "test")
                 .withMimeType(mimeType());
         final TruffleVM vm = TruffleVM.newVM().build();
         vm.eval(source);
@@ -103,5 +107,10 @@ public class RubyTckTest extends TruffleTCK {
     @Override
     protected String compoundObject() {
         return "compound_object";
+    }
+
+    @Override
+    protected String identity() {
+        return "identity";
     }
 }
