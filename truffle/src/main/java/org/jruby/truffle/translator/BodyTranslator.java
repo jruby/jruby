@@ -1406,6 +1406,7 @@ public class BodyTranslator extends Translator {
         m.put("$RS", "$/");
         m.put("$INPUT_RECORD_SEPARATOR", "$/");
         m.put("$>", "$stdout");
+        m.put("$PROGRAM_NAME", "$0");
     }
 
     @Override

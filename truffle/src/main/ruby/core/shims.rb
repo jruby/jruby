@@ -180,7 +180,6 @@ module Math
   DomainError = Errno::EDOM
 end
 
-$PROGRAM_NAME = $0
 $$ = Process.pid
 
 # IO::printf from Rubinius uses Rubinius::Sprinter
