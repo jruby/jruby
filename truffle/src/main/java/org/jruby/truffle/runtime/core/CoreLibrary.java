@@ -574,7 +574,7 @@ public class CoreLibrary {
         globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$,", nilObject, 0);
-        globals.define("$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")), 0);
+        globals.define("$0", Layouts.STRING.createString(stringFactory, RubyString.encodeBytelist(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), 0);
 
         globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
 
