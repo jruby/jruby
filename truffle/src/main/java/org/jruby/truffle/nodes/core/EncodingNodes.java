@@ -401,10 +401,10 @@ public abstract class EncodingNodes {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            final Hash<EncodingDB.Entry>.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
             while (i.hasNext()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
 
                 final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.bytes, e.p, e.end - e.p), StringSupport.CR_UNKNOWN, null), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
