@@ -16,6 +16,8 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.runtime.LexicalScope;
 
+import java.util.Arrays;
+
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
  * the state that does not change, such as where the method was defined.
@@ -65,7 +67,7 @@ public class SharedMethodInfo {
     }
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return argumentDescriptors;
+        return Arrays.copyOf(argumentDescriptors, argumentDescriptors.length);
     }
 
     public boolean shouldAlwaysClone() {
