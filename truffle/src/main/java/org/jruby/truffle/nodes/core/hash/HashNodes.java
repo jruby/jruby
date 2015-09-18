@@ -877,8 +877,6 @@ public abstract class HashNodes {
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
 
-            int conflictsCount = 0;
-
             for (int a = 0; a < getContext().getOptions().HASH_PACKED_ARRAY_MAX; a++) {
                 if (a < storeASize) {
                     boolean merge = true;
@@ -886,7 +884,6 @@ public abstract class HashNodes {
                     for (int b = 0; b < getContext().getOptions().HASH_PACKED_ARRAY_MAX; b++) {
                         if (b < storeBSize) {
                             if (eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(storeA, a), "eql?", null, PackedArrayStrategy.getKey(storeB, b))) {
-                                conflictsCount++;
                                 merge = false;
                                 break;
                             }
