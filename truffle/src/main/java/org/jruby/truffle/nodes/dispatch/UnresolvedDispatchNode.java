@@ -32,7 +32,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private int depth = 0;
 
     private final boolean ignoreVisibility;
-    private final boolean indirect;
     private final MissingBehavior missingBehavior;
 
     @Child private SingletonClassNode singletonClassNode;
@@ -40,12 +39,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     public UnresolvedDispatchNode(
             RubyContext context,
             boolean ignoreVisibility,
-            boolean indirect,
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
-        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
     }
 
@@ -59,8 +56,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final VirtualFrame frame,
             final Object receiverObject,
             final Object methodName,
-            Object blockObject,
-            final Object argumentsObjects) {
+            DynamicObject blockObject,
+            final Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
@@ -89,8 +86,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     depth++;
                     if (receiverObject instanceof DynamicObject) {
                         newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    }
-                    else if (RubyGuards.isForeignObject(receiverObject)) {
+                    } else if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
@@ -105,9 +101,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
-        Object[] args = (Object[]) argumentsObjects;
-        return new CachedForeignDispatchNode(getContext(), first, methodName, args.length);
+    private DispatchNode createForeign(Object[] argumentsObjects, DispatchNode first, Object methodName) {
+        return new CachedForeignDispatchNode(getContext(), first, methodName, argumentsObjects.length);
     }
 
     private DispatchNode doUnboxedObject(
@@ -124,7 +119,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         final String methodNameString = toString(methodName);
-
         final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
 
         if (method == null) {
@@ -132,32 +126,22 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         }
 
         if (receiverObject instanceof Boolean) {
-            final Assumption falseUnmodifiedAssumption =
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
 
-            final InternalMethod falseMethod =
-                    lookup(callerClass, false, methodNameString,
-                            ignoreVisibility);
-
-            final Assumption trueUnmodifiedAssumption =
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
-
-            final InternalMethod trueMethod =
-                    lookup(callerClass, true, methodNameString,
-                            ignoreVisibility);
-
-            if ((falseMethod == null) && (trueMethod == null)) {
-                throw new UnsupportedOperationException();
-            }
+            final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+            final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
+            assert falseMethod != null || trueMethod != null;
 
             return new CachedBooleanDispatchNode(getContext(),
                     methodName, first,
-                    falseUnmodifiedAssumption, null, falseMethod,
-                    trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
+                    falseUnmodifiedAssumption, falseMethod,
+                    trueUnmodifiedAssumption, trueMethod,
+                    getDispatchAction());
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),
-                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, indirect, getDispatchAction());
+                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
         }
     }
 
@@ -166,7 +150,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName,
-            Object argumentsObjects) {
+            Object[] argumentsObjects) {
         final DynamicObject callerClass;
 
         if (ignoreVisibility) {
@@ -186,13 +170,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         final DynamicObject receiverMetaClass = getContext().getCoreLibrary().getMetaClass(receiverObject);
         if (RubyGuards.isRubySymbol(receiverObject)) {
-            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, indirect, getDispatchAction());
+            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, getDispatchAction());
         } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
             return new CachedSingletonDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject),
-                    receiverMetaClass, method, indirect, getDispatchAction());
+                    receiverMetaClass, method, getDispatchAction());
         } else {
             return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
-                    receiverMetaClass, method, indirect, getDispatchAction());
+                    receiverMetaClass, method, getDispatchAction());
         }
     }
 
@@ -218,7 +202,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), getDispatchAction());
             }
 
             case CALL_METHOD_MISSING: {
@@ -230,7 +214,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, false, getDispatchAction());
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, getDispatchAction());
             }
 
             default: {

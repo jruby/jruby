@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;

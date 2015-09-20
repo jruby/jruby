@@ -7,10 +7,21 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# Serves a single request then shuts down. Useful with client.rb to make that
-# request.
+# Serves a single request then shuts down. Provides both the client and the
+# server.
 
+require 'open-uri'
 require 'webrick'
+
+Thread.new do
+  loop do
+    begin
+      open('http://localhost:8000/hello').read
+      break
+    rescue
+    end
+  end
+end
 
 server = WEBrick::HTTPServer.new(Port: 8000)
 

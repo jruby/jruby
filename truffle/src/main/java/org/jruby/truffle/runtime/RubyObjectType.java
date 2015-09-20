@@ -17,9 +17,13 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.ArrayForeignAccessFactory;
+import org.jruby.truffle.runtime.core.BasicForeignAccessFactory;
+import org.jruby.truffle.runtime.core.HashForeignAccessFactory;
+import org.jruby.truffle.runtime.core.StringForeignAccessFactory;
 import org.jruby.truffle.runtime.layouts.Layouts;
-
-import java.util.Arrays;
 
 public class RubyObjectType extends ObjectType {
 

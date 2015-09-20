@@ -45,4 +45,18 @@ public class InnerClasses {
         public interface CapsInnerInterface5 {}
         public interface lowerInnerInterface5 {}
     }
+
+    protected static interface ProtectedInner {
+        public static String VALUE = ProtectedInner.class.getName();
+
+        class Nested extends PackageInner {}
+    }
+
+    static class PackageInner {
+        protected static String VALUE = PackageInner.class.getName();
+    }
+
+    private static class PrivateInner {
+        static String VALUE = PrivateInner.class.getName();
+    }
 }

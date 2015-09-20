@@ -92,6 +92,22 @@
 	    </configuration>
 	  </execution>
 	  <execution>
+	    <id>check jruby-home</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-classpath</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>p JRuby.runtime.jruby_home</argument>
+              </arguments>
+            </configuration>
+          </execution>
+	  <execution>
 	    <id>count installed gems</id>
 	    <phase>test</phase>
 	    <goals>

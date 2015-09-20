@@ -43,5 +43,20 @@ module Rubinius
 
     end
 
+    def self.vm_spawn(options, command, arguments)
+      options ||= {}
+      env     = options[:unsetenv_others] ? {} : ENV.to_hash
+      env.merge! Hash[options[:env]] if options[:env]
+
+      env_array = env.map { |k, v| "#{k}=#{v}" }
+
+      if arguments.empty?
+        command, arguments = 'bash', ['bash', '-c', command]
+      end
+
+      Truffle::Primitive.spawn_process command, arguments, env_array
+    end
+
+    Truffle::Primitive.install_rubinius_primitive method(:vm_spawn)
   end
 end

@@ -43,9 +43,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -256,9 +258,8 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public Object readIfAvailable(DynamicObject file, int numberOfBytes) {
+        public Object readIfAvailable(VirtualFrame frame, DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
@@ -281,7 +282,7 @@ public abstract class IOPrimitiveNodes {
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
-                rubyWithSelf(file, "raise IO::EAGAINWaitReadable");
+                ruby(frame, "raise IO::EAGAINWaitReadable");
             }
 
             if (res < 0) {
@@ -512,6 +513,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @SuppressWarnings("restriction")
         @TruffleBoundary
         @Specialization
         public int accept(DynamicObject io) {
@@ -557,6 +559,16 @@ public abstract class IOPrimitiveNodes {
                 getContext().getSafepointManager().poll(this);
 
                 final int readIteration = posix().read(fd, buffer, toRead);
+
+                if (readIteration == -1) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                }
+
+                if (readIteration == 0) {
+                    return nil();
+                }
+
                 buffer.position(readIteration);
                 toRead -= readIteration;
             }

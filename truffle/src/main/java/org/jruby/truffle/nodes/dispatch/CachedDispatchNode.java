@@ -9,17 +9,21 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
     private final DynamicObject cachedNameAsSymbol;
-    private final boolean indirect;
 
     @Child protected DispatchNode next;
 
@@ -29,7 +33,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            boolean indirect,
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
 
@@ -45,8 +48,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-
-        this.indirect = indirect;
 
         this.next = next;
     }
@@ -79,7 +80,21 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return cachedNameAsSymbol;
     }
 
-    public boolean isIndirect() {
-        return indirect;
+    protected void applySplittingStrategy(DirectCallNode callNode, InternalMethod method) {
+        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
+            insert(callNode);
+            callNode.cloneCallTarget();
+        }
+    }
+
+    protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
+        return callNode.call(
+                frame,
+                RubyArguments.pack(
+                        method,
+                        method.getDeclarationFrame(),
+                        receiver,
+                        block,
+                        arguments));
     }
 }

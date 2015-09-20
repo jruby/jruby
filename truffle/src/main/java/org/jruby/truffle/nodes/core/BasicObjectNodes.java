@@ -27,7 +27,6 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -235,7 +234,6 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
 
             dispatchNode = new CallDispatchHeadNode(context, true,
-                    false,
                     MissingBehavior.CALL_METHOD_MISSING);
         }
 

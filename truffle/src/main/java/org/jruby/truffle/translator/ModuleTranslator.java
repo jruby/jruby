@@ -23,7 +23,6 @@ import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.CoreLibrary;
 
 /**
  * Translates module and class nodes.
@@ -89,6 +88,8 @@ class ModuleTranslator extends BodyTranslator {
             rubiniusMethodRename = methodName.equals("round");
         } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
             rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/integer.rb")) {
+            rubiniusMethodRename = methodName.equals("downto") || methodName.equals("upto");
         }
 
         if (rubiniusMethodRename) {

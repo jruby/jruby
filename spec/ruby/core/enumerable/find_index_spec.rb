@@ -48,6 +48,11 @@ describe "Enumerable#find_index" do
     @numerous.find_index.should be_an_instance_of(enumerator_class)
   end
 
+  it "uses #== for testing equality" do
+    [2].to_enum.find_index(2.0).should == 0
+    [2.0].to_enum.find_index(2).should == 0
+  end
+
   describe "without block" do
     it "gathers whole arrays as elements when each yields multiple" do
       @yieldsmixed.find_index([0, 1, 2]).should == 3

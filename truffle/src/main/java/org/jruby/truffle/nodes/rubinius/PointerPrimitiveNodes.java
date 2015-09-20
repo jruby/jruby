@@ -15,7 +15,9 @@ import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.ffi.Pointer;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.PointerGuards;
@@ -60,6 +62,7 @@ public abstract class PointerPrimitiveNodes {
             return malloc(pointerClass, (long) size);
         }
 
+        @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
             return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
@@ -74,6 +77,7 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
             UnsafeHolder.U.freeMemory(Layouts.POINTER.getPointer(pointer).address());

@@ -11,13 +11,14 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNode extends Node {
 
     protected final RubyContext context;
     protected final boolean ignoreVisibility;
-    protected final boolean indirect;
     protected final MissingBehavior missingBehavior;
     protected final DispatchAction dispatchAction;
 
@@ -26,23 +27,21 @@ public class DispatchHeadNode extends Node {
     public DispatchHeadNode(
             RubyContext context,
             boolean ignoreVisibility,
-            boolean indirect,
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
-        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.dispatchAction = dispatchAction;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, missingBehavior, dispatchAction);
     }
 
     public Object dispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         return first.executeDispatch(
                 frame,
                 receiverObject,
@@ -53,7 +52,7 @@ public class DispatchHeadNode extends Node {
 
     public void reset(String reason) {
         first.replace(new UnresolvedDispatchNode(
-                context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
+                context, ignoreVisibility, missingBehavior, dispatchAction), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {

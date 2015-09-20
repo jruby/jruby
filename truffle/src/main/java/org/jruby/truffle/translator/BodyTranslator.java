@@ -20,6 +20,7 @@ import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
@@ -113,7 +114,7 @@ public class BodyTranslator extends Translator {
         debugIgnoredCalls.add("upto");
     }
 
-    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!")); // "$_"
+    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!", "$?")); // "$_"
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
@@ -766,7 +767,7 @@ public class BodyTranslator extends Translator {
                         final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
                         comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
                     } else {
-                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, NodeUtil.cloneNode(readTemp)));
+                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, true, NodeUtil.cloneNode(readTemp)));
                     }
                 }
 
@@ -843,7 +844,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, bodyNode, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false);
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                     environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
@@ -1134,7 +1135,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, parseTree, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
@@ -1405,6 +1406,7 @@ public class BodyTranslator extends Translator {
         m.put("$RS", "$/");
         m.put("$INPUT_RECORD_SEPARATOR", "$/");
         m.put("$>", "$stdout");
+        m.put("$PROGRAM_NAME", "$0");
     }
 
     @Override
@@ -1442,9 +1444,12 @@ public class BodyTranslator extends Translator {
             return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
-        if (readOnlyGlobalVariables.contains(name)) {
+        final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
+        if (!inCore && readOnlyGlobalVariables.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
-        } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
+        }
+
+        if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new WriteInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, rhs, true);
         } else if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
@@ -1795,7 +1800,7 @@ public class BodyTranslator extends Translator {
         }
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
@@ -2895,7 +2900,7 @@ public class BodyTranslator extends Translator {
         }
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,

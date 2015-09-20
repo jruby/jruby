@@ -16,9 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class ConstructorInvoker extends RubyToJavaInvoker {
 
     public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
-        super(host, ctors.toArray(new Constructor[ctors.size()]));
-
-        trySetAccessible(getAccessibleObjects());
+        super(host, setAccessible( ctors.toArray(new Constructor[ctors.size()]) ) );
     }
 
     @Override

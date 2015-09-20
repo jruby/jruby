@@ -24,6 +24,4 @@ files from `rubinius-core-api` and Rubinius itself separate and to be consistent
 about what we're using from where and why. In the end it's a bit of a mix from
 the two projects, and a mix of modification and shimming that works for us.
 
-The only file the VM loads is `core.rb` - everything else is loaded from there.
-
 We have directly attached copyright and license information to each file.

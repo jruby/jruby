@@ -48,10 +48,8 @@ public class CheckArityNode extends RubyNode {
         final int given;
         final DynamicObject keywordArguments;
 
-        //TODO (MS): Check merge
-        if (RubyArguments.isKwOptimized(frame.getArguments())) {
-            given = RubyArguments.getUserArgumentsCount(frame.getArguments())
-                    - arity.getKeywordsCount() - 2;
+        if (arity.acceptsKeywords() && RubyArguments.isKwOptimized(frame.getArguments())) {
+            given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getKeywordsCount() - 2;
         } else {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments());
         }

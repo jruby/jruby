@@ -19,9 +19,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
+
 import com.oracle.truffle.tools.LineToProbesMap;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -68,11 +68,12 @@ public class AttachmentsManager {
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
                 return new AdvancedInstrumentRoot() {
 
-                    @Child private DirectCallNode callNode;
+                    @Node.Child
+                    private DirectCallNode callNode;
 
                     @Override
                     public Object executeRoot(Node node, VirtualFrame frame) {
-                        final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
+                        final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
 
                         if (callNode == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();

@@ -23,7 +23,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
@@ -158,9 +157,7 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
-
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
+            final ArgumentDescriptor[] argsDesc = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
             return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
                     argsDesc, true));

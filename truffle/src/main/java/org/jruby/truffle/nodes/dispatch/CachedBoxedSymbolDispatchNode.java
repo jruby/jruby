@@ -13,11 +13,10 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -28,32 +27,19 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
 
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
-    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedSymbolDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
             InternalMethod method,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+        super(context, cachedName, next, dispatchAction);
 
-        unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
-
-        if (method != null) {
-            if (indirect) {
-                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-            } else {
-                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
-                    insert(callNode);
-                    callNode.cloneCallTarget();
-                }
-            }
-        }
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        applySplittingStrategy(callNode, method);
     }
 
     @Override
@@ -66,8 +52,8 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -86,34 +72,14 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (DynamicObject) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }
 
         switch (getDispatchAction()) {
-            case CALL_METHOD: {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (DynamicObject) blockObject,
-                                    (Object[]) argumentsObjects));
-                }
-            }
+            case CALL_METHOD:
+                return call(callNode, frame, method, receiverObject, blockObject, argumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return true;

@@ -9,11 +9,10 @@
  */
 package org.jruby.truffle.runtime.array;
 
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
+
+import com.oracle.truffle.api.CompilerAsserts;
 
 public abstract class ArrayUtils {
 

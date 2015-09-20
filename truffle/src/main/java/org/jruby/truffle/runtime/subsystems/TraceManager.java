@@ -121,7 +121,6 @@ public class TraceManager {
 
                             final DynamicObject binding = Layouts.BINDING.createBinding(
                                     context.getCoreLibrary().getBindingFactory(),
-                                    self,
                                     frame.materialize());
 
                             if (callNode == null) {
@@ -243,7 +242,6 @@ public class TraceManager {
 
                 final DynamicObject binding = Layouts.BINDING.createBinding(
                         context.getCoreLibrary().getBindingFactory(),
-                        self,
                         frame.materialize());
 
                 if (callNode == null) {

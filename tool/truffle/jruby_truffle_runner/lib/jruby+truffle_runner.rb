@@ -53,18 +53,22 @@ class JRubyTruffleRunner
             without: ['--without GROUP', 'Do not install listed gem group by bundler', add_to_array, []]
         },
         run:    {
-            help:       ['-h', '--help', 'Show this message', assign_new_value, false],
-            test:       ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
-            graal:      ['-g', '--graal', 'Run on graal', assign_new_value, false],
-            build:      ['-b', '--build', 'Run `jt build` in JRuby', assign_new_value, false],
-            rebuild:    ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
-            debug:      ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
-            require:    ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
-            load_path:  ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
-            executable: ['-e', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
-            jexception: ['--jexception', 'print Java exceptions', assign_new_value, false]
+            help:            ['-h', '--help', 'Show this message', assign_new_value, false],
+            test:            ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
+            graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
+            build:           ['-b', '--build', 'Run `jt build` in JRuby', assign_new_value, false],
+            rebuild:         ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
+            debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
+            require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
+            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', add_to_array, []],
+            load_path:       ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
+            executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
+            jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
         },
         clean:  {
+            help: ['-h', '--help', 'Show this message', assign_new_value, false]
+        },
+        readme: {
             help: ['-h', '--help', 'Show this message', assign_new_value, false]
         }
     }
@@ -78,12 +82,8 @@ class JRubyTruffleRunner
       Allows to execute gem/app on JRuby+Truffle until it's more complete. Environment
       has to be set up first with setup subcommand then run subcommand can be used.
 
-      Options can be set on commandline or in local directory in #{LOCAL_CONFIG_FILE} file.
-      Tha data in yaml file follow same structure as OPTION_DEFINITIONS what, its values
-      are deep-merged with default values, then command-line options are applied.
-
-      This tool contains default configurations for gems in gem_configurations directory.
-      They are copied when there is no configuration present.
+      Run #{EXECUTABLE} readme to see README.
+      Run #{EXECUTABLE} subcommand --help to see its help.
 
     TXT
 
@@ -100,6 +100,7 @@ class JRubyTruffleRunner
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
 
       Runs file, -e expr, etc in setup environment on JRuby+Truffle
+      (options after -- are interpreted by ruby not by this tool)
       Examples: #{EXECUTABLE} run -- a_file.rb
                 #{EXECUTABLE} run -- -S irb
                 #{EXECUTABLE} run -- -e 'puts :v'
@@ -128,8 +129,9 @@ class JRubyTruffleRunner
 
     if subcommand.nil?
       print_options
-      help
+      help :global
     end
+    help :global if @options[:global][:help]
 
     subcommand = subcommand.to_sym
 
@@ -137,7 +139,7 @@ class JRubyTruffleRunner
     argv_after_subcommand    = subcommand_option_parser.order argv_after_global
 
     print_options
-    help subcommand if @options[subcommand][:help]
+    help subcommand if @options[subcommand][:help] && subcommand != :readme
 
     send "subcommand_#{subcommand}", argv_after_subcommand
   end
@@ -294,6 +296,9 @@ class JRubyTruffleRunner
                  end
 
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
+    @options[:run][:require_pattern].each do |pattern|
+      Dir.glob(pattern) { |v| @options[:run][:require] << File.expand_path(v) }
+    end
 
     cmd_options = [
         *(['-X+T', "-Xtruffle.core.load_path=#{core_load_path}"] unless @options[:run][:test]),
@@ -320,6 +325,11 @@ class JRubyTruffleRunner
 
   def subcommand_clean(rest)
     FileUtils.rm_rf @options[:global][:truffle_bundle_path]
+  end
+
+  def subcommand_readme(rest)
+    readme_path = File.join File.dirname(__FILE__), '..', 'README.md'
+    puts File.read(readme_path)
   end
 
   def print_cmd(cmd, print_always)

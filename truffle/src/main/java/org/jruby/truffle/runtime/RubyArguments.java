@@ -30,7 +30,9 @@ public final class RubyArguments {
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, DynamicObject block, Object[] arguments) {
+        assert self != null;
         assert block == null || RubyGuards.isRubyProc(block);
+        assert arguments != null;
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
 
@@ -116,6 +118,20 @@ public final class RubyArguments {
         return null;
     }
 
+    public static MaterializedFrame tryGetDeclarationFrame(Object[] arguments) {
+        if (DECLARATION_FRAME_INDEX >= arguments.length) {
+            return null;
+        }
+
+        final Object frame = arguments[DECLARATION_FRAME_INDEX];
+
+        if (frame instanceof MaterializedFrame) {
+            return (MaterializedFrame) frame;
+        }
+
+        return null;
+    }
+
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
     }
@@ -136,7 +152,7 @@ public final class RubyArguments {
      * current frame is 0.
      */
     @ExplodeLoop
-    private static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
+    public static MaterializedFrame getDeclarationFrame(MaterializedFrame frame, int level) {
         assert frame != null;
         assert level >= 0;
 

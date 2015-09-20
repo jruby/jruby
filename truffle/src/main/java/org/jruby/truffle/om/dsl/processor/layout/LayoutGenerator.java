@@ -14,6 +14,7 @@ import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import javax.lang.model.type.TypeKind;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -590,6 +591,7 @@ public class LayoutGenerator {
             }
 
             if (property.hasGetter()) {
+                addUncheckedCastWarning(stream, property);
                 stream.println("    @Override");
                 stream.printf("    public %s %s(DynamicObject object) {%n", property.getType(), NameUtils.asGetter(property.getName()));
                 stream.printf("        assert is%s(object);%n", layout.getName());
@@ -631,6 +633,7 @@ public class LayoutGenerator {
             assert !(property.hasSetter() && property.hasUnsafeSetter());
 
             if (property.hasSetter() || property.hasUnsafeSetter()) {
+                addUncheckedCastWarning(stream, property);
                 if (property.isShapeProperty()) {
                     stream.println("    @TruffleBoundary");
                 }
@@ -694,6 +697,13 @@ public class LayoutGenerator {
         }
 
         stream.println("}");
+    }
+
+    private void addUncheckedCastWarning(final PrintStream stream, PropertyModel property) {
+        if (property.getType().toString().indexOf('<') != -1 ||
+                (property.isVolatile() && !property.getType().getKind().isPrimitive())) {
+            stream.println("    @SuppressWarnings(\"unchecked\")");
+        }
     }
 
     private void iterateProperties(List<PropertyModel> properties, PropertyIteratorAction action) {

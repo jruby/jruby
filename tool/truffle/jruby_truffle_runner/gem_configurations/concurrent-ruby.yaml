@@ -2,7 +2,7 @@
 :setup:
   :file:
     shims.rb: |
-              # stub methods caling #system
+              # stub methods calling #system
               module Concurrent
                 module Utility
                   class ProcessorCounter

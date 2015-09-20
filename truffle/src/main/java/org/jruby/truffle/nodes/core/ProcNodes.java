@@ -24,7 +24,6 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -46,15 +45,19 @@ import org.jruby.util.StringSupport;
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
 
-    public static Object rootCall(DynamicObject proc, Object... args) {
-        assert RubyGuards.isRubyProc(proc);
-
-        return Layouts.PROC.getCallTargetForType(proc).call(RubyArguments.pack(
+    public static Object[] packArguments(DynamicObject proc, Object... args) {
+        return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
                 Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
-                args));
+                args);
+    }
+
+    public static Object rootCall(DynamicObject proc, Object... args) {
+        assert RubyGuards.isRubyProc(proc);
+
+        return Layouts.PROC.getCallTargetForType(proc).call(packArguments(proc, args));
     }
 
     public static DynamicObject createRubyProc(DynamicObject procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForProcs,
@@ -205,10 +208,9 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public Object binding(DynamicObject proc) {
+        public DynamicObject binding(DynamicObject proc) {
             final MaterializedFrame frame = Layouts.PROC.getDeclarationFrame(proc);
-
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), RubyArguments.getSelf(frame.getArguments()), frame);
+            return BindingNodes.createBinding(getContext(), frame);
         }
 
     }
@@ -259,9 +261,7 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
-            final ArgsNode argsNode = Layouts.PROC.getSharedMethodInfo(proc).getParseTree().findFirstChild(ArgsNode.class);
-
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
+            final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
 
             return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
                     argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA));

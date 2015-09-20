@@ -128,7 +128,6 @@ public class RubyModule extends RubyObject {
 
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
-    protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -3239,10 +3238,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = validateConstant(rubyName);
-
-            setConstantVisibility(context, name, true);
-            invalidateConstantCache(name);
+            private_constant(context, rubyName);
         }
         return this;
     }
@@ -3259,9 +3255,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = validateConstant(rubyName);
-            setConstantVisibility(context, name, false);
-            invalidateConstantCache(name);
+            public_constant(context, rubyName);
         }
         return this;
     }
@@ -3295,7 +3289,7 @@ public class RubyModule extends RubyObject {
             throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
         }
 
-        getConstantMapForWrite().put(name, new ConstantEntry(entry.value, hidden));
+        storeConstant(name, entry.value, hidden);
     }
 
     //
@@ -3570,7 +3564,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstantQuiet(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false);
+        return setConstantCommon(name, value, false, false);
     }
 
     /**
@@ -3582,7 +3576,11 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(String name, IRubyObject value) {
-        return setConstantCommon(name, value, true);
+        return setConstantCommon(name, value, false, true);
+    }
+
+    public IRubyObject setConstant(String name, IRubyObject value, boolean hidden) {
+        return setConstantCommon(name, value, hidden, true);
     }
 
     /**
@@ -3593,7 +3591,7 @@ public class RubyModule extends RubyObject {
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean warn) {
+    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn) {
         IRubyObject oldValue = fetchConstant(name);
         if (oldValue != null) {
             if (oldValue == UNDEF) {
@@ -3602,10 +3600,14 @@ public class RubyModule extends RubyObject {
                 if (warn) {
                     getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
                 }
-                storeConstant(name, value);
+                // might just call storeConstant(name, value, hidden) but to maintain
+                // backwards compatibility with calling #storeConstant overrides
+                if (hidden) storeConstant(name, value, true);
+                else storeConstant(name, value);
             }
         } else {
-            storeConstant(name, value);
+            if (hidden) storeConstant(name, value, true);
+            else storeConstant(name, value);
         }
 
         invalidateConstantCache(name);
@@ -3874,7 +3876,6 @@ public class RubyModule extends RubyObject {
     }
 
     protected static final String ERR_INSECURE_SET_CLASS_VAR = "Insecure: can't modify class variable";
-    protected static final String ERR_FROZEN_CVAR_TYPE = "class/module ";
 
     protected final String validateClassVariable(String name) {
         if (IdUtil.isValidClassVariableName(name)) {
@@ -3884,17 +3885,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureClassVariablesSettable() {
-        Ruby runtime = getRuntime();
-
-        if (!isFrozen()) {
-            return;
-        }
-
-        if (this instanceof RubyModule) {
-            throw runtime.newFrozenError(ERR_FROZEN_CONST_TYPE);
-        } else {
-            throw runtime.newFrozenError("");
-        }
+        checkAndRaiseIfFrozen();
     }
 
     //
@@ -3942,6 +3933,14 @@ public class RubyModule extends RubyObject {
 
         ensureConstantsSettable();
         return constantTableStore(name, value);
+    }
+
+    public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
+        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
+        assert value != null : "value is null";
+
+        ensureConstantsSettable();
+        return constantTableStore(name, value, hidden);
     }
 
     @Deprecated
@@ -4014,7 +4013,21 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureConstantsSettable() {
-        if (isFrozen()) throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
+        checkAndRaiseIfFrozen();
+    }
+
+    private void checkAndRaiseIfFrozen() throws RaiseException {
+        if ( isFrozen() ) {
+            if (this instanceof RubyClass) {
+                if (getBaseName() == null) { // anonymous
+                    // MRI 2.2.2 does get ugly ... as it skips this logic :
+                    // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
+                    throw getRuntime().newFrozenError(getName());
+                }
+                throw getRuntime().newFrozenError("#<Class:" + getName() + '>');
+            }
+            throw getRuntime().newFrozenError("Module");
+        }
     }
 
     protected boolean constantTableContains(String name) {
@@ -4038,6 +4051,12 @@ public class RubyModule extends RubyObject {
         ConstantEntry entry = constMap.get(name);
         if (entry != null) hidden = entry.hidden;
 
+        constMap.put(name, new ConstantEntry(value, hidden));
+        return value;
+    }
+
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        Map<String, ConstantEntry> constMap = getConstantMapForWrite();
         constMap.put(name, new ConstantEntry(value, hidden));
         return value;
     }

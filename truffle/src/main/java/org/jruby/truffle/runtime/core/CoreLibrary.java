@@ -20,7 +20,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
@@ -33,15 +39,55 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
+import org.jruby.truffle.nodes.core.BignumNodesFactory;
+import org.jruby.truffle.nodes.core.BindingNodesFactory;
+import org.jruby.truffle.nodes.core.ClassNodes;
+import org.jruby.truffle.nodes.core.ClassNodesFactory;
+import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
+import org.jruby.truffle.nodes.core.EncodingConverterNodesFactory;
+import org.jruby.truffle.nodes.core.EncodingNodes;
+import org.jruby.truffle.nodes.core.EncodingNodesFactory;
+import org.jruby.truffle.nodes.core.ExceptionNodes;
+import org.jruby.truffle.nodes.core.ExceptionNodesFactory;
+import org.jruby.truffle.nodes.core.FalseClassNodesFactory;
+import org.jruby.truffle.nodes.core.FiberNodesFactory;
+import org.jruby.truffle.nodes.core.FloatNodesFactory;
+import org.jruby.truffle.nodes.core.IntegerNodesFactory;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.core.MainNodesFactory;
+import org.jruby.truffle.nodes.core.MatchDataNodesFactory;
+import org.jruby.truffle.nodes.core.MathNodesFactory;
+import org.jruby.truffle.nodes.core.MethodNodesFactory;
+import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory;
+import org.jruby.truffle.nodes.core.MutexNodesFactory;
+import org.jruby.truffle.nodes.core.ObjectSpaceNodesFactory;
+import org.jruby.truffle.nodes.core.ProcNodesFactory;
+import org.jruby.truffle.nodes.core.ProcessNodes;
+import org.jruby.truffle.nodes.core.ProcessNodesFactory;
+import org.jruby.truffle.nodes.core.QueueNodesFactory;
+import org.jruby.truffle.nodes.core.RangeNodesFactory;
+import org.jruby.truffle.nodes.core.RegexpNodesFactory;
+import org.jruby.truffle.nodes.core.SizedQueueNodesFactory;
+import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.core.SymbolNodesFactory;
+import org.jruby.truffle.nodes.core.ThreadBacktraceLocationNodesFactory;
+import org.jruby.truffle.nodes.core.ThreadNodesFactory;
+import org.jruby.truffle.nodes.core.TimeNodesFactory;
+import org.jruby.truffle.nodes.core.TrueClassNodesFactory;
+import org.jruby.truffle.nodes.core.TruffleInteropNodesFactory;
+import org.jruby.truffle.nodes.core.TrufflePrimitiveNodesFactory;
+import org.jruby.truffle.nodes.core.UnboundMethodNodesFactory;
 import org.jruby.truffle.nodes.core.array.ArrayNodes;
 import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.BigDecimalNodesFactory;
 import org.jruby.truffle.nodes.ext.DigestNodesFactory;
-import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.ext.EtcNodesFactory;
+import org.jruby.truffle.nodes.ext.ObjSpaceNodesFactory;
+import org.jruby.truffle.nodes.ext.ZlibNodesFactory;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -64,13 +110,14 @@ import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.OutputStrings;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.source.SourceSection;
 
 public class CoreLibrary {
 
@@ -163,6 +210,7 @@ public class CoreLibrary {
     private final DynamicObject internalBufferClass;
     private final DynamicObject weakRefClass;
     private final DynamicObjectFactory weakRefFactory;
+    private final DynamicObject objectSpaceModule;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -171,8 +219,8 @@ public class CoreLibrary {
     private final DynamicObject rubiniusUndefined;
     private final DynamicObject digestClass;
 
-    private final ArrayNodes.MinBlock arrayMinBlock;
-    private final ArrayNodes.MaxBlock arrayMaxBlock;
+    @CompilationFinal private ArrayNodes.MinBlock arrayMinBlock;
+    @CompilationFinal private ArrayNodes.MaxBlock arrayMaxBlock;
 
     private final DynamicObject rubyInternalMethod;
     private final Map<Errno, DynamicObject> errnoClasses = new HashMap<>();
@@ -420,7 +468,7 @@ public class CoreLibrary {
         defineModule("GC");
         kernelModule = defineModule("Kernel");
         defineModule("Math");
-        defineModule("ObjectSpace");
+        objectSpaceModule = defineModule("ObjectSpace");
         signalModule = defineModule("Signal");
 
         // The rest
@@ -436,6 +484,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
         defineModule(truffleModule, "Digest");
         defineModule(truffleModule, "Zlib");
+        defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
@@ -477,9 +526,6 @@ public class CoreLibrary {
 
         globalVariablesObject = Layouts.CLASS.getInstanceFactory(objectClass).newInstance();
 
-        arrayMinBlock = new ArrayNodes.MinBlock(context);
-        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
-
         digestClass = defineClass(truffleModule, basicObjectClass, "Digest");
         Layouts.CLASS.setInstanceFactoryUnsafe(digestClass, DigestLayoutImpl.INSTANCE.createDigestShape(digestClass, digestClass));
     }
@@ -510,9 +556,13 @@ public class CoreLibrary {
     }
 
     private void addCoreMethods() {
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+
         // Bring in core method nodes
         CoreMethodNodeManager coreMethodNodeManager = new CoreMethodNodeManager(objectClass, node.getSingletonClassNode());
 
+        Main.printTruffleTimeMetric("before-load-truffle-nodes");
         coreMethodNodeManager.addCoreMethodNodes(ArrayNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BasicObjectNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BindingNodesFactory.getFactories());
@@ -556,7 +606,10 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(DigestNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(BigDecimalNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
+        Main.printTruffleTimeMetric("after-load-truffle-nodes");
+
         coreMethodNodeManager.allMethodInstalled();
 
         basicObjectSendMethod = Layouts.MODULE.getFields(basicObjectClass).getMethods().get("__send__");
@@ -571,7 +624,7 @@ public class CoreLibrary {
         globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$,", nilObject, 0);
-        globals.define("$0", context.toTruffle(context.getRuntime().getGlobalVariables().get("$0")), 0);
+        globals.define("$0", Layouts.STRING.createString(stringFactory, RubyString.encodeBytelist(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), 0);
 
         globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
 
@@ -718,29 +771,6 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_CHARARR", RubiniusTypes.TYPE_CHARARR);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_ENUM", RubiniusTypes.TYPE_ENUM);
         Layouts.MODULE.getFields(rubiniusFFIModule).setConstant(node, "TYPE_VARARGS", RubiniusTypes.TYPE_VARARGS);
-    }
-
-    public void loadRubyCore(String fileName, String prefix) {
-        final Source source;
-
-        try {
-            // TODO CS 28-Feb-15 need to use SourceManager here so that the debugger knows about the core files
-            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        context.load(source, node, NodeWrapper.IDENTITY);
-    }
-
-    public InputStream getRubyCoreInputStream(String fileName) {
-        final InputStream resource = getClass().getResourceAsStream("/" + fileName);
-
-        if (resource == null) {
-            throw new RuntimeException("couldn't load Truffle core library " + fileName);
-        }
-
-        return resource;
     }
 
     public void initializeEncodingConstants() {
@@ -927,6 +957,18 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(errnoObj.description(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject errnoError(int errno, String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
+        }
+
+        final DynamicObject errorMessage = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, RubyCallStack.getBacktrace(currentNode));
+    }
+
     public DynamicObject indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(indexErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
@@ -935,11 +977,6 @@ public class CoreLibrary {
     public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return indexError(String.format("index %d too small for %s; minimum: -%d", index, type, length), currentNode);
-    }
-
-    public DynamicObject indexNegativeLength(int length, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return indexError(String.format("negative length (%d)", length), currentNode);
     }
 
     public DynamicObject localJumpError(String message, Node currentNode) {
@@ -981,11 +1018,6 @@ public class CoreLibrary {
     public DynamicObject typeErrorCantDefineSingleton(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return typeError("can't define singleton", currentNode);
-    }
-
-    public DynamicObject typeErrorNoClassToMakeAlias(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError("no class to make alias", currentNode);
     }
 
     public DynamicObject typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
@@ -1031,11 +1063,6 @@ public class CoreLibrary {
                 badClassName,
                 coercionMethod,
                 Layouts.MODULE.getFields(getLogicalClass(coercedTo)).getName()), currentNode);
-    }
-
-    public DynamicObject typeErrorCantCoerce(Object from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("%s can't be coerced into %s", from, to), currentNode);
     }
 
     public DynamicObject typeErrorCantDump(Object object, Node currentNode) {
@@ -1203,55 +1230,9 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public DynamicObject invalidArgumentError(String value, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EINVAL), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Invalid argument -  %s", value), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
     public DynamicObject ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return ExceptionNodes.createRubyException(ioErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject badAddressError(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EFAULT), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("Bad address", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-
-    public DynamicObject badFileDescriptor(Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EBADF), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("Bad file descriptor", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject fileExistsError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EEXIST), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("File exists - %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject fileNotFoundError(String fileName, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOENT), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("No such file or directory -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject dirNotEmptyError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTEMPTY), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Directory not empty - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject operationNotPermittedError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EPERM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Operation not permitted - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject permissionDeniedError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EACCES), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Permission denied - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
-    }
-
-    public DynamicObject notDirectoryError(String path, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.ENOTDIR), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Not a directory - %s", path), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
@@ -1631,6 +1612,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getWeakRefFactory() {
         return weakRefFactory;
+    }
+
+    public Object getObjectSpaceModule() {
+        return objectSpaceModule;
     }
 
 }

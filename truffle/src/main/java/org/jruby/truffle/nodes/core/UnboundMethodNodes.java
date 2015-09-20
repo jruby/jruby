@@ -17,7 +17,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
@@ -29,7 +28,6 @@ import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "UnboundMethod")
@@ -158,9 +156,7 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
-
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
+            final ArgumentDescriptor[] argsDesc = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
             return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
                     argsDesc, true));

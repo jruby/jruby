@@ -1,2 +1,0 @@
-fails:IO#chars yields each character
-fails:IO#chars returns itself

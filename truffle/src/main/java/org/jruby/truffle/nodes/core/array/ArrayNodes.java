@@ -24,6 +24,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
@@ -2250,12 +2251,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maximumClosureFrame.materialize(), null, array, null);
+                    maximumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2279,6 +2282,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2304,7 +2308,7 @@ public abstract class ArrayNodes {
         public MaxBlock(RubyContext context) {
             final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "max");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
@@ -2352,12 +2356,14 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
+            final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
+                    RubyArguments.pack(method, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minimumClosureFrame.materialize(), null, array, null);
+                    minimumClosureFrame.materialize(), method, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -2381,6 +2387,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
@@ -2406,7 +2413,7 @@ public abstract class ArrayNodes {
         public MinBlock(RubyContext context) {
             final SourceSection sourceSection = CoreSourceSection.createCoreSourceSection("Array", "min");
 
-            frameDescriptor = new FrameDescriptor();
+            frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
             sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);

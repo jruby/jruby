@@ -32,7 +32,6 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -395,7 +394,7 @@ public abstract class HashNodes {
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
-            return yieldNode.dispatch(frame, (DynamicObject) block, key);
+            return yieldNode.dispatch(frame, block, key);
         }
 
         @Specialization(guards = {"isPackedHash(hash)", "!isCompareByIdentity(hash)"})
@@ -878,8 +877,6 @@ public abstract class HashNodes {
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
 
-            int conflictsCount = 0;
-
             for (int a = 0; a < getContext().getOptions().HASH_PACKED_ARRAY_MAX; a++) {
                 if (a < storeASize) {
                     boolean merge = true;
@@ -887,7 +884,6 @@ public abstract class HashNodes {
                     for (int b = 0; b < getContext().getOptions().HASH_PACKED_ARRAY_MAX; b++) {
                         if (b < storeBSize) {
                             if (eqlNode.callBoolean(frame, PackedArrayStrategy.getKey(storeA, a), "eql?", null, PackedArrayStrategy.getKey(storeB, b))) {
-                                conflictsCount++;
                                 merge = false;
                                 break;
                             }

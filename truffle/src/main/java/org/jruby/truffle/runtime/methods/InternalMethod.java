@@ -16,12 +16,17 @@ import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraph;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
-public class InternalMethod {
+public class InternalMethod implements ObjectGraphNode {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
@@ -36,7 +41,7 @@ public class InternalMethod {
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
                           DynamicObject declaringModule, Visibility visibility, boolean undefined,
                           CallTarget callTarget, MaterializedFrame declarationFrame) {
-        assert declaringModule == null || RubyGuards.isRubyModule(declaringModule);
+        assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
@@ -133,6 +138,21 @@ public class InternalMethod {
     @Override
     public String toString() {
         return sharedMethodInfo.toString();
+    }
+
+    @Override
+    public Set<DynamicObject> getAdjacentObjects() {
+        final Set<DynamicObject> adjacent = new HashSet<>();
+
+        if (declaringModule  != null) {
+            adjacent.add(declaringModule);
+        }
+
+        if (declarationFrame != null) {
+            adjacent.addAll(ObjectGraph.getObjectsInFrame(declarationFrame));
+        }
+
+        return adjacent;
     }
 
 }

@@ -9,10 +9,11 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
@@ -216,19 +217,21 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        return rubyWithSelf(RubyArguments.getSelf(frame.getArguments()), expression, arguments);
-    }
-
-    protected Object rubyWithSelf(Object self, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupFrame(self, arguments);
-        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), self, evalFrame);
+        final MaterializedFrame evalFrame = setupFrame(frame, arguments);
+        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), evalFrame);
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }
 
-    @TruffleBoundary
-    private MaterializedFrame setupFrame(Object self, Object... arguments) {
+    private MaterializedFrame setupFrame(VirtualFrame frame, Object... arguments) {
+        CompilerDirectives.transferToInterpreter();
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(null, null, self, null, new Object[]{}));
+                RubyArguments.pack(
+                        RubyArguments.getMethod(frame.getArguments()),
+                        null,
+                        RubyArguments.getSelf(frame.getArguments()),
+                        null,
+                        new Object[] {}),
+                new FrameDescriptor(nil()));
 
         if (arguments.length % 2 == 1) {
             throw new UnsupportedOperationException("odd number of name-value pairs for arguments");

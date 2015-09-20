@@ -79,6 +79,22 @@
               </arguments>
             </configuration>
           </execution>
+	  <execution>
+	    <id>check jruby-home</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-classpath</argument>
+		<classpath/>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>p JRuby.runtime.jruby_home</argument>
+              </arguments>
+            </configuration>
+          </execution>
           <execution>
             <id>count installed gems</id>
             <phase>test</phase>

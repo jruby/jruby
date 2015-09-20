@@ -526,6 +526,10 @@ public class JavaMethod extends JavaCallable {
     //    return parameterTypes;
     //}
 
+    public String getName() {
+        return method.getName();
+    }
+
     @Override
     public Class<?>[] getExceptionTypes() {
         return method.getExceptionTypes();
