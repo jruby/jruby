@@ -21,12 +21,16 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
+import jnr.ffi.Runtime;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyNil;
+import org.jruby.RubyString;
+import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -68,7 +72,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
-import jnr.ffi.Runtime;
 
 /**
  * The global state of a running Ruby system.

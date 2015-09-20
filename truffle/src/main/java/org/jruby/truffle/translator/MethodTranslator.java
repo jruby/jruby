@@ -9,9 +9,6 @@
  */
 package org.jruby.truffle.translator;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -41,6 +38,9 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class MethodTranslator extends BodyTranslator {
 

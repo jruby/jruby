@@ -17,7 +17,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.interop.messages.*;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.interop.RubyToIndexLabelNode;
 import org.jruby.truffle.nodes.interop.RubyToIndexLabelNodeGen;

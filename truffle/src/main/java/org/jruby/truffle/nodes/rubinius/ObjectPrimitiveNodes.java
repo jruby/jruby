@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;

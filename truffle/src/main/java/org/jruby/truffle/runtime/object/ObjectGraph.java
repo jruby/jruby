@@ -10,7 +10,10 @@
 package org.jruby.truffle.runtime.object;
 
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
