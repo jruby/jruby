@@ -689,17 +689,17 @@ public abstract class InteropNode extends RubyNode {
             super(context, sourceSection);
             this.name = name;
             this.head = new DispatchHeadNode(context, true, MissingBehavior.CALL_METHOD_MISSING, DispatchAction.CALL_METHOD);
-            this.arguments = new InteropArgumentsNode(context, sourceSection, arity); // [0] is label, [1] is the receiver
-            this.labelIndex = 0;
-            this.receiverIndex = 1;
+            this.arguments = new InteropArgumentsNode(context, sourceSection, arity); // [0] is receiver, [1] is the label
+            this.labelIndex = 1;
+            this.receiverIndex = 0;
         }
 
         @Override
         public Object execute(VirtualFrame frame) {
-            if (name.equals(ForeignAccess.getArguments(frame).get(labelIndex))) {
+            if (name.equals(frame.getArguments()[labelIndex])) {
                 Object[] args = new Object[arguments.getCount(frame)];
                 arguments.executeFillObjectArray(frame, args);
-                return head.dispatch(frame, ForeignAccess.getArguments(frame).get(receiverIndex), ForeignAccess.getArguments(frame).get(labelIndex), null, args);
+                return head.dispatch(frame, frame.getArguments()[receiverIndex], frame.getArguments()[labelIndex], null, args);
             } else {
                 CompilerDirectives.transferToInterpreter();
                 throw new IllegalStateException("Name changed");
@@ -732,7 +732,7 @@ public abstract class InteropNode extends RubyNode {
             // the arguments array looks like:
             // label, a0 (which is the receiver), a1, a2, ...
             for (int i = 2; i < 2 + arity - 1; i++) {
-                arguments[i - 2] = new InteropArgumentNode(context, sourceSection, i);
+                arguments[i - 2] = new InteropArgumentNode(context, sourceSection, i - 1);
             }
         }
 
