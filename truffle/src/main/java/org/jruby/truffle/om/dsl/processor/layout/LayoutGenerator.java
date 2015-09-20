@@ -14,7 +14,6 @@ import org.jruby.truffle.om.dsl.processor.layout.model.NameUtils;
 import org.jruby.truffle.om.dsl.processor.layout.model.PropertyModel;
 
 import javax.lang.model.type.TypeKind;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;

@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import java.util.Arrays;
-
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.truffle.runtime.LexicalScope;
 
-import com.oracle.truffle.api.source.SourceSection;
+import java.util.Arrays;
 
 /**
  * {@link InternalMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores

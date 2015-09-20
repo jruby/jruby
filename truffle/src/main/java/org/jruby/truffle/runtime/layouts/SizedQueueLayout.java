@@ -11,10 +11,9 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import org.jruby.truffle.om.dsl.api.Nullable;
 
 import java.util.concurrent.BlockingQueue;
-
-import org.jruby.truffle.om.dsl.api.Nullable;
 
 @org.jruby.truffle.om.dsl.api.Layout
 public interface SizedQueueLayout extends BasicObjectLayout {

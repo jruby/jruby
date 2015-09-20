@@ -9,10 +9,10 @@
  */
 package org.jruby.truffle.runtime.signal;
 
+import org.jruby.RubySignal;
+
 import java.util.Collections;
 import java.util.Map;
-
-import org.jruby.RubySignal;
 
 public class SignalOperations {
 
