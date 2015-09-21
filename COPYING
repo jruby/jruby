@@ -12,6 +12,9 @@ bytelist (http://github.com/jruby/bytelist),
 yydebug (http://svn.codehaus.org/jruby/trunk/jay/yydebug)
 are released under the same copyright/license.
 
+The Truffle component is copyright (c) 2013-2015 Oracle and/or its
+affiliates and is released under the same licenses.
+
 Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. Most of these libraries and their licenses are listed 
 below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
