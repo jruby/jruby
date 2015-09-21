@@ -114,10 +114,4 @@ public class RubyTckTest extends TruffleTCK {
         return "identity";
     }
 
-    @Ignore
-    @Override
-    @Test
-    public void testPlusWithIntsOnCompoundObject() throws Exception {
-        super.testPlusWithIntsOnCompoundObject();
-    }
 }
