@@ -81,7 +81,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'test-unit.version' => '3.0.3',
               'power_assert.version' => '0.2.3' )
 
-  modules [ 'truffle', 'core', 'lib' ]
+  modules [ 'truffle', 'truffle-om-dsl-api', 'truffle-om-dsl-processor', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',

@@ -29,6 +29,18 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-truffle-om-dsl-processor</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-truffle-om-dsl-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
       <version>0.7</version>
@@ -55,22 +67,6 @@ DO NOT MODIFIY - GENERATED CODE
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
-          <execution>
-            <id>anno</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
-              </includes>
-              <compilerArgs>
-                <compilerArg>-XDignore.symbol.file=true</compilerArg>
-                <compilerArg>-J-ea</compilerArg>
-              </compilerArgs>
-            </configuration>
-          </execution>
           <execution>
             <id>default-compile</id>
             <phase>compile</phase>
@@ -141,6 +137,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <includes>
                       <include>com.oracle:truffle</include>
                       <include>com.oracle:truffle-interop</include>
+                      <include>org.jruby:jruby-truffle-om-dsl-api</include>
                     </includes>
                   </artifactSet>
                   <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
@@ -169,6 +166,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <includes>
                       <include>com.oracle:truffle</include>
                       <include>com.oracle:truffle-interop</include>
+                      <include>org.jruby:jruby-truffle-om-dsl-api</include>
                     </includes>
                   </artifactSet>
                   <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
@@ -197,6 +195,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <includes>
                       <include>com.oracle:truffle</include>
                       <include>com.oracle:truffle-interop</include>
+                      <include>org.jruby:jruby-truffle-om-dsl-api</include>
                     </includes>
                   </artifactSet>
                   <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
@@ -225,6 +224,7 @@ DO NOT MODIFIY - GENERATED CODE
                     <includes>
                       <include>com.oracle:truffle</include>
                       <include>com.oracle:truffle-interop</include>
+                      <include>org.jruby:jruby-truffle-om-dsl-api</include>
                     </includes>
                   </artifactSet>
                   <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>

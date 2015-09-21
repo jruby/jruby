@@ -11,7 +11,6 @@ package org.jruby.truffle.om.dsl.api;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.ObjectType;
-import org.jruby.truffle.om.dsl.processor.OMProcessor;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -190,10 +189,6 @@ import java.lang.annotation.Target;
  * inherit the object type of the inherited shape.
  *
  * The class used should have empty constructor that is protected or more visible.
- *
- * <p><strong>Processing</strong></p>
- *
- * {@link Layout} annotations are processed by {@link OMProcessor}.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)

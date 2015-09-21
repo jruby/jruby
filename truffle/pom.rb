@@ -11,6 +11,8 @@ project 'JRuby Truffle' do
               'jruby.basedir' => '${basedir}/..' )
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
+  jar 'org.jruby:jruby-truffle-om-dsl-processor', '${project.version}', :scope => 'provided'
+  jar 'org.jruby:jruby-truffle-om-dsl-api', '${project.version}', :scope => 'provided'
 
   jar 'com.oracle:truffle:0.7'
   jar 'com.oracle:truffle-dsl-processor:0.7', :scope => 'provided'
@@ -24,12 +26,6 @@ project 'JRuby Truffle' do
           'source' => [ '${base.java.version}', '1.7' ],
           'target' => [ '${base.javac.version}', '1.7' ],
           'useIncrementalCompilation' =>  'false' ) do
-    execute_goals( 'compile',
-                   :id => 'anno',
-                   :phase => 'process-resources',
-                   'includes' => [ 'org/jruby/truffle/om/dsl/processor/OMProcessor.java' ],
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-ea' ] )
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
@@ -67,7 +63,8 @@ project 'JRuby Truffle' do
                        :phase => 'verify',
                        :artifactSet => { :includes => [
                           'com.oracle:truffle',
-                          'com.oracle:truffle-interop' ] },
+                          'com.oracle:truffle-interop',
+                          'org.jruby:jruby-truffle-om-dsl-api' ] },
                        :outputFile => '${project.build.directory}/jruby-truffle-${project.version}-complete.jar' )
       end
     end
