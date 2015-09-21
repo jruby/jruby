@@ -3289,6 +3289,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_to_inum
      *
      */
+    @Deprecated
     public IRubyObject stringToInum(int base, boolean badcheck) {
         ByteList s = this.value;
         return ConvertBytes.byteListToInum(getRuntime(), s, base, badcheck);

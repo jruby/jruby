@@ -605,7 +605,7 @@ public class Sprintf {
                             arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
                             break;
                         case STRING:
-                            arg = ((RubyString)arg).stringToInum(0, true);
+                            arg = ((RubyString)arg).stringToInum19(0, true);
                             break;
                         default:
                             if (arg.respondsTo("to_int")) {
