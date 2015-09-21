@@ -206,7 +206,9 @@ project 'JRuby Core' do
                    :id => 'default-clean',
                    :phase => 'clean',
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
-                                     'includes' => [ '${Constants.java}' ] } ],
+                                     'includes' => [ '${Constants.java}' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'bin/jruby' ] } ],
                    'failOnError' =>  'false' )
   end
 
