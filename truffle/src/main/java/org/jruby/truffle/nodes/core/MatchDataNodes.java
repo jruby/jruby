@@ -204,10 +204,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
 
@@ -218,9 +217,9 @@ public abstract class MatchDataNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, int length) {
-            CompilerDirectives.transferToInterpreter();
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
@@ -228,10 +227,9 @@ public abstract class MatchDataNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubySymbol(index)")
         public Object getIndexSymbol(DynamicObject matchData, DynamicObject index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             try {
                 ByteList value = Layouts.SYMBOL.getByteList(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
@@ -245,10 +243,9 @@ public abstract class MatchDataNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
-            CompilerDirectives.transferToInterpreter();
-
             try {
                 ByteList value = Layouts.STRING.getByteList(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
@@ -275,6 +272,7 @@ public abstract class MatchDataNodes {
             return getIndex(matchData, toIntNode.doInt(frame, index), NotProvided.INSTANCE);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
             final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
@@ -298,13 +296,10 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object begin(DynamicObject matchData, int index) {
-            CompilerDirectives.transferToInterpreter();
-
             if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
 
@@ -322,10 +317,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
             Object[] objects = getCaptures(matchData);
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -340,13 +334,10 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object end(DynamicObject matchData, int index) {
-            CompilerDirectives.transferToInterpreter();
-
             if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
 
@@ -395,6 +386,7 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int length(DynamicObject matchData) {
             return Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length).length;
@@ -412,6 +404,7 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object preMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPre(matchData));
@@ -429,6 +422,7 @@ public abstract class MatchDataNodes {
             taintResultNode = new TaintResultNode(getContext(), getSourceSection());
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object postMatch(DynamicObject matchData) {
             return taintResultNode.maybeTaint(Layouts.MATCH_DATA.getSource(matchData), Layouts.MATCH_DATA.getPost(matchData));
@@ -443,10 +437,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
             Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
@@ -459,10 +452,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            CompilerDirectives.transferToInterpreter();
-
             final ByteList bytes = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
             return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
         }
@@ -475,6 +467,7 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject regexp(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getRegexp(matchData);
@@ -489,6 +482,7 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject rubiniusSource(DynamicObject matchData) {
             return Layouts.MATCH_DATA.getSource(matchData);

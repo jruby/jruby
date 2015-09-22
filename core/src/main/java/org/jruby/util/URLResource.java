@@ -153,7 +153,7 @@ public class URLResource extends AbstractFileResource {
         return Channels.newChannel(inputStream());
     }
 
-    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean isFile) {
+    public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean asFile) {
         ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : RubyInstanceConfig.defaultClassLoader();
         try
         {
@@ -163,7 +163,7 @@ public class URLResource extends AbstractFileResource {
       }
       final URL url = cl.getResource(pathname);
       String[] files = null;
-      if (!isFile) {
+      if (!asFile) {
           files = listClassLoaderFiles(cl, pathname);
           if (files == null) {
               // no .jrubydir found
@@ -238,19 +238,19 @@ public class URLResource extends AbstractFileResource {
         return isDirectory;
     }
 
-    public static FileResource create(Ruby runtime, String pathname, boolean isFile) {
+    public static FileResource create(Ruby runtime, String pathname, boolean asFile) {
         if (!pathname.startsWith(URI)) {
             return null;
         }
         // GH-2005 needs the replace
         pathname = pathname.substring(URI.length()).replace("\\", "/");
         if (pathname.startsWith(CLASSLOADER)) {
-            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()), isFile);
+            return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()), asFile);
         }
-        return createRegularURI(pathname, isFile);
+        return createRegularURI(pathname, asFile);
     }
 
-    private static FileResource createRegularURI(String pathname, boolean isFile) {
+    private static FileResource createRegularURI(String pathname, boolean asFile) {
         URL url;
         try
         {
@@ -270,7 +270,7 @@ public class URLResource extends AbstractFileResource {
             // file does not exists
             return new URLResource(URI + pathname, (URL)null, null);
         }
-        String[] files = isFile ? null : listFiles(pathname);
+        String[] files = asFile ? null : listFiles(pathname);
         if (files != null) {
             return new URLResource(URI + pathname, (URL)null, files);
         }
@@ -324,7 +324,7 @@ public class URLResource extends AbstractFileResource {
     private static String[] listClassLoaderFiles(ClassLoader classloader, String pathname) {
         try
         {
-            String path = pathname + (pathname.equals("") ? ".jrubydir" : "/.jrubydir");
+            String path = pathname + (pathname.equals("") || pathname.endsWith("/") ? ".jrubydir" : "/.jrubydir");
             Enumeration<URL> urls = classloader.getResources(path);
             if (!urls.hasMoreElements()) {
                 return null;

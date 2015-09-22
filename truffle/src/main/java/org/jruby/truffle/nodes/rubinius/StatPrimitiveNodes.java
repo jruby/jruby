@@ -20,6 +20,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -164,7 +165,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -196,7 +197,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatFStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary
@@ -221,7 +222,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatLStatPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeStatNode = new WriteHeadObjectFieldNode(STAT_IDENTIFIER);
+            writeStatNode = WriteHeadObjectFieldNodeGen.create(STAT_IDENTIFIER);
         }
 
         @TruffleBoundary

@@ -286,9 +286,16 @@ public class RubyLexer {
     private LexState lex_state;
     private LexState last_state;
     public ISourcePosition tokline;
+    private int tokenCR;
+
+    public int getTokenCR() {
+        return tokenCR;
+    }
 
     public void newtok(boolean unreadOnce) {
         tokline = getPosition();
+        // We assume all idents are 7BIT until they aren't.
+        tokenCR = StringSupport.CR_7BIT;
 
         tokp = lex_p - (unreadOnce ? 1 : 0); // We use tokp of ripper to mark beginning of tokens.
     }
@@ -2706,7 +2713,12 @@ public class RubyLexer {
     public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
 
-        if (length <= 0) compile_error("invalid multibyte char (" + current_enc + ")");
+
+        if (length <= 0) {
+            compile_error("invalid multibyte char (" + current_enc + ")");
+        } else if (length > 1) {
+            tokenCR = StringSupport.CR_VALID;
+        }
 
         lex_p += length - 1;  // we already read first byte so advance pointer for remainder
 

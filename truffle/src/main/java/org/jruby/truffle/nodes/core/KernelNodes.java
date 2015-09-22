@@ -55,6 +55,7 @@ import org.jruby.truffle.nodes.methods.LookupMethodNode;
 import org.jruby.truffle.nodes.methods.LookupMethodNodeGen;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.pack.parser.FormatParser;
@@ -2116,7 +2117,7 @@ public abstract class KernelNodes {
             super(context, sourceSection);
             isFrozenNode = IsFrozenNodeGen.create(context, sourceSection, null);
             isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
-            writeTaintNode = new WriteHeadObjectFieldNode(Layouts.TAINTED_IDENTIFIER);
+            writeTaintNode = WriteHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER);
         }
 
         @Specialization
