@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.objects.TaintNodeGen;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
@@ -107,7 +108,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected WriteHeadObjectFieldNode createWriteObjectIDNode() {
-            return new WriteHeadObjectFieldNode(Layouts.OBJECT_ID_IDENTIFIER);
+            return WriteHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER);
         }
 
     }

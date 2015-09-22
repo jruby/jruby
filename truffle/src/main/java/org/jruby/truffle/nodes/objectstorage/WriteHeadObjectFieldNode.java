@@ -9,37 +9,140 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import java.util.EnumSet;
+
+import org.jruby.truffle.runtime.Options;
+
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.IncompatibleLocationException;
+import com.oracle.truffle.api.object.Location;
+import com.oracle.truffle.api.object.LocationModifier;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 
-public class WriteHeadObjectFieldNode extends Node {
+public abstract class WriteHeadObjectFieldNode extends Node {
 
     private final Object name;
-    @Child private WriteObjectFieldNode first;
 
     public WriteHeadObjectFieldNode(Object name) {
         this.name = name;
-        first = new UninitializedWriteObjectFieldNode(name);
-    }
-
-    public void execute(DynamicObject object, int value) {
-        first.execute(object, value);
-    }
-
-    public void execute(DynamicObject object, long value) {
-        first.execute(object, value);
-    }
-
-    public void execute(DynamicObject object, double value) {
-        first.execute(object, value);
-    }
-
-    public void execute(DynamicObject object, Object value) {
-        first.execute(object, value);
     }
 
     public Object getName() {
         return name;
+    }
+
+    public abstract void execute(DynamicObject object, Object value);
+
+    @Specialization(
+            guards = {
+                    "location != null",
+                    "object.getShape() == cachedShape",
+                    "location.canSet(object, value)"
+            },
+            assumptions = { "newArray(cachedShape.getValidAssumption(), validLocation)" },
+            limit = "getCacheLimit()")
+    public void writeExistingField(DynamicObject object, Object value,
+            @Cached("object.getShape()") Shape cachedShape,
+            @Cached("getLocation(object, value)") Location location,
+            @Cached("createAssumption()") Assumption validLocation) {
+        try {
+            location.set(object, value, cachedShape);
+        } catch (IncompatibleLocationException e) {
+            // remove this entry
+            validLocation.invalidate();
+            execute(object, value);
+        } catch (FinalLocationException e) {
+            throw new UnsupportedOperationException("write to final location?", e);
+        }
+    }
+
+    @Specialization(
+            guards = {
+                    "!hasField",
+                    "newShape != null", // workaround for DSL bug
+                    "object.getShape() == oldShape",
+                    "location.canSet(object, value)" },
+            assumptions = { "newArray(oldShape.getValidAssumption(), newShape.getValidAssumption(), validLocation)" },
+            limit = "getCacheLimit()")
+    public void writeNewField(DynamicObject object, Object value,
+            @Cached("hasField(object, value)") boolean hasField,
+            @Cached("object.getShape()") Shape oldShape,
+            @Cached("transitionWithNewField(oldShape, value)") Shape newShape,
+            @Cached("getNewLocation(newShape)") Location location,
+            @Cached("createAssumption()") Assumption validLocation) {
+        try {
+            location.set(object, value, oldShape, newShape);
+        } catch (IncompatibleLocationException e) {
+            // remove this entry
+            validLocation.invalidate();
+            execute(object, value);
+        }
+    }
+
+    @TruffleBoundary
+    @Specialization
+    public void writeUncached(DynamicObject object, Object value) {
+        object.updateShape();
+        final Shape shape = object.getShape();
+        final Property property = shape.getProperty(name);
+
+        if (property == null) {
+            object.define(name, value, 0);
+        } else {
+            property.setGeneric(object, value, shape);
+        }
+    }
+
+    protected Location getLocation(DynamicObject object, Object value) {
+        object.updateShape();
+        final Shape oldShape = object.getShape();
+        final Property property = oldShape.getProperty(name);
+
+        if (property != null && property.getLocation().canSet(object, value)) {
+            return property.getLocation();
+        } else {
+            return null;
+        }
+    }
+
+    protected boolean hasField(DynamicObject object, Object value) {
+        return getLocation(object, value) != null;
+    }
+
+    protected Shape transitionWithNewField(Shape oldShape, Object value) {
+        final Location location = oldShape.allocator().locationForValue(value, EnumSet.of(LocationModifier.NonNull));
+        final Property property = Property.create(name, location, 0);
+        return oldShape.addProperty(property);
+    }
+
+    protected Location getNewLocation(Shape newShape) {
+        return newShape.getProperty(name).getLocation();
+    }
+
+    protected Assumption createAssumption() {
+        return Truffle.getRuntime().createAssumption();
+    }
+
+    protected int getCacheLimit() {
+        return Options.FIELD_LOOKUP_CACHE;
+    }
+
+    // workaround for DSL bug
+    protected Assumption[] newArray(Assumption a1, Assumption a2, Assumption a3) {
+        return new Assumption[] { a1, a2, a3 };
+    }
+
+    // workaround for DSL bug
+    protected Assumption[] newArray(Assumption a1, Assumption a2) {
+        return new Assumption[] { a1, a2 };
     }
 
 }
