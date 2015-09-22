@@ -118,9 +118,21 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     protected Shape transitionWithNewField(Shape oldShape, Object value) {
-        final Location location = oldShape.allocator().locationForValue(value, EnumSet.of(LocationModifier.NonNull));
-        final Property property = Property.create(name, location, 0);
-        return oldShape.addProperty(property);
+        // This duplicates quite a bit of DynamicObject.define(), but should be fixed in Truffle soon.
+        final Property oldProperty = oldShape.getProperty(name);
+        if (oldProperty != null) {
+            if (oldProperty.getFlags() == 0 && oldProperty.getLocation().canSet(null, value)) {
+                return oldShape; // already the right shape
+            } else {
+                DynamicObject copy = oldShape.getLayout().newInstance(oldShape);
+                copy.define(name, value, 0);
+                return copy.getShape();
+            }
+        } else {
+            final Location location = oldShape.allocator().locationForValue(value, EnumSet.of(LocationModifier.NonNull));
+            final Property newProperty = Property.create(name, location, 0);
+            return oldShape.addProperty(newProperty);
+        }
     }
 
     protected Location getNewLocation(Shape newShape) {
