@@ -34,6 +34,12 @@ DO NOT MODIFIY - GENERATED CODE
       <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
     </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
   <build>
     <plugins>
       <plugin>
