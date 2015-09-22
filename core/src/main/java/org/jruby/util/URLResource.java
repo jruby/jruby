@@ -265,7 +265,7 @@ public class URLResource extends AbstractFileResource {
         }
         try
         {
-            pathname = pathname + (pathname.equals("") ? ".jrubydir" : "/.jrubydir");
+            pathname = pathname + (pathname.equals("") || pathname.endsWith("/") ? ".jrubydir" : "/.jrubydir");
             Enumeration<URL> urls = classloader.getResources(pathname);
             if (!urls.hasMoreElements()) {
                 return null;

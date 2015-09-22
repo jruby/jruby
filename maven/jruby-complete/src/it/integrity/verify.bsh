@@ -53,3 +53,6 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
+
+expected = "jruby home is a file: falsefalse";
+if ( !log.contains( expected ) ) throw new RuntimeException( "log file does not contain '" + expected + "'" );
