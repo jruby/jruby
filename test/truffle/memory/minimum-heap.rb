@@ -20,11 +20,18 @@ OPTIONS = ARGV[2]
 TOLERANCE = 1024
 UPPER_FACTOR = 4
 
+begin
+  `timeout --help`
+  TIMEOUT = 'timeout'
+rescue
+  TIMEOUT = 'gtimeout'
+end
+
 def can_run(heap)
   print "trying #{heap} KB... "
 
-  output = `#{COMMAND} -J-Xmx#{heap}k #{OPTIONS} 2>&1`
-  can_run = !output.include?('OutOfMemoryError')
+  output = `#{TIMEOUT} 120s #{COMMAND} -J-Xmx#{heap}k #{OPTIONS} 2>&1`
+  can_run = $?.exitstatus != 124 && !output.include?('OutOfMemoryError')
 
   if can_run
     puts "yes"
