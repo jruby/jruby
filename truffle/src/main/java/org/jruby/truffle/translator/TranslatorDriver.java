@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
@@ -191,7 +190,7 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            SourceSection sourceSection = new NullSourceSection("Unknown source section", "(unknown)");
+            SourceSection sourceSection = SourceSection.createUnavailable("Unknown source section", "(unknown)");
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?

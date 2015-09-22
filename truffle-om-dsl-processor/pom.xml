@@ -29,9 +29,9 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle</artifactId>
-      <version>0.7</version>
+      <groupId>com.oracle.truffle</groupId>
+      <artifactId>truffle-api</artifactId>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
     </dependency>
   </dependencies>
   <build>

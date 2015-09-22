@@ -41,17 +41,39 @@ DO NOT MODIFIY - GENERATED CODE
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle</artifactId>
-      <version>0.7</version>
+      <groupId>com.oracle.truffle</groupId>
+      <artifactId>truffle-api</artifactId>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>com.oracle</groupId>
+      <groupId>com.oracle.truffle</groupId>
+      <artifactId>truffle-debug</artifactId>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle.truffle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.7</version>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.oracle.truffle</groupId>
+      <artifactId>truffle-tck</artifactId>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+  <repositories>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
   <build>
     <defaultGoal>package</defaultGoal>
     <resources>
@@ -77,6 +99,7 @@ DO NOT MODIFIY - GENERATED CODE
               <annotationProcessors>
                 <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
+                <annotationProcessor>com.oracle.truffle.dsl.processor.LanguageRegistrationProcessor</annotationProcessor>
               </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>

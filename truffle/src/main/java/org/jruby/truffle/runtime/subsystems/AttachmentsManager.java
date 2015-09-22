@@ -10,18 +10,18 @@
 
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Instrument;
-import com.oracle.truffle.api.instrument.Probe;
-import com.oracle.truffle.api.instrument.StandardInstrumentListener;
-import com.oracle.truffle.api.instrument.StandardSyntaxTag;
+import com.oracle.truffle.api.instrument.*;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.tools.LineToProbesMap;
+import com.oracle.truffle.tools.LineToProbesMap;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.core.ProcNodes;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -48,27 +48,64 @@ public class AttachmentsManager {
     public synchronized void attach(String file, int line, final DynamicObject block) {
         assert RubyGuards.isRubyProc(block);
 
-        final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
+        final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
+
+        final Instrument instrument = Instrument.create(new AdvancedInstrumentResultListener() {
 
             @Override
-            public void enter(Probe probe, Node node, VirtualFrame frame) {
-                final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
-                ProcNodes.rootCall(block, binding);
+            public void notifyResult(Node node, VirtualFrame virtualFrame, Object o) {
             }
 
             @Override
-            public void returnVoid(Probe probe, Node node, VirtualFrame virtualFrame) {
+            public void notifyFailure(Node node, VirtualFrame virtualFrame, RuntimeException e) {
             }
+
+        } , new AdvancedInstrumentRootFactory() {
 
             @Override
-            public void returnValue(Probe probe, Node node, VirtualFrame virtualFrame, Object o) {
+            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
+                return new AdvancedInstrumentRoot() {
+
+                    @Node.Child
+                    private DirectCallNode callNode;
+
+                    @Override
+                    public Object executeRoot(Node node, VirtualFrame frame) {
+                        final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
+
+                        if (callNode == null) {
+                            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                            callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block)));
+
+                            if (callNode.isCallTargetCloningAllowed()) {
+                                callNode.cloneCallTarget();
+                            }
+
+                            if (callNode.isInlinable()) {
+                                callNode.forceInlining();
+                            }
+                        }
+
+                        callNode.call(frame, RubyArguments.pack(
+                                Layouts.PROC.getMethod(block),
+                                Layouts.PROC.getDeclarationFrame(block),
+                                Layouts.PROC.getSelf(block),
+                                Layouts.PROC.getBlock(block),
+                                new Object[]{binding}));
+
+                        return null;
+                    }
+
+                    @Override
+                    public String instrumentationInfo() {
+                        return info;
+                    }
+
+                };
             }
 
-            @Override
-            public void returnExceptional(Probe probe, Node node, VirtualFrame virtualFrame, Exception e) {
-            }
-
-        }, String.format("Truffle::Primitive.attach@%s:%d", file, line));
+        }, null, info);
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 

@@ -12,7 +12,8 @@ project 'JRuby Truffle OM DSL API' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
-  jar 'com.oracle:truffle:0.7'
+  truffle_version = '7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT'
+  jar 'com.oracle.truffle:truffle-api:' + truffle_version
 
   plugin( :compiler,
           'encoding' => 'utf-8',

@@ -10,18 +10,12 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-import com.oracle.truffle.interop.messages.Argument;
-import com.oracle.truffle.interop.messages.Read;
-import com.oracle.truffle.interop.messages.Receiver;
-import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -171,11 +165,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
         if (method == null) {
-            final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
-            if (multilanguage != null) {
-                return multilanguage;
-            }
-
             return createMethodMissingNode(first, methodName, receiverObject);
         }
 
@@ -201,20 +190,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first, Object methodName, Object[] argumentsObjects) {
-        if (getContext().getMultilanguageObject() != null) {
-            CompilerAsserts.neverPartOfCompilation();
-            TruffleObject multilanguageObject = getContext().getMultilanguageObject();
-            ForeignObjectAccessNode readLanguage = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
-            TruffleObject language = (TruffleObject) readLanguage.executeForeign(frame, multilanguageObject, methodName);
-            if (language != null) {
-                // EXECUTE(READ(...),...) on language
-                return new CachedForeignGlobalDispatchNode(getContext(), first, methodName, language, argumentsObjects.length);
-            }
-        }
-        return null;
     }
 
     private DispatchNode createMethodMissingNode(

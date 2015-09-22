@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.ObjectType;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @org.jruby.truffle.om.dsl.api.Layout
@@ -25,6 +26,7 @@ public interface MethodLayout extends BasicObjectLayout {
 
     boolean isMethod(DynamicObject object);
     boolean isMethod(Object object);
+    boolean isMethod(ObjectType objectType);
 
     Object getReceiver(DynamicObject object);
 

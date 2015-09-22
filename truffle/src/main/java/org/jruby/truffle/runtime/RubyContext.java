@@ -19,7 +19,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.tools.CoverageTracker;
+import com.oracle.truffle.tools.CoverageTracker;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Runtime;
 import jnr.ffi.provider.MemoryManager;
@@ -69,6 +69,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
@@ -112,12 +114,20 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private final PrintStream debugStandardOut;
 
+    private Map<String,TruffleObject> exported;
+    private final TruffleLanguage.Env env;
+
     public RubyContext(Ruby runtime) {
+        this(runtime, null);
+    }
+
+    public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
         latestInstance = this;
 
         assert runtime != null;
+        this.env = env;
 
         compilerOptions = Truffle.getRuntime().createCompilerOptions();
 
@@ -161,7 +171,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         coreLibrary.initialize();
 
         featureLoader = new FeatureLoader(this);
-        traceManager = new TraceManager();
+        traceManager = new TraceManager(this);
         atExitManager = new AtExitManager(this);
 
         threadManager = new ThreadManager(this);
@@ -568,11 +578,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return atExitManager;
     }
 
-    @Override
-    public String getLanguageShortName() {
-        return "ruby";
-    }
-
     public TraceManager getTraceManager() {
         return traceManager;
     }
@@ -599,17 +604,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public RubiniusPrimitiveManager getRubiniusPrimitiveManager() {
         return rubiniusPrimitiveManager;
-    }
-
-    // TODO(mg): we need to find a better place for this:
-    private TruffleObject multilanguageObject;
-
-    public TruffleObject getMultilanguageObject() {
-        return multilanguageObject;
-    }
-
-    public void setMultilanguageObject(TruffleObject multilanguageObject) {
-        this.multilanguageObject = multilanguageObject;
     }
 
     public CoverageTracker getCoverageTracker() {
@@ -681,6 +675,25 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public PrintStream getDebugStandardOut() {
         return debugStandardOut;
+    }
+
+    public void exportObject(DynamicObject name, TruffleObject object) {
+        assert RubyGuards.isRubyString(name);
+
+        if (exported == null) {
+            exported = new HashMap<>();
+        }
+        exported.put(name.toString(), object);
+    }
+
+    public Object findExportedObject(String name) {
+        return exported == null ? null : exported.get(name);
+    }
+
+    public Object importObject(DynamicObject name) {
+        assert RubyGuards.isRubyString(name);
+
+        return env.importSymbol(name.toString());
     }
 
     public Options getOptions() {

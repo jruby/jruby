@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.java.JavaInterop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
@@ -171,6 +173,8 @@ public class CoreLibrary {
 
     @CompilationFinal private InternalMethod basicObjectSendMethod;
 
+    private static final TruffleObject systemObject = JavaInterop.asTruffleObject(System.class);
+
     public String getCoreLoadPath() {
         String path = context.getOptions().CORE_LOAD_PATH;
 
@@ -227,7 +231,7 @@ public class CoreLibrary {
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
-        this.node = new CoreLibraryNode(context, new CoreSourceSection("CoreLibrary", "initialize"));
+        this.node = new CoreLibraryNode(context, CoreSourceSection.createCoreSourceSection("CoreLibrary", "initialize"));
 
         // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
         // Therefore, only initialize the core classes and modules here.
@@ -623,6 +627,11 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+
+        // Java interop
+
+        final DynamicObject javaModule = defineModule(truffleModule, "Java");
+        Layouts.MODULE.getFields(javaModule).setConstant(null, "System", systemObject);
     }
 
     private void initializeSignalConstants() {
@@ -749,10 +758,16 @@ public class CoreLibrary {
             } else {
                 return falseClass;
             }
+        } else if (object instanceof Byte) {
+            return fixnumClass;
+        } else if (object instanceof Short) {
+            return fixnumClass;
         } else if (object instanceof Integer) {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
+        } else if (object instanceof Float) {
+            return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {
@@ -772,10 +787,16 @@ public class CoreLibrary {
             } else {
                 return falseClass;
             }
+        } else if (object instanceof Byte) {
+            return fixnumClass;
+        } else if (object instanceof Short) {
+            return fixnumClass;
         } else if (object instanceof Integer) {
             return fixnumClass;
         } else if (object instanceof Long) {
             return fixnumClass;
+        } else if (object instanceof Float) {
+            return floatClass;
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {

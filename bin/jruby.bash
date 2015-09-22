@@ -200,13 +200,22 @@ JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
-set -- $JRUBY_OPTS "$@"
+
+# Wrap $JRUBY_OPTS in "" to preserve options with spaces. However, wrapping in "" will ensure there's always a value.
+# We only want to add $JRUBY_OPTS to $@ if it's non-empty, so check that first.
+if [ "x$JRUBY_OPTS" != x ]; then
+  set -- "$JRUBY_OPTS" "$@"
+fi
+
 while [ $# -gt 0 ]
 do
-    case "$1" in
+    # String leading and trailing whitespace from the option.
+    option="$(echo -e "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+
+    case "$option" in
     # Stuff after '-J' in this argument goes to JVM
     -J*)
-        val=${1:2}
+        val=${option:2}
         if [ "${val:0:4}" = "-Xmx" ]; then
             JAVA_MEM=$val
         elif [ "${val:0:4}" = "-Xms" ]; then
@@ -215,11 +224,11 @@ do
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
             $JAVACMD -help
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-X" ]; then
             $JAVACMD -X
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-classpath" ]; then
             CP="$CP$CP_DELIMITER$2"
@@ -235,7 +244,14 @@ do
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=$val
             fi
-            java_args=("${java_args[@]}" "${1:2}")
+
+            # Check if the option has an embedded space and the option is not quoted (via a check of the last char in
+            # the option). NB: ": -1" is not a typo. If you delete that space character things will break.
+            if [[ "$option" =~ ' ' && (${option: -1} != "'" && ${option: -1} != '"') ]]; then
+              java_args=("${java_args[@]}" "'${option:2}'")
+            else
+              java_args=("${java_args[@]}" "${option:2}")
+            fi
         fi
         ;;
      # Pass -X... and -X? search options through
@@ -243,7 +259,7 @@ do
         ruby_args=("${ruby_args[@]}" "$1") ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
-        val=${1:2}
+        val=${option:2}
         if expr "$val" : '.*[.]' > /dev/null; then
           java_args=("${java_args[@]}" "-Djruby.${val}")
         else
@@ -271,7 +287,7 @@ do
           else
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
-        fi 
+        fi
         java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
@@ -396,7 +412,7 @@ else
 
     exit $JRUBY_STATUS
   else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    eval "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
