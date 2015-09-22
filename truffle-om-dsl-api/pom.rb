@@ -12,6 +12,9 @@ project 'JRuby Truffle OM DSL API' do
 
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
+  repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',
+              :id => 'truffle' )
+
   truffle_version = '7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT'
   jar 'com.oracle.truffle:truffle-api:' + truffle_version
 
