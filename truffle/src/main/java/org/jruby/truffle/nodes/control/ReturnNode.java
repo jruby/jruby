@@ -33,8 +33,6 @@ public class ReturnNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        //ruby(frame, "Truffle::Primitive.debug_print 'HERE!!'; Truffle::Primitive.print_interleaved_backtrace");
-        //System.err.println(getEncapsulatingSourceSection().getShortDescription());
         throw new ReturnException(returnID, value.execute(frame));
     }
 
