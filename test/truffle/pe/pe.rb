@@ -47,24 +47,28 @@ end
 example "14", 14
 counter_example "rand"
 
-require_relative 'language/controlflow_pe.rb'
-require_relative 'language/closures_pe.rb'
-require_relative 'language/constant_pe.rb'
-require_relative 'language/ivar_pe.rb'
-require_relative 'language/metaprogramming_pe.rb'
-require_relative 'language/super_pe.rb'
-require_relative 'core/truefalse_pe.rb'
-require_relative 'core/fixnum_pe.rb'
-require_relative 'core/float_pe.rb'
-require_relative 'core/symbol_pe.rb'
-require_relative 'core/method_pe.rb'
-require_relative 'core/array_pe.rb'
-require_relative 'core/hash_pe.rb'
-require_relative 'core/eval_pe.rb'
-require_relative 'core/send_pe.rb'
-require_relative 'core/objectid_pe.rb'
-require_relative 'core/binding_pe.rb'
-require_relative 'macro/pushing_pixels_pe.rb'
+if ARGV.first
+  require File.expand_path(ARGV.first)
+else
+  require_relative 'language/controlflow_pe.rb'
+  require_relative 'language/closures_pe.rb'
+  require_relative 'language/constant_pe.rb'
+  require_relative 'language/ivar_pe.rb'
+  require_relative 'language/metaprogramming_pe.rb'
+  require_relative 'language/super_pe.rb'
+  require_relative 'core/truefalse_pe.rb'
+  require_relative 'core/fixnum_pe.rb'
+  require_relative 'core/float_pe.rb'
+  require_relative 'core/symbol_pe.rb'
+  require_relative 'core/method_pe.rb'
+  require_relative 'core/array_pe.rb'
+  require_relative 'core/hash_pe.rb'
+  require_relative 'core/eval_pe.rb'
+  require_relative 'core/send_pe.rb'
+  require_relative 'core/objectid_pe.rb'
+  require_relative 'core/binding_pe.rb'
+  require_relative 'macro/pushing_pixels_pe.rb'
+end
 
 tested = 0
 failed = 0

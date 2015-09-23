@@ -333,7 +333,8 @@ module Commands
   end
 
   def test_pe(*args)
-    run('--graal', *args, 'test/truffle/pe/pe.rb')
+    file = args.pop if args.last and File.exist?(args.last)
+    run('--graal', *args, 'test/truffle/pe/pe.rb', *file)
   end
   private :test_pe
 
