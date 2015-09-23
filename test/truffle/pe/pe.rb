@@ -117,7 +117,7 @@ EXAMPLES.each do |code, expected_constant, tagged|
     end
   end
 
-  test_thread.join(5)
+  test_thread.join(TIMEOUT)
 
   unless finished
     report 'TIMEOUT', code, "didn't compile in time so I don't know if it's constant or not"
