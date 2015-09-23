@@ -6,8 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "14.send(:*, 2)"
+example "14.send(:*, 2)", 28
 
-example "14.send('*', 2)"
+example "14.send('*', 2)", 28
 
-example "14.send((')'.ord + 1).chr, 2)"
+example "14.send((')'.ord + 1).chr, 2)", 28

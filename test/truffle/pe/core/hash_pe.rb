@@ -6,6 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "({a: 0, b: 1, c: 2})[:b]"
+example "({a: 0, b: 1, c: 2})[:b]", 1
 
-example "({a: 0, b: 1, c: 2}).map{ |k, v| v }[0]"
+example "({a: 0, b: 1, c: 2}).map{ |k, v| v }[0]", 0

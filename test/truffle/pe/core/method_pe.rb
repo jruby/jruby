@@ -6,10 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "1.method(:abs).call"
-example "1.method(:abs).unbind.bind(-2).call"
-
-# These 3 are not constant currently since they produce new objects
-tagged_example "1.method(:abs)"
-tagged_example "1.method(:abs).unbind"
-tagged_example "1.method(:abs).unbind.bind(-2)"
+example "1.method(:abs).call", 1
+example "1.method(:abs).unbind.bind(-2).call", 2

@@ -6,19 +6,19 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "14.2"
+example "14.2", 14.2
 
-example "14.0 + 2"
+example "14.0 + 2", 16.0
 counter_example "14.0 + 0xfffffffffffffffffffffffffffffff"
-example "14.0 + 2.0"
+example "14.0 + 2.0", 16.0
 counter_example "14.0 + rand"
 
-example "14.0 * 2"
+example "14.0 * 2", 28.0
 counter_example "14.0 * 0xfffffffffffffffffffffffffffffff"
-example "14.0 * 2.0"
+example "14.0 * 2.0", 28.0
 counter_example "14.0 * rand"
 
-example "14.0 / 2"
+example "14.0 / 2", 7.0
 counter_example "14.0 / 0xfffffffffffffffffffffffffffffff"
-example "14.0 / 2.0"
+example "14.0 / 2.0", 7.0
 counter_example "14.0 / rand"

@@ -6,12 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "eval('14')"
+example "eval('14')", 14
 
-example "eval('14 + 2')"
+example "eval('14 + 2')", 16
 
-example "eval('[1, 2, 3]')[1]"
+example "eval('[1, 2, 3]')[1]", 2
 
-example "eval([1, 2, 3].inspect)[1]"
+example "eval([1, 2, 3].inspect)[1]", 2
 
 counter_example "eval(rand.to_s)"
