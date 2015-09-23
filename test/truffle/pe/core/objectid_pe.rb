@@ -6,7 +6,7 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-tagged_example "nil.object_id"
+example "nil.object_id"
 
 example "true.object_id"
 

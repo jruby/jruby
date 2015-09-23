@@ -83,13 +83,13 @@ public class URLResourceTest extends TestCase {
         FileResource resource = URLResource.create((Ruby) null,
                 "uri:classloader:/somedir/", false);
 
-        assertNotNull( resource );
-        assertFalse( resource.isFile() );
-        assertTrue( resource.isDirectory() );
-        assertTrue( resource.exists() );
-        assertEquals( Arrays.asList( resource.list() ),
-                Arrays.asList( new String[] { ".", "dir_without_listing",
-                        "dir_with_listing" } ) );
+        assertNotNull(resource);
+        assertFalse(resource.isFile());
+        assertTrue(resource.isDirectory());
+        assertTrue(resource.exists());
+        assertEquals(Arrays.asList(resource.list()),
+                Arrays.asList(new String[]{".", "dir_without_listing",
+                        "dir_with_listing"}));
     }
 
     public void testNoneDirectoryClassloader()

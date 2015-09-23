@@ -129,7 +129,8 @@ public abstract class WriteHeadObjectFieldNode extends Node {
                 return copy.getShape();
             }
         } else {
-            final Location location = oldShape.allocator().locationForValue(value, EnumSet.of(LocationModifier.NonNull));
+            final Location location = oldShape.allocator().locationForValue(value,
+                    EnumSet.of(LocationModifier.Final, LocationModifier.NonNull));
             final Property newProperty = Property.create(name, location, 0);
             return oldShape.addProperty(newProperty);
         }
