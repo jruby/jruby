@@ -26,8 +26,8 @@ module IVarFixtures
   end
 end
 
-example "IVarFixtures::Foo.new(1,2).a"
-example "IVarFixtures::Foo.new(1,2).b"
+example "IVarFixtures::Foo.new(1,2).a", 1
+example "IVarFixtures::Foo.new(1,2).b", 2
 
-example "IVarFixtures::Foo.new(1,2).reset_b(42).b"
-example "IVarFixtures::Foo.new(1,2).reset_b([]).b.empty?"
+example "IVarFixtures::Foo.new(1,2).reset_b(42).b", 42
+example "IVarFixtures::Foo.new(1,2).reset_b([]).b.empty?", true

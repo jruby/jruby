@@ -6,4 +6,4 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)"
+tagged_example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)", 14
