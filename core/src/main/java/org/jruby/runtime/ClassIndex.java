@@ -71,5 +71,5 @@ public enum ClassIndex {
     CONTINUATION,
     BASICOBJECT,
     // insert new values here
-    MAX_CLASSES;
+    MAX_CLASSES, Layouts;
 }

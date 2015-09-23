@@ -36,6 +36,9 @@ import org.jruby.truffle.nodes.core.array.ArrayNodesFactory;
 import org.jruby.truffle.nodes.core.fixnum.FixnumNodesFactory;
 import org.jruby.truffle.nodes.core.hash.HashNodesFactory;
 import org.jruby.truffle.nodes.ext.*;
+import org.jruby.truffle.nodes.ext.psych.PsychEmitterNodesFactory;
+import org.jruby.truffle.nodes.ext.psych.PsychParserNodes;
+import org.jruby.truffle.nodes.ext.psych.PsychParserNodesFactory;
 import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
@@ -155,6 +158,8 @@ public class CoreLibrary {
     private final DynamicObject weakRefClass;
     private final DynamicObjectFactory weakRefFactory;
     private final DynamicObject objectSpaceModule;
+    private final DynamicObject psychModule;
+    private final DynamicObject psychParserClass;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -428,6 +433,11 @@ public class CoreLibrary {
         defineModule(truffleModule, "Zlib");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
+        psychModule = defineModule(truffleModule, "Psych");
+        psychParserClass = defineClass(psychModule, objectClass, "Parser");
+        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER_LAYOUT.createParserShape(psychParserClass, psychParserClass));
+        defineClass(psychModule, objectClass, "Emitter");
+
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
 
@@ -550,6 +560,8 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(ZlibNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(ObjSpaceNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
         Main.printTruffleTimeMetric("after-load-truffle-nodes");
 
         coreMethodNodeManager.allMethodInstalled();
@@ -623,6 +635,13 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
+
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
+
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "ANY", PsychParserNodes.ANY_ENCODING);
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF8", PsychParserNodes.UTF8_ENCODING);
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16LE", PsychParserNodes.UTF16LE_ENCODING);
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16BE", PsychParserNodes.UTF16BE_ENCODING);
     }
 
     private void initializeSignalConstants() {
@@ -921,6 +940,7 @@ public class CoreLibrary {
 
     public DynamicObject unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
+        new Exception().printStackTrace();
         return localJumpError("unexpected return", currentNode);
     }
 

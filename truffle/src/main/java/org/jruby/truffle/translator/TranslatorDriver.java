@@ -167,7 +167,9 @@ public class TranslatorDriver {
 
         // Catch return
 
-        truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        if (parserContext != ParserContext.EVAL) {
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        }
 
         // Catch retry
 
