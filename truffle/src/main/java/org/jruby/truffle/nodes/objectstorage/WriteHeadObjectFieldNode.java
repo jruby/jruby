@@ -75,7 +75,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     public void writeNewField(DynamicObject object, Object value,
             @Cached("hasField(object, value)") boolean hasField,
             @Cached("object.getShape()") Shape oldShape,
-            @Cached("transitionWithNewField(oldShape, value)") Shape newShape,
+            @Cached("transitionWithNewField(object, value)") Shape newShape,
             @Cached("getNewLocation(newShape)") Location location,
             @Cached("createAssumption()") Assumption validLocation) {
         try {
@@ -117,14 +117,16 @@ public abstract class WriteHeadObjectFieldNode extends Node {
         return getLocation(object, value) != null;
     }
 
-    protected Shape transitionWithNewField(Shape oldShape, Object value) {
+    protected Shape transitionWithNewField(DynamicObject object, Object value) {
+        final Shape oldShape = object.getShape();
+
         // This duplicates quite a bit of DynamicObject.define(), but should be fixed in Truffle soon.
         final Property oldProperty = oldShape.getProperty(name);
         if (oldProperty != null) {
             if (oldProperty.getFlags() == 0 && oldProperty.getLocation().canSet(null, value)) {
                 return oldShape; // already the right shape
             } else {
-                DynamicObject copy = oldShape.getLayout().newInstance(oldShape);
+                DynamicObject copy = object.copy(oldShape);
                 copy.define(name, value, 0);
                 return copy.getShape();
             }
