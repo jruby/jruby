@@ -636,8 +636,6 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
 
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
-
         Layouts.MODULE.getFields(psychParserClass).setConstant(node, "ANY", PsychParserNodes.ANY_ENCODING);
         Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF8", PsychParserNodes.UTF8_ENCODING);
         Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16LE", PsychParserNodes.UTF16LE_ENCODING);
