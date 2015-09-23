@@ -32,18 +32,6 @@ public class URLResourceTest extends TestCase {
                 Arrays.asList(new String[] {".", "dir_without_listing", "dir_with_listing"}));
     }
 
-    public void testDirectoryWithTrailingSlash(){
-        String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        FileResource resource = URLResource.create((Ruby) null, "uri:" + uri + "/");
-
-        assertNotNull(resource );
-        assertFalse(resource.isFile());
-        assertTrue(resource.isDirectory());
-        assertTrue(resource.exists());
-        assertEquals(Arrays.asList(resource.list()),
-                Arrays.asList(new String[] {".", "dir_without_listing", "dir_with_listing"}));
-    }
-
     public void testNoneDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/dir_without_listing" ).toExternalForm();
         FileResource resource = URLResource.create((Ruby) null, "uri:" + uri, false);
@@ -102,20 +90,6 @@ public class URLResourceTest extends TestCase {
         assertEquals(Arrays.asList(resource.list()),
                 Arrays.asList(new String[]{".", "dir_without_listing",
                         "dir_with_listing"}));
-    }
-
-    public void testDirectoryWithTrailingClassloader()
-    {
-        FileResource resource = URLResource.create((Ruby) null,
-                "uri:classloader:/somedir/");
-
-        assertNotNull( resource );
-        assertFalse( resource.isFile() );
-        assertTrue( resource.isDirectory() );
-        assertTrue( resource.exists() );
-        assertEquals( Arrays.asList( resource.list() ),
-                Arrays.asList( new String[] { ".", "dir_without_listing",
-                        "dir_with_listing" } ) );
     }
 
     public void testNoneDirectoryClassloader()
