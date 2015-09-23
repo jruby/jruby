@@ -69,6 +69,7 @@ else
   require_relative 'core/send_pe.rb'
   require_relative 'core/objectid_pe.rb'
   require_relative 'core/binding_pe.rb'
+  require_relative 'core/frozen_pe.rb'
   require_relative 'macro/pushing_pixels_pe.rb'
 end
 
