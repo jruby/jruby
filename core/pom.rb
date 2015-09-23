@@ -274,28 +274,31 @@ project 'JRuby Core' do
     end
   end
 
-  # TODO clean happens so often with me that this makes no sense. a copy
-  # always is as good. just keep it as it is for now.
-  copy_jruby_bash = [ :copy,
-                      { :sourceFile => '${jruby.basedir}/bin/jruby.bash',
-                        :destinationFile => '${jruby.basedir}/bin/jruby' } ]
   profile 'jruby.bash' do
 
     activation do
       file( :missing => '../bin/jruby' )
     end
 
-    phase :initialize do
-      plugin 'com.coderplus.maven.plugins:copy-rename-maven-plugin' do
-        execute_goal( *copy_jruby_bash )
-      end
+    plugin :antrun do
+      execute_goals( 'run',
+                     :id => 'copy',
+                     :phase => 'initialize',
+                     'tasks' => {
+                       'exec' => {
+                         '@executable' =>  '/bin/sh',
+                         '@osfamily' =>  'unix',
+                         'arg' => {
+                           '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
+                         }
+                       },
+                       'chmod' => {
+                         '@file' =>  '${jruby.basedir}/bin/jruby',
+                         '@perm' =>  '755'
+                       }
+                     } )
     end
-  end
 
-  phase :clean do
-    plugin 'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0.1' do
-      execute_goal( *copy_jruby_bash )
-    end
   end
 
   profile 'native' do
