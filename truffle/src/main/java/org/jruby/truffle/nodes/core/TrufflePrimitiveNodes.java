@@ -542,6 +542,28 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "print_backtrace", onSingleton = true)
+    public abstract static class PrintBacktraceNode extends CoreMethodNode {
+
+        public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject printBacktrace() {
+            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
+                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+
+            for (String line : rubyBacktrace) {
+                System.err.println(line);
+            }
+
+            return nil();
+        }
+
+    }
+
     @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)
     public abstract static class PrintInterleavedBacktraceNode extends CoreMethodNode {
 
