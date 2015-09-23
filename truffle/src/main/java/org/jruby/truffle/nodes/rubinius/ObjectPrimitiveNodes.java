@@ -83,7 +83,7 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.floatToID(getContext(), value);
         }
 
-        @Specialization
+        @Specialization(guards = "!isNil(object)")
         public long objectID(DynamicObject object,
                 @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode,
                 @Cached("createWriteObjectIDNode()") WriteHeadObjectFieldNode writeObjectIdNode) {
