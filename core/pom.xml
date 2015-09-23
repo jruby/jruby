@@ -597,6 +597,23 @@ DO NOT MODIFIY - GENERATED CODE
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>com.coderplus.maven.plugins</groupId>
+        <artifactId>copy-rename-maven-plugin</artifactId>
+        <version>1.0.1</version>
+        <executions>
+          <execution>
+            <phase>clean</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <sourceFile>${jruby.basedir}/bin/jruby.bash</sourceFile>
+              <destinationFile>${jruby.basedir}/bin/jruby</destinationFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -874,21 +891,17 @@ DO NOT MODIFIY - GENERATED CODE
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
+            <groupId>com.coderplus.maven.plugins</groupId>
+            <artifactId>copy-rename-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>copy</id>
                 <phase>initialize</phase>
                 <goals>
-                  <goal>run</goal>
+                  <goal>copy</goal>
                 </goals>
                 <configuration>
-                  <tasks>
-                    <exec executable="/bin/sh" osfamily="unix">
-                      <arg line="-c 'cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
-                    </exec>
-                    <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
-                  </tasks>
+                  <sourceFile>${jruby.basedir}/bin/jruby.bash</sourceFile>
+                  <destinationFile>${jruby.basedir}/bin/jruby</destinationFile>
                 </configuration>
               </execution>
             </executions>
