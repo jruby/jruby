@@ -26,6 +26,8 @@
 #
 #   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal test.rb
 
+TIMEOUT = 10
+
 EXAMPLES = []
 
 def example(code, expected_value, expected_constant=true, tagged=false)
@@ -129,7 +131,7 @@ EXAMPLES.each do |code, expected_value, expected_constant, tagged|
     end
   end
 
-  test_thread.join(5)
+  test_thread.join(TIMEOUT)
 
   unless finished
     report 'TIMEOUT', code, "didn't compile in time so I don't know if it's constant or not"
