@@ -32,12 +32,16 @@ def example(code, expected_value, expected_constant=true, tagged=false)
   EXAMPLES << [code, expected_value, expected_constant, tagged]
 end
 
+def tagged_example(code, expected_value)
+  example(code, expected_value, true, true)
+end
+
 def counter_example(code)
   example(code, nil, false, false)
 end
 
-def tagged_example(code, expected_value)
-  example(code, expected_value, false, true)
+def tagged_counter_example(code)
+  example(code, nil, false, true)
 end
 
 example "14", 14

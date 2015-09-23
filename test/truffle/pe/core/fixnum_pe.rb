@@ -9,7 +9,7 @@
 example "14", 14
 
 example "14 + 2", 16
-# counter_example "14 + 0xfffffffffffffffffffffffffffffff" # Graal error
+tagged_counter_example "14 + 0xfffffffffffffffffffffffffffffff" # Graal error
 example "14 + 2.0", 16.0
 counter_example "14 + rand"
 
