@@ -7,29 +7,29 @@
 # GNU Lesser General Public License version 2.1
 
 
-example "true.frozen?"
+example "true.frozen?", true
 
-example "false.frozen?"
+example "false.frozen?", true
 
 # int
-example "3.frozen?"
+example "3.frozen?", true
 
 # long
-example "(2**62).frozen?"
+example "(2**62).frozen?", true
 
 # Bignum
-example "(10 ** 100).frozen?"
+example "(10 ** 100).frozen?", true
 
 # float
-example "3.5.frozen?"
+example "3.5.frozen?", true
 
 # double
-example "(2**62).to_f.frozen?"
+example "(2**62).to_f.frozen?", true
 
-example ":symbol.frozen?"
+example ":symbol.frozen?", true
 
-example "nil.frozen?"
+example "nil.frozen?", true
 
-example "'abc'.frozen?"
+example "'abc'.frozen?", false
 
-example "'abc'.freeze.frozen?"
+example "'abc'.freeze.frozen?", true

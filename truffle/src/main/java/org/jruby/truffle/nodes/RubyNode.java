@@ -9,12 +9,21 @@
  */
 package org.jruby.truffle.nodes;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
+import jnr.ffi.provider.MemoryManager;
+import jnr.posix.POSIX;
+
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyString;
+import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
+import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.sockets.NativeSockets;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
+
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
@@ -22,18 +31,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
-import jnr.ffi.provider.MemoryManager;
-import jnr.posix.POSIX;
-import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
-import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.sockets.NativeSockets;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -215,31 +212,7 @@ public abstract class RubyNode extends Node {
     // ruby() helper
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        final MaterializedFrame evalFrame = setupFrame(frame, arguments);
-        final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), evalFrame);
-        return getContext().eval(expression, binding, true, "inline-ruby", this);
-    }
-
-    private MaterializedFrame setupFrame(VirtualFrame frame, Object... arguments) {
-        CompilerDirectives.transferToInterpreter();
-        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
-                RubyArguments.pack(
-                        RubyArguments.getMethod(frame.getArguments()),
-                        null,
-                        RubyArguments.getSelf(frame.getArguments()),
-                        null,
-                        new Object[] {}),
-                new FrameDescriptor(nil()));
-
-        if (arguments.length % 2 == 1) {
-            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
-        }
-
-        for (int n = 0; n < arguments.length; n += 2) {
-            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
-        }
-
-        return evalFrame;
+        return getContext().inlineRubyHelper(this, frame, expression, arguments);
     }
 
 }
