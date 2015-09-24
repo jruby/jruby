@@ -44,8 +44,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     @Specialization(
             guards = {
                     "location != null",
-                    "object.getShape() == cachedShape",
-                    "location.canSet(object, value)"
+                    "object.getShape() == cachedShape"
             },
             assumptions = { "newArray(cachedShape.getValidAssumption(), validLocation)" },
             limit = "getCacheLimit()")
@@ -55,12 +54,10 @@ public abstract class WriteHeadObjectFieldNode extends Node {
             @Cached("createAssumption()") Assumption validLocation) {
         try {
             location.set(object, value, cachedShape);
-        } catch (IncompatibleLocationException e) {
+        } catch (IncompatibleLocationException | FinalLocationException e) {
             // remove this entry
             validLocation.invalidate();
             execute(object, value);
-        } catch (FinalLocationException e) {
-            throw new UnsupportedOperationException("write to final location?", e);
         }
     }
 
@@ -68,8 +65,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
             guards = {
                     "!hasField",
                     "newShape != null", // workaround for DSL bug
-                    "object.getShape() == oldShape",
-                    "location.canSet(object, value)" },
+                    "object.getShape() == oldShape" },
             assumptions = { "newArray(oldShape.getValidAssumption(), newShape.getValidAssumption(), validLocation)" },
             limit = "getCacheLimit()")
     public void writeNewField(DynamicObject object, Object value,
