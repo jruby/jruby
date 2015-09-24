@@ -6,10 +6,8 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-
 example "true.frozen?", true
-
-example "false.frozen?", true
+example "nil.frozen?", true
 
 # int
 example "3.frozen?", true
@@ -20,16 +18,12 @@ example "(2**62).frozen?", true
 # Bignum
 example "(10 ** 100).frozen?", true
 
-# float
+# double
 example "3.5.frozen?", true
 
-# double
-example "(2**62).to_f.frozen?", true
-
+# Symbols are always frozen
 example ":symbol.frozen?", true
 
-example "nil.frozen?", true
-
+# Object
 example "'abc'.frozen?", false
-
 example "'abc'.freeze.frozen?", true
