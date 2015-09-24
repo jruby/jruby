@@ -12,6 +12,8 @@ package org.jruby.truffle.runtime.layouts;
 import com.oracle.truffle.api.object.HiddenKey;
 import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayout;
 import org.jruby.truffle.runtime.layouts.ext.BigDecimalLayoutImpl;
+import org.jruby.truffle.runtime.layouts.ext.psych.EmitterLayout;
+import org.jruby.truffle.runtime.layouts.ext.psych.EmitterLayoutImpl;
 import org.jruby.truffle.runtime.layouts.ext.psych.ParserLayout;
 import org.jruby.truffle.runtime.layouts.ext.psych.ParserLayoutImpl;
 import org.jruby.truffle.runtime.layouts.rubinius.*;
@@ -53,7 +55,8 @@ public abstract class Layouts {
     public static final TimeLayout TIME = TimeLayoutImpl.INSTANCE;
     public static final UnboundMethodLayout UNBOUND_METHOD = UnboundMethodLayoutImpl.INSTANCE;
     public static final WeakRefLayout WEAK_REF_LAYOUT = WeakRefLayoutImpl.INSTANCE;
-    public static final ParserLayout PSYCH_PARSER_LAYOUT = ParserLayoutImpl.INSTANCE;
+    public static final ParserLayout PSYCH_PARSER = ParserLayoutImpl.INSTANCE;
+    public static final EmitterLayout PSYCH_EMITTER = EmitterLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

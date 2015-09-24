@@ -435,8 +435,10 @@ public class CoreLibrary {
         defineModule(truffleModule, "Etc");
         psychModule = defineModule(truffleModule, "Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
-        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER_LAYOUT.createParserShape(psychParserClass, psychParserClass));
-        defineClass(psychModule, objectClass, "Emitter");
+        Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER.createParserShape(psychParserClass, psychParserClass));
+        final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");
+        final DynamicObject psychEmitterClass = defineClass(psychModule, psychHandlerClass, "Emitter");
+        Layouts.CLASS.setInstanceFactoryUnsafe(psychEmitterClass, Layouts.PSYCH_EMITTER.createEmitterShape(psychEmitterClass, psychEmitterClass));
 
         bigDecimalClass = defineClass(truffleModule, numericClass, "BigDecimal");
         Layouts.CLASS.setInstanceFactoryUnsafe(bigDecimalClass, Layouts.BIG_DECIMAL.createBigDecimalShape(bigDecimalClass, bigDecimalClass));
@@ -636,10 +638,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
         Layouts.MODULE.getFields(encodingConverterClass).setConstant(node, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
 
-        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "ANY", PsychParserNodes.ANY_ENCODING);
-        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF8", PsychParserNodes.UTF8_ENCODING);
-        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16LE", PsychParserNodes.UTF16LE_ENCODING);
-        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16BE", PsychParserNodes.UTF16BE_ENCODING);
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "ANY", PsychParserNodes.YAMLEncoding.YAML_ANY_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF8", PsychParserNodes.YAMLEncoding.YAML_UTF8_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16LE", PsychParserNodes.YAMLEncoding.YAML_UTF16LE_ENCODING.ordinal());
+        Layouts.MODULE.getFields(psychParserClass).setConstant(node, "UTF16BE", PsychParserNodes.YAMLEncoding.YAML_UTF16BE_ENCODING.ordinal());
     }
 
     private void initializeSignalConstants() {

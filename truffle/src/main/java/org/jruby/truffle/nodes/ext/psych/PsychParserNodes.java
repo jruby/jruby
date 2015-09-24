@@ -7,8 +7,10 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  *
- * Some of this code is modifed from the Psych JRuby extension module
+ * This code is modified from the Psych JRuby extension module
  * implementation with the following header:
+ *
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -41,6 +43,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 import org.jruby.RubyEncoding;
@@ -55,7 +59,6 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.IOInputStream;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
@@ -76,10 +79,18 @@ import java.util.Map;
 @CoreClass(name = "Truffle::Psych::Parser")
 public abstract class PsychParserNodes {
 
-    public static final int ANY_ENCODING = 0;
-    public static final int UTF8_ENCODING = 1;
-    public static final int UTF16LE_ENCODING = 2;
-    public static final int UTF16BE_ENCODING = 3;
+    public enum YAMLEncoding {
+        YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
+        YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
+        YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
+        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE), ;
+
+        YAMLEncoding(Encoding encoding) {
+            this.encoding = encoding;
+        }
+
+        public final Encoding encoding;
+    }
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
@@ -128,7 +139,7 @@ public abstract class PsychParserNodes {
 
             try {
                 parser = new ParserImpl(readerFor(yaml));
-                Layouts.PSYCH_PARSER_LAYOUT.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
 
                 if (isNil(path) && (boolean) ruby("yaml.respond_to? :path", "yaml", yaml)) {
                     path = (DynamicObject) ruby("yaml.path", "yaml", yaml);
@@ -138,11 +149,11 @@ public abstract class PsychParserNodes {
 
                 while (true) {
                     Event event = parser.getEvent();
-                    Layouts.PSYCH_PARSER_LAYOUT.setEvent(parserObject, event);
+                    Layouts.PSYCH_PARSER.setEvent(parserObject, event);
 
                     // FIXME: Event should expose a getID, so it can be switched
                     if (event.is(Event.ID.StreamStart)) {
-                        invoke(handler, "start_stream", ANY_ENCODING);
+                        invoke(handler, "start_stream", YAMLEncoding.YAML_ANY_ENCODING.ordinal());
                     } else if (event.is(Event.ID.DocumentStart)) {
                         handleDocumentStart((DocumentStartEvent) event, tainted, handler);
                     } else if (event.is(Event.ID.DocumentEnd)) {
@@ -169,11 +180,11 @@ public abstract class PsychParserNodes {
                 }
             } catch (ParserException pe) {
                 parser = null;
-                Layouts.PSYCH_PARSER_LAYOUT.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
                 raiseParserException(yaml, pe, path);
             } catch (ScannerException se) {
                 parser = null;
-                Layouts.PSYCH_PARSER_LAYOUT.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
                 StringBuilder message = new StringBuilder("syntax error");
                 if (se.getProblemMark() != null) {
                     message.append(se.getProblemMark().toString());
@@ -181,11 +192,11 @@ public abstract class PsychParserNodes {
                 raiseParserException(yaml, se, path);
             } catch (ReaderException re) {
                 parser = null;
-                Layouts.PSYCH_PARSER_LAYOUT.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
                 raiseParserException(yaml, re, path);
             } catch (Throwable t) {
                 Helpers.throwException(t);
-                Layouts.PSYCH_PARSER_LAYOUT.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
                 return parserObject;
             }
 
