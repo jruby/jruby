@@ -64,7 +64,6 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     @Specialization(
             guards = {
                     "!hasField",
-                    "newShape != null", // workaround for DSL bug
                     "object.getShape() == oldShape" },
             assumptions = { "newArray(oldShape.getValidAssumption(), newShape.getValidAssumption(), validLocation)" },
             limit = "getCacheLimit()")
