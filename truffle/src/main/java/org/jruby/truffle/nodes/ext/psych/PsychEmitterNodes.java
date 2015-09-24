@@ -66,7 +66,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-@CoreClass(name = "Truffle::Psych::Emitter")
+@CoreClass(name = "Psych::Emitter")
 public abstract class PsychEmitterNodes {
 
     @CoreMethod(names = "allocate", constructor = true)

@@ -282,3 +282,6 @@ require_relative 'core/main'
 require_relative 'core/truffle/cext/cext'
 require_relative 'core/truffle/cext/mkmf'
 require_relative 'core/truffle/cext/require'
+
+require_relative 'core/post'
+

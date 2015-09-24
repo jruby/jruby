@@ -433,7 +433,7 @@ public class CoreLibrary {
         defineModule(truffleModule, "Zlib");
         defineModule(truffleModule, "ObjSpace");
         defineModule(truffleModule, "Etc");
-        psychModule = defineModule(truffleModule, "Psych");
+        psychModule = defineModule("Psych");
         psychParserClass = defineClass(psychModule, objectClass, "Parser");
         Layouts.CLASS.setInstanceFactoryUnsafe(psychParserClass, Layouts.PSYCH_PARSER.createParserShape(psychParserClass, psychParserClass));
         final DynamicObject psychHandlerClass = defineClass(psychModule, objectClass, "Handler");

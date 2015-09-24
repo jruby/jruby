@@ -1135,12 +1135,6 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        // Psych calls method names generated from class hierarchies. We have Truffle::Psych, so we need to adapt
-
-        if (methodName.startsWith("visit_Psych_Nodes_")) {
-            methodName = "visit_Truffle_Psych_Nodes_" + methodName.substring("visit_Psych_Nodes_".length());
-        }
-
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
