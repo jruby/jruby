@@ -11,8 +11,12 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
@@ -20,11 +24,13 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.tools.CoverageTracker;
+
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Runtime;
 import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -201,6 +207,42 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         return method.getCallTarget().call(
                 RubyArguments.pack(method, method.getDeclarationFrame(), object, block, arguments));
+    }
+
+    /* For debugging in Java. */
+    public static Object debugEval(String code) {
+        CompilerAsserts.neverPartOfCompilation();
+        final FrameInstance currentFrameInstance = Truffle.getRuntime().getCurrentFrame();
+        final Frame currentFrame = currentFrameInstance.getFrame(FrameAccess.MATERIALIZE, true);
+        return getLatestInstance().inlineRubyHelper(null, currentFrame, code);
+    }
+
+    public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
+        final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
+        final DynamicObject binding = Layouts.BINDING.createBinding(getCoreLibrary().getBindingFactory(), evalFrame);
+        return eval(expression, binding, true, "inline-ruby", currentNode);
+    }
+
+    private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
+        CompilerDirectives.transferToInterpreter();
+        final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
+                RubyArguments.pack(
+                        RubyArguments.getMethod(frame.getArguments()),
+                        null,
+                        RubyArguments.getSelf(frame.getArguments()),
+                        null,
+                        new Object[] {}),
+                new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
+
+        if (arguments.length % 2 == 1) {
+            throw new UnsupportedOperationException("odd number of name-value pairs for arguments");
+        }
+
+        for (int n = 0; n < arguments.length; n += 2) {
+            evalFrame.setObject(evalFrame.getFrameDescriptor().findOrAddFrameSlot(arguments[n]), arguments[n + 1]);
+        }
+
+        return evalFrame;
     }
 
     @Override
