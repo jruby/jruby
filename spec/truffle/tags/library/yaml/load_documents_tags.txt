@@ -1,1 +1,0 @@
-fails:YAML.load_documents works on files

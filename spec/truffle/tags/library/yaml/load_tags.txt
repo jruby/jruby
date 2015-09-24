@@ -1,4 +1,3 @@
-fails:YAML.load returns a document from current io stream when io provided
 fails:YAML.load fails on invalid keys
 fails:YAML.load works on complex keys
 fails:YAML.load with iso8601 timestamp computes the microseconds

@@ -1,1 +1,0 @@
-fails:YAML.dump converts an object to YAML and write result to io when io provided

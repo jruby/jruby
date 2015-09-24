@@ -57,6 +57,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.adapaters.InputStreamAdapter;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -116,17 +117,12 @@ public abstract class PsychParserNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyString(yaml)")
+        @Specialization
         public Object parse(DynamicObject parserObject, DynamicObject yaml, NotProvided path) {
             return doParse(parserObject, yaml, nil());
         }
 
-        @Specialization(guards = {"isRubyString(yaml)", "isNil(path)"})
-        public Object parseNil(DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
-            return doParse(parserObject, yaml, nil());
-        }
-
-        @Specialization(guards = {"isRubyString(yaml)", "isRubyString(path)"})
+        @Specialization
         public Object parse(DynamicObject parserObject, DynamicObject yaml, DynamicObject path) {
             return doParse(parserObject, yaml, path);
         }
@@ -227,12 +223,11 @@ public abstract class PsychParserNodes {
 
             // fall back on IOInputStream, using default charset
             if ((boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
-                Encoding enc = ((boolean) ruby("yaml.is_a? RubyIO", "yaml", yaml))
+                Encoding enc = ((boolean) ruby("yaml.is_a? IO", "yaml", yaml))
                         ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
                         : UTF8Encoding.INSTANCE;
                 Charset charset = enc.getCharset();
-                throw new UnsupportedOperationException();
-                //return new StreamReader(new InputStreamReader(new IOInputStream(yaml), charset));
+                return new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
             } else {
                 throw new UnsupportedOperationException();
                 //throw runtime.newTypeError(yaml, runtime.getIO());
