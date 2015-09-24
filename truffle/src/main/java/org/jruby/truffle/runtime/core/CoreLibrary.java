@@ -940,7 +940,6 @@ public class CoreLibrary {
 
     public DynamicObject unexpectedReturn(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        new Exception().printStackTrace();
         return localJumpError("unexpected return", currentNode);
     }
 

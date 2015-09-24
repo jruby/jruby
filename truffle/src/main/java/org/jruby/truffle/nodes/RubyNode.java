@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -222,7 +223,7 @@ public abstract class RubyNode extends Node {
     protected Object ruby(Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(frame, arguments);
         final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), evalFrame);
-        return getContext().eval(expression, binding, true, "inline-ruby", this);
+        return getContext().eval(TranslatorDriver.ParserContext.INLINE, expression, binding, true, "inline-ruby", this);
     }
 
     private MaterializedFrame setupFrame(Frame frame, Object... arguments) {
