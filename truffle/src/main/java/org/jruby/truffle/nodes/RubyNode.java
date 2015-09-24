@@ -9,13 +9,12 @@
  */
 package org.jruby.truffle.nodes;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -214,13 +213,19 @@ public abstract class RubyNode extends Node {
 
     // ruby() helper
 
-    protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
+    protected Object ruby(String expression, Object... arguments) {
+        CompilerAsserts.neverPartOfCompilation();
+        return ruby(Truffle.getRuntime().getCurrentFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true),
+                expression, arguments);
+    }
+
+    protected Object ruby(Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupFrame(frame, arguments);
         final DynamicObject binding = Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), evalFrame);
         return getContext().eval(expression, binding, true, "inline-ruby", this);
     }
 
-    private MaterializedFrame setupFrame(VirtualFrame frame, Object... arguments) {
+    private MaterializedFrame setupFrame(Frame frame, Object... arguments) {
         CompilerDirectives.transferToInterpreter();
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
                 RubyArguments.pack(

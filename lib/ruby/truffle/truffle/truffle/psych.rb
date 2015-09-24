@@ -6,24 +6,13 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module YAML
-
-  def load(string)
-    raise "YAML.load not implemented"
-  end
-  module_function :load
-
-  def dump(object)
-    raise "YAML.dump not implemented"
-  end
-  module_function :dump
-
-end
-
-class Object
-
-  def to_yaml
-    raise "Object#to_yaml not implemented"
+module Truffle::Psych
+  
+  def self.libyaml_version
+    # TODO CS 23-Sep-15 hardcoded this for now - use resources to read
+    [1, 14, 0]
   end
 
 end
+
+Psych = Truffle::Psych
