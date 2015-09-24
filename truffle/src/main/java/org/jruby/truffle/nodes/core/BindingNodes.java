@@ -70,6 +70,10 @@ public abstract class BindingNodes {
             this.slot = slot;
             this.depth = depth;
         }
+
+        public FrameSlot getSlot() {
+            return slot;
+        }
     }
 
     public static FrameSlotAndDepth findFrameSlotOrNull(DynamicObject binding, DynamicObject symbol) {
@@ -137,19 +141,16 @@ public abstract class BindingNodes {
                 "symbol == cachedSymbol",
                 "!isLastLine(cachedSymbol)",
                 "compatibleFrames(binding, cachedBinding)",
-        }, limit = "getCacheLimit()")
+                "cachedFrameSlot != null"
+        },
+                limit = "getCacheLimit()")
         public Object localVariableGetCached(DynamicObject binding, DynamicObject symbol,
                                              @Cached("symbol") DynamicObject cachedSymbol,
                                              @Cached("binding") DynamicObject cachedBinding,
                                              @Cached("findFrameSlotOrNull(binding, symbol)") FrameSlotAndDepth cachedFrameSlot,
                                              @Cached("createReadNode(cachedFrameSlot)") ReadFrameSlotNode readLocalVariableNode) {
-            if (cachedFrameSlot == null) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorLocalVariableNotDefined(Layouts.SYMBOL.getString(symbol), binding, this));
-            } else {
-                final MaterializedFrame frame = RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding), cachedFrameSlot.depth);
-                return readLocalVariableNode.executeRead(frame);
-            }
+            final MaterializedFrame frame = RubyArguments.getDeclarationFrame(Layouts.BINDING.getFrame(binding), cachedFrameSlot.depth);
+            return readLocalVariableNode.executeRead(frame);
         }
 
         @TruffleBoundary
