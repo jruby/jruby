@@ -58,11 +58,13 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.adapaters.InputStreamAdapter;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 import org.yaml.snakeyaml.events.*;
 import org.yaml.snakeyaml.parser.Parser;
@@ -75,6 +77,7 @@ import org.yaml.snakeyaml.scanner.ScannerException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @CoreClass(name = "Psych::Parser")
@@ -286,11 +289,25 @@ public abstract class PsychParserNodes {
         }
 
         private void raiseParserException(DynamicObject yaml, ReaderException re, DynamicObject rbPath) {
-            throw new UnsupportedOperationException();
+            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
+                    "file", rbPath,
+                    "line", 0,
+                    "col", 0,
+                    "offset", re.getPosition(),
+                    "problem", re.getName() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(re.getName().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null),
+                    "context", re.toString() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(re.toString().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null));
         }
 
-        private static void raiseParserException(DynamicObject yaml, MarkedYAMLException mye, DynamicObject rbPath) {
-            throw new UnsupportedOperationException();
+        private void raiseParserException(DynamicObject yaml, MarkedYAMLException mye, DynamicObject rbPath) {
+            final Mark mark = mye.getProblemMark();
+
+            ruby("raise Psych::SyntaxError.new(file, line, col, offset, problem, context)",
+                    "file", rbPath,
+                    "line", mark.getLine(),
+                    "col", mark.getColumn(),
+                    "offset", mark.getIndex(),
+                    "problem", mye.getProblem() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null),
+                    "context", mye.getContext() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null));
         }
 
         private Object invoke(Object receiver, String name, Object... args) {

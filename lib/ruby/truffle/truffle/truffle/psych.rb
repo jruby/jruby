@@ -16,3 +16,5 @@ module Truffle::Psych
 end
 
 Psych = Truffle::Psych
+
+require 'psych/syntax_error.rb'
