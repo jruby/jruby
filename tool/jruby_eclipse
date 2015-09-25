@@ -27,7 +27,7 @@ bootclasspath = []
 classpath = []
 
 bootclasspath << "#{JRUBY}/lib/jruby.jar"
-bootclasspath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
+classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
@@ -37,7 +37,7 @@ end
 args = [java]
 args << "-Djffi.boot.library.path=#{JRUBY}/lib/jni"
 args << "-Xbootclasspath/a:" + bootclasspath.join(':')
-args << "-cp" << classpath.join(':') unless classpath.empty?
+args << "-classpath" << classpath.join(':') unless classpath.empty?
 
 args << "-Djruby.home=#{JRUBY}"
 args << "-Djruby.lib=#{JRUBY}/lib"
