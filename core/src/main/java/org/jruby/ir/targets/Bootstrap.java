@@ -8,6 +8,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
@@ -17,8 +18,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvocationLinker;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
@@ -26,6 +26,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -177,6 +178,10 @@ public class Bootstrap {
 
     public static Handle searchConst() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
+    }
+
+    public static Handle global() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
@@ -861,5 +866,62 @@ public class Bootstrap {
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
 
         site.setTarget(target);
+    }
+
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
+        GlobalSite site = new GlobalSite(type, varName);
+        MethodHandle handle;
+
+        if (operation.equals("get")) {
+            handle = lookup.findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
+
+        if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
+                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+
+            // use uncached logic forever
+//            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+
+            MethodHandle uncached = lookup().findStatic(Bootstrap.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
+            uncached = uncached.bindTo(variable);
+            uncached = dropArguments(uncached, 0, ThreadContext.class);
+            site.setTarget(uncached);
+            return (IRubyObject)uncached.invokeWithArguments(context);
+        }
+
+        Invalidator invalidator = variable.getInvalidator();
+        IRubyObject value = variable.getAccessor().getValue();
+
+        MethodHandle target = constant(IRubyObject.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+
+        site.setTarget(target);
+
+//        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") cached");
+
+        return value;
+    }
+
+    public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
+        return variable.getAccessor().getValue();
     }
 }
