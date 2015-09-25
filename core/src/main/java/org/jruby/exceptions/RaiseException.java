@@ -193,7 +193,7 @@ public class RaiseException extends JumpException {
     }
 
     private void preRaise(ThreadContext context) {
-        preRaise(context, (IRubyObject)null);
+        preRaise(context, (IRubyObject) null);
     }
 
     private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
@@ -223,10 +223,12 @@ public class RaiseException extends JumpException {
         // Ruby stack trace gets displayed
 
         // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
-        if (exception instanceof NativeException) {
-            setStackTrace(((NativeException)exception).getCause().getStackTrace());
-        } else {
-            setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+        if (context.exceptionRequiresBacktrace) {
+            if (exception instanceof NativeException) {
+                setStackTrace(((NativeException) exception).getCause().getStackTrace());
+            } else {
+                setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+            }
         }
     }
 

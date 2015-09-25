@@ -432,8 +432,7 @@ stmt            : kALIAS fitem {
                     }
                 }
                 | stmt kRESCUE_MOD stmt {
-                    Node body = $3 == null ? NilImplicitNode.NIL : $3;
-                    $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
+                    $$ = support.newRescueModNode($1, $3);
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
@@ -1000,9 +999,7 @@ arg             : lhs '=' arg {
                     $<Node>$.setPosition(support.getPosition($1));
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    ISourcePosition position = support.getPosition($1);
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
+                    $$ = support.node_assign($1, support.newRescueModNode($3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
                     support.checkExpression($3);
@@ -1023,11 +1020,9 @@ arg             : lhs '=' arg {
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
                     support.checkExpression($3);
-                    ISourcePosition pos = support.getPosition($5);
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    Node rescue = new RescueNode(pos, $3, new RescueBodyNode(support.getPosition($3), null, body, null), null);
+                    Node rescue = support.newRescueModNode($3, $5);
 
-                    pos = $1.getPosition();
+                    ISourcePosition pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);

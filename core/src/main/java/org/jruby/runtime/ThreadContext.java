@@ -1122,6 +1122,8 @@ public final class ThreadContext {
 
     private Set<RecursiveComparator.Pair> recursiveSet;
 
+    public boolean exceptionRequiresBacktrace = true;
+
     @Deprecated
     private org.jruby.util.RubyDateFormat dateFormat;
 
