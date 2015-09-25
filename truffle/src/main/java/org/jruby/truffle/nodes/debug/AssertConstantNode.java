@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.debug;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,7 +28,7 @@ public abstract class AssertConstantNode extends RubyNode {
     private static volatile boolean[] sideEffect;
 
     @Specialization
-    public DynamicObject assertCompilationConstant(Object value) {
+    public Object assertCompilationConstant(Object value) {
         final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value)};
 
         sideEffect = compilationConstant;
@@ -39,7 +38,7 @@ public abstract class AssertConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().internalError("Value in Truffle::Primitive.assert_constant was not constant", this));
         }
 
-        return nil();
+        return value;
     }
 
 }

@@ -26,6 +26,6 @@ module MetaprogrammingFixtures
 
 end
 
-example "MetaprogrammingFixtures::MethodMissing.new.does_not_exist"
-example "MetaprogrammingFixtures::ClassWithExistingMethod.new.respond_to?(:existing_method)"
-example "MetaprogrammingFixtures::ClassWithExistingMethod.new.send(:existing_method, 14)"
+example "MetaprogrammingFixtures::MethodMissing.new.does_not_exist", 14
+example "MetaprogrammingFixtures::ClassWithExistingMethod.new.respond_to?(:existing_method)", true
+example "MetaprogrammingFixtures::ClassWithExistingMethod.new.send(:existing_method, 15)", 15
