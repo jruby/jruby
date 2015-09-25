@@ -3,11 +3,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 ruby_version_is "2.1" do
   describe "Binding#local_variable_get" do
-  	it "reads local variables captured in the binding" do
+    it "reads local variables captured in the binding" do
       a = 42
       bind = binding
       bind.local_variable_get(:a).should == 42
-  	end
+    end
 
     it "raises a NameError for missing variables" do
       bind = BindingSpecs::Demo.new(1).get_empty_binding
