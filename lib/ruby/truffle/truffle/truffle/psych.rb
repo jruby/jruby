@@ -6,15 +6,23 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module Truffle::Psych
-  
+Psych = Truffle::Psych
+
+module Psych
+
   def self.libyaml_version
-    # TODO CS 23-Sep-15 hardcoded this for now - use resources to read
+    # TODO CS 23-Sep-15 hardcoded this for now - uses resources to read
     [1, 14, 0]
   end
 
-end
+  class ClassLoader
 
-Psych = Truffle::Psych
+    def path2class(path)
+      eval("::#{path}")
+    end
+
+  end
+
+end
 
 require 'psych/syntax_error.rb'
