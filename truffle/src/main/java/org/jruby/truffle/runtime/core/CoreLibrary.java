@@ -18,7 +18,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
-import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -714,9 +713,7 @@ public class CoreLibrary {
         getContext().getRuntime().getEncodingService().defineEncodings(new EncodingService.EncodingDefinitionVisitor() {
             @Override
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
-                Encoding e = encodingEntry.getEncoding();
-
-                DynamicObject re = EncodingNodes.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
+                DynamicObject re = EncodingNodes.newEncoding(encodingClass, null, name, p, end, encodingEntry.isDummy());
                 EncodingNodes.storeEncoding(encodingEntry.getIndex(), re);
             }
 
@@ -1163,7 +1160,7 @@ public class CoreLibrary {
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyEncoding(encoding);
-        return rangeError(String.format("invalid codepoint %x in %s", code, Layouts.ENCODING.getEncoding(encoding)), currentNode);
+        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(getContext(), encoding)), currentNode);
     }
 
     public DynamicObject rangeError(String type, String value, String range, Node currentNode) {

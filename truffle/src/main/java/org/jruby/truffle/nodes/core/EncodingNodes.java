@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -99,7 +100,7 @@ public abstract class EncodingNodes {
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
-            return Layouts.ENCODING.getEncoding(encoding).isAsciiCompatible();
+            return EncodingOperations.getEncoding(getContext(), encoding).isAsciiCompatible();
         }
     }
 
@@ -125,7 +126,9 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
         public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.ENCODING.getEncoding(first), Layouts.ENCODING.getEncoding(second));
+            final Encoding firstEncoding = EncodingOperations.getEncoding(getContext(), first);
+            final Encoding secondEncoding = EncodingOperations.getEncoding(getContext(), second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(firstEncoding, secondEncoding);
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -221,7 +224,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
         public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), Layouts.ENCODING.getEncoding(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), EncodingOperations.getEncoding(getContext(), second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -246,7 +249,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultExternalEncoding(Layouts.ENCODING.getEncoding(encoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(getContext(), encoding));
 
             return encoding;
         }
@@ -256,7 +259,7 @@ public abstract class EncodingNodes {
             CompilerDirectives.transferToInterpreter();
 
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(Layouts.ENCODING.getEncoding(rubyEncoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(getContext(), rubyEncoding));
 
             return rubyEncoding;
         }
@@ -292,7 +295,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(Layouts.ENCODING.getEncoding(encoding));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext(), encoding));
 
             return encoding;
         }
@@ -316,7 +319,7 @@ public abstract class EncodingNodes {
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(Layouts.ENCODING.getEncoding(getEncoding(encodingName.toString())));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext(), getEncoding(encodingName.toString())));
 
             return encodingName;
         }
@@ -447,8 +450,10 @@ public abstract class EncodingNodes {
                 return nil();
             }
 
+            final ByteList encodingName = new ByteList(encoding.getName());
+
             for (int i = 0; i < encodings.length; i++) {
-                if (Layouts.ENCODING.getEncoding(encodings[i]) == encoding) {
+                if (Layouts.ENCODING.getName(encodings[i]).equals(encodingName)) {
                     return i;
                 }
             }

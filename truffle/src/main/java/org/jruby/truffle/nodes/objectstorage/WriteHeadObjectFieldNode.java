@@ -124,7 +124,13 @@ public abstract class WriteHeadObjectFieldNode extends Node {
                 return copy.getShape();
             }
         } else {
-            final Location location = oldShape.allocator().locationForValue(value,
+            Class type = value.getClass();
+
+            if (value instanceof Long) {
+                type = long.class;
+            }
+
+            final Location location = oldShape.allocator().locationForType(type,
                     EnumSet.of(LocationModifier.Final, LocationModifier.NonNull));
             final Property newProperty = Property.create(name, location, 0);
             return oldShape.addProperty(newProperty);

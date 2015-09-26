@@ -76,6 +76,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -540,7 +541,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
         public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, EncodingOperations.getEncoding(getContext(), encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
@@ -549,7 +550,7 @@ public abstract class StringPrimitiveNodes {
             final int length;
 
             try {
-                length = Layouts.ENCODING.getEncoding(encoding).codeToMbcLength(code);
+                length = EncodingOperations.getEncoding(getContext(), encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
@@ -561,13 +562,13 @@ public abstract class StringPrimitiveNodes {
             final byte[] bytes = new byte[length];
 
             try {
-                Layouts.ENCODING.getEncoding(encoding).codeToMbc(code, bytes, 0);
+                EncodingOperations.getEncoding(getContext(), encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, EncodingOperations.getEncoding(getContext(), encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -581,7 +582,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         protected boolean isSimple(int code, DynamicObject encoding) {
-            return Layouts.ENCODING.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+            return EncodingOperations.getEncoding(getContext(), encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
 
     }
