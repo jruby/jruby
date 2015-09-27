@@ -37,9 +37,6 @@ class MSpecScript
 
     # require etc, linux only spec
     "^spec/ruby/core/io/advise_spec.rb",
-
-    # Pollutes other tests
-    "^spec/ruby/core/argf/binmode_spec.rb"
   ]
 
   core += [
@@ -95,9 +92,6 @@ class MSpecScript
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
-
-    # LoadError for `load "prime.rb"`
-    "^spec/ruby/library/prime/each_spec.rb",
   ]
 
   set :truffle, [
