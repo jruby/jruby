@@ -404,7 +404,7 @@ public abstract class EncodingNodes {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            final Hash<EncodingDB.Entry>.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            final Hash<EncodingDB.Entry>.HashEntryIterator i = EncodingDB.getAliases().entryIterator();
             while (i.hasNext()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
