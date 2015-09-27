@@ -420,19 +420,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("internal", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, defaultInternalEncoding));
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("internal", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("external", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, defaultExternalEncoding));
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("external", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("locale", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("locale", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
