@@ -6,12 +6,15 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ *
+ * Some of the code in this class is transposed from org.jruby.runtime.encoding.EncodingService,
+ * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
  */
-
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -23,11 +26,35 @@ public abstract class EncodingOperations {
 
         if (encoding == null) {
             final ByteList name = Layouts.ENCODING.getName(rubyEncoding);
-            encoding = context.getRuntime().getEncodingService().loadEncoding(name);
+            encoding = loadEncoding(name);
             Layouts.ENCODING.setEncoding(rubyEncoding, encoding);
         }
 
         return encoding;
+    }
+
+
+    private static EncodingDB.Entry findEncodingEntry(ByteList bytes) {
+        return EncodingDB.getEncodings().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
+    }
+
+    private static EncodingDB.Entry findAliasEntry(ByteList bytes) {
+        return EncodingDB.getAliases().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
+    }
+
+    private static EncodingDB.Entry findEncodingOrAliasEntry(ByteList bytes) {
+        final EncodingDB.Entry e = findEncodingEntry(bytes);
+        return e != null ? e : findAliasEntry(bytes);
+    }
+
+    private static Encoding loadEncoding(ByteList name) {
+        final EncodingDB.Entry entry = findEncodingOrAliasEntry(name);
+
+        if (entry == null) {
+            return null;
+        }
+
+        return entry.getEncoding();
     }
 
 }
