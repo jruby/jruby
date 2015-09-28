@@ -14,10 +14,10 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.WriteNode;
 import org.jruby.util.StringSupport;
@@ -50,7 +50,7 @@ public class WriteDeclarationVariableNode extends RubyNode implements WriteNode 
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
 }

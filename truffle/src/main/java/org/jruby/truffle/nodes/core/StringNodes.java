@@ -38,7 +38,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
@@ -202,7 +201,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -250,7 +249,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -274,7 +273,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));

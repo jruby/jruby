@@ -47,7 +47,6 @@ import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -63,6 +62,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.Signal;
@@ -150,7 +150,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -171,7 +171,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -462,11 +462,11 @@ public abstract class VMPrimitiveNodes {
                 Object[] objects = new Object[]{
                         Layouts.STRING.createString(
                                 getContext().getCoreLibrary().getStringFactory(),
-                                RubyString.encodeBytelist(key, UTF8Encoding.INSTANCE),
+                                StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE),
                                 StringSupport.CR_UNKNOWN, null),
                         Layouts.STRING.createString(
                                 getContext().getCoreLibrary().getStringFactory(),
-                                RubyString.encodeBytelist(stringValue, UTF8Encoding.INSTANCE),
+                                StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE),
                                 StringSupport.CR_UNKNOWN, null) };
                 sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }

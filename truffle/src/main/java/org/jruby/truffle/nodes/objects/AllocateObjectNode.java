@@ -23,12 +23,12 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -114,7 +114,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     private DynamicObject string(String value) {
         return Layouts.STRING.createString(
                 getContext().getCoreLibrary().getStringFactory(),
-                RubyString.encodeBytelist(value, UTF8Encoding.INSTANCE),
+                StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE),
                 StringSupport.CR_UNKNOWN,
                 null);
     }

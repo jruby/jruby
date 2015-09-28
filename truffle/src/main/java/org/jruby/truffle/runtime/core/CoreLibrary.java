@@ -22,7 +22,6 @@ import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.Main;
-import org.jruby.RubyString;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Constants;
@@ -572,14 +571,14 @@ public class CoreLibrary {
         globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
         globals.define("$,", nilObject, 0);
-        globals.define("$0", Layouts.STRING.createString(stringFactory, RubyString.encodeBytelist(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), 0);
+        globals.define("$0", Layouts.STRING.createString(stringFactory, StringOperations.encodeByteList(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), 0);
 
         globals.define("$DEBUG", context.getRuntime().isDebug(), 0);
 
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         globals.define("$VERBOSE", value, 0);
 
-        final DynamicObject defaultRecordSeparator = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject defaultRecordSeparator = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(CLI_RECORD_SEPARATOR, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         node.freezeNode.executeFreeze(defaultRecordSeparator);
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -591,15 +590,15 @@ public class CoreLibrary {
     private void initializeConstants() {
         // Set constants
 
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_VERSION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "JRUBY_VERSION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.VERSION, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_VERSION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(Constants.RUBY_VERSION, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "JRUBY_VERSION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(Constants.VERSION, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_PATCHLEVEL", 0);
         Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_REVISION", Constants.RUBY_REVISION);
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_ENGINE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_PLATFORM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.PLATFORM, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_RELEASE_DATE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_DESCRIPTION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
-        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_COPYRIGHT", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(OutputStrings.getCopyrightString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_ENGINE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(Constants.ENGINE + "+truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_PLATFORM", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(Constants.PLATFORM, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_RELEASE_DATE", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(Constants.COMPILE_DATE, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_DESCRIPTION", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(OutputStrings.getVersionString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        Layouts.MODULE.getFields(objectClass).setConstant(node, "RUBY_COPYRIGHT", Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(OutputStrings.getCopyrightString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
 
         // BasicObject knows itself
         Layouts.MODULE.getFields(basicObjectClass).setConstant(node, "BasicObject", basicObjectClass);
@@ -636,7 +635,7 @@ public class CoreLibrary {
 
         int i = 0;
         for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
-            DynamicObject signalName = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(signal.getKey(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            DynamicObject signalName = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(signal.getKey(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             Object[] objects = new Object[]{signalName, signal.getValue()};
             signals[i++] = Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), objects, objects.length);
         }
@@ -826,7 +825,7 @@ public class CoreLibrary {
 
     public DynamicObject runtimeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(runtimeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(runtimeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject frozenError(String className, Node currentNode) {
@@ -836,7 +835,7 @@ public class CoreLibrary {
 
     public DynamicObject argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(argumentErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(argumentErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject argumentErrorOutOfRange(Node currentNode) {
@@ -883,7 +882,7 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
         }
 
-        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(errnoObj.description(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(errnoObj.description(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject errnoError(int errno, String message, Node currentNode) {
@@ -894,13 +893,13 @@ public class CoreLibrary {
             return systemCallError(String.format("Unknown Error (%s) - %s", errno, message), currentNode);
         }
 
-        final DynamicObject errorMessage = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject errorMessage = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(String.format("%s - %s", errnoObj.description(), message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         return ExceptionNodes.createRubyException(getErrnoClass(errnoObj), errorMessage, RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(indexErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(indexErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject indexTooSmallError(String type, int index, int length, Node currentNode) {
@@ -910,7 +909,7 @@ public class CoreLibrary {
 
     public DynamicObject localJumpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(localJumpErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(localJumpErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject noBlockGiven(Node currentNode) {
@@ -935,7 +934,7 @@ public class CoreLibrary {
 
     public DynamicObject typeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(typeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(typeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject typeErrorAllocatorUndefinedFor(DynamicObject rubyClass, Node currentNode) {
@@ -1008,7 +1007,7 @@ public class CoreLibrary {
 
     public DynamicObject nameError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        DynamicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        DynamicObject nameError = ExceptionNodes.createRubyException(nameErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
         nameError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return nameError;
     }
@@ -1087,7 +1086,7 @@ public class CoreLibrary {
 
     public DynamicObject noMethodError(String message, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
         noMethodError.define("@name", context.getSymbolTable().getSymbol(name), 0);
         return noMethodError;
     }
@@ -1096,7 +1095,7 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         String message = "super called outside of method";
         DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(),
-                Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null),
+                Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null),
                 RubyCallStack.getBacktrace(currentNode));
         noMethodError.define("@name", nilObject, 0);
         return noMethodError;
@@ -1126,7 +1125,7 @@ public class CoreLibrary {
 
     public DynamicObject loadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getLoadErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject loadErrorCannotLoad(String name, Node currentNode) {
@@ -1136,32 +1135,32 @@ public class CoreLibrary {
 
     public DynamicObject zeroDivisionError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("divided by 0", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList("divided by 0", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject notImplementedError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(notImplementedErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(notImplementedErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(String.format("Method %s not implemented", message), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject syntaxError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(syntaxErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(syntaxErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject floatDomainError(String value, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(floatDomainErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(value, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(floatDomainErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject mathDomainError(String method, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(getErrnoClass(Errno.EDOM), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(String.format("Numerical argument is out of domain - \"%s\"", method), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject ioError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(ioErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(ioErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(String.format("Error reading file -  %s", fileName), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
@@ -1186,17 +1185,17 @@ public class CoreLibrary {
 
     public DynamicObject rangeError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(rangeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(rangeErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject internalError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist("internal implementation error - " + message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList("internal implementation error - " + message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject regexpError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(regexpErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(regexpErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject encodingCompatibilityErrorIncompatible(String a, String b, Node currentNode) {
@@ -1206,12 +1205,12 @@ public class CoreLibrary {
 
     public DynamicObject encodingCompatibilityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(encodingCompatibilityErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject fiberError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(fiberErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(fiberErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject deadFiberCalledError(Node currentNode) {
@@ -1226,17 +1225,17 @@ public class CoreLibrary {
 
     public DynamicObject threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(threadErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(threadErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject securityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(securityErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(securityErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public DynamicObject systemCallError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return ExceptionNodes.createRubyException(systemCallErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), RubyString.encodeBytelist(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
+        return ExceptionNodes.createRubyException(systemCallErrorClass, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(stringClass), StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

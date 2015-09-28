@@ -9,14 +9,12 @@
  */
 package org.jruby.truffle.nodes.time;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTimeZone;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
@@ -24,10 +22,10 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.io.BlockingIO;
 
 public class ReadTimeZoneNode extends RubyNode {
     
@@ -37,7 +35,7 @@ public class ReadTimeZoneNode extends RubyNode {
     private final ConditionProfile tzNilProfile = ConditionProfile.createBinaryProfile();
     private final ConditionProfile tzStringProfile = ConditionProfile.createBinaryProfile();
 
-    private static final ByteList defaultZone = RubyString.encodeBytelist(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
+    private static final ByteList defaultZone = StringOperations.encodeByteList(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
     private final DynamicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
@@ -45,7 +43,7 @@ public class ReadTimeZoneNode extends RubyNode {
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadLiteralConstantNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
-        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     @Override
