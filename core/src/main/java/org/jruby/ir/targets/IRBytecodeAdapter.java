@@ -496,6 +496,20 @@ public abstract class IRBytecodeAdapter {
      */
     public abstract void checkpoint();
 
+    /**
+     * Retrieve a global variable with the given name.
+     *
+     * Stack required: none
+     */
+    public abstract void getGlobalVariable(String name);
+
+    /**
+     * Set the global variable with the given name to the value on stack.
+     *
+     * Stack required: the new value
+     */
+    public abstract void setGlobalVariable(String name);
+
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();

@@ -23,7 +23,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -54,6 +53,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.ModuleFields;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -1324,7 +1324,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -1861,7 +1861,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject toS(DynamicObject module) {
             final String name = Layouts.MODULE.getFields(module).getName();
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(name, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(name, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

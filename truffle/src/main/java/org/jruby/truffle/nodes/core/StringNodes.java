@@ -38,8 +38,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
@@ -63,6 +61,8 @@ import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.EncodingOperations;
+import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.*;
@@ -77,13 +77,16 @@ public abstract class StringNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(rubyClass), new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(rubyClass, new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -126,8 +129,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile negativeTimesProfile = ConditionProfile.createBinaryProfile();
-
         @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
@@ -138,7 +139,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject multiply(DynamicObject string, int times) {
-            if (negativeTimesProfile.profile(times < 0)) {
+            if (times < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
@@ -200,7 +201,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -248,7 +249,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -272,7 +273,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -923,39 +924,73 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase", taintFromSelf = true)
-    public abstract static class DowncaseNode extends CoreMethodArrayArgumentsNode {
-
-        public DowncaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject downcase(DynamicObject string) {
-            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), newByteList, StringSupport.CR_UNKNOWN, null);
-        }
-    }
-
     @CoreMethod(names = "downcase!", raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject downcase(DynamicObject string) {
-            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public DynamicObject downcaseSingleByte(DynamicObject string) {
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
 
-            if (newByteList.equal(Layouts.STRING.getByteList(string))) {
+            if (bytes.realSize() == 0) {
                 return nil();
-            } else {
-                Layouts.STRING.setByteList(string, newByteList);
-                return string;
             }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = singleByteDowncase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                return string;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        public DynamicObject downcase(DynamicObject string) {
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
+            final Encoding encoding = bytes.getEncoding();
+
+            if (encoding.isDummy()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", encoding), this));
+            }
+
+            if (bytes.realSize() == 0) {
+                return nil();
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            try {
+                final boolean modified = multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+                if (modified) {
+                    return string;
+                } else {
+                    return nil();
+                }
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+        }
+
+        @TruffleBoundary
+        private boolean singleByteDowncase(byte[] bytes, int s, int end) {
+            return StringSupport.singleByteDowncase(bytes, s, end);
+        }
+
+        @TruffleBoundary
+        private boolean multiByteDowncase(Encoding encoding, byte[] bytes, int s, int end) {
+            return StringSupport.multiByteDowncase(encoding, bytes, s, end);
         }
     }
 
@@ -1105,7 +1140,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject encoding) {
-            StringOperations.forceEncoding(string, Layouts.ENCODING.getEncoding(encoding));
+            StringOperations.forceEncoding(string, EncodingOperations.getEncoding(encoding));
             return string;
         }
 
@@ -1159,21 +1194,6 @@ public abstract class StringNodes {
             return Layouts.STRING.getByteList(string).hashCode();
         }
 
-    }
-
-    @CoreMethod(names = "inspect", taintFromSelf = true)
-    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject inspect(DynamicObject string) {
-            final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), inspected.getByteList(), StringSupport.CR_UNKNOWN, null);
-        }
     }
 
     @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
@@ -1389,10 +1409,22 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public int ord(DynamicObject string) {
-            return ((org.jruby.RubyFixnum) getContext().toJRubyString(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
+
+            try {
+                return codePoint(EncodingUtils.STR_ENC_GET(codeRangeable), bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+        }
+
+        @TruffleBoundary
+        private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
+            return StringSupport.codePoint(encoding, bytes, p, end);
         }
     }
 
@@ -1501,7 +1533,6 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
 
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1516,9 +1547,8 @@ public abstract class StringNodes {
             final ByteList value = Layouts.STRING.getByteList(string);
             final Encoding enc = value.getEncoding();
 
-            if (dummyEncodingProfile.profile(enc.isDummy())) {
+            if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
@@ -2094,38 +2124,94 @@ public abstract class StringNodes {
     @CoreMethod(names = "upcase", taintFromSelf = true)
     public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
+        @Child CallDispatchHeadNode dupNode;
+        @Child CallDispatchHeadNode upcaseBangNode;
+
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+            upcaseBangNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject upcase(DynamicObject string) {
-            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), byteListString, StringSupport.CR_UNKNOWN, null);
+        public Object upcase(VirtualFrame frame, DynamicObject string) {
+            final Object duped = dupNode.call(frame, string, "dup", null);
+            upcaseBangNode.call(frame, duped, "upcase!", null);
+
+            return duped;
         }
 
     }
 
     @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject upcaseBang(DynamicObject string) {
-            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public DynamicObject upcaseSingleByte(DynamicObject string) {
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
 
-            if (byteListString.equal(Layouts.STRING.getByteList(string))) {
+            if (bytes.realSize() == 0) {
                 return nil();
-            } else {
-                Layouts.STRING.setByteList(string, byteListString);
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
                 return string;
+            } else {
+                return nil();
             }
         }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        public DynamicObject upcase(DynamicObject string) {
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
+            final Encoding encoding = bytes.getEncoding();
+
+            if (encoding.isDummy()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", encoding), this));
+            }
+
+            if (bytes.realSize() == 0) {
+                return nil();
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            try {
+                final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+                if (modified) {
+                    return string;
+                } else {
+                    return nil();
+                }
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+        }
+
+        @TruffleBoundary
+        private boolean singleByteUpcase(byte[] bytes, int s, int end) {
+            return StringSupport.singleByteUpcase(bytes, s, end);
+        }
+
+        @TruffleBoundary
+        private boolean multiByteUpcase(Encoding encoding, byte[] bytes, int s, int end) {
+            return StringSupport.multiByteUpcase(encoding, bytes, s, end);
+        }
+
     }
 
     @CoreMethod(names = "valid_encoding?")
@@ -2145,8 +2231,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
-
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -2159,9 +2243,7 @@ public abstract class StringNodes {
             final ByteList value = Layouts.STRING.getByteList(string);
             final Encoding enc = value.getEncoding();
 
-            if (dummyEncodingProfile.profile(enc.isDummy())) {
-                CompilerDirectives.transferToInterpreter();
-
+            if (enc.isDummy()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
@@ -2237,16 +2319,6 @@ public abstract class StringNodes {
     }
 
     public static class StringNodesHelper {
-
-        @TruffleBoundary
-        public static ByteList upcase(Ruby runtime, ByteList string) {
-            return runtime.newString(string).upcase(runtime.getCurrentContext()).getByteList();
-        }
-
-        @TruffleBoundary
-        public static ByteList downcase(Ruby runtime, ByteList string) {
-            return runtime.newString(string).downcase(runtime.getCurrentContext()).getByteList();
-        }
 
         public static int checkIndex(DynamicObject string, int index, RubyNode node) {
             assert RubyGuards.isRubyString(string);

@@ -7,7 +7,7 @@ class MSpecScript
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-Xmx2G]
+    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
 
   set :language, [
@@ -32,17 +32,11 @@ class MSpecScript
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
 
-    # require 'timeout'
-    "^spec/ruby/core/process/detach_spec.rb",
-
     # fail tag not excluding
     "^spec/ruby/core/string/modulo_spec.rb",
 
     # require etc, linux only spec
     "^spec/ruby/core/io/advise_spec.rb",
-
-    # Pollutes other tests
-    "^spec/ruby/core/argf/binmode_spec.rb"
   ]
 
   core += [
@@ -98,15 +92,6 @@ class MSpecScript
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
-
-    # LoadError for `load "prime.rb"`
-    "^spec/ruby/library/prime/each_spec.rb",
-
-    # Loads 'timeout', which doesn't work yet and results in a message printed to console about Rubinius::Channel#receive
-    # not being implemented.
-    "^spec/ruby/library/net",
-    "^spec/ruby/library/resolv",
-    "^spec/ruby/library/timeout"
   ]
 
   set :truffle, [

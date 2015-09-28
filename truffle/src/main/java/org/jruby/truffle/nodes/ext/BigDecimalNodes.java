@@ -17,7 +17,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -40,6 +39,7 @@ import org.jruby.truffle.nodes.internal.UnreachableCodeBranch;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -1969,14 +1969,14 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public Object unscaled(DynamicObject value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object unscaledSpecial(DynamicObject value) {
             final String type = Layouts.BIG_DECIMAL.getType(value).getRepresentation();
             String string = type.startsWith("-") ? type.substring(1) : type;
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(string, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

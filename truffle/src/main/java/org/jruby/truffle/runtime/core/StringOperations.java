@@ -28,6 +28,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
+import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -169,6 +170,10 @@ public abstract class StringOperations {
 
     public static boolean singleByteOptimizable(DynamicObject string) {
         return StringSupport.isSingleByteOptimizable(getCodeRangeable(string), EncodingUtils.STR_ENC_GET(getCodeRangeable(string)));
+    }
+
+    public static ByteList encodeByteList(CharSequence value, Encoding encoding) {
+        return RubyString.encodeBytelist(value, encoding);
     }
     
 }

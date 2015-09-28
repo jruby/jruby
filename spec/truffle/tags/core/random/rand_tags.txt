@@ -1,11 +1,1 @@
-fails:Random.rand returns the same sequence for a given seed if no max argument is passed
-fails:Random.rand returns the same sequence for a given seed if an Integer argument is passed
-fails:Random#rand with Fixnum eventually returns all possible values
 fails:Random#rand with Bignum typically returns a Bignum
-fails:Random#rand with Bignum returns the same sequence for a given seed
-fails:Random#rand with Float returns the same sequence for a given seed
-fails:Random#rand with Fixnum returns the same sequence for a given seed
-fails:Random#rand with Range works with inclusive ranges
-fails:Random#rand with Range works with exclusive ranges
-fails:Random#rand with Range returns the same sequence for a given seed
-fails:Random#rand with Range eventually returns all possible values

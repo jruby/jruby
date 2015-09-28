@@ -29,7 +29,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -67,6 +66,7 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.MethodFilter;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.hash.HashOperations;
@@ -152,7 +152,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(resultBuilder.toString(), Layouts.ENCODING.getEncoding(EncodingNodes.getEncoding("UTF-8"))), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -877,7 +877,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(line, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject rubyLine = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
             // Set the local variable $_ in the caller
 
@@ -2113,7 +2113,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
     }

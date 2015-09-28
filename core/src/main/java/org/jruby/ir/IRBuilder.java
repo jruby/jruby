@@ -3034,7 +3034,19 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
+    private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
+        // For now we will only contemplate 'foo rescue nil' cases but simple non-mod rescue forms can be added later.
+        if (!(rescueNode instanceof RescueModNode)) return false;
+
+        // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
+        // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
+        // effecting or being able to access $!.
+        return rescueNode.getRescueNode().getBodyNode() instanceof SideEffectFree;
+    }
+
     private Operand buildRescueInternal(RescueNode rescueNode, EnsureBlockInfo ensure) {
+        boolean needsBacktrace = !canBacktraceBeRemoved(rescueNode);
+
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
@@ -3045,6 +3057,7 @@ public class IRBuilder {
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         activeRescuers.push(rescueLabel);
+        addInstr(manager.needsBacktrace(needsBacktrace));
 
         // Body
         Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -3102,11 +3115,17 @@ public class IRBuilder {
         // Start of rescue logic
         addInstr(new LabelInstr(rescueLabel));
 
+        // This is optimized no backtrace path so we need to reenable backtraces since we are
+        // exiting that region.
+        if (!needsBacktrace) addInstr(manager.needsBacktrace(true));
+
         // Save off exception & exception comparison type
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(createTemporaryVariable()));
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(rescueNode.getRescueNode(), rv, exc, rEndLabel);
+
+        if (!needsBacktrace) addInstr(manager.needsBacktrace(true));
 
         activeRescueBlockStack.pop();
         return rv;

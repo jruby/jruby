@@ -57,6 +57,7 @@ public abstract class Layouts {
     public static final WeakRefLayout WEAK_REF_LAYOUT = WeakRefLayoutImpl.INSTANCE;
     public static final ParserLayout PSYCH_PARSER = ParserLayoutImpl.INSTANCE;
     public static final EmitterLayout PSYCH_EMITTER = EmitterLayoutImpl.INSTANCE;
+    public static final RandomizerLayout RANDOMIZER = RandomizerLayoutImpl.INSTANCE;
 
     // Other standard identifiers
 

@@ -21,7 +21,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
@@ -29,6 +28,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -99,7 +99,7 @@ public abstract class EncodingNodes {
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
-            return Layouts.ENCODING.getEncoding(encoding).isAsciiCompatible();
+            return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
         }
     }
 
@@ -125,7 +125,9 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
         public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.ENCODING.getEncoding(first), Layouts.ENCODING.getEncoding(second));
+            final Encoding firstEncoding = EncodingOperations.getEncoding(first);
+            final Encoding secondEncoding = EncodingOperations.getEncoding(second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(firstEncoding, secondEncoding);
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -221,7 +223,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
         public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), Layouts.ENCODING.getEncoding(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), EncodingOperations.getEncoding(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -246,7 +248,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultExternalEncoding(Layouts.ENCODING.getEncoding(encoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -256,7 +258,7 @@ public abstract class EncodingNodes {
             CompilerDirectives.transferToInterpreter();
 
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(Layouts.ENCODING.getEncoding(rubyEncoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
@@ -292,7 +294,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(Layouts.ENCODING.getEncoding(encoding));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -316,7 +318,7 @@ public abstract class EncodingNodes {
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(Layouts.ENCODING.getEncoding(getEncoding(encodingName.toString())));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getEncoding(encodingName.toString())));
 
             return encodingName;
         }
@@ -401,7 +403,7 @@ public abstract class EncodingNodes {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            final Hash<EncodingDB.Entry>.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            final Hash<EncodingDB.Entry>.HashEntryIterator i = EncodingDB.getAliases().entryIterator();
             while (i.hasNext()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
@@ -417,19 +419,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("internal", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, defaultInternalEncoding));
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("internal", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("external", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, defaultExternalEncoding));
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("external", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("locale", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("locale", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
@@ -447,8 +449,10 @@ public abstract class EncodingNodes {
                 return nil();
             }
 
+            final ByteList encodingName = new ByteList(encoding.getName());
+
             for (int i = 0; i < encodings.length; i++) {
-                if (Layouts.ENCODING.getEncoding(encodings[i]) == encoding) {
+                if (Layouts.ENCODING.getName(encodings[i]).equals(encodingName)) {
                     return i;
                 }
             }

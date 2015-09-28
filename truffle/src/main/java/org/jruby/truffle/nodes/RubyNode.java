@@ -25,10 +25,10 @@ import jnr.ffi.provider.MemoryManager;
 import jnr.posix.POSIX;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -69,7 +69,7 @@ public abstract class RubyNode extends Node {
     public abstract Object execute(VirtualFrame frame);
 
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist("expression", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("expression", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     // Execute without returning the result

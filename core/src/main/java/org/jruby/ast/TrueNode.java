@@ -39,7 +39,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Represents 'true'.
  */
-public class TrueNode extends Node implements INameNode {
+public class TrueNode extends Node implements INameNode, SideEffectFree {
     public TrueNode(ISourcePosition position) {
         super(position, false);
     }

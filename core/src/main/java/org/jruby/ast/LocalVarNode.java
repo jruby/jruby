@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Access a local variable 
  */
-public class LocalVarNode extends Node implements INameNode, IScopedNode {
+public class LocalVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
     private String name;
     

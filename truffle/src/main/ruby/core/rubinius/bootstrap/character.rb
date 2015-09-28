@@ -37,4 +37,9 @@ class String
     raise PrimitiveFailure, "Rubinius::Character#ascii? primitive failed"
   end
 
+  def printable?
+    Rubinius.primitive :character_printable_p
+    raise PrimitiveFailure, "Rubinius::Character#printable? primitive failed"
+  end
+
 end

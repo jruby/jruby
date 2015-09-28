@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
@@ -23,6 +22,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -45,7 +45,7 @@ public abstract class ExceptionNodes {
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0;n < lines.size(); n++) {
-            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         return Layouts.ARRAY.createArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayFactory(), array, array.length);
@@ -142,7 +142,7 @@ public abstract class ExceptionNodes {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
             if (message == null) {
                 final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             } else {
                 return message;
             }

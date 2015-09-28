@@ -43,9 +43,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -121,14 +121,14 @@ public abstract class DirPrimitiveNodes {
             Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(".", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(".", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else if (position == -1) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("..", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("..", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 
                 if (position < contents.length) {
-                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(contents[position], UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(contents[position], UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 } else {
                     return nil();
                 }
