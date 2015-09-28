@@ -1197,21 +1197,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "inspect", taintFromSelf = true)
-    public abstract static class InspectNode extends CoreMethodArrayArgumentsNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject inspect(DynamicObject string) {
-            final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), inspected.getByteList(), StringSupport.CR_UNKNOWN, null);
-        }
-    }
-
     @CoreMethod(names = "initialize", optional = 1, taintFromParameter = 0)
     public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 

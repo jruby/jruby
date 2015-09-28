@@ -114,6 +114,25 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
+    @RubiniusPrimitive(name = "character_printable_p")
+    public static abstract class CharacterPrintablePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public CharacterPrintablePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean isCharacterPrintable(DynamicObject character) {
+            final ByteList bytes = Layouts.STRING.getByteList(character);
+            final Encoding encoding = bytes.getEncoding();
+
+            final int codepoint = encoding.mbcToCode(bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+
+            return encoding.isPrint(codepoint);
+        }
+
+    }
+
     @RubiniusPrimitive(name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveNode {
 
