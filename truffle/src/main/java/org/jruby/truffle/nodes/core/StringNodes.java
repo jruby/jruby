@@ -970,7 +970,7 @@ public abstract class StringNodes {
 
             codeRangeable.modifyAndKeepCodeRange();
 
-            final boolean modified = StringSupport.multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            final boolean modified = multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             if (modified) {
                 return string;
             } else {
