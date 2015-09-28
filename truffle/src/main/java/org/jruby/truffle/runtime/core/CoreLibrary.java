@@ -154,6 +154,8 @@ public class CoreLibrary {
     private final DynamicObject weakRefClass;
     private final DynamicObjectFactory weakRefFactory;
     private final DynamicObject objectSpaceModule;
+    private final DynamicObject randomizerClass;
+    private final DynamicObjectFactory randomizerFactory;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -449,6 +451,9 @@ public class CoreLibrary {
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
+        randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
+        randomizerFactory = Layouts.RANDOMIZER.createRandomizerShape(randomizerClass, randomizerClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(randomizerClass, randomizerFactory);
 
         // Interop
 
@@ -1538,6 +1543,10 @@ public class CoreLibrary {
 
     public Object getObjectSpaceModule() {
         return objectSpaceModule;
+    }
+
+    public DynamicObjectFactory getRandomizerFactory() {
+        return randomizerFactory;
     }
 
 }

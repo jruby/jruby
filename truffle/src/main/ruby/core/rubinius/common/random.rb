@@ -25,11 +25,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Rubinius::Randomizer
-  Truffle.omit("We do our own allocation in Java") do
-    def self.allocate
-      Rubinius.primitive :randomizer_allocate
-      raise PrimitiveFailure, "Randomizer.allocate primitive failed"
-    end
+  def self.allocate
+    Rubinius.primitive :randomizer_allocate
+    raise PrimitiveFailure, "Randomizer.allocate primitive failed"
   end
 
   def initialize
