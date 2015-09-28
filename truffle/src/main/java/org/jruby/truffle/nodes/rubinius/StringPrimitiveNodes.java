@@ -76,6 +76,7 @@ import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.EncodingOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -111,6 +112,25 @@ public abstract class StringPrimitiveNodes {
 
             return found && Encoding.isAscii(codepoint);
         }
+    }
+
+    @RubiniusPrimitive(name = "character_printable_p")
+    public static abstract class CharacterPrintablePrimitiveNode extends RubiniusPrimitiveNode {
+
+        public CharacterPrintablePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public boolean isCharacterPrintable(DynamicObject character) {
+            final ByteList bytes = Layouts.STRING.getByteList(character);
+            final Encoding encoding = bytes.getEncoding();
+
+            final int codepoint = encoding.mbcToCode(bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+
+            return encoding.isPrint(codepoint);
+        }
+
     }
 
     @RubiniusPrimitive(name = "string_awk_split")
@@ -302,8 +322,6 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
     public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile nullByteProfile = ConditionProfile.createBinaryProfile();
-
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -313,7 +331,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList byteList = Layouts.STRING.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
-                if (nullByteProfile.profile(byteList.get(i) == 0)) {
+                if (byteList.get(i) == 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
                 }
@@ -376,9 +394,6 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile startTooLargeProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile startTooSmallProfile = ConditionProfile.createBinaryProfile();
-
         @Child private StringNodes.SizeNode sizeNode;
 
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -397,7 +412,7 @@ public abstract class StringPrimitiveNodes {
                 start += otherLength;
             }
 
-            if (startTooLargeProfile.profile(start > otherLength)) {
+            if (start > otherLength) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -407,7 +422,7 @@ public abstract class StringPrimitiveNodes {
                         ));
             }
 
-            if (startTooSmallProfile.profile(start < 0)) {
+            if (start < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -540,7 +555,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
         public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, EncodingOperations.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @TruffleBoundary
@@ -549,25 +564,27 @@ public abstract class StringPrimitiveNodes {
             final int length;
 
             try {
-                length = Layouts.ENCODING.getEncoding(encoding).codeToMbcLength(code);
+                length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
             final byte[] bytes = new byte[length];
 
             try {
-                Layouts.ENCODING.getEncoding(encoding).codeToMbc(code, bytes, 0);
+                EncodingOperations.getEncoding(encoding).codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, Layouts.ENCODING.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, EncodingOperations.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -581,7 +598,7 @@ public abstract class StringPrimitiveNodes {
         }
 
         protected boolean isSimple(int code, DynamicObject encoding) {
-            return Layouts.ENCODING.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+            return EncodingOperations.getEncoding(encoding) == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
 
     }
@@ -1137,7 +1154,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_substring")
+    @RubiniusPrimitive(name = "string_substring", lowerFixnumParameters = { 1, 2 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 

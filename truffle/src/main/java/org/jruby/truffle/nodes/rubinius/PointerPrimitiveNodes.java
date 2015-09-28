@@ -17,9 +17,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.PointerGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
@@ -285,7 +285,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
         @Specialization(guards = "type == TYPE_PTR")

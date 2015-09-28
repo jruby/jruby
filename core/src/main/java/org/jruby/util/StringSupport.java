@@ -382,6 +382,13 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
+    public static int codePoint(Encoding enc, byte[] bytes, int p, int end) {
+        if (p >= end) throw new IllegalArgumentException("empty string");
+        int cl = preciseLength(enc, bytes, p, end);
+        if (cl <= 0) throw new IllegalArgumentException("invalid byte sequence in " + enc);
+        return enc.mbcToCode(bytes, p, end);
+    }
+
     public static int codeLength(Encoding enc, int c) {
         return enc.codeToMbcLength(c);
     }
@@ -2188,5 +2195,82 @@ public final class StringSupport {
                 return y - ys;
         }
         return -1;
+    }
+
+    public static boolean singleByteDowncase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteDowncase(Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(enc, bytes, s, end);
+                if (enc.isUpper(c)) {
+                    enc.codeToMbc(toLower(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(enc, c);
+            }
+        }
+
+        return modify;
+    }
+
+    public static boolean singleByteUpcase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteUpcase(Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(enc, bytes, s, end);
+                if (enc.isLower(c)) {
+                    enc.codeToMbc(toUpper(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(enc, c);
+            }
+        }
+
+        return modify;
     }
 }

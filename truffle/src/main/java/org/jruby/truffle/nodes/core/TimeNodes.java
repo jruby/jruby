@@ -26,6 +26,12 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
+    private static final DateTime ZERO = new DateTime(0);
+
+    public static DateTime getDateTime(DynamicObject time) {
+        return Layouts.TIME.getDateTime(time);
+    }
+
     // We need it to copy the internal data for a call to Kernel#clone.
     @CoreMethod(names = "initialize_copy", required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodArrayArgumentsNode {
@@ -36,7 +42,7 @@ public abstract class TimeNodes {
 
         @Specialization(guards = "isRubyTime(from)")
         public Object initializeCopy(DynamicObject self, DynamicObject from) {
-            Layouts.TIME.setDateTime(self, Layouts.TIME.getDateTime(from));
+            Layouts.TIME.setDateTime(self, getDateTime(from));
             Layouts.TIME.setOffset(self, Layouts.TIME.getOffset(from));
             return self;
         }
@@ -54,8 +60,8 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalGMT(DynamicObject time) {
             return Layouts.TIME.getOffset(time) == nil() &&
-                    (Layouts.TIME.getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
-                     Layouts.TIME.getDateTime(time).getZone().getOffset(Layouts.TIME.getDateTime(time).getMillis()) == 0);
+                    (getDateTime(time).getZone().equals(DateTimeZone.UTC) ||
+                     getDateTime(time).getZone().getOffset(getDateTime(time).getMillis()) == 0);
         }
     }
 
@@ -74,7 +80,7 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalSetGMT(DynamicObject time, boolean isGMT) {
             if (isGMT) {
-                Layouts.TIME.setDateTime(time, Layouts.TIME.getDateTime(time).withZone(DateTimeZone.UTC));
+                Layouts.TIME.setDateTime(time, getDateTime(time).withZone(DateTimeZone.UTC));
             } else {
                 // Do nothing I guess - we can't change it to another zone, as what zone would that be?
             }
@@ -117,8 +123,6 @@ public abstract class TimeNodes {
 
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
-
-        private static final DateTime ZERO = new DateTime(0);
 
         @Child private AllocateObjectNode allocateObjectNode;
 

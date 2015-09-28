@@ -24,6 +24,7 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
@@ -358,6 +359,9 @@ public class InterpreterEngine {
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
+                break;
+            case TOGGLE_BACKTRACE:
+                context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
             case TRACE: {
                 if (context.runtime.hasEventHooks()) {

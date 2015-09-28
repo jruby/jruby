@@ -116,6 +116,7 @@ public abstract class IRVisitor {
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) { error(threadpollinstr); }
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }
+    public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) { error(instr); }
     public void ToAryInstr(ToAryInstr toaryinstr) { error(toaryinstr); }
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) { error(undefmethodinstr); }
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }

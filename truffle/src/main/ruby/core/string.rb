@@ -12,4 +12,10 @@ class String
     sprintf(self, *args)
   end
 
+  def downcase
+    s = dup
+    s.downcase!
+    s
+  end
+
 end

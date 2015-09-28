@@ -822,5 +822,21 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 sig(void.class));
     }
 
+    @Override
+    public void getGlobalVariable(String name) {
+        loadContext();
+        adapter.invokedynamic(
+                "get:" + JavaNameMangler.mangleMethodName(name),
+                sig(IRubyObject.class, ThreadContext.class),
+                Bootstrap.global());
+    }
+
+    @Override
+    public void setGlobalVariable(String name) {
+        loadRuntime();
+        adapter.ldc(name);
+        invokeHelper("setGlobalVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+    }
+
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
 }

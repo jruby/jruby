@@ -21,7 +21,6 @@ import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -1088,11 +1087,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        String name = getglobalvariableinstr.getGVar().getName();
-        jvmMethod().loadRuntime();
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
-        jvmAdapter().ldc(name);
-        jvmMethod().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject get(String)"));
+        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getName());
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
@@ -1461,13 +1456,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
-        GlobalVariable target = (GlobalVariable)putglobalvarinstr.getTarget();
-        String name = target.getName();
-        jvmMethod().loadRuntime();
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
-        jvmAdapter().ldc(name);
         visit(putglobalvarinstr.getValue());
-        jvmMethod().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject set(String, org.jruby.runtime.builtin.IRubyObject)"));
+        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getName());
         // leaves copy of value on stack
         jvmAdapter().pop();
     }
@@ -1716,6 +1706,13 @@ public class JVMVisitor extends IRVisitor {
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
+    }
+
+    @Override
+    public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().pushBoolean(instr.requiresBacktrace());
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setExceptionRequiresBacktrace", sig(void.class, boolean.class));
     }
 
     @Override

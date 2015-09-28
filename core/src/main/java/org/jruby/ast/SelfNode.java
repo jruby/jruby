@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Represents 'self' keyword
  */
-public class SelfNode extends Node implements INameNode {
+public class SelfNode extends Node implements INameNode, SideEffectFree {
     public SelfNode(ISourcePosition position) {
         super(position, false);
     }

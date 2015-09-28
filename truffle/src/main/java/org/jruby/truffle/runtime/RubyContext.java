@@ -35,7 +35,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
-import org.jruby.RubyString;
 import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
@@ -55,6 +54,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.core.SymbolTable;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
@@ -266,7 +266,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayOperations.append(coreLibrary.getArgv(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(coreLibrary.getStringClass()), RubyString.encodeBytelist(arg.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            ArrayOperations.append(coreLibrary.getArgv(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(coreLibrary.getStringClass()), StringOperations.encodeByteList(arg.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         }
 
         // Set the load path
@@ -285,7 +285,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                     pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
-                ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), RubyString.encodeBytelist(pathString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+                ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(pathString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
             }
         }
 
@@ -306,21 +306,21 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         home = home + "/";
 
         // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), RubyString.encodeBytelist(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
 
         // Our own implementations
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), RubyString.encodeBytelist(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), RubyString.encodeBytelist(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
         }
 
         // Shims
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), RubyString.encodeBytelist(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {

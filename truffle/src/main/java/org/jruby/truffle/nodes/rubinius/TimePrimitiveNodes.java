@@ -19,13 +19,14 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.nodes.core.TimeNodes;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.StringSupport;
@@ -38,13 +39,13 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private ReadTimeZoneNode readTimeZoneNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private ReadTimeZoneNode readTimeZoneNode;
         
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         @Specialization
@@ -73,7 +74,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public DynamicObject timeSDup(DynamicObject other) {
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getTimeClass(), Layouts.TIME.getDateTime(other), Layouts.TIME.getOffset(other));
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(other), TimeNodes.getDateTime(other), Layouts.TIME.getOffset(other));
         }
 
     }
@@ -82,26 +83,24 @@ public abstract class TimePrimitiveNodes {
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadTimeZoneNode readTimeZoneNode;
-        @Child private AllocateObjectNode allocateObjectNode;
 
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
-            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization(guards = { "isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nil());
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return allocateObjectNode.allocate(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset);
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -136,7 +135,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public long timeSeconds(DynamicObject time) {
-            return Layouts.TIME.getDateTime(time).getMillis() / 1_000;
+            return TimeNodes.getDateTime(time).getMillis() / 1_000;
         }
 
     }
@@ -150,7 +149,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public long timeUSeconds(DynamicObject time) {
-            return Layouts.TIME.getDateTime(time).getMillisOfSecond() * 1_000L;
+            return TimeNodes.getDateTime(time).getMillisOfSecond() * 1_000L;
         }
 
     }
@@ -168,7 +167,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public DynamicObject timeDecompose(VirtualFrame frame, DynamicObject time) {
             CompilerDirectives.transferToInterpreter();
-            final DateTime dateTime = Layouts.TIME.getDateTime(time);
+            final DateTime dateTime = TimeNodes.getDateTime(time);
             final int sec = dateTime.getSecondOfMinute();
             final int min = dateTime.getMinuteOfHour();
             final int hour = dateTime.getHourOfDay();
@@ -191,7 +190,7 @@ public abstract class TimePrimitiveNodes {
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
             } else {
-                zone = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(zoneString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                zone = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
@@ -212,7 +211,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), Layouts.TIME.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
         }
 
     }
@@ -221,7 +220,7 @@ public abstract class TimePrimitiveNodes {
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child ReadTimeZoneNode readTimeZoneNode;
-        @Child private AllocateObjectNode allocateObjectNode;
+        @Child AllocateObjectNode allocateObjectNode;
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -299,7 +298,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public long timeNSeconds(DynamicObject time) {
-            return Layouts.TIME.getDateTime(time).getMillisOfSecond() * 1_000_000L;
+            return TimeNodes.getDateTime(time).getMillisOfSecond() * 1_000_000L;
         }
 
     }
@@ -314,7 +313,7 @@ public abstract class TimePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public long timeSetNSeconds(DynamicObject time, int nanoseconds) {
-            Layouts.TIME.setDateTime(time, Layouts.TIME.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
+            Layouts.TIME.setDateTime(time, TimeNodes.getDateTime(time).withMillisOfSecond(nanoseconds / 1_000_000));
             return nanoseconds;
         }
 
@@ -351,7 +350,7 @@ public abstract class TimePrimitiveNodes {
             if (offset != nil()) {
                 return offset;
             } else {
-                return Layouts.TIME.getDateTime(time).getZone().getOffset(Layouts.TIME.getDateTime(time).getMillis()) / 1_000;
+                return TimeNodes.getDateTime(time).getZone().getOffset(TimeNodes.getDateTime(time).getMillis()) / 1_000;
             }
         }
 

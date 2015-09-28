@@ -41,6 +41,19 @@ import java.net.URLClassLoader;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+/**
+ * this classloader will be populated dynamically in the following ways:
+ *
+ * <li><code>JRuby.runtime.jruby_class_loader.add_url( java.net.URL.new( "file:my.jar" )</code></li>
+ * <li><code>$CLASSPATH << 'path/to/class/or/resources'</code></li>
+ * <li><code>require 'some.jar'</code></li>
+ * <li><code>load 'some.jar'</code></li>
+ *
+ * so it is the classloader for ALL the jars used by gems. and this
+ * classlaoder is "implicit" part of the $LOAD_PATH of the jruby runtime
+ * all ruby resources inside any of the added jars will be found via
+ * <code>require</code> and <code>load</code>
+ */
 public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");

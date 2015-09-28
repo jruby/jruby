@@ -935,6 +935,13 @@ public class ParserSupport {
         }
         return ((DStrNode) head).add(tail);
     }
+
+    public Node newRescueModNode(Node body, Node rescueBody) {
+        if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
+        ISourcePosition pos = getPosition(body);
+
+        return new RescueModNode(pos, body, new RescueBodyNode(pos, null, rescueBody, null));
+    }
     
     public Node newEvStrNode(ISourcePosition position, Node node) {
         if (node instanceof StrNode || node instanceof DStrNode || node instanceof EvStrNode) return node;

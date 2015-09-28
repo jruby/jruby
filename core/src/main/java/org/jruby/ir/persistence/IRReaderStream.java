@@ -281,6 +281,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case THREAD_POLL: return ThreadPollInstr.decode(this);
             case THROW: return ThrowExceptionInstr.decode(this);
             case TO_ARY: return ToAryInstr.decode(this);
+            case TOGGLE_BACKTRACE: return ToggleBacktraceInstr.decode(this);
             case UNDEF_METHOD: return UndefMethodInstr.decode(this);
             case UNRESOLVED_SUPER: return UnresolvedSuperInstr.decode(this);
             case YIELD: return YieldInstr.decode(this);

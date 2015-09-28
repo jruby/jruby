@@ -18,11 +18,11 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.ReadNode;
 import org.jruby.util.StringSupport;
@@ -104,7 +104,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
 
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }
@@ -119,7 +119,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }

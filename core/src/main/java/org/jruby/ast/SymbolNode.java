@@ -54,7 +54,7 @@ import org.jruby.util.StringSupport;
 /**
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode {
+public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
     private String name;
     private Encoding encoding;
 

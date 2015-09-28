@@ -18,13 +18,13 @@ import jnr.constants.platform.Fcntl;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyString;
 import org.jruby.platform.Platform;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -183,7 +183,7 @@ public abstract class PosixNodes {
                 return nil();
             }
 
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist((String) result, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList((String) result, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
     }
 
@@ -859,7 +859,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary
