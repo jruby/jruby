@@ -18,6 +18,8 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.nodes.objects.TaintNode;
@@ -33,6 +35,8 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
+    @Child private CallDispatchHeadNode concatNode;
+    @Child private CallDispatchHeadNode dupNode;
     @Child private IsTaintedNode isTaintedNode;
     @Child private TaintNode taintNode;
 
@@ -41,6 +45,8 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
+        concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+        dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         isTaintedNode = IsTaintedNodeGen.create(context, sourceSection, null);
         taintNode = TaintNodeGen.create(context, sourceSection, null);
     }
@@ -58,7 +64,7 @@ public final class InterpolatedStringNode extends RubyNode {
             tainted |= isTaintedNode.executeIsTainted(toInterpolate);
         }
 
-        final Object string = concat(strings);
+        final Object string = concat(frame, strings);
 
         if (taintProfile.profile(tainted)) {
             taintNode.executeTaint(string);
@@ -68,26 +74,22 @@ public final class InterpolatedStringNode extends RubyNode {
     }
 
     @TruffleBoundary
-    private DynamicObject concat(Object[] strings) {
+    private Object concat(VirtualFrame frame, Object[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
-        org.jruby.RubyString builder = null;
+        Object builder = null;
 
         for (Object string : strings) {
             assert RubyGuards.isRubyString(string);
 
             if (builder == null) {
-                builder = getContext().toJRubyString((DynamicObject) string);
+                builder = dupNode.call(frame, string, "dup", null);
             } else {
-                try {
-                    builder.append19(getContext().toJRuby(string));
-                } catch (org.jruby.exceptions.RaiseException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(builder.getEncoding().getCharsetName(), Layouts.STRING.getByteList((DynamicObject) string).getEncoding().getCharsetName(), this));
-                }
+                builder = concatNode.call(frame, builder, "concat", null, string);
             }
         }
 
-        return getContext().toTruffle(builder);
+        return builder;
     }
 
 }
