@@ -126,6 +126,7 @@ public class CoreLibrary {
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
     private final DynamicObject timeClass;
+    private final DynamicObjectFactory timeFactory;
     private final DynamicObject transcodingClass;
     private final DynamicObject trueClass;
     private final DynamicObject tupleClass;
@@ -390,7 +391,8 @@ public class CoreLibrary {
         threadBacktraceLocationClass = defineClass(threadBacktraceClass, objectClass, "Location");
         Layouts.CLASS.setInstanceFactoryUnsafe(threadBacktraceLocationClass, ThreadBacktraceLocationLayoutImpl.INSTANCE.createThreadBacktraceLocationShape(threadBacktraceLocationClass, threadBacktraceLocationClass));
         timeClass = defineClass("Time");
-        Layouts.CLASS.setInstanceFactoryUnsafe(timeClass, Layouts.TIME.createTimeShape(timeClass, timeClass));
+        timeFactory = Layouts.TIME.createTimeShape(timeClass, timeClass);
+        Layouts.CLASS.setInstanceFactoryUnsafe(timeClass, timeFactory);
         trueClass = defineClass("TrueClass");
         unboundMethodClass = defineClass("UnboundMethod");
         unboundMethodFactory = Layouts.UNBOUND_METHOD.createUnboundMethodShape(unboundMethodClass, unboundMethodClass);
@@ -1547,6 +1549,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getRandomizerFactory() {
         return randomizerFactory;
+    }
+
+    public DynamicObjectFactory getTimeFactory() {
+        return timeFactory;
     }
 
 }

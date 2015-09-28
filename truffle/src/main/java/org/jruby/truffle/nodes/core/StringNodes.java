@@ -78,13 +78,16 @@ public abstract class StringNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(rubyClass), new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return allocateObjectNode.allocate(rubyClass, new ByteList(), StringSupport.CR_UNKNOWN, null);
         }
 
     }
