@@ -1159,7 +1159,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_substring")
+    @RubiniusPrimitive(name = "string_substring", lowerFixnumParameters = { 1, 2 })
     @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
