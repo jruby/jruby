@@ -73,7 +73,6 @@ public final class InterpolatedStringNode extends RubyNode {
         return string;
     }
 
-    @TruffleBoundary
     private Object concat(VirtualFrame frame, Object[] strings) {
         // TODO(CS): there is a lot of copying going on here - and I think this is sometimes inner loop stuff
 
