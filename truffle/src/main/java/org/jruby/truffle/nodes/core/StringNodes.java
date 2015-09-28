@@ -249,7 +249,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -273,7 +273,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
