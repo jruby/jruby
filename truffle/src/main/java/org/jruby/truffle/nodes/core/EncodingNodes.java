@@ -100,7 +100,7 @@ public abstract class EncodingNodes {
         @Specialization
         public Object isCompatible(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
-            return EncodingOperations.getEncoding(getContext(), encoding).isAsciiCompatible();
+            return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
         }
     }
 
@@ -126,8 +126,8 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
         public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding firstEncoding = EncodingOperations.getEncoding(getContext(), first);
-            final Encoding secondEncoding = EncodingOperations.getEncoding(getContext(), second);
+            final Encoding firstEncoding = EncodingOperations.getEncoding(first);
+            final Encoding secondEncoding = EncodingOperations.getEncoding(second);
             final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(firstEncoding, secondEncoding);
 
             if (compatibleEncoding != null) {
@@ -224,7 +224,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
         public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), EncodingOperations.getEncoding(getContext(), second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), EncodingOperations.getEncoding(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -249,7 +249,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(getContext(), encoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -259,7 +259,7 @@ public abstract class EncodingNodes {
             CompilerDirectives.transferToInterpreter();
 
             final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(getContext(), rubyEncoding));
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
@@ -295,7 +295,7 @@ public abstract class EncodingNodes {
         public DynamicObject defaultInternal(DynamicObject encoding) {
             CompilerDirectives.transferToInterpreter();
 
-            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext(), encoding));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
@@ -319,7 +319,7 @@ public abstract class EncodingNodes {
             }
 
             final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getContext(), getEncoding(encodingName.toString())));
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getEncoding(encodingName.toString())));
 
             return encodingName;
         }

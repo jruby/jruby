@@ -38,7 +38,6 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1141,7 +1140,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyEncoding(encoding)")
         public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject encoding) {
-            StringOperations.forceEncoding(string, EncodingOperations.getEncoding(getContext(), encoding));
+            StringOperations.forceEncoding(string, EncodingOperations.getEncoding(encoding));
             return string;
         }
 

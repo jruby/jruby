@@ -1160,7 +1160,7 @@ public class CoreLibrary {
     public DynamicObject rangeError(int code, DynamicObject encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyEncoding(encoding);
-        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(getContext(), encoding)), currentNode);
+        return rangeError(String.format("invalid codepoint %x in %s", code, EncodingOperations.getEncoding(encoding)), currentNode);
     }
 
     public DynamicObject rangeError(String type, String value, String range, Node currentNode) {
