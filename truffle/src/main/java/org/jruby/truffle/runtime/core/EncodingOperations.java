@@ -12,6 +12,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -33,11 +34,12 @@ public abstract class EncodingOperations {
         return encoding;
     }
 
-
+    @TruffleBoundary
     private static EncodingDB.Entry findEncodingEntry(ByteList bytes) {
         return EncodingDB.getEncodings().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    @TruffleBoundary
     private static EncodingDB.Entry findAliasEntry(ByteList bytes) {
         return EncodingDB.getAliases().get(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
@@ -47,6 +49,7 @@ public abstract class EncodingOperations {
         return e != null ? e : findAliasEntry(bytes);
     }
 
+    @TruffleBoundary
     private static Encoding loadEncoding(ByteList name) {
         final EncodingDB.Entry entry = findEncodingOrAliasEntry(name);
 
