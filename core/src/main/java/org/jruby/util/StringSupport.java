@@ -2234,4 +2234,43 @@ public final class StringSupport {
 
         return modify;
     }
+
+    public static boolean singleByteUpcase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteUpcase(Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        int c;
+
+        while (s < end) {
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                    modify = true;
+                }
+                s++;
+            } else {
+                c = codePoint(enc, bytes, s, end);
+                if (enc.isLower(c)) {
+                    enc.codeToMbc(toUpper(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += codeLength(enc, c);
+            }
+        }
+
+        return modify;
+    }
 }

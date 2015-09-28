@@ -1715,38 +1715,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject singleByteUpcase(Ruby runtime, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCII.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
+        boolean modify = StringSupport.singleByteUpcase(bytes, s, end);
+
         return modify ? this : runtime.getNil();
     }
 
     private IRubyObject multiByteUpcase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCII.isLower(c)) {
-                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                    modify = true;
-                }
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, end);
-                if (enc.isLower(c)) {
-                    enc.codeToMbc(toUpper(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
-            }
+        try {
+            boolean modify = StringSupport.multiByteUpcase(enc, bytes, s, end);
+
+            return modify ? this : runtime.getNil();
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
         }
-        return modify ? this : runtime.getNil();
     }
 
     /** rb_str_downcase / rb_str_downcase_bang
