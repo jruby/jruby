@@ -957,15 +957,15 @@ public abstract class StringNodes {
             final ByteList bytes = codeRangeable.getByteList();
             final Encoding encoding = bytes.getEncoding();
 
-            if (bytes.realSize() == 0) {
-                return nil();
-            }
-
             if (encoding.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", encoding), this));
+            }
+
+            if (bytes.realSize() == 0) {
+                return nil();
             }
 
             codeRangeable.modifyAndKeepCodeRange();
