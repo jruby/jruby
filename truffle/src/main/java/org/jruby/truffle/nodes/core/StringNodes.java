@@ -935,7 +935,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public DynamicObject downcaseSingleByte(DynamicObject string) {
-            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
             final ByteList bytes = codeRangeable.getByteList();
 
             if (bytes.realSize() == 0) {
@@ -954,7 +954,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public DynamicObject downcase(DynamicObject string) {
-            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
             final ByteList bytes = codeRangeable.getByteList();
             final Encoding encoding = bytes.getEncoding();
 
@@ -2166,7 +2166,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public DynamicObject upcaseSingleByte(DynamicObject string) {
-            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
             final ByteList bytes = codeRangeable.getByteList();
 
             if (bytes.realSize() == 0) {
@@ -2185,7 +2185,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
         public DynamicObject upcase(DynamicObject string) {
-            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final CodeRangeable codeRangeable = StringOperations.getCodeRangeable(string);
             final ByteList bytes = codeRangeable.getByteList();
             final Encoding encoding = bytes.getEncoding();
 
