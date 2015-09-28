@@ -2124,38 +2124,89 @@ public abstract class StringNodes {
     @CoreMethod(names = "upcase", taintFromSelf = true)
     public abstract static class UpcaseNode extends CoreMethodArrayArgumentsNode {
 
+        @Child CallDispatchHeadNode dupNode;
+        @Child CallDispatchHeadNode upcaseBangNode;
+
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
+            upcaseBangNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        @TruffleBoundary
         @Specialization
-        public DynamicObject upcase(DynamicObject string) {
-            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), byteListString, StringSupport.CR_UNKNOWN, null);
+        public Object upcase(VirtualFrame frame, DynamicObject string) {
+            final Object duped = dupNode.call(frame, string, "dup", null);
+            upcaseBangNode.call(frame, duped, "upcase!", null);
+
+            return duped;
         }
 
     }
 
     @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class UpcaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject upcaseBang(DynamicObject string) {
-            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public DynamicObject upcaseSingleByte(DynamicObject string) {
+            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final ByteList bytes = codeRangeable.getByteList();
 
-            if (byteListString.equal(Layouts.STRING.getByteList(string))) {
+            if (bytes.realSize() == 0) {
                 return nil();
-            } else {
-                Layouts.STRING.setByteList(string, byteListString);
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = singleByteUpcase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
                 return string;
+            } else {
+                return nil();
             }
         }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        public DynamicObject upcase(DynamicObject string) {
+            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final ByteList bytes = codeRangeable.getByteList();
+            final Encoding encoding = bytes.getEncoding();
+
+            if (encoding.isDummy()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", encoding), this));
+            }
+
+            if (bytes.realSize() == 0) {
+                return nil();
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                return string;
+            } else {
+                return nil();
+            }
+        }
+
+        @TruffleBoundary
+        private boolean singleByteUpcase(byte[] bytes, int s, int end) {
+            return StringSupport.singleByteUpcase(bytes, s, end);
+        }
+
+        @TruffleBoundary
+        private boolean multiByteUpcase(Encoding encoding, byte[] bytes, int s, int end) {
+            return StringSupport.multiByteUpcase(encoding, bytes, s, end);
+        }
+
     }
 
     @CoreMethod(names = "valid_encoding?")
@@ -2267,11 +2318,6 @@ public abstract class StringNodes {
     }
 
     public static class StringNodesHelper {
-
-        @TruffleBoundary
-        public static ByteList upcase(Ruby runtime, ByteList string) {
-            return runtime.newString(string).upcase(runtime.getCurrentContext()).getByteList();
-        }
 
         public static int checkIndex(DynamicObject string, int index, RubyNode node) {
             assert RubyGuards.isRubyString(string);
