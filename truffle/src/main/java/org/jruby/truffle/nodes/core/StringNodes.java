@@ -64,6 +64,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
+import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.*;
@@ -1419,10 +1420,22 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public int ord(DynamicObject string) {
-            return ((org.jruby.RubyFixnum) getContext().toJRubyString(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
+            final StringCodeRangeableWrapper codeRangeable = StringOperations.getCodeRangeable(string);
+            final ByteList bytes = codeRangeable.getByteList();
+
+            try {
+                return codePoint(EncodingUtils.STR_ENC_GET(codeRangeable), bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
+        }
+
+        @TruffleBoundary
+        private int codePoint(Encoding encoding, byte[] bytes, int p, int end) {
+            return StringSupport.codePoint(encoding, bytes, p, end);
         }
     }
 
