@@ -971,11 +971,16 @@ public abstract class StringNodes {
 
             codeRangeable.modifyAndKeepCodeRange();
 
-            final boolean modified = multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-            if (modified) {
-                return string;
-            } else {
-                return nil();
+            try {
+                final boolean modified = multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+                if (modified) {
+                    return string;
+                } else {
+                    return nil();
+                }
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
@@ -2202,11 +2207,16 @@ public abstract class StringNodes {
 
             codeRangeable.modifyAndKeepCodeRange();
 
-            final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-            if (modified) {
-                return string;
-            } else {
-                return nil();
+            try {
+                final boolean modified = multiByteUpcase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+                if (modified) {
+                    return string;
+                } else {
+                    return nil();
+                }
+            } catch (IllegalArgumentException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
             }
         }
 
