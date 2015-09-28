@@ -1,2 +1,1 @@
-fails:Random.srand seeds Random.rand such that its return value is deterministic
 fails:Random.srand seeds Kernel.rand such that its return value is deterministic
