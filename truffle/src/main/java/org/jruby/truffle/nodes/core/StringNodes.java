@@ -130,8 +130,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile negativeTimesProfile = ConditionProfile.createBinaryProfile();
-
         @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode;
 
@@ -142,7 +140,7 @@ public abstract class StringNodes {
 
         @Specialization
         public DynamicObject multiply(DynamicObject string, int times) {
-            if (negativeTimesProfile.profile(times < 0)) {
+            if (times < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
@@ -1536,7 +1534,6 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
 
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1551,9 +1548,8 @@ public abstract class StringNodes {
             final ByteList value = Layouts.STRING.getByteList(string);
             final Encoding enc = value.getEncoding();
 
-            if (dummyEncodingProfile.profile(enc.isDummy())) {
+            if (enc.isDummy()) {
                 CompilerDirectives.transferToInterpreter();
-
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
@@ -2236,8 +2232,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
-
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -2250,9 +2244,7 @@ public abstract class StringNodes {
             final ByteList value = Layouts.STRING.getByteList(string);
             final Encoding enc = value.getEncoding();
 
-            if (dummyEncodingProfile.profile(enc.isDummy())) {
-                CompilerDirectives.transferToInterpreter();
-
+            if (enc.isDummy()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));

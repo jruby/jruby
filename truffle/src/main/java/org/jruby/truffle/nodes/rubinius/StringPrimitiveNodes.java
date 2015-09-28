@@ -322,8 +322,6 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
     public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile nullByteProfile = ConditionProfile.createBinaryProfile();
-
         public StringCheckNullSafePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -333,7 +331,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList byteList = Layouts.STRING.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
-                if (nullByteProfile.profile(byteList.get(i) == 0)) {
+                if (byteList.get(i) == 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("string contains NULL byte", this));
                 }
@@ -396,9 +394,6 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_compare_substring")
     public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile startTooLargeProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile startTooSmallProfile = ConditionProfile.createBinaryProfile();
-
         @Child private StringNodes.SizeNode sizeNode;
 
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -417,7 +412,7 @@ public abstract class StringPrimitiveNodes {
                 start += otherLength;
             }
 
-            if (startTooLargeProfile.profile(start > otherLength)) {
+            if (start > otherLength) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -427,7 +422,7 @@ public abstract class StringPrimitiveNodes {
                         ));
             }
 
-            if (startTooSmallProfile.profile(start < 0)) {
+            if (start < 0) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
