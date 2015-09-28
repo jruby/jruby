@@ -1709,6 +1709,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().pushBoolean(instr.requiresBacktrace());
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setExceptionRequiresBacktrace", sig(void.class, boolean.class));
+    }
+
+    @Override
     public void NonlocalReturnInstr(NonlocalReturnInstr returninstr) {
         jvmMethod().loadContext();
         jvmLoadLocal(DYNAMIC_SCOPE);

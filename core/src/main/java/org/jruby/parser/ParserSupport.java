@@ -940,7 +940,7 @@ public class ParserSupport {
         if (rescueBody == null) rescueBody = NilImplicitNode.NIL; // foo rescue () can make null.
         ISourcePosition pos = getPosition(body);
 
-        return new RescueNode(pos, body, new RescueBodyNode(pos, null, rescueBody, null), null);
+        return new RescueModNode(pos, body, new RescueBodyNode(pos, null, rescueBody, null));
     }
     
     public Node newEvStrNode(ISourcePosition position, Node node) {

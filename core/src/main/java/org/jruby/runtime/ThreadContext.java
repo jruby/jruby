@@ -1115,6 +1115,10 @@ public final class ThreadContext {
         this.recursiveSet = recursiveSet;
     }
 
+    public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
+        this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
+    }
+
     @Deprecated
     public void setFile(String file) {
         backtrace[backtraceIndex].filename = file;
@@ -1122,6 +1126,9 @@ public final class ThreadContext {
 
     private Set<RecursiveComparator.Pair> recursiveSet;
 
+    // Do we have to generate a backtrace when we generate an exception on this thread or can we
+    // MAYBE omit creating the backtrace for the exception (only some rescue forms and only for
+    // descendents of StandardError are eligible).
     public boolean exceptionRequiresBacktrace = true;
 
     @Deprecated

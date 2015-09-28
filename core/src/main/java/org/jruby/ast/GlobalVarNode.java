@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  *	access to a global variable.
  */
-public class GlobalVarNode extends Node implements INameNode {
+public class GlobalVarNode extends Node implements INameNode, SideEffectFree {
     private String name;
 
     public GlobalVarNode(ISourcePosition position, String name) {
