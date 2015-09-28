@@ -571,10 +571,12 @@ public abstract class StringPrimitiveNodes {
             try {
                 length = EncodingOperations.getEncoding(encoding).codeToMbcLength(code);
             } catch (EncodingException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
             if (length <= 0) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
