@@ -186,6 +186,7 @@ public abstract class PsychEmitterNodes {
                     }
                 }
                 if (version == null) {
+                    // TODO CS 28-Sep-15 implement this code path
                     throw new UnsupportedOperationException();
                     //throw context.runtime.newArgumentError("invalid YAML version: " + versionAry);
                 }
@@ -197,6 +198,7 @@ public abstract class PsychEmitterNodes {
                 for (int i = 0; i < tagsAry.length; i++) {
                     Object[] tagsTuple = ArrayOperations.toObjectArray((DynamicObject) tagsAry[i]);
                     if (tagsTuple.length != 2) {
+                        // TODO CS 28-Sep-15 implement this code path
                         throw new UnsupportedOperationException();
                         //throw context.runtime.newRuntimeError("tags tuple must be of length 2");
                     }
@@ -449,15 +451,18 @@ public abstract class PsychEmitterNodes {
         try {
             if (Layouts.PSYCH_EMITTER.getEmitter(emitter) == null) {
                 throw new UnsupportedOperationException();
+                // TODO CS 28-Sep-15 implement this code path
                 //throw context.getRuntime().newRuntimeError("uninitialized emitter");
             }
 
             Layouts.PSYCH_EMITTER.getEmitter(emitter).emit(event);
         } catch (IOException ioe) {
             throw new UnsupportedOperationException();
+            // TODO CS 28-Sep-15 implement this code path
             //throw context.runtime.newIOErrorFromException(ioe);
         } catch (EmitterException ee) {
             throw new UnsupportedOperationException();
+            // TODO CS 28-Sep-15 implement this code path
             //throw context.runtime.newRuntimeError(ee.toString());
         }
     }
@@ -465,6 +470,7 @@ public abstract class PsychEmitterNodes {
     private static void initEmitter(RubyContext context, DynamicObject emitter, int _encoding) {
         if (Layouts.PSYCH_EMITTER.getEmitter(emitter) != null) {
             throw new UnsupportedOperationException();
+            // TODO CS 28-Sep-15 implement this code path
             //throw context.runtime.newRuntimeError("already initialized emitter");
         }
 

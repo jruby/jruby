@@ -232,6 +232,7 @@ public abstract class PsychParserNodes {
                 Charset charset = enc.getCharset();
                 return new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
             } else {
+                // TODO CS 28-Sep-15 implement this code path
                 throw new UnsupportedOperationException();
                 //throw runtime.newTypeError(yaml, runtime.getIO());
             }
