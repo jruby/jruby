@@ -1674,10 +1674,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_upcase / rb_str_upcase_bang
      *
      */
+    @Deprecated
     public RubyString upcase(ThreadContext context) {
         return upcase19(context);
     }
 
+    @Deprecated
     public IRubyObject upcase_bang(ThreadContext context) {
         return upcase_bang19(context);
     }
@@ -1750,10 +1752,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_downcase / rb_str_downcase_bang
      *
      */
+    @Deprecated
     public RubyString downcase(ThreadContext context) {
         return downcase19(context);
     }
 
+    @Deprecated
     public IRubyObject downcase_bang(ThreadContext context) {
         return downcase_bang19(context);
     }
