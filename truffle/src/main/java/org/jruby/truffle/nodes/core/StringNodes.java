@@ -924,39 +924,68 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase", taintFromSelf = true)
-    public abstract static class DowncaseNode extends CoreMethodArrayArgumentsNode {
-
-        public DowncaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject downcase(DynamicObject string) {
-            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), newByteList, StringSupport.CR_UNKNOWN, null);
-        }
-    }
-
     @CoreMethod(names = "downcase!", raiseIfFrozenSelf = true)
+    @ImportStatic(StringGuards.class)
     public abstract static class DowncaseBangNode extends CoreMethodArrayArgumentsNode {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject downcase(DynamicObject string) {
-            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), Layouts.STRING.getByteList(string));
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public DynamicObject downcaseSingleByte(DynamicObject string) {
+            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final ByteList bytes = codeRangeable.getByteList();
 
-            if (newByteList.equal(Layouts.STRING.getByteList(string))) {
+            if (bytes.realSize() == 0) {
                 return nil();
-            } else {
-                Layouts.STRING.setByteList(string, newByteList);
-                return string;
             }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = singleByteDowncase(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                return string;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        public DynamicObject downcase(DynamicObject string) {
+            final CodeRangeable codeRangeable = Layouts.STRING.getCodeRangeableWrapper(string);
+            final ByteList bytes = codeRangeable.getByteList();
+            final Encoding encoding = bytes.getEncoding();
+
+            if (bytes.realSize() == 0) {
+                return nil();
+            }
+
+            if (encoding.isDummy()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", encoding), this));
+            }
+
+            codeRangeable.modifyAndKeepCodeRange();
+
+            final boolean modified = StringSupport.multiByteDowncase(encoding, bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
+            if (modified) {
+                return string;
+            } else {
+                return nil();
+            }
+        }
+
+        @TruffleBoundary
+        private boolean singleByteDowncase(byte[] bytes, int s, int end) {
+            return StringSupport.singleByteDowncase(bytes, s, end);
+        }
+
+        @TruffleBoundary
+        private boolean multiByteDowncase(Encoding encoding, byte[] bytes, int s, int end) {
+            return StringSupport.multiByteDowncase(encoding, bytes, s, end);
         }
     }
 
@@ -2242,11 +2271,6 @@ public abstract class StringNodes {
         @TruffleBoundary
         public static ByteList upcase(Ruby runtime, ByteList string) {
             return runtime.newString(string).upcase(runtime.getCurrentContext()).getByteList();
-        }
-
-        @TruffleBoundary
-        public static ByteList downcase(Ruby runtime, ByteList string) {
-            return runtime.newString(string).downcase(runtime.getCurrentContext()).getByteList();
         }
 
         public static int checkIndex(DynamicObject string, int index, RubyNode node) {
