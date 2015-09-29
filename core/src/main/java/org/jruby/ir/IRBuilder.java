@@ -1360,7 +1360,6 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
-        // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
@@ -3156,20 +3155,7 @@ public class IRBuilder {
                 outputExceptionCheck(build(exceptionList), exc, caughtLabel);
             }
         } else {
-            // SSS FIXME:
-            // rescue => e AND rescue implicitly EQQ the exception object with StandardError
-            // We generate explicit IR for this test here.  But, this can lead to inconsistent
-            // behavior (when compared to MRI) in certain scenarios.  See example:
-            //
-            //   self.class.const_set(:StandardError, 1)
-            //   begin; raise TypeError.new; rescue; puts "AHA"; end
-            //
-            // MRI rescues the error, but we will raise an exception because of reassignment
-            // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
-            //
-            // Solution: Create a 'StandardError' operand type to eliminate this.
-            Variable v = addResultInstr(new InheritanceSearchConstInstr(createTemporaryVariable(), new ObjectClass(), "StandardError", false));
-            outputExceptionCheck(v, exc, caughtLabel);
+            outputExceptionCheck(manager.getStandardError(), exc, caughtLabel);
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!
