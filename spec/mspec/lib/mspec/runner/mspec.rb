@@ -16,7 +16,9 @@ module MSpec
   @leave   = nil
   @load    = nil
   @unload  = nil
+  @tagged  = nil
   @current = nil
+  @example = nil
   @modes   = []
   @shared  = {}
   @guarded = []

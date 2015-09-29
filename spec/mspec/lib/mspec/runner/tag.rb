@@ -13,13 +13,19 @@ class SpecTag
 
   def unescape(str)
     return unless str
-    str = str[1..-2] if str[0] == ?" and str[-1] == ?"
-    str.gsub(/\\n/, "\n")
+    if str[0] == ?" and str[-1] == ?"
+      str[1..-2].gsub('\n', "\n")
+    else
+      str
+    end
   end
 
   def escape(str)
-    str = %["#{str.gsub(/\n/, '\n')}"] if /\n/ =~ str
-    str
+    if str.include? "\n"
+      %["#{str.gsub("\n", '\n')}"]
+    else
+      str
+    end
   end
 
   def to_s

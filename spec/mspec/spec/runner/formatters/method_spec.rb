@@ -120,8 +120,8 @@ describe MethodFormatter, "#after" do
     @formatter.before state
 
     exc = SpecExpectationNotMetError.new "failed"
-    @formatter.exception ExceptionState.new(@state, nil, exc)
-    @formatter.exception ExceptionState.new(@state, nil, exc)
+    @formatter.exception ExceptionState.new(state, nil, exc)
+    @formatter.exception ExceptionState.new(state, nil, exc)
 
     @formatter.after state
     h = @formatter.methods["Some#method"]

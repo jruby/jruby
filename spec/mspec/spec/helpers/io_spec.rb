@@ -52,6 +52,7 @@ end
 describe Object, "#new_fd" do
   before :each do
     @name = tmp("io_specs")
+    @io = nil
   end
 
   after :each do
