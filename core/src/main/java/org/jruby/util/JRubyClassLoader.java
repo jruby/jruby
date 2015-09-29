@@ -36,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
@@ -74,8 +75,24 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
 
     private Runnable unloader;
 
+    private File tempdir;
+
     public JRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
+    }
+
+    private File getTempDir() {
+        if (tempdir == null) {
+            String processName = ManagementFactory.getRuntimeMXBean().getName();
+            long pid = Long.parseLong(processName.split("@")[0]);
+            File dir = new File(System.getProperty("java.io.tmpdir"), "jruby-" + pid);
+            if (dir.mkdirs()) {
+                dir.deleteOnExit();
+            }
+            ;
+            tempdir = dir;
+        }
+        return tempdir;
     }
 
     public void addURLNoIndex(URL url) {
@@ -86,7 +103,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             OutputStream out = null;
             try
             {
-                File f = File.createTempFile( "jruby", ".jar");
+                File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
                 f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
                 in = new BufferedInputStream( url.openStream() );
