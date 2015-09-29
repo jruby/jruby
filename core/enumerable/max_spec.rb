@@ -3,13 +3,11 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Enumerable#max" do
   before :each do
-    @a = EnumerableSpecs::EachDefiner.new( 2, 4, 6, 8, 10 )
-
     @e_strs = EnumerableSpecs::EachDefiner.new("333", "22", "666666", "1", "55555", "1010101010")
     @e_ints = EnumerableSpecs::EachDefiner.new( 333,   22,   666666,   55555, 1010101010)
   end
 
-  it "max should return the maximum element" do
+  it "returns the maximum element" do
     EnumerableSpecs::Numerous.new.max.should == 6
   end
 
@@ -52,24 +50,25 @@ describe "Enumerable#max" do
     end.should raise_error(ArgumentError)
   end
 
-  it "returns the maximum element (with block)" do
-    # with a block
-    EnumerableSpecs::EachDefiner.new("2","33","4","11").max {|a,b| a <=> b }.should == "4"
-    EnumerableSpecs::EachDefiner.new( 2 , 33 , 4 , 11 ).max {|a,b| a <=> b }.should == 33
+  context "when passed a block" do
+    it "returns the maximum element" do
+      EnumerableSpecs::EachDefiner.new("2","33","4","11").max {|a,b| a <=> b }.should == "4"
+      EnumerableSpecs::EachDefiner.new( 2 , 33 , 4 , 11 ).max {|a,b| a <=> b }.should == 33
 
-    EnumerableSpecs::EachDefiner.new("2","33","4","11").max {|a,b| b <=> a }.should == "11"
-    EnumerableSpecs::EachDefiner.new( 2 , 33 , 4 , 11 ).max {|a,b| b <=> a }.should == 2
+      EnumerableSpecs::EachDefiner.new("2","33","4","11").max {|a,b| b <=> a }.should == "11"
+      EnumerableSpecs::EachDefiner.new( 2 , 33 , 4 , 11 ).max {|a,b| b <=> a }.should == 2
 
-    @e_strs.max {|a,b| a.length <=> b.length }.should == "1010101010"
+      @e_strs.max {|a,b| a.length <=> b.length }.should == "1010101010"
 
-    @e_strs.max {|a,b| a <=> b }.should == "666666"
-    @e_strs.max {|a,b| a.to_i <=> b.to_i }.should == "1010101010"
+      @e_strs.max {|a,b| a <=> b }.should == "666666"
+      @e_strs.max {|a,b| a.to_i <=> b.to_i }.should == "1010101010"
 
-    @e_ints.max {|a,b| a <=> b }.should == 1010101010
-    @e_ints.max {|a,b| a.to_s <=> b.to_s }.should == 666666
+      @e_ints.max {|a,b| a <=> b }.should == 1010101010
+      @e_ints.max {|a,b| a.to_s <=> b.to_s }.should == 666666
+    end
   end
 
-  it "returns the minimum for enumerables that contain nils" do
+  it "returns the maximum for enumerables that contain nils" do
     arr = EnumerableSpecs::Numerous.new(nil, nil, true)
     arr.max { |a, b|
       x = a.nil? ? 1 : a ? 0 : -1
@@ -83,4 +82,40 @@ describe "Enumerable#max" do
     multi.max.should == [6, 7, 8, 9]
   end
 
+  ruby_version_is "2.2" do
+    context "when called with an argument n" do
+      context "without a block" do
+        it "returns an array containing the maximum n elements" do
+          result = @e_ints.max(2)
+          result.should == [1010101010, 666666]
+        end
+      end
+
+      context "with a block" do
+        it "returns an array containing the maximum n elements" do
+          result = @e_ints.max(2) { |a, b| a * 2 <=> b * 2 }
+          result.should == [1010101010, 666666]
+        end
+      end
+
+      context "on a enumerable of length x where x < n" do
+        it "returns an array containing the maximum n elements of length x" do
+          result = @e_ints.max(500)
+          result.length.should == 5
+        end
+      end
+
+      context "that is negative" do
+        it "raises an ArgumentError" do
+          lambda { @e_ints.max(-1) }.should raise_error(ArgumentError)
+        end
+      end
+    end
+
+    context "that is nil" do
+      it "returns the maximum element" do
+        @e_ints.max(nil).should == 1010101010
+      end
+    end
+  end
 end

@@ -9,6 +9,13 @@ describe "The '&&' statement" do
   end
 
   it "evaluates to the first condition not to be true" do
+    value = nil
+    (value && nil).should == nil
+    (value && false).should == nil
+    value = false
+    (value && nil).should == false
+    (value && false).should == false
+
     ("yes" && 1 && nil && true).should == nil
     ("yes" && 1 && false && true).should == false
   end
@@ -41,6 +48,13 @@ describe "The 'and' statement" do
   end
 
   it "evaluates to the first condition not to be true" do
+    value = nil
+    (value and nil).should == nil
+    (value and false).should == nil
+    value = false
+    (value and nil).should == false
+    (value and false).should == false
+
     ("yes" and 1 and nil and true).should == nil
     ("yes" and 1 and false and true).should == false
   end

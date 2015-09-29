@@ -32,4 +32,36 @@ module ObjectSpaceFixtures
     return Proc.new { wr.write "finalized"; wr.close }
   end
 
+  class ObjectToBeFound
+    attr_reader :name
+
+    def initialize(name)
+      @name = name
+    end
+  end
+
+  class ObjectWithInstanceVariable
+    def initialize
+      @instance_variable = ObjectToBeFound.new(:instance_variable)
+    end
+  end
+
+  def self.to_be_found_symbols
+    ObjectSpace.each_object(ObjectToBeFound).map do |o|
+      o.name
+    end
+  end
+
+  def self.wait_for_weakref_cleared(weakref)
+    started = Time.now
+
+    while weakref.weakref_alive? && Time.now - started < 3
+      GC.start
+    end
+  end
+
+  SECOND_LEVEL_CONSTANT = ObjectToBeFound.new(:second_level_constant)
+
 end
+
+OBJECT_SPACE_TOP_LEVEL_CONSTANT = ObjectSpaceFixtures::ObjectToBeFound.new(:top_level_constant)

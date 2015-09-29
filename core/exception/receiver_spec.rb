@@ -10,7 +10,7 @@ ruby_version_is "2.3" do
         end
       )
     end
-    
+
     it "raises an ArgumentError when the receiver is none" do
       -> { NameError.new.receiver }.should raise_error(ArgumentError)
     end

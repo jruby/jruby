@@ -99,12 +99,24 @@ module MethodSpecs
     def baz(a, b)
       self.class
     end
+    def overridden; end
   end
 
   class B < A
+    def overridden; end
+  end
+
+  module BetweenBAndC
+    def overridden; end
   end
 
   class C < B
+    include BetweenBAndC
+    def overridden; end
+  end
+
+  module OverrideAgain
+    def overridden; end
   end
 
   class D

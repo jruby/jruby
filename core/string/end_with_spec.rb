@@ -14,9 +14,9 @@ describe "String#end_with?" do
     s.end_with?('ll').should be_false
   end
 
-  it "returns true if other is empty" do
-    s = 'hello'
-    s.end_with?('').should be_true
+  it "returns true if the search string is empty" do
+    "hello".end_with?("").should be_true
+    "".end_with?("").should be_true
   end
 
   it "returns true only if any ending match" do

@@ -79,6 +79,21 @@ describe "The super keyword" do
     lambda {sub_zsuper.new.foo}.should raise_error(NoMethodError, /super/)
   end
 
+  it "uses given block even if arguments are passed explicitly" do
+    c1 = Class.new do
+      def m
+        yield
+      end
+    end
+    c2 = Class.new(c1) do
+      def m(v)
+        super()
+      end
+    end
+
+    c2.new.m(:dump) { :value }.should == :value
+  end
+
   it "calls the superclass method when in a block" do
     Super::S6.new.here.should == :good
   end
