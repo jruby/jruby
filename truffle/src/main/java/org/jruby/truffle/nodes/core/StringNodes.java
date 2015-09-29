@@ -1156,7 +1156,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "getbyte", required = 1)
+    @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         private final ConditionProfile negativeIndexProfile = ConditionProfile.createBinaryProfile();

@@ -729,7 +729,7 @@ public abstract class StringPrimitiveNodes {
         }
     }
 
-    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 1)
+    @RubiniusPrimitive(name = "string_character_index", needsSelf = false, lowerFixnumParameters = 2)
     public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -956,7 +956,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 1, 2, 3 })
+    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false, lowerFixnumParameters = { 2, 3, 4 })
     public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -994,7 +994,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 0)
+    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false, lowerFixnumParameters = 1)
     public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -1294,7 +1294,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @RubiniusPrimitive(name = "string_from_bytearray", needsSelf = false, lowerFixnumParameters = { 1, 2 })
     public static abstract class StringFromByteArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringFromByteArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
