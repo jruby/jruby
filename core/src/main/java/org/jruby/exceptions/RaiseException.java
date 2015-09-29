@@ -203,9 +203,17 @@ public class RaiseException extends JumpException {
 
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
 
-        if (context.exceptionRequiresBacktrace) {
+        if (requiresBacktrace(context)) {
             exception.prepareIntegratedBacktrace(context, javaTrace);
         }
+    }
+
+    private boolean requiresBacktrace(ThreadContext context) {
+        IRubyObject debugMode = context.runtime.getGlobalVariables().get("$DEBUG");
+        // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
+        return context.exceptionRequiresBacktrace ||
+                (debugMode != null && debugMode.isTrue()) ||
+                !exception.kind_of_p(context, context.runtime.getStandardError()).isTrue();
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
@@ -216,8 +224,7 @@ public class RaiseException extends JumpException {
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
 
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        if (!exception.kind_of_p(context, context.runtime.getStandardError()).isTrue() ||
-                context.exceptionRequiresBacktrace) {
+        if (requiresBacktrace(context)) {
             if (backtrace == null) {
                 exception.prepareBacktrace(context, nativeException);
             } else {
