@@ -18,10 +18,6 @@ describe "BigDecimal.new" do
     }
   end
 
-  it "doesn't segfault when using a very large string to build the number" do
-    BigDecimal.new("1" + "0"*10000000)._dump.should == "10000017:0.1E10000001"
-  end
-
   it "Number of significant digits >= given precision" do
     BigDecimal.new("3.1415923", 10).precs[1].should >= 10
   end

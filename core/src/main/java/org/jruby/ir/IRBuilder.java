@@ -3036,7 +3036,7 @@ public class IRBuilder {
 
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
         // For now we will only contemplate 'foo rescue nil' cases but simple non-mod rescue forms can be added later.
-        if (!(rescueNode instanceof RescueModNode)) return false;
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode)) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from

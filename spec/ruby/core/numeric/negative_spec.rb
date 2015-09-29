@@ -8,14 +8,14 @@ ruby_version_is "2.3" do
         0.1.negative?.should be_false
       end
     end
-    
+
     describe "on zero" do
       it "returns false" do
         0.negative?.should be_false
         0.0.negative?.should be_false
       end
     end
-    
+
     describe "on negative numbers" do
       it "returns true" do
         -1.negative?.should be_true

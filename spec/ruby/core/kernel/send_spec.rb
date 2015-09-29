@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/send', __FILE__)
+require File.expand_path('../../../shared/basicobject/send', __FILE__)
 
 describe "Kernel#send" do
   it "invokes the named public method" do
@@ -64,5 +64,5 @@ describe "Kernel#send" do
     KernelSpecs::Foo.new.send(:aka).should == 'done2'
   end
 
-  it_behaves_like(:kernel_send, :send)
+  it_behaves_like(:basicobject_send, :send)
 end

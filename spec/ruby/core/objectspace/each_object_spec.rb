@@ -101,7 +101,7 @@ describe "ObjectSpace.each_object" do
 
   it "finds an object stored in a local variable set in a binding manually" do
     b = binding
-    b.local_variable_set(:local, ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_manual_binding))
+    b.eval("local = ObjectSpaceFixtures::ObjectToBeFound.new(:local_in_manual_binding)")
     ObjectSpaceFixtures.to_be_found_symbols.should include(:local_in_manual_binding)
   end
 

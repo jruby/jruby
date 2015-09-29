@@ -1,0 +1,7 @@
+fails:Float#next_float returns a float the smallest possible step greater than the receiver
+fails:Float#next_float steps directly between MAX and INFINITY
+fails:Float#next_float steps directly between 1.0 and 1.0 + EPSILON
+fails:Float#next_float steps directly between -1.0 and -1.0 + EPSILON/2
+fails:Float#next_float reverses the effect of prev_float
+fails:Float#next_float returns negative zero when stepping upward from just below zero
+fails:Float#next_float returns NAN if NAN was the receiver

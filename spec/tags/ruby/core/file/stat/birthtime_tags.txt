@@ -1,0 +1,1 @@
+fails:File::Stat#birthtime raises an NotImplementedError

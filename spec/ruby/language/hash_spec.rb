@@ -74,8 +74,15 @@ describe "Hash literal" do
   end
 
   it "accepts mixed 'key: value' and 'key => value' syntax" do
-    h = {a: 1, b: 2, "c" => 3}
+    h = {:a => 1, :b => 2, "c" => 3}
     {a: 1, b: 2, "c" => 3}.should == h
+  end
+
+  ruby_version_is "2.2" do
+    it "accepts mixed 'key: value', 'key => value' and '\"key\"': value' syntax" do
+      h = {:a => 1, :b => 2, "c" => 3, :d => 4}
+      eval('{a: 1, :b => 2, "c" => 3, "d": 4}').should == h
+    end
   end
 
   it "expands an '**{}' element into the containing Hash literal initialization" do

@@ -125,6 +125,60 @@ describe "A class definition" do
     class ClassSpecs::Plus; 10 + 20; end.should == 30
     class ClassSpecs::Singleton; class << self; :singleton; end; end.should == :singleton
   end
+
+  describe "within a block creates a new class in the lexical scope" do
+    it "for named classes at the toplevel" do
+      klass = Class.new do
+        class Howdy
+        end
+
+        def self.get_class_name
+          Howdy.name
+        end
+      end
+
+      Howdy.name.should == 'Howdy'
+      klass.get_class_name.should == 'Howdy'
+    end
+
+    it "for named classes in a module" do
+      klass = ClassSpecs::ANON_CLASS_FOR_NEW.call
+
+      ClassSpecs::NamedInModule.name.should == 'ClassSpecs::NamedInModule'
+      klass.get_class_name.should == 'ClassSpecs::NamedInModule'
+    end
+
+    it "for anonymous classes" do
+      klass = Class.new do
+        def self.get_class
+          Class.new do
+            def self.foo
+              'bar'
+            end
+          end
+        end
+
+        def self.get_result
+          get_class.foo
+        end
+      end
+
+      klass.get_result.should == 'bar'
+    end
+
+    it "for anonymous classes assigned to a constant" do
+      klass = Class.new do
+        AnonWithConstant = Class.new
+
+        def self.get_class_name
+          AnonWithConstant.name
+        end
+      end
+
+      AnonWithConstant.name.should == 'AnonWithConstant'
+      klass.get_class_name.should == 'AnonWithConstant'
+    end
+  end
 end
 
 describe "An outer class definition" do

@@ -23,7 +23,7 @@ describe "The DATA constant" do
     str.chomp.should == "data only"
   end
 
-  platform_is_not :windows do
+  platform_is_not :windows, :solaris do
     it "succeeds in locking the file DATA came from" do
       path = fixture(__FILE__, "data_flock.rb")
 

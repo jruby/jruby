@@ -109,3 +109,15 @@ describe SpecTag, "#==" do
     [one].==([two]).should == true
   end
 end
+
+describe SpecTag, "#unescape" do
+  it "replaces \\n by LF when the description is quoted" do
+    tag = SpecTag.new 'tag:"desc with\nnew line"'
+    tag.description.should == "desc with\nnew line"
+  end
+
+  it "does not replaces \\n by LF when the description is not quoted " do
+    tag = SpecTag.new 'tag:desc with\nnew line'
+    tag.description.should == "desc with\\nnew line"
+  end
+end

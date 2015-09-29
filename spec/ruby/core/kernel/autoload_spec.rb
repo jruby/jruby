@@ -57,22 +57,8 @@ describe "Kernel#autoload" do
   end
 
   describe "when Object is frozen" do
-    before :each do
-      non_existent = fixture __FILE__, "no_autoload.rb"
-
-      @script = <<-"EOD"
-        Object.freeze
-
-        begin
-          autoload :ANY_CONSTANT, "#{non_existent}"
-        rescue Exception => e
-          print e.class, " - ", defined?(ANY_CONSTANT).inspect
-        end
-      EOD
-    end
-
     it "raises a RuntimeError before defining the constant" do
-      ruby_exe(@script, args: "2>&1", escape: true).should == "RuntimeError - nil"
+      ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "RuntimeError - nil"
     end
   end
 end

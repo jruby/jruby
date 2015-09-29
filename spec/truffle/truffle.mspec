@@ -14,7 +14,7 @@ class MSpecScript
     "spec/ruby/language"
   ]
 
-  core = [
+  set :core, [
     "spec/ruby/core",
 
     # Can't load these - so tags aren't enough to exclude them. The problem is
@@ -38,36 +38,6 @@ class MSpecScript
     # require etc, linux only spec
     "^spec/ruby/core/io/advise_spec.rb",
   ]
-
-  core += [
-    # Windows
-    "^spec/ruby/core/method/source_location_spec.rb",
-    "^spec/ruby/core/struct/each_spec.rb",
-    "^spec/ruby/core/struct/element_reference_spec.rb",
-    "^spec/ruby/core/struct/element_set_spec.rb",
-    "^spec/ruby/core/struct/eql_spec.rb",
-    "^spec/ruby/core/struct/equal_value_spec.rb",
-    "^spec/ruby/core/struct/hash_spec.rb",
-    "^spec/ruby/core/struct/initialize_copy_spec.rb",
-    "^spec/ruby/core/struct/initialize_spec.rb",
-    "^spec/ruby/core/struct/inspect_spec.rb",
-    "^spec/ruby/core/struct/instance_variables_spec.rb",
-    "^spec/ruby/core/struct/length_spec.rb",
-    "^spec/ruby/core/struct/members_spec.rb",
-    "^spec/ruby/core/struct/new_spec.rb",
-    "^spec/ruby/core/struct/select_spec.rb",
-    "^spec/ruby/core/struct/size_spec.rb",
-    "^spec/ruby/core/struct/struct_spec.rb",
-    "^spec/ruby/core/struct/to_a_spec.rb",
-    "^spec/ruby/core/struct/to_h_spec.rb",
-    "^spec/ruby/core/struct/to_s_spec.rb",
-    "^spec/ruby/core/struct/values_at_spec.rb",
-    "^spec/ruby/core/struct/values_spec.rb",
-    "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
-    "^spec/ruby/core/unboundmethod/source_location_spec.rb",
-  ] if windows?
-  
-  set :core, core
 
   set :library, [
     "spec/ruby/library",
