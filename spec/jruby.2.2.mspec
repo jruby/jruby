@@ -105,9 +105,6 @@ class MSpecScript
   # This set of files is run by mspec ci
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
-  # Optional library specs
-  set :ffi, SPEC_DIR + '/optional/ffi'
-
   # A list of _all_ optional library specs
   set :optional, [get(:ffi)]
 
