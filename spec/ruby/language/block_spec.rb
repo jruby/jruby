@@ -812,6 +812,25 @@ describe "Post-args" do
         [a, b, c, d]
       end.call(2, 3).should == [2, 6, [], 3]
     end
+
+    ruby_version_is "2.2" do
+      describe "with a circular argument reference" do
+        it "shadows an existing local with the same name as the argument" do
+          a = 1
+          proc { |a=a| a }.call.should == nil
+        end
+
+        it "shadows an existing method with the same name as the argument" do
+          def a; 1; end
+          proc { |a=a| a }.call.should == nil
+        end
+
+        it "calls an existing method with the same name as the argument if explicitly using ()" do
+          def a; 1; end
+          proc { |a=a()| a }.call.should == 1
+        end
+      end
+    end
   end
 
   describe "with pattern matching" do

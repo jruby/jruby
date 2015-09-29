@@ -73,7 +73,7 @@ describe "Enumerable#slice_before" do
     end
   end
 
-  it "raises an Argument error when given an incorrect number of arguments" do
+  it "raises an ArgumentError when given an incorrect number of arguments" do
     lambda { @enum.slice_before("one", "two") }.should raise_error(ArgumentError)
     lambda { @enum.slice_before }.should raise_error(ArgumentError)
   end

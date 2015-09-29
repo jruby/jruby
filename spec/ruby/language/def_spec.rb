@@ -188,7 +188,7 @@ describe "An instance method with a default argument" do
   end
 
   ruby_version_is "2.2" do
-    it "does not call a method with the same name as the local" do
+    it "shadows an existing method with the same name as the local" do
       def bar
         1
       end
@@ -196,6 +196,17 @@ describe "An instance method with a default argument" do
         bar
       end
       foo.should == nil
+      foo(2).should == 2
+    end
+
+    it "calls a method with the same name as the local when explicitly using ()" do
+      def bar
+        1
+      end
+      def foo(bar = bar())
+        bar
+      end
+      foo.should == 1
       foo(2).should == 2
     end
   end

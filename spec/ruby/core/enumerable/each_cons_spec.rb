@@ -14,7 +14,7 @@ describe "Enumerable#each_cons" do
     acc.should == @in_threes
   end
 
-  it "raises an Argument Error if there is not a single parameter > 0" do
+  it "raises an ArgumentError if there is not a single parameter > 0" do
     lambda{ @enum.each_cons(0){}    }.should raise_error(ArgumentError)
     lambda{ @enum.each_cons(-2){}   }.should raise_error(ArgumentError)
     lambda{ @enum.each_cons{}       }.should raise_error(ArgumentError)
