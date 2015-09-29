@@ -6,24 +6,11 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module YAML
+# We defined Psych at the top level becuase several things depend on its name.
+# Here we fix that up and put it back into Truffle.
 
-  def load(string)
-    raise "YAML.load not implemented"
-  end
-  module_function :load
-
-  def dump(object)
-    raise "YAML.dump not implemented"
-  end
-  module_function :dump
-
-end
+Truffle::Psych = Psych
 
 class Object
-
-  def to_yaml
-    raise "Object#to_yaml not implemented"
-  end
-
+  remove_const :Psych
 end

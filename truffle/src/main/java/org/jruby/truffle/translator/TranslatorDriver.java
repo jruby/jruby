@@ -41,7 +41,7 @@ import java.nio.charset.StandardCharsets;
 public class TranslatorDriver {
 
     public static enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE, EVAL
+        TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
     }
 
     private final ParseEnvironment parseEnvironment;
@@ -167,7 +167,9 @@ public class TranslatorDriver {
 
         // Catch return
 
-        truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        if (parserContext != ParserContext.INLINE) {
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        }
 
         // Catch retry
 

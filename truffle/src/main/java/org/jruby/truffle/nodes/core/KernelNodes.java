@@ -1541,8 +1541,20 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(DynamicObject featureString) {
-            CompilerDirectives.transferToInterpreter();
             final String feature = featureString.toString();
+
+            // Pysch loads either the jar or the so - we need to intercept
+
+            if (feature.equals("psych.so") && RubyCallStack.getCallerFrame(getContext()).getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("psych.rb")) {
+                try {
+                    getContext().getFeatureLoader().require("truffle/psych.rb", this);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return true;
+            }
 
             // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
 

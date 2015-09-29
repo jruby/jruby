@@ -217,10 +217,15 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return getLatestInstance().inlineRubyHelper(null, currentFrame, code);
     }
 
+    @TruffleBoundary
+    public Object inlineRubyHelper(Node currentNode, String expression, Object... arguments) {
+        return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.MATERIALIZE, true), expression, arguments);
+    }
+
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = Layouts.BINDING.createBinding(getCoreLibrary().getBindingFactory(), evalFrame);
-        return eval(expression, binding, true, "inline-ruby", currentNode);
+        return eval(TranslatorDriver.ParserContext.INLINE, expression, binding, true, "inline-ruby", currentNode);
     }
 
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
@@ -231,7 +236,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                         null,
                         RubyArguments.getSelf(frame.getArguments()),
                         null,
-                        new Object[] {}),
+                        new Object[]{}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -392,17 +397,22 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     @TruffleBoundary
-    public Object eval(String code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(TranslatorDriver.ParserContext parserContext, String code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
-        return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
+        return eval(parserContext, ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
     }
 
     @TruffleBoundary
     public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+        return eval(TranslatorDriver.ParserContext.EVAL, code, binding, ownScopeForAssignments, filename, currentNode);
+    }
+
+    @TruffleBoundary
+    public Object eval(TranslatorDriver.ParserContext parserContext, ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
