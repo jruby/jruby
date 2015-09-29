@@ -342,7 +342,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_chr_at")
+    @RubiniusPrimitive(name = "string_chr_at", lowerFixnumParameters = 1)
     public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private StringByteSubstringPrimitiveNode stringByteSubstringNode;
