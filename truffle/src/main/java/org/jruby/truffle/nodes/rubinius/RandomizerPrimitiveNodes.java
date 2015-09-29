@@ -95,17 +95,17 @@ public abstract class RandomizerPrimitiveNodes {
         @Specialization
         public int randomizerRandInt(DynamicObject randomizer, int limit) {
             final Random r = Layouts.RANDOMIZER.getRandom(randomizer);
-            return (int) putIntoRange(r, (long) limit);
+            return (int) randInt(r, (long) limit);
         }
 
         @Specialization
         public long randomizerRandInt(DynamicObject randomizer, long limit) {
             final Random r = Layouts.RANDOMIZER.getRandom(randomizer);
-            return putIntoRange(r, limit);
+            return randInt(r, limit);
         }
 
         @TruffleBoundary
-        protected static long putIntoRange(Random r, long limit) {
+        protected static long randInt(Random r, long limit) {
             return RubyRandom.randLimitedFixnumInner(r, limit);
         }
 
