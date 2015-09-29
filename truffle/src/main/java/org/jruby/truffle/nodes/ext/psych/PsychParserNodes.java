@@ -178,24 +178,21 @@ public abstract class PsychParserNodes {
                     }
                 }
             } catch (ParserException pe) {
-                parser = null;
-                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 raiseParserException(yaml, pe, path);
             } catch (ScannerException se) {
-                parser = null;
-                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 StringBuilder message = new StringBuilder("syntax error");
                 if (se.getProblemMark() != null) {
                     message.append(se.getProblemMark().toString());
                 }
                 raiseParserException(yaml, se, path);
             } catch (ReaderException re) {
-                parser = null;
-                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 raiseParserException(yaml, re, path);
             } catch (Throwable t) {
                 Helpers.throwException(t);
-                Layouts.PSYCH_PARSER.setParser(parserObject, parser);
+                Layouts.PSYCH_PARSER.setParser(parserObject, null);
                 return parserObject;
             }
 
@@ -226,9 +223,11 @@ public abstract class PsychParserNodes {
 
             // fall back on IOInputStream, using default charset
             if ((boolean) ruby("yaml.respond_to? :read", "yaml", yaml)) {
-                Encoding enc = ((boolean) ruby("yaml.is_a? IO", "yaml", yaml))
-                        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
-                        : UTF8Encoding.INSTANCE;
+                //final boolean isIO = (boolean) ruby("yaml.is_a? IO", "yaml", yaml);
+                //Encoding enc = isIO
+                //        ? UTF8Encoding.INSTANCE // ((RubyIO)yaml).getReadEncoding()
+                //        : UTF8Encoding.INSTANCE;
+                final Encoding enc = UTF8Encoding.INSTANCE;
                 Charset charset = enc.getCharset();
                 return new StreamReader(new InputStreamReader(new InputStreamAdapter(getContext(), yaml), charset));
             } else {
