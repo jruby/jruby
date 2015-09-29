@@ -955,17 +955,13 @@ class CSV
       begin
         e = f.encode(ConverterEncoding)
         e =~ DateMatcher ? Date.parse(e) : f
-      rescue  # encoding conversion or date parse errors
-        f
-      end
+      end rescue r # encoding conversion or date parse errors
     end
     def self.date_time(f)
       begin
         e = f.encode(ConverterEncoding)
         e =~ DateTimeMatcher ? DateTime.parse(e) : f
-      rescue  # encoding conversion or date parse errors
-        f
-      end
+      end rescue r # encoding conversion or date parse errors
     end
   end
   Converters  = { integer:   converter_methods.method(:integer),
