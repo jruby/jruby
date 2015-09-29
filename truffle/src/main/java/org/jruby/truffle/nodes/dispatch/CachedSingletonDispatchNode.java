@@ -46,7 +46,7 @@ public class CachedSingletonDispatchNode extends CachedDispatchNode {
         this.next = next;
         this.method = method;
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-        applySplittingStrategy(callNode, method);
+        applySplittingInliningStrategy(callNode, method);
     }
 
     @Override

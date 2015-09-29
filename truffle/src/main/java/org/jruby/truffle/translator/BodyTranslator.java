@@ -844,7 +844,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false, false, false);
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                     environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
@@ -1135,7 +1135,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
@@ -1800,7 +1800,7 @@ public class BodyTranslator extends Translator {
         }
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
@@ -2900,7 +2900,7 @@ public class BodyTranslator extends Translator {
         }
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,

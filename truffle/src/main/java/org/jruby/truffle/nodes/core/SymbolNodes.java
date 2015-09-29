@@ -139,7 +139,7 @@ public abstract class SymbolNodes {
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection, null, Arity.NO_ARGUMENTS, Layouts.SYMBOL.getString(symbol),
-                    true, null, false);
+                    true, null, false, false, false);
 
             final RubyRootNode rootNode = new RubyRootNode(
                     getContext(), sourceSection,

@@ -25,11 +25,12 @@ public final class RubyArguments {
 
     public static final int METHOD_INDEX = 0;
     public static final int DECLARATION_FRAME_INDEX = 1;
+    public static final int CALLER_FRAME_INDEX = 2;
     public static final int SELF_INDEX = 3;
     public static final int BLOCK_INDEX = 4;
     public static final int RUNTIME_ARGUMENT_COUNT = 5;
 
-    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, DynamicObject block, Object[] arguments) {
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, Object[] arguments) {
         assert method != null;
         assert self != null;
         assert block == null || RubyGuards.isRubyProc(block);
@@ -39,6 +40,7 @@ public final class RubyArguments {
 
         packed[METHOD_INDEX] = method;
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
+        packed[CALLER_FRAME_INDEX] = callerFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
         ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
@@ -131,6 +133,10 @@ public final class RubyArguments {
         }
 
         return null;
+    }
+
+    public static MaterializedFrame getCallerFrame(Object[] arguments) {
+        return (MaterializedFrame) arguments[CALLER_FRAME_INDEX];
     }
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {

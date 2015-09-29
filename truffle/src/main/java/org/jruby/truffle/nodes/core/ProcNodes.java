@@ -49,7 +49,7 @@ public abstract class ProcNodes {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
-                Layouts.PROC.getSelf(proc),
+                null, Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
                 args);
     }

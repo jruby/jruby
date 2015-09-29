@@ -206,7 +206,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         return method.getCallTarget().call(
-                RubyArguments.pack(method, method.getDeclarationFrame(), object, block, arguments));
+                RubyArguments.pack(method, method.getDeclarationFrame(), null, object, block, arguments));
     }
 
     /* For debugging in Java. */
@@ -229,7 +229,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 RubyArguments.pack(
                         RubyArguments.getMethod(frame.getArguments()),
                         null,
-                        RubyArguments.getSelf(frame.getArguments()),
+                        null, RubyArguments.getSelf(frame.getArguments()),
                         null,
                         new Object[] {}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
@@ -425,7 +425,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[]{}));
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, new Object[]{}));
     }
 
     public long getNextObjectID() {

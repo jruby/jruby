@@ -49,7 +49,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (falseMethod != null) {
             this.falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
-            applySplittingStrategy(falseCallDirect, falseMethod);
+            applySplittingInliningStrategy(falseCallDirect, falseMethod);
         }
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
@@ -57,7 +57,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (trueMethod != null) {
             this.trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
-            applySplittingStrategy(trueCallDirect, trueMethod);
+            applySplittingInliningStrategy(trueCallDirect, trueMethod);
         }
     }
 

@@ -38,7 +38,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         this.unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-        applySplittingStrategy(callNode, method);
+        applySplittingInliningStrategy(callNode, method);
     }
 
     @Override

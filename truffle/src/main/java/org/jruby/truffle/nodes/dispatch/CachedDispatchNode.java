@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -79,19 +80,26 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return cachedNameAsSymbol;
     }
 
-    protected void applySplittingStrategy(DirectCallNode callNode, InternalMethod method) {
+    protected void applySplittingInliningStrategy(DirectCallNode callNode, InternalMethod method) {
         if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
             insert(callNode);
             callNode.cloneCallTarget();
         }
+
+        if (method.getSharedMethodInfo().shouldAlwaysInline() && callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
     }
 
     protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
+        CompilerAsserts.compilationConstant(method.getSharedMethodInfo().needsCallerFrame());
+
         return callNode.call(
                 frame,
                 RubyArguments.pack(
                         method,
                         method.getDeclarationFrame(),
+                        method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null,
                         receiver,
                         block,
                         arguments));

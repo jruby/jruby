@@ -2251,7 +2251,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
+                    RubyArguments.pack(method, null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2309,7 +2309,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2356,7 +2356,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
+                    RubyArguments.pack(method, null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2414,7 +2414,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
