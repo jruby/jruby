@@ -1231,21 +1231,9 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
             Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false);
 
-            while (frame != null) {
-                for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
-                    if (name instanceof String) {
-                        ArrayOperations.append(array, getSymbol((String) name));
-                    }
-                }
-
-                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
-            }
-
-            return array;
+            return BindingNodes.LocalVariablesNode.listLocalVariables(getContext(), frame);
         }
 
     }
