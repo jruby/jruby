@@ -1,0 +1,2 @@
+fails:Enumerable#min_by when called with an argument n without a block returns an enumerator
+fails:Enumerable#min_by when called with an argument n when n is nil returns the minimum element
