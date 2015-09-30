@@ -82,7 +82,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
+    IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
         int blockArity = getSignature().arityValue();
         if (blockArity == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
