@@ -19,9 +19,9 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-    private int callCount = 0;
+    private volatile int callCount = 0;
     private InterpreterContext interpreterContext;
-    private CompiledIRBlockBody jittedBody;
+    private volatile CompiledIRBlockBody jittedBody;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
@@ -48,8 +48,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
-        this.jittedBody = blockBody;
         this.callCount = -1;
+        this.jittedBody = blockBody;
     }
 
     @Override
@@ -147,13 +147,16 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
     }
 
-    // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
-    // and replace interpreterContext asynchronously.
     protected void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting()) return; // don't Promote to full build during runtime boot
+        if (context.runtime.isBooting()) return; // don't JIT during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        synchronized (this) {
+            if (callCount >= 0) {
+                if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+                    callCount = -1;
+                    context.runtime.getJITCompiler().buildThresholdReached(context, this);
+                }
+            }
         }
     }
 
