@@ -217,16 +217,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Extending an array of compatible type by just one
 
     @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
-    )
-    public boolean writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, boolean value) {
-        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
-        ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
-        Layouts.ARRAY.setSize(array, index + 1);
-        return value;
-    }
-
-    @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)", "isExtendingByOne(array, index)"}
     )
     public int writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
@@ -269,7 +259,27 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
-    public DynamicObject writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, DynamicObject value) {
+    public boolean writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, boolean value) {
+        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+        ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
+        Layouts.ARRAY.setSize(array, index + 1);
+        return value;
+    }
+
+    @Specialization(
+            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
+            )
+    public int writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
+        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+        ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
+        Layouts.ARRAY.setSize(array, index + 1);
+        return value;
+    }
+
+    @Specialization(
+            guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
+            )
+    public double writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, double value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
@@ -279,7 +289,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     @Specialization(
             guards={"isRubyArray(array)", "isObjectArray(array)", "isExtendingByOne(array, index)"}
     )
-    public int writeObjectExtendByOne(VirtualFrame frame, DynamicObject array, int index, int value) {
+    public DynamicObject writeExtendByOne(VirtualFrame frame, DynamicObject array, int index, DynamicObject value) {
         ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
         ((Object[]) Layouts.ARRAY.getStore(array))[index] = value;
         Layouts.ARRAY.setSize(array, index + 1);
