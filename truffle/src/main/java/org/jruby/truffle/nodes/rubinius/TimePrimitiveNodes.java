@@ -303,7 +303,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_set_nseconds")
+    @RubiniusPrimitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
     public static abstract class TimeSetNSecondsPrimitiveNode extends RubiniusPrimitiveNode {
 
         public TimeSetNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
