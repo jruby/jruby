@@ -43,7 +43,7 @@ public class ToggleBacktraceInstr extends NoOperandInstr {
     }
 
     public static ToggleBacktraceInstr decode(IRReaderDecoder d) {
-        return new ToggleBacktraceInstr(d.decodeBoolean());
+        return d.getCurrentScope().getManager().needsBacktrace(d.decodeBoolean());
     }
 
 
