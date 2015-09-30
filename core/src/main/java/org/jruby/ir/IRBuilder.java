@@ -2248,11 +2248,8 @@ public class IRBuilder {
         addInstr(new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
-        // Clone the ensure body and jump to the end.
-        // Don't bother if the protected body ended in a return
+        // Clone the ensure body and jump to the end.  Don't bother if the protected body ended in a return
         // OR if we are really processing a rescue node
-        //
-        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
         if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
@@ -3034,8 +3031,8 @@ public class IRBuilder {
     }
 
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
-        // For now we will only contemplate 'foo rescue nil' cases but simple non-mod rescue forms can be added later.
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode)) return false;
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
+                rescueNode.getElseNode() != null) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
