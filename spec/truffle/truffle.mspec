@@ -15,13 +15,7 @@ class MSpecScript
   ]
 
   set :core, [
-    "spec/ruby/core",
-
-    # seem side-effecting when not run in isolation
-    "^spec/ruby/core/marshal/dump_spec.rb",
-    "^spec/ruby/core/marshal/float_spec.rb",
-    "^spec/ruby/core/marshal/load_spec.rb",
-    "^spec/ruby/core/marshal/restore_spec.rb",
+    "spec/ruby/core"
   ]
 
   set :library, [
