@@ -309,6 +309,19 @@ public abstract class BindingNodes {
         }
     }
 
+    @CoreMethod(names = "receiver")
+    public abstract static class ReceiverNode extends UnaryCoreMethodNode {
+
+        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object receiver(DynamicObject binding) {
+            return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding).getArguments());
+        }
+    }
+
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 

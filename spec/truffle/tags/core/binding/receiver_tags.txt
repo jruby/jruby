@@ -1,1 +1,0 @@
-fails:Binding#receiver returns the object to which binding is bound
