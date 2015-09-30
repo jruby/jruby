@@ -110,15 +110,6 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
     // Writing within an existing array with a compatible type
 
     @Specialization(
-            guards={"isRubyArray(array)", "isObjectArray(array)", "isInBounds(array, index)"}
-    )
-    public boolean writeWithin(DynamicObject array, int index, boolean value) {
-        final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-        store[index] = value;
-        return value;
-    }
-
-    @Specialization(
             guards={"isRubyArray(array)", "isIntArray(array)", "isInBounds(array, index)"}
     )
     public int writeWithin(DynamicObject array, int index, int value) {
