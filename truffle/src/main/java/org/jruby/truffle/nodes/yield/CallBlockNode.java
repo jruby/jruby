@@ -70,7 +70,7 @@ public abstract class CallBlockNode extends RubyNode {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(block),
                 Layouts.PROC.getDeclarationFrame(block),
-                self,
+                null, self,
                 (DynamicObject) blockArgument,
                 arguments);
     }

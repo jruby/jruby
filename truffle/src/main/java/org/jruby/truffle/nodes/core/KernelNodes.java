@@ -300,7 +300,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "block_given?", isModuleFunction = true)
+    @CoreMethod(names = "block_given?", isModuleFunction = true, needsCallerFrame = true)
     public abstract static class BlockGivenNode extends CoreMethodArrayArgumentsNode {
 
         public BlockGivenNode(RubyContext context, SourceSection sourceSection) {
@@ -308,9 +308,16 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean blockGiven() {
+        public boolean blockGiven(MaterializedFrame callerFrame) {
+            return RubyArguments.getBlock(callerFrame.getArguments()) != null;
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public boolean blockGiven(NotProvided noCallerFrame) {
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
+
     }
 
     @CoreMethod(names = "__callee__", needsSelf = false)
@@ -564,7 +571,7 @@ public abstract class KernelNodes {
             return callNode.call(frame, RubyArguments.pack(
                     method,
                     parentFrame,
-                    callerSelf,
+                    null, callerSelf,
                     null,
                     new Object[]{}));
         }

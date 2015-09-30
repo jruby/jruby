@@ -53,7 +53,7 @@ public class OpenModuleNode extends RubyNode {
         Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
-        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), null, module, null, new Object[]{}));
     }
 
 }

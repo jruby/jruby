@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.Set;
-
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -47,7 +45,7 @@ public abstract class BindingNodes {
                 RubyArguments.pack(
                         RubyArguments.getMethod(arguments),
                         frame,
-                        RubyArguments.getSelf(arguments),
+                        null, RubyArguments.getSelf(arguments),
                         RubyArguments.getBlock(arguments),
                         RubyArguments.extractUserArguments(arguments)),
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
