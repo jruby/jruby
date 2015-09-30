@@ -32,9 +32,6 @@ class MSpecScript
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
 
-    # fail tag not excluding
-    "^spec/ruby/core/string/modulo_spec.rb",
-
     # require etc, linux only spec
     "^spec/ruby/core/io/advise_spec.rb",
   ]
