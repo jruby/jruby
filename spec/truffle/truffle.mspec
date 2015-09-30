@@ -23,17 +23,11 @@ class MSpecScript
     # This seems to hang sometimes on Travis
     "^spec/ruby/core/signal",
 
-    # require 'fcntl'
-    "^spec/ruby/core/io/reopen_spec.rb",
-
     # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
     "^spec/ruby/core/marshal/float_spec.rb",
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
-
-    # require etc, linux only spec
-    "^spec/ruby/core/io/advise_spec.rb",
   ]
 
   set :library, [
