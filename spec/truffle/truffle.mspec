@@ -17,12 +17,6 @@ class MSpecScript
   set :core, [
     "spec/ruby/core",
 
-    # Can't load these - so tags aren't enough to exclude them. The problem is
-    # either fixtures or syntax. Some of them are probably easy fixes.
-
-    # This seems to hang sometimes on Travis
-    "^spec/ruby/core/signal",
-
     # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
     "^spec/ruby/core/marshal/float_spec.rb",
