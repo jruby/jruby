@@ -265,23 +265,28 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
+        public Object stringByteSubstring(DynamicObject string, int index, long length) {
+            return stringByteSubstring(string, (long) index, length);
+        }
+
+        @Specialization
         public Object stringByteSubstring(DynamicObject string, int index, double length) {
             return stringByteSubstring(string, index, (int) length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, NotProvided length) {
-            return stringByteSubstring(string, (int) index, 1);
+        public Object stringByteSubstring(DynamicObject string, int index, DynamicObject length) {
+            return null;
+        }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, long index, NotProvided length) {
+            return stringByteSubstring(string, index, 1);
         }
 
         @Specialization
         public Object stringByteSubstring(DynamicObject string, long index, int length) {
             return stringByteSubstring(string, index, (long) length);
-        }
-
-        @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, long length) {
-            return stringByteSubstring(string, (long) index, length);
         }
 
         @Specialization
@@ -298,8 +303,18 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, double length) {
-            return stringByteSubstring(string, (int) index, (int) length);
+        public Object stringByteSubstring(DynamicObject string, long index, double length) {
+            return stringByteSubstring(string, index, (int) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, long index, DynamicObject length) {
+            return null;
+        }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, double index, NotProvided length) {
+            return stringByteSubstring(string, (int) index, 1);
         }
 
         @Specialization
@@ -307,13 +322,28 @@ public abstract class StringPrimitiveNodes {
             return stringByteSubstring(string, (int) index, length);
         }
 
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, double index, long length) {
+            return stringByteSubstring(string, (int) index, length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, double index, double length) {
+            return stringByteSubstring(string, (int) index, (int) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(DynamicObject string, double index, DynamicObject length) {
+            return null;
+        }
+
         @Specialization(guards = "isRubyRange(range)")
         public Object stringByteSubstring(DynamicObject string, DynamicObject range, NotProvided length) {
             return null;
         }
 
-        @Specialization(guards = "!isRubyRange(indexOrRange)")
-        public Object stringByteSubstring(DynamicObject string, Object indexOrRange, Object length) {
+        @Specialization(guards = "!isRubyRange(index)")
+        public Object stringByteSubstring(DynamicObject string, DynamicObject index, Object length) {
             return null;
         }
 
