@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -23,6 +24,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
 import java.util.Arrays;
 import java.util.StringTokenizer;
@@ -73,7 +75,7 @@ public class SimpleShell {
                         final Object result = context.execute(
                                 Source.fromText(shellLine, "shell"),
                                 UTF8Encoding.INSTANCE,
-                                TranslatorDriver.ParserContext.EVAL,
+                                ParserContext.EVAL,
                                 RubyArguments.getSelf(currentFrame.getArguments()),
                                 currentFrame,
                                 false,

@@ -673,7 +673,7 @@ public abstract class KernelNodes {
 
             final TranslatorDriver translator = new TranslatorDriver(getContext());
 
-            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, parentFrame, true, this, new NodeWrapper() {
+            return new RootNodeWrapper(translator.parse(getContext(), source, UTF8Encoding.INSTANCE, ParserContext.EVAL, parentFrame, true, this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return node; // return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "simple eval", node);

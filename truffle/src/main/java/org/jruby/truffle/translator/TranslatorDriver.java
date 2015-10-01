@@ -115,7 +115,7 @@ public class TranslatorDriver {
         } else {
             lexicalScope = context.getRootLexicalScope();
         }
-        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+        if (parserContext == ParserContext.MODULE) {
             Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
             lexicalScope = new LexicalScope(lexicalScope, (DynamicObject) module);
         }
@@ -139,7 +139,7 @@ public class TranslatorDriver {
 
         final BodyTranslator translator;
 
-        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+        if (parserContext == ParserContext.MODULE) {
             translator = new ModuleTranslator(currentNode, context, null, environment, source);
         } else {
             translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
