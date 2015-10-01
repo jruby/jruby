@@ -16,6 +16,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="child", type=RubyNode.class)
@@ -36,7 +37,7 @@ public abstract class ToSymbolNode extends RubyNode {
 
     @Specialization(guards = "isRubyString(string)")
     protected DynamicObject toSymbolString(DynamicObject string) {
-        return getSymbol(Layouts.STRING.getByteList(string));
+        return getSymbol(StringOperations.getByteList(string));
     }
 
     @Specialization

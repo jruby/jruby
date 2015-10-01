@@ -82,7 +82,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             StringOperations.modify(source);
             StringOperations.clearCodeRange(source);
 
-            return primitiveConvertHelper(encodingConverter, Layouts.STRING.getByteList(source), source, target, offset, size, options);
+            return primitiveConvertHelper(encodingConverter, StringOperations.getByteList(source), source, target, offset, size, options);
         }
 
         @TruffleBoundary
@@ -95,7 +95,7 @@ public abstract class EncodingConverterPrimitiveNodes {
             StringOperations.modify(target);
             StringOperations.clearCodeRange(target);
 
-            final ByteList outBytes = Layouts.STRING.getByteList(target);
+            final ByteList outBytes = StringOperations.getByteList(target);
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
@@ -109,8 +109,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
                 if (nonNullSourceProfile.profile(nonNullSource)) {
-                    if (size < Layouts.STRING.getByteList(source).getRealSize()) {
-                        size = Layouts.STRING.getByteList(source).getRealSize();
+                    if (size < StringOperations.getByteList(source).getRealSize()) {
+                        size = StringOperations.getByteList(source).getRealSize();
                     }
                 }
             }
@@ -146,8 +146,8 @@ public abstract class EncodingConverterPrimitiveNodes {
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
                 if (nonNullSourceProfile.profile(nonNullSource)) {
-                    Layouts.STRING.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                    Layouts.STRING.getByteList(source).setBegin(inPtr.p);
+                    StringOperations.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                    StringOperations.getByteList(source).setBegin(inPtr.p);
                 }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {

@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -165,7 +166,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccessArguments.getReceiver(frame.getArguments());
-            return RubyGuards.isRubyString(o) && Layouts.STRING.getByteList((DynamicObject) o).length() == 1;
+            return RubyGuards.isRubyString(o) && StringOperations.getByteList((DynamicObject) o).length() == 1;
         }
     }
 
@@ -178,7 +179,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return Layouts.STRING.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
+            return StringOperations.getByteList((DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments())).get(0);
         }
     }
 
@@ -273,10 +274,10 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccessArguments.getReceiver(frame.getArguments()))) {
                 final DynamicObject string = (DynamicObject) ForeignAccessArguments.getReceiver(frame.getArguments());
                 final int index = (int) ForeignAccessArguments.getArgument(frame.getArguments(), labelIndex);
-                if (index >= Layouts.STRING.getByteList(string).length()) {
+                if (index >= StringOperations.getByteList(string).length()) {
                     return 0;
                 } else {
-                    return (byte) Layouts.STRING.getByteList(string).get(index);
+                    return (byte) StringOperations.getByteList(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();

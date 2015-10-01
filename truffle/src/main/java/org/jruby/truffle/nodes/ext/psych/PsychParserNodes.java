@@ -59,6 +59,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.adapaters.InputStreamAdapter;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -201,7 +202,7 @@ public abstract class PsychParserNodes {
 
         private StreamReader readerFor(DynamicObject yaml) {
             if (RubyGuards.isRubyString(yaml)) {
-                ByteList byteList = Layouts.STRING.getByteList(yaml);
+                ByteList byteList = StringOperations.getByteList(yaml);
                 Encoding enc = byteList.getEncoding();
 
                 // if not unicode, transcode to UTF8

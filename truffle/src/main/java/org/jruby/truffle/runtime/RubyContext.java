@@ -503,7 +503,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
-        final org.jruby.RubyString jrubyString = runtime.newString(Layouts.STRING.getByteList(string).dup());
+        final org.jruby.RubyString jrubyString = runtime.newString(StringOperations.getByteList(string).dup());
 
         final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().getNilObject());
 

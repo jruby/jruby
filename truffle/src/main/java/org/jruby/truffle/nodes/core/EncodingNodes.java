@@ -139,7 +139,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyRegexp(second)"})
         public Object isCompatibleStringRegexp(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -151,7 +151,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyRegexp(first)", "isRubyString(second)"})
         public Object isCompatibleRegexpString(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.STRING.getByteList(second).getEncoding());
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), StringOperations.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -223,7 +223,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
         public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.STRING.getByteList(first).getEncoding(), EncodingOperations.getEncoding(second));
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getByteList(first).getEncoding(), EncodingOperations.getEncoding(second));
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);

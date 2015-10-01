@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -44,7 +45,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(Layouts.STRING.getByteList((DynamicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbol(StringOperations.getByteList((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -72,7 +73,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            return (RubyGuards.isRubyString(methodName)) && Layouts.STRING.getByteList((DynamicObject) cachedName).equal(Layouts.STRING.getByteList((DynamicObject) methodName));
+            return (RubyGuards.isRubyString(methodName)) && StringOperations.getByteList((DynamicObject) cachedName).equal(StringOperations.getByteList((DynamicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }

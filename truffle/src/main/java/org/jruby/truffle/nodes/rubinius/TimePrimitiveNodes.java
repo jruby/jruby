@@ -211,7 +211,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
         }
 
     }

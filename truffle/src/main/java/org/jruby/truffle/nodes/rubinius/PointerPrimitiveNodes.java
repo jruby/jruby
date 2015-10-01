@@ -310,7 +310,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
-            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final ByteList bytes = StringOperations.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
             Layouts.POINTER.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;

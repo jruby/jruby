@@ -35,6 +35,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "BasicObject")
@@ -145,7 +146,7 @@ public abstract class BasicObjectNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().instanceEval(Layouts.STRING.getByteList(string), receiver, "(eval)", this);
+            return getContext().instanceEval(StringOperations.getByteList(string), receiver, "(eval)", this);
         }
 
         @Specialization(guards = "isRubyProc(block)")

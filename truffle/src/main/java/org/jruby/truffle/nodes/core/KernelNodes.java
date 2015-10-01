@@ -661,7 +661,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
-            final Object result = getContext().eval(ParserContext.EVAL, Layouts.STRING.getByteList(source), binding, ownScopeForAssignments, filename, this);
+            final Object result = getContext().eval(ParserContext.EVAL, StringOperations.getByteList(source), binding, ownScopeForAssignments, filename, this);
             assert result != null;
             return result;
         }
@@ -1963,7 +1963,7 @@ public abstract class KernelNodes {
                 throw handleException(e);
             }
 
-            return finishFormat(Layouts.STRING.getByteList(format), result);
+            return finishFormat(StringOperations.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2022,7 +2022,7 @@ public abstract class KernelNodes {
             assert RubyGuards.isRubyString(format);
 
             try {
-                return new FormatParser(getContext()).parse(Layouts.STRING.getByteList(format));
+                return new FormatParser(getContext()).parse(StringOperations.getByteList(format));
             } catch (FormatException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));

@@ -77,7 +77,7 @@ public class StringCodeRangeableWrapper implements CodeRangeable {
 
     @Override
     public ByteList getByteList() {
-        return Layouts.STRING.getByteList(string);
+        return StringOperations.getByteList(string);
     }
 
 }

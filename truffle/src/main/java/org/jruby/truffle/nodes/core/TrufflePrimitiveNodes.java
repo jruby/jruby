@@ -199,7 +199,7 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final ByteList byteList = StringOperations.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
                 builder.append(String.format("\\x%02x", byteList.get(i)));

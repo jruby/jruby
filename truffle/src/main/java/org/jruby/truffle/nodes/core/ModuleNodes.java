@@ -649,7 +649,7 @@ public abstract class ModuleNodes {
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
-            Encoding encoding = Layouts.STRING.getByteList(code).getEncoding();
+            Encoding encoding = StringOperations.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);

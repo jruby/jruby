@@ -30,6 +30,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNodeGen;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
@@ -99,7 +100,7 @@ public abstract class ToStringNode extends PackNode {
             setTainted(frame);
         }
 
-        return Layouts.STRING.getByteList(string);
+        return StringOperations.getByteList(string);
     }
 
     @Specialization(guards = "isRubyArray(array)")
@@ -116,7 +117,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return Layouts.STRING.getByteList((DynamicObject) value);
+            return StringOperations.getByteList((DynamicObject) value);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -142,7 +143,7 @@ public abstract class ToStringNode extends PackNode {
                 setTainted(frame);
             }
 
-            return Layouts.STRING.getByteList((DynamicObject) value);
+            return StringOperations.getByteList((DynamicObject) value);
         }
 
         if (inspectOnConversionFailure) {
@@ -152,7 +153,7 @@ public abstract class ToStringNode extends PackNode {
                         getEncapsulatingSourceSection(), new RubyNode[]{null}));
             }
 
-            return Layouts.STRING.getByteList(inspectNode.toS(frame, object));
+            return StringOperations.getByteList(inspectNode.toS(frame, object));
         }
 
         CompilerDirectives.transferToInterpreter();
