@@ -18,8 +18,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -56,7 +58,6 @@ public class TranslatorDriver {
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
 
         final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
-
         if (parentFrame != null) {
             /*
              * Note that jruby-parser will be mistaken about how deep the existing variables are,
@@ -70,13 +71,15 @@ public class TranslatorDriver {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String) {
                         final String name = (String) slot.getIdentifier();
-                        staticScope.addVariableThisScope(name);
+                        staticScope.addVariableThisScope(name.intern()); // StaticScope expects interned var names
                     }
                 }
 
                 frame = RubyArguments.getDeclarationFrame(frame.getArguments());
             }
         }
+
+        final DynamicScope dynamicScope = new ManyVarsDynamicScope(staticScope);
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.MODULE;
@@ -88,7 +91,7 @@ public class TranslatorDriver {
         org.jruby.ast.RootNode node;
 
         try {
-            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), new ManyVarsDynamicScope(staticScope), parserConfiguration);
+            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
         } catch (org.jruby.exceptions.RaiseException e) {
             String message = e.getException().getMessage().asJavaString();
 
