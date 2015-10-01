@@ -84,36 +84,21 @@ class Exception
     (@backtrace || @locations) ? true : false
   end
 
-  def awesome_backtrace
-    @backtrace ||= Rubinius::Backtrace.backtrace(@locations)
-  end
-
-  def render(header="An exception occurred", io=STDERR, color=true)
-    message_lines = message.to_s.split("\n")
-
-    io.puts header
-    io.puts
-    io.puts "    #{message_lines.shift} (#{self.class})"
-
-    message_lines.each do |line|
-      io.puts "    #{line}"
+  Truffle.omit("We use MRI backtraces") do
+    def awesome_backtrace
+      @backtrace ||= Rubinius::Backtrace.backtrace(@locations)
     end
 
-    if @custom_backtrace
-      io.puts "\nUser defined backtrace:"
+    def render(header="An exception occurred", io=STDERR, color=true)
+      message_lines = message.to_s.split("\n")
+
+      io.puts header
       io.puts
-      @custom_backtrace.each do |line|
+      io.puts "    #{message_lines.shift} (#{self.class})"
+
+      message_lines.each do |line|
         io.puts "    #{line}"
       end
-    end
-
-    io.puts "\nBacktrace:"
-    io.puts
-    io.puts awesome_backtrace.show("\n", color)
-
-    extra = @parent
-    while extra
-      io.puts "\nCaused by: #{extra.message} (#{extra.class})"
 
       if @custom_backtrace
         io.puts "\nUser defined backtrace:"
@@ -125,11 +110,28 @@ class Exception
 
       io.puts "\nBacktrace:"
       io.puts
-      io.puts extra.awesome_backtrace.show
+      io.puts awesome_backtrace.show("\n", color)
 
-      extra = extra.parent
+      extra = @parent
+      while extra
+        io.puts "\nCaused by: #{extra.message} (#{extra.class})"
+
+        if @custom_backtrace
+          io.puts "\nUser defined backtrace:"
+          io.puts
+          @custom_backtrace.each do |line|
+            io.puts "    #{line}"
+          end
+        end
+
+        io.puts "\nBacktrace:"
+        io.puts
+        io.puts extra.awesome_backtrace.show
+
+        extra = extra.parent
+      end
+
     end
-
   end
 
   def set_backtrace(bt)
