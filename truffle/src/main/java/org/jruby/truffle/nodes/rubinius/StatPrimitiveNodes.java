@@ -251,7 +251,7 @@ public abstract class StatPrimitiveNodes {
 
         public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readStatNode = ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), STAT_IDENTIFIER, null, null);
+            readStatNode = ReadHeadObjectFieldNodeGen.create(STAT_IDENTIFIER, null);
         }
 
         public FileStat getStat(DynamicObject rubyStat) {

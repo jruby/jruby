@@ -63,7 +63,7 @@ public abstract class IsTaintedNode extends RubyNode {
     }
 
     protected ReadHeadObjectFieldNode createReadTaintedNode() {
-        return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.TAINTED_IDENTIFIER, false, null);
+        return ReadHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER, false);
     }
 
 }

@@ -104,7 +104,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
+            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected WriteHeadObjectFieldNode createWriteObjectIDNode() {

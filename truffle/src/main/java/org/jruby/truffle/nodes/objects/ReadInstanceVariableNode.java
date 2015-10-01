@@ -38,7 +38,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = ReadHeadObjectFieldNodeGen.create(context, sourceSection, name, nil(), null);
+        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
         this.isGlobal = isGlobal;
     }
 
