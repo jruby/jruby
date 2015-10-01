@@ -9,6 +9,7 @@ ruby_version_is "2.1" do
       bind.eval('local_variables').should == []
       bind.local_variable_set :foo, 1
       bind.eval('local_variables').should == [:foo]
+      bind.eval('foo').should == 1
     end
   end
 end
