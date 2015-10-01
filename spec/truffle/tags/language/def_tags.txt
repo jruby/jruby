@@ -1,8 +1,2 @@
-fails:A nested method definition creates an instance method when evaluated in an instance method
-fails:A nested method definition creates a class method when evaluated in a class method
-fails:A method definition inside an instance_eval creates a class method when the receiver is a class
-fails:A method definition in an eval creates an instance method
-fails:A method definition in an eval creates a class method
-fails:A method definition in an eval creates a singleton method
 fails:An instance method with a default argument does not call a method with the same name as the local
 fails:An instance method with a default argument shadows an existing method with the same name as the local

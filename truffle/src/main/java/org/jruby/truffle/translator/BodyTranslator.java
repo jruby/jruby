@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -1099,22 +1100,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode;
-
-        if (parent == null) {
-            /*
-             * In the top-level, methods are defined in the class of the main object. This is
-             * counter-intuitive - I would have expected them to be defined in the singleton class.
-             * Apparently this is a design decision to make top-level methods sort of global.
-             *
-             * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
-             */
-
-            // TODO: different for Kernel#load(..., true)
-            classNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
-        } else {
-            classNode = new SelfNode(context, sourceSection);
-        }
+        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
         final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
         return addNewlineIfNeeded(node, ret);

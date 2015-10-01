@@ -562,7 +562,7 @@ public abstract class KernelNodes {
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
-                    getContext().getCoreLibrary().getObjectClass(),
+                    RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule(),
                     Visibility.PUBLIC,
                     false,
                     cachedCallTarget,
@@ -571,9 +571,11 @@ public abstract class KernelNodes {
             return callNode.call(frame, RubyArguments.pack(
                     method,
                     parentFrame,
-                    null, callerSelf,
                     null,
-                    new Object[]{}));
+                    callerSelf,
+                    null,
+                    RubyArguments.getDeclarationContext(parentFrame.getArguments()),
+                    new Object[] {}));
         }
 
         @Specialization(guards = {

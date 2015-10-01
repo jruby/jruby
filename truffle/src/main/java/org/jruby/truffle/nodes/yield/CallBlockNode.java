@@ -21,7 +21,9 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -43,8 +45,11 @@ public abstract class CallBlockNode extends RubyNode {
         }
     }
 
-    public CallBlockNode(RubyContext context, SourceSection sourceSection) {
+    private final DeclarationContext declarationContext;
+
+    public CallBlockNode(RubyContext context, SourceSection sourceSection, DeclarationContext declarationContext) {
         super(context, sourceSection);
+        this.declarationContext = declarationContext;
     }
 
     public abstract Object executeCallBlock(VirtualFrame frame, DynamicObject block, Object self, DynamicObject blockArgument, Object[] arguments);
@@ -70,8 +75,10 @@ public abstract class CallBlockNode extends RubyNode {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(block),
                 Layouts.PROC.getDeclarationFrame(block),
-                null, self,
+                null,
+                self,
                 (DynamicObject) blockArgument,
+                declarationContext,
                 arguments);
     }
 

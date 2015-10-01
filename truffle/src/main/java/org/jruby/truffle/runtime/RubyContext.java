@@ -49,6 +49,7 @@ import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -67,6 +68,7 @@ import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -206,7 +208,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         return method.getCallTarget().call(
-                RubyArguments.pack(method, method.getDeclarationFrame(), null, object, block, arguments));
+                RubyArguments.pack(method, method.getDeclarationFrame(), null, object, block, DeclarationContext.METHOD, arguments));
     }
 
     /* For debugging in Java. */
@@ -236,7 +238,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                         null,
                         null, RubyArguments.getSelf(frame.getArguments()),
                         null,
-                        new Object[]{}),
+                        DeclarationContext.INSTANCE_EVAL,
+                        new Object[] {}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
         if (arguments.length % 2 == 1) {
@@ -432,10 +435,24 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
+        final DynamicObject declaringModule;
+        final DeclarationContext declarationContext;
+        if (parserContext == ParserContext.EVAL && parentFrame != null) {
+            declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
+            declarationContext = RubyArguments.getDeclarationContext(parentFrame.getArguments());
+        } else if (parserContext == ParserContext.MODULE) {
+            assert RubyGuards.isRubyModule(self);
+            declaringModule = (DynamicObject) self;
+            declarationContext = DeclarationContext.MODULE;
+        } else {
+            declaringModule = getCoreLibrary().getObjectClass();
+            declarationContext = DeclarationContext.METHOD;
+        }
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, new Object[]{}));
+        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                declaringModule, Visibility.PUBLIC, false, callTarget, parentFrame);
+
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
     }
 
     public long getNextObjectID() {

@@ -15,8 +15,10 @@ import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,6 +27,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.dispatch.RubyCallNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
@@ -136,7 +139,7 @@ public abstract class BasicObjectNodes {
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -153,17 +156,20 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
-    public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
+    public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private YieldDispatchHeadNode yield;
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization(guards = "isRubyProc(block)")
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
-            return yieldWithModifiedSelf(frame, block, receiver, arguments);
+            return yield.dispatchWithModifiedSelf(frame, block, receiver, arguments);
         }
 
         @Specialization

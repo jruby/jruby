@@ -47,6 +47,7 @@ public abstract class BindingNodes {
                         frame,
                         null, RubyArguments.getSelf(arguments),
                         RubyArguments.getBlock(arguments),
+                        RubyArguments.getDeclarationContext(arguments),
                         RubyArguments.extractUserArguments(arguments)),
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
 

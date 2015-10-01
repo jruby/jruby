@@ -14,7 +14,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -102,6 +104,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
                         method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null,
                         receiver,
                         block,
+                        DeclarationContext.METHOD,
                         arguments));
     }
 }

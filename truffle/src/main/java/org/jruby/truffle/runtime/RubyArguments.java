@@ -13,7 +13,9 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -28,13 +30,14 @@ public final class RubyArguments {
     public static final int CALLER_FRAME_INDEX = 2;
     public static final int SELF_INDEX = 3;
     public static final int BLOCK_INDEX = 4;
-    public static final int METHOD_DECLARATION_CONTEXT_INDEX = 5;
+    public static final int DECLARATION_CONTEXT_INDEX = 5;
     public static final int RUNTIME_ARGUMENT_COUNT = 6;
 
-    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, Object[] arguments) {
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, Object[] arguments) {
         assert method != null;
         assert self != null;
         assert block == null || RubyGuards.isRubyProc(block);
+        assert declarationContext != null;
         assert arguments != null;
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
@@ -44,6 +47,7 @@ public final class RubyArguments {
         packed[CALLER_FRAME_INDEX] = callerFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
+        packed[DECLARATION_CONTEXT_INDEX] = declarationContext;
         ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
@@ -68,6 +72,14 @@ public final class RubyArguments {
 
     public static DynamicObject getBlock(Object[] arguments) {
         return (DynamicObject) arguments[BLOCK_INDEX];
+    }
+
+    public static DeclarationContext getDeclarationContext(Object[] arguments) {
+        return (DeclarationContext) arguments[DECLARATION_CONTEXT_INDEX];
+    }
+
+    public static void setDeclarationContext(Object[] arguments, DeclarationContext declarationContext) {
+        arguments[DECLARATION_CONTEXT_INDEX] = declarationContext;
     }
 
     public static Object[] extractUserArguments(Object[] arguments) {
