@@ -84,7 +84,7 @@ public class SharedMethodInfo {
     }
 
     public SharedMethodInfo withName(String newName) {
-        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, argumentDescriptors, alwaysClone, false, false);
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, argumentDescriptors, alwaysClone, alwaysInline, needsCallerFrame);
     }
 
     @Override
