@@ -71,10 +71,15 @@ public class SimpleShell {
                 default:
                     try {
                         final Object result = context.execute(
-                                Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE,
+                                Source.fromText(shellLine, "shell"),
+                                UTF8Encoding.INSTANCE,
                                 TranslatorDriver.ParserContext.EVAL,
-                                RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
-                                false, currentNode, NodeWrapper.IDENTITY);
+                                RubyArguments.getSelf(currentFrame.getArguments()),
+                                currentFrame,
+                                false,
+                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
+                                currentNode,
+                                NodeWrapper.IDENTITY);
 
                         String inspected;
 

@@ -369,7 +369,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             }
         };
 
-        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.MODULE, currentNode, composed);
     }
 
     public SymbolTable getSymbolTable() {
@@ -387,7 +387,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, true, currentNode, new NodeWrapper() {
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
@@ -400,27 +400,24 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
+        return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, DeclarationContext declarationContext, Node currentNode, NodeWrapper wrapper) {
         final TranslatorDriver translator = new TranslatorDriver(this);
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final DynamicObject declaringModule;
-        final DeclarationContext declarationContext;
         if (parserContext == ParserContext.EVAL && parentFrame != null) {
             declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
-            declarationContext = RubyArguments.getDeclarationContext(parentFrame.getArguments());
         } else if (parserContext == ParserContext.MODULE) {
             assert RubyGuards.isRubyModule(self);
             declaringModule = (DynamicObject) self;
-            declarationContext = DeclarationContext.MODULE;
         } else {
             declaringModule = getCoreLibrary().getObjectClass();
-            declarationContext = DeclarationContext.METHOD;
         }
 
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
