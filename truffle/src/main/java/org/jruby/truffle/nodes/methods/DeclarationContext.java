@@ -45,10 +45,6 @@ public class DeclarationContext {
         return visibility;
     }
 
-    public DefaultDefinee getDefaultDefinee() {
-        return defaultDefinee;
-    }
-
     public DeclarationContext withVisibility(Visibility visibility) {
         if (visibility == this.visibility) {
             return this;
