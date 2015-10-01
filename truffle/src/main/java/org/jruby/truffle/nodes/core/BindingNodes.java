@@ -45,7 +45,8 @@ public abstract class BindingNodes {
                 RubyArguments.pack(
                         RubyArguments.getMethod(arguments),
                         frame,
-                        null, RubyArguments.getSelf(arguments),
+                        null,
+                        RubyArguments.getSelf(arguments),
                         RubyArguments.getBlock(arguments),
                         RubyArguments.getDeclarationContext(arguments),
                         RubyArguments.extractUserArguments(arguments)),

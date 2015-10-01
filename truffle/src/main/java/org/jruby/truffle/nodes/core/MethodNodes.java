@@ -113,7 +113,8 @@ public abstract class MethodNodes {
             return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
-                    null, Layouts.METHOD.getReceiver(method),
+                    null,
+                    Layouts.METHOD.getReceiver(method),
                     procOrNullNode.executeProcOrNull(block),
                     DeclarationContext.METHOD,
                     arguments);

@@ -236,7 +236,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                 RubyArguments.pack(
                         RubyArguments.getMethod(frame.getArguments()),
                         null,
-                        null, RubyArguments.getSelf(frame.getArguments()),
+                        null,
+                        RubyArguments.getSelf(frame.getArguments()),
                         null,
                         DeclarationContext.INSTANCE_EVAL,
                         new Object[] {}),

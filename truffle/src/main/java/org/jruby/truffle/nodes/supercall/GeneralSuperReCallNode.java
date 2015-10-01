@@ -105,7 +105,8 @@ public class GeneralSuperReCallNode extends RubyNode {
         final Object[] frameArguments = RubyArguments.pack(
                 superMethod,
                 RubyArguments.getDeclarationFrame(originalArguments),
-                null, RubyArguments.getSelf(originalArguments),
+                null,
+                RubyArguments.getSelf(originalArguments),
                 blockObject,
                 DeclarationContext.METHOD,
                 superArguments);
