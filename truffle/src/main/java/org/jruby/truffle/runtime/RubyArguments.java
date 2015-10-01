@@ -28,7 +28,8 @@ public final class RubyArguments {
     public static final int CALLER_FRAME_INDEX = 2;
     public static final int SELF_INDEX = 3;
     public static final int BLOCK_INDEX = 4;
-    public static final int RUNTIME_ARGUMENT_COUNT = 5;
+    public static final int METHOD_DECLARATION_CONTEXT_INDEX = 5;
+    public static final int RUNTIME_ARGUMENT_COUNT = 6;
 
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, Object[] arguments) {
         assert method != null;
