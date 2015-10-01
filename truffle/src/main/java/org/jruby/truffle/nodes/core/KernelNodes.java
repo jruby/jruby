@@ -26,6 +26,7 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -77,6 +78,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -583,7 +585,7 @@ public abstract class KernelNodes {
         }, contains = "evalNoBindingCached")
         public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided binding,
                                             NotProvided filename, NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), getCallerBinding(frame), true, this);
+            return doEval(source, getCallerBinding(frame), "(eval)", true);
         }
 
         @Specialization(guards = {
@@ -602,9 +604,7 @@ public abstract class KernelNodes {
         })
         public Object evalBinding(DynamicObject source, DynamicObject binding, NotProvided filename,
                                   NotProvided lineNumber) {
-            final Object result = getContext().eval(Layouts.STRING.getByteList(source), binding, false, this);
-            assert result != null;
-            return result;
+            return doEval(source, binding, "(eval)", false);
         }
 
         @Specialization(guards = {
@@ -624,7 +624,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)" })
         public Object evalBindingFilename(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                           NotProvided lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
+            return evalBindingFilenameLine(source, binding, filename, 0);
         }
 
         @Specialization(guards = {
@@ -644,7 +644,7 @@ public abstract class KernelNodes {
                 "isRubyString(filename)" })
         public Object evalBindingFilenameLine(DynamicObject source, DynamicObject binding, DynamicObject filename,
                                               int lineNumber) {
-            return getContext().eval(Layouts.STRING.getByteList(source), binding, false, filename.toString(), this);
+            return doEval(source, binding, filename.toString(), false);
         }
 
         @TruffleBoundary
@@ -654,6 +654,13 @@ public abstract class KernelNodes {
         public Object evalBadBinding(DynamicObject source, DynamicObject badBinding, NotProvided filename,
                                      NotProvided lineNumber) {
             throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(badBinding, "binding", this));
+        }
+
+        @TruffleBoundary
+        private Object doEval(DynamicObject source, DynamicObject binding, String filename, boolean ownScopeForAssignments) {
+            final Object result = getContext().eval(ParserContext.EVAL, Layouts.STRING.getByteList(source), binding, ownScopeForAssignments, filename, this);
+            assert result != null;
+            return result;
         }
 
         protected RootNodeWrapper compileSource(VirtualFrame frame, DynamicObject sourceText) {

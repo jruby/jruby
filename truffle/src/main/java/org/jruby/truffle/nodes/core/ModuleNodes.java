@@ -653,7 +653,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, callerFrame, this, new NodeWrapper() {
+            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, callerFrame, true, this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);

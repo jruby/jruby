@@ -227,7 +227,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = Layouts.BINDING.createBinding(getCoreLibrary().getBindingFactory(), evalFrame);
-        return eval(TranslatorDriver.ParserContext.INLINE, expression, binding, true, "inline-ruby", currentNode);
+        return eval(TranslatorDriver.ParserContext.INLINE, ByteList.create(expression), binding, true, "inline-ruby", currentNode);
     }
 
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
@@ -369,7 +369,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             }
         };
 
-        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, currentNode, composed);
     }
 
     public SymbolTable getSymbolTable() {
@@ -387,27 +387,12 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, true, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
             }
         });
-    }
-
-    public Object instanceEval(ByteList code, Object self, Node currentNode) {
-        return instanceEval(code, self, "(eval)", currentNode);
-    }
-
-    @TruffleBoundary
-    public Object eval(TranslatorDriver.ParserContext parserContext, String code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        return eval(parserContext, ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
-    }
-
-    @TruffleBoundary
-    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
-        return eval(TranslatorDriver.ParserContext.EVAL, code, binding, ownScopeForAssignments, filename, currentNode);
     }
 
     @TruffleBoundary
@@ -416,17 +401,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
         return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
-    }
-
-    @TruffleBoundary
-    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
-    }
-
-    @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
-        return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }
 
     @TruffleBoundary
