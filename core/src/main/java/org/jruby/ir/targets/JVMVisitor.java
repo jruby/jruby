@@ -1425,9 +1425,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
         // See also CompiledIRMethod.call
         jvmMethod().loadContext();
-        jvmAdapter().invokestatic(p(Visibility.class), "values", sig(Visibility[].class));
-        jvmAdapter().ldc(Visibility.PUBLIC.ordinal());
-        jvmAdapter().aaload();
+        jvmAdapter().getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
     }
 
