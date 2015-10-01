@@ -70,6 +70,10 @@ public final class RubyArguments {
         return arguments[SELF_INDEX];
     }
 
+    public static void setSelf(Object[] arguments, Object self) {
+        arguments[SELF_INDEX] = self;
+    }
+
     public static DynamicObject getBlock(Object[] arguments) {
         return (DynamicObject) arguments[BLOCK_INDEX];
     }

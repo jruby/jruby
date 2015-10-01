@@ -559,7 +559,7 @@ public abstract class KernelNodes {
             final DynamicObject callerBinding = getCallerBinding(frame);
 
             final MaterializedFrame parentFrame = Layouts.BINDING.getFrame(callerBinding);
-            final Object callerSelf = RubyArguments.getSelf(parentFrame.getArguments());
+            final Object callerSelf = RubyArguments.getSelf(frame.getArguments());
 
             final InternalMethod method = new InternalMethod(
                     cachedRootNode.getRootNode().getSharedMethodInfo(),
@@ -583,9 +583,12 @@ public abstract class KernelNodes {
         @Specialization(guards = {
                 "isRubyString(source)"
         }, contains = "evalNoBindingCached")
-        public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided binding,
+        public Object evalNoBindingUncached(VirtualFrame frame, DynamicObject source, NotProvided noBinding,
                                             NotProvided filename, NotProvided lineNumber) {
-            return doEval(source, getCallerBinding(frame), "(eval)", true);
+            final DynamicObject binding = getCallerBinding(frame);
+            final MaterializedFrame topFrame = Layouts.BINDING.getFrame(binding);
+            RubyArguments.setSelf(topFrame.getArguments(), RubyArguments.getSelf(frame.getArguments()));
+            return doEval(source, binding, "(eval)", true);
         }
 
         @Specialization(guards = {

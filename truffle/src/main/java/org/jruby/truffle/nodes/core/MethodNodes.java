@@ -291,7 +291,7 @@ public abstract class MethodNodes {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            frame.getArguments()[RubyArguments.SELF_INDEX] = receiver;
+            RubyArguments.setSelf(frame.getArguments(), receiver);
             return methodCallNode.call(frame, frame.getArguments());
         }
 
