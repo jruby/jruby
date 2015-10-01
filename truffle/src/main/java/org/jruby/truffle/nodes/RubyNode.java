@@ -25,7 +25,6 @@ import org.jruby.util.StringSupport;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -173,18 +172,6 @@ public abstract class RubyNode extends Node {
 
     protected DynamicObjectFactory getInstanceFactory(DynamicObject rubyClass) {
         return Layouts.CLASS.getInstanceFactory(rubyClass);
-    }
-
-    // Instrumentation
-
-    @Override
-    public boolean isInstrumentable() {
-        return true;
-    }
-
-    @Override
-    public ProbeNode.WrapperNode createWrapperNode() {
-        return new RubyWrapperNode(this);
     }
 
     public void setAtNewline() {

@@ -1084,7 +1084,7 @@ module Net
     end
 
     class BufferedSocket < BufferedIO
-      [:addr, :peeraddr, :send, :shutdown].each do |method|
+      [:addr, :peeraddr, :send, :dispose].each do |method|
         define_method(method) { |*args|
           @io.__send__(method, *args)
         }

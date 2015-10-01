@@ -9,18 +9,12 @@
  */
 package org.jruby;
 
-public interface TruffleContextInterface {
+public interface JRubyTruffleInterface {
 
-    enum BacktraceFormatter {
-        MRI,
-        DEBUG,
-        IMPL_DEBUG
-    }
-
-    void initialize();
+    String RUNTIME_SYMBOL = "org.jruby.truffle.runtime";
 
     Object execute(org.jruby.ast.RootNode rootNode);
 
-    void shutdown();
+    void dispose();
     
 }

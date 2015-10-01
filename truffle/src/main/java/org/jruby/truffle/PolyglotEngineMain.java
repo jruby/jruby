@@ -9,21 +9,24 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.TruffleVM;
 import org.jruby.truffle.runtime.RubyLanguage;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-public class TruffleVMMain {
+public class PolyglotEngineMain {
 
     public static void main(String[] args) {
-        final TruffleVM vm = TruffleVM.newVM().build();
+        final PolyglotEngine engine = PolyglotEngine.buildNew().build();
 
         for (String arg : args) {
             try (InputStream inputStream = new FileInputStream(arg)) {
                 final Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                vm.eval(RubyLanguage.MIME_TYPE, reader);
+                final Source source = Source.fromReader(reader, arg).withMimeType(RubyLanguage.MIME_TYPE);
+                engine.eval(source);
             } catch (IOException e) {
                 e.printStackTrace();
             }

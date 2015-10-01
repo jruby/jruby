@@ -10,31 +10,44 @@
 package org.jruby.truffle.nodes.instrument;
 
 import com.oracle.truffle.api.instrument.ASTProber;
+import com.oracle.truffle.api.instrument.Instrumenter;
+import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.StandardSyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeVisitor;
+import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.OpenModuleNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.runtime.RubySyntaxTag;
 
 public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
 
+    private final Instrumenter instrumenter;
+
+    public RubyDefaultASTProber(Instrumenter instrumenter) {
+        this.instrumenter = instrumenter;
+    }
+
     @Override
     public boolean visit(Node node) {
-        if (node.isInstrumentable()) {
+        if (RubyLanguage.INSTANCE.isInstrumentable(node)) {
             if (node instanceof RubyNode) {
                 final RubyNode rubyNode = (RubyNode) node;
 
                 if (rubyNode.isAtNewline()) {
+                    final Probe probe = instrumenter.probe(rubyNode);
                     // Identify statements using "newline" nodes created by the JRuby parser.
-                    rubyNode.probe().tagAs(StandardSyntaxTag.STATEMENT, null);
-                    rubyNode.probe().tagAs(RubySyntaxTag.LINE, null);
+                    probe.tagAs(StandardSyntaxTag.STATEMENT, null);
+                    probe.tagAs(RubySyntaxTag.LINE, null);
                 }
 
                 if (rubyNode instanceof OpenModuleNode) {
-                    rubyNode.probe().tagAs(RubySyntaxTag.CLASS, null);
+                    final Probe probe = instrumenter.probe(rubyNode);
+                    probe.tagAs(RubySyntaxTag.CLASS, null);
                 }
                 // A RubyRootNode can't have a probe because it doesn't have a parent.  So, we do the next best thing and
                 // tag its immediate child.  The trace instrument will know to look at the parent (RubyRootNode) based upon
@@ -42,7 +55,8 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                 // are such that the receiver must be resolved, so we have to push as far into the callee as we can to have
                 // a properly constructed frame.
                 else if ((rubyNode.getParent() instanceof RubyRootNode) && !(rubyNode instanceof SetMethodDeclarationContext)) {
-                    rubyNode.probe().tagAs(RubySyntaxTag.CALL, null);
+                    final Probe probe = instrumenter.probe(rubyNode);
+                    probe.tagAs(RubySyntaxTag.CALL, null);
                 }
 
             }
@@ -52,7 +66,8 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
     }
 
     @Override
-    public void probeAST(Node node) {
-        node.accept(this);
+    public void probeAST(Instrumenter instrumenter, RootNode rootNode) {
+        rootNode.accept(this);
     }
+
 }

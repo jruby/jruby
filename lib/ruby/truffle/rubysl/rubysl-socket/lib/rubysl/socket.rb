@@ -313,7 +313,7 @@ class Socket < BasicSocket
 
     attach_function :accept,   [:int, :pointer, :pointer], :int
     attach_function :close,    [:int], :int
-    attach_function :shutdown, [:int, :int], :int
+    attach_function :dispose, [:int, :int], :int
     attach_function :listen,   [:int, :int], :int
     attach_function :socket,   [:int, :int, :int], :int
     attach_function :send,     [:int, :pointer, :size_t, :int], :ssize_t

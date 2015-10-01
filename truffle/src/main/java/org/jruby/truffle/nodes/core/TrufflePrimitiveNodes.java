@@ -324,7 +324,7 @@ public abstract class TrufflePrimitiveNodes {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
-            getContext().getCoverageTracker().install();
+            getContext().getEnv().instrumenter().install(getContext().getCoverageTracker());
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -680,6 +680,19 @@ public abstract class TrufflePrimitiveNodes {
                     Arrays.asList(arguments),
                     Arrays.asList(environmentVariables));
 
+        }
+    }
+
+    @CoreMethod(names = "context", onSingleton = true)
+    public abstract static class ContextNode extends CoreMethodArrayArgumentsNode {
+
+        public ContextNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyContext context() {
+            return getContext();
         }
     }
 

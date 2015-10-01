@@ -75,9 +75,9 @@ module Utilities
 
   def self.ensure_igv_running
     unless igv_running?
-      Dir.chdir(find_graal_parent) do
-        spawn "#{find_graal_mx} igv", pgroup: true
-      end
+      #Dir.chdir(find_graal_parent) do
+      #  spawn "#{find_graal_mx} igv", pgroup: true
+      #end
 
       sleep 5
       puts

@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.HashSet;
 
 import com.headius.options.Option;
-import org.jruby.TruffleContextInterface;
 import org.jruby.runtime.Constants;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;

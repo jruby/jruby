@@ -12,18 +12,44 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.TruffleLanguage;
-import com.oracle.truffle.api.debug.DebugSupportProvider;
-import com.oracle.truffle.api.instrument.ToolSupportProvider;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.instrument.AdvancedInstrumentResultListener;
+import com.oracle.truffle.api.instrument.AdvancedInstrumentRootFactory;
+import com.oracle.truffle.api.instrument.Visualizer;
+import com.oracle.truffle.api.instrument.WrapperNode;
+import com.oracle.truffle.api.interop.ForeignAccess;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.java.JavaInterop;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jruby.Ruby;
 import org.jruby.runtime.Constants;
 import org.jruby.truffle.nodes.LazyRubyRootNode;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 
 import java.io.IOException;
 
 @TruffleLanguage.Registration(name = "Ruby", version = Constants.RUBY_VERSION, mimeType = RubyLanguage.MIME_TYPE)
 public class RubyLanguage extends TruffleLanguage<RubyContext> {
+
+    public static class JRubyContextWrapper implements TruffleObject {
+
+        private final Ruby ruby;
+
+        public JRubyContextWrapper(Ruby ruby) {
+            this.ruby = ruby;
+        }
+
+        public Ruby getRuby() {
+            return ruby;
+        }
+
+        @Override
+        public ForeignAccess getForeignAccess() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     public static final String MIME_TYPE = "application/x-ruby";
 
@@ -34,9 +60,17 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     public RubyContext createContext(Env env) {
-        final RubyContext context = new RubyContext(Ruby.newInstance(), env);
-        context.initialize();
-        return context;
+        final JRubyContextWrapper runtimeWrapper = (JRubyContextWrapper) env.importSymbol("org.jruby.truffle.runtime");
+
+        final Ruby runtime;
+
+        if (runtimeWrapper == null) {
+            runtime = Ruby.newInstance();
+        } else {
+            runtime = runtimeWrapper.getRuby();
+        }
+
+        return new RubyContext(runtime, env);
     }
 
     @Override
@@ -60,12 +94,27 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     }
 
     @Override
-    protected ToolSupportProvider getToolSupport() {
+    protected Visualizer getVisualizer() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    protected DebugSupportProvider getDebugSupport() {
+    public boolean isInstrumentable(Node node) {
+        return !(node instanceof RubyWrapperNode);
+    }
+
+    @Override
+    protected WrapperNode createWrapperNode(Node node) {
+        return new RubyWrapperNode((RubyNode) node);
+    }
+
+    @Override
+    protected Object evalInContext(Source source, Node node, MaterializedFrame mFrame) throws IOException {
+        return null;
+    }
+
+    @Override
+    protected AdvancedInstrumentRootFactory createAdvancedInstrumentRootFactory(String expr, AdvancedInstrumentResultListener resultListener) throws IOException {
         return null;
     }
 

@@ -17,7 +17,6 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
-import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -35,7 +34,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
-import org.jruby.TruffleContextInterface;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.runtime.Visibility;
@@ -84,7 +82,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext extends ExecutionContext implements TruffleContextInterface {
+public class RubyContext extends ExecutionContext {
 
     private static volatile RubyContext latestInstance;
 
@@ -123,10 +121,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     private Map<String,TruffleObject> exported;
     private final TruffleLanguage.Env env;
 
-    public RubyContext(Ruby runtime) {
-        this(runtime, null);
-    }
-
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
@@ -145,8 +139,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
 
-        // TODO CS 28-Feb-15 this is global
-        Probe.registerASTProber(new RubyDefaultASTProber());
+        env.instrumenter().registerASTProber(new RubyDefaultASTProber(env.instrumenter()));
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
@@ -183,7 +176,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         threadManager = new ThreadManager(this);
         threadManager.initialize();
 
-
         rubiniusPrimitiveManager = new RubiniusPrimitiveManager();
         rubiniusPrimitiveManager.addAnnotatedPrimitives();
 
@@ -202,6 +194,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         final PrintStream configStandardOut = runtime.getInstanceConfig().getOutput();
         debugStandardOut = (configStandardOut == System.out) ? null : configStandardOut;
+
+        initialize();
     }
 
     public Object send(Object object, String methodName, DynamicObject block, Object... arguments) {
@@ -255,8 +249,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return evalFrame;
     }
 
-    @Override
-    public void initialize() {
+    private void initialize() {
         // Give the core library manager a chance to tweak some of those methods
 
         coreLibrary.initializeAfterMethodsAdded();
@@ -676,7 +669,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return nativeSockets;
     }
 
-    @Override
     public Object execute(final org.jruby.ast.RootNode rootNode) {
         coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
 
@@ -710,7 +702,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return coreLibrary.getNilObject();
     }
 
-    @Override
     public void shutdown() {
         innerShutdown(true);
     }
@@ -744,5 +735,9 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     public MemoryManager getMemoryManager() {
         return memoryManager;
+    }
+
+    public TruffleLanguage.Env getEnv() {
+        return env;
     }
 }

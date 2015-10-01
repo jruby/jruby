@@ -10,6 +10,7 @@
 package org.jruby.truffle.tck;
 
 import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.TruffleVM;
 import com.oracle.truffle.tck.TruffleTCK;
 
@@ -22,12 +23,12 @@ public class RubyTckTest extends TruffleTCK {
 
     @Test
     public void checkVM() {
-        TruffleVM vm = TruffleVM.newVM().build();
-        assertNotNull(vm.getLanguages().get(mimeType()));
+        PolyglotEngine engine = PolyglotEngine.buildNew().build();
+        assertNotNull(engine.getLanguages().get(mimeType()));
     }
 
     @Override
-    protected TruffleVM prepareVM() throws Exception {
+    protected PolyglotEngine prepareVM() throws Exception {
         final Source source = Source.fromText(
                 "def sum(a, b)\n"
                         + " a + b\n"
@@ -64,9 +65,9 @@ public class RubyTckTest extends TruffleTCK {
                         + "Truffle::Interop.export(\"compound_object\", method(:compound_object))\n"
                         + "Truffle::Interop.export(\"identity\", method(:identity))\n", "test")
                 .withMimeType(mimeType());
-        final TruffleVM vm = TruffleVM.newVM().build();
-        vm.eval(source);
-        return vm;
+        PolyglotEngine engine = PolyglotEngine.buildNew().build();
+        engine.eval(source);
+        return engine;
     }
 
     @Override

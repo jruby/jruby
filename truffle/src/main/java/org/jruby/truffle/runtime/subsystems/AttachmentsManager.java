@@ -42,7 +42,7 @@ public class AttachmentsManager {
         // TODO CS 28-Feb-15 this is global isn't it?
 
         lineToProbesMap = new LineToProbesMap();
-        lineToProbesMap.install();
+        context.getEnv().instrumenter().install(lineToProbesMap);
     }
 
     public synchronized void attach(String file, int line, final DynamicObject block) {
@@ -50,17 +50,19 @@ public class AttachmentsManager {
 
         final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
 
-        final Instrument instrument = Instrument.create(new AdvancedInstrumentResultListener() {
+        final AdvancedInstrumentResultListener listener = new AdvancedInstrumentResultListener() {
 
             @Override
-            public void notifyResult(Node node, VirtualFrame virtualFrame, Object o) {
+            public void onExecution(Node node, VirtualFrame virtualFrame, Object result) {
             }
 
             @Override
-            public void notifyFailure(Node node, VirtualFrame virtualFrame, RuntimeException e) {
+            public void onFailure(Node node, VirtualFrame virtualFrame, RuntimeException exception) {
             }
 
-        } , new AdvancedInstrumentRootFactory() {
+        };
+
+        final AdvancedInstrumentRootFactory rootFactory = new AdvancedInstrumentRootFactory() {
 
             @Override
             public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
@@ -105,7 +107,7 @@ public class AttachmentsManager {
                 };
             }
 
-        }, null, info);
+        };
 
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
 
@@ -118,11 +120,9 @@ public class AttachmentsManager {
             attachments.put(lineLocation, instruments);
         }
 
-        instruments.add(instrument);
-
         for (Probe probe : lineToProbesMap.findProbes(lineLocation)) {
             if (probe.isTaggedAs(StandardSyntaxTag.STATEMENT)) {
-                probe.attach(instrument);
+                instruments.add(context.getEnv().instrumenter().attach(probe, listener, rootFactory, null, info));
                 return;
             }
         }

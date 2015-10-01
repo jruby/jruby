@@ -15,8 +15,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
@@ -38,7 +38,7 @@ public class TraceManager {
 
     private final RubyContext context;
 
-    private Collection<Instrument> instruments;
+    private Collection<ProbeInstrument> instruments;
     private boolean isInTraceFunc = false;
     private final Map<SyntaxTag, AdvancedInstrumentRootFactory> eventFactories = new HashMap<>();
 
@@ -63,11 +63,11 @@ public class TraceManager {
         final AdvancedInstrumentResultListener listener = new AdvancedInstrumentResultListener() {
 
             @Override
-            public void notifyResult(Node node, VirtualFrame virtualFrame, Object o) {
+            public void onExecution(Node node, VirtualFrame vFrame, Object result) {
             }
 
             @Override
-            public void notifyFailure(Node node, VirtualFrame virtualFrame, RuntimeException e) {
+            public void onFailure(Node node, VirtualFrame vFrame, RuntimeException ex) {
             }
 
         };
@@ -184,16 +184,15 @@ public class TraceManager {
         instruments = new ArrayList<>();
 
         for (Map.Entry<SyntaxTag, AdvancedInstrumentRootFactory> entry : eventFactories.entrySet()) {
-            for (Probe probe : Probe.findProbesTaggedAs(entry.getKey())) {
-                final Instrument instrument = Instrument.create(listener, entry.getValue(), null, "set_trace_func");
-                instruments.add(instrument);
-                probe.attach(instrument);
+            for (Probe probe : context.getEnv().instrumenter().findProbesTaggedAs(entry.getKey())) {
+                instruments.add(context.getEnv().instrumenter().attach(probe, listener, entry.getValue(), null, "set_trace_func"));
             }
         }
 
-        Probe.addProbeListener(new ProbeListener() {
+        context.getEnv().instrumenter().addProbeListener(new ProbeListener() {
+
             @Override
-            public void startASTProbing(Source source) {
+            public void startASTProbing(RootNode rootNode) {
             }
 
             @Override
@@ -203,15 +202,14 @@ public class TraceManager {
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
                 if (eventFactories.containsKey(tag)) {
-                    final Instrument instrument = Instrument.create(listener, eventFactories.get(tag), null, "set_trace_func");
-                    instruments.add(instrument);
-                    probe.attach(instrument);
+                    instruments.add(context.getEnv().instrumenter().attach(probe, listener, eventFactories.get(tag), null, "set_trace_func"));
                 }
             }
 
             @Override
-            public void endASTProbing(Source source) {
+            public void endASTProbing(RootNode rootNode) {
             }
+
         });
     }
 

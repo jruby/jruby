@@ -31,8 +31,6 @@ public class RubyRootNode extends RootNode {
     @Child private RubyNode body;
     private final boolean needsDeclarationFrame;
 
-    private boolean instrumentationApplied = false;
-
     public RubyRootNode(RubyContext context, SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         this(context, sourceSection, frameDescriptor, sharedMethodInfo, body, false);
     }
@@ -73,14 +71,6 @@ public class RubyRootNode extends RootNode {
     @Override
     public ExecutionContext getExecutionContext() {
         return context;
-    }
-
-    @Override
-    public void applyInstrumentation() {
-        if (!instrumentationApplied) {
-            Probe.applyASTProbers(body);
-            instrumentationApplied = true;
-        }
     }
 
     public boolean needsDeclarationFrame() {
