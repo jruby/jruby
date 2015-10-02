@@ -236,7 +236,6 @@ public class TraceManager {
         @Override
         public Object executeRoot(Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                final Object self = context.getCoreLibrary().getNilObject();
                 final Object classname = context.getCoreLibrary().getNilObject();
                 final Object id = context.getCoreLibrary().getNilObject();
 
