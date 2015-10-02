@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -34,6 +35,7 @@ public class TryNode extends RubyNode {
     @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
     private final BranchProfile elseProfile = BranchProfile.create();
+    private final boolean elsePresentProfile;
     private final BranchProfile controlFlowProfile = BranchProfile.create();
     private final BranchProfile raiseExceptionProfile = BranchProfile.create();
 
@@ -42,6 +44,7 @@ public class TryNode extends RubyNode {
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
+        elsePresentProfile = elsePart != null;
         clearExceptionVariableNode = new ClearExceptionVariableNode(context, sourceSection);
     }
 
@@ -70,7 +73,10 @@ public class TryNode extends RubyNode {
             }
 
             elseProfile.enter();
-            elsePart.executeVoid(frame);
+
+            if (elsePresentProfile) {
+                result = elsePart.execute(frame);
+            }
             return result;
         }
     }
