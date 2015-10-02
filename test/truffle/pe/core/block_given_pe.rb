@@ -14,5 +14,5 @@ module BlockGivenFixtures
 
 end
 
-example "BlockGivenFixtures.foo", false
-example "BlockGivenFixtures.foo { }", true
+tagged_example "BlockGivenFixtures.foo", false
+tagged_example "BlockGivenFixtures.foo { }", true
