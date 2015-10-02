@@ -72,7 +72,7 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.execute(
+                        final Object result = context.parseAndExecute(
                                 Source.fromText(shellLine, "shell"),
                                 UTF8Encoding.INSTANCE,
                                 ParserContext.EVAL,

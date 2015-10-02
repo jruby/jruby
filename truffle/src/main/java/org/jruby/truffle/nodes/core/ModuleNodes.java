@@ -646,7 +646,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this, NodeWrapper.IDENTITY);
+            return getContext().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this, NodeWrapper.IDENTITY);
         }
 
         @Specialization(guards = "isRubyProc(block)")

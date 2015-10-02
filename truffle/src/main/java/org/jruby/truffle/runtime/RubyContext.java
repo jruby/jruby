@@ -355,7 +355,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public void load(Source source, Node currentNode, final NodeWrapper nodeWrapper) {
-        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, nodeWrapper);
+        parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, nodeWrapper);
     }
 
     public SymbolTable getSymbolTable() {
@@ -373,7 +373,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, NodeWrapper.IDENTITY);
+        return parseAndExecute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
@@ -382,14 +382,25 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
         final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
-        return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode, NodeWrapper.IDENTITY);
+        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
+    public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
             DeclarationContext declarationContext, Node currentNode, NodeWrapper wrapper) {
+        final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+        return execute(parserContext, declarationContext, rootNode, parentFrame, self);
+    }
+
+    @TruffleBoundary
+    private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode,
+            NodeWrapper wrapper) {
         final TranslatorDriver translator = new TranslatorDriver(this);
-        final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+    }
+
+    @TruffleBoundary
+    private Object execute(ParserContext parserContext, DeclarationContext declarationContext, RubyRootNode rootNode, MaterializedFrame parentFrame, Object self) {
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final DynamicObject declaringModule;
@@ -681,10 +692,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         featureLoader.setMainScriptSource(source);
 
-        load(source, null, new NodeWrapper() {
+        final RubyRootNode rubyRootNode = new TranslatorDriver(this).parse(this, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
-                RubyContext context = node.getContext();
+                RubyContext context = RubyContext.this;
                 SourceSection sourceSection = node.getSourceSection();
                 return new TopLevelRaiseHandler(context, sourceSection,
                         SequenceNode.sequence(context, sourceSection,
@@ -693,7 +704,8 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                                 node));
             }
         });
-        return coreLibrary.getNilObject();
+
+        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rubyRootNode, null, coreLibrary.getMainObject());
     }
 
     @Override
