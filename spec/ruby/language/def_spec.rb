@@ -475,6 +475,22 @@ describe "A nested method definition" do
     lambda { other.a_singleton_method }.should raise_error(NoMethodError)
   end
 
+  it "creates a method in the surrounding context when evaluated in a def expr.method" do
+    class DefSpecNested
+      TARGET = Object.new
+      def TARGET.defs_method
+        def inherited_method;self;end
+      end
+    end
+
+    DefSpecNested::TARGET.defs_method
+    DefSpecNested.should have_instance_method :inherited_method
+    DefSpecNested::TARGET.should_not have_method :inherited_method
+
+    obj = DefSpecNested.new
+    obj.inherited_method.should == obj
+  end
+
   # See http://yugui.jp/articles/846#label-3
   it "inside an instance_eval creates a singleton method" do
     class DefSpecNested
