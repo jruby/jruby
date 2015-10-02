@@ -30,8 +30,10 @@ TIMEOUT = 10
 
 EXAMPLES = []
 
+Example = Struct.new(:code, :expected_value, :expected_constant, :tagged)
+
 def example(code, expected_value, expected_constant=true, tagged=false)
-  EXAMPLES << [code, expected_value, expected_constant, tagged]
+  EXAMPLES << Example.new(code, expected_value, expected_constant, tagged)
 end
 
 def tagged_example(code, expected_value)
@@ -84,8 +86,8 @@ def report(status, code, message = nil)
   puts message ? format(format_str + "\n         %s", status, code, message) : format('%14s: %s', status, code)
 end
 
-EXAMPLES.each do |code, expected_value, expected_constant, tagged|
-  next if tagged
+EXAMPLES.each do |example|
+  next if example.tagged
 
   finished = false
 
@@ -93,7 +95,7 @@ EXAMPLES.each do |code, expected_value, expected_constant, tagged|
     begin
       tested += 1
       value = nil
-      eval "loop { value = Truffle::Primitive.assert_constant begin; #{code}; end; Truffle::Primitive.assert_not_compiled; Thread.pass }"
+      eval "loop { value = Truffle::Primitive.assert_constant begin; #{example.code}; end; Truffle::Primitive.assert_not_compiled; Thread.pass }"
     rescue RubyTruffleError => e
       if e.message.include? 'Truffle::Primitive.assert_not_compiled'
         constant = true
@@ -104,27 +106,27 @@ EXAMPLES.each do |code, expected_value, expected_constant, tagged|
       end
 
       if constant.nil?
-        report 'ERROR', code, "errored in some unexpected way: #{e.message}"
+        report 'ERROR', example.code, "errored in some unexpected way: #{e.message}"
         errored += 1
       else
-        if expected_constant
+        if example.expected_constant
           unless constant
-            report 'FAILED', code, "wasn't constant"
+            report 'FAILED', example.code, "wasn't constant"
             failed += 1
           else
-            if value == expected_value
-              report 'OK', code
+            if value == example.expected_value
+              report 'OK', example.code
             else
-              report 'INCORRECT', code, "was: #{value.inspect} and not: #{expected_value.inspect}"
+              report 'INCORRECT', example.code, "was: #{value.inspect} and not: #{example.expected_value.inspect}"
               failed += 1
             end
           end
         else
           if constant
-            report 'QUERY', code, "wasn't supposed to be constant but it was (#{value.inspect})"
+            report 'QUERY', example.code, "wasn't supposed to be constant but it was (#{value.inspect})"
             failed += 1
           else
-            report 'OK (counter)', code
+            report 'OK (counter)', example.code
           end
         end
       end
@@ -136,11 +138,11 @@ EXAMPLES.each do |code, expected_value, expected_constant, tagged|
   test_thread.join(TIMEOUT)
 
   unless finished
-    report 'TIMEOUT', code, "didn't compile in time so I don't know if it's constant or not"
+    report 'TIMEOUT', example.code, "didn't compile in time so I don't know if it's constant or not"
     timedout += 1
   end
 end
 
-puts "Tested #{tested}, #{EXAMPLES.select{|c,e,t| t}.size} tagged, #{failed} failed, #{errored} errored, #{timedout} timed out"
+puts "Tested #{tested}, #{EXAMPLES.select{|example| example.tagged}.size} tagged, #{failed} failed, #{errored} errored, #{timedout} timed out"
 
 exit 1 unless failed.zero? && errored.zero? && timedout.zero?
