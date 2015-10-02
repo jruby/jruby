@@ -65,7 +65,6 @@ import org.jruby.truffle.runtime.object.ObjectIDOperations;
 import org.jruby.truffle.runtime.rubinius.RubiniusConfiguration;
 import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
@@ -395,7 +394,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(this);
-        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
     }
 
     @TruffleBoundary
@@ -677,9 +676,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         coreLibrary.getGlobalVariablesObject().define("$0", toTruffle(runtime.getGlobalVariables().get("$0")), 0);
 
         String inputFile = rootNode.getPosition().getFile();
-
         final Source source;
-
         try {
             if (!inputFile.equals("-e")) {
                 inputFile = new File(inputFile).getCanonicalPath();
@@ -691,20 +688,19 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
         featureLoader.setMainScriptSource(source);
 
-        final RubyRootNode rubyRootNode = new TranslatorDriver(this).parse(this, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null, new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                RubyContext context = RubyContext.this;
-                SourceSection sourceSection = node.getSourceSection();
-                return new TopLevelRaiseHandler(context, sourceSection,
-                        SequenceNode.sequence(context, sourceSection,
-                                new SetTopLevelBindingNode(context, sourceSection),
-                                new LoadRequiredLibrariesNode(context, sourceSection),
-                                node));
-            }
-        });
+        final RubyRootNode originalRootNode = parse(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
 
-        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, rubyRootNode, null, coreLibrary.getMainObject());
+        final SourceSection sourceSection = originalRootNode.getSourceSection();
+        final RubyNode wrappedBody =
+                new TopLevelRaiseHandler(this, sourceSection,
+                        SequenceNode.sequence(this, sourceSection,
+                                new SetTopLevelBindingNode(this, sourceSection),
+                                new LoadRequiredLibrariesNode(this, sourceSection),
+                                originalRootNode.getBody()));
+
+        final RubyRootNode newRootNode = originalRootNode.withBody(wrappedBody);
+
+        return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
 
     @Override
