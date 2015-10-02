@@ -28,7 +28,7 @@ public class DeclarationContext {
 
     /** @see <a href="http://yugui.jp/articles/846">http://yugui.jp/articles/846</a> */
     private enum DefaultDefinee {
-        DECLARING_MODULE,
+        LEXICAL_SCOPE,
         SINGLETON_CLASS,
         SELF
     }
@@ -55,8 +55,8 @@ public class DeclarationContext {
 
     public DynamicObject getModuleToDefineMethods(VirtualFrame frame, RubyContext context, SingletonClassNode singletonClassNode) {
         switch (defaultDefinee) {
-        case DECLARING_MODULE:
-            return (DynamicObject) RubyArguments.getMethod(frame.getArguments()).getDeclaringModule();
+        case LEXICAL_SCOPE:
+            return RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getLexicalScope().getLiveModule();
         case SINGLETON_CLASS:
             final Object self = RubyArguments.getSelf(frame.getArguments());
             return singletonClassNode.executeSingletonClass(frame, self);
@@ -67,9 +67,10 @@ public class DeclarationContext {
         }
     }
 
-    public static final DeclarationContext METHOD = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.DECLARING_MODULE);
-    public static final DeclarationContext MODULE = METHOD;
+    public static final DeclarationContext MODULE = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.LEXICAL_SCOPE);
+    public static final DeclarationContext METHOD = MODULE;
     public static final DeclarationContext BLOCK = METHOD;
+    public static final DeclarationContext TOP_LEVEL = METHOD;
     public static final DeclarationContext INSTANCE_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SINGLETON_CLASS);
     public static final DeclarationContext CLASS_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SELF);
 
