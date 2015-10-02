@@ -475,6 +475,27 @@ describe "A nested method definition" do
     lambda { other.a_singleton_method }.should raise_error(NoMethodError)
   end
 
+  # See http://yugui.jp/articles/846#label-3
+  it "inside an instance_eval creates a singleton method" do
+    class DefSpecNested
+      OBJ = Object.new
+      OBJ.instance_eval do
+        def create_method_in_instance_eval(a = (def arg_method; end))
+          def body_method; end
+        end
+      end
+    end
+
+    obj = DefSpecNested::OBJ
+    obj.create_method_in_instance_eval
+
+    obj.should have_method :arg_method
+    obj.should have_method :body_method
+
+    DefSpecNested.should_not have_instance_method :arg_method
+    DefSpecNested.should_not have_instance_method :body_method
+  end
+
   it "defines methods as public by default" do
     cls = Class.new do
       def do_def
