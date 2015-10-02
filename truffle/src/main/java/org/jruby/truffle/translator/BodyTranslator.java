@@ -1103,7 +1103,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1115,15 +1115,15 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, objectNode);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
+        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode(), true);
 
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode,
-            org.jruby.ast.Node bodyNode, boolean isDefs) {
+    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode,
+            boolean isDefs) {
         final Arity arity = MethodTranslator.getArity(argsNode);
-        final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class));
+        final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(argsNode);
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), arity, methodName, false, argumentDescriptors, false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(

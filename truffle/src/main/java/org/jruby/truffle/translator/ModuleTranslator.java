@@ -94,7 +94,7 @@ class ModuleTranslator extends BodyTranslator {
             methodName = methodName + "_internal";
         }
 
-        return translateMethodDefinition(sourceSection, classNode, methodName, node, node.getArgsNode(), node.getBodyNode(), false);
+        return translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override
