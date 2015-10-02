@@ -370,7 +370,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             }
         };
 
-        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.MODULE, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, composed);
     }
 
     public SymbolTable getSymbolTable() {

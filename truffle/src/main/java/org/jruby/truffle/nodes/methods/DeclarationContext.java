@@ -70,6 +70,7 @@ public class DeclarationContext {
     public static final DeclarationContext METHOD = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.DECLARING_MODULE);
     public static final DeclarationContext MODULE = METHOD;
     public static final DeclarationContext BLOCK = METHOD;
+    public static final DeclarationContext TOP_LEVEL = METHOD;
     public static final DeclarationContext INSTANCE_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SINGLETON_CLASS);
     public static final DeclarationContext CLASS_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SELF);
 
