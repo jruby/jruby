@@ -351,11 +351,11 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
 
     private void loadFileAbsolute(String fileName, Node currentNode) throws IOException {
         final Source source = sourceCache.getSource(fileName);
-        load(source, currentNode, NodeWrapper.IDENTITY);
+        load(source, currentNode);
     }
 
-    public void load(Source source, Node currentNode, final NodeWrapper nodeWrapper) {
-        parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, nodeWrapper);
+    public void load(Source source, Node currentNode) {
+        parseAndExecute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode);
     }
 
     public SymbolTable getSymbolTable() {
@@ -373,7 +373,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return parseAndExecute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, NodeWrapper.IDENTITY);
+        return parseAndExecute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode);
     }
 
     @TruffleBoundary
@@ -382,21 +382,20 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
         final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
-        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode, NodeWrapper.IDENTITY);
+        return parseAndExecute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode);
     }
 
     @TruffleBoundary
     public Object parseAndExecute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
-            DeclarationContext declarationContext, Node currentNode, NodeWrapper wrapper) {
-        final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+            DeclarationContext declarationContext, Node currentNode) {
+        final RubyRootNode rootNode = parse(source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode);
         return execute(parserContext, declarationContext, rootNode, parentFrame, self);
     }
 
     @TruffleBoundary
-    private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode,
-            NodeWrapper wrapper) {
+    private RubyRootNode parse(Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         final TranslatorDriver translator = new TranslatorDriver(this);
-        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+        return translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
