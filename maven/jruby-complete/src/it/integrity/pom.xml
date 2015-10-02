@@ -234,6 +234,27 @@
             </configuration>
           </execution>
           <execution>
+            <id>-S icecream - GH-3186</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <workingDirectory>${basedir}</workingDirectory>
+              <executable>java</executable>
+              <environmentVariables>
+                <PATH>${env.PATH}:somebin</PATH>
+              </environmentVariables>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath/>
+                <argument>org.jruby.Main</argument>
+                <argument>-S</argument>
+                <argument>icecream</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
             <id>META-INF/jruby.home is not a file - GH-3342</id>
             <phase>test</phase>
             <goals>
