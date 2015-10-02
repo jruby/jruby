@@ -14,7 +14,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -22,7 +21,6 @@ import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -57,8 +55,6 @@ class ModuleTranslator extends BodyTranslator {
         }
 
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-
-        body = new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC, name, body);
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
@@ -98,7 +94,7 @@ class ModuleTranslator extends BodyTranslator {
             methodName = methodName + "_internal";
         }
 
-        return translateMethodDefinition(sourceSection, classNode, methodName, node, node.getArgsNode(), node.getBodyNode());
+        return translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override

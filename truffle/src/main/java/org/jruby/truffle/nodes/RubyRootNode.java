@@ -44,6 +44,10 @@ public class RubyRootNode extends RootNode {
         this.needsDeclarationFrame = needsDeclarationFrame;
     }
 
+    public RubyRootNode withBody(RubyNode body) {
+        return new RubyRootNode(context, getSourceSection(), getFrameDescriptor(), sharedMethodInfo, body, needsDeclarationFrame);
+    }
+
     @Override
     public boolean isCloningAllowed() {
         return true;

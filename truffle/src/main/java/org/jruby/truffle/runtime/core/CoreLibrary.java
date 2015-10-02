@@ -19,7 +19,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Errno;
+
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConvFlags;
@@ -57,7 +59,6 @@ import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.OutputStrings;
 
@@ -704,7 +705,7 @@ public class CoreLibrary {
 
             state = State.LOADING_RUBY_CORE;
             try {
-                context.load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node, NodeWrapper.IDENTITY);
+                context.load(context.getSourceCache().getSource(getCoreLoadPath() + "/core.rb"), node);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

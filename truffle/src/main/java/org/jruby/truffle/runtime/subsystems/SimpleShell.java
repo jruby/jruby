@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
@@ -72,7 +71,7 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.execute(
+                        final Object result = context.parseAndExecute(
                                 Source.fromText(shellLine, "shell"),
                                 UTF8Encoding.INSTANCE,
                                 ParserContext.EVAL,
@@ -80,8 +79,7 @@ public class SimpleShell {
                                 currentFrame,
                                 false,
                                 RubyArguments.getDeclarationContext(currentFrame.getArguments()),
-                                currentNode,
-                                NodeWrapper.IDENTITY);
+                                currentNode);
 
                         String inspected;
 

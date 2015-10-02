@@ -65,7 +65,7 @@ public class CoreMethodNodeManager {
     }
 
     private DynamicObject getSingletonClass(Object object) {
-        return singletonClassNode.executeSingletonClass(null, object);
+        return singletonClassNode.executeSingletonClass(object);
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {

@@ -51,7 +51,7 @@ public class TranslatorDriver {
         parseEnvironment = new ParseEnvironment(context);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -101,10 +101,10 @@ public class TranslatorDriver {
             throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
         }
 
-        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node, wrapper);
+        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node);
     }
 
-    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
+    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
 
         final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
@@ -176,10 +176,6 @@ public class TranslatorDriver {
         // Catch retry
 
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
-
-        // Custom node wrapper
-
-        truffleNode = wrapper.wrap(truffleNode);
 
         // Shell result
 

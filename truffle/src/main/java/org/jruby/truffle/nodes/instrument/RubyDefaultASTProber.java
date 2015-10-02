@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.NodeVisitor;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.OpenModuleNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
@@ -54,7 +53,7 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
                 // the context implied by the tag.  We need to tag at the RubyRootNode because the semantics of set_trace_func
                 // are such that the receiver must be resolved, so we have to push as far into the callee as we can to have
                 // a properly constructed frame.
-                else if ((rubyNode.getParent() instanceof RubyRootNode) && !(rubyNode instanceof SetMethodDeclarationContext)) {
+                else if ((rubyNode.getParent() instanceof RubyRootNode)) {
                     final Probe probe = instrumenter.probe(rubyNode);
                     probe.tagAs(RubySyntaxTag.CALL, null);
                 }

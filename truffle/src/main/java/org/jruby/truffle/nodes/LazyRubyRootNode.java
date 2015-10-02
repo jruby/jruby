@@ -15,11 +15,9 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
-import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 public class LazyRubyRootNode extends RootNode {
@@ -58,14 +56,7 @@ public class LazyRubyRootNode extends RootNode {
 
             final TranslatorDriver translator = new TranslatorDriver(context);
 
-            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.EVAL, null, true, null, new NodeWrapper() {
-
-                @Override
-                public RubyNode wrap(RubyNode node) {
-                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "TruffleLanguage#parse (lazy)", node);
-                }
-
-            });
+            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, null);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

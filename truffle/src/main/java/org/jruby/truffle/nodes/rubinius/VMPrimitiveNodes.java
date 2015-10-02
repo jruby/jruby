@@ -240,8 +240,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectClass(VirtualFrame frame, Object object) {
-            return singletonClassNode.singletonClass(frame, object);
+        public Object vmObjectClass(Object object) {
+            return singletonClassNode.singletonClass(object);
         }
 
     }
