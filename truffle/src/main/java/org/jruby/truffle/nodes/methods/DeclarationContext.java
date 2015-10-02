@@ -42,23 +42,28 @@ public class DeclarationContext {
         this.defaultDefinee = defaultDefinee;
     }
 
-    public static Visibility findVisibility(Frame frame) {
+    private static Frame lookupVisibility(Frame frame) {
         while (frame != null) {
-            Visibility visibility = RubyArguments.getDeclarationContext(frame.getArguments()).visibility;
+            final Visibility visibility = RubyArguments.getDeclarationContext(frame.getArguments()).visibility;
             if (visibility != null) {
-                return visibility;
+                return frame;
             }
             frame = RubyArguments.getDeclarationFrame(frame.getArguments());
         }
-
         throw new UnsupportedOperationException("No declaration frame with visibility found");
     }
 
-    public DeclarationContext withVisibility(Visibility visibility) {
-        if (visibility == this.visibility) {
-            return this;
-        } else {
-            return new DeclarationContext(visibility, this.defaultDefinee);
+    public static Visibility findVisibility(Frame frame) {
+        final Frame visibilityFrame = lookupVisibility(frame);
+        return RubyArguments.getDeclarationContext(visibilityFrame.getArguments()).visibility;
+    }
+
+    public static void changeVisibility(Frame frame, Visibility newVisibility) {
+        final Frame visibilityFrame = lookupVisibility(frame);
+        final DeclarationContext oldDeclarationContext = RubyArguments.getDeclarationContext(visibilityFrame.getArguments());
+        if (newVisibility != oldDeclarationContext.visibility) {
+            final DeclarationContext newDeclarationContext = new DeclarationContext(newVisibility, oldDeclarationContext.defaultDefinee);
+            RubyArguments.setDeclarationContext(visibilityFrame.getArguments(), newDeclarationContext);
         }
     }
 

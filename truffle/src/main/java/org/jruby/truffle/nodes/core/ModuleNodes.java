@@ -1924,8 +1924,7 @@ public abstract class ModuleNodes {
 
         private void setCurrentVisibility(Visibility visibility) {
             final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
-            final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(callerFrame.getArguments());
-            RubyArguments.setDeclarationContext(callerFrame.getArguments(), declarationContext.withVisibility(visibility));
+            DeclarationContext.changeVisibility(callerFrame, visibility);
         }
 
     }
