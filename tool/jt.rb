@@ -60,24 +60,26 @@ module Utilities
   end
 
   def self.find_graal_parent
-    File.expand_path('../../../../../graal', find_graal)
+    graal = File.expand_path('../../../../../graal-compiler', find_graal)
+    raise "couldn't find graal - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless Dir.exist?(graal)
+    graal
   end
 
   def self.find_graal_mx
-    mx = File.expand_path('../../../../../mx/mx', find_graal)
+    mx = File.expand_path('../../../../../../mx/mx', find_graal)
     raise "couldn't find mx - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
     mx
   end
 
   def self.igv_running?
-    `ps a`.lines.any? { |p| p.include? 'mx/mx.py igv' }
+    `ps a`.include? 'IdealGraphVisualizer'
   end
 
   def self.ensure_igv_running
     unless igv_running?
-      #Dir.chdir(find_graal_parent) do
-      #  spawn "#{find_graal_mx} igv", pgroup: true
-      #end
+      Dir.chdir(find_graal_parent + "/../jvmci") do
+        spawn "#{find_graal_mx} --vm server igv", pgroup: true
+      end
 
       sleep 5
       puts
@@ -280,7 +282,7 @@ module Commands
     if args.delete('--igv')
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
-      jruby_args += %w[-J-Djvmci.options=Dump=TrufflePartialEscape]
+      jruby_args += %w[-J-Djvmci.option.Dump=TrufflePartialEscape]
     end
 
     if ENV["JRUBY_ECLIPSE"] == "true"
@@ -414,11 +416,11 @@ module Commands
     case command
     when 'debug'
       if args.delete '--ruby-backtrace'
-        compilation_exceptions_behaviour = '+TruffleCompilationExceptionsAreThrown'
+        compilation_exceptions_behaviour = '-J-Djvmci.option.TruffleCompilationExceptionsAreThrown=true'
       else
-        compilation_exceptions_behaviour = '+TruffleCompilationExceptionsAreFatal'
+        compilation_exceptions_behaviour = '-J-Djvmci.option.TruffleCompilationExceptionsAreFatal=true'
       end
-      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-Djvmci.options='+TraceTruffleCompilation #{compilation_exceptions_behaviour}'"})
+      env_vars = env_vars.merge({'JRUBY_OPTS' => "-J-Djvmci.option.TraceTruffleCompilation=true #{compilation_exceptions_behaviour}'"})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
