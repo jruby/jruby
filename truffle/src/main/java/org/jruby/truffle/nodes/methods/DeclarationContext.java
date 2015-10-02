@@ -59,7 +59,7 @@ public class DeclarationContext {
             return RubyArguments.getMethod(frame.getArguments()).getSharedMethodInfo().getLexicalScope().getLiveModule();
         case SINGLETON_CLASS:
             final Object self = RubyArguments.getSelf(frame.getArguments());
-            return singletonClassNode.executeSingletonClass(frame, self);
+            return singletonClassNode.executeSingletonClass(self);
         case SELF:
             return (DynamicObject) RubyArguments.getSelf(frame.getArguments());
         default:

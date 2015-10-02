@@ -1139,13 +1139,13 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public DynamicObject extendObject(VirtualFrame frame, DynamicObject module, DynamicObject object) {
+        public DynamicObject extendObject(DynamicObject module, DynamicObject object) {
             if (RubyGuards.isRubyClass(module)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, object)).include(this, module);
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(object)).include(this, module);
             return module;
         }
 
@@ -1394,7 +1394,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public DynamicObject publicClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
-            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1459,7 +1459,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public DynamicObject privateClassMethod(VirtualFrame frame, DynamicObject module, Object[] names) {
-            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(frame, module);
+            final DynamicObject singletonClass = singletonClassNode.executeSingletonClass(module);
 
             for (Object name : names) {
                 setMethodVisibilityNode.executeSetMethodVisibility(frame, singletonClass, name);
@@ -1986,7 +1986,7 @@ public abstract class ModuleNodes {
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
                 Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
             } else {
                 Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(visibility));
             }

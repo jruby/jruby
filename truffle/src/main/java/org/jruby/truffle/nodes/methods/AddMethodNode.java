@@ -57,7 +57,7 @@ public class AddMethodNode extends RubyNode {
 
         if (method.getVisibility() == Visibility.MODULE_FUNCTION) {
             Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
         } else {
             Layouts.MODULE.getFields(module).addMethod(this, method);
         }

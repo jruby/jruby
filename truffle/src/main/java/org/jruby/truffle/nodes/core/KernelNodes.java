@@ -454,7 +454,7 @@ public abstract class KernelNodes {
 
             // Copy the singleton class if any.
             if (Layouts.CLASS.getIsSingleton(Layouts.BASIC_OBJECT.getMetaClass(self))) {
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(frame, newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(newObject)).initCopy(Layouts.BASIC_OBJECT.getMetaClass(self));
             }
 
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
@@ -1770,8 +1770,8 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject singletonClass(VirtualFrame frame, Object self) {
-            return singletonClassNode.executeSingletonClass(frame, self);
+        public DynamicObject singletonClass(Object self) {
+            return singletonClassNode.executeSingletonClass(self);
         }
 
     }

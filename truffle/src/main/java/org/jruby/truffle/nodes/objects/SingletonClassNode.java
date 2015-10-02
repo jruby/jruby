@@ -37,7 +37,7 @@ public abstract class SingletonClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract DynamicObject executeSingletonClass(VirtualFrame frame, Object value);
+    public abstract DynamicObject executeSingletonClass(Object value);
 
     @Specialization(guards = "value")
     protected DynamicObject singletonClassTrue(boolean value) {
