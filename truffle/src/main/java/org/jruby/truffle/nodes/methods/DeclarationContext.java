@@ -14,6 +14,7 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 
@@ -41,8 +42,16 @@ public class DeclarationContext {
         this.defaultDefinee = defaultDefinee;
     }
 
-    public Visibility getVisibility() {
-        return visibility;
+    public static Visibility findVisibility(Frame frame) {
+        while (frame != null) {
+            Visibility visibility = RubyArguments.getDeclarationContext(frame.getArguments()).visibility;
+            if (visibility != null) {
+                return visibility;
+            }
+            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+        }
+
+        throw new UnsupportedOperationException("No declaration frame with visibility found");
     }
 
     public DeclarationContext withVisibility(Visibility visibility) {
@@ -68,9 +77,9 @@ public class DeclarationContext {
     }
 
     public static final DeclarationContext MODULE = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.LEXICAL_SCOPE);
-    public static final DeclarationContext METHOD = MODULE;
-    public static final DeclarationContext BLOCK = METHOD;
-    public static final DeclarationContext TOP_LEVEL = METHOD;
+    public static final DeclarationContext METHOD = new DeclarationContext(null, DefaultDefinee.LEXICAL_SCOPE);
+    public static final DeclarationContext BLOCK = new DeclarationContext(null, DefaultDefinee.LEXICAL_SCOPE);
+    public static final DeclarationContext TOP_LEVEL = new DeclarationContext(Visibility.PRIVATE, DefaultDefinee.LEXICAL_SCOPE);
     public static final DeclarationContext INSTANCE_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SINGLETON_CLASS);
     public static final DeclarationContext CLASS_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SELF);
 

@@ -50,7 +50,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
@@ -356,21 +355,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public void load(Source source, Node currentNode, final NodeWrapper nodeWrapper) {
-        final NodeWrapper loadWrapper = new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "load", node);
-            }
-        };
-
-        final NodeWrapper composed = new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                return nodeWrapper.wrap(loadWrapper.wrap(node));
-            }
-        };
-
-        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.TOP_LEVEL, currentNode, nodeWrapper);
     }
 
     public SymbolTable getSymbolTable() {
@@ -388,12 +373,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, new NodeWrapper() {
-            @Override
-            public RubyNode wrap(RubyNode node) {
-                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
-            }
-        });
+        return execute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary

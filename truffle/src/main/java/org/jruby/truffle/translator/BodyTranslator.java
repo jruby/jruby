@@ -21,6 +21,7 @@ import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1102,7 +1103,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1114,14 +1115,16 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, objectNode);
 
-        final RubyNode ret = new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC,
-                "defs", translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()));
+        final RubyNode ret = translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), true);
 
         return addNewlineIfNeeded(node, ret);
     }
 
-    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false, false, false);
+    protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode,
+            org.jruby.ast.Node bodyNode, boolean isDefs) {
+        final Arity arity = MethodTranslator.getArity(argsNode);
+        final ArgumentDescriptor[] argumentDescriptors = Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), arity, methodName, false, argumentDescriptors, false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
@@ -1132,7 +1135,7 @@ public class BodyTranslator extends Translator {
 
         final MethodDefinitionNode functionExprNode = methodCompiler.compileMethodNode(sourceSection, methodName, bodyNode, sharedMethodInfo);
 
-        return new AddMethodNode(context, sourceSection, classNode, functionExprNode);
+        return new AddMethodNode(context, sourceSection, classNode, functionExprNode, isDefs);
     }
 
     @Override

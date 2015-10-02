@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -19,23 +18,24 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ModuleNodes;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class AddMethodNode extends RubyNode {
 
+    private final boolean isDefs; // def expr.meth()
+
     @Child private RubyNode receiver;
     @Child private MethodDefinitionNode methodNode;
     @Child private SingletonClassNode singletonClassNode;
 
-    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
+    public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method, boolean isDefs) {
         super(context, section);
+        this.isDefs = isDefs;
         this.receiver = receiver;
         this.methodNode = method;
         this.singletonClassNode = SingletonClassNodeGen.create(context, section, null);
@@ -65,37 +65,13 @@ public class AddMethodNode extends RubyNode {
         return getSymbol(method.getName());
     }
 
-    private static Visibility getVisibility(Frame frame, String name) {
-        if (ModuleOperations.isMethodPrivateFromName(name)) {
+    private Visibility getVisibility(Frame frame, String name) {
+        if (isDefs) {
+            return Visibility.PUBLIC;
+        } else if (ModuleOperations.isMethodPrivateFromName(name)) {
             return Visibility.PRIVATE;
         } else {
-            return getVisibility(frame);
-        }
-    }
-
-    public static Visibility getVisibility(Frame frame) {
-        while (frame != null) {
-            Visibility visibility = findVisibility(frame);
-            if (visibility != null) {
-                return visibility;
-            }
-            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
-        }
-
-        throw new UnsupportedOperationException("No declaration frame with visibility found");
-    }
-
-    private static Visibility findVisibility(Frame frame) {
-        FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(ModuleNodes.VISIBILITY_FRAME_SLOT_ID);
-        if (slot == null) {
-            return null;
-        } else {
-            Object visibilityObject = frame.getValue(slot);
-            if (visibilityObject instanceof Visibility) {
-                return (Visibility) visibilityObject;
-            } else {
-                return Visibility.PUBLIC;
-            }
+            return DeclarationContext.findVisibility(frame);
         }
     }
 }

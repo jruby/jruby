@@ -47,7 +47,6 @@ import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -61,7 +60,6 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
-import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
@@ -73,12 +71,6 @@ import java.util.Map.Entry;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
-
-    /**
-     * The slot within a module definition method frame where we store the implicit state that is
-     * the current visibility for new methods.
-     */
-    public static final Object VISIBILITY_FRAME_SLOT_ID = new Object();
 
     public static DynamicObject createRubyModule(RubyContext context, DynamicObject selfClass, DynamicObject lexicalParent, String name, Node currentNode) {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
@@ -401,7 +393,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             final FrameInstance callerFrame = RubyCallStack.getCallerFrame(getContext());
             final SourceSection sourceSection = callerFrame.getCallNode().getEncapsulatingSourceSection();
-            final Visibility visibility = AddMethodNode.getVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
+            final Visibility visibility = DeclarationContext.findVisibility(callerFrame.getFrame(FrameAccess.READ_ONLY, true));
             final Arity arity = isGetter ? Arity.NO_ARGUMENTS : Arity.ONE_REQUIRED;
             final String ivar = "@" + name;
             final String accessorName = isGetter ? name : name + "=";
@@ -654,12 +646,7 @@ public abstract class ModuleNodes {
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this, new NodeWrapper() {
-                @Override
-                public RubyNode wrap(RubyNode node) {
-                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
-                }
-            });
+            return getContext().execute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this, NodeWrapper.IDENTITY);
         }
 
         @Specialization(guards = "isRubyProc(block)")
@@ -1936,16 +1923,9 @@ public abstract class ModuleNodes {
         }
 
         private void setCurrentVisibility(Visibility visibility) {
-            CompilerDirectives.transferToInterpreter();
-
             final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
-            assert callerFrame != null;
-            assert callerFrame.getFrameDescriptor() != null;
-
-            final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
-                    VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
-
-            callerFrame.setObject(visibilitySlot, visibility);
+            final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(callerFrame.getArguments());
+            RubyArguments.setDeclarationContext(callerFrame.getArguments(), declarationContext.withVisibility(visibility));
         }
 
     }
