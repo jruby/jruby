@@ -944,35 +944,29 @@ class CSV
   # To add a combo field, the value should be an Array of names.  Combo fields
   # can be nested with other combo fields.
   #
-  converter_methods = Module.new do
-    def self.integer(f)
-      Integer(f.encode(ConverterEncoding)) rescue f
-    end
-    def self.float(f)
-      Float(f.encode(ConverterEncoding)) rescue f
-    end
-    def self.date(f)
-      begin
-        e = f.encode(ConverterEncoding)
-        e =~ DateMatcher ? Date.parse(e) : f
-      rescue  # encoding conversion or date parse errors
-        f
-      end
-    end
-    def self.date_time(f)
-      begin
-        e = f.encode(ConverterEncoding)
-        e =~ DateTimeMatcher ? DateTime.parse(e) : f
-      rescue  # encoding conversion or date parse errors
-        f
-      end
-    end
-  end
-  Converters  = { integer:   converter_methods.method(:integer),
-                  float:     converter_methods.method(:float),
+  Converters  = { integer:   lambda { |f|
+                    Integer(f.encode(ConverterEncoding)) rescue f
+                  },
+                  float:     lambda { |f|
+                    Float(f.encode(ConverterEncoding)) rescue f
+                  },
                   numeric:   [:integer, :float],
-                  date:      converter_methods.method(:date),
-                  date_time: converter_methods.method(:date_time),
+                  date:      lambda { |f|
+                    begin
+                      e = f.encode(ConverterEncoding)
+                      e =~ DateMatcher ? Date.parse(e) : f
+                    rescue  # encoding conversion or date parse errors
+                      f
+                    end
+                  },
+                  date_time: lambda { |f|
+                    begin
+                      e = f.encode(ConverterEncoding)
+                      e =~ DateTimeMatcher ? DateTime.parse(e) : f
+                    rescue  # encoding conversion or date parse errors
+                      f
+                    end
+                  },
                   all:       [:date_time, :numeric] }
 
   #
@@ -995,18 +989,12 @@ class CSV
   # To add a combo field, the value should be an Array of names.  Combo fields
   # can be nested with other combo fields.
   #
-  header_converters = Module.new do
-    def self.downcase(h)
-      h.encode(ConverterEncoding).downcase
-    end
-    def self.symbol(h)
+  HeaderConverters = {
+    downcase: lambda { |h| h.encode(ConverterEncoding).downcase },
+    symbol:   lambda { |h|
       h.encode(ConverterEncoding).downcase.strip.gsub(/\s+/, "_").
                                                  gsub(/\W+/, "").to_sym
-    end
-  end
-  HeaderConverters = {
-    downcase: header_converters.method(:downcase),
-    symbol:   header_converters.method(:symbol)
+    }
   }
 
   #

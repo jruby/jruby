@@ -107,6 +107,8 @@ public class JVMVisitor extends IRVisitor {
             codegenScriptBody((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
             emitMethodJIT((IRMethod)scope, context);
+        } else if (scope instanceof IRClosure) {
+            emitBlockJIT((IRClosure) scope, context);
         } else if (scope instanceof IRModuleBody) {
             emitModuleBodyJIT((IRModuleBody)scope);
         } else {
@@ -222,7 +224,7 @@ public class JVMVisitor extends IRVisitor {
         return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
     }
 
-    private static final Signature CLOSURE_SIGNATURE = Signature
+    public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
@@ -244,12 +246,25 @@ public class JVMVisitor extends IRVisitor {
         emitWithSignatures(method, context, name);
     }
 
-    public void  emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
+    public void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFileName());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
         emitWithSignatures(method, context, name);
+
+        jvm.cls().visitEnd();
+        jvm.popclass();
+    }
+
+    public void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
+        String clsName = jvm.scriptToClass(closure.getFileName());
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        jvm.pushscript(clsName, closure.getFileName());
+
+        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+
+        context.setJittedName(name);
 
         jvm.cls().visitEnd();
         jvm.popclass();

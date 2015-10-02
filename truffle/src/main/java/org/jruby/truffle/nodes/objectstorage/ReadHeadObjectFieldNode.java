@@ -11,23 +11,18 @@ package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.*;
-import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.Options;
-import org.jruby.truffle.runtime.RubyContext;
 
-@NodeChild("receiver")
-public abstract class ReadHeadObjectFieldNode extends RubyNode {
+public abstract class ReadHeadObjectFieldNode extends Node {
     private final Object defaultValue;
     protected final Object name;
 
-    public ReadHeadObjectFieldNode(RubyContext context, SourceSection sourceSection, Object name, Object defaultValue) {
-        super(context, sourceSection);
+    public ReadHeadObjectFieldNode(Object name, Object defaultValue) {
         this.name = name;
         this.defaultValue = defaultValue;
     }

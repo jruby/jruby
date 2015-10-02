@@ -42,6 +42,7 @@ public class IRManager {
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
+    private final StandardError standardError = new StandardError();
     public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
     public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
 
@@ -81,6 +82,10 @@ public class IRManager {
 
     public Nil getNil() {
         return nil;
+    }
+
+    public StandardError getStandardError() {
+        return standardError;
     }
 
     public org.jruby.ir.operands.Boolean getTrue() {

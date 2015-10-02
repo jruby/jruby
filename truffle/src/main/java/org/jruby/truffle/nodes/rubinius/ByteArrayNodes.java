@@ -52,11 +52,11 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
-            final int prependLength = Layouts.STRING.getByteList(string).getUnsafeBytes().length;
+            final int prependLength = StringOperations.getByteList(string).getUnsafeBytes().length;
             final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(Layouts.STRING.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
         }
@@ -106,7 +106,7 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(pattern)")
         public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(Layouts.STRING.getByteList(pattern));
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteList(pattern));
 
             if (index == -1) {
                 return nil();

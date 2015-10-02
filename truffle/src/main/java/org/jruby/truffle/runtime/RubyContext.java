@@ -47,6 +47,7 @@ import org.jruby.truffle.nodes.core.SetTopLevelBindingNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.exceptions.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -65,6 +66,7 @@ import org.jruby.truffle.runtime.sockets.NativeSockets;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -210,7 +212,7 @@ public class RubyContext extends ExecutionContext {
         }
 
         return method.getCallTarget().call(
-                RubyArguments.pack(method, method.getDeclarationFrame(), object, block, arguments));
+                RubyArguments.pack(method, method.getDeclarationFrame(), null, object, block, DeclarationContext.METHOD, arguments));
     }
 
     /* For debugging in Java. */
@@ -221,10 +223,15 @@ public class RubyContext extends ExecutionContext {
         return getLatestInstance().inlineRubyHelper(null, currentFrame, code);
     }
 
+    @TruffleBoundary
+    public Object inlineRubyHelper(Node currentNode, String expression, Object... arguments) {
+        return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.MATERIALIZE, true), expression, arguments);
+    }
+
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = Layouts.BINDING.createBinding(getCoreLibrary().getBindingFactory(), evalFrame);
-        return eval(expression, binding, true, "inline-ruby", currentNode);
+        return eval(ParserContext.INLINE, ByteList.create(expression), binding, true, "inline-ruby", currentNode);
     }
 
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {
@@ -233,8 +240,10 @@ public class RubyContext extends ExecutionContext {
                 RubyArguments.pack(
                         RubyArguments.getMethod(frame.getArguments()),
                         null,
+                        null,
                         RubyArguments.getSelf(frame.getArguments()),
                         null,
+                        DeclarationContext.INSTANCE_EVAL,
                         new Object[] {}),
                 new FrameDescriptor(frame.getFrameDescriptor().getDefaultValue()));
 
@@ -364,7 +373,7 @@ public class RubyContext extends ExecutionContext {
             }
         };
 
-        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, true, DeclarationContext.MODULE, currentNode, composed);
     }
 
     public SymbolTable getSymbolTable() {
@@ -382,7 +391,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
+        return execute(source, code.getEncoding(), ParserContext.EVAL, self, null, true, DeclarationContext.INSTANCE_EVAL, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
@@ -390,45 +399,36 @@ public class RubyContext extends ExecutionContext {
         });
     }
 
-    public Object instanceEval(ByteList code, Object self, Node currentNode) {
-        return instanceEval(code, self, "(eval)", currentNode);
-    }
-
     @TruffleBoundary
-    public Object eval(String code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        return eval(ByteList.create(code), binding, ownScopeForAssignments, filename, currentNode);
-    }
-
-    @TruffleBoundary
-    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
+    public Object eval(ParserContext parserContext, ByteList code, DynamicObject binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         assert RubyGuards.isRubyBinding(binding);
         final Source source = Source.fromText(code, filename);
         final MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
-        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        final DeclarationContext declarationContext = RubyArguments.getDeclarationContext(frame.getArguments());
+        return execute(source, code.getEncoding(), parserContext, RubyArguments.getSelf(frame.getArguments()), frame, ownScopeForAssignments, declarationContext, currentNode, NodeWrapper.IDENTITY);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, DynamicObject binding, boolean ownScopeForAssignments, Node currentNode) {
-        assert RubyGuards.isRubyBinding(binding);
-        return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
-    }
-
-    @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
-        return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
-    }
-
-    @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+    public Object execute(Source source, Encoding defaultEncoding, ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments,
+            DeclarationContext declarationContext, Node currentNode, NodeWrapper wrapper) {
         final TranslatorDriver translator = new TranslatorDriver(this);
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
+        final DynamicObject declaringModule;
+        if (parserContext == ParserContext.EVAL && parentFrame != null) {
+            declaringModule = RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule();
+        } else if (parserContext == ParserContext.MODULE) {
+            assert RubyGuards.isRubyModule(self);
+            declaringModule = (DynamicObject) self;
+        } else {
+            declaringModule = getCoreLibrary().getObjectClass();
+        }
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[]{}));
+        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                declaringModule, Visibility.PUBLIC, false, callTarget, parentFrame);
+
+        return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
     }
 
     public long getNextObjectID() {
@@ -506,7 +506,7 @@ public class RubyContext extends ExecutionContext {
     public org.jruby.RubyString toJRubyString(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
 
-        final org.jruby.RubyString jrubyString = runtime.newString(Layouts.STRING.getByteList(string).dup());
+        final org.jruby.RubyString jrubyString = runtime.newString(StringOperations.getByteList(string).dup());
 
         final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().getNilObject());
 

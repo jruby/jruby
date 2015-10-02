@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectGraph;
 
@@ -69,7 +70,7 @@ public abstract class ObjSpaceNodes {
 
         @Specialization(guards = "isRubyString(object)")
         public int memsizeOfString(DynamicObject object) {
-            return 1 + object.getShape().getPropertyListInternal(false).size() + Layouts.STRING.getByteList(object).getRealSize();
+            return 1 + object.getShape().getPropertyListInternal(false).size() + StringOperations.getByteList(object).getRealSize();
         }
 
         @Specialization(guards = "isRubyMatchData(object)")

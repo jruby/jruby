@@ -27,11 +27,13 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -134,7 +136,7 @@ public abstract class InteropNode extends RubyNode {
                                 @Cached("create(getCallTarget(cachedProc))") DirectCallNode callNode) {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             Object[] args = faArgs.toArray();
-            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(cachedProc), Layouts.PROC.getDeclarationFrame(cachedProc), Layouts.PROC.getSelf(cachedProc), null, args));
+            return callNode.call(frame, RubyArguments.pack(Layouts.PROC.getMethod(cachedProc), Layouts.PROC.getDeclarationFrame(cachedProc), null, Layouts.PROC.getSelf(cachedProc), null, DeclarationContext.METHOD, args));
         }
         
         @Specialization(guards = "isRubyProc(proc)")
@@ -144,8 +146,10 @@ public abstract class InteropNode extends RubyNode {
             return callNode.call(frame, Layouts.PROC.getCallTargetForType(proc), RubyArguments.pack(
                     Layouts.PROC.getMethod(proc),
                     Layouts.PROC.getDeclarationFrame(proc),
+                    null,
                     Layouts.PROC.getSelf(proc),
                     null,
+                    DeclarationContext.METHOD,
                     args));
         }
         
@@ -157,7 +161,7 @@ public abstract class InteropNode extends RubyNode {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             // skip first argument; it's the receiver but a RubyMethod knows its receiver
             Object[] args = faArgs.subList(1, faArgs.size()).toArray();
-            return callNode.call(frame, RubyArguments.pack(internalMethod, internalMethod.getDeclarationFrame(), Layouts.METHOD.getReceiver(cachedMethod), null, args));
+            return callNode.call(frame, RubyArguments.pack(internalMethod, internalMethod.getDeclarationFrame(), null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, args));
         }
         
         @Specialization(guards = "isRubyMethod(method)")
@@ -169,8 +173,10 @@ public abstract class InteropNode extends RubyNode {
             return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
+                    null,
                     Layouts.METHOD.getReceiver(method),
                     null,
+                    DeclarationContext.METHOD,
                     args));
         }
 
@@ -269,7 +275,7 @@ public abstract class InteropNode extends RubyNode {
         @Override
         public Object execute(VirtualFrame frame) {
             Object o = ForeignAccess.getReceiver(frame);
-            return RubyGuards.isRubyString(o) && Layouts.STRING.getByteList(((DynamicObject) o)).length() == 1;
+            return RubyGuards.isRubyString(o) && StringOperations.getByteList(((DynamicObject) o)).length() == 1;
         }
     }
 
@@ -281,7 +287,7 @@ public abstract class InteropNode extends RubyNode {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            return Layouts.STRING.getByteList(((DynamicObject) ForeignAccess.getReceiver(frame))).get(0);
+            return StringOperations.getByteList(((DynamicObject) ForeignAccess.getReceiver(frame))).get(0);
         }
     }
 
@@ -375,10 +381,10 @@ public abstract class InteropNode extends RubyNode {
             if (RubyGuards.isRubyString(ForeignAccess.getReceiver(frame))) {
                 final DynamicObject string = (DynamicObject) ForeignAccess.getReceiver(frame);
                 final int index = (int) ForeignAccess.getArguments(frame).get(labelIndex);
-                if (index >= Layouts.STRING.getByteList(string).length()) {
+                if (index >= StringOperations.getByteList(string).length()) {
                     return 0;
                 } else {
-                    return (byte) Layouts.STRING.getByteList(string).get(index);
+                    return (byte) StringOperations.getByteList(string).get(index);
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();

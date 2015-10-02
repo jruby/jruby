@@ -15,28 +15,7 @@ class MSpecScript
   ]
 
   set :core, [
-    "spec/ruby/core",
-
-    # Can't load these - so tags aren't enough to exclude them. The problem is
-    # either fixtures or syntax. Some of them are probably easy fixes.
-
-    # This seems to hang sometimes on Travis
-    "^spec/ruby/core/signal",
-
-    # require 'fcntl'
-    "^spec/ruby/core/io/reopen_spec.rb",
-
-    # seem side-effecting when not run in isolation
-    "^spec/ruby/core/marshal/dump_spec.rb",
-    "^spec/ruby/core/marshal/float_spec.rb",
-    "^spec/ruby/core/marshal/load_spec.rb",
-    "^spec/ruby/core/marshal/restore_spec.rb",
-
-    # fail tag not excluding
-    "^spec/ruby/core/string/modulo_spec.rb",
-
-    # require etc, linux only spec
-    "^spec/ruby/core/io/advise_spec.rb",
+    "spec/ruby/core"
   ]
 
   set :library, [

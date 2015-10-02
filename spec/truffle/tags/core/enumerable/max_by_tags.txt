@@ -1,0 +1,4 @@
+fails:Enumerable#max_by when called with an argument n without a block returns an enumerator
+fails:Enumerable#max_by when called with an argument n with a block returns an array containing the maximum n elements based on the block's value
+fails:Enumerable#max_by when called with an argument n with a block on a enumerable of length x where x < n returns an array containing the maximum n elements of length n
+fails:Enumerable#max_by when called with an argument n when n is nil returns the maximum element

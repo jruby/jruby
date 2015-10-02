@@ -16,9 +16,11 @@ import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ModuleNodes;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -27,7 +29,11 @@ public class YieldDispatchHeadNode extends Node {
     @Child CallBlockNode callBlockNode;
 
     public YieldDispatchHeadNode(RubyContext context) {
-        callBlockNode = CallBlockNodeGen.create(context, null, null, null, null, null);
+        this(context, DeclarationContext.BLOCK);
+    }
+
+    public YieldDispatchHeadNode(RubyContext context, DeclarationContext declarationContext) {
+        callBlockNode = CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null);
     }
 
     public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {

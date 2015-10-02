@@ -6,7 +6,6 @@ require File.expand_path('../shared/lambda', __FILE__)
 
 describe "Kernel.lambda" do
   it_behaves_like(:kernel_lambda, :lambda)
-  it_behaves_like(:kernel_lambda_return_like_method, :lambda)
 
   it "is a private method" do
     Kernel.should have_private_instance_method(:lambda)
@@ -58,5 +57,18 @@ describe "Kernel.lambda" do
     }.should_not raise_error(ArgumentError)
   end
 
+  it "returns from the lambda itself, not the creation site of the lambda" do
+    @reached_end_of_method = nil
+    def test
+      send(@method) { return }.call
+      @reached_end_of_method = true
+    end
+    test
+    @reached_end_of_method.should be_true
+  end
+
+  it "allows long returns to flow through it" do
+    KernelSpecs::Lambda.new.outer(@method).should == :good
+  end
 end
 

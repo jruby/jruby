@@ -9,17 +9,18 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNode;
 import org.jruby.truffle.nodes.locals.ReadFrameSlotNodeGen;
@@ -44,8 +45,10 @@ public abstract class BindingNodes {
                 RubyArguments.pack(
                         RubyArguments.getMethod(arguments),
                         frame,
+                        null,
                         RubyArguments.getSelf(arguments),
                         RubyArguments.getBlock(arguments),
+                        RubyArguments.getDeclarationContext(arguments),
                         RubyArguments.extractUserArguments(arguments)),
                 new FrameDescriptor(context.getCoreLibrary().getNilObject()));
 
@@ -283,17 +286,21 @@ public abstract class BindingNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
         public DynamicObject localVariables(DynamicObject binding) {
-            final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
-
             MaterializedFrame frame = Layouts.BINDING.getFrame(binding);
 
+            return listLocalVariables(getContext(), frame);
+        }
+
+        @TruffleBoundary
+        public static DynamicObject listLocalVariables(RubyContext context, Frame frame) {
+            final DynamicObject array = Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), null, 0);
+
             while (frame != null) {
-                for (Object name : frame.getFrameDescriptor().getIdentifiers()) {
-                    if (name instanceof String) {
-                        ArrayOperations.append(array, getSymbol((String) name));
+                for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
+                    if (slot.getIdentifier() instanceof String) {
+                        ArrayOperations.append(array, context.getSymbol((String) slot.getIdentifier()));
                     }
                 }
 
@@ -301,6 +308,19 @@ public abstract class BindingNodes {
             }
 
             return array;
+        }
+    }
+
+    @CoreMethod(names = "receiver")
+    public abstract static class ReceiverNode extends UnaryCoreMethodNode {
+
+        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object receiver(DynamicObject binding) {
+            return RubyArguments.getSelf(Layouts.BINDING.getFrame(binding).getArguments());
         }
     }
 

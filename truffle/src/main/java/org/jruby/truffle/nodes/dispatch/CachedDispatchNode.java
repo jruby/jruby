@@ -9,13 +9,17 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -41,7 +45,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         if (RubyGuards.isRubySymbol(cachedName)) {
             cachedNameAsSymbol = (DynamicObject) cachedName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            cachedNameAsSymbol = context.getSymbol(Layouts.STRING.getByteList((DynamicObject) cachedName));
+            cachedNameAsSymbol = context.getSymbol(StringOperations.getByteList((DynamicObject) cachedName));
         } else if (cachedName instanceof String) {
             cachedNameAsSymbol = context.getSymbol((String) cachedName);
         } else {
@@ -69,7 +73,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (RubyGuards.isRubyString(cachedName)) {
-            return (RubyGuards.isRubyString(methodName)) && Layouts.STRING.getByteList((DynamicObject) cachedName).equal(Layouts.STRING.getByteList((DynamicObject) methodName));
+            return (RubyGuards.isRubyString(methodName)) && StringOperations.getByteList((DynamicObject) cachedName).equal(StringOperations.getByteList((DynamicObject) methodName));
         } else {
             throw new UnsupportedOperationException();
         }
@@ -79,21 +83,29 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return cachedNameAsSymbol;
     }
 
-    protected void applySplittingStrategy(DirectCallNode callNode, InternalMethod method) {
+    protected void applySplittingInliningStrategy(DirectCallNode callNode, InternalMethod method) {
         if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
             insert(callNode);
             callNode.cloneCallTarget();
         }
+
+        if (method.getSharedMethodInfo().shouldAlwaysInline() && callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
     }
 
     protected static Object call(DirectCallNode callNode, VirtualFrame frame, InternalMethod method, Object receiver, DynamicObject block, Object[] arguments) {
+        CompilerAsserts.compilationConstant(method.getSharedMethodInfo().needsCallerFrame());
+
         return callNode.call(
                 frame,
                 RubyArguments.pack(
                         method,
                         method.getDeclarationFrame(),
+                        method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null,
                         receiver,
                         block,
+                        DeclarationContext.METHOD,
                         arguments));
     }
 }

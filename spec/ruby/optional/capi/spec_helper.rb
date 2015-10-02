@@ -65,7 +65,7 @@ def compile_extension(name)
   cc        = RbConfig::CONFIG["CC"]
   cflags    = (ENV["CFLAGS"] || RbConfig::CONFIG["CFLAGS"]).dup
   cflags   += " #{RbConfig::CONFIG["ARCH_FLAG"]}" if RbConfig::CONFIG["ARCH_FLAG"]
-  cflags   += " -fPIC" unless cflags.include?("-fPIC")
+  cflags   += " #{RbConfig::CONFIG["CCDLFLAGS"]}" if RbConfig::CONFIG["CCDLFLAGS"]
   incflags  = "-I#{path} -I#{hdrdir}"
   incflags << " -I#{arch_hdrdir}" if arch_hdrdir
   incflags << " -I#{ruby_hdrdir}" if ruby_hdrdir

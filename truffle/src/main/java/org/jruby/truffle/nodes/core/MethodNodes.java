@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
@@ -31,6 +32,7 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -110,8 +112,10 @@ public abstract class MethodNodes {
             return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
+                    null,
                     Layouts.METHOD.getReceiver(method),
                     procOrNullNode.executeProcOrNull(block),
+                    DeclarationContext.METHOD,
                     arguments);
         }
 
@@ -286,7 +290,7 @@ public abstract class MethodNodes {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            frame.getArguments()[RubyArguments.SELF_INDEX] = receiver;
+            RubyArguments.setSelf(frame.getArguments(), receiver);
             return methodCallNode.call(frame, frame.getArguments());
         }
 

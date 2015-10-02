@@ -170,7 +170,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass, null);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -327,15 +327,9 @@ public class InterpreterEngine {
 
     protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             Block.Type blockType, RubyModule implClass, Stack<Integer> rescuePCs) {
+                                             Block.Type blockType, RubyModule implClass) {
         switch(operation) {
             case LABEL:
-                break;
-            case EXC_REGION_START:
-                rescuePCs.push(((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC());
-                break;
-            case EXC_REGION_END:
-                rescuePCs.pop();
                 break;
             case PUSH_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, block);

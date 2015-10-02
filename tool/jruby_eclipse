@@ -2,8 +2,10 @@
 # A JRuby launcher, in Ruby, and using the class files from Eclipse
 # Currently needs the core and stdlib jar, so build them again when they change.
 
-JRUBY = File.expand_path('../..', __FILE__)
 TRUFFLEJAR = "#{Dir.home}/.m2/repository/com/oracle/truffle/0.7/truffle-0.7.jar"
+SNAKEYAMLJAR = "#{Dir.home}/.m2/repository/org/yaml/snakeyaml/1.14/snakeyaml-1.14.jar"
+
+JRUBY = File.expand_path('../..', __FILE__)
 
 java = ENV["JAVACMD"] || "java"
 
@@ -30,6 +32,7 @@ bootclasspath << "#{JRUBY}/lib/jruby.jar"
 classpath << "#{JRUBY}/lib/jruby-stdlib-9.0.0.0-SNAPSHOT.jar"
 if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
+  classpath << SNAKEYAMLJAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
   java_flags << "-Djruby.truffle.core.load_path=truffle/src/main/ruby"
 end

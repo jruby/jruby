@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -48,13 +49,8 @@ public class AddMethodNode extends RubyNode {
 
         final InternalMethod methodObject = (InternalMethod) methodNode.execute(frame);
 
-        DynamicObject module;
-
-        if (RubyGuards.isRubyModule(receiverObject)) {
-            module = (DynamicObject) receiverObject;
-        } else {
-            module = singletonClassNode.executeSingletonClass(frame, receiverObject);
-        }
+        final DynamicObject module = (DynamicObject) receiverObject;
+        assert RubyGuards.isRubyModule(module);
 
         final Visibility visibility = getVisibility(frame, methodObject.getName());
         final InternalMethod method = methodObject.withDeclaringModule(module).withVisibility(visibility);

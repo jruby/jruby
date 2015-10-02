@@ -87,6 +87,10 @@ describe ExceptionState, "#failure?" do
 end
 
 describe ExceptionState, "#message" do
+  before :each do
+    @state = ExampleState.new ContextState.new("C#m"), "works"
+  end
+
   it "returns <No message> if the exception message is empty" do
     exc = ExceptionState.new @state, "", Exception.new("")
     exc.message.should == "<No message>"
@@ -111,6 +115,7 @@ end
 
 describe ExceptionState, "#backtrace" do
   before :each do
+    @state = ExampleState.new ContextState.new("C#m"), "works"
     begin
       raise Exception
     rescue Exception => @exception

@@ -21,12 +21,14 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -48,8 +50,9 @@ public abstract class ProcNodes {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
-                Layouts.PROC.getSelf(proc),
+                null, Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
+                DeclarationContext.BLOCK,
                 args);
     }
 

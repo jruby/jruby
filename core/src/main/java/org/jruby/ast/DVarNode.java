@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Access a dynamic variable (e.g. block scope local variable).
  */
-public class DVarNode extends Node implements INameNode, IScopedNode {
+public class DVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
     private String name;
     

@@ -22,12 +22,12 @@ public class StringGuards {
 
     public static boolean isSingleByteOptimizable(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding());
+        return StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), StringOperations.getByteList(string).getEncoding());
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getByteList(string).getEncoding().isAsciiCompatible();
+        return StringOperations.getByteList(string).getEncoding().isAsciiCompatible();
     }
 
     public static boolean isSingleByteOptimizableOrAsciiOnly(DynamicObject string) {
@@ -38,7 +38,7 @@ public class StringGuards {
 
     public static boolean isSingleByte(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getByteList(string).getEncoding().isSingleByte();
+        return StringOperations.getByteList(string).getEncoding().isSingleByte();
     }
 
     public static boolean isValidOr7BitEncoding(DynamicObject string) {
@@ -48,11 +48,11 @@ public class StringGuards {
 
     public static boolean isFixedWidthEncoding(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return Layouts.STRING.getByteList(string).getEncoding().isFixedWidth();
+        return StringOperations.getByteList(string).getEncoding().isFixedWidth();
     }
 
     public static boolean isValidUtf8(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringOperations.isCodeRangeValid(string) && Layouts.STRING.getByteList(string).getEncoding() instanceof UTF8Encoding;
+        return StringOperations.isCodeRangeValid(string) && StringOperations.getByteList(string).getEncoding() instanceof UTF8Encoding;
     }
 }

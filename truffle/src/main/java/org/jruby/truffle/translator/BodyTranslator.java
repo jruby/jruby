@@ -14,6 +14,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -844,7 +845,7 @@ public class BodyTranslator extends Translator {
     private RubyNode openModule(SourceSection sourceSection, RubyNode defineOrGetNode, String name, Node bodyNode) {
         LexicalScope newLexicalScope = environment.pushLexicalScope();
         try {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, newLexicalScope, Arity.NO_ARGUMENTS, name, false, null, false, false, false);
 
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                     environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
@@ -1099,22 +1100,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode;
-
-        if (parent == null) {
-            /*
-             * In the top-level, methods are defined in the class of the main object. This is
-             * counter-intuitive - I would have expected them to be defined in the singleton class.
-             * Apparently this is a design decision to make top-level methods sort of global.
-             *
-             * http://stackoverflow.com/questions/1761148/where-are-methods-defined-at-the-ruby-top-level
-             */
-
-            // TODO: different for Kernel#load(..., true)
-            classNode = new LiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
-        } else {
-            classNode = new SelfNode(context, sourceSection);
-        }
+        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
         final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
         return addNewlineIfNeeded(node, ret);
@@ -1135,7 +1121,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), methodName, false, Helpers.argsNodeToArgumentDescriptors(parseTree.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, methodName, false, null);
@@ -1800,7 +1786,7 @@ public class BodyTranslator extends Translator {
         }
 
         // Unset this flag for any for any blocks within the for statement's body
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), currentCallMethodName, true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), hasOwnScope, false,
@@ -2900,7 +2886,7 @@ public class BodyTranslator extends Translator {
         }
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), MethodTranslator.getArity(argsNode), "(lambda)", true, Helpers.argsNodeToArgumentDescriptors(node.findFirstChild(ArgsNode.class)), false, false, false);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParseEnvironment(), environment.getReturnID(), false, false,

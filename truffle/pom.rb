@@ -10,6 +10,7 @@ project 'JRuby Truffle' do
 
               'jruby.basedir' => '${basedir}/..' )
 
+  jar 'org.yaml:snakeyaml:1.14'
   jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
   repository( :url => 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/',

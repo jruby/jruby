@@ -1360,7 +1360,6 @@ public class IRBuilder {
     }
 
     public Operand buildGetDefinition(Node node) {
-        // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE:
@@ -2249,11 +2248,8 @@ public class IRBuilder {
         addInstr(new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
-        // Clone the ensure body and jump to the end.
-        // Don't bother if the protected body ended in a return
+        // Clone the ensure body and jump to the end.  Don't bother if the protected body ended in a return
         // OR if we are really processing a rescue node
-        //
-        // SSS FIXME: How can ensureBodyNode be anything but a RescueNode (if non-null)
         if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
@@ -3035,8 +3031,8 @@ public class IRBuilder {
     }
 
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
-        // For now we will only contemplate 'foo rescue nil' cases but simple non-mod rescue forms can be added later.
-        if (!(rescueNode instanceof RescueModNode)) return false;
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
+                rescueNode.getElseNode() != null) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
@@ -3156,20 +3152,7 @@ public class IRBuilder {
                 outputExceptionCheck(build(exceptionList), exc, caughtLabel);
             }
         } else {
-            // SSS FIXME:
-            // rescue => e AND rescue implicitly EQQ the exception object with StandardError
-            // We generate explicit IR for this test here.  But, this can lead to inconsistent
-            // behavior (when compared to MRI) in certain scenarios.  See example:
-            //
-            //   self.class.const_set(:StandardError, 1)
-            //   begin; raise TypeError.new; rescue; puts "AHA"; end
-            //
-            // MRI rescues the error, but we will raise an exception because of reassignment
-            // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
-            //
-            // Solution: Create a 'StandardError' operand type to eliminate this.
-            Variable v = addResultInstr(new InheritanceSearchConstInstr(createTemporaryVariable(), new ObjectClass(), "StandardError", false));
-            outputExceptionCheck(v, exc, caughtLabel);
+            outputExceptionCheck(manager.getStandardError(), exc, caughtLabel);
         }
 
         // Uncaught exception -- build other rescue nodes or rethrow!

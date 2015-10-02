@@ -13,12 +13,14 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
+import org.jruby.truffle.nodes.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
@@ -71,7 +73,7 @@ class ModuleTranslator extends BodyTranslator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
+        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);//new SelfNode(context, sourceSection);
 
         // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
         // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -74,7 +75,7 @@ public class LazyRubyRootNode extends RootNode {
             mainObject = context.getCoreLibrary().getMainObject();
         }
 
-        return callNode.call(virtualFrame, RubyArguments.pack(null, null, mainObject, null, virtualFrame.getArguments()));
+        return callNode.call(virtualFrame, RubyArguments.pack(null, null, null, mainObject, null, DeclarationContext.INSTANCE_EVAL, virtualFrame.getArguments()));
     }
 
 }

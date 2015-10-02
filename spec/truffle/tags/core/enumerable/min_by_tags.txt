@@ -1,0 +1,4 @@
+fails:Enumerable#min_by when called with an argument n without a block returns an enumerator
+fails:Enumerable#min_by when called with an argument n with a block returns an array containing the minimum n elements based on the block's value
+fails:Enumerable#min_by when called with an argument n with a block on a enumerable of length x where x < n returns an array containing the minimum n elements of length n
+fails:Enumerable#min_by when called with an argument n when n is nil returns the minimum element

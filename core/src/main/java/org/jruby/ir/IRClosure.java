@@ -2,10 +2,13 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -13,6 +16,7 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.objectweb.asm.Handle;
 
@@ -60,7 +64,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.getSignature());
+            this.body = new MixedModeIRBlockBody(c, c.getSignature());
         }
 
         this.signature = c.signature;
@@ -82,7 +86,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, signature);
+            this.body = new MixedModeIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());

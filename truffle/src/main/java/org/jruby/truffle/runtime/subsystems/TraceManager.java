@@ -22,6 +22,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
@@ -141,8 +142,10 @@ public class TraceManager {
                             callNode.call(frame, RubyArguments.pack(
                                     Layouts.PROC.getMethod(traceFunc),
                                     Layouts.PROC.getDeclarationFrame(traceFunc),
+                                    null,
                                     Layouts.PROC.getSelf(traceFunc),
                                     Layouts.PROC.getBlock(traceFunc),
+                                    DeclarationContext.METHOD,
                                     new Object[]{event, file, line, id, binding, classname}));
 
                             isInTraceFunc = false;
@@ -260,8 +263,10 @@ public class TraceManager {
                 callNode.call(frame, RubyArguments.pack(
                         Layouts.PROC.getMethod(traceFunc),
                         Layouts.PROC.getDeclarationFrame(traceFunc),
+                        null,
                         Layouts.PROC.getSelf(traceFunc),
                         Layouts.PROC.getBlock(traceFunc),
+                        DeclarationContext.METHOD,
                         new Object[]{event, file, line, id, binding, classname}));
 
                 isInTraceFunc = false;

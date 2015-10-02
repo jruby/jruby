@@ -21,6 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Visibility;
@@ -45,6 +46,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNode;
 import org.jruby.truffle.nodes.methods.CanBindMethodToModuleNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -60,6 +62,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 
@@ -405,7 +408,7 @@ public abstract class ModuleNodes {
             final String indicativeName = name + "(attr_" + (isGetter ? "reader" : "writer") + ")";
 
             final CheckArityNode checkArity = new CheckArityNode(getContext(), sourceSection, arity);
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, indicativeName, false, null, false, false, false);
 
             final SelfNode self = new SelfNode(getContext(), sourceSection);
             final RubyNode accessInstanceVariable;
@@ -605,7 +608,7 @@ public abstract class ModuleNodes {
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.CLASS_EVAL);
         }
 
         protected DynamicObject toStr(VirtualFrame frame, Object object) {
@@ -646,12 +649,12 @@ public abstract class ModuleNodes {
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
                     .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
-            Encoding encoding = Layouts.STRING.getByteList(code).getEncoding();
+            Encoding encoding = StringOperations.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
             Source source = Source.fromText(code.toString(), file);
 
-            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, callerFrame, this, new NodeWrapper() {
+            return getContext().execute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
@@ -685,7 +688,7 @@ public abstract class ModuleNodes {
 
         public ClassExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.CLASS_EVAL);
         }
 
         public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);

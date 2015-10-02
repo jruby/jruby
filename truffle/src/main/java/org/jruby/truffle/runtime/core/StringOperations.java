@@ -43,7 +43,7 @@ public abstract class StringOperations {
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(DynamicObject string) {
-        return Helpers.decodeByteList(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime(), Layouts.STRING.getByteList(string));
+        return Helpers.decodeByteList(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime(), StringOperations.getByteList(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
@@ -85,13 +85,13 @@ public abstract class StringOperations {
 
     public static void modify(DynamicObject string) {
         // TODO (nirvdrum 16-Feb-15): This should check whether the underlying ByteList is being shared and copy if necessary.
-        Layouts.STRING.getByteList(string).invalidate();
+        StringOperations.getByteList(string).invalidate();
     }
 
     public static void modify(DynamicObject string, int length) {
         // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
-        Layouts.STRING.getByteList(string).ensure(length);
-        Layouts.STRING.getByteList(string).invalidate();
+        StringOperations.getByteList(string).ensure(length);
+        StringOperations.getByteList(string).invalidate();
     }
 
     public static void modifyAndKeepCodeRange(DynamicObject string) {
@@ -107,7 +107,7 @@ public abstract class StringOperations {
         if (encoding == null) {
             throw Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime().newEncodingCompatibilityError(
                     String.format("incompatible character encodings: %s and %s",
-                            Layouts.STRING.getByteList(string).getEncoding().toString(),
+                            StringOperations.getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString()));
         }
 
@@ -116,7 +116,7 @@ public abstract class StringOperations {
 
     @CompilerDirectives.TruffleBoundary
     private static int slowCodeRangeScan(DynamicObject string) {
-        final ByteList byteList = Layouts.STRING.getByteList(string);
+        final ByteList byteList = StringOperations.getByteList(string);
         return StringSupport.codeRangeScan(byteList.getEncoding(), byteList);
     }
 
@@ -130,9 +130,9 @@ public abstract class StringOperations {
     public static int length(DynamicObject string) {
         if (CompilerDirectives.injectBranchProbability(
                 CompilerDirectives.FASTPATH_PROBABILITY,
-                StringSupport.isSingleByteOptimizable(getCodeRangeable(string), Layouts.STRING.getByteList(string).getEncoding()))) {
+                StringSupport.isSingleByteOptimizable(getCodeRangeable(string), StringOperations.getByteList(string).getEncoding()))) {
 
-            return Layouts.STRING.getByteList(string).getRealSize();
+            return StringOperations.getByteList(string).getRealSize();
 
         } else {
             return StringSupport.strLengthFromRubyString(getCodeRangeable(string));
@@ -149,7 +149,7 @@ public abstract class StringOperations {
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {
         assert RubyGuards.isRubyString(string);
-        return ArrayOperations.clampExclusiveIndex(Layouts.STRING.getByteList(string).length(), index);
+        return ArrayOperations.clampExclusiveIndex(StringOperations.getByteList(string).length(), index);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -159,7 +159,7 @@ public abstract class StringOperations {
         if (encoding == null) {
             throw new RaiseException(
                     Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                            Layouts.STRING.getByteList(string).getEncoding().toString(),
+                            StringOperations.getByteList(string).getEncoding().toString(),
                             other.getByteList().getEncoding().toString(),
                             node)
             );
@@ -174,6 +174,10 @@ public abstract class StringOperations {
 
     public static ByteList encodeByteList(CharSequence value, Encoding encoding) {
         return RubyString.encodeBytelist(value, encoding);
+    }
+
+    public static ByteList getByteList(DynamicObject object) {
+        return Layouts.STRING.getByteList(object);
     }
     
 }

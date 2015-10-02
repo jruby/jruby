@@ -199,7 +199,7 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final ByteList byteList = StringOperations.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
@@ -539,6 +539,28 @@ public abstract class TrufflePrimitiveNodes {
                 return yield(frame, block);
             }
         }
+    }
+
+    @CoreMethod(names = "print_backtrace", onSingleton = true)
+    public abstract static class PrintBacktraceNode extends CoreMethodNode {
+
+        public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject printBacktrace() {
+            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
+                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+
+            for (String line : rubyBacktrace) {
+                System.err.println(line);
+            }
+
+            return nil();
+        }
+
     }
 
     @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)

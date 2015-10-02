@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -47,7 +48,7 @@ public abstract class ZlibNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public long crc32(DynamicObject message, NotProvided initial) {
-            final ByteList bytes = Layouts.STRING.getByteList(message);
+            final ByteList bytes = StringOperations.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return crc32.getValue();
@@ -61,7 +62,7 @@ public abstract class ZlibNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(message)")
         public long crc32(DynamicObject message, long initial) {
-            final ByteList bytes = Layouts.STRING.getByteList(message);
+            final ByteList bytes = StringOperations.getByteList(message);
             final CRC32 crc32 = new CRC32();
             crc32.update(bytes.unsafeBytes(), bytes.begin(), bytes.length());
             return JZlib.crc32_combine(initial, crc32.getValue(), bytes.length());
@@ -89,7 +90,7 @@ public abstract class ZlibNodes {
         public DynamicObject deflate(DynamicObject message, int level) {
             final Deflater deflater = new Deflater(level);
 
-            final ByteList messageBytes = Layouts.STRING.getByteList(message);
+            final ByteList messageBytes = StringOperations.getByteList(message);
             deflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);
@@ -121,7 +122,7 @@ public abstract class ZlibNodes {
         public DynamicObject inflate(DynamicObject message) {
             final Inflater inflater = new Inflater();
 
-            final ByteList messageBytes = Layouts.STRING.getByteList(message);
+            final ByteList messageBytes = StringOperations.getByteList(message);
             inflater.setInput(messageBytes.unsafeBytes(), messageBytes.begin(), messageBytes.length());
 
             final ByteList outputBytes = new ByteList(BUFFER_SIZE);

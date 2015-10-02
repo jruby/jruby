@@ -16,6 +16,7 @@ describe "String#start_with?" do
 
   it "returns true if the search string is empty" do
     "hello".start_with?("").should be_true
+    "".start_with?("").should be_true
   end
 
   it "converts its argument using :to_str" do

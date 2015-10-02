@@ -14,7 +14,7 @@ describe "Enumerable#each_slice" do
     acc.should == @sliced
   end
 
-  it "raises an Argument Error if there is not a single parameter > 0" do
+  it "raises an ArgumentError if there is not a single parameter > 0" do
     lambda{ @enum.each_slice(0){}    }.should raise_error(ArgumentError)
     lambda{ @enum.each_slice(-2){}   }.should raise_error(ArgumentError)
     lambda{ @enum.each_slice{}       }.should raise_error(ArgumentError)

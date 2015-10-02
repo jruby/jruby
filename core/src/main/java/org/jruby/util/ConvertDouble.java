@@ -155,10 +155,20 @@ public class ConvertDouble {
 
             return SafeDoubleParser.parseDouble(new String(chars, 0, charsIndex));
         }
+
+        class LightweightNumberFormatException extends NumberFormatException {
+            public LightweightNumberFormatException(String message) {
+                super(message);
+            }
+            @Override
+            public Throwable fillInStackTrace() {
+                return this;
+            }
+        }
         
         private boolean strictError() {
             if (isStrict) {
-                throw new NumberFormatException("does not meet strict criteria");
+                throw new LightweightNumberFormatException("does not meet strict criteria");
             } else {
                 return true; // means EOS for non-strict
             }

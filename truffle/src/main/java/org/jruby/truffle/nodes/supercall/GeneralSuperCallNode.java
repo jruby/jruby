@@ -15,12 +15,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -94,7 +96,7 @@ public class GeneralSuperCallNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
         }
 
-        final Object[] frameArguments = RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject, argumentsArray);
+        final Object[] frameArguments = RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), null, self, blockObject, DeclarationContext.METHOD, argumentsArray);
 
         return callMethodNode.executeCallMethod(frame, superMethod, frameArguments);
     }

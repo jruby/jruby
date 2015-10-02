@@ -1,0 +1,3 @@
+fails:Method#super_method returns the method that would be called by super in the method
+fails:Method#super_method returns nil when there's no super method in the parent
+fails:Method#super_method returns nil when the parent's method is removed

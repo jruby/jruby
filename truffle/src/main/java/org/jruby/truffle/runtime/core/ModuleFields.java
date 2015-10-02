@@ -353,7 +353,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     public void undefMethod(Node currentNode, String methodName) {
         final InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, methodName);
         if (method == null) {
-            throw new UnsupportedOperationException();
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
             undefMethod(currentNode, method);
         }

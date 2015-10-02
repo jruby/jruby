@@ -183,7 +183,7 @@ public abstract class MatchDataNodes {
         assert RubyGuards.isRubyMatchData(matchData);
         if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
 
-        ByteList value = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getSource(matchData));
+        ByteList value = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
         Encoding enc = value.getEncoding();
 
         if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
@@ -247,7 +247,7 @@ public abstract class MatchDataNodes {
         @Specialization(guards = "isRubyString(index)")
         public Object getIndexString(DynamicObject matchData, DynamicObject index, NotProvided length) {
             try {
-                ByteList value = Layouts.STRING.getByteList(index);
+                ByteList value = StringOperations.getByteList(index);
                 final int i = Layouts.REGEXP.getRegex(Layouts.MATCH_DATA.getRegexp(matchData)).nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), Layouts.MATCH_DATA.getRegion(matchData));
 
                 return getIndex(matchData, i, NotProvided.INSTANCE);
@@ -455,7 +455,7 @@ public abstract class MatchDataNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
-            final ByteList bytes = Layouts.STRING.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
+            final ByteList bytes = StringOperations.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
             return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
         }
     }
