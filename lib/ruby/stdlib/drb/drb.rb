@@ -1508,7 +1508,7 @@ module DRb
       if  Thread.current['DRb'] && Thread.current['DRb']['server'] == self
         Thread.current['DRb']['stop_service'] = true
       else
-        if @protocol.respond_to? :dispose
+        if @protocol.respond_to? :shutdown
           @protocol.shutdown
         else
           @thread.kill # xxx: Thread#kill
