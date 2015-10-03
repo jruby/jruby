@@ -182,6 +182,7 @@ module Commands
     puts '    --asm           show assembly (implies --graal)'
     puts '    --server        run an instrumentation server on port 8080'
     puts '    --igv           make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
+    puts '        --full      show all phases, not just up to the Truffle partial escape'
     puts '    --jdebug        run a JDWP debug server on 8000'
     puts '    --jexception[s] print java exceptions'
     puts 'jt e 14 + 2                                    evaluate an expression'
@@ -273,7 +274,11 @@ module Commands
     if args.delete('--igv')
       warn "warning: --igv might not work on master - if it does not, use truffle-head instead which builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
-      jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+      if args.delete('--full')
+        jruby_args += %w[-J-G:Dump=Truffle]
+      else
+        jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+      end
     end
 
     if ENV["JRUBY_ECLIPSE"] == "true"
