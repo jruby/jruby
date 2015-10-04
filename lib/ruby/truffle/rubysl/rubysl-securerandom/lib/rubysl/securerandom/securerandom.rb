@@ -56,7 +56,8 @@ module SecureRandom
   def self.random_bytes(n=nil)
     n ||= 16
 
-    if defined? OpenSSL::Random
+    # TODO (pitr 04-Oct-2015): pending PR https://github.com/rubysl/rubysl-securerandom/pull/1
+    if defined?(OpenSSL::Random) && OpenSSL::Random != Random
       @pid = 0 if !defined?(@pid)
       pid = $$
       if @pid != pid
