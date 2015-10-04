@@ -342,7 +342,7 @@ public abstract class BigDecimalNodes {
         // TODO (pitr 21-Jun-2015): raise on underflow
 
         private DynamicObject createWithMode(VirtualFrame frame, Type value, DynamicObject self,
-                                               String constantName, String errorMessage) {
+                                             String constantName, String errorMessage) {
             setupModeCall();
             setupGetIntegerConstant();
             setupBooleanCast();
@@ -1183,7 +1183,7 @@ public abstract class BigDecimalNodes {
                 "!isNormalZero(b)" })
         public Object divmod(VirtualFrame frame, DynamicObject a, DynamicObject b) {
             final BigDecimal[] result = divmodBigDecimal(Layouts.BIG_DECIMAL.getValue(a), Layouts.BIG_DECIMAL.getValue(b));
-            Object[] store = new Object[]{createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1])};
+            Object[] store = new Object[]{ createBigDecimal(frame, result[0]), createBigDecimal(frame, result[1]) };
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
@@ -1193,7 +1193,7 @@ public abstract class BigDecimalNodes {
                 "isNormalZero(a)",
                 "!isNormalZero(b)" })
         public Object divmodZeroDividend(VirtualFrame frame, DynamicObject a, DynamicObject b) {
-            Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+            Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
         }
 
@@ -1214,7 +1214,7 @@ public abstract class BigDecimalNodes {
             final Type bType = Layouts.BIG_DECIMAL.getType(b);
 
             if (aType == Type.NAN || bType == Type.NAN) {
-                Object[] store = new Object[]{createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN)};
+                Object[] store = new Object[]{ createBigDecimal(frame, Type.NAN), createBigDecimal(frame, Type.NAN) };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
@@ -1224,7 +1224,7 @@ public abstract class BigDecimalNodes {
             }
 
             if (aType == Type.NEGATIVE_ZERO || (aType == Type.NORMAL && isNormalZero(a))) {
-                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO)};
+                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, BigDecimal.ZERO) };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
@@ -1238,12 +1238,12 @@ public abstract class BigDecimalNodes {
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
 
-                Object[] store = new Object[]{createBigDecimal(frame, type), createBigDecimal(frame, Type.NAN)};
+                Object[] store = new Object[]{ createBigDecimal(frame, type), createBigDecimal(frame, Type.NAN) };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
             if (bType == Type.POSITIVE_INFINITY || bType == Type.NEGATIVE_INFINITY) {
-                Object[] store = new Object[]{createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a)};
+                Object[] store = new Object[]{ createBigDecimal(frame, BigDecimal.ZERO), createBigDecimal(frame, a) };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
             }
 
@@ -1916,8 +1916,8 @@ public abstract class BigDecimalNodes {
         public Object precsNormal(DynamicObject value) {
             final BigDecimal bigDecimalValue = Layouts.BIG_DECIMAL.getValue(value).abs();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{
-                                bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
-                                nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length())}, 2);
+                    bigDecimalValue.stripTrailingZeros().unscaledValue().toString().length(),
+                    nearestBiggerMultipleOf4(bigDecimalValue.unscaledValue().toString().length()) }, 2);
         }
 
         @Specialization(guards = "!isNormal(value)")
