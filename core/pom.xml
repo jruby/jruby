@@ -545,6 +545,12 @@ DO NOT MODIFIY - GENERATED CODE
                     <include>bin/jruby</include>
                   </includes>
                 </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/jni/**</include>
+                  </includes>
+                </fileset>
               </filesets>
               <failOnError>false</failOnError>
             </configuration>
@@ -593,6 +599,52 @@ DO NOT MODIFIY - GENERATED CODE
                   <mainClass>org.jruby.Main</mainClass>
                 </transformer>
               </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <tasks>
+                <exec executable="/bin/sh" osfamily="unix">
+                  <arg line="-c 'cp &quot;${jruby.basedir}/bin/jruby.bash&quot; &quot;${jruby.basedir}/bin/jruby&quot;'" />
+                </exec>
+                <chmod file="${jruby.basedir}/bin/jruby" perm="755" />
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unzip native</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <excludes>META-INF,META-INF/*</excludes>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.github.jnr</groupId>
+                  <artifactId>jffi</artifactId>
+                  <version>${jffi.version}</version>
+                  <type>jar</type>
+                  <classifier>native</classifier>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${jruby.basedir}/lib</outputDirectory>
+                </artifactItem>
+              </artifactItems>
             </configuration>
           </execution>
         </executions>
@@ -877,7 +929,6 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
               <execution>
-                <id>copy</id>
                 <phase>initialize</phase>
                 <goals>
                   <goal>run</goal>
@@ -909,7 +960,6 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
               <execution>
-                <id>unzip native</id>
                 <phase>process-classes</phase>
                 <goals>
                   <goal>unpack</goal>
