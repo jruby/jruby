@@ -499,7 +499,6 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
-            final int size = Layouts.HASH.getSize(hash);
 
             int count = 0;
 
@@ -509,7 +508,7 @@ public abstract class HashNodes {
                         count++;
                     }
 
-                    if (n < size) {
+                    if (n < Layouts.HASH.getSize(hash)) {
                         yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
                     }
                 }
