@@ -22,7 +22,7 @@ import com.oracle.truffle.api.object.DynamicObject;
  * Declaration context for methods:
  * <ul>
  * <li>visibility</li>
- * <li>default definee (which module to define on)</li>
+ * <li>default definee / current module (which module to define on)</li>
  * </ul>
  */
 public class DeclarationContext {
@@ -62,9 +62,13 @@ public class DeclarationContext {
         final Frame visibilityFrame = lookupVisibility(frame);
         final DeclarationContext oldDeclarationContext = RubyArguments.getDeclarationContext(visibilityFrame.getArguments());
         if (newVisibility != oldDeclarationContext.visibility) {
-            final DeclarationContext newDeclarationContext = new DeclarationContext(newVisibility, oldDeclarationContext.defaultDefinee);
-            RubyArguments.setDeclarationContext(visibilityFrame.getArguments(), newDeclarationContext);
+            RubyArguments.setDeclarationContext(visibilityFrame.getArguments(), oldDeclarationContext.withVisibility(newVisibility));
         }
+    }
+
+    private DeclarationContext withVisibility(Visibility visibility) {
+        assert visibility != null;
+        return new DeclarationContext(visibility, defaultDefinee);
     }
 
     public DynamicObject getModuleToDefineMethods(VirtualFrame frame, RubyContext context, SingletonClassNode singletonClassNode) {
@@ -82,7 +86,7 @@ public class DeclarationContext {
     }
 
     public static final DeclarationContext MODULE = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.LEXICAL_SCOPE);
-    public static final DeclarationContext METHOD = new DeclarationContext(null, DefaultDefinee.LEXICAL_SCOPE);
+    public static final DeclarationContext METHOD = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.LEXICAL_SCOPE);
     public static final DeclarationContext BLOCK = new DeclarationContext(null, DefaultDefinee.LEXICAL_SCOPE);
     public static final DeclarationContext TOP_LEVEL = new DeclarationContext(Visibility.PRIVATE, DefaultDefinee.LEXICAL_SCOPE);
     public static final DeclarationContext INSTANCE_EVAL = new DeclarationContext(Visibility.PUBLIC, DefaultDefinee.SINGLETON_CLASS);

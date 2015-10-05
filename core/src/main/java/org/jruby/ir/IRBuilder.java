@@ -177,6 +177,7 @@ public class IRBuilder {
         Label    end;
         Label    dummyRescueBlockLabel;
         Variable savedGlobalException;
+        boolean needsBacktrace;
 
         // Label of block that will rescue exceptions raised by ensure code
         Label    bodyRescuer;
@@ -201,6 +202,7 @@ public class IRBuilder {
             innermostLoop = l;
             matchingRescueNode = n;
             this.bodyRescuer = bodyRescuer;
+            needsBacktrace = true;
         }
 
         public void addInstr(Instr i) {
@@ -231,6 +233,8 @@ public class IRBuilder {
 
             // $! should be restored before the ensure block is run
             if (savedGlobalException != null) {
+                // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
+                if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
                 builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
             }
 
@@ -3047,6 +3051,7 @@ public class IRBuilder {
         Label rBeginLabel = getNewLabel();
         Label rEndLabel   = ensure.end;
         Label rescueLabel = getNewLabel(); // Label marking start of the first rescue code.
+        ensure.needsBacktrace = needsBacktrace;
 
         addInstr(new LabelInstr(rBeginLabel));
 
@@ -3120,8 +3125,6 @@ public class IRBuilder {
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(rescueNode.getRescueNode(), rv, exc, rEndLabel);
-
-        if (!needsBacktrace) addInstr(manager.needsBacktrace(true));
 
         activeRescueBlockStack.pop();
         return rv;

@@ -2646,7 +2646,7 @@ public class BodyTranslator extends Translator {
         RubyNode elsePart;
 
         if (node.getElseNode() == null || node.getElseNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            elsePart = nilNode(sourceSection);
+            elsePart = null; //nilNode(sourceSection);
         } else {
             elsePart = node.getElseNode().accept(this);
         }

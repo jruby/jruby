@@ -61,6 +61,7 @@ class JRubyTruffleRunner
             debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', add_to_array, []],
+            exclude_pattern: ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern', add_to_array, []],
             load_path:       ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
             executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
@@ -310,7 +311,10 @@ class JRubyTruffleRunner
 
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
     @options[:run][:require_pattern].each do |pattern|
-      Dir.glob(pattern) { |v| @options[:run][:require] << File.expand_path(v) }
+      Dir.glob(pattern) do |file|
+        next if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
+        @options[:run][:require] << File.expand_path(file)
+      end
     end
 
     cmd_options = [

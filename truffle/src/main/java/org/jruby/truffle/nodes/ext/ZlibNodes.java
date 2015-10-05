@@ -25,10 +25,12 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import java.lang.reflect.Field;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
+import java.util.zip.Adler32;
 
 @CoreClass(name = "Truffle::Zlib")
 public abstract class ZlibNodes {
@@ -69,7 +71,7 @@ public abstract class ZlibNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = {"isRubyString(message)", "isRubyBignum(initial)"})
+        @Specialization(guards = { "isRubyString(message)", "isRubyBignum(initial)" })
         public long crc32(DynamicObject message, DynamicObject initial) {
             throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
         }
@@ -144,6 +146,64 @@ public abstract class ZlibNodes {
             inflater.end();
 
             return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
+        }
+
+    }
+
+    @CoreMethod(names = "adler32", isModuleFunction = true, required = 0, optional = 2, lowerFixnumParameters = 1)
+    public abstract static class Adler32Node extends CoreMethodArrayArgumentsNode {
+
+        private static final Field ADLER_PRIVATE_FIELD;
+
+        static {
+            try {
+                ADLER_PRIVATE_FIELD = Adler32.class.getDeclaredField("adler");
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+            ADLER_PRIVATE_FIELD.setAccessible(true);
+        }
+
+        public Adler32Node(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public long adler32(NotProvided string, NotProvided adler) {
+            return new Adler32().getValue();
+        }
+
+        @Specialization
+        @TruffleBoundary
+        public long adler32(DynamicObject string, NotProvided adler) {
+            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final Adler32 adler32 = new Adler32();
+            adler32.update(bytes.unsafeBytes());
+            return adler32.getValue();
+        }
+
+        @Specialization
+        @TruffleBoundary
+        public long adler32(DynamicObject string, int adler) {
+            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final Adler32 adler32 = new Adler32();
+
+            try {
+                ADLER_PRIVATE_FIELD.setInt(adler32, adler);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
+            adler32.update(bytes.unsafeBytes());
+            return adler32.getValue();
+        }
+
+        @Specialization(guards = "isRubyBignum(adler)")
+        @TruffleBoundary
+        public long adler32(DynamicObject string, DynamicObject adler) {
+            throw new RaiseException(
+                    getContext().getCoreLibrary().rangeError("bignum too big to convert into `unsigned long'", this));
+
         }
 
     }

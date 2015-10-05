@@ -147,8 +147,8 @@ public abstract class ModuleOperations {
         }
 
         while ((next = fullName.indexOf("::", start)) != -1) {
-            String segment = fullName.substring(start, next);
-            RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
+            final String segment = fullName.substring(start, next);
+            final RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
             if (constant == null) {
                 return null;
             } else if (RubyGuards.isRubyModule(constant.getValue())) {
@@ -160,7 +160,12 @@ public abstract class ModuleOperations {
             start = next + 2;
         }
 
-        String lastSegment = fullName.substring(start);
+        final String lastSegment = fullName.substring(start);
+        if (!IdUtil.isValidConstantName19(lastSegment)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
+        }
+
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
     }
 
