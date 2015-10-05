@@ -8,10 +8,15 @@ export MAVEN_OPTS='-XX:MaxPermSize=192m'
 ```
 
 
-all tests
+all tests from the ./maven/jruby directory
 ```
 mvn verify -Papps
 ```
+or from the jruby root directory
+```
+mvn -Papps
+```
+
 
 to pick a single tests
 ```
