@@ -28,7 +28,7 @@ public class RubiniusLastStringReadNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         // Rubinius expects $_ to be thread-local, rather than frame-local.  If we see it in a method call, we need
         // to look to the caller's frame to get the correct value, otherwise it will be nil.
-        final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false).materialize();
+        final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true).materialize();
 
         final FrameSlot slot = callerFrame.getFrameDescriptor().findFrameSlot("$_");
         try {

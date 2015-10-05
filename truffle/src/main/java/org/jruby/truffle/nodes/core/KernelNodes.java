@@ -894,7 +894,7 @@ public abstract class KernelNodes {
 
             // Set the local variable $_ in the caller
 
-            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_WRITE, true);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -1244,8 +1244,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject localVariables() {
-            Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, false);
-
+            final Frame frame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
             return BindingNodes.LocalVariablesNode.listLocalVariables(getContext(), frame);
         }
 
