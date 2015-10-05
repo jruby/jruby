@@ -80,7 +80,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame);
+            return BindingNodes.createBinding(getContext(), frame);
         }
 
     }

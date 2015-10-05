@@ -17,8 +17,10 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BindingNodes;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -82,7 +84,7 @@ public class TraceNode extends RubyNode {
                         file,
                         line,
                         context.getCoreLibrary().getNilObject(),
-                        Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame.materialize()),
+                        BindingNodes.createBinding(getContext(), frame.materialize()),
                         context.getCoreLibrary().getNilObject()
                 };
 
