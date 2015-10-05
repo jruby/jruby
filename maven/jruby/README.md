@@ -4,7 +4,7 @@ important for the rails4 warfile tests to increase the PermGen Space
 for jdk7
 
 ```
-export MAVEN_OPTS='-XX:MaxPermSize=192m'
+export MAVEN_OPTS='-XX:MaxPermSize=512m'
 ```
 
 
