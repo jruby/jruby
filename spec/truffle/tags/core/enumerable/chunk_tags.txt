@@ -1,8 +1,0 @@
-fails:Enumerable#chunk yields the current element and the current chunk to the block
-fails:Enumerable#chunk returns elements of the Enumerable in an Array of Arrays, [v, ary], where 'ary' contains the consecutive elements for which the block returned the value 'v'
-fails:Enumerable#chunk returns elements for which the block returns :_alone in separate Arrays
-fails:Enumerable#chunk does not return elements for which the block returns :_separator
-fails:Enumerable#chunk does not return elements for which the block returns nil
-fails:Enumerable#chunk raises a RuntimeError if the block returns a Symbol starting with an underscore other than :_alone or :_separator
-fails:Enumerable#chunk with [initial_state] yields an element and an object value-equal but not identical to the object passed to #chunk
-fails:Enumerable#chunk with [initial_state] does not yield the object passed to #chunk if it is nil

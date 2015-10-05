@@ -3,7 +3,7 @@ require 'net/http'
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Net::HTTPHeader#content_length" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 
@@ -29,7 +29,7 @@ describe "Net::HTTPHeader#content_length" do
 end
 
 describe "Net::HTTPHeader#content_length=" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

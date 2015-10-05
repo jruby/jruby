@@ -1,3 +1,0 @@
-fails:Module#method_undefined is a private instance method
-fails:Module#method_undefined returns nil in the default implementation
-fails:Module#method_undefined is called when a method is undefined from self

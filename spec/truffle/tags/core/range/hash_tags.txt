@@ -1,1 +1,0 @@
-fails:Range#hash generates the same hash values for Ranges with the same start, end and exclude_end? values

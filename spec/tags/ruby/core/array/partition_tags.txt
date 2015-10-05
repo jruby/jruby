@@ -1,0 +1,1 @@
+fails:Array#partition returns in the left array values for which the block evaluates to true

@@ -1,4 +1,4 @@
-describe :dir_pwd, :shared => true do
+describe :dir_pwd, shared: true do
   with_feature :encoding do
     before :each do
       @external = Encoding.default_external

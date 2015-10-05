@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Integer#rationalize" do
-  before(:all) do
+  before :all do
     @numbers = [
       0,
       29871,

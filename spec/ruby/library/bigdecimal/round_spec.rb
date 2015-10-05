@@ -187,4 +187,10 @@ describe "BigDecimal#round" do
       @n2_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
     end
   end
+
+  it 'raise exception, if self is special value' do
+    lambda { BigDecimal('NaN').round }.should raise_error(FloatDomainError)
+    lambda { BigDecimal('Infinity').round }.should raise_error(FloatDomainError)
+    lambda { BigDecimal('-Infinity').round }.should raise_error(FloatDomainError)
+  end
 end

@@ -5,6 +5,9 @@ require 'mspec/runner/actions/tag'
 require 'mspec/runner/actions/taglist'
 require 'mspec/runner/actions/tagpurge'
 
+one_spec = File.expand_path(File.dirname(__FILE__)) + '/fixtures/one_spec.rb'
+two_spec = File.expand_path(File.dirname(__FILE__)) + '/fixtures/two_spec.rb'
+
 describe MSpecTag, ".new" do
   before :each do
     @script = MSpecTag.new
@@ -31,7 +34,7 @@ describe MSpecTag, "#options" do
   before :each do
     @stdout, $stdout = $stdout, IOStub.new
 
-    @argv = ["a", "b"]
+    @argv = [one_spec, two_spec]
     @options, @config = new_option
     MSpecOptions.stub(:new).and_return(@options)
 
@@ -55,7 +58,7 @@ describe MSpecTag, "#options" do
 
   it "provides a custom action (block) to the config option" do
     @script.should_receive(:load).with("cfg.mspec")
-    @script.options ["-B", "cfg.mspec", "a"]
+    @script.options ["-B", "cfg.mspec", one_spec]
   end
 
   it "enables the name option" do
@@ -123,14 +126,14 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("-N", "--add", "TAG", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the mode to :add and sets the tag to TAG" do
       ["-N", "--add"].each do |opt|
         @config[:tagger] = nil
         @config[:tag] = nil
-        @script.options [opt, "taggit", "file.rb"]
+        @script.options [opt, "taggit", one_spec]
         @config[:tagger].should == :add
         @config[:tag].should == "taggit:"
       end
@@ -142,7 +145,7 @@ describe MSpecTag, "options" do
       @options.stub(:on)
       @options.should_receive(:on).with("-R", "--del", "TAG",
           an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "it sets the mode to :del, the tag to TAG, and the outcome to :pass" do
@@ -150,7 +153,7 @@ describe MSpecTag, "options" do
         @config[:tagger] = nil
         @config[:tag] = nil
         @config[:outcome] = nil
-        @script.options [opt, "taggit", "file.rb"]
+        @script.options [opt, "taggit", one_spec]
         @config[:tagger].should == :del
         @config[:tag].should == "taggit:"
         @config[:outcome].should == :pass
@@ -162,13 +165,13 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("-Q", "--pass", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the outcome to :pass" do
       ["-Q", "--pass"].each do |opt|
         @config[:outcome] = nil
-        @script.options [opt, "file.rb"]
+        @script.options [opt, one_spec]
         @config[:outcome].should == :pass
       end
     end
@@ -178,13 +181,13 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("-F", "--fail", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the outcome to :fail" do
       ["-F", "--fail"].each do |opt|
         @config[:outcome] = nil
-        @script.options [opt, "file.rb"]
+        @script.options [opt, one_spec]
         @config[:outcome].should == :fail
       end
     end
@@ -194,13 +197,13 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("-L", "--all", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the outcome to :all" do
       ["-L", "--all"].each do |opt|
         @config[:outcome] = nil
-        @script.options [opt, "file.rb"]
+        @script.options [opt, one_spec]
         @config[:outcome].should == :all
       end
     end
@@ -210,18 +213,18 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("--list", "TAG", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the mode to :list" do
       @config[:tagger] = nil
-      @script.options ["--list", "TAG", "file.rb"]
+      @script.options ["--list", "TAG", one_spec]
       @config[:tagger].should == :list
     end
 
     it "sets ltags to include TAG" do
       @config[:tag] = nil
-      @script.options ["--list", "TAG", "file.rb"]
+      @script.options ["--list", "TAG", one_spec]
       @config[:ltags].should == ["TAG"]
     end
   end
@@ -230,12 +233,12 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("--list-all", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the mode to :list_all" do
       @config[:tagger] = nil
-      @script.options ["--list-all", "file.rb"]
+      @script.options ["--list-all", one_spec]
       @config[:tagger].should == :list_all
     end
   end
@@ -244,12 +247,12 @@ describe MSpecTag, "options" do
     it "is enabled with #options" do
       @options.stub(:on)
       @options.should_receive(:on).with("--purge", an_instance_of(String))
-      @script.options ["file.rb"]
+      @script.options [one_spec]
     end
 
     it "sets the mode to :purge" do
       @config[:tagger] = nil
-      @script.options ["--purge", "file.rb"]
+      @script.options ["--purge", one_spec]
       @config[:tagger].should == :purge
     end
   end

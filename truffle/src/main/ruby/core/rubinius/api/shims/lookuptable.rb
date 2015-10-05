@@ -6,7 +6,19 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# TODO(CS): isn't this vulnerable to naming conflicts?
+module Rubinius
+  class LookupTable < Hash
+    alias_method :lookup_orig, :[]
 
-class LookupTable < Hash
+    def [](key)
+      lookup_orig(key_to_sym(key))
+    end
+
+    private
+
+    # Taken from Rubinius LookupTable.
+    def key_to_sym(key)
+      key.kind_of?(String) ? key.to_sym : key
+    end
+  end
 end

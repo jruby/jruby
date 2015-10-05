@@ -3,7 +3,7 @@ require 'cgi'
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "CGI::HtmlExtension#html" do
-  before(:each) do
+  before :each do
     @html = CGISpecs.cgi_new
     @html.stub!(:doctype).and_return("<!DOCTYPE SUPA-FUNKAY-RUBYSPEC-DOCTYPE>")
   end

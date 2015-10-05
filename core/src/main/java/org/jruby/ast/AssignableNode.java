@@ -30,14 +30,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.ast.types.IArityNode;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 
 /**
  * Base class of any node which can be assigned to.
  */
-public abstract class AssignableNode extends Node implements IArityNode {
+public abstract class AssignableNode extends Node {
     private Node valueNode;
     
     public AssignableNode(ISourcePosition position) {
@@ -66,12 +64,5 @@ public abstract class AssignableNode extends Node implements IArityNode {
      */
     public void setValueNode(Node valueNode) {
         this.valueNode = valueNode == null ? NilImplicitNode.NIL : valueNode;
-    }
-    
-    /**
-     * Almost all assignables are only assigned a single value.
-     */
-    public Arity getArity() {
-        return Arity.singleArgument();
     }
 }

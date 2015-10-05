@@ -2,11 +2,8 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#dup" do
-  before :all do
-    @file = tmp("rubinius_spec_io_dup_#{$$}_#{Time.now.to_f}")
-  end
-
   before :each do
+    @file = tmp("rubinius_spec_io_dup_#{$$}_#{Time.now.to_f}")
     @f = File.open @file, 'w+'
     @i = @f.dup
 
@@ -15,11 +12,8 @@ describe "IO#dup" do
   end
 
   after :each do
-    @i.close unless @i.closed?
-    @f.close unless @f.closed?
-  end
-
-  after :all do
+    @i.close if @i && !@i.closed?
+    @f.close if @f && !@f.closed?
     rm_r @file
   end
 

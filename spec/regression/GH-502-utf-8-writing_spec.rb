@@ -17,10 +17,10 @@ describe 'utf-16BE should write regardless of underlying locale encoding' do
     file.close
 
     read = File.read(path, :encoding => 'utf-16be', :binmode => true)
-    read.should == str
+    expect(read).to eq(str)
 
     read = File.open(path, 'rb:utf-16be') { |f| f.read }
-    read.should == str
+    expect(read).to eq(str)
 
     File.unlink(path)
   end

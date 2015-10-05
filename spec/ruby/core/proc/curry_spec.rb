@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Proc#curry" do
-  before(:each) do
+  before :each do
     @proc_add = Proc.new {|x,y,z| (x||0) + (y||0) + (z||0) }
     @lambda_add = lambda {|x,y,z| (x||0) + (y||0) + (z||0) }
   end
@@ -79,10 +79,20 @@ describe "Proc#curry" do
 
     instance_exec(3, &curried).should == 6
   end
+
+  it "combines arguments and calculates incoming arity accurately for successively currying" do
+    l = lambda{|a,b,c| a+b+c }
+    l1 = l.curry.call(1)
+    # the l1 currying seems unnecessary, but it triggered the original issue
+    l2 = l1.curry.call(2)
+
+    l2.curry.call(3).should == 6
+    l1.curry.call(2,3).should == 6
+  end
 end
 
 describe "Proc#curry with arity argument" do
-  before(:each) do
+  before :each do
     @proc_add = proc {|x,y,z| (x||0) + (y||0) + (z||0) }
     @lambda_add = lambda {|x,y,z| (x||0) + (y||0) + (z||0) }
   end
@@ -113,6 +123,8 @@ describe "Proc#curry with arity argument" do
 
   it "raises an ArgumentError if called on a lambda that requires fewer than _arity_ arguments" do
     lambda { @lambda_add.curry(4) }.should raise_error(ArgumentError)
+    lambda { lambda { true }.curry(1) }.should raise_error(ArgumentError)
+    lambda { lambda {|a, b=nil|}.curry(5) }.should raise_error(ArgumentError)
   end
 
   it "calls the curried proc with the arguments if _arity_ arguments have been given" do

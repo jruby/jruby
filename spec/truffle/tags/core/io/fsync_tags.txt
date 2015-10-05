@@ -1,2 +1,0 @@
-fails:IO#fsync raises an IOError on closed stream
-fails:IO#fsync writes the buffered data to permanent storage

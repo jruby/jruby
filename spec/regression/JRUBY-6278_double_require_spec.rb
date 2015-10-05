@@ -33,6 +33,6 @@ describe "JRUBY-6278: Double require bug in the handling of concurrent requires"
       end
     }
     [t1, t2].each(&:join)
-    ScratchPad.should == [:required, :required]
+    expect(ScratchPad).to eq([:required, :required])
   end
 end

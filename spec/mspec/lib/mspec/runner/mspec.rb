@@ -1,7 +1,6 @@
 require 'mspec/runner/context'
 require 'mspec/runner/exception'
 require 'mspec/runner/tag'
-require 'fileutils'
 
 module MSpec
 
@@ -17,7 +16,9 @@ module MSpec
   @leave   = nil
   @load    = nil
   @unload  = nil
+  @tagged  = nil
   @current = nil
+  @example = nil
   @modes   = []
   @shared  = {}
   @guarded = []
@@ -301,12 +302,22 @@ module MSpec
     tags
   end
 
+  def self.make_tag_dir(path)
+    parent = File.dirname(path)
+    return if File.exist? parent
+    begin
+      Dir.mkdir(parent)
+    rescue SystemCallError
+      make_tag_dir(parent)
+      Dir.mkdir(parent)
+    end
+  end
+
   # Writes each tag in +tags+ to the tag file. Overwrites the
   # tag file if it exists.
   def self.write_tags(tags)
     file = tags_file
-    path = File.dirname file
-    FileUtils.mkdir_p path unless File.exist? path
+    make_tag_dir(file)
     File.open(file, "wb") do |f|
       tags.each { |t| f.puts t }
     end
@@ -323,8 +334,7 @@ module MSpec
     end
 
     file = tags_file
-    path = File.dirname file
-    FileUtils.mkdir_p path unless File.exist? path
+    make_tag_dir(file)
     File.open(file, "ab") { |f| f.puts tag.to_s }
     return true
   end

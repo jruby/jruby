@@ -75,7 +75,7 @@ describe "An ensure block inside a begin block" do
 end
 
 describe "An ensure block inside a method" do
-  before(:each) do
+  before :each do
     @obj = EnsureSpec::Container.new
   end
 

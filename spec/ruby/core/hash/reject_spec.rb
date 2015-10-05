@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#reject" do
   it "returns a new hash removing keys for which the block yields true" do
@@ -9,7 +10,7 @@ describe "Hash#reject" do
   end
 
   it "is equivalent to hsh.dup.delete_if" do
-    h = new_hash(:a => 'a', :b => 'b', :c => 'd')
+    h = new_hash(a: 'a', b: 'b', c: 'd')
     h.reject { |k,v| k == 'd' }.should == (h.dup.delete_if { |k, v| k == 'd' })
 
     all_args_reject = []
@@ -25,20 +26,22 @@ describe "Hash#reject" do
     h.reject { false }.to_a.should == [[1, 2]]
   end
 
-  ruby_bug "extra states should not be copied", "2.1" do
-    it "returns Hash instance for subclasses" do
-      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
-      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
-    end
+  ruby_version_is "2.2" do
+    context "with extra state" do
+      it "returns Hash instance for subclasses" do
+        HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
+        HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
+      end
 
-    it "taints the resulting hash" do
-      h = new_hash(:a => 1).taint
-      h.reject {false}.tainted?.should == false
+      it "does not taint the resulting hash" do
+        h = new_hash(a: 1).taint
+        h.reject {false}.tainted?.should == false
+      end
     end
   end
 
   it "processes entries with the same order as reject!" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
 
     reject_pairs = []
     reject_bang_pairs = []
@@ -49,6 +52,7 @@ describe "Hash#reject" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :reject)
+  it_behaves_like(:enumeratorized_with_origin_size, :reject, new_hash(1 => 2, 3 => 4, 5 => 6))
 end
 
 describe "Hash#reject!" do
@@ -60,16 +64,16 @@ describe "Hash#reject!" do
   end
 
   it "is equivalent to delete_if if changes are made" do
-    hsh = new_hash(:a => 1)
+    hsh = new_hash(a: 1)
     hsh.reject! { |k,v| v < 2 }.should == hsh.dup.delete_if { |k, v| v < 2 }
   end
 
   it "returns nil if no changes were made" do
-    new_hash(:a => 1).reject! { |k,v| v > 1 }.should == nil
+    new_hash(a: 1).reject! { |k,v| v > 1 }.should == nil
   end
 
   it "processes entries with the same order as delete_if" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
 
     reject_bang_pairs = []
     delete_if_pairs = []
@@ -88,4 +92,5 @@ describe "Hash#reject!" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :reject!)
+  it_behaves_like(:enumeratorized_with_origin_size, :reject!, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

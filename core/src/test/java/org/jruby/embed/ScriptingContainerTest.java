@@ -144,7 +144,7 @@ public class ScriptingContainerTest {
         String[] names = {"ruby"};
         result = instance.getProperty(key);
         assertArrayEquals(key, names, result);
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -161,7 +161,7 @@ public class ScriptingContainerTest {
         String expResult = "jruby " + Constants.VERSION;
         String result = instance.getSupportedRubyVersion();
         assertTrue(result.startsWith(expResult));
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -177,7 +177,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         LocalContextProvider result = instance.getProvider();
         assertTrue(result instanceof SingletonLocalContextProvider);
-        instance = null;
+        instance.terminate();
 
         instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
@@ -186,7 +186,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         result = instance.getProvider();
         assertTrue(result instanceof ThreadSafeLocalContextProvider);
-        instance = null;
+        instance.terminate();
 
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         instance.setError(pstream);
@@ -195,7 +195,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         result = instance.getProvider();
         assertTrue(result instanceof SingleThreadLocalContextProvider);
-        instance = null;
+        instance.terminate();
 
         instance = new ScriptingContainer(LocalContextScope.SINGLETON);
         instance.setError(pstream);
@@ -204,8 +204,8 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         result = instance.getProvider();
         assertTrue(result instanceof SingletonLocalContextProvider);
-        instance = null;
-        
+        instance.terminate();
+
         instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -213,7 +213,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         result = instance.getProvider();
         assertTrue(result instanceof ConcurrentLocalContextProvider);
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -227,12 +227,12 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        Ruby runtime  = JavaEmbedUtils.initialize(new ArrayList());
+        Ruby runtime = JavaEmbedUtils.initialize(new ArrayList());
         Ruby result = instance.getProvider().getRuntime();
         Class expClazz = runtime.getClass();
         Class resultClazz = result.getClass();
         assertEquals(expClazz, resultClazz);
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -267,9 +267,9 @@ public class ScriptingContainerTest {
         assertEquals(1.2345, instance.getVarMap().get("parameter"));
         result.put("@coefficient", 4);
         assertEquals(4, instance.getVarMap().get("@coefficient"));
-        
+
         result.clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -281,7 +281,7 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
-        
+
         Map result = instance.getAttributeMap();
         Object obj = result.get(AttributeName.READER);
         assertEquals(obj.getClass(), java.io.InputStreamReader.class);
@@ -289,7 +289,7 @@ public class ScriptingContainerTest {
         assertEquals(obj.getClass(), java.io.PrintWriter.class);
         obj = result.get(AttributeName.ERROR_WRITER);
         assertEquals(obj.getClass(), java.io.PrintWriter.class);
-        
+
         result.put(AttributeName.BASE_DIR, "/usr/local/lib");
         assertEquals("/usr/local/lib", result.get(AttributeName.BASE_DIR));
 
@@ -300,7 +300,7 @@ public class ScriptingContainerTest {
         assertEquals("虚", result.get("むなしいきもち"));
 
         result.clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -320,6 +320,8 @@ public class ScriptingContainerTest {
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
+
+        instance.terminate();
     }
 
     /**
@@ -340,6 +342,8 @@ public class ScriptingContainerTest {
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");
+
+        instance.terminate();
     }
 
     /**
@@ -369,7 +373,7 @@ public class ScriptingContainerTest {
         Object expResult = null;
         Object result = instance.get(key);
         assertEquals(expResult, result);
-        
+
         instance.put("@name", "camellia");
         assertEquals("camellia", instance.get("@name"));
         instance.put("COLOR", "red");
@@ -389,7 +393,7 @@ public class ScriptingContainerTest {
         assertEquals("bush", instance.get("$category"));
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
 
         instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
         instance.setError(pstream);
@@ -398,9 +402,9 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.runScriptlet("ivalue = 200000");
         assertEquals(200000L, instance.get("ivalue"));
-        
+
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -461,7 +465,7 @@ public class ScriptingContainerTest {
         assertEquals("1 km is 0.621 miles.", sw.toString().trim());
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -518,7 +522,7 @@ public class ScriptingContainerTest {
         }
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -561,7 +565,7 @@ public class ScriptingContainerTest {
         }
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -582,7 +586,7 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         EmbedEvalUnit result;
-        
+
         try {
             result = instance.parse(type, filename, lines);
         } catch (Throwable t) {
@@ -627,7 +631,7 @@ public class ScriptingContainerTest {
         }
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     private int getNextYear() {
@@ -680,7 +684,7 @@ public class ScriptingContainerTest {
         }
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -723,7 +727,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, result);
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -752,7 +756,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, result);
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -785,7 +789,7 @@ public class ScriptingContainerTest {
         assertEquals(120.0, angles.get(2), 0.00001);
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -846,7 +850,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, sw.toString().trim());
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -861,7 +865,7 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         EmbedRubyRuntimeAdapter result = instance.newRuntimeAdapter();
-        String script = 
+        String script =
             "def volume\n"+
             "  (Math::PI * (@r ** 2.0) * @h)/3.0\n" +
             "end\n" +
@@ -878,7 +882,7 @@ public class ScriptingContainerTest {
         assertEquals(9.424778, rightCircularCone.get(1), 0.000001);
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -895,6 +899,7 @@ public class ScriptingContainerTest {
         EmbedRubyObjectAdapter result = instance.newObjectAdapter();
         Class[] interfaces = result.getClass().getInterfaces();
         assertEquals(org.jruby.embed.EmbedRubyObjectAdapter.class, interfaces[0]);
+        instance.terminate();
     }
 
     /**
@@ -940,7 +945,7 @@ public class ScriptingContainerTest {
         assertEquals(9.424778, surface_area, 0.000001);
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -974,7 +979,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, sw.toString().trim());
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1014,7 +1019,7 @@ public class ScriptingContainerTest {
         }
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1052,12 +1057,12 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        
+
         // Verify that empty message name returns null
         Object result = instance.callMethod(null, "", returnType, unit);
         assertEquals(null, result);
 
-        String text = 
+        String text =
             "songs:\n"+
             "- Hey Soul Sister\n" +
             "- Who Says\n" +
@@ -1077,7 +1082,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, sw.toString());
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1125,6 +1130,8 @@ public class ScriptingContainerTest {
         Double[] a = {3.1415, 2.7182, 1.4142};
         List expList = Arrays.asList(a);
         assertEquals(expList, list);
+
+        instance.terminate();
     }
 
     @Test
@@ -1148,6 +1155,8 @@ public class ScriptingContainerTest {
         instance.runScriptlet(script);
         String something = instance.runRubyMethod(String.class, instance, "say_something");
         assertEquals("Something", something);
+
+        instance.terminate();
     }
 
     /**
@@ -1273,6 +1282,8 @@ public class ScriptingContainerTest {
         List<String> units = ((PositionFunction)result).getUnits();
         assertEquals("ft./sec", units.get(0));
         assertEquals("ft.", units.get(1));
+
+        instance.terminate();
     }
 
     /**
@@ -1289,7 +1300,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setReader(reader);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1306,7 +1317,7 @@ public class ScriptingContainerTest {
         Reader result = instance.getReader();
         assertFalse(result == null);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1323,7 +1334,7 @@ public class ScriptingContainerTest {
         InputStream result = instance.getInput();
         assertFalse(result == null);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1350,7 +1361,7 @@ public class ScriptingContainerTest {
         // This never successes.
         //assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1366,7 +1377,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.resetWriter();
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1383,7 +1394,7 @@ public class ScriptingContainerTest {
         Writer result = instance.getWriter();
         assertTrue(result == writer);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1400,7 +1411,7 @@ public class ScriptingContainerTest {
         PrintStream result = instance.getOutput();
         assertTrue(result == pstream);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1424,7 +1435,7 @@ public class ScriptingContainerTest {
         assertEquals(expResult, esw.toString().trim());
 
         instance.getVarMap().clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1440,7 +1451,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.resetErrorWriter();
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1457,7 +1468,7 @@ public class ScriptingContainerTest {
         Writer result = instance.getErrorWriter();
         assertTrue(result == writer);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1474,7 +1485,7 @@ public class ScriptingContainerTest {
         PrintStream result = instance.getError();
         assertTrue(result == pstream);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1536,7 +1547,7 @@ public class ScriptingContainerTest {
         assertArrayEquals(expResult, retMethods);
 
         instance.clear();
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1553,8 +1564,8 @@ public class ScriptingContainerTest {
         List<String> result = instance.getLoadPaths();
         assertTrue(result != null);
         assertTrue(result.size() == 0);
-        
-        instance = null;
+
+        instance.terminate();
     }
 
     /**
@@ -1576,7 +1587,7 @@ public class ScriptingContainerTest {
         instance.setLoadPaths(paths);
         assertArrayEquals(paths.toArray(), instance.getLoadPaths().toArray());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1593,6 +1604,8 @@ public class ScriptingContainerTest {
         InputStream expResult = System.in;
         InputStream result = instance.getInput();
         assertEquals(expResult, result);
+
+        instance.terminate();
     }
 
     /**
@@ -1613,7 +1626,7 @@ public class ScriptingContainerTest {
         instance.setInput(istream);
         assertTrue(instance.getInput() instanceof InputStream);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1631,7 +1644,7 @@ public class ScriptingContainerTest {
         instance.setInput(reader);
         assertEquals(reader, instance.getInput());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1649,7 +1662,7 @@ public class ScriptingContainerTest {
         PrintStream result = instance.getOutput();
         assertEquals(pstream, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1665,7 +1678,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         assertEquals(pstream, instance.getOutput());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1686,7 +1699,7 @@ public class ScriptingContainerTest {
         instance.setOutput(ow);
         assertTrue(instance.getOutput() instanceof PrintStream);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1704,7 +1717,7 @@ public class ScriptingContainerTest {
         PrintStream result = instance.getError();
         assertEquals(pstream, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1720,7 +1733,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         assertEquals(pstream, instance.getError());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1741,7 +1754,7 @@ public class ScriptingContainerTest {
         instance.setError(ew);
         assertTrue(instance.getError() instanceof PrintStream);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1756,6 +1769,8 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         // compare to default, as specified by properties etc
         assertEquals(Options.COMPILE_MODE.load(), instance.getCompileMode());
+
+        instance.terminate();
     }
 
     /**
@@ -1777,7 +1792,7 @@ public class ScriptingContainerTest {
         instance.setCompileMode(mode);
         assertEquals(mode, instance.getCompileMode());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1795,7 +1810,7 @@ public class ScriptingContainerTest {
         boolean result = instance.isRunRubyInProcess();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1817,7 +1832,7 @@ public class ScriptingContainerTest {
         instance.setRunRubyInProcess(inprocess);
         assertEquals(inprocess, instance.isRunRubyInProcess());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1835,7 +1850,7 @@ public class ScriptingContainerTest {
         boolean result = instance.isObjectSpaceEnabled();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1853,7 +1868,7 @@ public class ScriptingContainerTest {
         instance.setObjectSpaceEnabled(enable);
         assertEquals(enable, instance.isObjectSpaceEnabled());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1871,7 +1886,7 @@ public class ScriptingContainerTest {
         Map result = instance.getEnvironment();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1894,8 +1909,8 @@ public class ScriptingContainerTest {
 
         instance.setEnvironment(environment);
         assertEquals(environment, instance.getEnvironment());
-        
-        instance = null;
+
+        instance.terminate();
     }
 
     /**
@@ -1913,7 +1928,7 @@ public class ScriptingContainerTest {
         String result = instance.getCurrentDirectory();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1939,7 +1954,7 @@ public class ScriptingContainerTest {
         instance = new ScriptingContainer();
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
-        
+
         instance = new ScriptingContainer(LocalContextScope.CONCURRENT);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -1947,7 +1962,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
-        
+
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -1955,6 +1970,8 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setCurrentDirectory(directory);
         assertEquals(directory, instance.getCurrentDirectory());
+
+        instance.terminate();
     }
 
     /**
@@ -1978,7 +1995,7 @@ public class ScriptingContainerTest {
         String result = instance.getHomeDirectory();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -1996,7 +2013,7 @@ public class ScriptingContainerTest {
         instance.setHomeDirectory(home);
         assertEquals(System.getProperty("user.dir"), instance.getHomeDirectory());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2014,7 +2031,7 @@ public class ScriptingContainerTest {
         ClassLoader result = instance.getClassLoader();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2036,7 +2053,7 @@ public class ScriptingContainerTest {
         instance.setClassLoader(loader);
         assertEquals(loader, instance.getClassLoader());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2054,7 +2071,7 @@ public class ScriptingContainerTest {
         Profile result = instance.getProfile();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2075,8 +2092,8 @@ public class ScriptingContainerTest {
         profile = Profile.ALL;
         instance.setProfile(profile);
         assertEquals(profile, instance.getProfile());
-        
-        instance = null;
+
+        instance.terminate();
     }
 
     /**
@@ -2094,8 +2111,7 @@ public class ScriptingContainerTest {
         LoadServiceCreator result = instance.getLoadServiceCreator();
         assertEquals(expResult, result);
 
-
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2112,7 +2128,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setLoadServiceCreator(creator);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2130,7 +2146,7 @@ public class ScriptingContainerTest {
         String[] result = instance.getArgv();
         assertArrayEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2148,7 +2164,7 @@ public class ScriptingContainerTest {
         instance.setArgv(argv);
         assertArrayEquals(argv, instance.getArgv());
 
-        instance = null;
+        instance.terminate();
 
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         //instance.setError(pstream);
@@ -2157,7 +2173,7 @@ public class ScriptingContainerTest {
         //instance.setErrorWriter(writer);
         argv = new String[] {"tree", "woods", "forest"};
         instance.setArgv(argv);
-        String script = 
+        String script =
                 "def print_argv\n" +
                   "all_of_them = \"\"\n" +
                   "ARGV.each { |item| all_of_them += item }\n" +
@@ -2172,7 +2188,7 @@ public class ScriptingContainerTest {
         //Object[] params = (Object[])instance.get("ARGV");
         //assertArrayEquals(argv, params);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2198,6 +2214,8 @@ public class ScriptingContainerTest {
         List<String> list = instance.callMethod(receiver, "get_array", List.class);
         List<String> expList = Arrays.asList(expParams);
         assertEquals(expList, list);
+
+        instance.terminate();
     }
 
     /**
@@ -2215,7 +2233,7 @@ public class ScriptingContainerTest {
         String result = instance.getScriptFilename();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2232,7 +2250,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setScriptFilename(filename);
 
-        instance = null;
+        instance.terminate();
 
         filename = "["+this.getClass().getCanonicalName()+"]";
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
@@ -2245,7 +2263,7 @@ public class ScriptingContainerTest {
             assertTrue(sw.toString().contains(filename));
         }
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2263,7 +2281,7 @@ public class ScriptingContainerTest {
         String result = instance.getRecordSeparator();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2280,7 +2298,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setRecordSeparator(separator);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2298,7 +2316,7 @@ public class ScriptingContainerTest {
         KCode result = instance.getKCode();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2316,7 +2334,7 @@ public class ScriptingContainerTest {
         int result = instance.getJitLogEvery();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2333,7 +2351,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setJitLogEvery(logEvery);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2351,7 +2369,7 @@ public class ScriptingContainerTest {
         int result = instance.getJitThreshold();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2368,7 +2386,7 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setJitThreshold(threshold);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2386,7 +2404,7 @@ public class ScriptingContainerTest {
         int result = instance.getJitMax();
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2403,34 +2421,16 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setJitMax(max);
 
-        instance = null;
-    }
-
-    /**
-     * Test of getJitMaxSize method, of class ScriptingContainer.
-     */
-    @Test
-    public void testGetJitMaxSize() {
-        logger1.info("getJitMaxSize");
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        int expResult = 30000;
-        int result = instance.getJitMaxSize();
-        assertEquals(expResult, result);
-
-        instance = null;
+        instance.terminate();
     }
 
     /**
      * Test of setJitMaxSize method, of class ScriptingContainer.
      */
     @Test
-    public void testSetJitMaxSize() {
+    public void testJitMaxSize() {
         logger1.info("setJitMaxSize");
-        int maxSize = 0;
+        int maxSize = 10000;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
@@ -2438,7 +2438,8 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         instance.setJitMaxSize(maxSize);
 
-        instance = null;
+        assertEquals(maxSize, instance.getJitMaxSize());
+        instance.terminate();
     }
 
     /**
@@ -2457,7 +2458,7 @@ public class ScriptingContainerTest {
         Object result = instance.removeAttribute(key);
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2478,7 +2479,7 @@ public class ScriptingContainerTest {
         Object result = instance.remove(key);
         assertEquals(expResult, result);
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2501,7 +2502,7 @@ public class ScriptingContainerTest {
         instance.clear();
         assertEquals(0, instance.getProvider().getVarMap().size());
 
-        instance = null;
+        instance.terminate();
     }
 
     /**
@@ -2515,7 +2516,7 @@ public class ScriptingContainerTest {
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setErrorWriter(writer);
-        
+
         instance.put("my_var", "Hullo!");
 
         StringWriter sw = new StringWriter();
@@ -2525,7 +2526,7 @@ public class ScriptingContainerTest {
         assertEquals("Hullo!", sw.toString().trim());
 
         // need to put the lvar again since lvars vanish after eval on a transient setting
-        instance.put("my_var", "Hullo!"); 
+        instance.put("my_var", "Hullo!");
         sw = new StringWriter();
         instance.setWriter(sw);
         instance.setCompileMode(CompileMode.JIT);
@@ -2539,9 +2540,9 @@ public class ScriptingContainerTest {
         instance.runScriptlet("puts my_var");
         assertEquals("Hullo!", sw.toString().trim());
 
-        instance = null;
+        instance.terminate();
     }
-    
+
     public void testEmbedEvalUnitCompileModes() {
         org.jruby.embed.ScriptingContainer container = new org.jruby.embed.ScriptingContainer();
         container.setCompileMode(CompileMode.OFF);
@@ -2569,6 +2570,8 @@ public class ScriptingContainerTest {
         evalUnit2.run();
         assertEquals("script 1: success", container.get("$one").toString());
         assertEquals("script 2: success", container.get("$two").toString());
+
+        container.terminate();
     }
 
 
@@ -2578,19 +2581,20 @@ public class ScriptingContainerTest {
     @Test
     public void testNullToContextClassLoader() {
         logger1.info("Thread.currentThread().setContextClassLoader(null)");
-        ScriptingContainer instance = null;
+        ScriptingContainer instance;
         try {
             ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(null);
             instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
             Thread.currentThread().setContextClassLoader(oldClassLoader);
-        } catch (NullPointerException e) {
+
+            instance.terminate();
+        }
+        catch (NullPointerException e) {
             fail(e.getMessage());
-        } finally {
-            instance = null;
         }
     }
-    
+
     /**
      * Test of setClassLoader method, of SystemPropertyCatcher.
      * This method is only used in JSR223 but tested here. Since, JSR223
@@ -2603,13 +2607,15 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
         assertEquals(instance.getClass().getClassLoader(), instance.getClassLoader());
-        
+
         System.setProperty(PropertyName.CLASSLOADER.toString(), "context");
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         org.jruby.embed.util.SystemPropertyCatcher.setClassLoader(instance);
         assertEquals(Thread.currentThread().getContextClassLoader(), instance.getClassLoader());
+
+        instance.terminate();
     }
-    
+
     /**
      * Test of setClassLoader method, of SystemPropertyCatcher.
      * This method is only used in JSR223 but tested here. Since, JSR223
@@ -2622,6 +2628,8 @@ public class ScriptingContainerTest {
         Object someInstance = instance.runScriptlet("Object.new");
         Object result = instance.callMethod(someInstance, "instance_eval", "self", "<eval>", 1);
         assertNotNull(result);
+
+        instance.terminate();
     }
 
     @Test
@@ -2629,6 +2637,8 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         Object result = instance.runScriptlet("exit 1234");
         assertEquals(1234L, result);
+
+        instance.terminate();
     }
 
     @Test
@@ -2647,4 +2657,54 @@ public class ScriptingContainerTest {
         Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
         assertEquals("classpath:/__FILE__.rb", result.toString());
     }
+
+    @Test
+    public void testJavadocExample4() {
+        ScriptingContainer container = new ScriptingContainer();
+        String script =
+         "def message\n" +
+             "\"message: #{@message}\"\n" +
+          "end\n" +
+         "message";
+        container.put("@message", "What's up?");
+        JavaEmbedUtils.EvalUnit unit = container.parse(script);
+        IRubyObject msg = unit.run(); // a RubyString instance
+        assertEquals("message: What's up?", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+        container.put("@message", "Fabulous!");
+        msg = unit.run();
+        assertEquals("message: Fabulous!", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+        container.put("@message", "That's the way you are.");
+        msg = unit.run();
+        assertEquals("message: That's the way you are.", JavaEmbedUtils.rubyToJava(msg));
+        //System.out.println(JavaEmbedUtils.rubyToJava(msg));
+
+        container.terminate();
+    }
+
+// NOTE: test makes no sense on 9K
+//    @Test
+//    public void testSystemPropertyCatcherSetCompatVersion() {
+//        ScriptingContainer container;
+//
+//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.8");
+//        container = new ScriptingContainer(LocalContextScope.THREADSAFE);
+//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
+//        assertEquals("1.8.7", container.runScriptlet("RUBY_VERSION"));
+//        container.terminate();
+//
+//        System.setProperty(PropertyName.COMPATVERSION.toString(), "RUBY2_0");
+//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
+//        assertEquals("2.0.0", container.runScriptlet("RUBY_VERSION"));
+//        container.terminate();
+//
+//        System.setProperty(PropertyName.COMPATVERSION.toString(), "1.9");
+//        container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+//        org.jruby.embed.util.SystemPropertyCatcher.setConfiguration(container);
+//        assertEquals("1.9.3", container.runScriptlet("RUBY_VERSION"));
+//        container.terminate();
+//    }
+
 }

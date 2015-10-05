@@ -8,7 +8,7 @@ describe "File.join" do
       dir = Dir.tmpdir
       file_path = File.join(Dir.tmpdir, file_name)
       begin
-        file_path.should == "#{dir}#{File::SEPARATOR}#{file_name}"
+        expect(file_path).to eq("#{dir}#{File::SEPARATOR}#{file_name}")
       ensure
         Dir.chdir(dir) do
           Dir["*tmpfile.txt"].each do |f|

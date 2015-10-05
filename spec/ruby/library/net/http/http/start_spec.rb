@@ -3,20 +3,20 @@ require 'net/http'
 require File.expand_path('../fixtures/http_server', __FILE__)
 
 describe "Net::HTTP.start" do
-  before(:all) do
+  before :each do
     NetHTTPSpecs.start_server
   end
 
-  after(:all) do
+  after :each do
     NetHTTPSpecs.stop_server
   end
 
   describe "when not passed a block" do
-    before(:each) do
+    before :each do
       @http = Net::HTTP.start("localhost", 3333)
     end
 
-    after(:each) do
+    after :each do
       @http.finish if @http.started?
     end
 
@@ -58,20 +58,14 @@ describe "Net::HTTP.start" do
 end
 
 describe "Net::HTTP#start" do
-  before(:all) do
+  before :each do
     NetHTTPSpecs.start_server
-  end
-
-  after(:all) do
-    NetHTTPSpecs.stop_server
-  end
-
-  before(:each) do
     @http = Net::HTTP.new("localhost", 3333)
   end
 
-  after(:each) do
+  after :each do
     @http.finish if @http.started?
+    NetHTTPSpecs.stop_server
   end
 
   it "returns self" do

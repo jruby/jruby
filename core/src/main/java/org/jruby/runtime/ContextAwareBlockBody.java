@@ -9,14 +9,15 @@ public abstract class ContextAwareBlockBody extends BlockBody {
     /** The static scope for the block body */
     protected StaticScope scope;
 
-    /** The 'Arity' of the block */
-    protected final Arity arity;
+    public ContextAwareBlockBody(StaticScope scope, Signature signature) {
+        super(signature);
 
-    public ContextAwareBlockBody(StaticScope scope, Arity arity, int argumentType) {
-        super(argumentType);
-        
         this.scope = scope;
-        this.arity = arity;
+    }
+
+    @Deprecated
+    public ContextAwareBlockBody(StaticScope scope, Arity arity, int argumentType) {
+        this(scope, Signature.from(arity));
     }
 
     protected Frame pre(ThreadContext context, Binding binding) {
@@ -34,9 +35,5 @@ public abstract class ContextAwareBlockBody extends BlockBody {
 
     public void setStaticScope(StaticScope newScope) {
         this.scope = newScope;
-    }
-
-    public Arity arity() {
-        return arity;
     }
 }

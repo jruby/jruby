@@ -152,31 +152,31 @@ describe "CApiBignumSpecs" do
   ruby_version_is ""..."2.2" do
     describe "RBIGNUM_SIGN" do
       it "returns C true if the Bignum has a positive sign" do
-        @s.RBIGNUM_SIGN(bignum_value()).should be_true
+        @s.RBIGNUM_SIGN(bignum_value).should be_true
       end
 
       it "retuns C false if the Bignum has a negative sign" do
-        @s.RBIGNUM_SIGN(-bignum_value()).should be_false
+        @s.RBIGNUM_SIGN(-bignum_value).should be_false
       end
     end
 
     describe "RBIGNUM_POSITIVE_P" do
       it "returns C true if the Bignum has a positive sign" do
-        @s.RBIGNUM_POSITIVE_P(bignum_value()).should be_true
+        @s.RBIGNUM_POSITIVE_P(bignum_value).should be_true
       end
 
       it "retuns C false if the Bignum has a negative sign" do
-        @s.RBIGNUM_POSITIVE_P(-bignum_value()).should be_false
+        @s.RBIGNUM_POSITIVE_P(-bignum_value).should be_false
       end
     end
 
     describe "RBIGNUM_NEGATIVE_P" do
       it "returns C false if the Bignum has a positive sign" do
-        @s.RBIGNUM_NEGATIVE_P(bignum_value()).should be_false
+        @s.RBIGNUM_NEGATIVE_P(bignum_value).should be_false
       end
 
       it "retuns C true if the Bignum has a negative sign" do
-        @s.RBIGNUM_NEGATIVE_P(-bignum_value()).should be_true
+        @s.RBIGNUM_NEGATIVE_P(-bignum_value).should be_true
       end
     end
 

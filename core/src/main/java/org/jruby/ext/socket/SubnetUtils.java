@@ -189,15 +189,12 @@ public class SubnetUtils {
          */
         @Override
         public String toString() {
-            final StringBuilder buf = new StringBuilder();
-            buf.append("CIDR Signature:\t[").append(getCidrSignature()).append("]")
-                .append(" Netmask: [").append(getNetmask()).append("]\n")
-                .append("Network:\t[").append(getNetworkAddress()).append("]\n")
-                .append("Broadcast:\t[").append(getBroadcastAddress()).append("]\n")
-                 .append("First Address:\t[").append(getLowAddress()).append("]\n")
-                 .append("Last Address:\t[").append(getHighAddress()).append("]\n")
-                 .append("# Addresses:\t[").append(getAddressCount()).append("]\n");
-            return buf.toString();
+            return "CIDR Signature:\t[" + getCidrSignature() + "] Netmask: [" + getNetmask() + "]\n" +
+            "Network:\t[" + getNetworkAddress() + "]\n" +
+            "Broadcast:\t[" + getBroadcastAddress() + "]\n" +
+            "First Address:\t[" + getLowAddress() + "]\n" +
+            "Last Address:\t[" + getHighAddress() + "]\n" +
+            "# Addresses:\t[" + getAddressCount() + "]\n" ;
         }
     }
 

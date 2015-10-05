@@ -9,19 +9,26 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.ArrayDupNode;
-import org.jruby.truffle.nodes.core.ArrayDupNodeFactory;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.core.array.ArrayDupNode;
+import org.jruby.truffle.nodes.core.array.ArrayDupNodeGen;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -47,52 +54,39 @@ public abstract class SplatCastNode extends RubyNode {
         super(context, sourceSection);
         this.nilBehavior = nilBehavior;
         // Calling private #to_a is allowed for the *splat operator.
-        dup = ArrayDupNodeFactory.create(context, sourceSection, null);
+        dup = ArrayDupNodeGen.create(context, sourceSection, null);
         respondToToA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
-        respondToCast = BooleanCastNodeFactory.create(context, sourceSection, null);
+        respondToCast = BooleanCastNodeGen.create(context, sourceSection, null);
         toA = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         this.useToAry = useToAry;
     }
 
-    public SplatCastNode(SplatCastNode prev) {
-        super(prev);
-        dup = prev.dup;
-        nilBehavior = prev.nilBehavior;
-        respondToToA = prev.respondToToA;
-        respondToCast = prev.respondToCast;
-        toA = prev.toA;
-        useToAry = prev.useToAry;
-    }
-
     protected abstract RubyNode getChild();
 
-    @Specialization
-    public RubyArray splat(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject splat(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             default: {
-                CompilerAsserts.neverPartOfCompilation();
                 throw new UnsupportedOperationException();
             }
         }
     }
 
-    @Specialization
-    public RubyArray splat(VirtualFrame frame, RubyArray array) {
+    @Specialization(guards = "isRubyArray(array)")
+    public DynamicObject splat(VirtualFrame frame, DynamicObject array) {
         // TODO(cs): is it necessary to dup here in all cases?
         // It is needed at least for [*ary] (parsed as just a SplatNode) and b = *ary.
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
-    public RubyArray splat(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
+    @Specialization(guards = {"!isNil(object)", "!isRubyArray(object)"})
+    public DynamicObject splat(VirtualFrame frame, Object object) {
         final String method;
 
         if (useToAry) {
@@ -102,14 +96,15 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, getContext().makeString(method), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, makeMethodNameString(method), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
-            if (array instanceof RubyArray) {
-                return (RubyArray) array;
-            } else if (array instanceof RubyNilClass || array == DispatchNode.MISSING) {
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+            if (RubyGuards.isRubyArray(array)) {
+                return (DynamicObject) array;
+            } else if (array == nil() || array == DispatchNode.MISSING) {
+                CompilerDirectives.transferToInterpreter();
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
                         object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
@@ -117,7 +112,12 @@ public abstract class SplatCastNode extends RubyNode {
             }
         }
 
-        return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private DynamicObject makeMethodNameString(String methodName) {
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(methodName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
     }
 
 }

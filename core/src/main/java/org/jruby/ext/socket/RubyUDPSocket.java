@@ -185,9 +185,12 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect: name or service not known");
-            
+
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "connect: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
 
@@ -211,7 +214,10 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
 
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "recvfrom: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
 
@@ -243,7 +249,10 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
 
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "send: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
 
@@ -274,7 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
             byte[] buf2 = data.getBytes();
-            DatagramPacket sendDP = null;
+            DatagramPacket sendDP;
 
             int port;
             if (_port instanceof RubyString) {
@@ -312,7 +321,10 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
 
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "send: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
 
@@ -357,7 +369,10 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
 
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "recvfrom: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
     }
 
@@ -381,7 +396,10 @@ public class RubyUDPSocket extends RubyIPSocket {
             return doReceive(runtime, RubyNumeric.fix2int(_length));
 
         } catch (IOException e) {
-            throw SocketUtils.sockerr(runtime, "recv: name or service not known");
+            throw runtime.newIOErrorFromException(e);
+
+        } catch (Exception e) {
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
 
         }
     }

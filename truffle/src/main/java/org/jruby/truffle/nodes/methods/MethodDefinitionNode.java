@@ -10,17 +10,18 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a method. That is, store the definition of a method and when executed
+ * Define a method from a method literal (def mymethod ... end).
+ * That is, store the definition of a method and when executed
  * produce the executable object that results.
  */
 public class MethodDefinitionNode extends RubyNode {
@@ -30,35 +31,18 @@ public class MethodDefinitionNode extends RubyNode {
 
     private final CallTarget callTarget;
 
-    private final boolean requiresDeclarationFrame;
-
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            boolean requiresDeclarationFrame, CallTarget callTarget) {
+                                CallTarget callTarget) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
-        this.requiresDeclarationFrame = requiresDeclarationFrame;
         this.callTarget = callTarget;
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        final MaterializedFrame declarationFrame;
-
-        if (requiresDeclarationFrame) {
-            declarationFrame = frame.materialize();
-        } else {
-            declarationFrame = null;
-        }
-
-        return executeMethod(frame, declarationFrame);
-    }
-
-    public InternalMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
-        notDesignedForCompilation();
-
-        return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
+        final DynamicObject dummyModule = getContext().getCoreLibrary().getObjectClass();
+        final Visibility dummyVisibility = Visibility.PUBLIC;
+        return new InternalMethod(sharedMethodInfo, name, dummyModule, dummyVisibility, false, callTarget, null);
     }
 
     @Override

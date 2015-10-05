@@ -1,3 +1,0 @@
-fails:Syslog.inspect returns a string a closed log
-fails:Syslog.inspect returns a string for an opened log
-fails:Syslog.inspect includes the ident, options, facility and mask

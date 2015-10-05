@@ -1,0 +1,2 @@
+fails:UNIXServer.open creates a new UNIXServer
+fails:UNIXServer.open yields the new UNIXServer object to the block, if given

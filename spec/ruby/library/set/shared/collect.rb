@@ -1,5 +1,5 @@
-describe :set_collect_bang, :shared => true do
-  before(:each) do
+describe :set_collect_bang, shared: true do
+  before :each do
     @set = Set[1, 2, 3, 4, 5]
   end
 

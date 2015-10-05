@@ -2,13 +2,13 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "ThreadGroup#add" do
-  before(:each) do
+  before :each do
     @chan1,@chan2 = Channel.new,Channel.new
     @thread = Thread.new { @chan1 << :go; @chan2.receive }
     @chan1.receive
   end
 
-  after(:each) do
+  after :each do
     @chan2 << :done
     @thread.join
   end

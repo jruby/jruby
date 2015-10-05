@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name="Continuation")
 public class RubyContinuation extends RubyObject {
-    public static class Continuation extends Error implements Unrescuable {
+    public static class Continuation extends RuntimeException implements Unrescuable {
         public Continuation() {tag = null;}
         public Continuation(IRubyObject tag) {
             this.tag = tag;

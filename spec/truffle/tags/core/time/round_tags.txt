@@ -1,5 +1,0 @@
-fails:Time#round defaults to rounding to 0 places
-fails:Time#round rounds to 0 decimal places with an explicit argument
-fails:Time#round rounds to 7 decimal places with an explicit argument
-fails:Time#round returns an instance of Time, even if #round is called on a subclass
-fails:Time#round copies own timezone to the returning value

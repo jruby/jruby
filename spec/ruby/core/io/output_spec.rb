@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#<<" do
   it "writes an object to the IO stream" do
-     lambda {
+    lambda {
       $stderr << "Oh noes, an error!"
     }.should output_to_fd("Oh noes, an error!", $stderr)
   end

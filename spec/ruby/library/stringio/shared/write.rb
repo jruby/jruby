@@ -1,5 +1,5 @@
-describe :stringio_write, :shared => true do
-  before(:each) do
+describe :stringio_write, shared: true do
+  before :each do
     @io = StringIO.new('12345')
   end
 
@@ -11,8 +11,8 @@ describe :stringio_write, :shared => true do
   end
 end
 
-describe :stringio_write_string, :shared => true do
-  before(:each) do
+describe :stringio_write_string, shared: true do
+  before :each do
     @io = StringIO.new('12345')
   end
 
@@ -56,7 +56,7 @@ describe :stringio_write_string, :shared => true do
   end
 end
 
-describe :stringio_write_not_writable, :shared => true do
+describe :stringio_write_not_writable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("test", "r")
     lambda { io.send(@method, "test") }.should raise_error(IOError)
@@ -67,8 +67,8 @@ describe :stringio_write_not_writable, :shared => true do
   end
 end
 
-describe :stringio_write_append, :shared => true do
-  before(:each) do
+describe :stringio_write_append, shared: true do
+  before :each do
     @io = StringIO.new("example", "a")
   end
 

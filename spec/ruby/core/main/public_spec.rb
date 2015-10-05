@@ -18,6 +18,6 @@ describe "main#public" do
   it "raises a NameError when given an undefined name" do
     lambda do
       eval "public :main_undefined_method", TOPLEVEL_BINDING
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 end

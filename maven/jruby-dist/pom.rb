@@ -1,3 +1,5 @@
+require 'rubygems/package'
+require 'fileutils'
 project 'JRuby Dist' do
 
   version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
@@ -7,16 +9,12 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'main.basedir' => '${project.parent.parent.basedir}' )
-
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/../..'
-  end
+  properties( 'main.basedir' => '${project.parent.parent.basedir}',
+              'ruby.maven.version' => '3.3.3',
+              'ruby.maven.libs.version' => '3.3.3' )
 
   # pre-installed gems - not default gems !
-  gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
+  gem 'ruby-maven', '${ruby.maven.version}', :scope => 'provided'
 
   # HACK: add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
@@ -26,7 +24,7 @@ project 'JRuby Dist' do
       file( :exists => '../jruby' )
     end
 
-    repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+    repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
                 :id => 'rubygems-releases' )
   end
 
@@ -49,6 +47,8 @@ project 'JRuby Dist' do
     end
 
     execute :pack200 do |ctx|
+      require 'open3'
+
       jruby_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
                                    'META-INF/jruby.home/**/*.jar' ) ]
       gem_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
@@ -60,7 +60,21 @@ project 'JRuby Dist' do
         file = f.sub /.jar$/, '' 
         unless File.exists?( file + '.pack.gz' )
           puts "pack200 #{f.sub(/.*jruby.home./, '').sub(/.*rubygems-provided./, '')}"
-          `pack200 #{file}.pack.gz #{file}.jar`
+
+          Open3.popen3('pack200', "#{file}.pack.gz", "#{file}.jar") do |stdin, stdout, stderr, wait_thread|
+            stdio_threads = []
+
+            stdio_threads <<  Thread.new(stdout) do |stdout|
+              stdout.each { |line| $stdout.puts line }
+            end
+
+            stdio_threads <<  Thread.new(stderr) do |stderr|
+              stderr.each { |line| $stderr.puts line }
+            end
+
+            stdio_threads.each(&:join)
+            wait_thread.value
+          end
         end
       end
     end
@@ -79,6 +93,22 @@ project 'JRuby Dist' do
       gems = File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
       ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
         File.chmod( 0644, f ) rescue nil if File.file?( f )
+      end
+      Dir[ File.join( gems, '**/maven-home/bin/mvn' ) ].each do |f|
+        File.chmod( 0755, f ) rescue nil if File.file?( f )
+      end
+    end
+
+    execute :dump_full_specs_of_ruby_maven do |ctx|
+      rubygems =  File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
+      gems =  File.join( rubygems, 'cache/*gem' )
+      default_specs = File.join( rubygems, 'specifications/default' )
+      FileUtils.mkdir_p( default_specs )
+      Dir[gems].each do |gem|
+        spec = Gem::Package.new( gem ).spec
+        File.open( File.join( default_specs, File.basename( gem ) + 'spec' ), 'w' ) do |f|
+          f.print( spec.to_ruby )
+        end
       end
     end
   end
@@ -112,19 +142,18 @@ project 'JRuby Dist' do
       execute :pack_sources do |ctx|
         require 'fileutils'
 
-        revision = `git show`.gsub( /\n.*|commit /, '' )
+        revision = `git log -1 --format="%H"`.chomp
       
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          #[ 'tar', 'zip' ].each do |format|
-          [ 'zip' ].each do |format|
+          [ 'tar', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        #puts "zipping #{basefile}.tar"
-        #system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
+        puts "zipping #{basefile}.tar"
+        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
@@ -133,6 +162,9 @@ project 'JRuby Dist' do
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
         
+      end
+      plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+        execute_goals( :artifacts, :algorithms => ['SHA256' ] )
       end
     end
   end

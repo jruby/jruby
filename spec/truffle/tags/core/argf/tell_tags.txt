@@ -1,2 +1,0 @@
-fails:ARGF.tell gives the correct position for each read operation
-fails:ARGF.tell raises an ArgumentError when called on a closed stream

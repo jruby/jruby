@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.debug;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -17,7 +16,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 @NodeChild("value")
 public abstract class AssertConstantNode extends RubyNode {
@@ -26,24 +24,21 @@ public abstract class AssertConstantNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public AssertConstantNode(AssertConstantNode prev) {
-        super(prev);
-    }
-
+    @SuppressWarnings("unused")
     private static volatile boolean[] sideEffect;
 
     @Specialization
-    public RubyNilClass assertCompilationConstant(Object value) {
-        final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value) || CompilerDirectives.inInterpreter()};
+    public Object assertCompilationConstant(Object value) {
+        final boolean[] compilationConstant = new boolean[]{CompilerDirectives.isCompilationConstant(value)};
 
         sideEffect = compilationConstant;
 
         if (!compilationConstant[0]) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            throw new RaiseException(getContext().getCoreLibrary().internalError("Value was not constant", this));
+            throw new RaiseException(getContext().getCoreLibrary().internalError("Value in Truffle::Primitive.assert_constant was not constant", this));
         }
 
-        return nil();
+        return value;
     }
 
 }

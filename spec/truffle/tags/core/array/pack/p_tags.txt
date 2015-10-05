@@ -1,2 +1,0 @@
-fails:Array#pack with format 'P' returns a String whose size is the number of bytes in a machine word
-fails:Array#pack with format 'p' returns a String whose size is the number of bytes in a machine word

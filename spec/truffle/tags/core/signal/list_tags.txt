@@ -1,0 +1,1 @@
+fails:Signal.list doesn't contain other signals than in 1.8

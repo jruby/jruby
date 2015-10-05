@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'set'
 
 describe "SortedSet#superset?" do
-  before(:each) do
+  before :each do
     @set = SortedSet[1, 2, 3, 4]
   end
 

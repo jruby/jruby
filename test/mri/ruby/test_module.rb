@@ -833,7 +833,7 @@ class TestModule < Test::Unit::TestCase
   end
 
   def test_attr
-    assert_in_out_err([], <<-INPUT, %w(:ok nil), /warning: private attribute\?$/)
+    assert_in_out_err([], <<-INPUT, %w(nil))
       $VERBOSE = true
       c = Class.new
       c.instance_eval do
@@ -841,7 +841,6 @@ class TestModule < Test::Unit::TestCase
         attr_reader :foo
       end
       o = c.new
-      o.foo rescue p(:ok)
       p(o.instance_eval { foo })
     INPUT
 
@@ -1729,8 +1728,8 @@ class TestModule < Test::Unit::TestCase
     m2.send(:include, m)
     m2.class_variable_set(:@@bar, 2)
     assert_equal([:@@foo], m.class_variables)
-    assert_equal([:@@bar, :@@foo], m2.class_variables)
-    assert_equal([:@@bar, :@@foo], m2.class_variables(true))
+    assert_equal([:@@bar, :@@foo], m2.class_variables.sort)
+    assert_equal([:@@bar, :@@foo], m2.class_variables(true).sort)
     assert_equal([:@@bar], m2.class_variables(false))
   end
 

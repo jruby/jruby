@@ -9,23 +9,24 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /*
- * TODO(CS): could probably unify this with SplatCastNode with some final configuration options.
+ * TODO(CS): could probably unify this with SplatCastNode with some final configuration getContext().getOptions().
  */
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
@@ -40,78 +41,69 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection, SplatCastNode.NilBehavior nilBehavior) {
         super(context, sourceSection);
-        toArrayNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
+        toArrayNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         this.nilBehavior = nilBehavior;
-    }
-
-    public ArrayCastNode(ArrayCastNode prev) {
-        super(prev);
-        toArrayNode = prev.toArrayNode;
-        nilBehavior = prev.nilBehavior;
     }
 
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyNilClass cast(boolean value) {
+    public DynamicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(int value) {
+    public DynamicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(long value) {
+    public DynamicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(double value) {
+    public DynamicObject cast(double value) {
         return nil();
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyBignum value) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public DynamicObject castBignum(DynamicObject value) {
         return nil();
     }
 
-    @Specialization
-    public RubyArray cast(RubyArray array) {
+    @Specialization(guards = "isRubyArray(array)")
+    public DynamicObject castArray(DynamicObject array) {
         return array;
     }
 
-    @Specialization
-    public Object cast(RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public Object cast(Object nil) {
         switch (nilBehavior) {
             case EMPTY_ARRAY:
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0);
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{nil()}, 1);
 
             case NIL:
                 return nil;
 
             default: {
-                CompilerAsserts.neverPartOfCompilation();
                 throw new UnsupportedOperationException();
             }
         }
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
-    public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
+    @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyArray(object)"})
+    public Object cast(VirtualFrame frame, DynamicObject object) {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
             return nil();
         }
 
-        if (!(result instanceof RubyArray)) {
+        if (!RubyGuards.isRubyArray(result)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_ary", "Array", this));
         }

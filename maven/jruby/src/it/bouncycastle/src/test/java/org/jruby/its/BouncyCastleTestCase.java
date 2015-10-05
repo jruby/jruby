@@ -31,7 +31,7 @@ public class BouncyCastleTestCase {
         ScriptingContainer container = new ScriptingContainer();
         container.setClassloaderDelegate(false);
         Object result = container.parse( "require 'openssl'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
-        assertEquals( "BouncyCastle Security Provider v1.49", result.toString() );
+        assertEquals( "BouncyCastle Security Provider v1.50", result.toString() );
 
         result = container.parse("JRuby.runtime.jruby_class_loader").run();
         assertEquals("org.jruby.util.SelfFirstJRubyClassLoader", result.toString().replaceFirst("@.*$", ""));

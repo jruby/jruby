@@ -9,6 +9,13 @@
  */
 package org.jruby.truffle.nodes.cast;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -17,19 +24,11 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Fallback;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * Casts a value into a Ruby Float (double).
  */
-@NodeChild(value = "child", type = RubyNode.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class NumericToFloatNode extends RubyNode {
 
     @Child private KernelNodes.IsANode isANode;
@@ -43,15 +42,9 @@ public abstract class NumericToFloatNode extends RubyNode {
         this.method = method;
     }
 
-    public NumericToFloatNode(NumericToFloatNode prev) {
-        super(prev.getContext(), prev.getSourceSection());
-        isANode = prev.isANode;
-        method = prev.method;
-    }
+    public abstract double executeDouble(VirtualFrame frame, DynamicObject value);
 
-    public abstract double executeFloat(VirtualFrame frame, RubyBasicObject value);
-
-    private Object callToFloat(VirtualFrame frame, RubyBasicObject value) {
+    private Object callToFloat(VirtualFrame frame, DynamicObject value) {
         if (toFloatCallNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             toFloatCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
@@ -59,8 +52,8 @@ public abstract class NumericToFloatNode extends RubyNode {
         return toFloatCallNode.call(frame, value, method, null);
     }
 
-    @Specialization(guards = "isNumeric")
-    protected double castNumeric(VirtualFrame frame, RubyBasicObject value) {
+    @Specialization(guards = "isNumeric(frame, value)")
+    protected double castNumeric(VirtualFrame frame, DynamicObject value) {
         final Object result = callToFloat(frame, value);
 
         if (result instanceof Double) {

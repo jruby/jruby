@@ -37,7 +37,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 public class TemporaryBooleanVariable extends TemporaryLocalVariable {
     public static final String PREFIX = "%b_";
     public TemporaryBooleanVariable(int offset) {
-        super(PREFIX+offset, offset);
+        super(offset);
     }
 
     @Override

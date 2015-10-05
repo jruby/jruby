@@ -13,11 +13,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineMetaClassInstr extends ResultBaseInstr implements FixedArityInstr {
+public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     private final IRModuleBody metaClassBody;
 
     public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody metaClassBody) {
-        super(Operation.DEF_META_CLASS, result, new Operand[] {object });
+        super(Operation.DEF_META_CLASS, result, object);
 
         assert result != null: "DefineMetaClassInstr result is null";
 
@@ -29,7 +29,7 @@ public class DefineMetaClassInstr extends ResultBaseInstr implements FixedArityI
     }
 
     public Operand getObject() {
-        return operands[0];
+        return getOperand1();
     }
 
     @Override

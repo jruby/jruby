@@ -11,18 +11,16 @@ import org.jruby.javasupport.JavaMethod;
 public abstract class MethodInvoker extends RubyToJavaInvoker {
 
     MethodInvoker(RubyModule host, List<Method> methods) {
-        super(host, methods.toArray(new Method[methods.size()]));
-        trySetAccessible(getAccessibleObjects());
+        super(host, setAccessible( methods.toArray(new Method[methods.size()]) ) );
     }
 
     MethodInvoker(RubyModule host, Method method) {
-        super(host, new Method[] { method });
-        trySetAccessible(getAccessibleObjects());
+        super(host, setAccessible(method));
     }
 
     @Override
     protected final JavaCallable createCallable(Ruby runtime, Member member) {
-        return JavaMethod.create(runtime, (Method) member);
+        return new JavaMethod(runtime, (Method) member);
     }
 
     @Override
@@ -41,12 +39,12 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
     }
 
     @Override
-    protected Class[] getMemberParameterTypes(Member member) {
+    protected final Class[] getMemberParameterTypes(Member member) {
         return ((Method) member).getParameterTypes();
     }
 
     @Override
-    protected boolean isMemberVarArgs(Member member) {
+    protected final boolean isMemberVarArgs(Member member) {
         return ((Method) member).isVarArgs();
     }
 

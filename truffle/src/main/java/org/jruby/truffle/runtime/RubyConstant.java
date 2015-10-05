@@ -10,21 +10,27 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RubyConstant {
 
-    private final RubyModule declaringModule;
+    private final DynamicObject declaringModule;
     private final Object value;
     private boolean isPrivate;
-    private boolean autoload;
+    private final boolean autoload;
 
-    public RubyConstant(RubyModule declaringModule, Object value, boolean isPrivate, boolean autoload) {
+    public RubyConstant(DynamicObject declaringModule, Object value, boolean isPrivate, boolean autoload) {
+        assert RubyGuards.isRubyModule(declaringModule);
         this.declaringModule = declaringModule;
         this.value = value;
         this.isPrivate = isPrivate;
         this.autoload = autoload;
+    }
+
+    public DynamicObject getDeclaringModule() {
+        return declaringModule;
     }
 
     public Object getValue() {
@@ -39,8 +45,10 @@ public class RubyConstant {
         this.isPrivate = isPrivate;
     }
 
-    public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, RubyModule module) {
+    public boolean isVisibleTo(RubyContext context, LexicalScope lexicalScope, DynamicObject module) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyGuards.isRubyModule(module);
         assert lexicalScope == null || lexicalScope.getLiveModule() == module;
 
         if (!isPrivate) {
@@ -58,8 +66,8 @@ public class RubyConstant {
         }
 
         // Look in ancestors
-        if (module instanceof RubyClass) {
-            for (RubyModule included : module.parentAncestors()) {
+        if (RubyGuards.isRubyClass(module)) {
+            for (DynamicObject included : Layouts.MODULE.getFields(module).parentAncestors()) {
                 if (included == declaringModule) {
                     return true;
                 }

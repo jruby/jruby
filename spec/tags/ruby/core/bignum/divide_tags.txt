@@ -1,0 +1,1 @@
+fails:Bignum#/ returns self divided by other

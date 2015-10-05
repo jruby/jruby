@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Kernel#instance_variable_get" do
-  before(:each) do
+  before :each do
     @obj = Object.new
     @obj.instance_variable_set("@test", :test)
   end
@@ -47,7 +47,7 @@ describe "Kernel#instance_variable_get" do
 end
 
 describe "Kernel#instance_variable_get when passed Symbol" do
-  before(:each) do
+  before :each do
     @obj = Object.new
     @obj.instance_variable_set("@test", :test)
   end
@@ -70,7 +70,7 @@ describe "Kernel#instance_variable_get when passed Symbol" do
 end
 
 describe "Kernel#instance_variable_get when passed String" do
-  before(:each) do
+  before :each do
     @obj = Object.new
     @obj.instance_variable_set("@test", :test)
   end
@@ -93,7 +93,7 @@ describe "Kernel#instance_variable_get when passed String" do
 end
 
 describe "Kernel#instance_variable_get when passed Fixnum" do
-  before(:each) do
+  before :each do
     @obj = Object.new
     @obj.instance_variable_set("@test", :test)
   end

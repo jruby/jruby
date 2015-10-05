@@ -3,6 +3,9 @@ package org.jruby.ir;
 import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LineNumberInstr;
+import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -17,17 +20,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
-import org.jruby.ir.passes.OptimizeTempVarsPass;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
-    public static final String DEFAULT_BUILD_PASSES = "LocalOptimizationPass";
-    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+    public static final String DEFAULT_BUILD_PASSES = "";
+    public static final String DEFAULT_JIT_PASSES = "OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
@@ -35,10 +38,13 @@ public class IRManager {
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
+    private final IRModuleBody object = new IRClassBody(this, null, "Object", 0, null);
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
+    private final StandardError standardError = new StandardError();
+    public final ToggleBacktraceInstr needsBacktrace = new ToggleBacktraceInstr(true);
+    public final ToggleBacktraceInstr needsNoBacktrace = new ToggleBacktraceInstr(false);
 
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
@@ -78,6 +84,10 @@ public class IRManager {
         return nil;
     }
 
+    public StandardError getStandardError() {
+        return standardError;
+    }
+
     public org.jruby.ir.operands.Boolean getTrue() {
         return tru;
     }
@@ -88,6 +98,10 @@ public class IRManager {
 
     public IRModuleBody getObject() {
         return object;
+    }
+
+    public ToggleBacktraceInstr needsBacktrace(boolean needsIt) {
+        return needsIt ? needsBacktrace : needsNoBacktrace;
     }
 
     public CompilerPassScheduler schedulePasses() {
@@ -177,6 +191,39 @@ public class IRManager {
         }
     }
 
+    public LineNumberInstr newLineNumber(int line) {
+        if (line >= lineNumbers.length-1) growLineNumbersPool(line);
+
+        if (line < 0) line = 0;
+        LineNumberInstr tempVar = lineNumbers[line];
+
+        if (tempVar == null) {
+            tempVar = new LineNumberInstr(line);
+            lineNumbers[line] = tempVar;
+        }
+
+        return tempVar;
+
+    }
+
+    private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
+
+    public ReceiveSelfInstr getReceiveSelfInstr() {
+        return receiveSelfInstr;
+    }
+
+    private LineNumberInstr[] lineNumbers = new LineNumberInstr[3000];
+
+    protected LineNumberInstr[] growLineNumbersPool(int index) {
+        int newLength = index * 2;
+        LineNumberInstr[] newPool = new LineNumberInstr[newLength];
+
+        System.arraycopy(lineNumbers, 0, newPool, 0, lineNumbers.length);
+        lineNumbers = newPool;
+        return newPool;
+    }
+
+
     public void removeListener(IRScopeListener listener) {
         if (irScopeListener.equals(listener)) irScopeListener = null;
     }
@@ -220,8 +267,14 @@ public class IRManager {
     }
 
     public Instr[] optimizeTemporaryVariablesIfEnabled(IRScope scope, Instr[] instrs) {
+        // Local opts don't move instrs across basic-block boundaries
+        // and are safe to run before the opt-tmp-vars pass.
+        // This ensures that local opts aren't affected by RAW hazards.
+        (new LocalOptimizationPass()).runLocalOptsOnInstrArray(scope, instrs);
         // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
-        return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        // FIXME: LOP + Opttempvars cannot cope with y,d = d,y it propagates the intermediate temp var away
+        //return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+        return instrs;
     }
 
     /**

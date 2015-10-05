@@ -9,9 +9,14 @@ public class Boolean extends ImmutableLiteral {
     private final boolean truthy;
 
     public Boolean(boolean truthy) {
-        super(OperandType.BOOLEAN);
+        super();
 
         this.truthy = truthy;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.BOOLEAN;
     }
 
     @Override

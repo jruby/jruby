@@ -1,3 +1,1 @@
-fails:Dir#tell returns an Integer representing the current position in the directory
-fails:Dir#tell returns a different Integer if moved from previous position
 fails:Dir#tell raises an IOError when called on a closed Dir instance

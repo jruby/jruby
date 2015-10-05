@@ -11,6 +11,16 @@ describe "Module#public_constant" do
     end.should raise_error(NameError)
   end
 
+  it "accepts strings as constant names" do
+    cls = Class.new
+    cls.const_set :Foo, true
+
+    cls.send :private_constant, :Foo
+    cls.send :public_constant, "Foo"
+
+    cls::Foo.should == true
+  end
+
   # [ruby-list:48558]
   it "accepts multiple names" do
     mod = Module.new

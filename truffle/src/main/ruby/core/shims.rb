@@ -1,7 +1,7 @@
 # Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
-# 
+#
 # Eclipse Public License version 1.0
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
@@ -18,13 +18,15 @@ class IO
     @internal
   end
 
-  def set_encoding(external, internal)
-    @external = external
-    @internal = internal
-  end
 end
 
-STDIN = IO.new
+STDIN = File.new(0)
+STDOUT = File.new(1)
+STDERR = File.new(2)
+
+$stdin = STDIN
+$stdout = STDOUT
+$stderr = STDERR
 
 class << STDIN
   def external_encoding
@@ -32,44 +34,21 @@ class << STDIN
   end
 end
 
-STDOUT = IO.new
-$stdout = STDOUT
-
-class << STDOUT
-  def puts(*values)
-    Kernel.send(:puts, *values)
-  end
-
-  def print(*values)
-    Kernel.send(:print, *values)
-  end
-
-  def printf(*values)
-    Kernel.send(:printf, *values)
-  end
-
-  def flush
-    Truffle::Primitive.flush_stdout
-  end
-
-  def sync
-    false
-  end
-
-  def sync=(value)
+if STDOUT.tty?
+  STDOUT.sync = true
+else
+  Truffle::Primitive.at_exit true do
+    STDOUT.flush
   end
 end
 
-STDERR = IO.new
-$stderr = STDERR
-
-class << STDERR
-  def puts(*values)
-    Kernel.send(:puts, *values)
+if STDERR.tty?
+  STDERR.sync = true
+else
+  Truffle::Primitive.at_exit true do
+    STDERR.flush
   end
 end
-
-ARGF = Object.new
 
 class Regexp
   def self.last_match(n = nil)
@@ -83,76 +62,27 @@ class Regexp
 end
 
 module Rubinius
-
   L64 = true
 
   def extended_modules(object)
     []
   end
-
 end
 
 class Module
-
   def extended_modules(object)
     []
   end
-
 end
 
 class String
   def append(other)
     self << other
   end
-
-  def shorten!(size)
-    self.modify!
-    return if @num_bytes == 0
-    self.num_bytes -= size
-  end
-
 end
 
 class Rational
-
   alias :__slash__ :/
-
-  def _offset_to_milliseconds
-    (self * 1000).to_i
-  end
-
-end
-
-ENV['TZ'] = 'UTC'
-
-class Method
-
-  def to_proc
-    meth = self
-    proc { |*args|
-      meth.call(*args)
-    }
-  end
-
-end
-
-class IO
-
-  def tty?
-    false
-  end
-
-end
-
-class MatchData
-  def full
-    @cached_full ||= begin
-      tuple = Rubinius::Tuple.new
-      tuple << self.begin(0)
-      tuple << self.end(0)
-      tuple
-    end
-  end
 end
 
 # Wrapper class for Rubinius's exposure of @data within String.
@@ -182,23 +112,15 @@ module Rubinius
       @array[index]
     end
   end
-end
 
-class IO
-
-  RDONLY = 0
-  WRONLY = 1
-  RDWR = 2
-
-  CREAT = 512
-  EXCL = 2048
-  NOCTTY = 131072
-  TRUNC = 1024
-  APPEND = 8
-  NONBLOCK = 4
-  SYNC = 128
-  SEEK_SET = 0
-
+  class Mirror
+    module Process
+      def self.set_status_global(status)
+        # Rubinius has: `::Thread.current[:$?] = status`
+        $? = status
+      end
+    end
+  end
 end
 
 # We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
@@ -232,3 +154,99 @@ class Encoding::Converter
   end
 end
 
+class Rubinius::ByteArray
+
+  alias_method :[], :get_byte
+  alias_method :[]=, :set_byte
+
+end
+
+module Rubinius
+
+  def self.synchronize(object, &block)
+    Truffle::Primitive.synchronized(object, &block)
+  end
+
+end
+
+module Errno
+
+  # TODO CS 18-Apr-15 this should be a separate class
+  DomainError = EDOM
+
+end
+
+module Math
+  DomainError = Errno::EDOM
+end
+
+$$ = Process.pid
+
+# IO::printf from Rubinius uses Rubinius::Sprinter
+
+class IO
+
+  def printf(fmt, *args)
+    fmt = StringValue(fmt)
+    write sprintf(fmt, *args)
+  end
+
+end
+
+# Windows probably doesn't have a HOME env var, but Rubinius requires it in places, so we need
+# to construct the value and place it in the hash.
+unless ENV['HOME']
+  if ENV['HOMEDRIVE']
+    ENV['HOME'] = if ENV['HOMEPATH']
+                    ENV['HOMEDRIVE'] + ENV['HOMEPATH']
+                  else
+                    ENV['USERPROFILE']
+                  end
+  end
+end
+
+class Exception
+
+  def locations
+    # These should be Rubinius::Location
+    # and use the internal backtrace, never the custom one.
+    backtrace.each do |s|
+      def s.position
+        self
+      end
+    end
+  end
+
+  def to_s
+    if message.nil?
+      self.class.to_s
+    else
+      message.to_s
+    end
+  end
+
+end
+
+# Hack to let code run that try to invoke RubyGems directly.  We don't yet support RubyGems, but in most cases where
+# this call would be made, we've already set up the $LOAD_PATH so the call would no-op anyway.
+module Kernel
+  def gem(*args)
+  end
+end
+
+# Find out why Rubinius doesn't implement this
+class Rubinius::ARGFClass
+
+  def inplace_mode
+    @ext
+  end
+
+  def inplace_mode=(ext)
+    @ext = ext
+  end
+
+end
+
+# JRuby uses this for example to make proxy settings visible to stdlib/uri/common.rb
+
+ENV_JAVA = {}

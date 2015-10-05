@@ -1,20 +1,13 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "IO.sysopen" do
-
-  before :all do
-    @filename = tmp("rubinius-spec-io-sysopen-#{$$}.txt")
-  end
-
   before :each do
+    @filename = tmp("rubinius-spec-io-sysopen-#{$$}.txt")
     @fd = nil
   end
 
   after :each do
     IO.for_fd(@fd).close if @fd
-  end
-
-  after :all do
     rm_r @filename
   end
 
@@ -40,7 +33,6 @@ describe "IO.sysopen" do
   end
 
   it "accepts a mode as second argument" do
-    @fd = 0
     lambda { @fd = IO.sysopen(@filename, "w") }.should_not raise_error
     @fd.should_not equal(0)
   end
@@ -51,6 +43,7 @@ describe "IO.sysopen" do
   end
 
   it "accepts mode & permission that are nil" do
+    touch @filename # create the file
     @fd = IO.sysopen(@filename, nil, nil)
     @fd.should_not equal(0)
   end

@@ -84,9 +84,6 @@ describe "Kernel#eval" do
     lambda { eval("inner", bind.binding) }.should raise_error(NameError)
   end
 
-  # This differs from the 1.8 example because 1.9 doesn't share scope across
-  # sibling evals
-  #
   # REWRITE ME: This obscures the real behavior of where locals are stored
   # in eval bindings.
   it "allows a binding to be captured inside an eval" do
@@ -127,12 +124,12 @@ describe "Kernel#eval" do
 
   it "allows creating a new class in a binding" do
     bind = proc {}
-    eval("class A; end; A.name", bind.binding).should =~ /A$/
+    eval("class EvalBindingProcA; end; EvalBindingProcA.name", bind.binding).should =~ /EvalBindingProcA$/
   end
 
   it "allows creating a new class in a binding created by #eval" do
     bind = eval "binding"
-    eval("class A; end; A.name", bind).should =~ /A$/
+    eval("class EvalBindingA; end; EvalBindingA.name", bind).should =~ /EvalBindingA$/
   end
 
   it "includes file and line information in syntax error" do
@@ -199,17 +196,6 @@ describe "Kernel#eval" do
   it "returns from the scope calling #eval when evaluating 'return'" do
     lambda { eval("return :eval") }.call.should == :eval
   end
-
-  # TODO: investigate this further on 1.8.7. This is one oddity:
-  #
-  # In a script body:
-  #
-  #   lambda { return }
-  #     works as expected
-  #
-  #   def quix; yield; end
-  #   lambda { quix { return } }
-  #     raises a LocalJumpError
 
   it "unwinds through a Proc-style closure and returns from a lambda-style closure in the closure chain" do
     code = fixture __FILE__, "eval_return_with_lambda.rb"

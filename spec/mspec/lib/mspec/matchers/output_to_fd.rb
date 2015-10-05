@@ -1,5 +1,4 @@
 require 'mspec/helpers/tmp'
-require 'fileutils'
 
 # Lower-level output speccing mechanism for a single
 # output stream. Unlike OutputMatcher which provides
@@ -48,7 +47,10 @@ class OutputToFDMatcher
     # Clean up
     ensure
       out.close unless out.closed?
-      FileUtils.rm out.path
+      File.delete out.path
+      if !old_to.closed? and old_to.fileno != @to.fileno # reopen might create a new fd
+        old_to.close
+      end
     end
 
     return true

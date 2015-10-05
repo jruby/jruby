@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Enumerator#peek" do
-  before(:each) do
+  before :each do
     @e = (1..5).to_a.to_enum
   end
 

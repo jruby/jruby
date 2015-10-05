@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -194,8 +194,8 @@ class Encoding
       status = primitive_convert str.dup, dest, nil, nil, @options | PARTIAL_INPUT
 
       if status == :invalid_byte_sequence or
-          status == :undefined_conversion or
-          status == :incomplete_input
+         status == :undefined_conversion or
+         status == :incomplete_input
         raise last_error
       end
 
@@ -265,8 +265,8 @@ class Encoding
       status = primitive_convert nil, dest
 
       if status == :invalid_byte_sequence or
-          status == :undefined_conversion or
-          status == :incomplete_input
+         status == :undefined_conversion or
+         status == :incomplete_input
         raise last_error
       end
 
@@ -288,35 +288,35 @@ class Encoding
       destination_encoding_name = error[:destination_encoding_name]
 
       case result
-        when :invalid_byte_sequence
-          read_again_string = error[:read_again_string]
-          if read_again_string
-            msg = "#{error_bytes_msg} followed by #{read_again_string.dump} on #{source_encoding_name}"
-          else
-            msg = "#{error_bytes_msg} on #{source_encoding_name}"
-          end
+      when :invalid_byte_sequence
+        read_again_string = error[:read_again_string]
+        if read_again_string
+          msg = "#{error_bytes_msg} followed by #{read_again_string.dump} on #{source_encoding_name}"
+        else
+          msg = "#{error_bytes_msg} on #{source_encoding_name}"
+        end
 
-          exc = InvalidByteSequenceError.new msg
-        when :incomplete_input
-          msg = "incomplete #{error_bytes_msg} on #{source_encoding_name}"
+        exc = InvalidByteSequenceError.new msg
+      when :incomplete_input
+        msg = "incomplete #{error_bytes_msg} on #{source_encoding_name}"
 
-          exc = InvalidByteSequenceError.new msg
-        when :undefined_conversion
-          error_char = error_bytes
-          if codepoint = error[:codepoint]
-            error_bytes_msg = "U+%04X" % codepoint
-          end
+        exc = InvalidByteSequenceError.new msg
+      when :undefined_conversion
+        error_char = error_bytes
+        if codepoint = error[:codepoint]
+          error_bytes_msg = "U+%04X" % codepoint
+        end
 
-          if source_encoding_name.to_sym == @source_encoding.name and
-              destination_encoding_name.to_sym == @destination_encoding.name
-            msg = "#{error_bytes_msg} from #{source_encoding_name} to #{destination_encoding_name}"
-          else
-            msg = "#{error_bytes_msg} to #{destination_encoding_name} in conversion from #{source_encoding_name}"
-            transcoder = @converters.first
-            msg << " to #{transcoder.target}"
-          end
+        if source_encoding_name.to_sym == @source_encoding.name and
+           destination_encoding_name.to_sym == @destination_encoding.name
+          msg = "#{error_bytes_msg} from #{source_encoding_name} to #{destination_encoding_name}"
+        else
+          msg = "#{error_bytes_msg} to #{destination_encoding_name} in conversion from #{source_encoding_name}"
+          transcoder = @converters.first
+          msg << " to #{transcoder.target}"
+        end
 
-          exc = UndefinedConversionError.new msg
+        exc = UndefinedConversionError.new msg
       end
 
       Rubinius.privately do
@@ -524,13 +524,13 @@ class Encoding
     key = name.upcase.to_sym
 
     case obj
-      when Encoding
-        source_name = obj.name
-      when nil
-        EncodingMap[key][1] = nil
-        return
-      else
-        source_name = StringValue(obj)
+    when Encoding
+      source_name = obj.name
+    when nil
+      EncodingMap[key][1] = nil
+      return
+    else
+      source_name = StringValue(obj)
     end
 
     entry = EncodingMap[source_name.upcase.to_sym]

@@ -4,12 +4,12 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 require 'socket'
 
 describe "Socket.getnameinfo" do
-  before :all do
+  before :each do
     @reverse_lookup = BasicSocket.do_not_reverse_lookup
     BasicSocket.do_not_reverse_lookup = true
   end
 
-  after :all do
+  after :each do
     BasicSocket.do_not_reverse_lookup = @reverse_lookup
   end
 

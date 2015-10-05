@@ -282,6 +282,10 @@ describe "C-API Kernel function" do
   end
 
   describe "rb_catch" do
+    before :each do
+      ScratchPad.record []
+    end
+
     it "executes passed function" do
       @s.rb_catch("foo", lambda { 1 }).should == 1
     end
@@ -378,14 +382,21 @@ describe "C-API Kernel function" do
   end
 
   describe "rb_set_end_proc" do
-    it "runs a C function on shutdown" do
-      r, w = IO.pipe
+    before :each do
+      @r, @w = IO.pipe
+    end
 
+    after :each do
+      @r.close
+      @w.close
+    end
+
+    it "runs a C function on shutdown" do
       fork {
-        @s.rb_set_end_proc(w)
+        @s.rb_set_end_proc(@w)
       }
 
-      r.read(1).should == "e"
+      @r.read(1).should == "e"
     end
   end
 

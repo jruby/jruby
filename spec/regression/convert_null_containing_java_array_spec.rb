@@ -2,6 +2,6 @@ require 'rspec'
 
 describe "ArrayJavaProxy#to_a" do
   it "succesfully converts arrays containing nil" do
-    [nil].to_java.to_a.should == [nil]
+    expect([nil].to_java.to_a).to eq([nil])
   end
 end

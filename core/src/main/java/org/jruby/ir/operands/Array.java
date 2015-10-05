@@ -25,14 +25,15 @@ public class Array extends Operand {
         this(EMPTY_ARRAY);
     }
 
-    public Array(List<Operand> elts) {
-        this(elts.toArray(new Operand[elts.size()]));
-    }
-
     public Array(Operand[] elts) {
-        super(OperandType.ARRAY);
+        super();
 
         this.elts = elts == null ? EMPTY_ARRAY : elts;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.ARRAY;
     }
 
     public boolean isBlank() {

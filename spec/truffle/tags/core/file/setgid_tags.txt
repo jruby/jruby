@@ -1,3 +1,1 @@
-fails:File.setgid? returns false if the file was just made
-fails:File.setgid? returns false if the file does not exist
 fails:File.setgid? returns true when the gid bit is set

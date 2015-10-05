@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'bigdecimal'
 
 describe "BigDecimal#floor" do
-  before(:each) do
+  before :each do
     @one = BigDecimal("1")
     @three = BigDecimal("3")
     @four = BigDecimal("4")

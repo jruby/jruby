@@ -1,0 +1,2 @@
+fails:Array#repeated_permutation when no block is given returned Enumerator size returns 0 when combination_size is < 0
+fails:Array#repeated_permutation when no block is given returned Enumerator size returns array size ** combination_size

@@ -1,7 +1,7 @@
-require "#{File.dirname __FILE__}/../../../spec_helper"
-require "#{File.dirname __FILE__}/../fixtures/classes"
+require File.expand_path('../../../../spec_helper', __FILE__)
+require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :unboundmethod_to_s, :shared => true do
+describe :unboundmethod_to_s, shared: true do
   before :each do
     @from_module = UnboundMethodSpecs::Methods.instance_method(:from_mod)
     @from_method = UnboundMethodSpecs::Methods.new.method(:from_mod).unbind

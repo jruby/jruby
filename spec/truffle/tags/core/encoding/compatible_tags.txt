@@ -1,12 +1,3 @@
-fails:Encoding.compatible? String, Regexp returns US-ASCII if both are US-ASCII
-fails:Encoding.compatible? String, Regexp returns the String's Encoding if it is not US-ASCII but both are ASCII only
-fails:Encoding.compatible? String, Regexp returns the String's Encoding if the String is not ASCII only
-fails:Encoding.compatible? Regexp, String returns US-ASCII if both are US-ASCII
-fails:Encoding.compatible? Regexp, Regexp returns US-ASCII if both are US-ASCII
-fails:Encoding.compatible? Regexp, Regexp returns the first's Encoding if it is not US-ASCII and not ASCII only
-fails:Encoding.compatible? Regexp, Symbol returns US-ASCII if both are US-ASCII
-fails:Encoding.compatible? Regexp, Symbol returns the first's Encoding if it is not US-ASCII and not ASCII only
-fails:Encoding.compatible? Symbol, Regexp returns US-ASCII if both are US-ASCII
 fails:Encoding.compatible? Object, Object returns nil for Object, String
 fails:Encoding.compatible? Object, Object returns nil for Object, Regexp
 fails:Encoding.compatible? Object, Object returns nil for Object, Symbol

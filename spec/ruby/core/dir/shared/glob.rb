@@ -1,12 +1,14 @@
 # -*- encoding: utf-8 -*-
-describe :dir_glob, :shared => true do
-  before(:all) do
+describe :dir_glob, shared: true do
+  before :all do
+    DirSpecs.create_mock_dirs
     @cwd = Dir.pwd
     Dir.chdir DirSpecs.mock_dir
   end
 
-  after(:all) do
+  after :all do
     Dir.chdir @cwd
+    DirSpecs.delete_mock_dirs
   end
 
   with_feature :encoding do
@@ -273,8 +275,8 @@ describe :dir_glob, :shared => true do
   end
 end
 
-describe :dir_glob_recursive, :shared => true do
-  before(:all) do
+describe :dir_glob_recursive, shared: true do
+  before :all do
     @cwd = Dir.pwd
     @mock_dir = File.expand_path tmp('dir_glob_mock')
 
@@ -290,7 +292,7 @@ describe :dir_glob_recursive, :shared => true do
     Dir.chdir @mock_dir
   end
 
-  after(:all) do
+  after :all do
     Dir.chdir @cwd
     rm_r @mock_dir
   end

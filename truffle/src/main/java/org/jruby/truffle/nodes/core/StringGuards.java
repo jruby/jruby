@@ -10,17 +10,49 @@
 
 package org.jruby.truffle.nodes.core;
 
-import org.jruby.truffle.runtime.core.RubyString;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.StringSupport;
 
 public class StringGuards {
 
-    public static boolean isSingleByteOptimizable(RubyString string) {
-        return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
+    public static boolean isSingleByteOptimizable(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), StringOperations.getByteList(string).getEncoding());
     }
 
-    public static boolean isAsciiCompatible(RubyString string) {
-        return string.getByteList().getEncoding().isAsciiCompatible();
+    public static boolean isAsciiCompatible(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.getByteList(string).getEncoding().isAsciiCompatible();
     }
 
+    public static boolean isSingleByteOptimizableOrAsciiOnly(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        // TODO (nirvdrnum 08-Jun-15) Rubinius tracks whether a String is ASCII-only via a field in the String.
+        return isSingleByteOptimizable(string);
+    }
+
+    public static boolean isSingleByte(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.getByteList(string).getEncoding().isSingleByte();
+    }
+
+    public static boolean isValidOr7BitEncoding(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.isCodeRangeValid(string) || CodeRangeSupport.isCodeRangeAsciiOnly(StringOperations.getCodeRangeable(string));
+    }
+
+    public static boolean isFixedWidthEncoding(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.getByteList(string).getEncoding().isFixedWidth();
+    }
+
+    public static boolean isValidUtf8(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return StringOperations.isCodeRangeValid(string) && StringOperations.getByteList(string).getEncoding() instanceof UTF8Encoding;
+    }
 }

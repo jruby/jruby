@@ -1,1 +1,0 @@
-fails:main#private raises a NameError when given an undefined name

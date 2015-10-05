@@ -1,1 +1,0 @@
-fails:File.stat returns information for a file that has been deleted but is still open

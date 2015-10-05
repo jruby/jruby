@@ -21,7 +21,12 @@ public class FrozenString extends StringLiteral {
      * Used by persistence and by .freeze optimization
      */
     public FrozenString(ByteList byteList, int cr) {
-        super(OperandType.FROZEN_STRING, byteList, cr);
+        super(byteList, cr);
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.FROZEN_STRING;
     }
 
     /**
@@ -33,12 +38,12 @@ public class FrozenString extends StringLiteral {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.freezeAndDedupString(RubyString.newString(context.runtime, bytelist));
+        return context.runtime.freezeAndDedupString(RubyString.newString(context.runtime, bytelist, coderange));
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof FrozenString && bytelist.equals(((FrozenString) other).bytelist);
+        return other instanceof FrozenString && bytelist.equals(((FrozenString) other).bytelist) && coderange == ((FrozenString) other).coderange;
     }
 
     @Override

@@ -6,12 +6,12 @@ describe "File.owned?" do
 end
 
 describe "File.owned?" do
-  before(:each) do
+  before :each do
     @filename = tmp("i_exist")
     touch(@filename)
   end
 
-  after(:each) do
+  after :each do
     rm_r @filename
   end
 

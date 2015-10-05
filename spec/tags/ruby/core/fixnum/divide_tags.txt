@@ -1,0 +1,3 @@
+fails:Fixnum#/ returns self divided by the given argument
+fails:Fixnum#/ supports dividing negative numbers
+fails:Fixnum#/ coerces fixnum and return self divided by other

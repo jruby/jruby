@@ -1,7 +1,7 @@
 # encoding: utf-8
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :io_write, :shared => true do
+describe :io_write, shared: true do
   before :each do
     @filename = tmp("IO_syswrite_file") + $$.to_s
     File.open(@filename, "w") do |file|
@@ -12,8 +12,8 @@ describe :io_write, :shared => true do
   end
 
   after :each do
-    @file.close
-    @readonly_file.close
+    @readonly_file.close if @readonly_file
+    @file.close if @file
     rm_r @filename
   end
 

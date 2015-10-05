@@ -14,14 +14,10 @@ import com.oracle.truffle.api.instrument.KillException;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.instrument.ProbeNode.WrapperNode;
-import com.oracle.truffle.api.instrument.TruffleEventReceiver;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeInfo(cost = NodeCost.NONE)
 public final class RubyWrapperNode extends RubyNode implements WrapperNode {
@@ -39,11 +35,6 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         return "Wrapper node for Ruby";
     }
 
-    @Override
-    public RubyNode getNonWrapperNode() {
-        return child;
-    }
-
     public void insertProbe(ProbeNode newProbeNode) {
         this.probeNode = insert(newProbeNode);
     }
@@ -54,6 +45,11 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         } catch (IllegalStateException e) {
             throw new UnsupportedOperationException("A lite-Probed wrapper has no explicit Probe");
         }
+    }
+
+    @Override
+    public boolean isInstrumentable() {
+        return false;
     }
 
     public RubyNode getChild() {
@@ -68,44 +64,6 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
 
         try {
             result = child.execute(frame);
-            probeNode.returnValue(child, frame, result);
-        } catch (KillException e) {
-            throw e;
-        } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public RubyArray executeArray(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
-
-        RubyArray result;
-
-        try {
-            result = child.executeArray(frame);
-            probeNode.returnValue(child, frame, result);
-        } catch (KillException e) {
-            throw e;
-        } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public RubyBignum executeBignum(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
-
-        RubyBignum result;
-
-        try {
-            result = child.executeBignum(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -142,13 +100,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         int result;
 
         try {
-            result = child.executeIntegerFixnum(frame);
+            result = child.executeInteger(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -161,13 +119,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         long result;
 
         try {
-            result = child.executeLongFixnum(frame);
+            result = child.executeLong(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -180,32 +138,13 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         probeNode.enter(child, frame);
 
         double result;
 
         try {
-            result = child.executeFloat(frame);
-            probeNode.returnValue(child, frame, result);
-        } catch (KillException e) {
-            throw e;
-        } catch (Exception e) {
-            probeNode.returnExceptional(child, frame, e);
-            throw e;
-        }
-
-        return result;
-    }
-
-    @Override
-    public RubyString executeRubyString(VirtualFrame frame) throws UnexpectedResultException {
-        probeNode.enter(child, frame);
-
-        RubyString result;
-
-        try {
-            result = child.executeRubyString(frame);
+            result = child.executeDouble(frame);
             probeNode.returnValue(child, frame, result);
         } catch (KillException e) {
             throw e;
@@ -232,13 +171,4 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         }
     }
 
-    @Override
-    public Probe probe() {
-        throw new UnsupportedOperationException("Cannot call probe() on a wrapper.");
-    }
-
-    @Override
-    public void probeLite(TruffleEventReceiver eventReceiver) {
-        throw new UnsupportedOperationException("Cannot call probeLite() on a wrapper.");
-    }
 }

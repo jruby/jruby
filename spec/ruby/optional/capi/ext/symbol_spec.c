@@ -81,6 +81,12 @@ VALUE symbol_spec_rb_is_instance_id(VALUE self, VALUE sym) {
 }
 #endif
 
+#ifdef HAVE_RB_SYM2STR
+VALUE symbol_spec_rb_sym2str(VALUE self, VALUE sym) {
+  return rb_sym2str(sym);
+}
+#endif
+
 void Init_symbol_spec() {
   VALUE cls;
   cls = rb_define_class("CApiSymbolSpecs", rb_cObject);
@@ -120,6 +126,10 @@ void Init_symbol_spec() {
 
 #ifdef HAVE_RB_IS_INSTANCE_ID
   rb_define_method(cls, "rb_is_instance_id", symbol_spec_rb_is_instance_id, 1);
+#endif
+
+#ifdef HAVE_RB_SYM2STR
+  rb_define_method(cls, "rb_sym2str", symbol_spec_rb_sym2str, 1);
 #endif
 }
 

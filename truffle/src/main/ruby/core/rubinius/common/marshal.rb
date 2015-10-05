@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -491,7 +491,7 @@ module Marshal
     end
 
     def add_object(obj)
-      sz = @links.size
+      sz = @objects.size
       @objects[sz] = obj
       @links[obj.__id__] = sz
     end
@@ -551,11 +551,14 @@ module Marshal
               construct_data
             when 64   # ?@
               num = construct_integer
-              obj = @objects[num]
 
-              raise ArgumentError, "dump format error (unlinked)" unless obj
+              begin
+                obj = @objects.fetch(num)
+                return obj
+              rescue IndexError
+                raise ArgumentError, "dump format error (unlinked)"
+              end
 
-              return obj
             when 59   # ?;
               num = construct_integer
               sym = @symbols[num]
@@ -650,7 +653,8 @@ module Marshal
 
       obj = result * sign
 
-      store_unique_object obj
+      add_object obj
+      obj
     end
 
     def construct_data

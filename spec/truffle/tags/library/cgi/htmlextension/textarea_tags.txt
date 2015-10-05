@@ -1,0 +1,5 @@
+fails:CGI::HtmlExtension#textarea when passed no arguments includes the return value of the passed block when passed a block
+fails:CGI::HtmlExtension#textarea when passed name includes the return value of the passed block when passed a block
+fails:CGI::HtmlExtension#textarea when passed name, cols includes the return value of the passed block when passed a block
+fails:CGI::HtmlExtension#textarea when passed name, cols, rows includes the return value of the passed block when passed a block
+fails:CGI::HtmlExtension#textarea when passed Hash includes the return value of the passed block when passed a block

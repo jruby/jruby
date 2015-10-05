@@ -1,2 +1,0 @@
-fails(JRUBY-5671):SimpleDelegator can be marshalled
-fails(JRUBY-5671):SimpleDelegator can be marshalled with its instance variables intact

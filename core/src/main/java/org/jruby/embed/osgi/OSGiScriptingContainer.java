@@ -180,5 +180,5 @@ public class OSGiScriptingContainer extends ScriptingContainer {
     public JRubyOSGiBundleClassLoader getOSGiBundleClassLoader() {
         return (JRubyOSGiBundleClassLoader)super.getClassLoader();
     }
-    
+
 }

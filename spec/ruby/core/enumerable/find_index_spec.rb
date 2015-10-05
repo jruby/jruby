@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#find_index" do
   before :each do
@@ -47,6 +48,11 @@ describe "Enumerable#find_index" do
     @numerous.find_index.should be_an_instance_of(enumerator_class)
   end
 
+  it "uses #== for testing equality" do
+    [2].to_enum.find_index(2.0).should == 0
+    [2.0].to_enum.find_index(2).should == 0
+  end
+
   describe "without block" do
     it "gathers whole arrays as elements when each yields multiple" do
       @yieldsmixed.find_index([0, 1, 2]).should == 3
@@ -54,11 +60,11 @@ describe "Enumerable#find_index" do
   end
 
   describe "with block" do
-    before(:each) do
+    before :each do
       ScratchPad.record []
     end
 
-    after(:each) do
+    after :each do
       ScratchPad.clear
     end
 
@@ -76,4 +82,6 @@ describe "Enumerable#find_index" do
       end
     end
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :find_index
 end

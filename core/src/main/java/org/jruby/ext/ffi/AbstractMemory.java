@@ -194,10 +194,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean(this.equals(obj));
     }
-    @Override
-    public final boolean eql(IRubyObject other) {
-        return this.equals(other);
-    }
+    
     /**
      * Calculates the hash code for this <tt>MemoryPointer</tt>
      *

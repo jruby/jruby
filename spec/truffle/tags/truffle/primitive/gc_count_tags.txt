@@ -1,0 +1,1 @@
+slow:Truffle::Primitive.gc_count increases as collections are run

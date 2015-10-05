@@ -94,7 +94,13 @@ class Gem::RemoteFetcher
     rescue Resolv::ResolvError
       uri
     else
-      URI.parse "#{uri.scheme}://#{res.target}#{uri.path}"
+      target = res.target.to_s.strip
+
+      if /\.#{Regexp.quote(host)}\z/ =~ target
+        return URI.parse "#{uri.scheme}://#{target}#{uri.path}"
+      end
+
+      uri
     end
   end
 
@@ -103,7 +109,7 @@ class Gem::RemoteFetcher
   # filename. Returns nil if the gem cannot be located.
   #--
   # Should probably be integrated with #download below, but that will be a
-  # larger, more emcompassing effort. -erikh
+  # larger, more encompassing effort. -erikh
 
   def download_to_cache dependency
     found, _ = Gem::SpecFetcher.fetcher.spec_for_dependency dependency

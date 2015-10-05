@@ -11,10 +11,15 @@ public class Rational extends ImmutableLiteral {
     private final long denominator;
 
     public Rational(long numerator, long denominator) {
-        super(OperandType.RATIONAL);
+        super();
 
         this.numerator = numerator;
         this.denominator = denominator;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.RATIONAL;
     }
 
     @Override

@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/encoded_strings', __FILE__)
 
-describe :array_inspect, :shared => true do
+describe :array_inspect, shared: true do
   it "returns a string" do
     [1, 2, 3].send(@method).should be_an_instance_of(String)
   end
@@ -68,7 +68,7 @@ describe :array_inspect, :shared => true do
       jp   = "jp".encode("EUC-JP")
       array = [jp, utf8]
 
-      array.inspect.encoding.name.should == "UTF-8"
+      array.send(@method).encoding.name.should == "UTF-8"
     end
 
     it "use US-ASCII encoding if the default external encoding is not ascii compatible" do
@@ -78,7 +78,7 @@ describe :array_inspect, :shared => true do
       jp   = "jp".encode("EUC-JP")
       array = [jp, utf8]
 
-      array.inspect.encoding.name.should == "US-ASCII"
+      array.send(@method).encoding.name.should == "US-ASCII"
     end
 
     it "raises if inspected result is not default external encoding" do

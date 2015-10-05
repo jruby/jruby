@@ -12,21 +12,26 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
-
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraph;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
-public class InternalMethod {
+public class InternalMethod implements ObjectGraphNode {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
 
-    private final RubyModule declaringModule;
+    private final DynamicObject declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
 
@@ -34,8 +39,9 @@ public class InternalMethod {
     private final MaterializedFrame declarationFrame;
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
-                          RubyModule declaringModule, Visibility visibility, boolean undefined,
+                          DynamicObject declaringModule, Visibility visibility, boolean undefined,
                           CallTarget callTarget, MaterializedFrame declarationFrame) {
+        assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
@@ -49,7 +55,7 @@ public class InternalMethod {
         return sharedMethodInfo;
     }
 
-    public RubyModule getDeclaringModule() {
+    public DynamicObject getDeclaringModule() {
         return declaringModule;
     }
 
@@ -73,7 +79,9 @@ public class InternalMethod {
         return callTarget;
     }
 
-    public InternalMethod withDeclaringModule(RubyModule newDeclaringModule) {
+    public InternalMethod withDeclaringModule(DynamicObject newDeclaringModule) {
+        assert RubyGuards.isRubyModule(newDeclaringModule);
+
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
@@ -81,8 +89,12 @@ public class InternalMethod {
         }
     }
 
-    public InternalMethod withNewName(String newName) {
-        return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+    public InternalMethod withName(String newName) {
+        if (newName.equals(name)) {
+            return this;
+        } else {
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+        }
     }
 
     public InternalMethod withVisibility(Visibility newVisibility) {
@@ -97,14 +109,16 @@ public class InternalMethod {
         return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
-    public boolean isVisibleTo(Node currentNode, RubyClass callerClass) {
+    public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
+        assert RubyGuards.isRubyClass(callerClass);
+
         switch (visibility) {
             case PUBLIC:
                 return true;
 
             case PROTECTED:
-                for (RubyModule ancestor : callerClass.ancestors()) {
-                    if (ancestor == declaringModule || ancestor.getMetaClass() == declaringModule) {
+                for (DynamicObject ancestor : Layouts.MODULE.getFields(callerClass).ancestors()) {
+                    if (ancestor == declaringModule || Layouts.BASIC_OBJECT.getMetaClass(ancestor) == declaringModule) {
                         return true;
                     }
                 }
@@ -124,6 +138,21 @@ public class InternalMethod {
     @Override
     public String toString() {
         return sharedMethodInfo.toString();
+    }
+
+    @Override
+    public Set<DynamicObject> getAdjacentObjects() {
+        final Set<DynamicObject> adjacent = new HashSet<>();
+
+        if (declaringModule  != null) {
+            adjacent.add(declaringModule);
+        }
+
+        if (declarationFrame != null) {
+            adjacent.addAll(ObjectGraph.getObjectsInFrame(declarationFrame));
+        }
+
+        return adjacent;
     }
 
 }

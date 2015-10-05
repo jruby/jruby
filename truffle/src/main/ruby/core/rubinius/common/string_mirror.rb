@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 module Rubinius
   class Mirror
     class String < Mirror
-      subject = ::String
+      self.subject = ::String
 
       def character_to_byte_index(idx, start=0)
         Rubinius.invoke_primitive :string_character_byte_index, @object, idx, start

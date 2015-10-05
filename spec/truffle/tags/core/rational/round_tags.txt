@@ -1,3 +1,1 @@
-fails:Rational#round with a precision < 0 returns an integer
-fails:Rational#round with a precision < 0 moves the truncation point n decimal places left
 slow:Rational#round with a precision > 0 doesn't fail when rounding to an absurdly large positive precision

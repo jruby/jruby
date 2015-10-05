@@ -1,0 +1,6 @@
+fails:Complex#coerce returns an array containing other and self as Complex when other is an Integer
+fails:Complex#coerce returns an array containing other and self as Complex when other is a Float
+fails:Complex#coerce returns an array containing other and self as Complex when other is a Bignum
+fails:Complex#coerce returns an array containing other and self as Complex when other is a Rational
+fails:Complex#coerce returns an array containing other as Complex and self when other is a Numeric which responds to #real? with true
+fails:Complex#coerce raises a TypeError when other is a String

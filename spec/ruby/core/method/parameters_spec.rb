@@ -125,8 +125,6 @@ describe "Method#parameters" do
     m.parameters.should == [[:req,:a],[:req,:b],[:opt,:c],[:rest,:d],[:block,:blk]]
   end
 
-  # 1.9 semantics
-  #
   it "returns [[:rest,:a],[:req,:b]] for a method expecting a splat argument ('a') and a required argument ('b')" do
     m = MethodSpecs::Methods.instance_method(:one_splat_one_req)
     m.parameters.should == [[:rest,:a],[:req,:b]]

@@ -1,1 +1,0 @@
-fails:Enumerator::Yielder#<< requires multiple arguments

@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'set'
 
 describe "SortedSet#keep_if" do
-  before(:each) do
+  before :each do
     @set = SortedSet["one", "two", "three"]
   end
 

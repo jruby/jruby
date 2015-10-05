@@ -12,42 +12,48 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.util.Consumer;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 @SuppressWarnings("restriction")
 public class InstrumentationServerManager {
 
     private final RubyContext context;
     private final int port;
+    private final HttpServer server; // not final as we want a gentler failure
 
-    private HttpServer server;
     private volatile boolean shuttingDown = false;
 
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
         this.port = port;
-    }
 
-    public void start() {
+        HttpServer server = null;
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             e.printStackTrace();
-            return;
         }
+        this.server = server;
+    }
 
+    public int getPort() {
+        return port;
+    }
+
+    public void start() {
         server.createContext("/stacks", new HttpHandler() {
 
             @Override
@@ -55,16 +61,16 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(false, new SafepointAction() {
 
                         @Override
-                        public void run(RubyThread thread, Node currentNode) {
+                        public void run(DynamicObject thread, Node currentNode) {
                             try {
                                 Backtrace backtrace = RubyCallStack.getBacktrace(null);
 
                                 synchronized (this) {
                                     // Not thread-safe so keep the formatting synchronized for now.
-                                    String[] lines = Backtrace.DISPLAY_FORMATTER.format(context, null, backtrace);
+                                    final List<String> lines = BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, backtrace);
 
                                     builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");
@@ -104,23 +110,13 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
-
+                    Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
+                    context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
-                        public void run(RubyThread thread, final Node currentNode) {
-                            if (thread.getName().equals("main")) {
-                                thread.getDeferredSafepointActions().add(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
-                                    }
-
-                                });
-                            }
+                        public void run(DynamicObject thread, final Node currentNode) {
+                            new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
+                                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                         }
-
                     });
 
                     httpExchange.getResponseHeaders().set("Content-Type", "text/plain");

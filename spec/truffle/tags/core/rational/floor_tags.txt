@@ -1,2 +1,0 @@
-fails:Rational#floor with a precision < 0 returns an integer
-fails:Rational#floor with a precision < 0 moves the truncation point n decimal places left

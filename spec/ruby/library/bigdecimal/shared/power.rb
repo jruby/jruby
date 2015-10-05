@@ -1,6 +1,6 @@
 require 'bigdecimal'
 
-describe :bigdecimal_power, :shared => true do
+describe :bigdecimal_power, shared: true do
   it "powers of self" do
     e3_minus = BigDecimal("3E-20001")
     e3_minus_power_2 = BigDecimal("9E-40002")

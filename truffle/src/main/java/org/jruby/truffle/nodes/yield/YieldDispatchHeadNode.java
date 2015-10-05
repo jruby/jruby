@@ -9,53 +9,41 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
+
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public class YieldDispatchHeadNode extends Node {
 
-    @Child private YieldDispatchNode dispatch;
+    @Child CallBlockNode callBlockNode;
 
     public YieldDispatchHeadNode(RubyContext context) {
-        dispatch = new UninitializedYieldDispatchNode(context);
-
+        this(context, DeclarationContext.BLOCK);
     }
 
-    public Object dispatch(VirtualFrame frame, RubyProc block, Object... argumentsObjects) {
-        return dispatch.dispatchWithSelfAndBlock(frame, block, block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects);
+    public YieldDispatchHeadNode(RubyContext context, DeclarationContext declarationContext) {
+        callBlockNode = CallBlockNodeGen.create(context, null, declarationContext, null, null, null, null);
     }
 
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object... argumentsObjects) {
-        return dispatch.dispatchWithSelfAndBlock(frame, block, block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects);
+    public Object dispatch(VirtualFrame frame, DynamicObject block, Object... argumentsObjects) {
+        assert block == null || RubyGuards.isRubyProc(block);
+        return callBlockNode.executeCallBlock(frame, block, Layouts.PROC.getSelf(block), Layouts.PROC.getBlock(block), argumentsObjects);
     }
 
-    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, RubyProc block, Object self, Object... argumentsObjects) {
-        // TODO: assumes this also changes the default definee.
-
-        Frame frame = block.getDeclarationFrame();
-        FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
-        Object oldVisibility = frame.getValue(slot);
-
-        try {
-            frame.setObject(slot, Visibility.PUBLIC);
-
-            return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, block.getBlockCapturedInScope(), argumentsObjects);
-        } finally {
-            frame.setObject(slot, oldVisibility);
-        }
+    public Object dispatchWithModifiedBlock(VirtualFrame frame, DynamicObject block, DynamicObject modifiedBlock, Object... argumentsObjects) {
+        assert block == null || RubyGuards.isRubyProc(block);
+        assert modifiedBlock == null || RubyGuards.isRubyProc(modifiedBlock);
+        return callBlockNode.executeCallBlock(frame, block, Layouts.PROC.getSelf(block), modifiedBlock, argumentsObjects);
     }
 
-    public YieldDispatchNode getDispatch() {
-        return dispatch;
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, DynamicObject block, Object self, Object... argumentsObjects) {
+        assert block == null || RubyGuards.isRubyProc(block);
+        return callBlockNode.executeCallBlock(currentFrame, block, self, Layouts.PROC.getBlock(block), argumentsObjects);
     }
 
 }

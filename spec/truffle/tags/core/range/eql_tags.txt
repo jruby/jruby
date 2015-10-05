@@ -1,2 +1,0 @@
-fails:Range#eql? returns true if other has same begin, end, and exclude_end? values
-fails:Range#eql? returns true for subclasses to Range

@@ -9,6 +9,7 @@ describe "Thread#abort_on_exception" do
 
   after do
     ThreadSpecs.state = :exit
+    @thread.join
   end
 
   it "is false by default" do
@@ -21,7 +22,7 @@ describe "Thread#abort_on_exception" do
   end
 end
 
-describe :thread_abort_on_exception, :shared => true do
+describe :thread_abort_on_exception, shared: true do
   before do
     @thread = Thread.new do
       Thread.pass until ThreadSpecs.state == :run

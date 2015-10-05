@@ -9,15 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigInteger;
 
@@ -39,63 +39,35 @@ public class GeneralDivModNode extends RubyNode {
         fixnumOrBignumRemainder = new FixnumOrBignumNode(context, sourceSection);
     }
 
-    public RubyArray execute(int a, int b) {
+    public DynamicObject execute(long a, long b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(int a, long b) {
+    public DynamicObject execute(long a, BigInteger b) {
+        return divMod(BigInteger.valueOf(a), b);
+    }
+
+    public DynamicObject execute(long a, double b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(int a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
+    public DynamicObject execute(BigInteger a, long b) {
+        return divMod(a, BigInteger.valueOf(b));
     }
 
-    public RubyArray execute(int a, double b) {
+    public DynamicObject execute(BigInteger a, BigInteger b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(long a, int b) {
+    public DynamicObject execute(double a, long b) {
         return divMod(a, b);
     }
 
-    public RubyArray execute(long a, long b) {
-        return divMod(a, b);
+    public DynamicObject execute(double a, BigInteger b) {
+        return divMod(a, b.doubleValue());
     }
 
-    public RubyArray execute(long a, RubyBignum b) {
-        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
-    }
-
-    public RubyArray execute(long a, double b) {
-        return divMod(a, b);
-    }
-
-    public RubyArray execute(RubyBignum a, int b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
-    }
-
-    public RubyArray execute(RubyBignum a, long b) {
-        return divMod(a.bigIntegerValue(), BigInteger.valueOf(b));
-    }
-
-    public RubyArray execute(RubyBignum a, RubyBignum b) {
-        return divMod(a.bigIntegerValue(), b.bigIntegerValue());
-    }
-
-    public RubyArray execute(double a, int b) {
-        return divMod(a, b);
-    }
-
-    public RubyArray execute(double a, long b) {
-        return divMod(a, b);
-    }
-
-    public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, b.bigIntegerValue().doubleValue());
-    }
-
-    public RubyArray execute(double a, double b) {
+    public DynamicObject execute(double a, double b) {
         return divMod(a, b);
     }
 
@@ -104,8 +76,8 @@ public class GeneralDivModNode extends RubyNode {
      * and contributors there.
      */
 
-    @CompilerDirectives.TruffleBoundary
-    private RubyArray divMod(long a, long b) {
+    @TruffleBoundary
+    private DynamicObject divMod(long a, long b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -135,20 +107,20 @@ public class GeneralDivModNode extends RubyNode {
 
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
         } else if (integerDiv instanceof Long) {
             useObjectPairProfile.enter();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{integerDiv, mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{integerDiv, mod}, 2);
         } else {
             useObjectPairProfile.enter();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
-                    fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
-                    mod}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+                        fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
+                        mod}, 2);
         }
     }
 
-    @CompilerDirectives.TruffleBoundary
-    private RubyArray divMod(double a, double b) {
+    @TruffleBoundary
+    private DynamicObject divMod(double a, double b) {
         if (b == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -167,13 +139,13 @@ public class GeneralDivModNode extends RubyNode {
             mod += b;
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(div),
                 mod}, 2);
     }
 
-    @CompilerDirectives.TruffleBoundary
-    private RubyArray divMod(BigInteger a, BigInteger b) {
+    @TruffleBoundary
+    private DynamicObject divMod(BigInteger a, BigInteger b) {
         if (b.signum() == 0) {
             bZeroProfile.enter();
             throw new ArithmeticException("divide by zero");
@@ -187,13 +159,13 @@ public class GeneralDivModNode extends RubyNode {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
+        return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                 fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
                 fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
-    public RubyBignum create(BigInteger value) {
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    public DynamicObject create(BigInteger value) {
+        return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
     }
 
     @Override

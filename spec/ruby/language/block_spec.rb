@@ -49,9 +49,32 @@ describe "A block yielded a single" do
       result.should == [1, 2, [], 3, 2, {x: 9}]
     end
 
-    it "treats hashes with symbol keys as keyword arguments" do
-      result = m([a: 10]) { |a = nil, **b| [a, b] }
-      result.should == [nil, a: 10]
+    it "assigns symbol keys from a Hash to keyword arguments" do
+      result = m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }
+      result.should == [{"a" => 1}, a: 10]
+    end
+
+    it "assigns symbol keys from a Hash returned by #to_hash to keyword arguments" do
+      obj = mock("coerce block keyword arguments")
+      obj.should_receive(:to_hash).and_return({"a" => 1, b: 2})
+
+      result = m([obj]) { |a=nil, **b| [a, b] }
+      result.should == [{"a" => 1}, b: 2]
+    end
+
+    ruby_version_is "2.2.1" do # SEGV on MRI 2.2.0
+      it "calls #to_hash on the argument but does not use the result when no keywords are present" do
+        obj = mock("coerce block keyword arguments")
+        obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
+
+        result = m([obj]) { |a=nil, **b| [a, b] }
+        result.should == [{"a" => 1, "b" => 2}, {}]
+      end
+    end
+
+    it "assigns non-symbol keys to non-keyword arguments" do
+      result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
+      result.should == [{"a" => 10}, {b: 2}]
     end
 
     ruby_bug "#10685", "2.2.0.0" do
@@ -609,6 +632,20 @@ describe "A block" do
       @y.m(1, 2) { |_, _| _ }.should == 1
     end
   end
+
+  describe "taking identically-named arguments" do
+    it "raises a SyntaxError for standard arguments" do
+      lambda { eval "lambda { |x,x| }" }.should raise_error(SyntaxError)
+      lambda { eval "->(x,x) {}" }.should raise_error(SyntaxError)
+      lambda { eval "Proc.new { |x,x| }" }.should raise_error(SyntaxError)
+    end
+
+    it "accepts unnamed arguments" do
+      lambda { eval "lambda { |_,_| }" }.should_not raise_error(SyntaxError)
+      lambda { eval "->(_,_) {}" }.should_not raise_error(SyntaxError)
+      lambda { eval "Proc.new { |_,_| }" }.should_not raise_error(SyntaxError)
+    end
+  end
 end
 
 describe "Block-local variables" do
@@ -667,7 +704,7 @@ describe "Block-local variables" do
     b = :b
     c = :c
     d = :d
-    {:ant => :bee}.each_pair do |a, b; c, d|
+    {ant: :bee}.each_pair do |a, b; c, d|
       a = :A
       b = :B
       c = :C
@@ -774,6 +811,25 @@ describe "Post-args" do
       proc do |a=5, b=6, *c, d|
         [a, b, c, d]
       end.call(2, 3).should == [2, 6, [], 3]
+    end
+
+    ruby_version_is "2.2" do
+      describe "with a circular argument reference" do
+        it "shadows an existing local with the same name as the argument" do
+          a = 1
+          proc { |a=a| a }.call.should == nil
+        end
+
+        it "shadows an existing method with the same name as the argument" do
+          def a; 1; end
+          proc { |a=a| a }.call.should == nil
+        end
+
+        it "calls an existing method with the same name as the argument if explicitly using ()" do
+          def a; 1; end
+          proc { |a=a()| a }.call.should == 1
+        end
+      end
     end
   end
 

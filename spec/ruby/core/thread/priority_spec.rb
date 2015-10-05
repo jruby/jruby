@@ -52,4 +52,10 @@ describe "Thread#priority=" do
       lambda{ @thread.priority = Object.new }.should raise_error(TypeError)
     end
   end
+
+  it "sets priority even when the thread has died" do
+    @thread.join
+    @thread.priority = 3
+    @thread.priority.should == 3
+  end
 end

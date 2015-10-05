@@ -1,2 +1,0 @@
-fails:File.blockdev? returns true/false depending if the named file is a block device
-fails:File.blockdev? accepts an object that has a #to_path method

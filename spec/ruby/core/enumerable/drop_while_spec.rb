@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#drop_while" do
   before :each do
@@ -44,4 +45,6 @@ describe "Enumerable#drop_while" do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.drop_while {|e| e != [6, 7, 8, 9] }.should == [[6, 7, 8, 9]]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, :drop_while
 end

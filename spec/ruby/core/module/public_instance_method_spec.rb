@@ -34,25 +34,25 @@ describe "Module#public_instance_method" do
   it "raises a NameError when given a protected method name" do
     lambda do
       ModuleSpecs::Basic.public_instance_method(:protected_module)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "raises a NameError if the method is private" do
     lambda do
       ModuleSpecs::Basic.public_instance_method(:private_module)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "raises a NameError if the method has been undefined" do
     lambda do
       ModuleSpecs::Parent.public_instance_method(:undefed_method)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "raises a NameError if the method does not exist" do
     lambda do
       Module.new.public_instance_method(:missing)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "sets the NameError#name attribute to the name of the missing method" do

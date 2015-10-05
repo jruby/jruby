@@ -11,18 +11,17 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
 
 @CoreClass(name = "main")
 public abstract class MainNodes {
 
-    @CoreMethod(names = "public", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
-    public abstract static class PublicNode extends CoreMethodNode {
+    @CoreMethod(names = "public", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    public abstract static class PublicNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PublicNode publicNode;
 
@@ -31,21 +30,15 @@ public abstract class MainNodes {
             publicNode = ModuleNodesFactory.PublicNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
-        public PublicNode(PublicNode prev) {
-            super(prev);
-            publicNode = prev.publicNode;
-        }
-
         @Specialization
-        public RubyModule doPublic(VirtualFrame frame, Object[] args) {
-            notDesignedForCompilation();
-            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPublic(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return publicNode.executePublic(frame, object, args);
         }
     }
 
-    @CoreMethod(names = "private", argumentsAsArray = true, needsSelf = false, visibility = Visibility.PRIVATE)
-    public abstract static class PrivateNode extends CoreMethodNode {
+    @CoreMethod(names = "private", rest = true, needsSelf = false, visibility = Visibility.PRIVATE)
+    public abstract static class PrivateNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ModuleNodes.PrivateNode privateNode;
 
@@ -54,15 +47,9 @@ public abstract class MainNodes {
             privateNode = ModuleNodesFactory.PrivateNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
-        public PrivateNode(PrivateNode prev) {
-            super(prev);
-            privateNode = prev.privateNode;
-        }
-
         @Specialization
-        public RubyModule doPrivate(VirtualFrame frame, Object[] args) {
-            notDesignedForCompilation();
-            final RubyClass object = getContext().getCoreLibrary().getObjectClass();
+        public DynamicObject doPrivate(VirtualFrame frame, Object[] args) {
+            final DynamicObject object = getContext().getCoreLibrary().getObjectClass();
             return privateNode.executePrivate(frame, object, args);
         }
     }

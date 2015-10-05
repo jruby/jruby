@@ -7,11 +7,11 @@ SPEC_TEMP_DIR = ENV["SPEC_TEMP_DIR"] || "#{File.expand_path(Dir.pwd)}/rubyspec_t
 
 SPEC_TEMP_UNIQUIFIER = "0"
 
-SPEC_TMEM_DIR_PID = Process.pid
+SPEC_TEMP_DIR_PID = Process.pid
 
 at_exit do
   begin
-    if SPEC_TMEM_DIR_PID == Process.pid
+    if SPEC_TEMP_DIR_PID == Process.pid
       Dir.delete SPEC_TEMP_DIR if File.directory? SPEC_TEMP_DIR
     end
   rescue SystemCallError

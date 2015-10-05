@@ -1,1 +1,0 @@
-fails(compiler):self.send(:block_given?) returns true if and only if a block is supplied

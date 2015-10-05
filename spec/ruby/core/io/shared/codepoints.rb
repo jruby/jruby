@@ -1,18 +1,28 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :io_codepoints, :shared => true do
-  before(:each) do
+describe :io_codepoints, shared: true do
+  before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     @enum = @io.send(@method)
   end
 
-  after(:each) do
+  after :each do
     @io.close
   end
 
-  it "returns an Enumerator when passed no block" do
-    @enum.should be_an_instance_of(enumerator_class)
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      @enum.should be_an_instance_of(enumerator_class)
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @enum.size.should == nil
+        end
+      end
+    end
   end
 
   it "yields each codepoint" do

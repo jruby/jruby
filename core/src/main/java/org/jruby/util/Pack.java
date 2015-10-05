@@ -76,7 +76,6 @@ public class Pack {
     private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
     private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
     private static final String sTooFew = "too few arguments";
-    private static final byte[] hex_table;
     private static final byte[] uu_table;
     private static final byte[] b64_table;
     private static final byte[] sHexDigits;
@@ -103,7 +102,6 @@ public class Pack {
     }    
 
     static {
-        hex_table = ByteList.plain("0123456789ABCDEF");
         uu_table =
             ByteList.plain("`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
         b64_table =
@@ -474,6 +472,25 @@ public class Pack {
         return result;
     }
 
+    public static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
+        if (occurrences == 0 && type == 'm' && !ignoreStar) {
+            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
+                    lCurElemString.getBegin(), lCurElemString.length(),
+                    lCurElemString.length(), (byte) type, false);
+            return;
+        }
+
+        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
+        if (lCurElemString.length() == 0) return;
+
+        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
+        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
+            encodes(runtime, result, charsToEncode,
+                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
+                    occurrences, (byte)type, true);
+        }
+    }
+
     /**
      * encodes a String in base64 or its uuencode variant.
      * appends the result of the encoding in a StringBuffer
@@ -493,11 +510,9 @@ public class Pack {
         byte lPadding;
         if (encodingType == 'u') {
             if (charCount >= lTranslationTable.length) {
-                throw runtime.newArgumentError(
-                    ""
-                        + charCount
-                        + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
-                        + lTranslationTable.length);
+                throw runtime.newArgumentError(charCount
+                    + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
+                    + lTranslationTable.length);
             }
             io2Append.append(lTranslationTable[charCount]);
             lPadding = '`';
@@ -529,61 +544,6 @@ public class Pack {
             io2Append.append(lPadding);
         }
         if (tailLf) {
-            io2Append.append('\n');
-        }
-        return io2Append;
-    }
-
-    /**
-     * encodes a String with the Quoted printable, MIME encoding (see RFC2045).
-     * appends the result of the encoding in a StringBuffer
-     * @param io2Append The StringBuffer which should receive the result
-     * @param i2Encode The String to encode
-     * @param iLength The max number of characters to encode
-     * @return the io2Append buffer
-     **/
-    private static ByteList qpencode(ByteList io2Append, ByteList i2Encode, int iLength) {
-        io2Append.ensure(1024);
-        int lCurLineLength = 0;
-        int lPrevChar = -1;
-        byte[] l2Encode = i2Encode.getUnsafeBytes();
-        try {
-            int end = i2Encode.getBegin() + i2Encode.getRealSize();
-            for (int i = i2Encode.getBegin(); i < end; i++) {
-                int lCurChar = l2Encode[i] & 0xff;
-                if (lCurChar > 126 || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || lCurChar == '=') {
-                    io2Append.append('=');
-                    io2Append.append(hex_table[lCurChar >>> 4]);
-                    io2Append.append(hex_table[lCurChar & 0x0f]);
-                    lCurLineLength += 3;
-                    lPrevChar = -1;
-                } else if (lCurChar == '\n') {
-                    if (lPrevChar == ' ' || lPrevChar == '\t') {
-                        io2Append.append('=');
-                        io2Append.append(lCurChar);
-                    }
-                    io2Append.append(lCurChar);
-                    lCurLineLength = 0;
-                    lPrevChar = lCurChar;
-                } else {
-                    io2Append.append(lCurChar);
-                    lCurLineLength++;
-                    lPrevChar = lCurChar;
-                }
-                if (lCurLineLength > iLength) {
-                    io2Append.append('=');
-                    io2Append.append('\n');
-                    lCurLineLength = 0;
-                    lPrevChar = '\n';
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            //normal exit, this should be faster than a test at each iterations for string with more than
-            //about 40 char
-        }
-
-        if (lCurLineLength > 0) {
-            io2Append.append('=');
             io2Append.append('\n');
         }
         return io2Append;
@@ -1995,22 +1955,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        if (occurrences == 0 && type == 'm' && !ignoreStar) {
-                            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
-                                    lCurElemString.getBegin(), lCurElemString.length(),
-                                    lCurElemString.length(), (byte)type, false);
-                            break;
-                        }
-
-                        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
-                        if (lCurElemString.length() == 0) break;
-
-                        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
-                        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
-                            encodes(runtime, result, charsToEncode,
-                                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
-                                    occurrences, (byte)type, true);
-                        }
+                        encodeUM(runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
                 case 'M' : {
@@ -2023,7 +1968,7 @@ public class Pack {
                            occurrences = 72;
                        }
 
-                       qpencode(result, lCurElemString, occurrences);
+                       PackUtils.qpencode(result, lCurElemString, occurrences);
                     }
                     break;
                 case 'U' :
@@ -2174,7 +2119,7 @@ public class Pack {
      */
     private static void encodeIntLittleEndian(ByteList result, int s) {
         result.append((byte) (s & 0xff)).append((byte) ((s >> 8) & 0xff));
-        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s>>24) &0xff));
+        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s >> 24) & 0xff));
     }
 
     /**
@@ -2380,4 +2325,5 @@ public class Pack {
     private static void encodeShortBigEndian(ByteList result, int s) {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
     }
+
 }

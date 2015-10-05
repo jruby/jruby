@@ -2,23 +2,23 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "Dir#inspect" do
-  before :all do
-    DirSpecs.create_mock_dirs
+  before :each do
+    @dir = Dir.new(Dir.getwd)
   end
 
-  after :all do
-    DirSpecs.delete_mock_dirs
+  after :each do
+    @dir.close
   end
 
   it "returns a String" do
-    Dir.new(Dir.getwd).inspect.should be_an_instance_of(String)
+    @dir.inspect.should be_an_instance_of(String)
   end
 
   it "includes the class name" do
-    Dir.new(Dir.getwd).inspect.should =~ /Dir/
+    @dir.inspect.should =~ /Dir/
   end
 
   it "includes the directory name" do
-    Dir.new(Dir.getwd).inspect.should include(Dir.getwd)
+    @dir.inspect.should include(Dir.getwd)
   end
 end

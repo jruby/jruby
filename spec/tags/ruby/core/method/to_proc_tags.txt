@@ -1,2 +1,0 @@
-fails:Method#to_proc should correct handle arguments (unwrap)
-fails:Method#to_proc executes method with whole array (one argument)

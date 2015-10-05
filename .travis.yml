@@ -2,11 +2,13 @@ language: java
 
 sudo: false
 
-cache:
-  directories:
-    - $HOME/.m2
+#cache:
+#  directories:
+#    - $HOME/.m2
 
 before_script:
+  - export MAVEN_SKIP_RC=true
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=512m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
@@ -21,6 +23,7 @@ os:
 env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    - MALLOC_ARENA_MAX=2
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
@@ -40,6 +43,8 @@ env:
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
     - PHASE='-Ptruffle-specs-library'
+    - PHASE='-Ptruffle-specs-truffle'
+    - PHASE='-Ptruffle-mri-tests'
 
 matrix:
   include:
@@ -67,18 +72,23 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=tool/truffle-findbugs.sh
       jdk: oraclejdk8
+    - env: COMMAND='ruby tool/jt.rb check_ambiguous_arguments'
+      jdk: oraclejdk8
+    - env: COMMAND=test/truffle/run.sh
+      jdk: oraclejdk8
   fast_finish: true
-
 
 branches:
   only:
     - master
     - jruby-1_7
+    - truffle-head
     - /^test-.*$/
     - /^ha-feature/
 
-script: if [[ -v COMMAND ]]; then $COMMAND; else travis_retry mvn -Pbootstrap clean install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
-install: /bin/true
+script: if [[ -v COMMAND ]]; then $COMMAND; else ./mvnw install -Dinvoker.skip=false $PHASE | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]; fi
+install: travis_retry ./mvnw -Pbootstrap clean install -Dinvoker.skip -Dmaven.test.skip
+
 notifications:
   irc:
     channels:
@@ -87,6 +97,7 @@ notifications:
     on_failure: always
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+    skip_join: true
 
   # update jruby-head installed on Travis CI
   webhooks:

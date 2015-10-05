@@ -5,11 +5,11 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents target.ref = value or target = value where target is not a stack variable
-public abstract class PutInstr extends Instr implements FixedArityInstr {
+public abstract class PutInstr extends TwoOperandInstr implements FixedArityInstr {
     protected String  ref;
 
     public PutInstr(Operation op, Operand target, String ref, Operand value) {
-        super(op, new Operand[] { target, value });
+        super(op, target, value);
 
         this.ref = ref;
     }
@@ -19,11 +19,11 @@ public abstract class PutInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getTarget() {
-        return operands[0];
+        return getOperand1();
     }
 
     public Operand getValue() {
-        return operands[1];
+        return getOperand2();
     }
 
     @Override

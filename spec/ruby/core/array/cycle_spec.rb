@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#cycle" do
   before :each do
@@ -91,4 +92,10 @@ describe "Array#cycle" do
   it "raises a TypeError if passed false" do
     lambda { @array.cycle(false) { } }.should raise_error(TypeError)
   end
+
+  before :all do
+    @object = [1, 2, 3, 4]
+    @empty_object = []
+  end
+  it_should_behave_like :enumeratorized_with_cycle_size
 end

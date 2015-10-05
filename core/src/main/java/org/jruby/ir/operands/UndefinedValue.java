@@ -25,7 +25,12 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public static final UndefinedValue UNDEFINED = new UndefinedValue();
 
     private UndefinedValue() {
-        super(OperandType.UNDEFINED_VALUE);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.UNDEFINED_VALUE;
     }
 
     @Override

@@ -1,6 +1,0 @@
-fails:Rational#divmod when passed a Rational returns the quotient as Integer and the remainder as Rational
-fails:Rational#divmod when passed an Integer returns the quotient as Integer and the remainder as Rational
-fails:Rational#divmod when passed a Float returns the quotient as Integer and the remainder as Float
-fails:Rational#divmod when passed a Float raises a ZeroDivisionError when passed 0
-fails:Rational#divmod when passed a Rational raises a ZeroDivisonError when passed a Rational with a numerator of 0
-fails:Rational#divmod when passed an Integer raises a ZeroDivisionError when passed 0

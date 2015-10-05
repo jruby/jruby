@@ -1,19 +1,11 @@
 #include "ruby.h"
 #include "rubyspec.h"
-#ifdef RUBY_VERSION_IS_1_8_EX_1_9
-#include "rubyio.h"
-#else
 #include "ruby/io.h"
-#endif
 #include <fcntl.h>
 #include <unistd.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef RUBY_VERSION_IS_1_8_EX_1_8_7
-#define rb_io_t OpenFile
 #endif
 
 static int set_non_blocking(int fd) {
@@ -32,11 +24,7 @@ static int set_non_blocking(int fd) {
 static int io_spec_get_fd(VALUE io) {
   rb_io_t* fp;
   GetOpenFile(io, fp);
-#ifdef RUBY_VERSION_IS_1_9
   return fp->fd;
-#else
-  return fileno(fp->f);
-#endif
 }
 
 VALUE io_spec_GetOpenFile_fd(VALUE self, VALUE io) {
@@ -140,13 +128,8 @@ VALUE io_spec_rb_io_taint_check(VALUE self, VALUE io) {
 }
 #endif
 
-#ifdef RUBY_VERSION_IS_1_9
 typedef int wait_bool;
 #define wait_bool_to_ruby_bool(x) (x ? Qtrue : Qfalse)
-#else
-typedef VALUE wait_bool;
-#define wait_bool_to_ruby_bool(x) (x)
-#endif
 
 #ifdef HAVE_RB_IO_WAIT_READABLE
 #define RB_IO_WAIT_READABLE_BUF 13

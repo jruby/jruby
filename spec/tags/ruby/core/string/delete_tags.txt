@@ -1,2 +1,0 @@
-fails:String#delete deletes all chars in a sequence
-fails:String#delete deletes multibyte characters

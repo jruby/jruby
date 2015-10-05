@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' bignnum.rb
-
 class Bignum < Integer
+
+  Truffle.omit(":divide is a Rubinius internal detail. We define :/ directly in Java") do
+    # see README-DEVELOPERS regarding safe math compiler plugin
+    alias_method :/, :divide
+  end
+
+  def eql?(value)
+    value.is_a?(Bignum) && self == value
+  end
+
+  alias_method :modulo, :%
+
+  def fdiv(n)
+    to_f / n
+  end
 
   def **(o)
     Rubinius.primitive :bignum_pow
@@ -39,5 +52,4 @@ class Bignum < Integer
 
     redo_coerced :**, o
   end
-
 end

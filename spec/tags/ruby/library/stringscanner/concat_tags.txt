@@ -1,2 +1,0 @@
-fails:StringScanner#concat raises a TypeError if the given argument can't be converted to a String
-fails:StringScanner#concat when passed a Fixnum raises a TypeError

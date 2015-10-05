@@ -1,0 +1,1 @@
+fails:IO.binread raises an Errno::EINVAL when not passed a valid offset

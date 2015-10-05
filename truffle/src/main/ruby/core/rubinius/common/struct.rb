@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,7 @@ class Struct
   private :_attrs
 
   def select
-    return to_enum(:select) unless block_given?
+    return to_enum(:select) { size } unless block_given?
 
     to_a.select do |v|
       yield v
@@ -231,7 +231,7 @@ class Struct
   end
 
   def each
-    return to_enum :each unless block_given?
+    return to_enum(:each) { size } unless block_given?
     values.each do |v|
       yield v
     end
@@ -239,8 +239,8 @@ class Struct
   end
 
   def each_pair
-    return to_enum :each_pair unless block_given?
-    _attrs.each { |var| yield var, instance_variable_get(:"@#{var}") }
+    return to_enum(:each_pair) { size } unless block_given?
+    _attrs.each { |var| yield [var, instance_variable_get(:"@#{var}")] }
     self
   end
 

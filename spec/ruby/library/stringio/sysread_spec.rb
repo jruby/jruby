@@ -33,7 +33,7 @@ describe "StringIO#sysread when passed nil" do
 end
 
 describe "StringIO#sysread when passed [length]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 

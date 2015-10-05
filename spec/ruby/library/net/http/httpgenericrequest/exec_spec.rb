@@ -3,7 +3,7 @@ require 'net/http'
 require "stringio"
 
 describe "Net::HTTPGenericRequest#exec when passed socket, version, path" do
-  before(:each) do
+  before :each do
     @socket = StringIO.new("")
     def @socket.io # 2.0's @socket is BufferedIO
       self

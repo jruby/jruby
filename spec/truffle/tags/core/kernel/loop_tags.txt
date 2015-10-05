@@ -1,2 +1,0 @@
-fails:Kernel.loop rescues StopIteration
-fails:Kernel.loop rescues StopIteration's subclasses

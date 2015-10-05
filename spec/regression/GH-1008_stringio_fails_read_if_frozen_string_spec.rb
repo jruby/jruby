@@ -6,6 +6,6 @@ describe "StringIO#read" do
     str = "Hello".freeze
     strio = StringIO.new(str)
 
-    strio.read.should == str
+    expect(strio.read).to eq(str)
   end
 end

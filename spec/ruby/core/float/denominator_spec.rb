@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Float#denominator" do
-  before(:each) do
+  before :each do
     @numbers = [
       0.0,
       29871.22736282,

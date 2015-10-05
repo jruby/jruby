@@ -249,6 +249,25 @@ describe "A lambda literal -> () { }" do
         result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
       end
     end
+
+    ruby_version_is "2.2" do
+      describe "with circular optional argument reference" do
+        it "shadows an existing local with the same name as the argument" do
+          a = 1
+          -> (a=a) { a }.call.should == nil
+        end
+
+        it "shadows an existing method with the same name as the argument" do
+          def a; 1; end
+          -> (a=a) { a }.call.should == nil
+        end
+
+        it "calls an existing method with the same name as the argument if explicitly using ()" do
+          def a; 1; end
+          -> (a=a()) { a }.call.should == 1
+        end
+      end
+    end
   end
 end
 
@@ -272,6 +291,23 @@ describe "A lambda expression 'lambda { ... }'" do
 
   it "returns a lambda" do
     lambda { }.lambda?.should be_true
+  end
+
+  it "requires a block" do
+    lambda { lambda }.should raise_error(ArgumentError)
+  end
+
+  context "with an implicit block" do
+    before do
+      def meth; lambda; end
+    end
+
+    it "can be created" do
+      implicit_lambda = meth { 1 }
+
+      implicit_lambda.lambda?.should be_true
+      implicit_lambda.call.should == 1
+    end
   end
 
   context "assigns no local variables" do

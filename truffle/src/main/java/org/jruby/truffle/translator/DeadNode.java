@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
@@ -20,15 +21,20 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class DeadNode extends RubyNode {
 
-    private final String description;
+    private final Exception reason;
 
-    public DeadNode(RubyContext context, SourceSection sourceSection, String description) {
+    public DeadNode(RubyContext context, SourceSection sourceSection, Exception reason) {
         super(context, sourceSection);
-        this.description = description;
+        this.reason = reason;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException("Dead nodes should have been pruned before execution starts: " + description);
+        throw exception();
+    }
+
+    @TruffleBoundary
+    private RuntimeException exception() {
+        return new UnsupportedOperationException(reason);
     }
 }

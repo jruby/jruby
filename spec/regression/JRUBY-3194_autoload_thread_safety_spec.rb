@@ -32,10 +32,10 @@ describe 'JRUBY-3194: threaded autoload' do
     file.close
     add_autoload(file.path)
     begin
-      lambda {
-        (require file.path).should == true
-        SpecRegressionJruby3194.should == 1
-      }.should_not raise_error
+      expect {
+        expect(require file.path).to eq(true)
+        expect(SpecRegressionJruby3194).to eq(1)
+      }.not_to raise_error
     ensure
       remove_autoload_constant
     end
@@ -47,11 +47,11 @@ describe 'JRUBY-3194: threaded autoload' do
     file.close
     add_autoload(file.path)
     begin
-      lambda {
+      expect {
         t1 = Thread.new { SpecRegressionJruby3194::X }
         t2 = Thread.new { SpecRegressionJruby3194::X }
         [t1, t2].each(&:join)
-      }.should_not raise_error
+      }.not_to raise_error
     ensure
       remove_autoload_constant
     end
@@ -63,11 +63,11 @@ describe 'JRUBY-3194: threaded autoload' do
     file.close
     add_autoload(file.path)
     begin
-      lambda {
+      expect {
         t1 = Thread.new { SpecRegressionJruby3194::X }
         t2 = Thread.new { SpecRegressionJruby3194::X }
         [t1, t2].each(&:join)
-      }.should_not raise_error
+      }.not_to raise_error
     ensure
       remove_autoload_constant
     end
@@ -79,9 +79,9 @@ describe 'JRUBY-3194: threaded autoload' do
     file.close
     add_autoload(file.path)
     begin
-      lambda {
+      expect {
         SpecRegressionJruby3194
-      }.should raise_error NameError
+      }.to raise_error NameError
     ensure
       remove_autoload_constant
     end
@@ -95,7 +95,7 @@ describe 'JRUBY-3194: threaded autoload' do
     begin
       class SpecRegressionJruby3194
       end
-      SpecRegressionJruby3194.class.should == Class
+      expect(SpecRegressionJruby3194.class).to eq(Class)
     ensure
       remove_autoload_constant
     end

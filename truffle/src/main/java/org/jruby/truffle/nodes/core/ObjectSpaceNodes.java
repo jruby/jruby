@@ -9,80 +9,100 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.dispatch.RespondToNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.ObjectIDOperations;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-
-import java.util.Collection;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraph;
+import org.jruby.truffle.runtime.object.ObjectIDOperations;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
 
     @CoreMethod(names = "_id2ref", isModuleFunction = true, required = 1)
-    public abstract static class ID2RefNode extends CoreMethodNode {
+    @ImportStatic(ObjectIDOperations.class)
+    public abstract static class ID2RefNode extends CoreMethodArrayArgumentsNode {
 
         public ID2RefNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ID2RefNode(ID2RefNode prev) {
-            super(prev);
+        @Specialization(guards = "id == NIL")
+        public Object id2RefNil(long id) {
+            return nil();
         }
 
-        @Specialization
-        public Object id2Ref(int id) {
-            return id2Ref((long) id);
+        @Specialization(guards = "id == TRUE")
+        public boolean id2RefTrue(long id) {
+            return true;
         }
 
-        @Specialization
-        public Object id2Ref(long id) {
-            notDesignedForCompilation();
-
-            if (id == ObjectIDOperations.NIL) {
-                return nil();
-            } else if (id == ObjectIDOperations.TRUE) {
-                return true;
-            } else if (id == ObjectIDOperations.FALSE) {
-                return false;
-            } else if (ObjectIDOperations.isSmallFixnumID(id)) {
-                return ObjectIDOperations.toFixnum(id);
-            } else {
-                final Object object = getContext().getObjectSpaceManager().collectLiveObjects().get(id);
-
-                if (object == null) {
-                    return nil();
-                } else {
-                    return object;
-                }
-            }
+        @Specialization(guards = "id == FALSE")
+        public boolean id2RefFalse(long id) {
+            return false;
         }
 
-        @Specialization(guards = "isLargeFixnumID")
-        public Object id2RefLargeFixnum(RubyBignum id) {
+        @Specialization(guards = "isSmallFixnumID(id)")
+        public long id2RefSmallInt(long id) {
             return ObjectIDOperations.toFixnum(id);
         }
 
-        @Specialization(guards = "isFloatID")
-        public double id2RefFloat(RubyBignum id) {
-            return ObjectIDOperations.toFloat(id);
+        @TruffleBoundary
+        @Specialization(guards = "isBasicObjectID(id)")
+        public DynamicObject id2Ref(
+                final long id,
+                @Cached("createReadObjectIDNode()") ReadHeadObjectFieldNode readObjectIdNode) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
+                final long objectID;
+
+                try {
+                    objectID = readObjectIdNode.executeLong(object);
+                } catch (UnexpectedResultException e) {
+                    throw new UnsupportedOperationException(e);
+                }
+
+                if (objectID == id) {
+                    return object;
+                }
+            }
+
+            throw new RaiseException(getContext().getCoreLibrary().rangeError(String.format("0x%016x is not id value", id), this));
         }
 
-        protected boolean isLargeFixnumID(RubyBignum id) {
-            return ObjectIDOperations.isLargeFixnumID(id.bigIntegerValue());
+        @Specialization(guards = { "isRubyBignum(id)", "isLargeFixnumID(id)" })
+        public Object id2RefLargeFixnum(DynamicObject id) {
+            return Layouts.BIGNUM.getValue(id).longValue();
         }
 
-        protected boolean isFloatID(RubyBignum id) {
-            return ObjectIDOperations.isFloatID(id.bigIntegerValue());
+        @Specialization(guards = { "isRubyBignum(id)", "isFloatID(id)" })
+        public double id2RefFloat(DynamicObject id) {
+            return Double.longBitsToDouble(Layouts.BIGNUM.getValue(id).longValue());
+        }
+
+        protected ReadHeadObjectFieldNode createReadObjectIDNode() {
+            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
+        }
+
+        protected boolean isLargeFixnumID(DynamicObject id) {
+            return ObjectIDOperations.isLargeFixnumID(Layouts.BIGNUM.getValue(id));
+        }
+
+        protected boolean isFloatID(DynamicObject id) {
+            return ObjectIDOperations.isFloatID(Layouts.BIGNUM.getValue(id));
         }
 
     }
@@ -94,17 +114,13 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public EachObjectNode(EachObjectNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isRubyProc(block)")
+        public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
+            CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
                 if (!isHidden(object)) {
                     yield(frame, block, object);
                     count++;
@@ -114,14 +130,15 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization
-        public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
-            notDesignedForCompilation();
+        @Specialization(guards = { "isRubyModule(ofClass)", "isRubyProc(block)" })
+        public int eachObject(VirtualFrame frame, DynamicObject ofClass, DynamicObject block) {
+            CompilerDirectives.transferToInterpreter();
 
             int count = 0;
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
-                if (!isHidden(object) && ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
+            for (DynamicObject object : ObjectGraph.stopAndGetAllObjects(this, getContext())) {
+                final DynamicObject metaClass = Layouts.BASIC_OBJECT.getMetaClass(object);
+                if (!isHidden(object) && ModuleOperations.assignableTo(metaClass, ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }
@@ -130,48 +147,47 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        private boolean isHidden(RubyBasicObject object) {
-            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+        private boolean isHidden(DynamicObject object) {
+            return RubyGuards.isRubyClass(object) && Layouts.CLASS.getIsSingleton(object);
         }
 
     }
 
     @CoreMethod(names = "define_finalizer", isModuleFunction = true, required = 2)
-    public abstract static class DefineFinalizerNode extends CoreMethodNode {
+    public abstract static class DefineFinalizerNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private RespondToNode respondToNode;
 
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DefineFinalizerNode(DefineFinalizerNode prev) {
-            super(prev);
+            respondToNode = new RespondToNode(getContext(), getSourceSection(), null, "call");
         }
 
         @Specialization
-        public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
-            notDesignedForCompilation();
-
-            getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
+        public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
+            if (respondToNode.executeBoolean(frame, finalizer)) {
+                getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
+                Object[] objects = new Object[]{ 0, finalizer };
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorWrongArgumentType(finalizer, "callable", this));
+            }
         }
+
     }
 
     @CoreMethod(names = "undefine_finalizer", isModuleFunction = true, required = 1)
-    public abstract static class UndefineFinalizerNode extends CoreMethodNode {
+    public abstract static class UndefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public UndefineFinalizerNode(UndefineFinalizerNode prev) {
-            super(prev);
-        }
-
+        @TruffleBoundary
         @Specialization
         public Object undefineFinalizer(Object object) {
-            notDesignedForCompilation();
-
-            getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);
+            getContext().getObjectSpaceManager().undefineFinalizer((DynamicObject) object);
             return object;
         }
     }

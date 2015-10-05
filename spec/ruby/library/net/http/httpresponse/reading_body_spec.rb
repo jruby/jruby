@@ -3,7 +3,7 @@ require 'net/http'
 require "stringio"
 
 describe "Net::HTTPResponse#reading_body" do
-  before(:each) do
+  before :each do
     @res = Net::HTTPUnknownResponse.new("1.0", "???", "test response")
     @socket = Net::BufferedIO.new(StringIO.new("test body"))
   end
@@ -26,7 +26,7 @@ describe "Net::HTTPResponse#reading_body" do
     end
 
     describe "but the response type is not allowed to have a body" do
-      before(:each) do
+      before :each do
         @res = Net::HTTPInformation.new("1.0", "???", "test response")
       end
 

@@ -1,29 +1,3 @@
 fails:IO#set_encoding when passed nil, nil with 'r' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'r' mode prevents the #internal_encoding from changing when Encoding.default_internal is changed
 fails:IO#set_encoding when passed nil, nil with 'r' mode allows the #external_encoding to change when Encoding.default_external is changed
 fails:IO#set_encoding when passed nil, nil with 'rb' mode returns Encoding.default_external
-fails:IO#set_encoding when passed nil, nil with 'r+' mode sets the encodings to nil
-fails:IO#set_encoding when passed nil, nil with 'r+' mode prevents the encodings from changing when Encoding defaults are changed
-fails:IO#set_encoding when passed nil, nil with 'r+' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'w' mode sets the encodings to nil
-fails:IO#set_encoding when passed nil, nil with 'w' mode prevents the encodings from changing when Encoding defaults are changed
-fails:IO#set_encoding when passed nil, nil with 'w' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'w+' mode sets the encodings to nil
-fails:IO#set_encoding when passed nil, nil with 'w+' mode prevents the encodings from changing when Encoding defaults are changed
-fails:IO#set_encoding when passed nil, nil with 'w+' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'a' mode sets the encodings to nil
-fails:IO#set_encoding when passed nil, nil with 'a' mode prevents the encodings from changing when Encoding defaults are changed
-fails:IO#set_encoding when passed nil, nil with 'a' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding when passed nil, nil with 'a+' mode sets the encodings to nil
-fails:IO#set_encoding when passed nil, nil with 'a+' mode prevents the encodings from changing when Encoding defaults are changed
-fails:IO#set_encoding when passed nil, nil with 'a+' mode sets the encodings to the current Encoding defaults
-fails:IO#set_encoding returns self
-fails:IO#set_encoding sets the external encoding when passed an Encoding argument
-fails:IO#set_encoding sets the external and internal encoding when passed two Encoding arguments
-fails:IO#set_encoding sets the external encoding when passed the name of an Encoding
-fails:IO#set_encoding ignores the internal encoding if the same as external when passed Encoding objects
-fails:IO#set_encoding ignores the internal encoding if the same as external when passed encoding names separanted by ':'
-fails:IO#set_encoding sets the external and internal encoding when passed the names of Encodings separated by ':'
-fails:IO#set_encoding sets the external and internal encoding when passed two String arguments
-fails:IO#set_encoding calls #to_str to convert an abject to a String
-fails:IO#set_encoding calls #to_str to convert the second argument to a String

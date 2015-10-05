@@ -9,16 +9,13 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.RubyContext;
-
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-
-import org.jruby.truffle.runtime.core.*;
-
-import java.math.BigInteger;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
@@ -34,33 +31,29 @@ public abstract class BignumPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public BignumPowPrimitiveNode(BignumPowPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyBignum pow(RubyBignum a, int b) {
+        public DynamicObject pow(DynamicObject a, int b) {
             return pow(a, (long) b);
         }
 
         @Specialization
-        public RubyBignum pow(RubyBignum a, long b) {
+        public DynamicObject pow(DynamicObject a, long b) {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 what about this cast?
-                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), a.bigIntegerValue().pow((int) b));
+                return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), Layouts.BIGNUM.getValue(a).pow((int) b));
             }
         }
 
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
-        public double pow(RubyBignum a, double b) {
-            return Math.pow(a.bigIntegerValue().doubleValue(), b);
+        public double pow(DynamicObject a, double b) {
+            return Math.pow(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public RubyBignum pow(RubyBignum a, RubyBignum b) {
+        @Specialization(guards = "isRubyBignum(b)")
+        public Void pow(DynamicObject a, DynamicObject b) {
             throw new UnsupportedOperationException();
         }
 

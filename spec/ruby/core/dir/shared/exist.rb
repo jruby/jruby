@@ -1,4 +1,4 @@
-describe :dir_exist, :shared => true do
+describe :dir_exist, shared: true do
   it "returns true if the given directory exists" do
     Dir.send(@method, File.dirname(__FILE__)).should be_true
   end
@@ -44,7 +44,7 @@ describe :dir_exist, :shared => true do
   end
 
   it "doesn't set $! when file doesn't exist" do
-    Dir.exist?("/path/to/non/existent/dir")
+    Dir.send(@method, "/path/to/non/existent/dir")
     $!.should be_nil
   end
 

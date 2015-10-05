@@ -2,7 +2,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::InvalidByteSequenceError#readagain_bytes" do
-    before(:each) do
+    before :each do
       @exception, @errinfo = EncodingSpecs::InvalidByteSequenceError.exception
       @exception2, @errinfo2 = EncodingSpecs::InvalidByteSequenceErrorIndirect.exception
     end

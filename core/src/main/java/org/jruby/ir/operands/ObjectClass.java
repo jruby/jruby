@@ -11,7 +11,12 @@ import java.util.List;
 
 public class ObjectClass extends Operand {
     public ObjectClass() {
-        super(OperandType.OBJECT_CLASS);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.OBJECT_CLASS;
     }
 
     @Override

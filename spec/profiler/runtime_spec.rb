@@ -49,7 +49,7 @@ describe Java::OrgJruby::Ruby do
   end
   
   def new_runtime(config = Java::OrgJruby::RubyInstanceConfig.new)
-    config.processArguments(['--profile.api'])
+    config.processArguments(['-I.', '--profile.api'])
     Java::OrgJruby::Ruby.newInstance(config)
   end
   

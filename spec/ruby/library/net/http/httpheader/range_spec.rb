@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/set_range', __FILE__)
 
 describe "Net::HTTPHeader#range" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

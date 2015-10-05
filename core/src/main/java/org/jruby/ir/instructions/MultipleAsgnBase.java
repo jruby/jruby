@@ -9,11 +9,11 @@ import org.jruby.ir.operands.Variable;
 // - Regular multiple/parallel assignments: x,y,*z = ...
 // - When blocks are inlined, all receive* instructions get
 //   converted into multiple-assign instructions
-public abstract class MultipleAsgnBase extends ResultBaseInstr {
+public abstract class MultipleAsgnBase extends OneOperandResultBaseInstr {
     protected final int index;
 
     public MultipleAsgnBase(Operation op, Variable result, Operand array, int index) {
-        super(op, result, new Operand[] { array });
+        super(op, result, array);
 
         assert result != null : "MultipleAsgnBase result is null";
 
@@ -21,7 +21,7 @@ public abstract class MultipleAsgnBase extends ResultBaseInstr {
     }
 
     public Operand getArray() {
-        return operands[0];
+        return getOperand1();
     }
 
     public int getIndex() {

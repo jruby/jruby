@@ -2,7 +2,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :string_chars, :shared => true do
+describe :string_chars, shared: true do
   it "passes each char in self to the given block" do
     a = []
     "hello".send(@method) { |c| a << c }
@@ -67,6 +67,18 @@ describe :string_chars, :shared => true do
         "\xAD".force_encoding('SJIS'),
         "\xA2".force_encoding('SJIS')
       ]
+    end
+
+    it "taints resulting strings when self is tainted" do
+      str = "hello"
+
+      str.send(@method) do |x|
+        x.tainted?.should == false
+      end
+
+      str.dup.taint.send(@method) do |x|
+        x.tainted?.should == true
+      end
     end
   end
 end

@@ -1,4 +1,4 @@
-describe :time_params, :shared => true do
+describe :time_params, shared: true do
   it "accepts 1 argument (year)" do
     Time.send(@method, 2000).should ==
       Time.send(@method, 2000, 1, 1, 0, 0, 0)
@@ -185,7 +185,7 @@ describe :time_params, :shared => true do
   end
 end
 
-describe :time_params_10_arg, :shared => true do
+describe :time_params_10_arg, shared: true do
   it "handles string arguments" do
     Time.send(@method, "1", "15", "20", "1", "1", "2000", :ignored, :ignored,
               :ignored, :ignored).should ==
@@ -221,7 +221,7 @@ describe :time_params_10_arg, :shared => true do
   end
 end
 
-describe :time_params_microseconds, :shared => true do
+describe :time_params_microseconds, shared: true do
   it "handles microseconds" do
     t = Time.send(@method, 2000, 1, 1, 20, 15, 1, 123)
     t.usec.should == 123

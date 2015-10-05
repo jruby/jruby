@@ -2,7 +2,7 @@ require File.expand_path('../../../../../spec_helper', __FILE__)
 require 'net/http'
 
 describe "Net::HTTPResponse#read_body" do
-  before(:each) do
+  before :each do
     @res = Net::HTTPUnknownResponse.new("1.0", "???", "test response")
     @socket = Net::BufferedIO.new(StringIO.new("test body"))
   end

@@ -3,7 +3,7 @@ require 'matrix'
 
 describe "Matrix#[]" do
 
-  before(:all) do
+  before :all do
     @m = Matrix[[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
   end
 

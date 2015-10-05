@@ -1,4 +1,4 @@
-describe :date_parse, :shared => true do
+describe :date_parse, shared: true do
   it "can parse a mmm-YYYY string into a Date object" do
     d = Date.parse("feb#{@sep}2008")
     d.year.should  == 2008

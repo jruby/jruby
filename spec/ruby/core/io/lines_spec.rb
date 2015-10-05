@@ -8,11 +8,25 @@ describe "IO#lines" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "returns an Enumerator" do
     @io.lines.should be_an_instance_of(enumerator_class)
+  end
+
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      @io.lines.should be_an_instance_of(enumerator_class)
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @io.lines.size.should == nil
+        end
+      end
+    end
   end
 
   it "returns a line when accessed" do

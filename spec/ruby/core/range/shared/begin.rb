@@ -1,4 +1,4 @@
-describe :range_begin, :shared => true do
+describe :range_begin, shared: true do
   it "returns the first element of self" do
     (-1..1).send(@method).should == -1
     (0..1).send(@method).should == 0

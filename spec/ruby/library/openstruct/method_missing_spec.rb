@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require "ostruct"
 
 describe "OpenStruct#method_missing when called with a method name ending in '='" do
-  before(:each) do
+  before :each do
     @os = OpenStruct.new
   end
 
@@ -49,7 +49,7 @@ end
 
 describe "OpenStruct#method_missing when not passed any additional arguments" do
   it "returns the value for the passed method from the method/value table" do
-    os = OpenStruct.new(:age => 20)
+    os = OpenStruct.new(age: 20)
     os.method_missing(:age).should eql(20)
     os.method_missing(:name).should be_nil
   end

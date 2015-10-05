@@ -1,0 +1,1 @@
+fails:Zlib::ZStream#flush_next_out flushes the stream and flushes the output buffer

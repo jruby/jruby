@@ -29,9 +29,6 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.embed.EmbedRubyInterfaceAdapter;
@@ -48,7 +45,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter {
-    private ScriptingContainer container;
+
+    private final ScriptingContainer container;
 
     public EmbedRubyInterfaceAdapterImpl(ScriptingContainer container) {
         this.container = container;
@@ -56,7 +54,7 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
 
     /**
      * Returns a instance of a requested interface type from a previously evaluated script.
-     * 
+     *
      * @param receiver a receiver of the previously evaluated script.
      * @param clazz an interface type of the returning instance.
      * @return an instance of requested interface type.
@@ -65,21 +63,24 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
         if (clazz == null || !clazz.isInterface()) {
             return null;
         }
-        Ruby runtime = container.getProvider().getRuntime();
-        Object o;
+        final Ruby runtime = container.getProvider().getRuntime();
+        final Object obj;
         if (receiver == null || receiver instanceof RubyNil) {
-            o = JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf(), clazz);
+            obj = JavaEmbedUtils.rubyToJava(runtime, runtime.getTopSelf(), clazz);
         } else if (receiver instanceof IRubyObject) {
-            o = JavaEmbedUtils.rubyToJava(runtime, (IRubyObject) receiver, clazz);
+            obj = JavaEmbedUtils.rubyToJava(runtime, (IRubyObject) receiver, clazz);
         } else {
             IRubyObject rubyReceiver = JavaUtil.convertJavaToRuby(runtime, receiver);
-            o = JavaEmbedUtils.rubyToJava(runtime, rubyReceiver, clazz);
+            obj = JavaEmbedUtils.rubyToJava(runtime, rubyReceiver, clazz);
         }
-        String name = clazz.getName();
+        final String name = clazz.getName();
+        final ClassLoader loader = obj.getClass().getClassLoader();
         try {
-            Class<T> c = (Class<T>) Class.forName(name, true, o.getClass().getClassLoader());
-            return c.cast(o);
-        } catch (ClassNotFoundException e) {
+            @SuppressWarnings("unchecked")
+            Class<T> klass = (Class<T>) Class.forName(name, true, loader);
+            return klass.cast(obj);
+        }
+        catch (ClassNotFoundException e) {
             throw new InvokeFailedException(e);
         }
     }

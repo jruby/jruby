@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
-describe "A jar with dependecies" do
+describe "jar with dependecies" do
   it "carries its error messages along to Ruby exception when one of its classes is imported" do
     begin
       module Fixtures
@@ -9,7 +9,7 @@ describe "A jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      $!.message.should match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
+      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
     end
   end
 
@@ -21,7 +21,7 @@ describe "A jar with dependecies" do
 
       Fixtures::ThrowExceptionOnCreate.new
     rescue
-      $!.message.should match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
+      expect($!.message).to match(/cannot link Java class java_integration\.fixtures\.ThrowExceptionOnCreate, probable missing dependency: junit.framework.Test/)
     end
   end
 end

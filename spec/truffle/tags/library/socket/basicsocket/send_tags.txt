@@ -1,0 +1,3 @@
+fails:BasicSocket#send sends a message to another socket and returns the number of bytes sent
+fails:BasicSocket#send accepts flags to specify unusual sending behaviour
+fails:BasicSocket#send accepts a sockaddr as recipient address

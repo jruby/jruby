@@ -12,11 +12,12 @@ package org.jruby.truffle.nodes.conversion;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToSymbolNode extends RubyNode {
@@ -25,27 +26,23 @@ public abstract class ToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToSymbolNode(ToSymbolNode prev) {
-        super(prev);
-    }
-
-    public abstract RubySymbol executeRubySymbol(VirtualFrame frame, Object object);
+    public abstract DynamicObject executeRubySymbol(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a symbol? Or should the user do that themselves?
 
-    @Specialization
-    protected RubySymbol toSymbol(RubySymbol symbol) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    protected DynamicObject toSymbolSymbol(DynamicObject symbol) {
         return symbol;
     }
 
-    @Specialization
-    protected RubySymbol toSymbol(RubyString string) {
-        return getContext().newSymbol(string.getBytes());
+    @Specialization(guards = "isRubyString(string)")
+    protected DynamicObject toSymbolString(DynamicObject string) {
+        return getSymbol(StringOperations.getByteList(string));
     }
 
     @Specialization
-    protected RubySymbol toSymbol(String string) {
-        return getContext().newSymbol(string);
+    protected DynamicObject toSymbol(String string) {
+        return getSymbol(string);
     }
 
 }

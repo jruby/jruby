@@ -19,12 +19,12 @@ public final class StructByValue extends Type {
     private final RubyClass structClass;
 
     public static RubyClass createStructByValueClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass sbvClass = ffiModule.defineClassUnder("StructByValue", ffiModule.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        final RubyClass Type = ffiModule.getClass("Type");
+        RubyClass sbvClass = ffiModule.defineClassUnder("StructByValue", Type, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         sbvClass.defineAnnotatedMethods(StructByValue.class);
         sbvClass.defineAnnotatedConstants(StructByValue.class);
 
-        ffiModule.getClass("Type").setConstant("Struct", sbvClass);
+        Type.setConstant("Struct", sbvClass);
 
         return sbvClass;
     }

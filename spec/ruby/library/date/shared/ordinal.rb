@@ -6,9 +6,9 @@
 #  24  25  26  27  28  29  30
 #  31
 
-describe :date_ordinal, :shared => true do
+describe :date_ordinal, shared: true do
   it "constructs a Date object from an ordinal date" do
-    # October 1582 (the Gregorian calendar, Ordinal Date in 1.9)
+    # October 1582 (the Gregorian calendar, Ordinal Date)
     #   S   M  Tu   W  Th   F   S
     #     274 275 276 277 278 279
     # 280 281 282 283 284 285 286

@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Signal.list" do
-  RUBY18_SIGNALS = %w{
+  RUBY_SIGNALS = %w{
     EXIT
     HUP
     INT
@@ -48,8 +48,8 @@ describe "Signal.list" do
     INFO
   }
 
-  it "doesn't contain other signals than in 1.8" do
-    (Signal.list.keys - RUBY18_SIGNALS).should == []
+  it "doesn't contain other signals than the known list" do
+    (Signal.list.keys - RUBY_SIGNALS).should == []
   end
 
   if Signal.list["CHLD"]

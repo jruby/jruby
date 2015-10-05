@@ -1,4 +1,3 @@
-exclude :test_embexpr_end, "needs investigation"
-exclude :test_event_coverage, "embexpr_end due to parser/lexer bug"
-exclude :test_tokenize, "needs investigation"
+exclude :test_lex, "off-by-one one-liner no newline"
+exclude :test_location, "off-by-one one-liner no newline"
 

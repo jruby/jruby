@@ -3,7 +3,7 @@ require 'cgi'
 require "stringio"
 
 describe "CGI::QueryExtension#multipart?" do
-  before(:each) do
+  before :each do
     @old_stdin = $stdin
 
     @old_request_method = ENV['REQUEST_METHOD']
@@ -26,7 +26,7 @@ EOS
     @cgi = CGI.new
   end
 
-  after(:each) do
+  after :each do
     $stdin = @old_stdin
 
     ENV['REQUEST_METHOD'] = @old_request_method

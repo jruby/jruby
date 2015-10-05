@@ -3,7 +3,10 @@ package org.jruby.ir.passes;
 import org.jruby.ir.*;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -18,6 +21,24 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
+    }
+
+    /*
+     * Since the return is now going to be preceded by a pops of bindings/frames,
+     * the return value should continue to be valid after those pops.
+     * If not, introduce a copy into a tmp-var before the pops and use the tmp-var
+     * to return the right value.
+     */
+    private void fixReturn(IRScope scope, ReturnBase i, ListIterator<Instr> instrs) {
+        Operand retVal = i.getReturnValue();
+        if (!(retVal instanceof ImmutableLiteral || retVal instanceof TemporaryVariable)) {
+            TemporaryVariable tmp = scope.createTemporaryVariable();
+            CopyInstr copy = new CopyInstr(tmp, retVal);
+            i.updateReturnValue(tmp);
+            instrs.previous();
+            instrs.add(copy);
+            instrs.next();
+        }
     }
 
     @Override
@@ -78,6 +99,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         // throw an exception and we don't multiple pops (once before the
                         // return/break, and once when the exception is caught).
                         if (!bb.isExitBB() && i instanceof ReturnBase) {
+                            if (requireBinding || requireFrame) {
+                                fixReturn(scope, (ReturnBase)i, instrs);
+                            }
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
@@ -88,7 +112,12 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                     if (bb.isExitBB() && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
-                        if (i != null && i instanceof ReturnBase) instrs.previous();
+                        if (i != null && i instanceof ReturnBase) {
+                            if (requireBinding || requireFrame) {
+                                fixReturn(scope, (ReturnBase)i, instrs);
+                            }
+                            instrs.previous();
+                        }
                         if (requireBinding) instrs.add(new PopBindingInstr());
                         if (requireFrame) instrs.add(new PopFrameInstr());
                     }

@@ -40,25 +40,17 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class YieldNode extends Node {
     private final Node argsNode;
-    private final boolean expandedArguments;
 
     /**
      * Construct a new YieldNode.
      *
      * @param position position of the node in the source
-     * @param argsNode the arguments to the yield
-     * @param expandedArguments whether the arguments should be treated as directly-passed args
-     *                          as in yield 1, 2, 3 (expandedArguments = true) versus
-     *                          yield [1, 2, 3] (expandedArguments = false).
+     * @param argsNode the arguments to the yield (null == no args)
      */
-    public YieldNode(ISourcePosition position, Node argsNode, boolean expandedArguments) {
+    public YieldNode(ISourcePosition position, Node argsNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment());
         
-        // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
-        //assert argsNode != null : "argsNode is not null";
-        
         this.argsNode = argsNode;
-        this.expandedArguments = expandedArguments;
     }
 
     public NodeType getNodeType() {
@@ -79,10 +71,6 @@ public class YieldNode extends Node {
      */
     public Node getArgsNode() {
         return argsNode;
-    }
-
-    public boolean getExpandArguments() {
-        return expandedArguments;
     }
 
     @Override

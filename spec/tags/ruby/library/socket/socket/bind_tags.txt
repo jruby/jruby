@@ -1,3 +1,0 @@
-fails:Socket#bind on SOCK_STREAM socket binds to a port
-fails:Socket#bind on SOCK_STREAM socket returns 0 if successful
-fails:Socket#bind on SOCK_STREAM socket raises Errno::EINVAL when binding to an already bound port

@@ -10,34 +10,55 @@
 package org.jruby.truffle.nodes.time;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.specific.UTF8Encoding;
+import org.joda.time.DateTimeZone;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 public class ReadTimeZoneNode extends RubyNode {
     
     @Child private CallDispatchHeadNode hashNode;
-    
-    private final RubyString TZ;
+    @Child private ReadLiteralConstantNode envNode;
+
+    private final ConditionProfile tzNilProfile = ConditionProfile.createBinaryProfile();
+    private final ConditionProfile tzStringProfile = ConditionProfile.createBinaryProfile();
+
+    private static final ByteList defaultZone = StringOperations.encodeByteList(DateTimeZone.getDefault().toString(), UTF8Encoding.INSTANCE);
+    private final DynamicObject TZ;
     
     public ReadTimeZoneNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
-        TZ = getContext().makeString("TZ");
-    }
-
-    @Override
-    public RubyString executeRubyString(VirtualFrame frame) {
-        // TODO CS 4-Mar-15 cast
-        return (RubyString) hashNode.call(frame, getContext().getCoreLibrary().getENV(), "[]", null, TZ);
+        envNode = new ReadLiteralConstantNode(context, sourceSection,
+                new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
+        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
+        final Object tz = hashNode.call(frame, envNode.execute(frame), "[]", null, TZ);
+
+        // TODO CS 4-May-15 not sure how TZ ends up being nil
+
+        if (tzNilProfile.profile(tz == nil())) {
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), defaultZone.dup(), StringSupport.CR_UNKNOWN, null);
+        } else if (tzStringProfile.profile(RubyGuards.isRubyString(tz))) {
+            return tz;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
+
 }

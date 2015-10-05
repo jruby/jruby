@@ -52,13 +52,13 @@ with_feature :encoding do
       it "returns a copy when Encoding.default_internal is nil" do
         Encoding.default_internal = nil
         str = "あ"
-        str.encode(:invalid => :replace).should_not equal(str)
+        str.encode(invalid: :replace).should_not equal(str)
       end
 
       it "normalizes newlines" do
-        "\r\nfoo".encode(:universal_newline => true).should == "\nfoo"
+        "\r\nfoo".encode(universal_newline: true).should == "\nfoo"
 
-        "\rfoo".encode(:universal_newline => true).should == "\nfoo"
+        "\rfoo".encode(universal_newline: true).should == "\nfoo"
       end
     end
 
@@ -77,14 +77,14 @@ with_feature :encoding do
     describe "when passed to, options" do
       it "returns a copy when the destination encoding is the same as the String encoding" do
         str = "あ"
-        str.encode(Encoding::UTF_8, :undef => :replace).should_not equal(str)
+        str.encode(Encoding::UTF_8, undef: :replace).should_not equal(str)
       end
     end
 
     describe "when passed to, from, options" do
       it "returns a copy when both encodings are the same" do
         str = "あ"
-        str.encode("utf-8", "utf-8", :invalid => :replace).should_not equal(str)
+        str.encode("utf-8", "utf-8", invalid: :replace).should_not equal(str)
       end
     end
   end
@@ -129,7 +129,7 @@ with_feature :encoding do
       it "returns self for ASCII-only String when Encoding.default_internal is nil" do
         Encoding.default_internal = nil
         str = "abc"
-        str.encode!(:invalid => :replace).should equal(str)
+        str.encode!(invalid: :replace).should equal(str)
       end
     end
 

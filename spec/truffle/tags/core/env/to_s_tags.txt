@@ -1,1 +1,0 @@
-fails:ENV.to_s returns "ENV"

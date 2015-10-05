@@ -313,10 +313,13 @@ module ModuleSpecs
   class CVars
     @@cls = :class
 
+    # Singleton class lexical scopes are ignored for class variables
     class << self
       def cls
+        # This looks in the parent lexical scope, class CVars
         @@cls
       end
+      # This actually adds it to the parent lexical scope, class CVars
       @@meta = :meta
     end
 
@@ -367,10 +370,10 @@ module ModuleSpecs
     end
   end
 
-  # This class isn't inherited from or included in anywhere. It exists to test
-  # 1.9's constant scoping rules
+  # This class isn't inherited from or included in anywhere.
+  # It exists to test the constant scoping rules.
   class Detached
-    DETATCHED_CONSTANT = :d
+    DETACHED_CONSTANT = :d
   end
 
   class ParentPrivateMethodRedef
@@ -489,6 +492,16 @@ module ModuleSpecs
   module UnboundMethodTest
     def foo
       'bar'
+    end
+  end
+
+  module ClassEvalTest
+    def self.get_constant_from_scope
+      module_eval("Lookup")
+    end
+
+    def self.get_constant_from_scope_with_send(method)
+      send(method, "Lookup")
     end
   end
 end

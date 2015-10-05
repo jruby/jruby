@@ -4,13 +4,14 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-public class ReceiveSelfInstr extends ResultBaseInstr implements FixedArityInstr {
+public class ReceiveSelfInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
     // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
     public ReceiveSelfInstr(Variable result) {
-        super(Operation.RECV_SELF, result, EMPTY_OPERANDS);
+        super(Operation.RECV_SELF, result);
 
         assert result != null: "ReceiveSelfInstr result is null";
     }
@@ -24,8 +25,13 @@ public class ReceiveSelfInstr extends ResultBaseInstr implements FixedArityInstr
         return null;
     }
 
+    @Override
+    public void encode(IRWriterEncoder e) {
+        e.encode(getOperation());
+    }
+
     public static ReceiveSelfInstr decode(IRReaderDecoder d) {
-        return new ReceiveSelfInstr(d.decodeVariable());
+        return d.getCurrentScope().getManager().getReceiveSelfInstr();
     }
 
     @Override

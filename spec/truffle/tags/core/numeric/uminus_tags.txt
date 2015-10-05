@@ -1,1 +1,0 @@
-fails:Numeric#-@ with a Numeric subclass calls #coerce(0) on self, then subtracts the second element of the result from the first

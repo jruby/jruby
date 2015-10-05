@@ -12,9 +12,14 @@ public class UnboxedBoolean extends ImmutableLiteral {
     public static final UnboxedBoolean FALSE = new UnboxedBoolean(false);
 
     public UnboxedBoolean(boolean truthy) {
-        super(OperandType.UNBOXED_BOOLEAN);
+        super();
 
         this.truthy = truthy;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.UNBOXED_BOOLEAN;
     }
 
     @Override

@@ -3,7 +3,7 @@ require 'net/http'
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Net::HTTPHeader#each_value" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
     @headers["My-Header"] = "test"
     @headers.add_field("My-Other-Header", "a")

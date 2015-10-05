@@ -4,12 +4,21 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 import java.util.List;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Represents the StandardError object -- this operand used in rescue blocks
 // for when the rescue block doesn't specify an exception object class
 public class StandardError extends Operand {
     public StandardError() {
-        super(OperandType.STANDARD_ERROR);
+        super();
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.STANDARD_ERROR;
     }
 
     @Override
@@ -30,5 +39,10 @@ public class StandardError extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.StandardError(this);
+    }
+
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return context.runtime.getStandardError();
     }
 }

@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
 require 'tempfile'
 
 describe "Tempfile#_close" do
@@ -8,7 +7,7 @@ describe "Tempfile#_close" do
   end
 
   after :each do
-    TempfileSpecs.cleanup @tempfile
+    @tempfile.close!
   end
 
   it "is protected" do

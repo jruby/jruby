@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Observer#notify_observers" do
 
-  before(:each) do
+  before :each do
     @observable = ObservableSpecs.new
     @observer = ObserverCallbackSpecs.new
     @observable.add_observer(@observer)

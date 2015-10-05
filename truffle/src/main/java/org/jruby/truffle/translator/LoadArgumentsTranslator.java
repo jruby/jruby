@@ -13,22 +13,21 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.array.PrimitiveArrayNodeFactory;
-import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
+import org.jruby.truffle.nodes.arguments.*;
+import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ArraySliceNodeFactory;
-import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
-import org.jruby.truffle.nodes.literal.NilLiteralNode;
-import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
+import org.jruby.truffle.nodes.core.array.ArrayLiteralNode;
+import org.jruby.truffle.nodes.core.array.ArraySliceNodeGen;
+import org.jruby.truffle.nodes.core.array.PrimitiveArrayNodeFactory;
+import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.*;
@@ -88,56 +87,60 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
+        final org.jruby.ast.Node[] args = node.getArgs();
+        final int preCount = node.getPreCount();
 
-        if (node.getPre() != null) {
+        if (preCount > 0) {
             state = State.PRE;
             index = 0;
-            for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
-                sequence.add(arg.accept(this));
-                ++index;
+            for (int i = 0; i < preCount; i++) {
+                sequence.add(args[i].accept(this));
+                index++;
                 required++;
             }
         }
 
-        if (node.getOptArgs() != null) {
+        final int optArgCount = node.getOptionalArgsCount();
+        if (optArgCount > 0) {
             // (BlockNode 0, (OptArgNode:a 0, (LocalAsgnNode:a 0, (FixnumNode 0))), ...)
             state = State.OPT;
             index = argsNode.getPreCount();
-            for (org.jruby.ast.Node arg : node.getOptArgs().childNodes()) {
-                sequence.add(arg.accept(this));
+            final int optArgIndex = node.getOptArgIndex();
+            for (int i = 0; i < optArgCount; i++) {
+                sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
         }
 
-        hasKeywordArguments = node.hasKwargs() && node.getKeywords() != null;
+        hasKeywordArguments = node.hasKwargs();
 
         if (node.getRestArgNode() != null) {
             methodBodyTranslator.getEnvironment().hasRestParameter = true;
             sequence.add(node.getRestArgNode().accept(this));
         }
 
-        if (node.getPost() != null) {
+        int postCount = node.getPostCount();
+        if (postCount > 0) {
             state = State.POST;
             index = -1;
-            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
-            Collections.reverse(children);
-            for (org.jruby.ast.Node arg : children) {
-                sequence.add(arg.accept(this));
-                index--;
+            int postIndex = node.getPostIndex();
+            for (int i = postCount - 1; i >= 0; i--) {
+                sequence.add(args[postIndex + i].accept(this));
                 required++;
+                index--;
             }
         }
 
         if (hasKeywordArguments) {
             kwIndex = 0;
             countKwArgs = 0;
-            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
-                countKwArgs++;
-            }
-            
-            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
-                sequence.add(arg.accept(this));
+            final int keywordIndex = node.getKeywordsIndex();
+            final int keywordCount = node.getKeywordCount();
+
+            for (int i = 0; i < keywordCount; i++) {
+                sequence.add(args[keywordIndex + i].accept(this));
                 kwIndex++;
+                countKwArgs++;
             }
         }
 
@@ -159,44 +162,34 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]), -countKwArgs - 1);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
 
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
     public RubyNode visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name;
-        final RubyNode defaultValue;
-
         final org.jruby.ast.Node firstChild = node.childNodes().get(0);
+        final org.jruby.ast.AssignableNode asgnNode;
+        final String name;
 
         if (firstChild instanceof org.jruby.ast.LocalAsgnNode) {
-            final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
-            name = localAsgnNode.getName();
-
-            if (localAsgnNode.getValueNode() == null) {
-                defaultValue = new NilLiteralNode(context, sourceSection);
-            } else if (localAsgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
-                /*
-                 * This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
-                 * the semantic action of executing this node is to report an error, and we do the same thing.
-                 */
-                defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
-            } else {
-                defaultValue = localAsgnNode.getValueNode().accept(this);
-            }
+            asgnNode = (org.jruby.ast.LocalAsgnNode) firstChild;
+            name = ((org.jruby.ast.LocalAsgnNode) firstChild).getName();
         } else if (firstChild instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) firstChild;
-            name = dAsgnNode.getName();
-
-            if (dAsgnNode.getValueNode() == null) {
-                defaultValue = new NilLiteralNode(context, sourceSection);
-            } else {
-                defaultValue = dAsgnNode.getValueNode().accept(this);
-            }
+            asgnNode = (org.jruby.ast.DAsgnNode) firstChild;
+            name = ((org.jruby.ast.DAsgnNode) firstChild).getName();
         } else {
             throw new UnsupportedOperationException("unsupported keyword arg " + node);
+        }
+
+        final RubyNode defaultValue;
+        if (asgnNode.getValueNode() instanceof RequiredKeywordArgumentValueNode) {
+            /* This isn't a true default value - it's a marker to say there isn't one. This actually makes sense;
+             * the semantic action of executing this node is to report an error, and we do the same thing. */
+            defaultValue = new MissingKeywordArgumentNode(context, sourceSection, name);
+        } else {
+            defaultValue = translateNodeOrNil(sourceSection, asgnNode.getValueNode());
         }
 
         excludedKeywords.add(name);
@@ -204,7 +197,7 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -213,7 +206,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode = readArgument(sourceSection);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     private RubyNode readArgument(SourceSection sourceSection) {
@@ -243,13 +236,13 @@ public class LoadArgumentsTranslator extends Translator {
         int from = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
         int to = -argsNode.getPostCount();
         if (useArray()) {
-            readNode = ArraySliceNodeFactory.create(context, sourceSection, from, to, loadArray(sourceSection));
+            readNode = ArraySliceNodeGen.create(context, sourceSection, from, to, loadArray(sourceSection));
         } else {
             readNode = new ReadRestArgumentNode(context, sourceSection, from, to, hasKeywordArguments);
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -258,7 +251,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         final RubyNode readNode = new ReadBlockNode(context, sourceSection, context.getCoreLibrary().getNilObject());
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(node.getName());
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
@@ -308,21 +301,25 @@ public class LoadArgumentsTranslator extends Translator {
                 readNode = new ReadOptionalArgumentNode(context, sourceSection, index, minimum, defaultValue);
             }
         } else {
-            readNode = ArraySliceNodeFactory.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
+            readNode = ArraySliceNodeGen.create(context, sourceSection, index, indexFromEnd, loadArray(sourceSection));
         }
 
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
-        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+        return new WriteLocalVariableNode(context, sourceSection, readNode, slot);
     }
 
     @Override
     public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
         // (ArrayNode 0, (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null)))
-        return node.childNodes().get(0).accept(this);
+        if (node.size() == 1 && node.get(0) instanceof MultipleAsgnNode) {
+            return node.children()[0].accept(this);
+        } else {
+            return defaultVisit(node);
+        }
     }
 
     @Override
-    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
+    public RubyNode visitMultipleAsgnNode(MultipleAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         // (MultipleAsgn19Node 0, (ArrayNode 0, (LocalAsgnNode:a 0, ), (LocalAsgnNode:b 0, )), null, null))
@@ -346,7 +343,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (node.getPre() != null) {
             index = 0;
-            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPre().children()) {
                 notNilSequence.add(child.accept(this));
                 index++;
             }
@@ -360,11 +357,11 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
+            org.jruby.ast.Node[] children = node.getPost().children();
             index = -1;
-            final List<org.jruby.ast.Node> children = new ArrayList<>(node.getPost().childNodes());
-            Collections.reverse(children);
-            for (org.jruby.ast.Node child : children) {
-                notNilSequence.add(child.accept(this));
+            for (int i = children.length - 1; i >= 0; i--) {
+                notNilSequence.add(children[i].accept(this));
+                required++;
                 index--;
             }
         }
@@ -378,7 +375,7 @@ public class LoadArgumentsTranslator extends Translator {
         final ParameterCollector parametersToClearCollector = new ParameterCollector();
 
         if (node.getPre() != null) {
-            for (org.jruby.ast.Node child : node.getPre().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPre().children()) {
                 child.accept(parametersToClearCollector);
             }
         }
@@ -395,13 +392,13 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (node.getPost() != null) {
-            for (org.jruby.ast.Node child : node.getPost().childNodes()) {
+            for (org.jruby.ast.Node child : node.getPost().children()) {
                 child.accept(parametersToClearCollector);
             }
         }
 
         for (String parameterToClear : parametersToClearCollector.getParameters()) {
-            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(new NilLiteralNode(context, sourceSection)));
+            nilSequence.add(((ReadNode) methodBodyTranslator.getEnvironment().findOrAddLocalVarNodeDangerous(parameterToClear, sourceSection)).makeWriteNode(nilNode(sourceSection)));
         }
 
         if (!childNodes.isEmpty()) {
@@ -413,13 +410,13 @@ public class LoadArgumentsTranslator extends Translator {
         final RubyNode nil = SequenceNode.sequence(context, sourceSection, nilSequence);
 
         return SequenceNode.sequence(context, sourceSection,
-                WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot,
-                        ArrayCastNodeFactory.create(context, sourceSection,
-                                readArgument(sourceSection))),
+                new WriteLocalVariableNode(context, sourceSection,
+                        ArrayCastNodeGen.create(context, sourceSection,
+                                readArgument(sourceSection)), arraySlot),
                 new IfNode(context, sourceSection,
-                        new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot)),
+                        new IsNilNode(context, sourceSection, new ReadLocalVariableNode(context, sourceSection, arraySlot)),
                         nil,
-                        notNil == null ? new NilLiteralNode(context, sourceSection) : notNil));
+                        notNil == null ? nilNode(sourceSection) : notNil));
     }
 
     @Override
@@ -441,7 +438,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceSection sourceSection) {
-        return ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlotStack.peek().getArraySlot());
+        return new ReadLocalVariableNode(context, sourceSection, arraySlotStack.peek().getArraySlot());
     }
 
     @Override

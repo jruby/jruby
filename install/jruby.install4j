@@ -683,30 +683,6 @@
       </exclude>
       <variables />
     </win32>
-    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.7.0_51" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
-      <excludedLaunchers />
-      <excludedComponents />
-      <excludedBeans>
-        <bean refId="26" />
-      </excludedBeans>
-      <overriddenPrincipalLanguage id="en" customLocalizationFile="" />
-      <exclude>
-        <entry location=".i4j_fileset_201" fileType="regular" />
-      </exclude>
-      <variables />
-    </win32>
-    <win32 name="Windows 64-bit w/ JRE" id="198" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-amd64-1.7.0_51" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
-      <excludedLaunchers />
-      <excludedComponents />
-      <excludedBeans>
-        <bean refId="26" />
-      </excludedBeans>
-      <overriddenPrincipalLanguage id="en" customLocalizationFile="" />
-      <exclude>
-        <entry location=".i4j_fileset_201" fileType="regular" />
-      </exclude>
-      <variables />
-    </win32>
     <macosFolder name="Mac OS X Folder" id="22" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="all" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" customInstallBaseDir="" createUninstallIcon="true" contentFilesType="1" downloadURL="">
       <excludedLaunchers>
         <launcher id="320" />

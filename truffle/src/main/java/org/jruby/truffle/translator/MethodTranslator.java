@@ -16,48 +16,46 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.ast.ArgsNode;
+import org.jruby.ast.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
+import org.jruby.truffle.nodes.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.arguments.ShouldDestructureNode;
+import org.jruby.truffle.nodes.cast.ArrayCastNodeGen;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.core.ProcNodes.Type;
+import org.jruby.truffle.nodes.dispatch.RespondToNode;
+import org.jruby.truffle.nodes.locals.FlipFlopStateNode;
+import org.jruby.truffle.nodes.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.methods.locals.FlipFlopStateNode;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
-import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
 import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
+import org.jruby.truffle.nodes.supercall.ZSuperOutsideMethodNode;
+import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
-class MethodTranslator extends BodyTranslator {
+import java.util.ArrayDeque;
+import java.util.Deque;
 
+public class MethodTranslator extends BodyTranslator {
+
+    private final org.jruby.ast.ArgsNode argsNode;
     private boolean isBlock;
 
-    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
+    public MethodTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source, org.jruby.ast.ArgsNode argsNode) {
         super(currentNode, context, parent, environment, source, false);
         this.isBlock = isBlock;
+        this.argsNode = argsNode;
     }
 
-    public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
-        if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
-            System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
-        }
-
-        final ParameterCollector parameterCollector = new ParameterCollector();
-        argsNode.accept(parameterCollector);
-
-        for (String parameter : parameterCollector.getParameters()) {
-            environment.declareVar(parameter);
-        }
-
+    public BlockDefinitionNode compileBlockNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo, Type type) {
+        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
         final Arity arity = getArity(argsNode);
-
         final Arity arityForCheck;
 
         /*
@@ -67,24 +65,121 @@ class MethodTranslator extends BodyTranslator {
          * follow the specs for now until we see a reason to do something else.
          */
 
-        if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false, false, false, 0);
+        if (argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode && !((UnnamedRestArgNode) argsNode.getRestArgNode()).isStar()) {
+            arityForCheck = arity.withRest(false);
         } else {
             arityForCheck = arity;
         }
 
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
+        }
 
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
+        final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
+
+        final RubyNode preludeProc;
+        if (shouldConsiderDestructuringArrayArg()) {
+            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+            final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
+            final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
+            final RubyNode writeArrayNode = new WriteLocalVariableNode(context, sourceSection, castArrayNode, arraySlot);
+
+            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
+            destructureArgumentsTranslator.pushArraySlot(arraySlot);
+            final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
+
+            preludeProc = new IfNode(context, sourceSection,
+                                    new ShouldDestructureNode(context, sourceSection, arity,
+                                            new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
+                    SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments), loadArguments);
         } else {
-            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            preludeProc = loadArguments;
+        }
+
+        final RubyNode preludeLambda = SequenceNode.sequence(context, sourceSection,
+                new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                NodeUtil.cloneNode(loadArguments));
+
+        // Procs
+        final RubyNode bodyProc = wrapBody(preludeProc, body);
+
+        final RubyRootNode newRootNodeForProcs = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                bodyProc, environment.needsDeclarationFrame());
+
+        // Lambdas
+        final RubyNode bodyLambda =
+                new CatchBreakAsReturnNode(context, sourceSection,
+                        new CatchReturnNode(context, sourceSection,
+                                wrapBody(preludeLambda, body),
+                                environment.getReturnID()));
+
+        final RubyRootNode newRootNodeForLambdas = new RubyRootNode(
+                context, sourceSection,
+                environment.getFrameDescriptor(), environment.getSharedMethodInfo(),
+                bodyLambda,
+                environment.needsDeclarationFrame());
+
+        final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
+        final CallTarget callTargetAsLambda = Truffle.getRuntime().createCallTarget(newRootNodeForLambdas);
+
+        return new BlockDefinitionNode(context, sourceSection, type, environment.getSharedMethodInfo(),
+                callTargetAsProc, callTargetAsLambda, environment.getBreakID());
+    }
+
+    private boolean shouldConsiderDestructuringArrayArg() {
+        if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
+            return false;
+        } else if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
+            return false;
+        } else if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private RubyNode wrapBody(RubyNode prelude, RubyNode body) {
+        final SourceSection sourceSection = body.getSourceSection();
+
+        body = SequenceNode.sequence(context, sourceSection, prelude, body);
+
+        if (environment.getFlipFlopStates().size() > 0) {
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+        }
+
+        body = new RedoableNode(context, sourceSection, body);
+        body = new CatchNextNode(context, sourceSection, body);
+        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
+        body = new CatchRetryAsErrorNode(context, sourceSection, body);
+        return body;
+    }
+
+    /*
+     * This method exists solely to be substituted to support lazy
+     * method parsing. The substitution returns a node which performs
+     * the parsing lazily and then calls doCompileMethodBody.
+     */
+    public RubyNode compileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        return doCompileMethodBody(sourceSection, methodName, bodyNode, sharedMethodInfo);
+    }
+
+    public RubyNode doCompileMethodBody(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final ParameterCollector parameterCollector = declareArguments(sourceSection, methodName, sharedMethodInfo);
+        final Arity arity = getArity(argsNode);
+
+        RubyNode body;
+
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
@@ -92,58 +187,13 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyNode prelude;
 
-        if (isBlock) {
-            boolean shouldConsiderDestructuringArrayArg = true;
-
-            if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
-                shouldConsiderDestructuringArrayArg = false;
-            }
-
-            if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
-                shouldConsiderDestructuringArrayArg = false;
-            }
-
-            if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
-                shouldConsiderDestructuringArrayArg = false;
-            }
-
-            RubyNode preludeBuilder;
-
-            if (shouldConsiderDestructuringArrayArg) {
-                final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-                final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
-                final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
-
-                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
-                destructureArgumentsTranslator.pushArraySlot(arraySlot);
-                final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
-
-                preludeBuilder =
-                        new BehaveAsBlockNode(context, sourceSection,
-                                new IfNode(context, sourceSection,
-                                        new ShouldDestructureNode(context, sourceSection, arity,
-                                                new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
-                                        SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
-                                        NodeUtil.cloneNode(loadArguments)),
-                                NodeUtil.cloneNode(loadArguments));
-            } else {
-                preludeBuilder = loadArguments;
-            }
-
-            prelude = SequenceNode.sequence(context, sourceSection,
-                    new BehaveAsBlockNode(context, sourceSection,
-                            new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
-                            new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
+        if (usesRubiniusPrimitive) {
+            // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
+            prelude = loadArguments;
         } else {
-            if (usesRubiniusPrimitive) {
-                // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
-                prelude = loadArguments;
-            } else {
-                prelude = SequenceNode.sequence(context, sourceSection,
-                        new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
-                        loadArguments);
-            }
+            prelude = SequenceNode.sequence(context, sourceSection,
+                    new CheckArityNode(context, sourceSection, arity, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                    loadArguments);
         }
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);
@@ -152,97 +202,66 @@ class MethodTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        if (isBlock) {
-            body = new RedoableNode(context, sourceSection, body);
-            body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
-
-            body = new BehaveAsProcNode(context, sourceSection,
-                    new CatchBreakAsProcErrorNode(context, sourceSection, body),
-                    NodeUtil.cloneNode(body));
-        } else {
-            body = new CatchBreakAsReturnNode(context, sourceSection, body);
-            body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
-        }
-
-        body = new CatchNextNode(context, sourceSection, body);
+        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
-        if (!isBlock) {
-            // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
-            body = new ExceptionTranslatingNode(context, sourceSection, body);
-        }
+        // TODO(CS, 10-Jan-15) why do we only translate exceptions in methods and not blocks?
+        body = new ExceptionTranslatingNode(context, sourceSection, body);
+        return body;
+    }
 
+    public MethodDefinitionNode compileMethodNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
+        final RubyNode body = compileMethodBody(sourceSection,  methodName, bodyNode, sharedMethodInfo);
         final RubyRootNode rootNode = new RubyRootNode(
-                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
+                context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
-        if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
-            NodeUtil.printCompactTree(System.err, rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+        return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), callTarget);
+    }
+
+    private ParameterCollector declareArguments(SourceSection sourceSection, String methodName, SharedMethodInfo sharedMethodInfo) {
+        final ParameterCollector parameterCollector = new ParameterCollector();
+        argsNode.accept(parameterCollector);
+
+        for (String parameter : parameterCollector.getParameters()) {
+            environment.declareVar(parameter);
         }
 
-        if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
-            NodeUtil.printTree(System.err, rootNode);
-        }
-
-        if (isBlock) {
-            final RubyRootNode newRootNodeForBlocks = rootNode.cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-            }
-
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForBlocks, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
-            }
-
-            final RubyRootNode newRootNodeForProcs = rootNode.cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getAsBlock());
-            }
-
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForProcs, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getAsProc());
-            }
-
-            final CallTarget callTargetAsProc = Truffle.getRuntime().createCallTarget(newRootNodeForProcs);
-
-            final CallTarget callTargetAsBlock = Truffle.getRuntime().createCallTarget(newRootNodeForBlocks);
-
-            final RubyRootNode newRootNodeForMethods = rootNode.cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.replace(behaveAsBlockNode.getNotAsBlock());
-            }
-
-            for (BehaveAsProcNode behaveAsProcNode : NodeUtil.findAllNodeInstances(newRootNodeForMethods, BehaveAsProcNode.class)) {
-                behaveAsProcNode.replace(behaveAsProcNode.getNotAsProc());
-            }
-
-            final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(
-                    context,
-                    newRootNodeForMethods.getSourceSection(),
-                    newRootNodeForMethods.getFrameDescriptor(), newRootNodeForMethods.getSharedMethodInfo(),
-                    new CatchBreakAsReturnNode(context, sourceSection,
-                        new CatchReturnNode(context, newRootNodeForMethods.getSourceSection(),
-                            newRootNodeForMethods.getBody(), getEnvironment().getReturnID())));
-
-            final CallTarget callTargetAsMethod = Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
-
-            return new BlockDefinitionNode(context, sourceSection, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), callTargetAsBlock, callTargetAsProc, callTargetAsMethod);
-        } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(),
-                    environment.needsDeclarationFrame(), Truffle.getRuntime().createCallTarget(rootNode));
-        }
+        return parameterCollector;
     }
 
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
-        final int minimum = argsNode.getRequiredArgsCount();
-        final int maximum = argsNode.getMaxArgumentsCount();
-        // TODO CS 19-Mar-15 collect up the keyword argument names here
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords(), argsNode);
+        final String[] keywordArguments;
+
+        if (argsNode.hasKwargs() && argsNode.getKeywords() != null) {
+            final org.jruby.ast.Node[] keywordNodes = argsNode.getKeywords().children();
+            final int keywordsCount = keywordNodes.length;
+
+            keywordArguments = new String[keywordsCount];
+            for (int i = 0; i < keywordsCount; i++) {
+                final KeywordArgNode kwarg = (KeywordArgNode) keywordNodes[i];
+                final AssignableNode assignableNode = kwarg.getAssignable();
+
+                if (assignableNode instanceof LocalAsgnNode) {
+                    keywordArguments[i] = ((LocalAsgnNode) assignableNode).getName();
+                } else if (assignableNode instanceof DAsgnNode) {
+                    keywordArguments[i] = ((DAsgnNode) assignableNode).getName();
+                } else {
+                    throw new UnsupportedOperationException(
+                            "unsupported keyword arg " + kwarg);
+                }
+            }
+        } else {
+            keywordArguments = Arity.NO_KEYWORDS;
+        }
+
+        return new Arity(
+                argsNode.getPreCount(),
+                argsNode.getOptionalArgsCount(),
+                argsNode.hasRestArg(),
+                argsNode.getPostCount(),
+                keywordArguments,
+                argsNode.hasKeyRest());
     }
 
     @Override
@@ -263,7 +282,36 @@ class MethodTranslator extends BodyTranslator {
             environment.setNeedsDeclarationFrame();
         }
 
-        return new GeneralSuperReCallNode(context, sourceSection, environment.isBlock());
+        currentCallMethodName = environment.getNamedMethodName();
+
+        final RubyNode blockNode;
+        if (node.getIterNode() != null) {
+            blockNode = node.getIterNode().accept(this);
+        } else {
+            blockNode = null;
+        }
+
+        boolean insideDefineMethod = false;
+        MethodTranslator methodArgumentsTranslator = this;
+        while (methodArgumentsTranslator.isBlock) {
+            if (!(methodArgumentsTranslator.parent instanceof MethodTranslator)) {
+                return new ZSuperOutsideMethodNode(context, sourceSection, insideDefineMethod);
+            } else if (methodArgumentsTranslator.currentCallMethodName.equals("define_method")) {
+                insideDefineMethod = true;
+            }
+            methodArgumentsTranslator = (MethodTranslator) methodArgumentsTranslator.parent;
+        }
+
+        final ReloadArgumentsTranslator reloadTranslator = new ReloadArgumentsTranslator(
+                currentNode, context, source, this);
+
+        final ArgsNode argsNode = methodArgumentsTranslator.argsNode;
+        final SequenceNode reloadSequence = (SequenceNode) reloadTranslator.visitArgsNode(argsNode);
+
+        return new GeneralSuperReCallNode(context, sourceSection,
+                reloadTranslator.isSplatted(),
+                reloadSequence.getSequence(),
+                blockNode);
     }
 
     @Override
@@ -276,4 +324,29 @@ class MethodTranslator extends BodyTranslator {
         }
     }
 
+    /*
+     * The following methods allow us to save and restore enough of
+     * the current state of the Translator to allow lazy parsing. When
+     * the lazy parsing is actually performed, the state is restored
+     * to what it would have been if the method had been parsed
+     * eagerly.
+     */
+    public TranslatorState getCurrentState() {
+        return new TranslatorState(getEnvironment().getLexicalScope(), new ArrayDeque<SourceSection>(parentSourceSection));
+    }
+
+    public void restoreState(TranslatorState state) {
+        this.getEnvironment().getParseEnvironment().resetLexicalScope(state.scope);
+        this.parentSourceSection = state.parentSourceSection;
+    }
+
+    public static class TranslatorState {
+        private final LexicalScope scope;
+        private final Deque<SourceSection> parentSourceSection;
+
+        private TranslatorState(LexicalScope scope, Deque<SourceSection> parentSourceSection) {
+            this.scope = scope;
+            this.parentSourceSection = parentSourceSection;
+        }
+    }
 }

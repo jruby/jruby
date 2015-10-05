@@ -12,13 +12,15 @@ import java.util.List;
 public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private DynamicScope toplevelScope;
+    private String fileName;
 
     public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
-        super(manager, null, sourceName, sourceName, 0, staticScope);
+        super(manager, null, sourceName, 0, staticScope);
         this.toplevelScope = null;
+        this.fileName = sourceName;
+
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
-            staticScope.setScopeType(this.getScopeType());
         }
     }
 
@@ -68,5 +70,10 @@ public class IRScriptBody extends IRScope {
     @Override
     public boolean isScriptScope() {
         return true;
+    }
+
+    @Override
+    public String getFileName() {
+        return fileName;
     }
 }

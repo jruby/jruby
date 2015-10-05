@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Enumerator#next_values" do
-  before(:each) do
+  before :each do
     o = Object.new
     def o.each
       yield :a

@@ -618,7 +618,7 @@ describe "CApiObject" do
     end
 
     it "returns self when called on a Bignum" do
-      @o.rb_to_int(bignum_value()).should == bignum_value()
+      @o.rb_to_int(bignum_value).should == bignum_value
     end
 
     it "calls #to_int to convert and object to an integer" do
@@ -712,6 +712,12 @@ describe "CApiObject" do
       it "sets and returns the instance variable on an object" do
         @o.rb_iv_set(@test, "@foo", 42).should == 42
         @test.instance_eval { @foo }.should == 42
+      end
+
+      it "sets and returns the instance variable with a bare name" do
+        @o.rb_iv_set(@test, "foo", 42).should == 42
+        @o.rb_iv_get(@test, "foo").should == 42
+        @test.instance_eval { @foo }.should == 7
       end
     end
 

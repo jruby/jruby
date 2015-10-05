@@ -50,7 +50,7 @@ describe "Module#protected" do
   it "raises a NameError when given an undefined name" do
     lambda do
       Module.new.send(:protected, :undefined)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 end
 

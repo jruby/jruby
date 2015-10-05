@@ -1,0 +1,1 @@
+fails:Net::FTPError is an Exception

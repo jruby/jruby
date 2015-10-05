@@ -1,0 +1,1 @@
+fails:REXML::Element#new creates element from another element

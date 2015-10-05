@@ -2,28 +2,32 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO.pipe" do
+  after :each do
+    @r.close if @r && !@r.closed?
+    @w.close if @w && !@w.closed?
+  end
+
   it "creates a two-ended pipe" do
-    r, w = IO.pipe
-    w.puts "test_create_pipe\\n"
-    w.close
-    r.read(16).should == "test_create_pipe"
-    r.close
+    @r, @w = IO.pipe
+    @w.puts "test_create_pipe\\n"
+    @w.close
+    @r.read(16).should == "test_create_pipe"
   end
 
   it "returns two IO objects" do
-    r,w = IO.pipe
-    r.should be_kind_of(IO)
-    w.should be_kind_of(IO)
+    @r, @w = IO.pipe
+    @r.should be_kind_of(IO)
+    @w.should be_kind_of(IO)
   end
 
   it "returns instances of a subclass when called on a subclass" do
-    r, w = IOSpecs::SubIO.pipe
-    r.should be_an_instance_of(IOSpecs::SubIO)
-    w.should be_an_instance_of(IOSpecs::SubIO)
-    w.close
-    r.close
+    @r, @w = IOSpecs::SubIO.pipe
+    @r.should be_an_instance_of(IOSpecs::SubIO)
+    @w.should be_an_instance_of(IOSpecs::SubIO)
   end
+end
 
+describe "IO.pipe" do
   describe "passed a block" do
     it "yields two IO objects" do
       IO.pipe do |r, w|
@@ -70,12 +74,12 @@ describe "IO.pipe" do
 end
 
 describe "IO.pipe" do
-  before(:each) do
+  before :each do
     @default_external = Encoding.default_external
     @default_internal = Encoding.default_internal
   end
 
-  after(:each) do
+  after :each do
     Encoding.default_external = @default_external
     Encoding.default_internal = @default_internal
   end
@@ -159,14 +163,14 @@ describe "IO.pipe" do
   end
 
   it "accepts an options Hash with one String encoding argument" do
-    IO.pipe("BOM|UTF-8:ISO-8859-1", :invalid => :replace) do |r, w|
+    IO.pipe("BOM|UTF-8:ISO-8859-1", invalid: :replace) do |r, w|
       r.external_encoding.should == Encoding::UTF_8
       r.internal_encoding.should == Encoding::ISO_8859_1
     end
   end
 
   it "accepts an options Hash with two String encoding arguments" do
-    IO.pipe("UTF-8", "ISO-8859-1", :invalid => :replace) do |r, w|
+    IO.pipe("UTF-8", "ISO-8859-1", invalid: :replace) do |r, w|
       r.external_encoding.should == Encoding::UTF_8
       r.internal_encoding.should == Encoding::ISO_8859_1
     end
@@ -174,7 +178,7 @@ describe "IO.pipe" do
 
   it "calls #to_hash to convert an options argument" do
     options = mock("io pipe encoding options")
-    options.should_receive(:to_hash).and_return({ :invalid => :replace })
+    options.should_receive(:to_hash).and_return({ invalid: :replace })
     IO.pipe("UTF-8", "ISO-8859-1", options) { |r, w| }
   end
 

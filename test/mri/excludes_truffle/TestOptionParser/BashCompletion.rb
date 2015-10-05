@@ -1,0 +1,6 @@
+exclude :test_long_f, "needs investigation"
+exclude :test_long_for_option, "needs investigation"
+exclude :test_long_for_option_args, "needs investigation"
+exclude :test_long_for_option_complete, "needs investigation"
+exclude :test_one_hyphen, "needs investigation"
+exclude :test_two_hyphen, "needs investigation"

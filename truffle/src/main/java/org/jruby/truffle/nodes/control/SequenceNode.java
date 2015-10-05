@@ -15,9 +15,9 @@ import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.LiteralNode;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,15 +31,23 @@ public final class SequenceNode extends RubyNode {
 
     @Children private final RubyNode[] body;
 
+    public static RubyNode sequenceNoFlatten(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
+        return new SequenceNode(context, sourceSection, sequence);
+    }
+
+    public static RubyNode sequenceNoFlatten(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
+        return sequenceNoFlatten(context, sourceSection, sequence.toArray(new RubyNode[sequence.size()]));
+    }
+
     public static RubyNode sequence(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
         return sequence(context, sourceSection, Arrays.asList(sequence));
     }
 
     public static RubyNode sequence(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
-        final List<RubyNode> flattened = flatten(sequence, true);
+        final List<RubyNode> flattened = flatten(context, sequence, true);
 
         if (flattened.isEmpty()) {
-            return new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+            return new NilNode(context, sourceSection);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -47,19 +55,19 @@ public final class SequenceNode extends RubyNode {
         }
     }
 
-    private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
+    private static List<RubyNode> flatten(RubyContext context, List<RubyNode> sequence, boolean allowTrailingNil) {
         final List<RubyNode> flattened = new ArrayList<>();
 
         for (int n = 0; n < sequence.size(); n++) {
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof ObjectLiteralNode && ((ObjectLiteralNode) node).getObject() instanceof RubyNilClass) {
+            if (node instanceof LiteralNode && ((LiteralNode) node).getObject() == context.getCoreLibrary().getNilObject()) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }
             } else if (node instanceof SequenceNode) {
-                flattened.addAll(flatten(Arrays.asList(((SequenceNode) node).body), lastNode));
+                flattened.addAll(flatten(context, Arrays.asList(((SequenceNode) node).body), lastNode));
             } else {
                 flattened.add(node);
             }
@@ -91,4 +99,7 @@ public final class SequenceNode extends RubyNode {
         }
     }
 
+    public RubyNode[] getSequence() {
+        return body;
+    }
 }

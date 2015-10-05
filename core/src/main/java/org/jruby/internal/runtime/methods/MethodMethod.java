@@ -49,7 +49,7 @@ public class MethodMethod extends DynamicMethod {
      */
     public MethodMethod(RubyModule implementationClass, RubyUnboundMethod method, Visibility visibility) {
         // FIXME: set up a CallConfiguration for this
-        super(implementationClass, visibility, null);
+        super(implementationClass, visibility);
         this.method = method;
     }
 

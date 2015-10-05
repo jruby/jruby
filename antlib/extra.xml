@@ -25,7 +25,7 @@ build jruby-complete.jar
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
-<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-1.7.20-SNAPSHOT.jar'/>
+<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
 <arg value='org.jruby.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
@@ -112,7 +112,6 @@ build jruby-complete.jar
 <arg value='test/test_irubyobject_java_passing.rb'/>
 <arg value='test/test_jruby_object_input_stream.rb'/>
 <arg value='test/test_jar_on_load_path.rb'/>
-<arg value='test/test_jruby_ext.rb'/>
 <arg value='test/test_jruby_core_ext.rb'/>
 <arg value='test/test_thread_context_frame_dereferences_unreachable_variables.rb'/>
 <arg value='test/test_context_classloader.rb'/>
@@ -137,7 +136,7 @@ build jruby-complete.jar
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
-<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-1.7.20-SNAPSHOT.jar'/>
+<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-9.0.0.0.jar'/>
 <arg value='org.jruby.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
@@ -153,7 +152,7 @@ build jruby-complete.jar
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
-<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-1.7.20-SNAPSHOT.jar'/>
+<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
 <arg value='org.jruby.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
@@ -169,7 +168,7 @@ build jruby-complete.jar
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
-<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-1.7.20-SNAPSHOT.jar'/>
+<arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
 <arg value='org.jruby.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
@@ -461,7 +460,7 @@ build jruby-complete.jar
 <env key='GEM_PATH' value='lib/ruby/gems/shared'/>
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
-<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-1.7.20-SNAPSHOT.jar'/>
+<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-9.0.0.0.jar'/>
 <arg value='org.jruby.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>

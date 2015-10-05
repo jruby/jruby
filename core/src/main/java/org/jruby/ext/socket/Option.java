@@ -170,9 +170,9 @@ public class Option extends RubyObject {
         return context.nil;
     }
     
-    @JRubyMethod
-    public IRubyObject rb_int(ThreadContext context) {
-        return context.nil;
+    @JRubyMethod(name = "int")
+    public IRubyObject asInt(ThreadContext context) {
+        return context.getRuntime().newFixnum((int) intData);
     }
 
     @JRubyMethod(meta = true)

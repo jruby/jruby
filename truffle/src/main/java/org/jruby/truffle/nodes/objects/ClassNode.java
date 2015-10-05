@@ -11,12 +11,12 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Reads the class of an object.
@@ -28,40 +28,36 @@ public abstract class ClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ClassNode(ClassNode prev) {
-        super(prev);
-    }
+    public abstract DynamicObject executeGetClass(VirtualFrame frame, Object value);
 
-    public abstract RubyClass executeGetClass(Object value);
-
-    @Specialization(guards = "isTrue")
-    protected RubyClass getClassTrue(boolean value) {
+    @Specialization(guards = "value")
+    protected DynamicObject getClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue")
-    protected RubyClass getClassFalse(boolean value) {
+    @Specialization(guards = "!value")
+    protected DynamicObject getClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyClass getClass(int value) {
+    protected DynamicObject getClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass getClass(long value) {
+    protected DynamicObject getClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass getClass(double value) {
+    protected DynamicObject getClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyClass getClass(RubyBasicObject object) {
-        return object.getLogicalClass();
+    protected DynamicObject getClass(DynamicObject object) {
+        return Layouts.BASIC_OBJECT.getLogicalClass(object);
     }
 
 }

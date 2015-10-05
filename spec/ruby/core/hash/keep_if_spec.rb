@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#keep_if" do
   it "yields two arguments: key and value" do
@@ -10,9 +11,9 @@ describe "Hash#keep_if" do
   end
 
   it "keeps every entry for which block is true and returns self" do
-    h = new_hash(:a => 1, :b => 2, :c => 3, :d => 4)
+    h = new_hash(a: 1, b: 2, c: 3, d: 4)
     h.keep_if { |k,v| v % 2 == 0 }.should equal(h)
-    h.should == new_hash(:b => 2, :d => 4)
+    h.should == new_hash(b: 2, d: 4)
   end
 
   it "returns self even if unmodified" do
@@ -26,4 +27,5 @@ describe "Hash#keep_if" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :keep_if)
+  it_behaves_like(:enumeratorized_with_origin_size, :keep_if, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

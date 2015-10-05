@@ -1,0 +1,1 @@
+fails:Rational#divmod when passed a Rational returns the quotient as Integer and the remainder as Rational

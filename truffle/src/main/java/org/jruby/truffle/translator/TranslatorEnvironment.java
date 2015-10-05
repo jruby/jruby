@@ -11,16 +11,13 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
+import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
+import org.jruby.truffle.nodes.locals.ReadLocalVariableNode;
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
@@ -28,6 +25,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TranslatorEnvironment {
+
+    public static class BreakID {
+    };
 
     private final RubyContext context;
 
@@ -37,15 +37,15 @@ public class TranslatorEnvironment {
 
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
-    private TranslatorDriver parser;
-    private final long returnID;
+    private final ReturnID returnID;
     private final boolean isBlock;
+    private BreakID breakID;
 
     private final boolean ownScopeForAssignments;
     private final boolean neverAssignInParentScope;
 
     protected final TranslatorEnvironment parent;
-    private boolean needsDeclarationFrame = true; // We keep the logic as we might do it differently one day.
+    private boolean needsDeclarationFrame = false; // We keep the logic as we might do it differently one day.
     private final SharedMethodInfo sharedMethodInfo;
 
     private final String namedMethodName;
@@ -55,24 +55,28 @@ public class TranslatorEnvironment {
 
     public boolean hasRestParameter = false;
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
-                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock) {
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
+            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+            SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock, BreakID breakID,
+            FrameDescriptor frameDescriptor) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
-        this.parser = parser;
+        this.parseEnvironment = parseEnvironment;
         this.returnID = returnID;
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
         this.isBlock = isBlock;
-        this.parseEnvironment = (parent != null ? parent.parseEnvironment : new ParseEnvironment(context));
+        this.breakID = breakID;
     }
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-                    SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
-        this(context, parent, new FrameDescriptor(context.getCoreLibrary().getNilObject()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, ParseEnvironment parseEnvironment,
+            ReturnID returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+            SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock, BreakID breakID) {
+        this(context, parent, parseEnvironment, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock, breakID,
+                new FrameDescriptor(context.getCoreLibrary().getNilObject()));
     }
 
     public LexicalScope getLexicalScope() {
@@ -146,9 +150,9 @@ public class TranslatorEnvironment {
                 FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
                 if (slot != null) {
                     if (level == 0) {
-                        return ReadLocalVariableNodeFactory.create(context, sourceSection, slot);
+                        return new ReadLocalVariableNode(context, sourceSection, slot);
                     } else {
-                        return ReadLevelVariableNodeFactory.create(context, sourceSection, slot, level);
+                        return new ReadDeclarationVariableNode(context, sourceSection, level, slot);
                     }
                 }
 
@@ -185,12 +189,12 @@ public class TranslatorEnvironment {
         return name;
     }
 
-    public long getReturnID() {
+    public ReturnID getReturnID() {
         return returnID;
     }
 
-    public TranslatorDriver getParser() {
-        return parser;
+    public ParseEnvironment getParseEnvironment() {
+        return parseEnvironment;
     }
 
     public boolean hasOwnScopeForAssignments() {
@@ -216,4 +220,13 @@ public class TranslatorEnvironment {
     public boolean isBlock() {
         return isBlock;
     }
+
+    public BreakID getBreakID() {
+        return breakID;
+    }
+
+    public void setBreakIDForWhile(BreakID breakID) {
+        this.breakID = breakID;
+    }
+
 }

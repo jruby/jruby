@@ -1,5 +1,0 @@
-fails:File.absolute_path resolves paths relative to the current working directory
-fails:File.absolute_path does not expand '~' to a home directory.
-fails:File.absolute_path does not expand '~user' to a home directory.
-fails:File.absolute_path accepts a second argument of a directory from which to resolve the path
-fails:File.absolute_path calls #to_path on its argument

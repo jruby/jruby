@@ -47,8 +47,8 @@ false && describe('JRUBY-3155') do
 
       server_thread.join
 
-      server_strings.should == ["0\n", "1\n", "2\n", "3\n", "4\n"]
-      client_strings.should == ["0\n", "1\n", "2\n", "3\n", "4\n"]
+      expect(server_strings).to eq(["0\n", "1\n", "2\n", "3\n", "4\n"])
+      expect(client_strings).to eq(["0\n", "1\n", "2\n", "3\n", "4\n"])
     ensure
       server.close rescue nil
       s.close rescue nil

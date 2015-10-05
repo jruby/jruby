@@ -1,0 +1,1 @@
+fails:BigDecimal#to_f remembers negative zero when converted to float

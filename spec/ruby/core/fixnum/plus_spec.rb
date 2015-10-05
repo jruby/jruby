@@ -17,4 +17,13 @@ describe "Fixnum#+" do
     lambda { 13 + "10"    }.should raise_error(TypeError)
     lambda { 13 + :symbol }.should raise_error(TypeError)
   end
+
+  it "overflows to Bignum when the result does not fit in Fixnum" do
+    (5 + 10).should be_an_instance_of Fixnum
+    (1 + bignum_value).should be_an_instance_of Bignum
+
+    bignum_zero = bignum_value.coerce(0).first
+    (1 + bignum_zero).should be_an_instance_of Fixnum
+    (fixnum_max + 1).should be_an_instance_of(Bignum)
+  end
 end

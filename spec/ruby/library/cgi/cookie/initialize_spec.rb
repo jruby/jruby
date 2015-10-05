@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'cgi'
 
 describe "CGI::Cookie#initialize when passed String" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.allocate
   end
 
@@ -56,7 +56,7 @@ describe "CGI::Cookie#initialize when passed String" do
 end
 
 describe "CGI::Cookie#initialize when passed Hash" do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.allocate
   end
 
@@ -126,7 +126,7 @@ describe "CGI::Cookie#initialize when passed Hash" do
 end
 
 describe "CGI::Cookie#initialize when passed String, values ..." do
-  before(:each) do
+  before :each do
     @cookie = CGI::Cookie.allocate
   end
 

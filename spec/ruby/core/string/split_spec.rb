@@ -105,6 +105,12 @@ describe "String#split with String" do
     "a\x00a b".split(' ').should == ["a\x00a", "b"]
   end
 
+  describe "when limit is zero" do
+    it "ignores leading and continuous whitespace when string is a single space" do
+      " now's  the time  ".split(' ', 0).should == ["now's", "the", "time"]
+    end
+  end
+
   it "splits between characters when its argument is an empty string" do
     "hi!".split("").should == ["h", "i", "!"]
     "hi!".split("", -1).should == ["h", "i", "!", ""]
@@ -129,6 +135,15 @@ describe "String#split with String" do
     $~ = nil
     "x.y.z".split(".")
     $~.should == nil
+  end
+
+  it "returns the original string if no matches are found" do
+    "foo".split("bar").should == ["foo"]
+    "foo".split("bar", -1).should == ["foo"]
+    "foo".split("bar", 0).should == ["foo"]
+    "foo".split("bar", 1).should == ["foo"]
+    "foo".split("bar", 2).should == ["foo"]
+    "foo".split("bar", 3).should == ["foo"]
   end
 
   it "returns subclass instances based on self" do
@@ -310,7 +325,12 @@ describe "String#split with Regexp" do
   end
 
   it "returns the original string if no matches are found" do
-    "foo".split("\n").should == ["foo"]
+    "foo".split(/bar/).should == ["foo"]
+    "foo".split(/bar/, -1).should == ["foo"]
+    "foo".split(/bar/, 0).should == ["foo"]
+    "foo".split(/bar/, 1).should == ["foo"]
+    "foo".split(/bar/, 2).should == ["foo"]
+    "foo".split(/bar/, 3).should == ["foo"]
   end
 
   it "returns subclass instances based on self" do
@@ -346,9 +366,6 @@ describe "String#split with Regexp" do
     end
   end
 
-  # When split is called with a limit of -1, empty fields are not suppressed
-  # and a final empty field is *alawys* created (who knows why). This empty
-  # string is not tainted (again, who knows why) on 1.8 but is on 1.9.
   it "taints an empty string if self is tainted" do
     ":".taint.split(//, -1).last.tainted?.should be_true
   end

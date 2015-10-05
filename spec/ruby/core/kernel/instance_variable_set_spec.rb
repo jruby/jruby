@@ -66,7 +66,7 @@ describe "Kernel#instance_variable_set" do
   end
 
   describe "on frozen objects" do
-    before(:each) do
+    before :each do
       klass = Class.new do
         attr_reader :ivar
         def initialize

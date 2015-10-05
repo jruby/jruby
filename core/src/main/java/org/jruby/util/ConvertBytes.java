@@ -21,9 +21,10 @@ public class ConvertBytes {
     private final boolean is19;
 
     public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck) {
-        this(runtime, _str, base, badcheck, false);
+        this(runtime, _str, base, badcheck, true);
     }
 
+    @Deprecated
     public ConvertBytes(Ruby runtime, ByteList _str, int base, boolean badcheck, boolean is19) {
         this.runtime = runtime;
         this._str = _str;
@@ -119,7 +120,7 @@ public class ConvertBytes {
 
     public static final ByteList longToByteList(long i, int radix, byte[] digitmap) {
         if (i == 0) return new ByteList(ZERO_BYTES);
-        
+
         if (i == Long.MIN_VALUE) return new ByteList(MIN_VALUE_BYTES[radix]);
 
         boolean neg = false;
@@ -137,7 +138,7 @@ public class ConvertBytes {
             buf[--pos] = digitmap[(int)(i % radix)];
         } while ((i /= radix) > 0);
         if (neg) buf[--pos] = (byte)'-';
-        
+
         return new ByteList(buf, pos, len - pos);
     }
 
@@ -229,12 +230,13 @@ public class ConvertBytes {
     /** rb_cstr_to_inum
      *
      */
+    @Deprecated
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+        return new ConvertBytes(runtime, str, base, badcheck, false).byteListToInum();
     }
 
     public static RubyInteger byteListToInum19(Ruby runtime, ByteList str, int base, boolean badcheck) {
-        return new ConvertBytes(runtime, str, base, badcheck, true).byteListToInum();
+        return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
     }
 
     private final static byte[] conv_digit = new byte[128];
@@ -333,7 +335,7 @@ public class ConvertBytes {
     private byte convertDigit(byte c) {
         if(c < 0) {
             return -1;
-        } 
+        }
         return conv_digit[c];
     }
 
@@ -552,7 +554,7 @@ public class ConvertBytes {
                     i += c;
                 }
             }
-            
+
             if(s != save) {
                 if(endptr != null) {
                     endptr[0] = s;
@@ -587,7 +589,7 @@ public class ConvertBytes {
             }
             return runtime.newFixnum(0);
         }
-        
+
         ignoreLeadingWhitespace();
 
         boolean sign = getSign();
@@ -599,8 +601,8 @@ public class ConvertBytes {
                 }
                 return runtime.newFixnum(0);
             }
-        }        
-        
+        }
+
         figureOutBase();
 
         int len = calculateLength();
@@ -646,7 +648,7 @@ public class ConvertBytes {
                     invalidString("Integer"); // trailing garbage
                 }
             }
-            
+
             if(sign) {
                 return runtime.newFixnum(val);
             } else {
@@ -700,6 +702,8 @@ public class ConvertBytes {
                 result[resultIndex++] = (char)cx;
             }
 
+            if(resultIndex == 0) { return runtime.newFixnum(0); }
+
             int tmpStr = str;
             if (badcheck) {
                 // no str-- here because we don't null-terminate strings
@@ -712,16 +716,9 @@ public class ConvertBytes {
             }
         }
 
-        BigInteger z;
-        if(resultIndex == 0) {
-            z = BigInteger.ZERO;
-        } else {
-            z = new BigInteger(new String(result, 0, resultIndex), base);
-        }
-
-        if(!sign) {
-            z = z.negate();
-        }
+        String s = new String(result, 0, resultIndex);
+        BigInteger z = (base == 10) ? stringToBig(s) : new BigInteger(s, base);
+        if(!sign) { z = z.negate(); }
 
         if(badcheck) {
             if(_str.getBegin() + 1 < str && data[str-1] == '_') {
@@ -736,6 +733,45 @@ public class ConvertBytes {
         }
 
         return RubyBignum.bignorm(runtime, z);
+    }
+
+    private BigInteger stringToBig(String str) {
+        str = str.replaceAll("_", "");
+        int size = str.length();
+        int nDigits = 512;
+        if (size < nDigits) { nDigits = size; }
+
+        int j = size - 1;
+        int i = j - nDigits + 1;
+
+        BigInteger digits[] = new BigInteger[j / nDigits + 1];
+
+        for(int z = 0; j >= 0; z++) {
+            digits[z] = new BigInteger(str.substring(i, j + 1).trim());
+            j = i - 1;
+            i = j - nDigits + 1;
+            if(i < 0) { i = 0; }
+        }
+
+        BigInteger b10x = BigInteger.TEN.pow(nDigits);
+        int n = digits.length;
+        while(n > 1) {
+            i = 0;
+            j = 0;
+            while(i < n / 2) {
+                digits[i] = digits[j].add(digits[j + 1].multiply(b10x));
+                i += 1;
+                j += 2;
+            }
+            if(j == n-1) {
+                digits[i] = digits[j];
+                i += 1;
+            }
+            n = i;
+            b10x = b10x.multiply(b10x);
+        }
+
+        return digits[0];
     }
 
     public static class ERange extends RuntimeException {

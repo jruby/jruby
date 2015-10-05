@@ -44,7 +44,7 @@ describe "Thread#alive?" do
       begin
         sleep
       ensure
-        Thread.pass until exit # Ruby 1.8 won't switch threads here
+        Thread.pass until exit
       end
     end
 

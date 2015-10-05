@@ -107,6 +107,16 @@ describe "The next statement from within the block" do
 end
 
 describe "The next statement" do
+  describe "in a method" do
+    it "is invalid and raises a SyntaxError" do
+      lambda {
+        eval("def m; next; end")
+      }.should raise_error(SyntaxError)
+    end
+  end
+end
+
+describe "The next statement" do
   before :each do
     ScratchPad.record []
   end
@@ -309,7 +319,7 @@ describe "The next statement" do
 
       ScratchPad.recorded.should == [:begin, :ensure, :begin, :ensure]
     end
- end
+  end
 end
 
 describe "Assignment via next" do

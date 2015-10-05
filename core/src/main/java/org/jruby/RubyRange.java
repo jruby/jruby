@@ -53,6 +53,7 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -80,6 +81,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject begin;
     private IRubyObject end;
     private boolean isExclusive;
+    private boolean isInited = false;
 
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
@@ -229,11 +231,12 @@ public class RubyRange extends RubyObject {
         this.begin = begin;
         this.end = end;
         this.isExclusive = isExclusive;
+        this.isInited = true;
     }
     
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
-        if (!begin.isNil() || !end.isNil()) {
+        if (this.isInited) {
             throw getRuntime().newNameError("`initialize' called twice", "initialize");
         }
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
@@ -242,7 +245,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(required = 1, visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        if (!begin.isNil() || !end.isNil()) {
+        if (this.isInited) {
             throw context.runtime.newNameError("`initialize' called twice", "initialize");
         }
 
@@ -420,7 +423,7 @@ public class RubyRange extends RubyObject {
             to--;
         }
         long from = ((RubyFixnum) begin).getLongValue();
-        if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
+        if (block.getSignature() == Signature.NO_ARGUMENTS) {
             IRubyObject nil = runtime.getNil();
             long i;
             for (i = from; i < to; i++) {
@@ -527,7 +530,7 @@ public class RubyRange extends RubyObject {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
-                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Arity.singleArgument(), callback, context);
+                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Signature.ONE_ARGUMENT, callback, context);
                 ((RubyString)tmp).uptoCommon19(context, end, isExclusive, blockCallback);
             } else {
                 if (!begin.respondsTo("succ")) throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
@@ -656,7 +659,11 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) {
                 throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
             }
-            rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
+            if (end instanceof RubyFixnum) {
+                rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum)end).getLongValue() - 1);
+            } else {
+                rangeEnd =  end.callMethod(context, "-", RubyFixnum.one(context.runtime));
+            }
         } else {
             rangeEnd = end;
         }
@@ -716,7 +723,7 @@ public class RubyRange extends RubyObject {
         }
         final RubyArray result = runtime.newArray(num);
         try {
-            RubyEnumerable.callEach(runtime, context, this, Arity.ONE_ARGUMENT, new BlockCallback() {
+            RubyEnumerable.callEach(runtime, context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {

@@ -14,13 +14,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToStrNode extends RubyNode {
@@ -32,52 +34,34 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public ToStrNode(ToStrNode prev) {
-        super(prev);
-        toStrNode = prev.toStrNode;
-    }
+    public abstract DynamicObject executeToStr(VirtualFrame frame, Object object);
 
-    @Specialization
-    public RubyString coerceRubyString(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public DynamicObject coerceRubyString(DynamicObject string) {
         return string;
     }
 
-    @Specialization(guards = "!isRubyString")
-    public RubyString coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
-
+    @Specialization(guards = "!isRubyString(object)")
+    public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
 
         try {
             coerced = toStrNode.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(
-                        getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
         }
 
-        if (coerced instanceof RubyString) {
-            return (RubyString) coerced;
+        if (RubyGuards.isRubyString(coerced)) {
+            return (DynamicObject) coerced;
         } else {
             CompilerDirectives.transferToInterpreter();
-
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
 
-    @Override
-    public abstract RubyString executeRubyString(VirtualFrame frame);
-
-    public abstract RubyString executeRubyString(VirtualFrame frame, Object object);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
-    }
 }

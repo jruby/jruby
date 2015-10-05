@@ -20,9 +20,11 @@ describe "MatchData#begin" do
     match_data.begin(2).should == 2
   end
 
-  it "returns the offset for multi byte strings with unicode regexp" do
-    match_data = /(.)(.)(\d+)(\d)/u.match("TñX1138.")
-    match_data.begin(0).should == 1
-    match_data.begin(2).should == 2
+  not_supported_on :opal do
+    it "returns the offset for multi byte strings with unicode regexp" do
+      match_data = /(.)(.)(\d+)(\d)/u.match("TñX1138.")
+      match_data.begin(0).should == 1
+      match_data.begin(2).should == 2
+    end
   end
 end

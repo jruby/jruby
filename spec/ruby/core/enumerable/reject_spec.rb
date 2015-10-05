@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#reject" do
   it "returns an array of the elements for which block is false" do
@@ -19,4 +20,6 @@ describe "Enumerable#reject" do
     multi = EnumerableSpecs::YieldsMulti.new
     multi.reject {|e| e == [3, 4, 5] }.should == [[1, 2], [6, 7, 8, 9]]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, :reject
 end

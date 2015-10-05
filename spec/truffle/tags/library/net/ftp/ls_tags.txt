@@ -1,0 +1,12 @@
+fails:Net::FTP#ls when passed a block yields each file in the list of files in the passed dir
+fails:Net::FTP#ls when passed no block returns an Array containing a list of files in the passed dir
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPTempError when the response code is 450
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPPermError when the response code is 502
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#ls when the LIST command fails raises a Net::FTPPermError when the response code is 530
+fails:Net::FTP#ls when opening the data port fails raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#ls when opening the data port fails raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#ls when opening the data port fails raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#ls when opening the data port fails raises a Net::FTPPermError when the response code is 530

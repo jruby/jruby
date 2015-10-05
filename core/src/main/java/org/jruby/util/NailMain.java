@@ -51,7 +51,7 @@ public class NailMain {
         Main main = new Main(config);
         
         config.setCurrentDirectory(context.getWorkingDirectory());
-        config.setEnvironment(context.getEnv());
+        config.setEnvironment(OSEnvironment.propertiesToStringMap(context.getEnv()));
 
         return main.run(context.getArgs()).getStatus();
     }

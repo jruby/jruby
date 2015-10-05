@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "ENV.select!" do
   it "removes environment variables for which the block returns true" do
@@ -19,6 +20,8 @@ describe "ENV.select!" do
   it "returns an Enumerator if called without a block" do
     ENV.select!.should be_an_instance_of(enumerator_class)
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :select!, ENV
 end
 
 describe "ENV.select" do
@@ -31,4 +34,6 @@ describe "ENV.select" do
   it "returns an Enumerator when no block is given" do
     ENV.select.should be_an_instance_of(enumerator_class)
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :select, ENV
 end

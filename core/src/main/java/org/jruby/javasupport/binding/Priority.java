@@ -9,7 +9,7 @@ public enum Priority {
     RESERVED(0), METHOD(1), FIELD(2), PROTECTED_METHOD(3),
     WEAKLY_RESERVED(4), ALIAS(5), PROTECTED_FIELD(6);
 
-    private int value;
+    private final int value;
 
     Priority(int value) {
         this.value = value;

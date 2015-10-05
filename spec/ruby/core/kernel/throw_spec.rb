@@ -45,6 +45,12 @@ describe "Kernel.throw" do
     lambda { throw :blah }.should raise_error(ArgumentError)
   end
 
+  ruby_version_is "2.2" do
+    it "raises an UncaughtThrowError if there is no catch block for the symbol" do
+      lambda { throw :blah }.should raise_error(UncaughtThrowError)
+    end
+  end
+
   it "raises ArgumentError if 3 or more arguments provided" do
     lambda {
       catch :blah do

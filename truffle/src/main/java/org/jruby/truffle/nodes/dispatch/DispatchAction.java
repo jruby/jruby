@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.dispatch;
 
 public enum DispatchAction {
-    READ_CONSTANT,
     CALL_METHOD,
     RESPOND_TO_METHOD
 }

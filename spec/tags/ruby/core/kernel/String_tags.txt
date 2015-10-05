@@ -1,2 +1,0 @@
-fails:Kernel.String raises a TypeError if respond_to? returns false for #to_s
-fails:Kernel#String raises a TypeError if respond_to? returns false for #to_s

@@ -82,8 +82,6 @@ public enum Operation {
     EQQ(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception), // a === call used in when
     LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /* Yield: Is this a call? Implementing instr doesn't inherit from CallBase.java */
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
@@ -209,7 +207,8 @@ public enum Operation {
     PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
+    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    TOGGLE_BACKTRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;

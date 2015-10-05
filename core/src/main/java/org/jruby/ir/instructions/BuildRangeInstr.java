@@ -18,21 +18,21 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, this range operand could get converted to calls
 // that actually build the BuildRangeInstr object
-public class BuildRangeInstr extends ResultBaseInstr {
+public class BuildRangeInstr extends TwoOperandResultBaseInstr {
     private boolean exclusive;
 
     public BuildRangeInstr(Variable result, Operand begin, Operand end, boolean exclusive) {
-        super(Operation.BUILD_RANGE, result, new Operand[] { begin, end });
+        super(Operation.BUILD_RANGE, result, begin, end);
 
         this.exclusive = exclusive;
     }
 
     public Operand getBegin() {
-        return operands[0];
+        return getOperand1();
     }
 
     public Operand getEnd() {
-        return operands[1];
+        return getOperand2();
     }
 
     public boolean isExclusive() {

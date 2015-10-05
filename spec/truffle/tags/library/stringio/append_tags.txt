@@ -1,2 +1,0 @@
-fails:StringIO#<< when passed [Object] writes the passed argument onto self
-fails:StringIO#<< when passed [Object] writes the passed argument at the current position

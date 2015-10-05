@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'digest'
 
 describe "Digest.hexencode" do
-  before(:each) do
+  before :each do
     @string   = 'sample string'
     @encoded  = "73616d706c6520737472696e67"
   end

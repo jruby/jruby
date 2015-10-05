@@ -1,6 +1,7 @@
 require 'mspec/expectations/expectations'
 require 'mspec/runner/actions/timer'
 require 'mspec/runner/actions/tally'
+require 'mspec/runner/actions/leakchecker' if ENV['CHECK_LEAKS']
 
 class DottedFormatter
   attr_reader :exceptions, :timer, :tally
@@ -8,7 +9,7 @@ class DottedFormatter
   def initialize(out=nil)
     @exception = @failure = false
     @exceptions = []
-    @count = 0
+    @count = 0 # For subclasses
     if out.nil?
       @out = $stdout
     else
@@ -24,6 +25,7 @@ class DottedFormatter
   def register
     (@timer = TimerAction.new).register
     (@tally = TallyAction.new).register
+    LeakCheckerAction.new.register if ENV['CHECK_LEAKS']
     @counter = @tally.counter
 
     MSpec.register :exception, self
@@ -35,7 +37,7 @@ class DottedFormatter
 
   def abort
     if @current_state
-      puts " aborting example: #{@current_state.description}"
+      puts "\naborting example: #{@current_state.description}"
     end
   end
 
@@ -94,12 +96,17 @@ class DottedFormatter
     print "\n"
     count = 0
     @exceptions.each do |exc|
-      outcome = exc.failure? ? "FAILED" : "ERROR"
-      print "\n#{count += 1})\n#{exc.description} #{outcome}\n"
-      print exc.message, "\n"
-      print exc.backtrace, "\n"
+      count += 1
+      print_exception(exc, count)
     end
     print "\n#{@timer.format}\n\n#{@tally.format}\n"
+  end
+
+  def print_exception(exc, count)
+    outcome = exc.failure? ? "FAILED" : "ERROR"
+    print "\n#{count})\n#{exc.description} #{outcome}\n"
+    print exc.message, "\n"
+    print exc.backtrace, "\n"
   end
 
   # A convenience method to allow printing to different outputs.

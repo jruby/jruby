@@ -13,7 +13,7 @@ module JRuby
         end
       end
 
-      def generate_dir_info( dir, is_root = true )
+      def generate_dir_info( dir = ARGV[0], is_root = true )
         return if dir != nil && !File.directory?( dir )
         File.open( dir + '/.jrubydir', 'w' ) do |f|
           f.puts ".." unless is_root

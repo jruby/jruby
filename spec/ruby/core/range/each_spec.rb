@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Range#each" do
   it "passes each element to the given block by using #succ" do
@@ -60,4 +61,6 @@ describe "Range#each" do
     (:aa..:ac).each.to_a.should == [:aa, :ab, :ac]
     (:aa...:ac).each.to_a.should == [:aa, :ab]
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :each, (1..3)
 end

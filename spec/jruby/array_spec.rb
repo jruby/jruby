@@ -12,14 +12,14 @@ array_extender << "arrayElem"
 
 describe "Array" do
   it "uses the #each method's override for #any? if one exists" do
-    array_extender.any? { |elem| elem.should == "eachElem" }
+    array_extender.any? { |elem| expect(elem).to eq("eachElem") }
   end
 
   it "uses the #each method's override for #all? if one exists" do
-    array_extender.all? { |elem| elem.should == "eachElem" }
+    array_extender.all? { |elem| expect(elem).to eq("eachElem") }
   end
 
   it "uses the #each method's override for #find? if one exists" do
-    array_extender.find { |elem| elem.should == "eachElem" }
+    array_extender.find { |elem| expect(elem).to eq("eachElem") }
   end
 end

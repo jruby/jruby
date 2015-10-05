@@ -10,7 +10,9 @@ describe "Regexp.union" do
   it "returns a regular expression that will match passed arguments" do
     Regexp.union("penzance").should == /penzance/
     Regexp.union("skiing", "sledding").should == /skiing|sledding/
-    Regexp.union(/dogs/, /cats/i).should == /(?-mix:dogs)|(?i-mx:cats)/
+    not_supported_on :opal do
+      Regexp.union(/dogs/, /cats/i).should == /(?-mix:dogs)|(?i-mx:cats)/
+    end
   end
 
   it "quotes any string arguments" do
@@ -139,7 +141,9 @@ describe "Regexp.union" do
 
   it "accepts a single array of patterns as arguments" do
     Regexp.union(["skiing", "sledding"]).should == /skiing|sledding/
-    Regexp.union([/dogs/, /cats/i]).should == /(?-mix:dogs)|(?i-mx:cats)/
+    not_supported_on :opal do
+      Regexp.union([/dogs/, /cats/i]).should == /(?-mix:dogs)|(?i-mx:cats)/
+    end
     lambda{Regexp.union(["skiing", "sledding"], [/dogs/, /cats/i])}.should raise_error(TypeError)
   end
 end

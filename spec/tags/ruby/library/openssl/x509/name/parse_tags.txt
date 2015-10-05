@@ -1,0 +1,1 @@
+fails:OpenSSL::X509::Name.parse raises TypeError if the given string contains no key/value pairs

@@ -1,1 +1,0 @@
-fails:String#b returns new string without modifying self

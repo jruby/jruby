@@ -1,0 +1,3 @@
+fails:Numeric#quo calls #to_r to convert the object to a Rational
+fails:Numeric#quo raises a TypeError of #to_r does not return a Rational
+fails:Numeric#quo returns the result of calling self#/ with other

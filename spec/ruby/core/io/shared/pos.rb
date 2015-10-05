@@ -1,7 +1,7 @@
-describe :io_pos, :shared => true do
+describe :io_pos, shared: true do
   before :each do
     @fname = tmp('test.txt')
-    File.open @fname, 'w' do |f| f.write "123" end
+    File.open(@fname, 'w') { |f| f.write "123" }
   end
 
   after :each do
@@ -32,10 +32,10 @@ describe :io_pos, :shared => true do
   end
 end
 
-describe :io_set_pos, :shared => true do
+describe :io_set_pos, shared: true do
   before :each do
     @fname = tmp('test.txt')
-    File.open @fname, 'w' do |f| f.write "123" end
+    File.open(@fname, 'w') { |f| f.write "123" }
   end
 
   after :each do

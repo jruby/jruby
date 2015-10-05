@@ -6,19 +6,15 @@ describe "ARGF.file" do
     @file2 = fixture __FILE__, "file2.txt"
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   # NOTE: this test assumes that fixtures files have two lines each
   it "returns the current file object on each file" do
-    argv [@file1, @file2] do
+    argf [@file1, @file2] do
       result = []
       # returns first current file even when not yet open
-      result << ARGF.file.path
-      result << ARGF.file.path while ARGF.gets
+      result << @argf.file.path
+      result << @argf.file.path while @argf.gets
       # returns last current file even when closed
-      result << ARGF.file.path
+      result << @argf.file.path
       result.should == [@file1, @file1, @file1, @file2, @file2, @file2]
     end
   end

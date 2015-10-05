@@ -14,8 +14,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
-import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RaiseIfFrozenNode extends RubyNode {
 
@@ -25,7 +26,7 @@ public class RaiseIfFrozenNode extends RubyNode {
     public RaiseIfFrozenNode(RubyNode child) {
         super(child.getContext(), child.getEncapsulatingSourceSection());
         this.child = child;
-        isFrozenNode = IsFrozenNodeFactory.create(child.getContext(), child.getEncapsulatingSourceSection(), null);
+        isFrozenNode = IsFrozenNodeGen.create(child.getContext(), child.getEncapsulatingSourceSection(), null);
     }
 
     @Override
@@ -35,7 +36,7 @@ public class RaiseIfFrozenNode extends RubyNode {
         if (isFrozenNode.executeIsFrozen(result)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(
-                    getContext().getCoreLibrary().getLogicalClass(result).getName(), this));
+                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(result)).getName(), this));
         }
 
         return result;

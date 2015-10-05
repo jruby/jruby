@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.nodes.globals;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.ThreadLocalObject;
 
 /**
  * If a child node produces a {@link ThreadLocal}, get the value from it. If the value is not a {@code ThreadLocal},
@@ -31,26 +33,15 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public GetFromThreadLocalNode(GetFromThreadLocalNode prev) {
-        super(prev);
-    }
-
+    @TruffleBoundary
     @Specialization
-    public Object get(ThreadLocal<?> threadLocal) {
+    public Object get(ThreadLocalObject threadLocal) {
         return threadLocal.get();
     }
 
-    @Specialization(guards = "!isThreadLocal")
+    @Specialization(guards = "!isThreadLocal(value)")
     public Object get(Object value) {
         return value;
-    }
-
-    public static Object get(RubyContext context, Object value) {
-        if (value instanceof ThreadLocal) {
-            return ((ThreadLocal<?>) value).get();
-        } else {
-            return value;
-        }
     }
 
 

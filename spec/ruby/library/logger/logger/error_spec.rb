@@ -41,13 +41,13 @@ describe "Logger#error" do
   it "logs a ERROR message" do
     @logger.error("test")
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "ERROR -- : test\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "ERROR -- : test\n"
   end
 
   it "accepts an application name with a block" do
     @logger.error("MyApp") { "Test message" }
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "ERROR -- MyApp: Test message\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "ERROR -- MyApp: Test message\n"
   end
 
 end

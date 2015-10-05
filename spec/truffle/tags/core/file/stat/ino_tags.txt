@@ -1,1 +1,0 @@
-fails:File::Stat#ino returns the ino of a File::Stat object

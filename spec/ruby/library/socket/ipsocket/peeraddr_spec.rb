@@ -2,11 +2,8 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Socket::IPSocket#peeraddr" do
-  before :all do
-    @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
-  end
-
   before :each do
+    @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
     @server = TCPServer.new("127.0.0.1", SocketSpecs.port)
     @client = TCPSocket.new("127.0.0.1", SocketSpecs.port)
   end
@@ -14,10 +11,6 @@ describe "Socket::IPSocket#peeraddr" do
   after :each do
     @server.close unless @server.closed?
     @client.close unless @client.closed?
-    BasicSocket.do_not_reverse_lookup = false
-  end
-
-  after :all do
     BasicSocket.do_not_reverse_lookup = @do_not_reverse_lookup
   end
 

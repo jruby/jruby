@@ -18,7 +18,7 @@ describe 'Accessing instance variables' do
       (0..100).each do |i|
         object.instance_variable_set(:"@foo#{i}", i)
         read_value = object.instance_variable_get(:"@foo#{i}")
-        read_value.should == i
+        expect(read_value).to eq(i)
       end
 
       # cleanup

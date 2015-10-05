@@ -1,2 +1,0 @@
-fails:MatchData#values_at returns an array of the matching value
-fails:MatchData#values_at when passed a Range returns an array of the matching value

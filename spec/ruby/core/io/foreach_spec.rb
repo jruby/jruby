@@ -55,9 +55,19 @@ describe "IO.foreach" do
     $_.should be_nil
   end
 
-  it "returns an Enumerator when called without a block" do
-    IO.foreach(@name).should be_an_instance_of(enumerator_class)
-    IO.foreach(@name).to_a.should == IOSpecs.lines
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      IO.foreach(@name).should be_an_instance_of(enumerator_class)
+      IO.foreach(@name).to_a.should == IOSpecs.lines
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          IO.foreach(@name).size.should == nil
+        end
+      end
+    end
   end
 
   it_behaves_like :io_readlines, :foreach, IOSpecs.collector

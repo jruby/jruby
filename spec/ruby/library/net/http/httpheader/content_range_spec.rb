@@ -3,7 +3,7 @@ require 'net/http'
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Net::HTTPHeader#content_range" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

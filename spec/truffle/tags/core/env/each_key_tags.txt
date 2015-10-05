@@ -1,2 +1,0 @@
-fails:ENV.each_key returns each key
-fails:ENV.each_key returns keys in the locale encoding

@@ -2,9 +2,11 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/enumeratorize', __FILE__)
 require File.expand_path('../shared/keep_if', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#select" do
   it_behaves_like :enumeratorize, :select
+  it_behaves_like :enumeratorized_with_origin_size, :select, [1,2,3]
 
   it "returns a new array of elements for which block is true" do
     [1, 3, 4, 5, 6, 9].select { |i| i % ((i + 1) / 2) == 0}.should == [1, 4, 6]

@@ -1,19 +1,5 @@
-fails:String#unpack with format 'L' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'l' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'l' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' ignores whitespace in the format string
 fails:String#unpack with format 'L' calls #to_str to coerce the directives string
-fails:String#unpack with format 'L' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'l' ignores whitespace in the format string
 fails:String#unpack with format 'l' calls #to_str to coerce the directives string
-fails:String#unpack with format 'l' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' with modifier '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '!' decodes a long with most significant bit set as a positive number
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes one int for a single format character
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes two ints for two format characters
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes the number of ints requested by the count modifier

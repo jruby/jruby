@@ -1,8 +1,6 @@
 package org.jruby.ir.interpreter;
 
-import java.util.Collection;
 import java.util.List;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -70,12 +68,15 @@ public class InterpreterContext {
         Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
         for (int ipc = 0; ipc < length; ipc++) {
             Instr i = linearizedInstrArray[ipc];
-            i.setIPC(ipc);
 
             if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
         }
 
         return linearizedInstrArray;
+    }
+
+    public int getRequiredArgsCount() {
+        return getStaticScope().getSignature().required();
     }
 
     public IRScope getScope() {

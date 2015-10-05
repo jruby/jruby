@@ -80,7 +80,7 @@ abstract class ClassData {
     }
 
     public ClassVisitor cls;
-    public String clsName;
+    public final String clsName;
     Stack<MethodData> methodStack = new Stack();
     public AtomicInteger callSiteCount = new AtomicInteger(0);
     public Set<Integer> arrayMethodsDefined = new HashSet();

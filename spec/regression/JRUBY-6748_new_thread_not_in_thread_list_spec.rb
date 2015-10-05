@@ -8,7 +8,7 @@ describe "A newly created thread" do
       threads << Thread.new do
         1000.times do 
           objects = Thread.list.map{|t|t.object_id}
-          objects.should include(Thread.current.object_id)
+          expect(objects).to include(Thread.current.object_id)
         end
       end
     end

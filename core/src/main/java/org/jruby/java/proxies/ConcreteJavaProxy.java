@@ -96,7 +96,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             newMethod = clazz.searchMethod("new");
         }
 
-        private boolean needsCreate(IRubyObject proxy) {
+        private static boolean needsCreate(IRubyObject proxy) {
             return ((JavaProxy) proxy).object == null;
         }
 

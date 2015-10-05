@@ -50,7 +50,6 @@ import java.util.logging.Logger;
  * a transitive dependency on any runtime JRuby classes.
  */
 @SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod"})
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
@@ -80,6 +79,11 @@ public class AnnotationBinder extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
+
     public void processType(TypeElement cd) {
         // process inner classes
         for (TypeElement innerType : ElementFilter.typesIn(cd.getEnclosedElements())) {
@@ -104,7 +108,6 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.RubyModule;");
             out.println("import org.jruby.RubyClass;");
             out.println("import org.jruby.anno.TypePopulator;");
-            out.println("import org.jruby.internal.runtime.methods.CallConfiguration;");
             out.println("import org.jruby.internal.runtime.methods.JavaMethod;");
             out.println("import org.jruby.internal.runtime.methods.DynamicMethod;");
             out.println("import org.jruby.runtime.Arity;");
@@ -317,21 +320,16 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            String callRequirement = AnnotationHelper.getCallConfigNameByAnno(anno);
-            String callerRequirement = AnnotationHelper.getCallerCallConfigNameByAnno(anno);
-
             out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
             out.println("        populateMethod(javaMethod, " +
                     +AnnotationHelper.getArityValue(anno, actualRequired) + ", \""
                     + method.getSimpleName() + "\", "
                     + isStatic + ", "
-                    + "CallConfiguration." + callRequirement + ","
                     + anno.notImplemented() + ", "
                     + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
                     + method.getReturnType().toString() + ".class, "
-                    + "new Class[] {" + buffer.toString() + "},"
-                    + "CallConfiguration." + callerRequirement + ");");
+                    + "new Class[] {" + buffer.toString() + "});");
             generateMethodAddCalls(method, anno);
         }
     }
@@ -368,21 +366,16 @@ public class AnnotationBinder extends AbstractProcessor {
                     anno.frame());
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
-            String callRequirement = AnnotationHelper.getCallConfigNameByAnno(anno);
-            String callerRequirement = AnnotationHelper.getCallerCallConfigNameByAnno(anno);
-
             out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ");");
             out.println("        populateMethod(javaMethod, " +
                     "-1, \"" +
                     method.getSimpleName() + "\", " +
                     isStatic + ", " +
-                    "CallConfiguration." + callRequirement + ", " +
                     anno.notImplemented() + ", "
                     + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
                     + method.getReturnType().toString() + ".class, "
-                    + "new Class[] {" + buffer.toString() + "},"
-                    + "CallConfiguration." + callerRequirement + ");");
+                    + "new Class[] {" + buffer.toString() + "});");
             generateMethodAddCalls(method, anno);
         }
     }

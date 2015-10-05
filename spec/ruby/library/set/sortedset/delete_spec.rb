@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'set'
 
 describe "SortedSet#delete" do
-  before(:each) do
+  before :each do
     @set = SortedSet["a", "b", "c"]
   end
 
@@ -18,7 +18,7 @@ describe "SortedSet#delete" do
 end
 
 describe "SortedSet#delete?" do
-  before(:each) do
+  before :each do
     @set = SortedSet["a", "b", "c"]
   end
 

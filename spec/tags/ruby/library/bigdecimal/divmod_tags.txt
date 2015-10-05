@@ -1,1 +1,1 @@
-fails:BigDecimal#mod_part_of_divmod returns a [Float value] when the argument is Float
+fails:BigDecimal#divmod Can be reversed with * and +

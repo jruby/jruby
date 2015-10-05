@@ -5,7 +5,6 @@ import java.util.Map;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -34,7 +33,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
- * Created by enebo on 2/7/15.
+ * An attempt at a minimal subset of instrs for small simple methods.
  */
 public class SimpleMethodInterpreterEngine extends InterpreterEngine {
     public static Map<Operation, Boolean> OPERATIONS = new HashMap() {{
@@ -84,7 +83,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -255,7 +253,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
@@ -279,7 +277,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -457,7 +454,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
@@ -481,7 +478,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -660,7 +656,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
@@ -684,7 +680,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -864,7 +859,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
@@ -888,7 +883,6 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -1060,7 +1054,7 @@ public class SimpleMethodInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 

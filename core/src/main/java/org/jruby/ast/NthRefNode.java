@@ -43,13 +43,9 @@ import org.jruby.util.DefinedMessage;
 public class NthRefNode extends Node {
     private final int matchNumber;
     
-    /** ByteList representing the name of this numbered nth ref */
-    private final DefinedMessage definedMessage;
-
     public NthRefNode(ISourcePosition position, int matchNumber) {
         super(position, false);
         this.matchNumber = matchNumber;
-        this.definedMessage = DefinedMessage.byText("$" + matchNumber);
     }
 
     public NodeType getNodeType() {

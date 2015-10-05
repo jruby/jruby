@@ -1,6 +1,0 @@
-fails:Dir.rmdir removes empty directories
-fails:Dir.rmdir calls #to_path on non-String arguments
-fails:Dir.rmdir raises an Errno::ENOTEMPTY when trying to remove a nonempty directory
-fails:Dir.rmdir raises an Errno::ENOENT when trying to remove a non-existing directory
-fails:Dir.rmdir raises an Errno::ENOTDIR when trying to remove a non-directory
-fails:Dir.rmdir raises an Errno::EACCES if lacking adequate permissions to remove the directory

@@ -95,7 +95,6 @@ describe MSpec, ".protect" do
   before :each do
     MSpec.clear_current
     @cs = ContextState.new "C#m"
-    @cs.stub(:state).and_return(@es)
     @cs.parent = MSpec.current
 
     @es = ExampleState.new @cs, "runs"

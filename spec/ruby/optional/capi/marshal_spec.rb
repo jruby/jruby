@@ -3,12 +3,12 @@ require File.expand_path('../spec_helper', __FILE__)
 load_extension("marshal")
 
 describe "CApiMarshalSpecs" do
-  before(:each) do
+  before :each do
     @s = CApiMarshalSpecs.new
   end
 
   describe "rb_marshal_dump" do
-    before(:each) do
+    before :each do
       @obj = "foo"
     end
 
@@ -32,7 +32,7 @@ describe "CApiMarshalSpecs" do
   end
 
   describe "rb_marshal_load" do
-    before(:each) do
+    before :each do
       @obj = "foo"
       @data = Marshal.dump(@obj)
     end

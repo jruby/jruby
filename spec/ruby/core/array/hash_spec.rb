@@ -13,10 +13,10 @@ describe "Array#hash" do
 
   it "properly handles recursive arrays" do
     empty = ArraySpecs.empty_recursive_array
-    empty.hash.should be_kind_of(Fixnum)
+    lambda { empty.hash }.should_not raise_error
 
     array = ArraySpecs.recursive_array
-    array.hash.should be_kind_of(Fixnum)
+    lambda { empty.hash }.should_not raise_error
   end
 
   it "returns the same hash for equal recursive arrays" do
@@ -32,25 +32,22 @@ describe "Array#hash" do
   it "returns the same hash for equal recursive arrays through hashes" do
     h = {} ; rec = [h] ; h[:x] = rec
     rec.hash.should == [h].hash
-    rec.hash.should == [{:x => rec}].hash
-    # Like above, this is because rec.eql?([{:x => rec}])
+    rec.hash.should == [{x: rec}].hash
+    # Like above, this is because rec.eql?([{x: rec}])
   end
 
   #  Too much of an implementation detail? -rue
-  not_compliant_on :rubinius, :opal do
+  not_supported_on :rubinius, :opal do
     it "calls to_int on result of calling hash on each element" do
       ary = Array.new(5) do
-        # Can't use should_receive here because it calls hash()
         obj = mock('0')
-        def obj.hash()
-          def self.to_int() freeze; 0 end
-          return self
-        end
+        obj.should_receive(:hash).and_return(obj)
+        obj.should_receive(:to_int).and_return(0)
         obj
       end
 
       ary.hash
-      ary.each { |obj| obj.frozen?.should == true }
+
 
       hash = mock('1')
       hash.should_receive(:to_int).and_return(1.hash)

@@ -1,4 +1,4 @@
-describe :file_executable, :shared => true do
+describe :file_executable, shared: true do
   before :each do
     @file1 = tmp('temp1.txt')
     @file2 = tmp('temp2.txt')
@@ -41,7 +41,7 @@ describe :file_executable, :shared => true do
   end
 end
 
-describe :file_executable_missing, :shared => true do
+describe :file_executable_missing, shared: true do
   it "returns false if the file does not exist" do
     @object.send(@method, 'fake_file').should == false
   end

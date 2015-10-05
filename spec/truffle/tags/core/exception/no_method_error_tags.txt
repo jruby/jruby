@@ -1,3 +1,2 @@
-fails:NoMethodError.new allows passing method args
 fails:NoMethodError#args returns an empty array if the caller method had no arguments
 fails:NoMethodError#args returns an array with the same elements as passed to the method

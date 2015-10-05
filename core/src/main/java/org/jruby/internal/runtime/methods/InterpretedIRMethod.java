@@ -1,18 +1,20 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.compiler.FullBuildSource;
+import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,10 +25,10 @@ import org.jruby.util.log.LoggerFactory;
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
-public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, FullBuildSource {
+public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Compilable<InterpreterContext> {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private Arity arity;
+    private Signature signature;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     protected final IRScope method;
@@ -35,12 +37,13 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected int callCount = 0;
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
+        super(implementationClass, visibility, method.getName());
         this.method = method;
         this.method.getStaticScope().determineModule();
-        this.arity = calculateArity();
+        this.signature = getStaticScope().getSignature();
 
-        // FIXME: Enable no full build promotion option (perhaps piggy back JIT threshold)
+        // -1 jit.threshold is way of having interpreter not promote full builds.
+        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
     }
 
     public IRScope getIRScope() {
@@ -55,21 +58,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return method.getStaticScope();
     }
 
-    public String[] getParameterList() {
+    public ArgumentDescriptor[] getArgumentDescriptors() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
-        return ((IRMethod) method).getArgDesc();
+        return ((IRMethod) method).getArgumentDescriptors();
     }
 
-    private Arity calculateArity() {
-        StaticScope s = method.getStaticScope();
-        if (s.getOptionalArgs() > 0 || s.getRestArg() >= 0) return Arity.required(s.getRequiredArgs());
-
-        return Arity.createArity(s.getRequiredArgs());
+    public Signature getSignature() {
+        return signature;
     }
 
     @Override
     public Arity getArity() {
-        return arity;
+        return signature.arity();
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {
@@ -86,7 +86,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
         }
-        context.setCurrentVisibility(getVisibility());
     }
 
     // FIXME: for subclasses we should override this method since it can be simple get
@@ -258,7 +257,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    public void switchToFullBuild(InterpreterContext interpreterContext) {
+    public void completeBuild(InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
     }
 
@@ -267,17 +266,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected void promoteToFullBuild(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // don't Promote to full build during runtime boot
-        if (runtime.isBooting()) return;
+        if (runtime.isBooting()) return;   // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            runtime.getJITCompiler().fullBuildThresholdReached(this, context.runtime.getInstanceConfig());
-        }
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
     }
 
     @Override
     public DynamicMethod dup() {
-        return new InterpretedIRMethod(method, visibility, implementationClass);
+        return new InterpretedIRMethod(method, getVisibility(), implementationClass);
+    }
+
+    public String getClassName(ThreadContext context) {
+        return null;
     }
 
     public String getFile() {

@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger("Main");
-    
+
     public Main(RubyInstanceConfig config) {
         this(config, false);
     }
@@ -100,16 +100,16 @@ public class Main {
         this.config = new RubyInstanceConfig();
         config.setHardExit(hardExit);
     }
-    
+
     private static List<String> getDotfileDirectories() {
         ArrayList<String> searchList = new ArrayList<String>();
         for (String homeProp : new String[] {"user.dir", "user.home"}) {
             String home = SafePropertyAccessor.getProperty(homeProp);
             if (home != null) searchList.add(home);
         }
-        
+
         // JVM sometimes picks odd location for user.home based on a registry entry
-        // (see http://bugs.sun.com/view_bug.do?bug_id=4787931).  Add extra check in 
+        // (see http://bugs.sun.com/view_bug.do?bug_id=4787931).  Add extra check in
         // case that entry is wrong. Add before user.home in search list.
         if (Platform.IS_WINDOWS) {
             String homeDrive = System.getenv("HOMEDRIVE");
@@ -118,10 +118,10 @@ public class Main {
                 searchList.add(1, (homeDrive + homePath).replace('\\', '/'));
             }
         }
-        
+
         return searchList;
     }
-    
+
     public static void processDotfile() {
         for (String home : getDotfileDirectories()) {
             File dotfile = new File(home + "/.jrubyrc");
@@ -131,7 +131,7 @@ public class Main {
 
     private static void loadJRubyProperties(File dotfile) {
         FileInputStream fis = null;
-        
+
         try {
             // update system properties with long form jruby properties from .jrubyrc
             Properties sysProps = System.getProperties();
@@ -147,7 +147,7 @@ public class Main {
         } catch (SecurityException se) {
             LOG.debug("exception loading " + dotfile, se);
         } finally {
-            if (fis != null) try {fis.close();} catch (Exception e) {}        
+            if (fis != null) try {fis.close();} catch (Exception e) {}
         }
     }
 
@@ -184,8 +184,10 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
+        printTruffleTimeMetric("before-main");
+
         doGCJCheck();
-        
+
         Main main;
 
         if (DripMain.DRIP_RUNTIME != null) {
@@ -193,7 +195,7 @@ public class Main {
         } else {
             main = new Main(true);
         }
-        
+
         try {
             Status status = main.run(args);
             if (status.isExit()) {
@@ -218,6 +220,9 @@ public class Main {
 
             System.exit(1);
         }
+
+        printTruffleTimeMetric("after-main");
+        printTruffleMemoryMetric();
     }
 
     public Status run(String[] args) {
@@ -254,9 +259,7 @@ public class Main {
 
         InputStream in   = config.getScriptSource();
         String filename  = config.displayedFileName();
-        
-        doProcessArguments(in);
-        
+
         Ruby _runtime;
 
         if (DripMain.DRIP_RUNTIME != null) {
@@ -266,10 +269,10 @@ public class Main {
         } else {
             _runtime = Ruby.newInstance(config);
         }
-        
+
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
-        
+
         if (config.isHardExit()) {
             // we're the command-line JRuby, and should set a shutdown hook for
             // teardown.
@@ -363,7 +366,7 @@ public class Main {
             }
             config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
         }
-        
+
         if (config.isVerbose()) {
             config.getError().println("Exception trace follows:");
             oome.printStackTrace(config.getError());
@@ -403,8 +406,7 @@ public class Main {
 
             runtime.runFromMain(in, filename);
 
-            runtime.shutdownTruffleBridge();
-
+            runtime.shutdownTruffleContextIfRunning();
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }
@@ -414,15 +416,15 @@ public class Main {
     private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
         // check primary script
         boolean status = checkStreamSyntax(runtime, in, filename);
-        
+
         // check other scripts specified on argv
         for (String arg : config.getArgv()) {
             status = status && checkFileSyntax(runtime, arg);
         }
-        
+
         return new Status(status ? 0 : -1);
     }
-    
+
     private boolean checkFileSyntax(Ruby runtime, String filename) {
         File file = new File(filename);
         if (file.exists()) {
@@ -436,21 +438,21 @@ public class Main {
             return false;
         }
     }
-    
+
     private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+        final ThreadContext context = runtime.getCurrentContext();
+        final IRubyObject $ex = context.getErrorInfo();
         try {
             runtime.parseFromMain(in, filename);
             config.getOutput().println("Syntax OK");
             return true;
         } catch (RaiseException re) {
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                context.setErrorInfo($ex);
                 config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-            } else {
-                throw re;
+                return false;
             }
-            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-            return false;
+            throw re;
         }
     }
 
@@ -517,7 +519,7 @@ public class Main {
      * @param rj
      * @return
      */
-    private static int handleRaiseException(RaiseException rj) {
+    protected static int handleRaiseException(RaiseException rj) {
         RubyException raisedException = rj.getException();
         Ruby runtime = raisedException.getRuntime();
         if (runtime.getSystemExit().isInstance(raisedException)) {
@@ -530,6 +532,28 @@ public class Main {
         } else {
             System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
             return 1;
+        }
+    }
+
+    public static void printTruffleTimeMetric(String id) {
+        if (Options.TRUFFLE_METRICS_TIME.load()) {
+            final long millis = System.currentTimeMillis();
+            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
+        }
+    }
+
+    private static void printTruffleMemoryMetric() {
+        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
+            for (int n = 0; n < 10; n++) {
+                System.gc();
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
         }
     }
 

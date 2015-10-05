@@ -4,41 +4,28 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedList;
 
-import org.osgi.framework.Bundle;
+import org.jruby.util.ClassLoaderGetResourses;
+import org.jruby.util.UriLikePathHelper;
 
 /**
- * the IsolatedScriptingContainer detects the whether it is used with
- * a Thread.currentThread.contextClassLoader (J2EE) or with the classloader
- * which loaded IsolatedScriptingContainer.class (OSGi case)
- * 
- * the setup of LOAD_PATH and GEM_PATH and JRUBY_HOME uses ONLY uri: or uri:classloader:
- * protocol paths. i.e. everything lives within one or more classloaders - no jars added from
- * jave.class.path or similar "magics"
+ * the IsolatedScriptingContainer does set GEM_HOME and GEM_PATH and JARS_HOME
+ * in such a way that it uses only resources which can be reached with classloader.
  *
- * the root of the "main" classloader is add to LOAD_PATH and GEM_PATH.
+ * GEM_HOME is uri:classloader://META-INF/jruby.home/lib/ruby/gems/shared
+ * GEM_PATH is uri:classloader://
+ * JARS_HOME is uri:classloader://jars
  *
- * in the OSGi case there are helper methods to add ClassLoaders to the LOAD_PATH or GEM_PATH
- * 
- * a typical setup for the ContextClassLoader case and OSGi case looks likes this:
- * <li>LOAD_PATH == [ "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9/site_ruby", 
- *                    "uri:classloader:/META-INF/jruby.home/lib/ruby/shared",
- *                    "uri:classloader:/META-INF/jruby.home/lib/ruby/1.9",
- *                    "uri:classloader:" ]</li>
- * <li>Gem::Specification.dirs ==  [ "uri:classloader:/specifications", "uri:classloader:/META-INF/jruby.home/lib/ruby/gems/shared/specifications" ]
- * here very resource is loaded via <code>Thread.currentTHread.getContextClassLoader().getResourceAsStream(...)</code>
- * 
- * <code>new URL( uri ).openStream()</code>, i.e. <code>new URL(classloader.getResource().toString()).openStream()</code> has to work for
- * those classloaders. felix, knoplerfish and equinox OSGi framework do work.
- * 
- * NOTE: <code>Gem.path</code> is base for determine the <code>Gem::Specification.dirs</code> and <code>Gem::Specification.dirs</code> is
- * used to find gemspec files of the installed gems.
+ * but whenever you want to set them via {@link #setEnvironment(Map)} this will be honored.
+ *
+ * it also comes with OSGi support which allows to add a bundle to LOAD_PATH or GEM_PATH.
  */
 public class IsolatedScriptingContainer extends ScriptingContainer {
 
-    private static final String JRUBYDIR = "/.jrubydir";
-    private static final String JRUBY_HOME = "/META-INF/jruby.home";
-    
+    private static final String URI_CLASSLOADER = "uri:classloader:/";
+
     public IsolatedScriptingContainer()
     {
         this(LocalContextScope.SINGLETON);
@@ -66,7 +53,16 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
     {
         super(scope, behavior, lazy);
 
-        setLoadPaths( Arrays.asList( "uri:classloader:" ) );
+        List<String> loadPaths = new LinkedList<String>();
+        loadPaths.add(URI_CLASSLOADER);
+        setLoadPaths(loadPaths);
+
+        // set the right jruby home
+        UriLikePathHelper uriPath = new UriLikePathHelper(new ClassLoaderGetResourses(getClassLoader()));
+        URL url = uriPath.getResource("/.jrubydir");
+        if (url != null){
+            setCurrentDirectory( URI_CLASSLOADER );
+        }
 
         // setup the isolated GEM_PATH, i.e. without $HOME/.gem/**
         setEnvironment(null);
@@ -74,75 +70,16 @@ public class IsolatedScriptingContainer extends ScriptingContainer {
 
     @Override
     public void setEnvironment(Map environment) {
-        if (environment == null || !environment.containsKey("GEM_PATH")) {
-            Map env = environment == null ? new HashMap() : new HashMap(environment);
-            env.put("GEM_PATH", "");
+        if (environment == null || !environment.containsKey("GEM_PATH")
+                || !environment.containsKey("GEM_HOME") || !environment.containsKey("JARS_HOME")) {
+            Map<String,String> env = environment == null ? new HashMap<String,String>() : new HashMap<String,String>(environment);
+            if (!env.containsKey("GEM_PATH")) env.put("GEM_PATH", URI_CLASSLOADER);
+            if (!env.containsKey("GEM_HOME")) env.put("GEM_HOME", URI_CLASSLOADER);
+            if (!env.containsKey("JARS_HOME")) env.put("JARS_HOME", URI_CLASSLOADER + "jars");
             super.setEnvironment(env);
         }
         else {
             super.setEnvironment(environment);
         }
-    }
-
-    public void addLoadPath( ClassLoader cl ) {
-        addLoadPath( cl, JRUBYDIR );
-    }
-
-    public void addLoadPath( ClassLoader cl, String ref ) {
-        addLoadPath(createUri(cl, ref));
-    }
-
-    public void addBundleToLoadPath( Bundle cl ) {
-        addBundleToLoadPath( cl, JRUBYDIR );
-    }
-
-    public void addBundleToLoadPath( Bundle cl, String ref ) {
-        addLoadPath(createUriFromBundle(cl, ref));
-    }
-
-    private String createUriFromBundle( Bundle cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on bundle " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-
-    private void addLoadPath(String uri) {
-        runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
-    }
-
-    public void addBundleToGemPath( Bundle cl ) {
-        addBundleToGemPath( cl, "/specifications" + JRUBYDIR );
-    }
-
-    public void addBundleToGemPath( Bundle cl, String ref ) {
-        addGemPath(createUriFromBundle(cl, ref));
-    }
-
-    public void addGemPath( ClassLoader cl ) {
-        addGemPath( cl, "/specifications" + JRUBYDIR );
-    }
-
-    public void addGemPath( ClassLoader cl, String ref ) {
-        addGemPath(createUri(cl, ref));
-    }
-
-    private String createUri(ClassLoader cl, String ref) {
-        URL url = cl.getResource( ref );
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-
-    private void addGemPath(String uri) {
-        runScriptlet( "require 'rubygems/defaults/jruby';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
     }
 }

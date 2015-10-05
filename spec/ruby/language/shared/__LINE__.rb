@@ -1,4 +1,4 @@
-describe :language___LINE__, :shared => true do
+describe :language___LINE__, shared: true do
   before :each do
     CodeLoadingSpecs.spec_setup
     @path = File.expand_path("line_fixture.rb", CODE_LOADING_DIR)

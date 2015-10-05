@@ -2,14 +2,14 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Numeric#singleton_method_added" do
-  before(:all) do
+  before :all do
     class ::NumericSpecs::Subclass
       # We want restore default Numeric behaviour for this particular test
       remove_method :singleton_method_added
     end
   end
 
-  after(:all) do
+  after :all do
     class ::NumericSpecs::Subclass
       # Allow mocking methods again
       def singleton_method_added(val)

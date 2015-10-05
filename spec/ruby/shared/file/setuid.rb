@@ -1,2 +1,2 @@
-describe :file_setuid, :shared => true do
+describe :file_setuid, shared: true do
 end

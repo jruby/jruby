@@ -1,1 +1,0 @@
-fails:Encoding::Converter#inspect needs to be reviewed for spec completeness

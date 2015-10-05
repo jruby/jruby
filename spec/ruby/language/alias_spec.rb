@@ -11,7 +11,7 @@ class AliasObject
 end
 
 describe "The alias keyword" do
-  before(:each) do
+  before :each do
     @obj = AliasObject.new
     @meta = class << @obj;self;end
   end

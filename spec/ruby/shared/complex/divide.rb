@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_divide, :shared => true do
+describe :complex_divide, shared: true do
   describe "with Complex" do
     it "divides according to the usual rule for complex numbers" do
       a = Complex((1 * 10) - (2 * 20), (1 * 20) + (2 * 10))

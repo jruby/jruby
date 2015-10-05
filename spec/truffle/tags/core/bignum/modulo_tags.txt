@@ -1,3 +1,0 @@
-fails:Bignum#% returns the modulus obtained from dividing self by the given argument
-fails:Bignum#modulo returns the modulus obtained from dividing self by the given argument
-fails:Bignum#% raises a ZeroDivisionError when the given argument is 0 and a Float

@@ -52,7 +52,7 @@ public class OpenFile implements Finalizable {
         writeconvAsciicompat = nil;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
-        posix = new PosixShim(runtime.getPosix());
+        posix = new PosixShim(runtime);
     }
 
     // IO Mode flags
@@ -78,8 +78,6 @@ public class OpenFile implements Finalizable {
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
 
     public void ascii8bitBinmode(Ruby runtime) {
-        Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
-
         if (readconv != null) {
             readconv.close();
             readconv = null;
@@ -895,7 +893,7 @@ public class OpenFile implements Finalizable {
     // MRI: NEED_READCONV
     public boolean needsReadConversion() {
         return Platform.IS_WINDOWS ?
-                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0)
+                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || isTextMode()
                 :
                 (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
     }
@@ -917,6 +915,10 @@ public class OpenFile implements Finalizable {
             IRubyObject ecopts;
             byte[] sname, dname;
             ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+            if (isTextMode() && Platform.IS_WINDOWS) {
+                // we can't do O_TEXT so we always do CRLF translation on Windows
+                ecflags = ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+            }
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();
@@ -1346,9 +1348,23 @@ public class OpenFile implements Finalizable {
         InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
 
         // if we can do selection and this is not a non-blocking call, do selection
+
+        /*
+            NOTE CON: We only do this selection because on the JDK, blocking calls to NIO channels can't be
+            interrupted, and we need to be able to interrupt blocking reads. In MRI, this logic is always just a
+            simple read(2) because EINTR does not damage the descriptor.
+
+            Doing selects here on ENXIO native channels caused FIFOs to block for read all the time, even when no
+            writers are connected. This may or may not be correct behavior for selects against FIFOs, but in any
+            case since MRI does not do a select here at all I believe correct logic is to skip the select when
+            working with any native descriptor.
+         */
+
         fptr.unlock();
         try {
-            if (fd.chSelect != null && !iis.fptr.nonblock) {
+            if (fd.chSelect != null
+                    && fd.chNative == null // MRI does not select for rb_read_internal on native descriptors
+                    && !iis.fptr.nonblock) {
                 context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
             }
         } finally {
@@ -1394,18 +1410,17 @@ public class OpenFile implements Finalizable {
                 }
             }
 
-            // kinda-hacky way to see if there's more data to read from a seekable channel
+            /*
+            Seekable channels (usually FileChannel) are treated as ready always. There are
+            three kinds we typically see:
+            1. files, which always select(2) as ready
+            2. stdio, which we can't select and can't check .size for available data
+            3. subprocess stdio, which we can't select and can't check .size either
+            In all three cases, without native fd logic, we can't do anything to determine
+            if the stream is ready, so we just assume it is and hope for the best.
+             */
             if (fd.chSeek != null) {
-                FileChannel fdSeek = fd.chSeek;
-                try {
-                    // not a real file, can't get size...we'll have to just read and block
-                    if (fdSeek.size() < 0) return true;
-
-                    // if current position is less than file size, read should not block
-                    return fdSeek.position() < fdSeek.size();
-                } catch (IOException ioe) {
-                    throw context.runtime.newIOErrorFromException(ioe);
-                }
+                return true;
             }
         } finally {
             if (locked) unlock();
@@ -1504,14 +1519,14 @@ public class OpenFile implements Finalizable {
     }
 
     // io_shift_cbuf
-    public IRubyObject shiftCbuf(ThreadContext context, int len, IRubyObject strp) {
+    public IRubyObject shiftCbuf(ThreadContext context, final int len, final IRubyObject strp) {
         boolean locked = lock();
         try {
             IRubyObject str = null;
             if (strp != null) {
                 str = strp;
                 if (str.isNil()) {
-                    strp = str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
+                    str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
                 } else {
                     ((RubyString) str).cat(cbuf.ptr, cbuf.off, len);
                 }
@@ -2012,18 +2027,24 @@ public class OpenFile implements Finalizable {
         return;
     }
 
-    // io_fwrite
+    // MRI: io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
-        // TODO: Windows
-//        #ifdef _WIN32
-//        if (fptr->mode & FMODE_TTY) {
-//            long len = rb_w32_write_console(str, fptr->fd);
-//            if (len > 0) return len;
-//        }
-//        #endif
+        if (Platform.IS_WINDOWS && isStdio()) {
+            return rbW32WriteConsole((RubyString)str);
+        }
+
         str = doWriteconv(context, str);
         ByteList strByteList = ((RubyString)str).getByteList();
         return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+    }
+
+    // MRI: rb_w32_write_console
+    public static long rbW32WriteConsole(RubyString buffer) {
+        // The actual port in MRI uses win32 APIs, but System.console seems to do what we want. See jruby/jruby#3292.
+        // FIXME: This assumes the System.console() is the right one to write to. Can you have multiple active?
+        System.console().printf("%s", buffer.asJavaString());
+
+        return buffer.size();
     }
 
     // do_writeconv

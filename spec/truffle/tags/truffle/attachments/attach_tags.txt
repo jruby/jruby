@@ -1,0 +1,3 @@
+fails:Truffle::Attachments.attach allows multiple blocks to be installed on the same line and runs them in the order they were attached
+fails:Truffle::Attachments.attach allows write access to local variables in the block
+fails:Truffle::Attachments.attach runs the block before running the line

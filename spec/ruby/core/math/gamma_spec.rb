@@ -1,11 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Math.gamma" do
-  before :all do
-    @factorial1 = 1
-    @factorial2 = 1124000727777607680000  # 22!
-  end
-
   it "returns +infinity given 0" do
     Math.gamma(0).should == Float::INFINITY
   end
@@ -19,18 +14,20 @@ describe "Math.gamma" do
   end
 
   # stop at n == 23 because 23! cannot be exactly represented by IEEE 754 double
-  2.upto(23) do |n|
-    it "returns exactly #{n-1}! given #{n}" do
-      @factorial1 *= n - 1
-      Math.gamma(n).should == @factorial1
+  it "returns exactly (n-1)! given n for n between 2 and 23" do
+    fact = 1
+    2.upto(23) do |n|
+      fact *= (n - 1)
+      Math.gamma(n).should == fact
     end
   end
 
-  24.upto(30) do |n|
-    it "returns approximately #{n-1}! given #{n}" do
-      @factorial2 *= n - 1
+  it "returns approximately (n-1)! given n for n between 24 and 30" do
+    fact2 = 1124000727777607680000  # 22!
+    24.upto(30) do |n|
+      fact2 *= n - 1
       # compare only the first 12 places, tolerate the rest
-      Math.gamma(n).should be_close(@factorial2, @factorial2.to_s[12..-1].to_i)
+      Math.gamma(n).should be_close(fact2, fact2.to_s[12..-1].to_i)
     end
   end
 

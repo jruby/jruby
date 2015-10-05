@@ -1,5 +1,1 @@
-fails:File::Stat#file? returns true if the named file exists and is a regular file.
-fails:File::Stat#file? accepts an object that has a #to_path method
-fails:File::Stat#file? returns true if the null device exists and is a regular file.
-fails:File::Stat#file? raises a TypeError if not passed a String type
 windows:File::Stat#file? raises an ArgumentError if not passed one argument

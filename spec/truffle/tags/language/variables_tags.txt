@@ -1,5 +1,3 @@
-fails(inherited):Basic multiple assignment with a splatted single RHS value does not call #to_ary on an object
-fails(inherited):Basic multiple assignment with a splatted single RHS value calls #to_a even if it's private
 fails(inherited):Multiple assignment with a single RHS value does not call #to_ary if #respond_to? returns false
 fails(inherited):Multiple assignment with a single RHS value raises a TypeError of #to_ary does not return an Array
 fails(inherited):Multiple assignment with a single RHS value raises a TypeError if #to_ary does not return an Array
@@ -26,8 +24,6 @@ fails:Multiple assignment with a single RHS value assigns a grouped LHS without 
 fails:Multiple assignment with a single RHS value assigns a grouped LHS with splats
 fails:Multiple assignment with a single RHS value does not mutate a RHS Array
 fails:Multiple assignment with a single RHS value calls #to_ary on the value returned by the method call
-fails:Multiple assignment with a single RHS value assigns global variables
-fails:Multiple assignment with a single RHS value assigns indexed elements
 fails:Multiple assignment with a single splatted RHS value calls #to_a to convert nil to an empty Array
 fails:Multiple assignment with a single splatted RHS value does not call #to_a if #respond_to? returns false
 fails:Multiple assignment with a single splatted RHS value assigns a MLHS with leading splat

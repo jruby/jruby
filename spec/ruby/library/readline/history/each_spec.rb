@@ -5,11 +5,11 @@ process_is_foreground do
     require 'readline'
 
     describe "Readline::HISTORY.each" do
-      before(:each) do
+      before :each do
         Readline::HISTORY.push("1", "2", "3")
       end
 
-      after(:each) do
+      after :each do
         Readline::HISTORY.pop
         Readline::HISTORY.pop
         Readline::HISTORY.pop

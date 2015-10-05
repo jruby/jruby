@@ -1,0 +1,6 @@
+exclude :test_div, "needs investigation"
+exclude :test_pow2, "needs investigation"
+exclude :test_power_of_0, "needs investigation"
+exclude :test_remainder, "needs investigation"
+exclude :test_xor_with_nonintegral_numeric, "needs investigation"
+exclude :test_xor_with_rational, "needs investigation"

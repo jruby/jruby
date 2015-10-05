@@ -1,4 +1,4 @@
-describe :array_slice, :shared => true do
+describe :array_slice, shared: true do
   it "returns the element at index with [index]" do
     [ "a", "b", "c", "d", "e" ].send(@method, 1).should == "b"
 
@@ -277,8 +277,8 @@ describe :array_slice, :shared => true do
     range_incl = ArraySpecs::MyRange.new(1, 2)
     range_excl = ArraySpecs::MyRange.new(-3, -1, true)
 
-    a[range_incl].should == [2, 3]
-    a[range_excl].should == [2, 3]
+    a.send(@method, range_incl).should == [2, 3]
+    a.send(@method, range_excl).should == [2, 3]
   end
 
   it "returns nil for a requested index not in the array with [index]" do

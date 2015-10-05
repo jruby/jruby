@@ -7,7 +7,7 @@ describe "Kernel" do
   end
 end
 
-describe :kernel_Array, :shared => true do
+describe :kernel_Array, shared: true do
   before :each do
     @array = [1, 2, 3]
   end

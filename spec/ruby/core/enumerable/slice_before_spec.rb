@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#slice_before" do
   before :each do
@@ -39,39 +40,43 @@ describe "Enumerable#slice_before" do
       end
     end
 
-    describe "and an argument" do
-      it "calls the block with a copy of that argument" do
-        arg = [:foo]
-        first = nil
-        e = @enum.slice_before(arg) do |i, init|
-          init.should == arg
-          init.should_not equal(arg)
-          first = init
-          i == 6 || i == 2
-        end
-        e.should be_an_instance_of(enumerator_class)
-        e.to_a.should == [[7], [6, 5, 4, 3], [2, 1]]
-        e = @enum.slice_before(arg) do |i, init|
-          init.should_not equal(first)
-        end
-        e.to_a
-      end
-
-      quarantine! do # need to double-check with ruby-core. Might be wrong or too specific
-        it "duplicates the argument directly without calling dup" do
-          arg = EnumerableSpecs::Undupable.new
+    ruby_version_is ""..."2.3" do
+      describe "and an argument" do
+        it "calls the block with a copy of that argument" do
+          arg = [:foo]
+          first = nil
           e = @enum.slice_before(arg) do |i, init|
-            init.initialize_dup_called.should be_true
-            false
+            init.should == arg
+            init.should_not equal(arg)
+            first = init
+            i == 6 || i == 2
           end
-          e.to_a.should == [[7, 6, 5, 4, 3, 2, 1]]
+          e.should be_an_instance_of(enumerator_class)
+          e.to_a.should == [[7], [6, 5, 4, 3], [2, 1]]
+          e = @enum.slice_before(arg) do |i, init|
+            init.should_not equal(first)
+          end
+          e.to_a
+        end
+
+        quarantine! do # need to double-check with ruby-core. Might be wrong or too specific
+          it "duplicates the argument directly without calling dup" do
+            arg = EnumerableSpecs::Undupable.new
+            e = @enum.slice_before(arg) do |i, init|
+              init.initialize_dup_called.should be_true
+              false
+            end
+            e.to_a.should == [[7, 6, 5, 4, 3, 2, 1]]
+          end
         end
       end
     end
   end
 
-  it "raises an Argument error when given an incorrect number of arguments" do
+  it "raises an ArgumentError when given an incorrect number of arguments" do
     lambda { @enum.slice_before("one", "two") }.should raise_error(ArgumentError)
     lambda { @enum.slice_before }.should raise_error(ArgumentError)
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_unknown_size, [:slice_before, 3]
 end

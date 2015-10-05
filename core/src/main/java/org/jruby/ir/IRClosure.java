@@ -2,18 +2,21 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.representations.CFG;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.objectweb.asm.Handle;
 
@@ -28,10 +31,10 @@ public class IRClosure extends IRScope {
 
     private boolean isBeginEndBlock;
 
-    /** The parameter names, for Proc#parameters */
-    private String[] parameterList;
-
     private Signature signature;
+
+    // Argument description
+    protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
@@ -40,15 +43,14 @@ public class IRClosure extends IRScope {
     private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
-    protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
-        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+    protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, String prefix) {
+        super(manager, lexicalParent, null, lineNumber, staticScope);
 
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
         this.closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
         this.body = null;
-        this.parameterList = new String[] {};
     }
 
     /** Used by cloning code */
@@ -62,7 +64,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.getSignature());
+            this.body = new MixedModeIRBlockBody(c, c.getSignature());
         }
 
         this.signature = c.signature;
@@ -77,14 +79,14 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
+        this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
         lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, signature);
+            this.body = new MixedModeIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
@@ -105,16 +107,6 @@ public class IRClosure extends IRScope {
 
     public boolean isBeginEndBlock() {
         return isBeginEndBlock;
-    }
-
-    public void setParameterList(String[] parameterList) {
-        this.parameterList = parameterList;
-
-        if (!getManager().isDryRun()) this.body.setParameterList(parameterList);
-    }
-
-    public String[] getParameterList() {
-        return this.parameterList;
     }
 
     @Override
@@ -250,7 +242,6 @@ public class IRClosure extends IRScope {
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         // SSS FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
-        clone.setParameterList(this.parameterList);
         clone.isBeginEndBlock = this.isBeginEndBlock;
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
@@ -296,10 +287,6 @@ public class IRClosure extends IRScope {
         super.setName(getLexicalParent().getName() + name);
     }
 
-    public Arity getArity() {
-        return signature.arity();
-    }
-
     public Signature getSignature() {
         return signature;
     }
@@ -310,5 +297,17 @@ public class IRClosure extends IRScope {
 
     public Handle getHandle() {
         return handle;
+    }
+
+    public ArgumentDescriptor[] getArgumentDescriptors() {
+        return argDesc;
+    }
+
+
+    /**
+     * Set upon completion of IRBuild of this IRClosure.
+     */
+    public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
+        this.argDesc = argDesc;
     }
 }

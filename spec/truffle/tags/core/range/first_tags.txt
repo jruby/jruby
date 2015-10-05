@@ -1,9 +1,0 @@
-fails:Range#first returns the specified number of elements from the beginning
-fails:Range#first returns an empty array for an empty Range
-fails:Range#first returns an empty array when passed zero
-fails:Range#first returns all elements in the range when count exceeds the number of elements
-fails:Range#first calls #to_int to convert the argument
-fails:Range#first raises a TypeError if #to_int does not return an Integer
-fails:Range#first truncates the value when passed a Float
-fails:Range#first raises a TypeError when passed nil
-fails:Range#first raises a TypeError when passed a String

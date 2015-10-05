@@ -1,3 +1,0 @@
-fails:IO#lines returns an Enumerator
-fails:IO#lines returns a line when accessed
-fails:IO#lines yields each line to the passed block

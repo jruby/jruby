@@ -83,20 +83,4 @@ END
       MyERB2.new.main2()
     }.should raise_error(NameError)
   end
-
-
-  #--
-  #it "does not change current $SAFE even if safe_level is specifiled at ERB#initialize" do
-  #  input = "$SAFE=<%=$SAFE.inspect%>"
-  #  expected = "$SAFE=2"
-  #  safe_level = 2
-  #  erb = ERB.new(input, safe_level)
-  #  curr_safe_level = $SAFE
-  #  erb.result(binding()).should == expected
-  #  $SAFE.should == curr_safe_level    # BUG: $SAFE will be changed in current Rubinius
-  #end
-  #++
-
-
 end
-

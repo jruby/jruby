@@ -4,9 +4,9 @@ shared_examples :enum do
   describe "#enum_slice" do
     it "is only defined in 1.8 mode" do
       if RUBY_VERSION =~ /1\.8/
-        subject.respond_to?(:enum_slice).should == true
+        expect(subject.respond_to?(:enum_slice)).to eq(true)
       else
-        subject.respond_to?(:enum_slice).should == false
+        expect(subject.respond_to?(:enum_slice)).to eq(false)
       end
     end
   end
@@ -14,9 +14,9 @@ shared_examples :enum do
   describe "#enum_cons" do
     it "is only defined in 1.8 mode" do
       if RUBY_VERSION =~ /1\.8/
-        subject.respond_to?(:enum_cons).should == true
+        expect(subject.respond_to?(:enum_cons)).to eq(true)
       else
-        subject.respond_to?(:enum_cons).should == false
+        expect(subject.respond_to?(:enum_cons)).to eq(false)
       end
     end
   end

@@ -1,1 +1,0 @@
-fails:Binding#eval with a file given does not store the filename permanently

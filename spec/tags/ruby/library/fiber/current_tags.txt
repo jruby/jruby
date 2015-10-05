@@ -1,3 +1,0 @@
-fails:Fiber.current returns the root Fiber when called outside of a Fiber
-fails:Fiber.current returns the current Fiber when called from a Fiber
-fails:Fiber.current returns the current Fiber when called from a Fiber that transferred to another

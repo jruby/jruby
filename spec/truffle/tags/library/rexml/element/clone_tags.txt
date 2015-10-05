@@ -1,0 +1,4 @@
+fails:REXML::Element#clone creates a copy of element
+fails:REXML::Element#clone copies the attributes
+fails:REXML::Element#clone does not copy the text
+fails:REXML::Element#clone does not copy the child elements

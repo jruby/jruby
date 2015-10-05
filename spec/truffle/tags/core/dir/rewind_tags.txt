@@ -1,3 +1,1 @@
-fails:Dir#rewind resets the next read to start from the first entry
-fails:Dir#rewind returns the Dir instance
 fails:Dir#rewind raises an IOError when called on a closed Dir instance

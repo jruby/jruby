@@ -26,10 +26,8 @@
 
 package org.jruby.util;
 
-import org.jcodings.Encoding;
-
 public interface ByteListHolder {
-    public ByteList getByteList();
-    public void modify();
-    public void modify(int length);
+    ByteList getByteList();
+    void modify();
+    void modify(int length);
 }

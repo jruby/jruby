@@ -1,4 +1,4 @@
-describe :file_directory, :shared => true do
+describe :file_directory, shared: true do
   before :each do
     @dir = tmp("file_directory")
     @file = tmp("file_directory.txt")
@@ -33,7 +33,7 @@ describe :file_directory, :shared => true do
   end
 end
 
-describe :file_directory_io, :shared => true do
+describe :file_directory_io, shared: true do
   before :each do
     @dir = tmp("file_directory_io")
     @file = tmp("file_directory_io.txt")

@@ -13,7 +13,7 @@ describe "Enumerable#count" do
     end
 
     describe "with a custom size method" do
-      before(:each) do
+      before :each do
         class << @numerous
           def size
             :any_object

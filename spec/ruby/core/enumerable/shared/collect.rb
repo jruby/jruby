@@ -1,4 +1,6 @@
-describe :enumerable_collect, :shared => true do
+require File.expand_path('../enumerable_enumeratorized', __FILE__)
+
+describe :enumerable_collect, shared: true do
   before :each do
     ScratchPad.record []
   end
@@ -25,4 +27,6 @@ describe :enumerable_collect, :shared => true do
     enum.should be_an_instance_of(enumerator_class)
     enum.each { |i| -i }.should == [-2, -5, -3, -6, -1, -4]
   end
+
+  it_should_behave_like :enumerable_enumeratorized_with_origin_size
 end

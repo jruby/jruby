@@ -5,20 +5,20 @@ if RUBY_VERSION > '1.9'
   describe 'Struct#inspect' do
     it 'returns correct value' do
       s1 = Struct.new(:aa).new("ΆἅἇἈ")
-      s1.inspect.should == "#<struct aa=\"ΆἅἇἈ\">"
-      s1.inspect.encoding.should == Encoding::UTF_8
+      expect(s1.inspect).to eq("#<struct aa=\"ΆἅἇἈ\">")
+      expect(s1.inspect.encoding).to eq(Encoding::UTF_8)
 
       s2 = Struct.new(:a, :b).new("ΆἅἇἈ", "abc")
-      s2.inspect.should == "#<struct a=\"ΆἅἇἈ\", b=\"abc\">"
-      s2.inspect.encoding.should == Encoding::UTF_8
+      expect(s2.inspect).to eq("#<struct a=\"ΆἅἇἈ\", b=\"abc\">")
+      expect(s2.inspect.encoding).to eq(Encoding::UTF_8)
 
       s3 = Struct.new(:b).new("abc")
-      s3.inspect.should == "#<struct b=\"abc\">"
-      s3.inspect.encoding.should == Encoding::ASCII_8BIT
+      expect(s3.inspect).to eq("#<struct b=\"abc\">")
+      expect(s3.inspect.encoding).to eq(Encoding::ASCII_8BIT)
 
       s4 = Struct.new(:"ΆἅἇἈ").new("aa")
-      s4.inspect.should == "#<struct ΆἅἇἈ=\"aa\">"
-      s4.inspect.encoding.should == Encoding::UTF_8
+      expect(s4.inspect).to eq("#<struct ΆἅἇἈ=\"aa\">")
+      expect(s4.inspect.encoding).to eq(Encoding::UTF_8)
     end
   end
 end

@@ -1,2 +1,0 @@
-fails:File::Stat#symlink? returns true if the file is a link
-fails:File::Stat#symlink? accepts an object that has a #to_path method

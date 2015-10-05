@@ -3,7 +3,7 @@ require 'matrix'
 
 describe "Matrix#row_vectors" do
 
-  before(:each) do
+  before :each do
     @vectors = Matrix[ [1,2], [3,4] ].row_vectors
   end
 

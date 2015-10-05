@@ -2,7 +2,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :range_cover, :shared => true do
+describe :range_cover, shared: true do
   it "uses the range element's <=> to make the comparison" do
     a = mock('a')
     a.should_receive(:<=>).twice.and_return(-1,-1)
@@ -31,7 +31,7 @@ describe :range_cover, :shared => true do
 
   describe "with weird succ" do
     describe "when included end value" do
-      before(:each) do
+      before :each do
         @range = RangeSpecs::TenfoldSucc.new(1)..RangeSpecs::TenfoldSucc.new(99)
       end
 
@@ -61,7 +61,7 @@ describe :range_cover, :shared => true do
     end
 
     describe "when excluded end value" do
-      before(:each) do
+      before :each do
         @range = RangeSpecs::TenfoldSucc.new(1)...RangeSpecs::TenfoldSucc.new(99)
       end
 

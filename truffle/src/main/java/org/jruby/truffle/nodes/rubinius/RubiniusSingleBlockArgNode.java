@@ -10,13 +10,13 @@
 
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class RubiniusSingleBlockArgNode extends RubyNode {
     private final ConditionProfile emptyArgsProfile = ConditionProfile.createBinaryProfile();
@@ -50,7 +50,7 @@ public class RubiniusSingleBlockArgNode extends RubyNode {
             } else {
                 Object[] extractedArguments = RubyArguments.extractUserArguments(frame.getArguments());
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), extractedArguments, userArgumentCount);
+                return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), extractedArguments, userArgumentCount);
             }
         }
     }

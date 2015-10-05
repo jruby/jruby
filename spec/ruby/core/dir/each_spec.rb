@@ -35,9 +35,19 @@ describe "Dir#each" do
     ls.should include(@dir.read)
   end
 
-  it "returns an Enumerator if no block given" do
-    @dir.each.should be_an_instance_of(enumerator_class)
-    @dir.each.to_a.sort.should == DirSpecs.expected_paths
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      @dir.each.should be_an_instance_of(enumerator_class)
+      @dir.each.to_a.sort.should == DirSpecs.expected_paths
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @dir.each.size.should == nil
+        end
+      end
+    end
   end
 end
 

@@ -1,0 +1,1 @@
+fails:Net::HTTPResponse#response returns self

@@ -9,7 +9,6 @@ describe "Symbol#casecmp with Symbol" do
     :abcdef.casecmp(:ABCDEF).should == 0
   end
 
-  # Broken in MRI 1.8.4
   it "doesn't consider non-ascii characters equal that aren't" do
     # -- Latin-1 --
     upper_a_tilde  = :"\xC3"

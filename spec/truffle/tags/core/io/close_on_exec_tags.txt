@@ -1,13 +1,4 @@
-fails:IO#close_on_exec= sets the close-on-exec flag if true
-fails:IO#close_on_exec= sets the close-on-exec flag if non-false
-fails:IO#close_on_exec= unsets the close-on-exec flag if false
-fails:IO#close_on_exec= unsets the close-on-exec flag if nil
-fails:IO#close_on_exec= ensures the IO's file descriptor is closed in exec'ed processes
-fails:IO#close_on_exec= raises IOError if called on a closed IO
-fails:IO#close_on_exec= returns nil
 fails:IO#close_on_exec? returns true by default
-fails:IO#close_on_exec? returns true if set
-fails:IO#close_on_exec? raises IOError if called on a closed IO
 fails(windows):IO#close_on_exec= returns false from #respond_to?
 fails(windows):IO#close_on_exec= raises a NotImplementedError when called
 fails(windows):IO#close_on_exec? returns false from #respond_to?

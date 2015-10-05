@@ -1,8 +1,8 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :method_equal, :shared => true do
-  before(:each) do
+describe :method_equal, shared: true do
+  before :each do
     @m = MethodSpecs::Methods.new
     @m_foo = @m.method(:foo)
     @m2 = MethodSpecs::Methods.new
@@ -52,6 +52,14 @@ describe :method_equal, :shared => true do
     MethodSpecs::Methods.send :define_method, :defined_foo, MethodSpecs::Methods.instance_method(:foo)
     m2 = @m.method(:defined_foo)
     @m_foo.send(@method, m2).should be_true
+  end
+
+  it "returns false if comparing a method defined via define_method and def" do
+    defn = @m.method(:zero)
+    defined = @m.method(:zero_defined_method)
+
+    defn.send(@method, defined).should be_false
+    defined.send(@method, defn).should be_false
   end
 
   describe 'missing methods' do

@@ -6,6 +6,6 @@ describe "The -I command line option" do
   end
 
   it "adds the path to the load path ($:)" do
-    ruby_exe(@script, :options => "-I fixtures").should include("fixtures")
+    ruby_exe(@script, options: "-I fixtures").should include("fixtures")
   end
 end

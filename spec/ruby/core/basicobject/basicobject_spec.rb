@@ -76,7 +76,7 @@ describe "BasicObject subclass" do
     obj.instance_variable_set(:@test, :value)
     obj.instance_variable_get(:@test).should == :value
 
-    obj.send(:hash).should be_an_instance_of(Fixnum)
+    obj.respond_to?(:hash).should == true
   end
 
   describe "BasicObject references" do

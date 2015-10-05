@@ -33,7 +33,7 @@ platform_is_not :windows do
       Process.constants.grep(/\ARLIMIT_/) do |fullname|
         short = $'
         it "coerces :#{short} into #{fullname}" do
-          Process.getrlimit(short.to_sym).should == Process.getrlimit(Process::const_get(fullname))
+          Process.getrlimit(short.to_sym).should == Process.getrlimit(Process.const_get(fullname))
         end
       end
 
@@ -46,7 +46,7 @@ platform_is_not :windows do
       Process.constants.grep(/\ARLIMIT_/) do |fullname|
         short = $'
         it "coerces '#{short}' into #{fullname}" do
-          Process.getrlimit(short).should == Process.getrlimit(Process::const_get(fullname))
+          Process.getrlimit(short).should == Process.getrlimit(Process.const_get(fullname))
         end
       end
 

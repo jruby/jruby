@@ -42,6 +42,12 @@ module JRuby
       end
     end
 
+    # Change the current threads context classloader.  By, default call
+    # with no arguments to replace it with JRuby's class loader.
+    def set_context_class_loader(loader = JRuby.runtime.jruby_class_loader)
+      java.lang.Thread.currentThread.setContextClassLoader loader
+    end
+
     # Parse the given block or the provided content, returning a JRuby AST node.
     def parse(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, lineno = 0, &block)
       if block
@@ -57,20 +63,22 @@ module JRuby
         content = content.to_str
         filename = filename.to_str unless default_filename
 
-        runtime.parse(reference0(content).byte_list, filename, nil, lineno, extra_position_info)
+        runtime.java_send :parse, [org.jruby.util.ByteList, java.lang.String, org.jruby.runtime.DynamicScope, Java::int, Java::boolean], reference0(content).byte_list, filename, nil, lineno, extra_position_info
       end
     end
     alias ast_for parse
 
     def compile_ir(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
       runtime = JRuby.runtime
+      manager = org.jruby.ir.IRManager.new(runtime.instance_config)
+      manager.dry_run = true
       node = if default_filename
                parse(content, &block)
              else
                parse(content, filename, extra_position_info, &block)
              end
 
-      scope = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+      scope = org.jruby.ir.IRBuilder.build_root(manager, node).scope
       scope.top_level_binding_scope = node.scope
 
       scope
@@ -82,7 +90,8 @@ module JRuby
       irscope = compile_ir(content, filename)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
-      bytes = visitor.compile_to_bytecode(irscope);
+      context = org.jruby.ir.targets.JVMVisitorMethodContext.new
+      bytes = visitor.compile_to_bytecode(irscope, context)
       static_scope = irscope.static_scope;
       top_self = runtime.top_self
       static_scope.module = top_self.class

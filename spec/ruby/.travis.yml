@@ -1,10 +1,13 @@
 language: ruby
-script:
-  - bundle exec mspec -t ruby
-notifications:
-  email: false
 rvm:
-  - 2.0.0
-  - 2.1
-  - 2.2
+  - 2.0.0-p598
+  - 2.1.5
+  - 2.2.2
   - ruby-head
+install:
+  - git clone https://github.com/ruby/mspec.git ../mspec
+script:
+  - ../mspec/bin/mspec
+branches:
+  only:
+    - master

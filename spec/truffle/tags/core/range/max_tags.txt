@@ -1,7 +1,0 @@
-fails:Range#max returns the maximum value in the range when called with no arguments
-fails:Range#max returns the maximum value in the Float range when called with no arguments
-fails:Range#max returns nil when the endpoint is less than the start point
-fails:Range#max returns nil when the endpoint is less than the start point in a Float range
-fails:Range#max returns end point when the range is Time..Time(included end point)
-fails:Range#max raises TypeError when called on a Time...Time(excluded end point)
-fails:Range#max given a block returns nil when the endpoint is less than the start point

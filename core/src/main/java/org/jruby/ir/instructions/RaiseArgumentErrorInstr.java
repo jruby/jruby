@@ -11,14 +11,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
+public class RaiseArgumentErrorInstr extends NoOperandInstr implements FixedArityInstr {
     private final int required;
     private final int opt;
-    private final int rest;
+    private final boolean rest;
     private final int numArgs;
 
-    public RaiseArgumentErrorInstr(int required, int opt, int rest, int numArgs) {
-        super(Operation.RAISE_ARGUMENT_ERROR, EMPTY_OPERANDS);
+    public RaiseArgumentErrorInstr(int required, int opt, boolean rest, int numArgs) {
+        super(Operation.RAISE_ARGUMENT_ERROR);
 
         this.required = required;
         this.opt = opt;
@@ -43,7 +43,7 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
         return required;
     }
 
-    public int getRest() {
+    public boolean getRest() {
         return rest;
     }
 
@@ -62,7 +62,7 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     }
 
     public static RaiseArgumentErrorInstr decode(IRReaderDecoder d) {
-        return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+        return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
     @Override

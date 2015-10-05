@@ -64,7 +64,7 @@ describe "Dir.mkdir" do
 end
 
 # The permissions flag are not supported on Windows as stated in documentation:
-# The permissions may be modified by the value of File::umask, and are ignored on NT.
+# The permissions may be modified by the value of File.umask, and are ignored on NT.
 platform_is_not :windows do
   describe "Dir.mkdir" do
     before :each do

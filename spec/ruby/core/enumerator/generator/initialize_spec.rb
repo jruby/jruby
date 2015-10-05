@@ -3,7 +3,7 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Enumerator::Generator#initialize" do
-  before(:each) do
+  before :each do
     @class = enumerator_class::Generator
     @uninitialized = @class.allocate
   end

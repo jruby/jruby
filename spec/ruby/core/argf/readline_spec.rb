@@ -15,13 +15,9 @@ describe "ARGF.readline" do
     @file2 = fixture __FILE__, "file2.txt"
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "raises an EOFError when reaching end of files" do
-    argv [@file1, @file2] do
-      lambda { while line = ARGF.readline; end }.should raise_error(EOFError)
+    argf [@file1, @file2] do
+      lambda { while line = @argf.readline; end }.should raise_error(EOFError)
     end
   end
 end

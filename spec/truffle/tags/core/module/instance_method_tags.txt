@@ -1,3 +1,0 @@
-fails:Module#instance_method raises a NameError if the method has been undefined
-fails:Module#instance_method raises a NameError if the method does not exist
-fails:Module#instance_method sets the NameError#name attribute to the name of the missing method

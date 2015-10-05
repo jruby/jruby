@@ -1,3 +1,6 @@
 fails:Continuation#call using #call transfers execution to right after the Kernel.callcc block
 fails:Continuation#call escapes an inner ensure block
 fails:Continuation#call executes an outer ensure block
+fails:Continuation#call arguments given to #call (or nil) are returned by the Kernel.callcc block (as Array unless only one object)
+fails:Continuation#call #[] is an alias for #call
+fails:Continuation#call closes over lexical environments

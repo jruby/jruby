@@ -41,13 +41,13 @@ describe "Logger#fatal" do
   it "logs a FATAL message" do
     @logger.fatal("test")
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "FATAL -- : test\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "FATAL -- : test\n"
   end
 
   it "accepts an application name with a block" do
     @logger.fatal("MyApp") { "Test message" }
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "FATAL -- MyApp: Test message\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "FATAL -- MyApp: Test message\n"
   end
 
 end

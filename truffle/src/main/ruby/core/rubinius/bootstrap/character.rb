@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,11 @@ class String
   def ascii?
     Rubinius.primitive :character_ascii_p
     raise PrimitiveFailure, "Rubinius::Character#ascii? primitive failed"
+  end
+
+  def printable?
+    Rubinius.primitive :character_printable_p
+    raise PrimitiveFailure, "Rubinius::Character#printable? primitive failed"
   end
 
 end

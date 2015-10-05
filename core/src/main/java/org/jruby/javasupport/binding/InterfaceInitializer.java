@@ -23,10 +23,6 @@ public class InterfaceInitializer extends Initializer {
     public RubyModule initialize(RubyModule proxy) {
         final State state = new State(runtime, null);
 
-        super.initializeBase(proxy);
-
-        runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).set(proxy);
-
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (int i = fields.length; --i >= 0; ) {

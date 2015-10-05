@@ -3,7 +3,7 @@ require 'net/http'
 
 describe "Net::HTTP.new" do
   describe "when passed address" do
-    before(:each) do
+    before :each do
       @http = Net::HTTP.new("localhost")
     end
 
@@ -26,7 +26,7 @@ describe "Net::HTTP.new" do
   end
 
   describe "when passed address, port" do
-    before(:each) do
+    before :each do
       @http = Net::HTTP.new("localhost", 3333)
     end
 

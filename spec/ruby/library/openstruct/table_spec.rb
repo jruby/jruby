@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'ostruct'
 
 describe "OpenStruct#table" do
-  before(:each) do
+  before :each do
     @os = OpenStruct.new("age" => 20, "name" => "John")
   end
 
@@ -11,7 +11,7 @@ describe "OpenStruct#table" do
   end
 
   it "returns self's method/value table" do
-    @os.send(:table).should == { :age => 20, :name => "John" }
+    @os.send(:table).should == { age: 20, name: "John" }
     @os.send(:table)[:age] = 30
     @os.age.should == 30
   end

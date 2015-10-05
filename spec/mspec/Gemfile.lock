@@ -25,3 +25,6 @@ DEPENDENCIES
   mspec!
   rake (~> 10.0)
   rspec (~> 2.14.1)
+
+BUNDLED WITH
+   1.10.2

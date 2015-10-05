@@ -396,7 +396,7 @@ describe "String#sub with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".sub(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "tattoo".sub(/(tt)/, 'tt' => 'b', tt: 'z').should == "taboo"
   end
 
   it "uses a key's value only a single time" do
@@ -481,7 +481,7 @@ describe "String#sub! with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".sub!(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "hello".sub!(/(ll)/, 'll' => 'r', ll: 'z').should == "hero"
   end
 
   it "uses a key's value only a single time" do
@@ -549,5 +549,17 @@ describe "String#sub! with pattern and Hash" do
   it "taints self if a hash value is tainted" do
     str = "Ghana"
     str.sub!(/a$/, 'a' => 'di'.taint).tainted?.should be_true
+  end
+end
+
+describe "String#sub with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    lambda { "abca".sub(/a/) }.should raise_error(ArgumentError)
+  end
+end
+
+describe "String#sub! with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    lambda { "abca".sub!(/a/) }.should raise_error(ArgumentError)
   end
 end

@@ -302,8 +302,10 @@ describe "String#%" do
     ("%.10b" % -5).should == "..11111011"
     ("% b" % -5).should == "-101"
     ("%+b" % -5).should == "-101"
-    ("%b" % -(2 ** 64 + 5)).should ==
-    "..101111111111111111111111111111111111111111111111111111111111111011"
+    not_supported_on :opal do
+      ("%b" % -(2 ** 64 + 5)).should ==
+        "..101111111111111111111111111111111111111111111111111111111111111011"
+    end
   end
 
   it "supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #" do
@@ -323,7 +325,9 @@ describe "String#%" do
     ("%.10B" % -5).should == ("%.10b" % -5)
     ("% B" % -5).should == ("% b" % -5)
     ("%+B" % -5).should == ("%+b" % -5)
-    ("%B" % -(2 ** 64 + 5)).should == ("%b" % -(2 ** 64 + 5))
+    not_supported_on :opal do
+      ("%B" % -(2 ** 64 + 5)).should == ("%b" % -(2 ** 64 + 5))
+    end
 
     ("%#B" % 10).should == "0B1010"
   end
@@ -416,8 +420,8 @@ describe "String#%" do
     it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
       ("%e" % 1e1020).should == "Inf"
       ("%e" % -1e1020).should == "-Inf"
-      ("%e" % (-0e0/0)).should == "NaN"
-      ("%e" % (0.0/0)).should == "NaN"
+      ("%e" % -Float::NAN).should == "NaN"
+      ("%e" % Float::NAN).should == "NaN"
     end
 
     it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
@@ -427,8 +431,8 @@ describe "String#%" do
       ("%10E" % 1e1020).should == "       Inf"
       ("%+E" % 1e1020).should == "+Inf"
       ("% E" % 1e1020).should == " Inf"
-      ("%E" % (0.0/0)).should == "NaN"
-      ("%E" % (-0e0/0)).should == "NaN"
+      ("%E" % Float::NAN).should == "NaN"
+      ("%E" % -Float::NAN).should == "NaN"
     end
   end
 
@@ -447,7 +451,7 @@ describe "String#%" do
     it "pads with spaces for %E with Inf, -Inf, and NaN" do
       ("%010E" % -1e1020).should == "      -Inf"
       ("%010E" % 1e1020).should == "       Inf"
-      ("%010E" % (0.0/0)).should == "       NaN"
+      ("%010E" % Float::NAN).should == "       NaN"
     end
   end
 
@@ -511,7 +515,9 @@ describe "String#%" do
 
     ("% o" % -26).should == "-32"
     ("%+o" % -26).should == "-32"
-    ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
+    not_supported_on :opal do
+      ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
+    end
   end
 
   it "supports inspect formats using %p" do
@@ -585,9 +591,7 @@ describe "String#%" do
     block.should raise_error(ArgumentError)
   end
 
-  # Note: %u has been changed to an alias for %d in MRI 1.9 trunk.
-  # Let's wait a bit for it to cool down and see if it will
-  # be changed for 1.8 as well.
+  # Note: %u has been changed to an alias for %d in 1.9.
   it "supports unsigned formats using %u" do
     ("%u" % 10).should == "10"
     ("% u" % 10).should == " 10"
@@ -629,7 +633,9 @@ describe "String#%" do
     ("%.10x" % -5).should == "..fffffffb"
     ("% x" % -26).should == "-1a"
     ("%+x" % -26).should == "-1a"
-    ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
+    not_supported_on :opal do
+      ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
+    end
   end
 
   it "supports hex formats using %X for positive numbers" do
@@ -652,7 +658,9 @@ describe "String#%" do
     ("%.10X" % -5).should == "..FFFFFFFB"
     ("% X" % -26).should == "-1A"
     ("%+X" % -26).should == "-1A"
-    ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
+    not_supported_on :opal do
+      ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
+    end
   end
 
   it "formats zero without prefix using %#x" do
@@ -743,7 +751,7 @@ describe "String#%" do
 
   describe "when format string contains %{} sections" do
     it "replaces %{} sections with values from passed-in hash" do
-      ("%{foo}bar" % {:foo => 'oof'}).should == "oofbar"
+      ("%{foo}bar" % {foo: 'oof'}).should == "oofbar"
     end
 
     it "raises KeyError if key is missing from passed-in hash" do
@@ -757,7 +765,7 @@ describe "String#%" do
 
   describe "when format string contains %<> formats" do
     it "uses the named argument for the format's value" do
-      ("%<foo>d" % {:foo => 1}).should == "1"
+      ("%<foo>d" % {foo: 1}).should == "1"
     end
 
     it "raises KeyError if key is missing from passed-in hash" do

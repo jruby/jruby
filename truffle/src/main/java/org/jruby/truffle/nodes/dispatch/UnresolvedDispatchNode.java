@@ -9,46 +9,46 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import java.util.concurrent.Callable;
-
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.core.KernelNodes;
-import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
+import com.oracle.truffle.interop.messages.Argument;
+import com.oracle.truffle.interop.messages.Read;
+import com.oracle.truffle.interop.messages.Receiver;
+import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyConstant;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
+
+import java.util.concurrent.Callable;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
     private int depth = 0;
 
     private final boolean ignoreVisibility;
-    private final boolean indirect;
     private final MissingBehavior missingBehavior;
 
-    @Child private KernelNodes.RequireNode requireNode;
+    @Child private SingletonClassNode singletonClassNode;
 
     public UnresolvedDispatchNode(
             RubyContext context,
             boolean ignoreVisibility,
-            boolean indirect,
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction) {
         super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
-        this.indirect = indirect;
         this.missingBehavior = missingBehavior;
     }
 
@@ -62,8 +62,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final VirtualFrame frame,
             final Object receiverObject,
             final Object methodName,
-            Object blockObject,
-            final Object argumentsObjects) {
+            DynamicObject blockObject,
+            final Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
@@ -86,15 +86,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 final DispatchNode newDispathNode;
 
-                if (depth == DISPATCH_POLYMORPHIC_MAX) {
+                if (depth == getContext().getOptions().DISPATCH_CACHE) {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (isRubyBasicObject(receiverObject)) {
-                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    }
-                    else if (isForeign(receiverObject)) {
-                        return createForeign(argumentsObjects, first, methodName);
+                    if (receiverObject instanceof DynamicObject) {
+                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                    } else if (RubyGuards.isForeignObject(receiverObject)) {
+                        newDispathNode = createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
                     }
@@ -108,12 +107,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
-    private boolean isForeign(Object receiverObject) {
-        return false;
-    }
-
-    private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
-        throw new UnsupportedOperationException();
+    private DispatchNode createForeign(Object[] argumentsObjects, DispatchNode first, Object methodName) {
+        return new CachedForeignDispatchNode(getContext(), first, methodName, argumentsObjects.length);
     }
 
     private DispatchNode doUnboxedObject(
@@ -121,9 +116,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             DispatchNode first,
             Object receiverObject,
             Object methodName) {
-        final DispatchAction dispatchAction = getDispatchAction();
-
-        final RubyClass callerClass;
+        final DynamicObject callerClass;
 
         if (ignoreVisibility) {
             callerClass = null;
@@ -131,150 +124,110 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
         }
 
-        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final String methodNameString = toString(methodName);
+        final InternalMethod method = lookup(callerClass, receiverObject, methodNameString, ignoreVisibility);
 
-            if (method == null) {
-                return createMethodMissingNode(first, methodName, receiverObject);
-            }
+        if (method == null) {
+            return createMethodMissingNode(first, methodName, receiverObject);
+        }
 
-            if (receiverObject instanceof Boolean) {
-                final Assumption falseUnmodifiedAssumption =
-                        getContext().getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
+        if (receiverObject instanceof Boolean) {
+            final Assumption falseUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getFalseClass()).getUnmodifiedAssumption();
+            final InternalMethod falseMethod = lookup(callerClass, false, methodNameString, ignoreVisibility);
 
-                final InternalMethod falseMethod =
-                        lookup(callerClass, false, methodName.toString(),
-                                ignoreVisibility);
+            final Assumption trueUnmodifiedAssumption = Layouts.MODULE.getFields(getContext().getCoreLibrary().getTrueClass()).getUnmodifiedAssumption();
+            final InternalMethod trueMethod = lookup(callerClass, true, methodNameString, ignoreVisibility);
+            assert falseMethod != null || trueMethod != null;
 
-                final Assumption trueUnmodifiedAssumption =
-                        getContext().getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
-
-                final InternalMethod trueMethod =
-                        lookup(callerClass, true, methodName.toString(),
-                                ignoreVisibility);
-
-                if ((falseMethod == null) && (trueMethod == null)) {
-                    throw new UnsupportedOperationException();
-                }
-
-                return new CachedBooleanDispatchNode(getContext(),
-                        methodName, first,
-                        falseUnmodifiedAssumption, null, falseMethod,
-                        trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
-            } else {
-                return new CachedUnboxedDispatchNode(getContext(),
-                        methodName, first, receiverObject.getClass(),
-                        getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction());
-            }
+            return new CachedBooleanDispatchNode(getContext(),
+                    methodName, first,
+                    falseUnmodifiedAssumption, falseMethod,
+                    trueUnmodifiedAssumption, trueMethod,
+                    getDispatchAction());
         } else {
-            throw new UnsupportedOperationException();
+            return new CachedUnboxedDispatchNode(getContext(),
+                    methodName, first, receiverObject.getClass(),
+                    Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiverObject)).getUnmodifiedAssumption(), method, getDispatchAction());
         }
     }
 
-    private DispatchNode doRubyBasicObject(
+    private DispatchNode doDynamicObject(
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
             Object methodName,
-            Object argumentsObjects) {
-        final DispatchAction dispatchAction = getDispatchAction();
+            Object[] argumentsObjects) {
+        final DynamicObject callerClass;
 
-        final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        if (ignoreVisibility) {
+            callerClass = null;
+        } else if (getDispatchAction() == DispatchAction.RESPOND_TO_METHOD) {
+            final Frame callerFrame = RubyCallStack.getCallerFrame(getContext()).getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
+            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(callerFrame.getArguments()));
+        } else {
+            callerClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
+        }
 
-        if (dispatchAction == DispatchAction.CALL_METHOD || dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-            final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
+        final InternalMethod method = lookup(callerClass, receiverObject, toString(methodName), ignoreVisibility);
 
-            if (method == null) {
-                final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
-                if (multilanguage != null) {
-                    return multilanguage;
-                }
-
-                return createMethodMissingNode(first, methodName, receiverObject);
+        if (method == null) {
+            final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
+            if (multilanguage != null) {
+                return multilanguage;
             }
 
-            if (receiverObject instanceof RubySymbol) {
-                return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction());
-            } else {
-                return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction());
-            }
+            return createMethodMissingNode(first, methodName, receiverObject);
+        }
 
-        } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
-            final RubyModule module = (RubyModule) receiverObject;
-            final RubyConstant constant = lookupConstant(module, methodName.toString(),
-                    ignoreVisibility);
+        final DynamicObject receiverMetaClass = getContext().getCoreLibrary().getMetaClass(receiverObject);
+        if (RubyGuards.isRubySymbol(receiverObject)) {
+            return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, method, getDispatchAction());
+        } else if (Layouts.CLASS.getIsSingleton(receiverMetaClass)) {
+            return new CachedSingletonDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject),
+                    receiverMetaClass, method, getDispatchAction());
+        } else {
+            return new CachedBoxedDispatchNode(getContext(), methodName, first, ((DynamicObject) receiverObject).getShape(),
+                    receiverMetaClass, method, getDispatchAction());
+        }
+    }
 
-            if (constant == null) {
-                return createConstantMissingNode(first, methodName, callerClass, module);
-            }
-
-            if (constant.isAutoload()) {
-                if (requireNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
-                }
-
-                requireNode.require((RubyString) constant.getValue());
-
-                return doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
-            }
-
-            // The module, the "receiver" is an instance of its singleton class.
-            // But we want to check the module assumption, not its singleton class assumption.
-            return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                    module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
-                    null, indirect, getDispatchAction());
+    private String toString(Object methodName) {
+        if (methodName instanceof String) {
+            return (String) methodName;
+        } else if (RubyGuards.isRubyString(methodName)) {
+            return methodName.toString();
+        } else if (RubyGuards.isRubySymbol(methodName)) {
+            return Layouts.SYMBOL.getString((DynamicObject) methodName);
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first,  Object methodName, Object argumentsObjects) {
-        return null;
-    }
-
-    private DispatchNode createConstantMissingNode(
-            DispatchNode first,
-            Object methodName,
-            RubyClass callerClass,
-            RubyBasicObject receiverObject) {
-        switch (missingBehavior) {
-            case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, getDispatchAction());
-            }
-
-            case CALL_CONST_MISSING: {
-                final InternalMethod method = lookup(callerClass, receiverObject, "const_missing", ignoreVisibility);
-
-                if (method == null) {
-                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(
-                            receiverObject.toString() + " didn't have a #const_missing", this));
-                }
-
-                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-                }
-
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
-            }
-
-            default: {
-                throw new UnsupportedOperationException(missingBehavior.toString());
+    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first, Object methodName, Object[] argumentsObjects) {
+        if (getContext().getMultilanguageObject() != null) {
+            CompilerAsserts.neverPartOfCompilation();
+            TruffleObject multilanguageObject = getContext().getMultilanguageObject();
+            ForeignObjectAccessNode readLanguage = ForeignObjectAccessNode.getAccess(Read.create(Receiver.create(), Argument.create()));
+            TruffleObject language = (TruffleObject) readLanguage.executeForeign(frame, multilanguageObject, methodName);
+            if (language != null) {
+                // EXECUTE(READ(...),...) on language
+                return new CachedForeignGlobalDispatchNode(getContext(), first, methodName, language, argumentsObjects.length);
             }
         }
+        return null;
     }
 
     private DispatchNode createMethodMissingNode(
             DispatchNode first,
             Object methodName,
             Object receiverObject) {
+        // TODO (eregon, 26 Aug. 2015): should handle primitive types as well
+        final Shape shape = (receiverObject instanceof DynamicObject) ? ((DynamicObject) receiverObject).getShape() : null;
+
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
+                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first, shape,
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), getDispatchAction());
             }
 
             case CALL_METHOD_MISSING: {
@@ -285,12 +238,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-                }
-
-                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
+                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first, shape,
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, getDispatchAction());
             }
 
             default: {

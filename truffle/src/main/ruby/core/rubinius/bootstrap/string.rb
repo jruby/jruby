@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,11 @@ class String
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"
+  end
+
+  def find_string_reverse(pattern, start)
+    Rubinius.primitive :string_rindex
+    raise PrimitiveFailure, "String#find_string_reverse primitive failed"
   end
 
   def chr_at(byte)

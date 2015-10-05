@@ -1,3 +1,0 @@
-fails:File::Stat#initialize raises an exception if the file doesn't exist
-fails:File::Stat#initialize creates a File::Stat object for the given file
-fails:File::Stat#initialize calls #to_path on non-String arguments

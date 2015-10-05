@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#printf" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('example')
   end
 
@@ -31,7 +31,7 @@ describe "StringIO#printf" do
 end
 
 describe "StringIO#printf when in append mode" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example", "a")
   end
 

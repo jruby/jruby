@@ -1,1 +1,0 @@
-fails:File#inspect returns a String

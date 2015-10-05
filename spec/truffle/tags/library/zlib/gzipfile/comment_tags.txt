@@ -1,0 +1,2 @@
+fails:Zlib::GzipFile#comment returns the name
+fails:Zlib::GzipFile#comment raises an error on a closed stream

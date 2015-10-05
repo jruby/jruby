@@ -19,7 +19,7 @@ public class MethodMissingMethod extends DynamicMethod {
     private RubyString name;
 
     public MethodMissingMethod(RubyModule implementationClass, RubyString name) {
-        super(implementationClass, null, null);
+        super(implementationClass, null);
 
         this.name = name;
     }

@@ -31,7 +31,6 @@ package org.jruby.parser;
 import java.io.IOException;
 
 import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
@@ -41,7 +40,6 @@ import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.ClassVarAsgnNode;
@@ -74,7 +72,7 @@ import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
@@ -100,7 +98,6 @@ import org.jruby.ast.SClassNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
-import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.UntilNode;
@@ -110,13 +107,12 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.ZYieldNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
@@ -131,14 +127,13 @@ public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
-    public RubyParser() {
-        this(new ParserSupport());
+    public RubyParser(LexerSource source) {
+        this(new ParserSupport(), source);
     }
 
-    public RubyParser(ParserSupport support) {
+    public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
-        lexer = new RubyLexer();
-        lexer.setParserSupport(support);
+        lexer = new RubyLexer(support, source);
         support.setLexer(lexer);
     }
 
@@ -251,7 +246,7 @@ public class RubyParser {
 %type <BlockArgNode> opt_f_block_arg f_block_arg
 %type <IterNode> brace_block do_block cmd_brace_block
    // ENEBO: missing mhls_entry
-%type <MultipleAsgn19Node> mlhs mlhs_basic 
+%type <MultipleAsgnNode> mlhs mlhs_basic 
 %type <RescueBodyNode> opt_rescue
 %type <AssignableNode> var_lhs
 %type <LiteralNode> fsym
@@ -437,8 +432,7 @@ stmt            : kALIAS fitem {
                     }
                 }
                 | stmt kRESCUE_MOD stmt {
-                    Node body = $3 == null ? NilImplicitNode.NIL : $3;
-                    $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
+                    $$ = support.newRescueModNode($1, $3);
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
@@ -588,50 +582,50 @@ command        : fcall command_args %prec tLOWEST {
                     $$ = new NextNode($1, support.ret_args($2, $1));
                 }
 
-// MultipleAssig19Node:mlhs - [!null]
+// MultipleAssigNode:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
                     $$ = $2;
                 }
 
-// MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
+// MultipleAssignNode:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic {
                     $$ = $1;
                 }
                 | tLPAREN mlhs_inner rparen {
-                    $$ = new MultipleAsgn19Node($1, support.newArrayNode($1, $2), null, null);
+                    $$ = new MultipleAsgnNode($1, support.newArrayNode($1, $2), null, null);
                 }
 
-// MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
+// MultipleAssignNode:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
 mlhs_basic      : mlhs_head {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | mlhs_head mlhs_item {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1.add($2), null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1.add($2), null, null);
                 }
                 | mlhs_head tSTAR mlhs_node {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, $3, (ListNode) null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, $3, (ListNode) null);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, $3, $5);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, $3, $5);
                 }
                 | mlhs_head tSTAR {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $4);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, null);
+                    $$ = new MultipleAsgnNode($2.getPosition(), null, $2, null);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = new MultipleAsgn19Node($2.getPosition(), null, $2, $4);
+                    $$ = new MultipleAsgnNode($2.getPosition(), null, $2, $4);
                 }
                 | tSTAR {
-                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                      $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' mlhs_post {
-                      $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), $3);
+                      $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -983,16 +977,16 @@ reswords        : k__LINE__ {
                 | kYIELD {
                     $$ = "yield";
                 }
-                | kIF_MOD {
+                | kIF {
                     $$ = "if";
                 }
-                | kUNLESS_MOD {
+                | kUNLESS {
                     $$ = "unless";
                 }
-                | kWHILE_MOD {
+                | kWHILE {
                     $$ = "while";
                 }
-                | kUNTIL_MOD {
+                | kUNTIL {
                     $$ = "until";
                 }
                 | kRESCUE_MOD {
@@ -1005,9 +999,7 @@ arg             : lhs '=' arg {
                     $<Node>$.setPosition(support.getPosition($1));
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    ISourcePosition position = support.getPosition($1);
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
+                    $$ = support.node_assign($1, support.newRescueModNode($3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
                     support.checkExpression($3);
@@ -1028,11 +1020,9 @@ arg             : lhs '=' arg {
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
                     support.checkExpression($3);
-                    ISourcePosition pos = support.getPosition($5);
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    Node rescue = new RescueNode(pos, $3, new RescueBodyNode(support.getPosition($3), null, body, null), null);
+                    Node rescue = support.newRescueModNode($3, $5);
 
-                    pos = $1.getPosition();
+                    ISourcePosition pos = $1.getPosition();
                     String asgnOp = $2;
                     if (asgnOp.equals("||")) {
                         $1.setValueNode(rescue);
@@ -1175,8 +1165,12 @@ arg             : lhs '=' arg {
                 | kDEFINED opt_nl arg {
                     $$ = support.new_defined($1, $3);
                 }
-                | arg '?' arg opt_nl ':' arg {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
+                | arg '?' {
+                    lexer.getConditionState().begin();
+                } arg opt_nl ':' {
+                    lexer.getConditionState().end();
+                } arg {
+                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $4, $8);
                 }
                 | primary {
                     $$ = $1;
@@ -1237,7 +1231,8 @@ call_args       : command {
                 }
 
 command_args    : /* none */ {
-                    $$ = Long.valueOf(lexer.getCmdArgumentState().begin());
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().begin();
                 } call_args {
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
@@ -1329,21 +1324,29 @@ primary         : literal
                 | tFID {
                     $$ = support.new_fcall($1);
                 }
-                | kBEGIN bodystmt kEND {
-                    $$ = new BeginNode($1, $2 == null ? NilImplicitNode.NIL : $2);
+                | kBEGIN {
+                    $$ = lexer.getCmdArgumentState().getStack();
+                    lexer.getCmdArgumentState().reset();
+                } bodystmt kEND {
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
+                    $$ = new BeginNode($1, $3 == null ? NilImplicitNode.NIL : $3);
                 }
                 | tLPAREN_ARG {
                     lexer.setState(LexState.EXPR_ENDARG);
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
-                | tLPAREN_ARG expr {
+                | tLPAREN_ARG {
+                    $$ = lexer.getCmdArgumentState().getStack();
+                    lexer.getCmdArgumentState().reset();
+                } expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
                     if (Options.PARSER_WARN_GROUPED_EXPRESSIONS.load()) {
                       support.warning(ID.GROUPED_EXPRESSION, $1, "(...) interpreted as grouped expression");
                     }
-                    $$ = $2;
+                    $$ = $3;
                 }
                 | tLPAREN compstmt tRPAREN {
                     if ($2 != null) {
@@ -1378,10 +1381,10 @@ primary         : literal
                     $$ = support.new_yield($1, $3);
                 }
                 | kYIELD tLPAREN2 rparen {
-                    $$ = new ZYieldNode($1);
+                    $$ = new YieldNode($1, null);
                 }
                 | kYIELD {
-                    $$ = new ZYieldNode($1);
+                    $$ = new YieldNode($1, null);
                 }
                 | kDEFINED opt_nl tLPAREN2 expr rparen {
                     $$ = support.new_defined($1, $4);
@@ -1400,7 +1403,7 @@ primary         : literal
                 | method_call brace_block {
                     if ($1 != null && 
                           $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+                          lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
                     $$ = $<BlockAcceptingNode>1.setIterNode($2);
                     $<Node>$.setPosition($1.getPosition());
@@ -1488,7 +1491,7 @@ primary         : literal
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefnNode($1, new ArgumentNode($1, $2), (ArgsNode) $4, support.getCurrentScope(), body);
+                    $$ = new DefnNode($1, $2, (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                 }
@@ -1502,7 +1505,7 @@ primary         : literal
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), (ArgsNode) $7, support.getCurrentScope(), body);
+                    $$ = new DefsNode($1, $2, $5, (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                 }
@@ -1562,31 +1565,31 @@ f_marg_list     : f_marg {
                 }
 
 f_margs         : f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, null, null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, null, null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), null);
                 }
                 | f_marg_list ',' tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, support.assignableLabelOrIdentifier($4, null), $6);
                 }
                 | f_marg_list ',' tSTAR {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), null);
                 }
                 | f_marg_list ',' tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
+                    $$ = new MultipleAsgnNode($1.getPosition(), $1, new StarNode(lexer.getPosition()), $5);
                 }
                 | tSTAR f_norm_arg {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), null);
                 }
                 | tSTAR f_norm_arg ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, support.assignableLabelOrIdentifier($2, null), $4);
                 }
                 | tSTAR {
-                    $$ = new MultipleAsgn19Node(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
+                    $$ = new MultipleAsgnNode(lexer.getPosition(), null, new StarNode(lexer.getPosition()), null);
                 }
                 | tSTAR ',' f_marg_list {
-                    $$ = new MultipleAsgn19Node(support.getPosition($3), null, null, $3);
+                    $$ = new MultipleAsgnNode(support.getPosition($3), null, null, $3);
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
@@ -1737,10 +1740,10 @@ do_block        : kDO_BLOCK {
 block_call      : command do_block {
                     // Workaround for JRUBY-2326 (MRI does not enter this production for some reason)
                     if ($1 instanceof YieldNode) {
-                        throw new SyntaxException(PID.BLOCK_GIVEN_TO_YIELD, $1.getPosition(), lexer.getCurrentLine(), "block given to yield");
+                        lexer.compile_error(PID.BLOCK_GIVEN_TO_YIELD, "block given to yield");
                     }
                     if ($1 instanceof BlockAcceptingNode && $<BlockAcceptingNode>1.getIterNode() instanceof BlockPassNode) {
-                        throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, $1.getPosition(), lexer.getCurrentLine(), "Both block arg and actual block given.");
+                        lexer.compile_error(PID.BLOCK_ARG_AND_BLOCK_GIVEN, "Both block arg and actual block given.");
                     }
                     if ($1 instanceof NonLocalControlFlowNode) {
                         ((BlockAcceptingNode) $<NonLocalControlFlowNode>1.getValueNode()).setIterNode($2);
@@ -1854,7 +1857,7 @@ literal         : numeric {
                     $$ = $1;
                 }
                 | symbol {
-                    $$ = new SymbolNode(lexer.getPosition(), new ByteList($1.getBytes(), lexer.getEncoding()));
+                    $$ = support.asSymbol(lexer.getPosition(), $1);
                 }
                 | dsym
 
@@ -1973,7 +1976,7 @@ qsym_list      : /* none */ {
 string_contents : /* none */ {
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    $$ = lexer.createStr(aChar, 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $<Node>2);
@@ -2009,17 +2012,23 @@ string_content  : tSTRING_CONTENT {
                    $$ = lexer.getStrTerm();
                    lexer.setStrTerm(null);
                    lexer.getConditionState().stop();
-                   lexer.getCmdArgumentState().stop();
+                } {
+                   $$ = lexer.getCmdArgumentState().getStack();
+                   lexer.getCmdArgumentState().reset();
                 } {
                    $$ = lexer.getState();
                    lexer.setState(LexState.EXPR_BEG);
-                } compstmt tRCURLY {
+                } {
+                   $$ = lexer.getBraceNest();
+                   lexer.setBraceNest(0);
+                } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
-                   lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
-                   lexer.setState($<LexState>3);
+                   lexer.getCmdArgumentState().reset($<Long>3.longValue());
+                   lexer.setState($<LexState>4);
+                   lexer.setBraceNest($<Integer>5);
 
-                   $$ = support.newEvStrNode(support.getPosition($4), $4);
+                   $$ = support.newEvStrNode(support.getPosition($6), $6);
                 }
 
 string_dvar     : tGVAR {
@@ -2050,11 +2059,11 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                      // EvStrNode :"#{some expression}"
                      // Ruby 1.9 allows empty strings as symbols
                      if ($2 == null) {
-                         $$ = new SymbolNode(lexer.getPosition(), new ByteList(new byte[0], lexer.getEncoding()));
+                         $$ = support.asSymbol(lexer.getPosition(), "");
                      } else if ($2 instanceof DStrNode) {
                          $$ = new DSymbolNode($2.getPosition(), $<DStrNode>2);
                      } else if ($2 instanceof StrNode) {
-                         $$ = new SymbolNode($2.getPosition(), $<StrNode>2.getValue());
+                         $$ = support.asSymbol($2.getPosition(), $2);
                      } else {
                          $$ = new DSymbolNode($2.getPosition());
                          $<DSymbolNode>$.add($2);
@@ -2110,7 +2119,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new FalseNode(lexer.getPosition());
                 }
                 | k__FILE__ {
-                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getPosition().getFile().getBytes(),
+                    $$ = new FileNode(lexer.getPosition(), new ByteList(lexer.getFile().getBytes(),
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {
@@ -2180,6 +2189,7 @@ superclass      : term {
                 }
                 | tLT {
                    lexer.setState(LexState.EXPR_BEG);
+                   lexer.commandStart = true;
                 } expr_value term {
                     $$ = $3;
                 }
@@ -2463,7 +2473,7 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = new KeyValuePair<Node,Node>($1, $3);
                 }
                 | tLABEL arg_value {
-                    SymbolNode label = new SymbolNode(support.getPosition($2), new ByteList($1.getBytes(), lexer.getEncoding()));
+                    Node label = support.asSymbol(support.getPosition($2), $1);
                     $$ = new KeyValuePair<Node,Node>(label, $2);
                 }
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
@@ -2516,15 +2526,11 @@ none_block_pass : /* none */ {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
         
-        lexer.reset();
-        lexer.setSource(source);
-        lexer.setEncoding(configuration.getDefaultEncoding());
-
         yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();

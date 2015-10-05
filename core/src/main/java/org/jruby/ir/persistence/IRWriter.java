@@ -119,10 +119,10 @@ public class IRWriter {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("DONE LABELS: " + labelIndices.size());
     }
 
-    // {type,[variables],required_args}
+    // {type,[variables],signature}
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         file.encode(staticScope.getType());
         file.encode(staticScope.getVariables());
-        file.encode(staticScope.getRequiredArgs());
+        file.encode(staticScope.getSignature());
     }
 }

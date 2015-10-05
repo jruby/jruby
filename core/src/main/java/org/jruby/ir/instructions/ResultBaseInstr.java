@@ -13,8 +13,8 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 public abstract class ResultBaseInstr extends Instr implements ResultInstr {
     protected Variable result;
 
-    public ResultBaseInstr(Operation operation, Variable result, Operand[] operands) {
-        super(operation, operands);
+    public ResultBaseInstr(Operation operation, Variable result) {
+        super(operation);
 
         this.result = result;
     }

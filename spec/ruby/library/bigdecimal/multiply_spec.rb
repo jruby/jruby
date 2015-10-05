@@ -7,7 +7,7 @@ describe "BigDecimal#*" do
 end
 
 describe "BigDecimal#*" do
-  before(:each) do
+  before :each do
     @e3_minus = BigDecimal("3E-20001")
     @e3_plus = BigDecimal("3E20001")
     @e = BigDecimal("1.00000000000000000000123456789")

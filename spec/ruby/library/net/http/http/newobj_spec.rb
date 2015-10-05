@@ -2,7 +2,7 @@ require File.expand_path('../../../../../spec_helper', __FILE__)
 require 'net/http'
 
 describe "Net::HTTP.newobj" do
-  before(:each) do
+  before :each do
     @net = Net::HTTP.newobj("localhost")
   end
 
@@ -25,7 +25,7 @@ describe "Net::HTTP.newobj" do
   end
 
   describe "when passed address, port" do
-    before(:each) do
+    before :each do
       @net = Net::HTTP.newobj("localhost", 3333)
     end
 

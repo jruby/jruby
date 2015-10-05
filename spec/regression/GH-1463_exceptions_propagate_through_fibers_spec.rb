@@ -34,9 +34,9 @@ if (RUBY_VERSION >= '1.9')
           t.join
         end
 
-        fiber_exceptions.size.should == 100
+        expect(fiber_exceptions.size).to eq(100)
         fiber_exceptions.each do |ex|
-          ex.should be_kind_of(StandardError)
+          expect(ex).to be_kind_of(StandardError)
         end
 
         expect(thread_exceptions).to eq []
@@ -74,9 +74,9 @@ if (RUBY_VERSION >= '1.9')
           t.join rescue nil
         end
 
-        thread_exceptions.size.should == 100
+        expect(thread_exceptions.size).to eq(100)
         thread_exceptions.each do |ex|
-          ex.should be_kind_of(StandardError)
+          expect(ex).to be_kind_of(StandardError)
         end
 
         expect(fiber_exceptions).to eq []

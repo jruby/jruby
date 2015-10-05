@@ -23,6 +23,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 // FIXME: Make into a base class at some point to play with different formats
@@ -31,20 +33,18 @@ import org.jruby.util.ByteList;
  * Represents a file which is persisted to storage.
  */
 public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
-    private static final int VERSION = 0;
-
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
-    private final IRWriterAnalzer analyzer;
+    private final IRWriterAnalyzer analyzer;
 
     int headersOffset = -1;
     int poolOffset = -1;
 
     public IRWriterStream(OutputStream stream) {
         this.stream = stream;
-        this.analyzer = new IRWriterAnalzer();
+        this.analyzer = new IRWriterAnalyzer();
     }
 
     public IRWriterStream(File file) throws FileNotFoundException {
@@ -138,8 +138,12 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(String value) {
-        encode(value.length());
-        buf.put(value.getBytes());
+        if (value == null) {
+            encode(NULL_STRING);
+        } else {
+            encode(value.length());
+            buf.put(value.getBytes());
+        }
     }
 
     // This cannot tell difference between null and [] which is ok.  Possibly we should even allow
@@ -184,6 +188,18 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void encode(IRScopeType value) {
         encode((byte) value.ordinal());
+    }
+
+    @Override
+    public void encode(Signature signature) {
+        // Non-method/block scopes still have this field so we set it to no-arg by convention.
+        if (signature == null) signature = Signature.NO_ARGUMENTS;
+        encode(signature.encode());
+    }
+
+    @Override
+    public void encode(RubyEvent event) {
+        encode((byte) event.ordinal());
     }
 
     @Override
@@ -242,6 +258,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void endEncoding(IRScope script) {
         try {
+            stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             buf.flip();

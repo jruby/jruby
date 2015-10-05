@@ -12,11 +12,11 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Reads the internal metaclass of an object.
@@ -28,40 +28,36 @@ public abstract class MetaClassNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public MetaClassNode(MetaClassNode prev) {
-        super(prev);
-    }
+    public abstract DynamicObject executeMetaClass(VirtualFrame frame, Object value);
 
-    public abstract RubyClass executeMetaClass(VirtualFrame frame, Object value);
-
-    @Specialization(guards = "isTrue")
-    protected RubyClass singletonClassTrue(boolean value) {
+    @Specialization(guards = "value")
+    protected DynamicObject singletonClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue")
-    protected RubyClass singletonClassFalse(boolean value) {
+    @Specialization(guards = "!value")
+    protected DynamicObject singletonClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(int value) {
+    protected DynamicObject singletonClass(int value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(long value) {
+    protected DynamicObject singletonClass(long value) {
         return getContext().getCoreLibrary().getFixnumClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(double value) {
+    protected DynamicObject singletonClass(double value) {
         return getContext().getCoreLibrary().getFloatClass();
     }
 
     @Specialization
-    protected RubyClass singletonClass(RubyBasicObject object) {
-        return object.getMetaClass();
+    protected DynamicObject singletonClass(DynamicObject object) {
+        return Layouts.BASIC_OBJECT.getMetaClass(object);
     }
 
 }

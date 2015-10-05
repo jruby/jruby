@@ -2,21 +2,13 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Socket::IPSocket#addr" do
-  before :all do
-    @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
-  end
-
-
   before :each do
+    @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup
     @socket = TCPServer.new("127.0.0.1", SocketSpecs.port)
   end
 
   after :each do
     @socket.close unless @socket.closed?
-    BasicSocket.do_not_reverse_lookup = false
-  end
-
-  after :all do
     BasicSocket.do_not_reverse_lookup = @do_not_reverse_lookup
   end
 

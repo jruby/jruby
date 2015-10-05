@@ -1,5 +1,5 @@
-describe :bignum_modulo, :shared => true do
-  before(:each) do
+describe :bignum_modulo, shared: true do
+  before :each do
     @bignum = bignum_value
   end
 

@@ -46,6 +46,22 @@ class TestLoad < Test::Unit::TestCase
     assert $loaded_foo_bar
   end
 
+  def test_require_without_current_dir_in_load_path
+    $LOAD_PATH.delete '.'
+    assert_raises(LoadError) { require('test/jruby/dummy') }
+    assert require('./test/jruby/dummy')
+  ensure
+    $LOAD_PATH << '.'
+  end
+
+  # GH-2972
+  def test_require_relative_via_uri_classloader_protocol
+    $CLASSPATH << './test/jruby'
+    assert_nothing_raised do
+      require 'uri:classloader:/require_relative.rb'
+    end
+  end
+
   # JRUBY-3231
   def test_load_with_empty_string_in_loadpath
     begin
@@ -93,6 +109,15 @@ class TestLoad < Test::Unit::TestCase
       java_import "test.HelloThere"
       HelloThere.new.message
     }
+  end
+
+  def test_require_nested_jar_defines_packages_for_classes_in_that_jar
+    assert_equal "test", run_in_sub_runtime(%{
+      require 'test/jruby/jar_with_nested_classes_jar'
+      require 'jar_with_classes'
+      java_import "test.HelloThere"
+      HelloThere.java_class.package.name
+    })
   end
 
   def call_extern_load_foo_bar(classpath = nil)
@@ -183,6 +208,12 @@ OUT
     $:.shift
   end
 
+  def test_load_rb_if_jar_doesnt_exist
+    # commit f5d1f9b99aa667c4449241b43dd4dcec258548cb removed this feature
+    # keep this for easier merging with jruby-1_7
+    #require 'test/jruby/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
+  end
+
   def test_overriding_require_shouldnt_cause_problems
     eval(<<DEPS, binding, "deps")
 class ::Object
@@ -258,9 +289,9 @@ DEPS
   def test_jar_with_plus_in_name
     assert_in_sub_runtime %{
        require 'test/jruby/jar_with+.jar'
-       Dir["#{File.dirname( __FILE__ )}/jar_with+.jar!/*"].size == 2
-     }
-   end
+      Dir["#{File.dirname( __FILE__ )}/jar_with+.jar!/*"].size == 2
+    }
+  end
 
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading

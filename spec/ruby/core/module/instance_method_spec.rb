@@ -67,11 +67,11 @@ describe "Module#instance_method" do
     um.should == @parent_um
     lambda do
       ModuleSpecs::InstanceMethChild.instance_method(:foo)
-    end.should raise_exception(NameError)
+    end.should raise_error(NameError)
   end
 
   it "raises a NameError if the method does not exist" do
-    lambda { Object.instance_method(:missing) }.should raise_exception(NameError)
+    lambda { Object.instance_method(:missing) }.should raise_error(NameError)
   end
 
   it "sets the NameError#name attribute to the name of the missing method" do

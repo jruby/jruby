@@ -1,7 +1,4 @@
 fails:File.dirname returns all the components of filename except the last one
-fails:File.dirname returns all the components of filename except the last one (edge cases on all platforms)
-fails:File.dirname returns all the components of filename except the last one (edge cases on non-windows)
-fails:File.dirname accepts an object that has a #to_path method
 fails(windows):File.dirname returns all the components of filename except the last one (edge cases on windows)
 fails(windows):File.dirname returns the return all the components of filename except the last one (Windows format)
 fails(windows):File.dirname returns the return all the components of filename except the last one (windows unc)

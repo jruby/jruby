@@ -6,13 +6,9 @@ describe "ARGF.to_s" do
     @file2 = fixture __FILE__, "file2.txt"
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "returns 'ARGF'" do
-    argv [@file1, @file2] do
-      ARGF.to_s.should == "ARGF"
+    argf [@file1, @file2] do
+      @argf.to_s.should == "ARGF"
     end
   end
 end

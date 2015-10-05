@@ -1,4 +1,4 @@
-describe :readline_history_size, :shared => true do
+describe :readline_history_size, shared: true do
   it "returns the size of the history" do
     Readline::HISTORY.send(@method).should == 0
     Readline::HISTORY.push("1", "2", "")

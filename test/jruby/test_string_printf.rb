@@ -30,8 +30,8 @@ class TestStringPrintf < Test::Unit::TestCase
   ##### char (%c) #####
   def test_char
     assert_equal("A", "%c" % 65)
-    assert_equal("m", "%c" % 365)
-    assert_equal("[", "%c" % -165)
+    assert_equal("ŭ", "%c" % 365)
+    assert_raises(ArgumentError) {"%c" % -165}
     assert_equal("A", "% c" % 65)
     assert_equal("A", "%0c" % 65)
     assert_equal("A", "%.5c" % 65)

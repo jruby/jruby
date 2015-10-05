@@ -31,12 +31,39 @@ describe "Integer#downto [stop] when self and stop are Fixnums" do
     lambda {1.downto(nil) {|x| p x } }.should raise_error(ArgumentError)
   end
 
-  it "returns an Enumerator" do
-    result = []
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      result = []
 
-    enum = 5.downto(2)
-    enum.each { |i| result << i }
+      enum = 5.downto(2)
+      enum.each { |i| result << i }
 
-    result.should == [5, 4, 3, 2]
+      result.should == [5, 4, 3, 2]
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "raises an ArgumentError for invalid endpoints" do
+          enum = 1.downto("A")
+          lambda { enum.size }.should raise_error(ArgumentError)
+          enum = 1.downto(nil)
+          lambda { enum.size }.should raise_error(ArgumentError)
+        end
+
+        it "returns self - stop + 1" do
+          10.downto(5).size.should == 6
+          10.downto(1).size.should == 10
+          10.downto(0).size.should == 11
+          0.downto(0).size.should == 1
+          -3.downto(-5).size.should == 3
+        end
+
+        it "returns 0 when stop > self" do
+          4.downto(5).size.should == 0
+          -5.downto(0).size.should == 0
+          -5.downto(-3).size.should == 0
+        end
+      end
+    end
   end
 end

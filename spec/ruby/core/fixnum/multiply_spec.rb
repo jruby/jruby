@@ -20,18 +20,8 @@ describe "Fixnum#*" do
   end
 
   it "overflows to Bignum when the result does not fit in Fixnum" do
-    if 1.size == 4
-      # 32-bit fixnums
-      y = 0x4000
-      result = y * y * y
-      result.should == 0x40000000000
-      result.should be_kind_of(Bignum)
-    elsif 1.size == 8
-      # 64-bit fixnums
-      y = 0x40000000
-      result = y * y * y
-      result.should == 0x40000000000000000000000
-      result.should be_kind_of(Bignum)
-    end
+    (fixnum_max * fixnum_max).should be_kind_of(Bignum)
+    (fixnum_max * fixnum_min).should be_kind_of(Bignum)
   end
+
 end

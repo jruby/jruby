@@ -1,1 +1,0 @@
-fails:Thread#group needs to be reviewed for spec completeness

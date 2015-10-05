@@ -33,6 +33,7 @@ import org.jruby.RubyProc;
 
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.Arity;
@@ -203,7 +204,7 @@ public class SunSignalFacade implements SignalFacade {
             }
         } else {
             final RubyModule signalModule = runtime.getModule("Signal");
-            Block block = CallBlock.newCallClosure(signalModule, signalModule, Arity.noArguments(),
+            Block block = CallBlock.newCallClosure(signalModule, signalModule, Signature.NO_ARGUMENTS,
                     callback, runtime.getCurrentContext());
             retVals[0] = RubyProc.newProc(runtime, block, block.type);
         }

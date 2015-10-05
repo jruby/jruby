@@ -43,8 +43,9 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
 
@@ -72,17 +73,14 @@ public class StaticScope implements Serializable {
     // Next CRef down the lexical structure
     private StaticScope previousCRefScope = null;
 
-    // Our name holder (offsets are assigned as variables are added
+    // Our name holder (offsets are assigned as variables are added)
     private String[] variableNames;
 
-    // number of variables in this scope representing required arguments
-    private int requiredArgs = 0;
+    // Arity of this scope if there is one
+    private Signature signature;
 
-    // number of variables in this scope representing optional arguments
-    private int optionalArgs = 0;
-
-    // index of variable that represents a "rest" arg
-    private int restArg = -1;
+    // File name where this static scope came from or null if a native or artificial scope
+    private String file;
 
     private DynamicScope dummyScope;
 
@@ -92,10 +90,15 @@ public class StaticScope implements Serializable {
 
     private Type type;
     private boolean isBlockOrEval;
-    private boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
+    private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private int scopeId;
-    private IRScope irScope; // Method/Closure that this static scope corresponds to
+    private long commandArgumentStack;
+
+    // Method/Closure that this static scope corresponds to.  This is used to tell whether this
+    // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
+    private IRScope irScope;
+
+    private RubyModule overlayModule;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -103,6 +106,15 @@ public class StaticScope implements Serializable {
         public static Type fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
         }
+    }
+
+    /**
+     *
+     */
+    protected StaticScope(Type type, StaticScope enclosingScope, String file) {
+        this(type, enclosingScope, NO_NAMES);
+
+        this.file = file;
     }
 
     /**
@@ -140,10 +152,6 @@ public class StaticScope implements Serializable {
         return irScope;
     }
 
-    public int getScopeId() {
-        return scopeId;
-    }
-
     public IRScopeType getScopeType() {
         return scopeType;
     }
@@ -152,16 +160,9 @@ public class StaticScope implements Serializable {
         this.scopeType = scopeType;
     }
 
-    public void setIRScope(IRScope irScope, boolean isForLoopBody) {
-        if (!isForLoopBody) {
-            this.irScope = irScope;
-        }
-        this.scopeId = irScope.getScopeId();
-        this.scopeType = irScope.getScopeType();
-    }
-
     public void setIRScope(IRScope irScope) {
-        setIRScope(irScope, false);
+        this.irScope = irScope;
+        this.scopeType = irScope.getScopeType();
     }
 
     /**
@@ -229,26 +230,15 @@ public class StaticScope implements Serializable {
     }
 
     public int getNumberOfVariables() {
-        return irScope == null ? variableNames.length : irScope.getUsedVariablesCount();
+        return variableNames.length;
     }
 
     public void setVariables(String[] names) {
         assert names != null : "names is not null";
+        assert namesAreInterned(names);
 
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
-    }
-
-    /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
-    public IRubyObject getConstantWithConstMissing(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
-
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
-        return result == null ? cref.getConstant(internedName) : result;
-    }
-
-    public boolean isConstantDefined(String internedName) {
-        return getConstant(internedName) != null;
     }
 
     public IRubyObject getConstant(String internedName) {
@@ -272,18 +262,6 @@ public class StaticScope implements Serializable {
         if (previousCRefScope == null) return null;
 
         return getConstantInner(internedName);
-    }
-
-    public IRubyObject setConstant(String internedName, IRubyObject result) {
-        RubyModule module;
-
-        if ((module = getModule()) != null) {
-            module.setConstant(internedName, result);
-            return result;
-        }
-
-        // TODO: wire into new exception handling mechanism
-        throw result.getRuntime().newTypeError("no class/module to define constant");
     }
 
     /**
@@ -480,26 +458,6 @@ public class StaticScope implements Serializable {
         return cref;
     }
 
-    public int getOptionalArgs() {
-        return optionalArgs;
-    }
-
-    public int getRequiredArgs() {
-        return requiredArgs;
-    }
-
-    public void setRequiredArgs(int requiredArgs) {
-        this.requiredArgs = requiredArgs;
-    }
-
-    public int getRestArg() {
-        return restArg;
-    }
-
-    public void setRestArg(int restArg) {
-        this.restArg = restArg;
-    }
-
     public boolean isBlockScope() {
         return isBlockOrEval;
     }
@@ -516,31 +474,35 @@ public class StaticScope implements Serializable {
         this.isArgumentScope = true;
     }
 
-    public Arity getArity() {
-        if (optionalArgs > 0) {
-            if (restArg >= 0) {
-                return Arity.optional();
-            }
-            return Arity.required(requiredArgs);
-        } else {
-            if (restArg >= 0) {
-                return Arity.optional();
-            }
-            return Arity.fixed(requiredArgs);
-        }
+    /**
+     * For all block or method associated with static scopes this will return the signature for that
+     * signature-providing scope.  module bodies and other non-arity specific code will return null.
+     */
+    public Signature getSignature() {
+        return signature;
     }
 
-    public void setArities(int required, int optional, int rest) {
-        this.requiredArgs = required;
-        this.optionalArgs = optional;
-        this.restArg = rest;
+    /**
+     * This happens in when first defining ArgsNodes or when reifying a method from AOT.
+     */
+    public void setSignature(Signature signature) {
+        this.signature = signature;
     }
 
     public DynamicScope getDummyScope() {
         return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
     }
 
+    public void setCommandArgumentStack(long commandArgumentStack) {
+        this.commandArgumentStack = commandArgumentStack;
+    }
+
+    public long getCommandArgumentStack() {
+        return commandArgumentStack;
+    }
+
     private void growVariableNames(String name) {
+        assert name == name.intern();
         String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
@@ -557,6 +519,10 @@ public class StaticScope implements Serializable {
         return type;
     }
 
+    public String getFile() {
+        return file;
+    }
+
     public StaticScope duplicate() {
         StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
         // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.
@@ -565,7 +531,16 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setSignature(signature);
 
         return dupe;
+    }
+
+    public RubyModule getOverlayModule(ThreadContext context) {
+        RubyModule omod = overlayModule;
+        if (omod == null) {
+            overlayModule = omod = RubyModule.newModule(context.runtime);
+        }
+        return omod;
     }
 }

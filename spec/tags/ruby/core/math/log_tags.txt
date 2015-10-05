@@ -1,0 +1,2 @@
+fails:Math.log returns NaN given NaN
+fails:Math.log accepts any argument that can be coerced with Float()

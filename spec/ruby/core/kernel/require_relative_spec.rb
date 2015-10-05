@@ -154,12 +154,13 @@ describe "Kernel#require_relative with a relative path" do
   describe "($LOADED_FEATURES)" do
     it "stores an absolute path" do
       require_relative(@path).should be_true
-      $LOADED_FEATURES.should == [@abs_path]
+      $LOADED_FEATURES.should include(@abs_path)
     end
 
     it "does not store the path if the load fails" do
+      saved_loaded_features = $LOADED_FEATURES.dup
       lambda { require_relative("#{@dir}/raise_fixture.rb") }.should raise_error(RuntimeError)
-      $LOADED_FEATURES.should == []
+      $LOADED_FEATURES.should == saved_loaded_features
     end
 
     it "does not load an absolute path that is already stored" do
@@ -170,7 +171,7 @@ describe "Kernel#require_relative with a relative path" do
 
     it "adds the suffix of the resolved filename" do
       require_relative("#{@dir}/load_fixture").should be_true
-      $LOADED_FEATURES.should == ["#{@abs_dir}/load_fixture.rb"]
+      $LOADED_FEATURES.should include("#{@abs_dir}/load_fixture.rb")
     end
 
     it "loads a path for a file already loaded with a relative path" do
@@ -182,6 +183,7 @@ describe "Kernel#require_relative with a relative path" do
     end
   end
 end
+
 describe "Kernel#require_relative with an absolute path" do
   it "needs to be reviewed for spec completeness"
 
@@ -316,12 +318,13 @@ describe "Kernel#require_relative with an absolute path" do
   describe "($LOAD_FEATURES)" do
     it "stores an absolute path" do
       require_relative(@path).should be_true
-      $LOADED_FEATURES.should == [@abs_path]
+      $LOADED_FEATURES.should include(@abs_path)
     end
 
     it "does not store the path if the load fails" do
+      saved_loaded_features = $LOADED_FEATURES.dup
       lambda { require_relative("#{@dir}/raise_fixture.rb") }.should raise_error(RuntimeError)
-      $LOADED_FEATURES.should == []
+      $LOADED_FEATURES.should == saved_loaded_features
     end
 
     it "does not load an absolute path that is already stored" do
@@ -332,7 +335,7 @@ describe "Kernel#require_relative with an absolute path" do
 
     it "adds the suffix of the resolved filename" do
       require_relative("#{@dir}/load_fixture").should be_true
-      $LOADED_FEATURES.should == ["#{@abs_dir}/load_fixture.rb"]
+      $LOADED_FEATURES.should include("#{@abs_dir}/load_fixture.rb")
     end
 
     it "loads a path for a file already loaded with a relative path" do

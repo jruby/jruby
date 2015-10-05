@@ -1,1 +1,0 @@
-fails(windows - Hash#value?):ENV.value? looks up values case-insensitively

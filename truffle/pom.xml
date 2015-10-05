@@ -1,20 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+
+DO NOT MODIFIY - GENERATED CODE
+
+
+-->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>9.0.2.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-truffle</artifactId>
   <name>JRuby Truffle</name>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>1.14</version>
+    </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
@@ -24,12 +36,12 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.6</version>
+      <version>0.7</version>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.6</version>
+      <version>0.7</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -37,6 +49,7 @@
     <defaultGoal>package</defaultGoal>
     <resources>
       <resource>
+        <targetPath>${project.build.directory}/classes/jruby-truffle</targetPath>
         <directory>src/main/ruby</directory>
         <includes>
           <include>**/*rb</include>
@@ -48,6 +61,22 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
+            <id>anno</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org/jruby/truffle/om/dsl/processor/OMProcessor.java</include>
+              </includes>
+              <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-ea</compilerArg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+          <execution>
             <id>default-compile</id>
             <phase>compile</phase>
             <goals>
@@ -55,6 +84,7 @@
             </goals>
             <configuration>
               <annotationProcessors>
+                <annotationProcessor>org.jruby.truffle.om.dsl.processor.OMProcessor</annotationProcessor>
                 <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
               </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
@@ -62,6 +92,7 @@
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                <compilerArg>-J-ea</compilerArg>
               </compilerArgs>
             </configuration>
           </execution>
@@ -96,4 +127,118 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>dist</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pack jruby-truffle-complete.jar</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
+                    </includes>
+                  </artifactSet>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jruby-jars</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pack jruby-truffle-complete.jar</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
+                    </includes>
+                  </artifactSet>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>all</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pack jruby-truffle-complete.jar</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
+                    </includes>
+                  </artifactSet>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>pack jruby-truffle-complete.jar</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>com.oracle:truffle</include>
+                      <include>com.oracle:truffle-interop</include>
+                    </includes>
+                  </artifactSet>
+                  <outputFile>${project.build.directory}/jruby-truffle-${project.version}-complete.jar</outputFile>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

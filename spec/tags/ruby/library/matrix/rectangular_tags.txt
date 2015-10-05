@@ -1,1 +1,0 @@
-fails:Matrix#rectangular for a subclass of Matrix returns instances of that subclass

@@ -1,2 +1,0 @@
-fails:Bignum#== calls 'other == self' if the given argument is not an Integer
-fails:Bignum#== returns the result of 'other == self' as a boolean

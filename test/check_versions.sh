@@ -8,12 +8,11 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-mvn install -Pbootstrap
-mvn -Pcomplete
-mvn -Pdist
-mvn -Pjruby-jars
-mvn -Pjruby-tests
-mvn -Pmain
+./mvnw install -Pbootstrap
+./mvnw -Pcomplete
+./mvnw -Pdist
+./mvnw -Pjruby-jars
+./mvnw -Pmain
 
 declare -a failed
 failed[0]=0
@@ -62,17 +61,15 @@ function check {
 
 }
 
-check test/target/jruby-tests-$jar_version.jar 1
 check lib/target/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 13
-check maven/jruby-jars/lib/jruby-truffle-$jar_version-complete.jar 15
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
 check maven/jruby/target/jruby-$jar_version.jar 9
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 17 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 13 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 19 jruby-$jar_version
+check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 14 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
 check core/target/jruby-core-$jar_version.jar 9
 check truffle/target/jruby-truffle-$jar_version.jar 15

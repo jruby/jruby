@@ -109,6 +109,25 @@ module BreakSpecs
     def method(v)
       yield v
     end
+
+    def invoke_yield_in_while
+      looping = true
+      while looping
+        note :aa
+        yield
+        note :bb
+        looping = false
+      end
+      note :should_not_reach_here
+    end
+
+    def break_in_block_in_while
+      invoke_yield_in_while do
+        note :break
+        break :value
+        note :c
+      end
+    end
   end
 
   class Lambda < Driver

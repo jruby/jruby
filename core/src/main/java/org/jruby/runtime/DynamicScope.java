@@ -28,7 +28,6 @@
 package org.jruby.runtime;
 
 import org.jruby.EvalType;
-import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
 import org.jruby.runtime.scope.OneVarDynamicScope;
@@ -48,11 +47,7 @@ public abstract class DynamicScope {
 
     private EvalType evalType;
 
-    // A place to store that special hiding space that bindings need to implement things like:
-    // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
-    // hidden shared scope.  We store it here.  This will be null if no binding has yet
-    // been called.
-    protected DynamicScope evalScope;
+    private boolean lambda;
 
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this.staticScope = staticScope;
@@ -98,6 +93,11 @@ public abstract class DynamicScope {
      */
     public final DynamicScope getParentScope() {
         return parent;
+    }
+
+    @Deprecated
+    public DynamicScope getNextCapturedScope() {  // Used by ruby-debug-ide
+        return getParentScope();
     }
 
     /**
@@ -247,67 +247,6 @@ public abstract class DynamicScope {
      */
     public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
 
-    /**
-     * Set all values which represent 'normal' parameters in a call list to this dynamic
-     * scope.  Function calls bind to local scopes by assuming that the indexes or the
-     * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
-     * the first two slots).  We pass in a second argument because we sometimes get more
-     * values than we are expecting.  The rest get compacted by original caller into
-     * rest args.
-     *
-     * @param values up to size specified to be mapped as ordinary parm values
-     * @param size is the number of values to assign as ordinary parm values
-     */
-    public abstract void setArgValues(IRubyObject[] values, int size);
-
-    public void setArgValues() {
-        setArgValues(IRubyObject.NULL_ARRAY, 0);
-    }
-    public void setArgValues(IRubyObject arg0) {
-        setArgValues(new IRubyObject[] {arg0}, 1);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
-        setArgValues(new IRubyObject[] {arg0, arg1}, 2);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2}, 3);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3}, 4);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4}, 5);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5}, 6);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6}, 7);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7}, 8);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8}, 9);
-    }
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9) {
-        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9}, 10);
-    }
-
-
-    /**
-     *
-     * @param values group where last n(size) values are used
-     * @param index index in the dynamic scope to start setting these values
-     * @param size which of the last size arguments of values parameter to set
-     */
-    public abstract void setEndArgValues(IRubyObject[] values, int index, int size);
-
-    /**
-     * Copy variable values back for ZSuper call.
-     */
-    public abstract IRubyObject[] getArgValues();
-
     @Override
     public String toString() {
         return toString(new StringBuffer(), "");
@@ -377,5 +316,13 @@ public abstract class DynamicScope {
 
     public void clearEvalType() {
         evalType = EvalType.NONE;
+    }
+
+    public void setLambda(boolean lambda) {
+        this.lambda = lambda;
+    }
+
+    public boolean isLambda() {
+        return lambda;
     }
 }

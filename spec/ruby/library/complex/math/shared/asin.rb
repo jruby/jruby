@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_asin, :shared => true do
+describe :complex_math_asin, shared: true do
   it "returns the arcsine of the argument" do
     @object.send(:asin, 1).should be_close(Math::PI/2, TOLERANCE)
     @object.send(:asin, 0).should be_close(0.0, TOLERANCE)
@@ -23,7 +23,7 @@ describe :complex_math_asin, :shared => true do
   end
 end
 
-describe :complex_math_asin_bang, :shared => true do
+describe :complex_math_asin_bang, shared: true do
   it "returns the arcsine of the argument" do
     @object.send(:asin!, 1).should be_close(Math::PI/2, TOLERANCE)
     @object.send(:asin!, 0).should be_close(0.0, TOLERANCE)

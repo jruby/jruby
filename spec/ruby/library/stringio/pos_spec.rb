@@ -7,7 +7,7 @@ describe "StringIO#pos" do
 end
 
 describe "StringIO#pos=" do
-  before(:each) do
+  before :each do
     @io = StringIOSpecs.build
   end
 

@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallContext;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -24,7 +23,7 @@ abstract public class NativeInvoker extends DynamicMethod {
 
 
     public NativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
-        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+        super(implementationClass, Visibility.PUBLIC);
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
         this.signature = signature;

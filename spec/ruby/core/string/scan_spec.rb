@@ -70,7 +70,9 @@ describe "String#scan" do
 
   it "raises a TypeError if pattern isn't a Regexp and can't be converted to a String" do
     lambda { "cruel world".scan(5)         }.should raise_error(TypeError)
-    lambda { "cruel world".scan(:test)     }.should raise_error(TypeError)
+    not_supported_on :opal do
+      lambda { "cruel world".scan(:test)   }.should raise_error(TypeError)
+    end
     lambda { "cruel world".scan(mock('x')) }.should raise_error(TypeError)
   end
 

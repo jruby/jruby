@@ -13,7 +13,7 @@ describe "TCPSocket method" do
     @client_sock = TCPSocket.new("localhost", @port)
     @client_thread = Thread.new &blk
     sleep(0.1) # potentially too short?
-    @client_thread.status.should == 'sleep'
+    expect(@client_thread.status).to eq('sleep')
     @client_thread.kill
   end
 

@@ -8,6 +8,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
@@ -17,12 +18,15 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvocationLinker;
+import org.jruby.runtime.invokedynamic.GlobalSite;
+import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -34,15 +38,29 @@ import java.lang.invoke.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
+    public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
+    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class);
+    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, String.class, int.class);
+    public static final Class[] REIFIED_OBJECT_CLASSES = {
+        RubyObjectVar0.class,
+        RubyObjectVar1.class,
+        RubyObjectVar2.class,
+        RubyObjectVar3.class,
+        RubyObjectVar4.class,
+        RubyObjectVar5.class,
+        RubyObjectVar6.class,
+        RubyObjectVar7.class,
+        RubyObjectVar8.class,
+        RubyObjectVar9.class,
+    };
     private static final Logger LOG = LoggerFactory.getLogger("Bootstrap");
     static final Lookup LOOKUP = MethodHandles.lookup();
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName) {
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
@@ -52,7 +70,7 @@ public class Bootstrap {
         MutableCallSite site = new MutableCallSite(type);
         Binder binder = Binder
                 .from(RubyString.class, ThreadContext.class)
-                .insert(0, arrayOf(MutableCallSite.class, ByteList.class), site, byteList);
+                .insert(0, arrayOf(MutableCallSite.class, ByteList.class, int.class), site, byteList, cr);
         if (name.equals("frozen")) {
             site.setTarget(binder.invokeStaticQuiet(lookup, Bootstrap.class, "frozenString"));
         } else {
@@ -131,7 +149,7 @@ public class Bootstrap {
     }
 
     public static Handle string() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
     }
 
     public static Handle bytelist() {
@@ -162,7 +180,11 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
-    public static RubyString string(MutableCallSite site, ByteList value, ThreadContext context) throws Throwable {
+    public static Handle global() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
         MethodHandle handle = SmartBinder
                 .from(STRING_SIGNATURE)
                 .invoke(NEW_STRING_SHARED_HANDLE.apply("byteList", value))
@@ -170,11 +192,11 @@ public class Bootstrap {
 
         site.setTarget(handle);
 
-        return RubyString.newStringShared(context.runtime, value);
+        return RubyString.newStringShared(context.runtime, value, cr);
     }
 
-    public static RubyString frozenString(MutableCallSite site, ByteList value, ThreadContext context) throws Throwable {
-        RubyString frozen = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, value));
+    public static RubyString frozenString(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
+        RubyString frozen = context.runtime.freezeAndDedupString(RubyString.newStringShared(context.runtime, value, cr));
         MethodHandle handle = Binder.from(RubyString.class, ThreadContext.class)
                 .dropAll()
                 .constant(frozen);
@@ -279,6 +301,56 @@ public class Bootstrap {
         return IRRuntimeHelpers.dupKwargsHashAndPopulateFromArray(context, hash, pairs);
     }
 
+    static MethodHandle buildIndyHandle(InvokeSite site, DynamicMethod method, RubyModule implClass) {
+        MethodHandle mh = null;
+        Signature siteToDyncall = site.signature.insertArgs(3, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+
+        if (method instanceof HandleMethod) {
+            HandleMethod handleMethod = (HandleMethod)method;
+            boolean blockGiven = site.signature.lastArgType() == Block.class;
+
+            if (site.arity >= 0 && site.arity <= 3) {
+                mh = handleMethod.getHandle(site.arity);
+                if (mh != null) {
+                    if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                    mh = dropArguments(mh, 1, IRubyObject.class);
+                } else {
+                    mh = handleMethod.getHandle(4);
+                    if (site.arity == 0) {
+                        mh = dropArguments(mh, 1, IRubyObject.class);
+                        if (!blockGiven) {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                        } else {
+                            mh = insertArguments(mh, mh.type().parameterCount() - 2, IRubyObject.NULL_ARRAY);
+                        }
+                    } else {
+                        // bundle up varargs
+                        if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                        mh = SmartBinder.from(lookup(), siteToDyncall)
+                                .permute("context", "self", "class", "name", "block", "arg.*")
+                                .collect("args", "arg.*")
+                                .permute("context", "self", "class", "name", "args", "block")
+                                .invoke(mh)
+                                .handle();
+                    }
+                }
+            } else {
+                mh = handleMethod.getHandle(4);
+                if (!blockGiven) mh = insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+
+                mh = SmartBinder.from(lookup(), siteToDyncall)
+                        .permute("context", "self", "class", "name", "args", "block")
+                        .invoke(mh)
+                        .handle();
+            }
+
+            mh = insertArguments(mh, 3, implClass, site.name());
+        }
+
+        return mh;
+    }
+
     static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass dispatchClass) {
         SmartBinder binder;
 
@@ -355,11 +427,13 @@ public class Bootstrap {
         MethodHandle mh = null;
         SmartBinder binder = null;
 
-        if (method.getNativeCall() != null) {
+        if (method instanceof NativeCallMethod && ((NativeCallMethod) method).getNativeCall() != null) {
+            NativeCallMethod nativeMethod = (NativeCallMethod)method;
+            DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+            int nativeArgCount = getNativeArgCount(method, nativeCall);
 
-            DynamicMethod.NativeCall nc = method.getNativeCall();
+            DynamicMethod.NativeCall nc = nativeCall;
 
             if (nc.isJava()) {
                 // not supported yet, use DynamicMethod.call
@@ -521,7 +595,7 @@ public class Bootstrap {
         }
 
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
 
         getValue = guardWithTest(test, getValue, fallback);
@@ -577,7 +651,7 @@ public class Bootstrap {
         }
 
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
         test = dropArguments(test, 1, IRubyObject.class);
 
@@ -603,6 +677,10 @@ public class Bootstrap {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean testRealClass(int id, IRubyObject self) {
+        return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
     }
 
     public static boolean testType(RubyClass original, IRubyObject self) {
@@ -743,5 +821,107 @@ public class Bootstrap {
 
     private static String extractSourceInfo(VariableSite site) {
         return " (" + site.file() + ":" + site.line() + ")";
+    }
+
+    public static Handle getFixnumOperatorHandle() {
+        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);
+    }
+
+    public static Handle getFloatOperatorHandle() {
+        return getBootstrapHandle("floatOperatorBootstrap", MathLinker.class, BOOTSTRAP_DOUBLE_STRING_INT_SIG);
+    }
+
+    public static Handle checkpointHandle() {
+        return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+
+    public static Handle getBootstrapHandle(String name, String sig) {
+        return getBootstrapHandle(name, Bootstrap.class, sig);
+    }
+
+    public static Handle getBootstrapHandle(String name, Class type, String sig) {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(type), name, sig);
+    }
+
+    public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(Bootstrap.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static void checkpointFallback(MutableCallSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        Invalidator invalidator = runtime.getCheckpointInvalidator();
+
+        MethodHandle target = Binder
+                .from(void.class, ThreadContext.class)
+                .nop();
+        MethodHandle fallback = lookup().findStatic(Bootstrap.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+
+        site.setTarget(target);
+    }
+
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
+        GlobalSite site = new GlobalSite(type, varName);
+        MethodHandle handle;
+
+        if (operation.equals("get")) {
+            handle = lookup.findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+
+        return site;
+    }
+
+    public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
+
+        if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
+                variable.getScope() != GlobalVariable.Scope.GLOBAL) {
+
+            // use uncached logic forever
+//            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+
+            MethodHandle uncached = lookup().findStatic(Bootstrap.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
+            uncached = uncached.bindTo(variable);
+            uncached = dropArguments(uncached, 0, ThreadContext.class);
+            site.setTarget(uncached);
+            return (IRubyObject)uncached.invokeWithArguments(context);
+        }
+
+        Invalidator invalidator = variable.getInvalidator();
+        IRubyObject value = variable.getAccessor().getValue();
+
+        MethodHandle target = constant(IRubyObject.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+
+        site.setTarget(target);
+
+//        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") cached");
+
+        return value;
+    }
+
+    public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
+        return variable.getAccessor().getValue();
     }
 }

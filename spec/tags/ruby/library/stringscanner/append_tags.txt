@@ -1,2 +1,0 @@
-fails:StringScanner#<< raises a TypeError if the given argument can't be converted to a String
-fails:StringScanner#<< when passed a Fixnum raises a TypeError

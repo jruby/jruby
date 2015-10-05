@@ -10,7 +10,7 @@ describe Ant, "Rake helpers" do
   it "should set FileLists as task attributes by joining them with commas" do
     ant = Ant.new
     ant.property :name => "files", :value => FileList['*.*']
-    ant.properties["files"].should =~ /,/
+    expect(ant.properties["files"]).to match(/,/)
   end
 
 end
@@ -29,16 +29,16 @@ describe Ant, "Rake #ant_task" do
   end
 
   it "should create a Rake task whose body defines Ant tasks" do
-    ant.properties.should_not include("foo")
+    expect(ant.properties).not_to include("foo")
 
     task :initial
     ant_task :ant => :initial do
       property :name => "foo", :value => "bar"
     end
-    Rake::Task[:ant].should_not be_nil
-    Rake::Task[:ant].prerequisites.should == ["initial"]
+    expect(Rake::Task[:ant]).not_to be_nil
+    expect(Rake::Task[:ant].prerequisites).to contain_exactly("initial")
     Rake::Task[:ant].invoke
 
-    ant.properties["foo"].should == "bar"
+    expect(ant.properties["foo"]).to eq("bar")
   end
 end

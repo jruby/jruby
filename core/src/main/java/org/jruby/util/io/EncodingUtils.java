@@ -4,7 +4,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -16,6 +15,8 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
+import org.jcodings.unicode.UnicodeEncoding;
+import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -24,7 +25,6 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -66,7 +66,7 @@ public class EncodingUtils {
         if (!encStr.getEncoding().isAsciiCompatible()) {
             throw context.runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
-        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(enc);
+        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(encStr);
         // check for missing encoding is in getEncodingFromObject
         return idx;
     }
@@ -687,7 +687,9 @@ public class EncodingUtils {
         int c;
         int l;
 
-        // if e < p check unnecessary
+        if (e <= p) {
+            return -1;
+        }
 
         if (encAsciicompat(enc)) {
             c = pBytes[p] & 0xFF;
@@ -1029,10 +1031,12 @@ public class EncodingUtils {
         EConvResult ret;
         int convertedOutput = 0;
 
+        // these are in the while clause in MRI
         destbytes = newStr.getUnsafeBytes();
         int dest = newStr.begin();
         dp.p = dest + convertedOutput;
         ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+
         while (ret == EConvResult.DestinationBufferFull) {
             int convertedInput = sp.p - start;
             int rest = len - convertedInput;
@@ -1046,6 +1050,12 @@ public class EncodingUtils {
             }
             olen += rest < 2 ? 2 : rest;
             newStr.ensure(olen);
+
+            // these are the while clause in MRI
+            destbytes = newStr.getUnsafeBytes();
+            dest = newStr.begin();
+            dp.p = dest + convertedOutput;
+            ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
         }
         ec.close();
 
@@ -1222,11 +1232,10 @@ public class EncodingUtils {
 
     // make_econv_exception
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
-        String mesg;
-        RaiseException exc;
+        final StringBuilder mesg = new StringBuilder(); RaiseException exc;
 
-        if (ec.lastError.getResult() == EConvResult.InvalidByteSequence ||
-                ec.lastError.getResult() == EConvResult.IncompleteInput) {
+        final EConvResult result = ec.lastError.getResult();
+        if (result == EConvResult.InvalidByteSequence || result == EConvResult.IncompleteInput) {
             byte[] errBytes = ec.lastError.getErrorBytes();
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
@@ -1235,48 +1244,47 @@ public class EncodingUtils {
             RubyString dumped = (RubyString)bytes.dump();
             int readagainLen = ec.lastError.getReadAgainLength();
             IRubyObject bytes2 = runtime.getNil();
-            IRubyObject dumped2;
-            int idx;
-            if (ec.lastError.getResult() == EConvResult.IncompleteInput) {
-                mesg = "incomplete " + dumped + " on " + new String(ec.lastError.getSource());
+            if (result == EConvResult.IncompleteInput) {
+                mesg.append("incomplete ").append(dumped).append(" on ").append(new String(ec.lastError.getSource()));
             } else if (readagainLen != 0) {
                 bytes2 = RubyString.newString(runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
-                dumped2 = ((RubyString)bytes2).dump();
-                mesg = dumped + " followed by " + dumped2 + " on " + new String(ec.lastError.getSource());
+                IRubyObject dumped2 = ((RubyString) bytes2).dump();
+                mesg.append(dumped).append(" followed by ").append(dumped2).append(" on ").append( new String(ec.lastError.getSource()) );
             } else {
-                mesg = dumped + " on " + new String(ec.lastError.getSource());
+                mesg.append(dumped).append(" on ").append( new String(ec.lastError.getSource()) );
             }
 
-            exc = runtime.newInvalidByteSequenceError(mesg);
+            exc = runtime.newInvalidByteSequenceError(mesg.toString());
             exc.getException().setInternalVariable("error_bytes", bytes);
             exc.getException().setInternalVariable("readagain_bytes", bytes2);
-            exc.getException().setInternalVariable("incomplete_input", ec.lastError.getResult() == EConvResult.IncompleteInput ? runtime.getTrue() : runtime.getFalse());
+            exc.getException().setInternalVariable("incomplete_input", result == EConvResult.IncompleteInput ? runtime.getTrue() : runtime.getFalse());
 
             return makeEConvExceptionSetEncs(exc, runtime, ec);
-        } else if (ec.lastError.getResult() == EConvResult.UndefinedConversion) {
+        }
+        else if (result == EConvResult.UndefinedConversion) {
             byte[] errBytes = ec.lastError.getErrorBytes();
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
-            ByteList _bytes = new ByteList(errBytes, errBytesP, errorLen - errBytesP);
-            RubyString bytes = RubyString.newString(runtime, _bytes);
-            if (Arrays.equals(ec.lastError.getSource(), "UTF-8".getBytes())) {
+            final byte[] errSource = ec.lastError.getSource();
+            if (Arrays.equals(errSource, "UTF-8".getBytes())) {
                 // prepare dumped form
             }
-            RubyString dumped = (RubyString)bytes.dump();
 
-            if (Arrays.equals(ec.lastError.getSource(), ec.source) &&
-                    Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
-                mesg = dumped + " from " + new String(ec.lastError.getSource()) + " to " + new String(ec.lastError.getDestination());
+            RubyString bytes = RubyString.newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
+            RubyString dumped = (RubyString) bytes.dump();
+
+            if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
+                mesg.append(dumped).append(" from ").append( new String(errSource) ).append(" to ").append( new String(ec.lastError.getDestination()) );
             } else {
-                mesg = dumped + " to " + new String(ec.lastError.getDestination()) + " in conversion from " + new String(ec.source);
+                mesg.append(dumped).append(" to ").append( new String(ec.lastError.getDestination()) ).append(" in conversion from ").append( new String(ec.source) );
                 for (int i = 0; i < ec.numTranscoders; i++) {
-                    mesg += " to " + new String(ec.elements[i].transcoding.transcoder.getDestination());
+                    mesg.append(" to ").append( new String(ec.elements[i].transcoding.transcoder.getDestination()) );
                 }
             }
 
-            exc = runtime.newUndefinedConversionError(mesg);
+            exc = runtime.newUndefinedConversionError(mesg.toString());
 
-            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.getSource());
+            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(errSource);
             if (entry != null) {
                 bytes.setEncoding(entry.getEncoding());
                 exc.getException().setInternalVariable("error_char", bytes);
@@ -1338,7 +1346,7 @@ public class EncodingUtils {
         switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
                     if (((RubyFixnum)b3).getLongValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
@@ -1348,16 +1356,16 @@ public class EncodingUtils {
                 break;
             case 0xFE:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
                 io.ungetbyte(context, b2);
                 break;
             case 0xFF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xFE) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFE) {
                     b3 = io.getbyte(context);
-                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
                         if (((RubyFixnum)b4).getLongValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
@@ -1372,9 +1380,9 @@ public class EncodingUtils {
                 break;
             case 0:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
-                    if (((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
-                        if (((RubyFixnum)b4).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
+                        if (b4 instanceof RubyFixnum && ((RubyFixnum)b4).getLongValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);
@@ -1810,17 +1818,64 @@ public class EncodingUtils {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
         else if (cr == StringSupport.CR_7BIT) {
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (!enc.isAsciiCompatible()) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         else { /* ENC_CODERANGE_VALID */
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         return str;
+    }
+
+    // MRI: get_encoding
+    public static Encoding getEncoding(ByteList str) {
+        return getActualEncoding(str.getEncoding(), str);
+    }
+
+    private static final Encoding UTF16Dummy = EncodingDB.getEncodings().get("UTF-16".getBytes()).getEncoding();
+    private static final Encoding UTF32Dummy = EncodingDB.getEncodings().get("UTF-32".getBytes()).getEncoding();
+
+    // MRI: get_actual_encoding
+    public static Encoding getActualEncoding(Encoding enc, ByteList byteList) {
+        if (enc.isDummy() && enc instanceof UnicodeEncoding) {
+            // handle dummy UTF-16 and UTF-32 by scanning for BOM, as in MRI
+            byte[] bytes = byteList.unsafeBytes();
+            int p = byteList.begin();
+            int end = p + byteList.getRealSize();
+
+            if (enc == UTF16Dummy && end - p >= 2) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
+
+                if (c0 == 0xFE && c1 == 0xFF) {
+                    return UTF16BEEncoding.INSTANCE;
+                } else if (c0 == 0xFF && c1 == 0xFE) {
+                    return UTF16LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
+            } else if (enc == UTF32Dummy && end - p >= 4) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
+                int c2 = bytes[p + 2] & 0xff;
+                int c3 = bytes[p + 3] & 0xff;
+
+                if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
+                    return UTF32BEEncoding.INSTANCE;
+                } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
+                    return UTF32LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
+            }
+        }
+        return enc;
+    }
+
+    public static Encoding STR_ENC_GET(ByteListHolder str) {
+        return getEncoding(str.getByteList());
     }
 }

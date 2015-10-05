@@ -13,15 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyMath;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Math")
 public abstract class MathNodes {
@@ -31,10 +33,6 @@ public abstract class MathNodes {
 
         public ACosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ACosNode(ACosNode prev) {
-            super(prev);
         }
 
         @Override
@@ -54,10 +52,6 @@ public abstract class MathNodes {
 
         public ACosHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ACosHNode(ACosHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -85,10 +79,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ASinNode(ASinNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < -1.0 || a > 1.0) {
@@ -106,10 +96,6 @@ public abstract class MathNodes {
 
         public ASinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ASinHNode(ASinHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -142,10 +128,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ATanNode(ATanNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.atan(a);
@@ -160,10 +142,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ATan2Node(ATan2Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a, double b) {
             return Math.atan2(a, b);
@@ -176,10 +154,6 @@ public abstract class MathNodes {
 
         public ATanHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ATanHNode(ATanHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -217,10 +191,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public CbRtNode(CbRtNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cbrt(a);
@@ -233,10 +203,6 @@ public abstract class MathNodes {
 
         public CosNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CosNode(CosNode prev) {
-            super(prev);
         }
 
         @Override
@@ -253,10 +219,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public CosHNode(CosHNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.cosh(a);
@@ -269,10 +231,6 @@ public abstract class MathNodes {
 
         public ErfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ErfNode(ErfNode prev) {
-            super(prev);
         }
 
         @Override
@@ -301,10 +259,6 @@ public abstract class MathNodes {
 
         public ErfcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ErfcNode(ErfcNode prev) {
-            super(prev);
         }
 
         @Override
@@ -348,10 +302,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public ExpNode(ExpNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.exp(a);
@@ -360,7 +310,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "frexp", isModuleFunction = true, required = 1)
-    public abstract static class FrExpNode extends CoreMethodNode {
+    public abstract static class FrExpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -371,29 +321,23 @@ public abstract class MathNodes {
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
-        public FrExpNode(FrExpNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
-        }
-
         @Specialization
-        public RubyArray frexp(int a) {
+        public DynamicObject frexp(int a) {
             return frexp((double) a);
         }
 
         @Specialization
-        public RubyArray frexp(long a) {
+        public DynamicObject frexp(long a) {
             return frexp((double) a);
         }
 
-        @Specialization
-        public RubyArray frexp(RubyBignum a) {
-            return frexp(a.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(a)")
+        public DynamicObject frexp(DynamicObject a) {
+            return frexp(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
-        public RubyArray frexp(double a) {
+        public DynamicObject frexp(double a) {
             // Copied from RubyMath - see copyright notices there
 
             double mantissa = a;
@@ -414,18 +358,13 @@ public abstract class MathNodes {
                 for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{sign * mantissa, exponent}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{sign * mantissa, exponent}, 2);
         }
 
         @Fallback
-        public RubyArray frexp(VirtualFrame frame, Object a) {
+        public DynamicObject frexp(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return frexp(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -441,10 +380,6 @@ public abstract class MathNodes {
 
         public GammaNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GammaNode(GammaNode prev) {
-            super(prev);
         }
 
         @Override
@@ -500,10 +435,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public HypotNode(HypotNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a, double b) {
             return Math.hypot(a, b);
@@ -512,7 +443,7 @@ public abstract class MathNodes {
     }
 
     @CoreMethod(names = "ldexp", isModuleFunction = true, required = 2)
-    public abstract static class LdexpNode extends CoreMethodNode {
+    public abstract static class LdexpNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatANode;
@@ -523,13 +454,6 @@ public abstract class MathNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             integerBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected LdexpNode(LdexpNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatANode = prev.floatANode;
-            integerBNode = prev.integerBNode;
         }
 
         @Specialization
@@ -562,19 +486,19 @@ public abstract class MathNodes {
             return function((double) a, b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, int b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, int b) {
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, long b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, long b) {
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, double b) {
-            return function(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, double b) {
+            return function(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -600,14 +524,9 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return function(
-                            floatANode.callFloat(frame, a, "to_f", null),
-                            integerBNode.callLongFixnum(frame, b, "to_int", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getIntegerClass(), this));
-                }
+                return function(
+                        floatANode.callFloat(frame, a, "to_f", null),
+                        integerBNode.callLongFixnum(frame, b, "to_int", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -621,7 +540,7 @@ public abstract class MathNodes {
 
 
     @CoreMethod(names = "lgamma", isModuleFunction = true, required = 1)
-    public abstract static class LGammaNode extends CoreMethodNode {
+    public abstract static class LGammaNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -632,29 +551,23 @@ public abstract class MathNodes {
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
         }
 
-        public LGammaNode(LGammaNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
-        }
-
         @Specialization
-        public RubyArray lgamma(int a) {
+        public DynamicObject lgamma(int a) {
             return lgamma((double) a);
         }
 
         @Specialization
-        public RubyArray lgamma(long a) {
+        public DynamicObject lgamma(long a) {
             return lgamma((double) a);
         }
 
-        @Specialization
-        public RubyArray lgamma(RubyBignum a) {
-            return lgamma(a.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(a)")
+        public DynamicObject lgamma(DynamicObject a) {
+            return lgamma(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
-        public RubyArray lgamma(double a) {
+        public DynamicObject lgamma(double a) {
             // Copied from RubyMath - see copyright notices there
 
             if (a < 0 && Double.isInfinite(a)) {
@@ -664,18 +577,13 @@ public abstract class MathNodes {
 
             final RubyMath.NemesLogGamma l = new RubyMath.NemesLogGamma(a);
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{l.value, l.sign}, 2);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{l.value, l.sign}, 2);
         }
 
         @Fallback
-        public RubyArray lgamma(VirtualFrame frame, Object a) {
+        public DynamicObject lgamma(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return lgamma(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -693,40 +601,30 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public LogNode(LogNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public double function(int a, UndefinedPlaceholder b) {
+        public double function(int a, NotProvided b) {
             return doFunction(a);
         }
 
         @Specialization
-        public double function(long a, UndefinedPlaceholder b) {
+        public double function(long a, NotProvided b) {
+            return doFunction(a);
+        }
+
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, NotProvided b) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue());
+        }
+
+        @Specialization
+        public double function(double a, NotProvided b) {
             return doFunction(a);
         }
 
         @Specialization
-        public double function(RubyBignum a, UndefinedPlaceholder b) {
-            return doFunction(a.bigIntegerValue().doubleValue());
-        }
-
-        @Specialization
-        public double function(double a, UndefinedPlaceholder b) {
-            return doFunction(a);
-        }
-
-        @Specialization
-        public double function(VirtualFrame frame, Object a, UndefinedPlaceholder b) {
+        public double function(VirtualFrame frame, Object a, NotProvided b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(
-                            floatANode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -763,10 +661,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public Log10Node(Log10Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -788,10 +682,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public Log2Node(Log2Node prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             if (a < 0) {
@@ -811,10 +701,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public SinNode(SinNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.sin(a);
@@ -827,10 +713,6 @@ public abstract class MathNodes {
 
         public SinHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SinHNode(SinHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -847,10 +729,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public TanNode(TanNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.tan(a);
@@ -863,10 +741,6 @@ public abstract class MathNodes {
 
         public TanHNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TanHNode(TanHNode prev) {
-            super(prev);
         }
 
         @Override
@@ -883,10 +757,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
         }
 
-        public SqrtNode(SqrtNode prev) {
-            super(prev);
-        }
-
         @Override
         protected double doFunction(double a) {
             return Math.sqrt(a);
@@ -894,7 +764,7 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleMonadicMathNode extends CoreMethodNode {
+    protected abstract static class SimpleMonadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child private KernelNodes.IsANode isANode;
         @Child private CallDispatchHeadNode floatNode;
@@ -903,12 +773,6 @@ public abstract class MathNodes {
             super(context, sourceSection);
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected SimpleMonadicMathNode(SimpleMonadicMathNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatNode = prev.floatNode;
         }
 
         // TODO: why can't we leave this abstract?
@@ -927,9 +791,9 @@ public abstract class MathNodes {
             return doFunction(a);
         }
 
-        @Specialization
-        public double function(RubyBignum a) {
-            return doFunction(a.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue());
         }
 
         @Specialization
@@ -940,12 +804,7 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(floatNode.callFloat(frame, a, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 
@@ -956,7 +815,7 @@ public abstract class MathNodes {
 
     }
 
-    protected abstract static class SimpleDyadicMathNode extends CoreMethodNode {
+    protected abstract static class SimpleDyadicMathNode extends CoreMethodArrayArgumentsNode {
 
         @Child protected KernelNodes.IsANode isANode;
         @Child protected CallDispatchHeadNode floatANode;
@@ -967,13 +826,6 @@ public abstract class MathNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
             floatANode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
             floatBNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
-        }
-
-        protected SimpleDyadicMathNode(SimpleDyadicMathNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-            floatANode = prev.floatANode;
-            floatBNode = prev.floatBNode;
         }
 
         // TODO: why can't we leave this abstract?
@@ -992,9 +844,9 @@ public abstract class MathNodes {
             return doFunction(a, b);
         }
 
-        @Specialization
-        public double function(int a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(b)")
+        public double function(int a, DynamicObject b) {
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization
@@ -1012,9 +864,9 @@ public abstract class MathNodes {
             return doFunction(a, b);
         }
 
-        @Specialization
-        public double function(long a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(long a, DynamicObject b) {
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization
@@ -1022,24 +874,24 @@ public abstract class MathNodes {
             return doFunction(a, b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, int b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, int b) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, long b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, long b) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
-        @Specialization
-        public double function(RubyBignum a, RubyBignum b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b.bigIntegerValue().doubleValue());
+        @Specialization(guards = {"isRubyBignum(a)", "isRubyBignum(b)"})
+        public double function(DynamicObject a, DynamicObject b) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
-        @Specialization
-        public double function(RubyBignum a, double b) {
-            return doFunction(a.bigIntegerValue().doubleValue(), b);
+        @Specialization(guards = "isRubyBignum(a)")
+        public double function(DynamicObject a, double b) {
+            return doFunction(Layouts.BIGNUM.getValue(a).doubleValue(), b);
         }
 
         @Specialization
@@ -1052,9 +904,9 @@ public abstract class MathNodes {
             return doFunction(a, b);
         }
 
-        @Specialization
-        public double function(double a, RubyBignum b) {
-            return doFunction(a, b.bigIntegerValue().doubleValue());
+        @Specialization(guards = "isRubyBignum(b)")
+        public double function(double a, DynamicObject b) {
+            return doFunction(a, Layouts.BIGNUM.getValue(b).doubleValue());
         }
 
         @Specialization
@@ -1065,14 +917,9 @@ public abstract class MathNodes {
         @Fallback
         public double function(VirtualFrame frame, Object a, Object b) {
             if (isANode.executeIsA(frame, a, getContext().getCoreLibrary().getNumericClass()) && isANode.executeIsA(frame, b, getContext().getCoreLibrary().getNumericClass())) {
-                try {
-                    return doFunction(
-                            floatANode.callFloat(frame, a, "to_f", null),
-                            floatBNode.callFloat(frame, b, "to_f", null));
-                } catch (UseMethodMissingException e) {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            a, getContext().getCoreLibrary().getFloatClass(), this));
-                }
+                return doFunction(
+                        floatANode.callFloat(frame, a, "to_f", null),
+                        floatBNode.callFloat(frame, b, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
 

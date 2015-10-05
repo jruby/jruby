@@ -32,6 +32,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
@@ -121,7 +122,6 @@ public class IRRuntimeHelpers {
         // If not in a lambda, check if this was a non-local return
         if (IRRuntimeHelpers.inLambda(blockType)) return returnValue;
 
-        IRScopeType scopeType = dynScope.getStaticScope().getScopeType();
         while (dynScope != null) {
             StaticScope ss = dynScope.getStaticScope();
             // SSS FIXME: Why is scopeType empty? Looks like this static-scope
@@ -132,7 +132,9 @@ public class IRRuntimeHelpers {
             // To be investigated.
             IRScopeType ssType = ss.getScopeType();
             if (ssType != null) {
-                if (ssType.isMethodType() || (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT)) {
+                if (ssType.isMethodType() ||
+                        (ss.isArgumentScope() && ssType.isClosureType() && ssType != IRScopeType.EVAL_SCRIPT) ||
+                        (ssType.isClosureType() && dynScope.isLambda())) {
                     break;
                 }
             }
@@ -151,8 +153,8 @@ public class IRRuntimeHelpers {
         } else {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
-            // If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating.
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) {
+            // If we are in the method scope we are supposed to return from, stop propagating.
+            if (rj.methodToReturnFrom == dynScope) {
                 if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope + " matching dynscope? " + (rj.methodToReturnFrom == dynScope));
                 return (IRubyObject) rj.returnValue;
             }
@@ -246,7 +248,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, newVisibility, containingClass);
+        DynamicMethod method = new CompiledIRMethod(handle, irScope, newVisibility, containingClass, irScope.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
@@ -263,7 +265,7 @@ public class IRRuntimeHelpers {
 
         RubyClass containingClass = obj.getSingletonClass();
 
-        DynamicMethod method = new CompiledIRMethod(handle, irScope, Visibility.PUBLIC, containingClass);
+        DynamicMethod method = new CompiledIRMethod(handle, irScope, Visibility.PUBLIC, containingClass, irScope.receivesKeywordArgs());
 
         containingClass.addMethod(rubyName, method);
 
@@ -455,11 +457,10 @@ public class IRRuntimeHelpers {
         return b.yieldSpecific(context);
     }
 
-    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, Arity arity, boolean argIsArray) {
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, int blockArity, boolean argIsArray) {
         // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
         if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
 
-        int blockArity = arity.getValue();
         switch (blockArity) {
             case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case  0 : return new IRubyObject[] { value };
@@ -488,6 +489,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static Block getBlockFromObject(ThreadContext context, Object value) {
         Block block;
         if (value instanceof Block) {
@@ -495,7 +497,7 @@ public class IRRuntimeHelpers {
         } else if (value instanceof RubyProc) {
             block = ((RubyProc) value).getBlock();
         } else if (value instanceof RubyMethod) {
-            block = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+            block = ((RubyProc)((RubyMethod)value).to_proc(context)).getBlock();
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {
@@ -506,21 +508,34 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest,
-                                  boolean receivesKwargs, int restKey) {
+    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, boolean rest,
+                                  boolean receivesKwargs, int restKey, Block.Type blockType) {
         int argsLength = args.length;
-        RubyHash keywordArgs = (RubyHash) extractKwargsHash(args, required, receivesKwargs);
+        RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
         if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, keywordArgs);
 
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
 
-        if (argsLength < required || (rest == -1 && argsLength > (required + opt))) {
+        if ((blockType == null || blockType.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
 //            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
 //            System.out.println("ARGS[0]: " + args[0]);
 
             Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
+        }
+    }
+
+    // Due to our current strategy of destructively processing the kwargs hash we need to dup
+    // and make sure the copy is not frozen.  This has a poor name as encouragement to rewrite
+    // how we handle kwargs internally :)
+    public static void frobnicateKwargsArgument(ThreadContext context, int requiredArguments, IRubyObject[] args) {
+        RubyHash kwargs = IRRuntimeHelpers.extractKwargsHash(args, requiredArguments, true);
+
+        if (kwargs != null) {
+            kwargs = (RubyHash) kwargs.dup(context);
+            kwargs.setFrozen(false);
+            args[args.length - 1] = kwargs;
         }
     }
 
@@ -530,7 +545,15 @@ public class IRRuntimeHelpers {
 
         Object lastArg = args[args.length - 1];
 
-        return !(lastArg instanceof RubyHash) ? null : (RubyHash) lastArg;
+        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+
+        if (((IRubyObject) lastArg).respondsTo("to_hash")) {
+            lastArg = ((IRubyObject) lastArg).callMethod(((IRubyObject) lastArg).getRuntime().getCurrentContext(), "to_hash");
+
+            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        }
+
+        return null;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(final ThreadContext context, RubyHash keywordArgs) {
@@ -703,6 +726,14 @@ public class IRRuntimeHelpers {
         return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
     }
 
+    @JIT
+    public static IRubyObject restoreExceptionVar(ThreadContext context, IRubyObject exc, IRubyObject savedExc) {
+        if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
+            context.runtime.getGlobalVariables().set("$!", savedExc);
+        }
+        return null;
+    }
+
     public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
         boolean inBindingEval = currDynScope.inBindingEval();
 
@@ -712,26 +743,55 @@ public class IRRuntimeHelpers {
         for (DynamicScope ds = currDynScope; ds != null; ) {
             IRScopeType scopeType = ds.getStaticScope().getScopeType();
             switch (ds.getEvalType()) {
-                case MODULE_EVAL  : return (RubyModule) self;
+                // The most common use case in the MODULE_EVAL case is:
+                //   a method is defined inside a closure
+                //   that is nested inside a module_eval.
+                //   here self = the module
+                // In the rare case where it is not (looks like it can
+                // happen in some testing frameworks), we have to add
+                // the method to self itself => its metaclass.
+                //
+                // SSS FIXME: Looks like this rare case happens when
+                // the closure is used in a "define_method &block" scenario
+                // => in reality the scope is not a closure but an
+                // instance_method. So, when we fix define_method implementation
+                // to actually convert blocks to real instance_method scopes,
+                // we will not have this edge case since the code will then
+                // be covered by the (scopeType == IRScopeType.INSTANCE_METHOD)
+                // scenario below. Whenever we get to fixing define_method
+                // implementation, we should rip out this code here.
+                //
+                // Verify that this test runs:
+                // -------------
+                //   require "minitest/autorun"
+                //
+                //   describe "A" do
+                //     it "should do something" do
+                //       def foo
+                //       end
+                //     end
+                //   end
+                // -------------
+                case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
                 case INSTANCE_EVAL: return self.getSingletonClass();
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
+                        // Walk up the dynscope hierarchy
                         ds = ds.getParentScope();
                     } else if (inBindingEval) {
                         // Binding evals are special!
                         return ds.getStaticScope().getModule();
-                    } else if (scopeType == IRScopeType.CLASS_METHOD) {
-                        return (RubyModule) self;
-                    } else if (scopeType == IRScopeType.INSTANCE_METHOD) {
-                        return self.getMetaClass();
                     } else {
                         switch (scopeType) {
+                            case CLASS_METHOD:
                             case MODULE_BODY:
                             case CLASS_BODY:
-                                return (RubyModule)self;
                             case METACLASS_BODY:
                                 return (RubyModule) self;
+
+                            case INSTANCE_METHOD:
+                                return self.getMetaClass();
 
                             default:
                                 throw new RuntimeException("Should not get here! scopeType is " + scopeType);
@@ -768,11 +828,12 @@ public class IRRuntimeHelpers {
         return context.runtime.newArray(restArgs);
     }
 
-    public static IRubyObject receivePostReqdArg(IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
+    @JIT
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
         boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
         int remaining = n - preReqdArgsCount;
-        if (remaining <= argIndex) return null;  // For blocks!
+        if (remaining <= argIndex) return context.nil;
 
         return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
     }
@@ -870,7 +931,7 @@ public class IRRuntimeHelpers {
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
         IRubyObject rVal = null;
-        if (method.isUndefined()|| (superClass.isPrepended() && (method.isImplementedBy(self.getType())))) {
+        if (method.isUndefined()) {
             rVal = Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block);
         } else {
             rVal = method.call(context, self, superClass, methodName, args, block);
@@ -957,9 +1018,9 @@ public class IRRuntimeHelpers {
         return types;
     }
 
-    // Used by JIT
-    public static RubyString newFrozenStringFromRaw(Ruby runtime, String str, String encoding) {
-        return runtime.freezeAndDedupString(new RubyString(runtime, runtime.getString(), newByteListFromRaw(runtime, str, encoding)));
+    @JIT
+    public static RubyString newFrozenStringFromRaw(Ruby runtime, String str, String encoding, int cr) {
+        return runtime.freezeAndDedupString(RubyString.newString(runtime, newByteListFromRaw(runtime, str, encoding), cr));
     }
 
     @JIT
@@ -979,9 +1040,17 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
-        RubyHash hash = RubyHash.newHash(runtime);
+        int length = pairs.length / 2;
+        boolean useSmallHash = length <= 10;
+
+        RubyHash hash = useSmallHash ? RubyHash.newHash(runtime) : RubyHash.newSmallHash(runtime);
         for (int i = 0; i < pairs.length;) {
-            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            if (useSmallHash) {
+                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
+            } else {
+                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            }
+
         }
         return hash;
     }
@@ -1093,7 +1162,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, IRScope irModule, Object rubyContainer) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
+        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule, false);
     }
 
     private static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
@@ -1117,7 +1186,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
 
-        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
+        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass, false);
     }
 
     public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
@@ -1157,23 +1226,29 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
         rubyClass.addMethod(method.getName(), newMethod);
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
@@ -1212,7 +1287,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
@@ -1225,7 +1300,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
 
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
@@ -1259,26 +1334,24 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return Helpers.splatValue19(maybeAry);
+    public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck19(ary, runtime.getArray(), "to_a");
+        if (tmp.isNil()) {
+            tmp = runtime.newArray(ary);
+        }
+        else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
+            tmp = ((RubyArray)tmp).aryDup();
+        }
+        return (RubyArray)tmp;
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyArray) {
-            return value;
-        } else {
-            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
-            if (newValue.isNil()) {
-                return RubyArray.newArrayLight(context.runtime, value);
-            }
-
-            // must be array by now, or error
-            if (!(newValue instanceof RubyArray)) {
-                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
-            }
-
-            return newValue;
+        if (!(value instanceof RubyArray)) {
+            value = RubyArray.aryToAry(value);
         }
+
+        return value;
     }
 
     public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {
@@ -1329,9 +1402,14 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes) {
+    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, String callType) {
+        return new RefinedCachingCallSite(name, CallType.valueOf(callType));
+    }
+
+    @JIT
+    public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes, String filename) {
         try {
-            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes)));
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes), new ByteList(filename.getBytes())));
         } catch (IOException ioe) {
             // should not happen for bytes
             return null;
@@ -1363,5 +1441,15 @@ public class IRRuntimeHelpers {
     @JIT
     public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
         accessor.set(self, value);
+    }
+
+    @JIT
+    public static RubyFixnum getArgScopeDepth(ThreadContext context, StaticScope currScope) {
+        int i = 0;
+        while (!currScope.isArgumentScope()) {
+            currScope = currScope.getEnclosingScope();
+            i++;
+        }
+        return context.runtime.newFixnum(i);
     }
 }

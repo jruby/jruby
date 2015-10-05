@@ -56,36 +56,52 @@ public class RubyRandom extends RubyObject {
         RandomType(IRubyObject vseed) {
             this.seed = vseed.convertToInteger();
             if (seed instanceof RubyFixnum) {
-                long v = Math.abs(RubyNumeric.num2long(seed));
-                if (v == (v & 0xffffffffL)) {
-                    this.mt = new Random((int) v);
-                } else {
-                    int[] ints = new int[2];
-                    ints[0] = (int) v;
-                    ints[1] = (int) (v >> 32);
-                    this.mt = new Random(ints);
-                }
+                this.mt = randomFromFixnum((RubyFixnum) seed);
             } else if (seed instanceof RubyBignum) {
-                BigInteger big = ((RubyBignum) seed).getBigIntegerValue();
-                if (big.signum() < 0) {
-                    big = big.abs();
-                }
-                byte[] buf = big.toByteArray();
-                int buflen = buf.length;
-                if (buf[0] == 0) {
-                    buflen -= 1;
-                }
-                int len = Math.min((buflen + 3) / 4, Random.N);
-                int[] ints = bigEndianToInts(buf, len);
-                if (len <= 1) {
-                    this.mt = new Random(ints[0]);
-                } else {
-                    this.mt = new Random(ints);
-                }
+                this.mt = randomFromBignum((RubyBignum) seed);
             } else {
                 throw vseed.getRuntime().newTypeError(
                         String.format("failed to convert %s into Integer", vseed.getMetaClass()
                                 .getName()));
+            }
+        }
+
+        public static Random randomFromFixnum(RubyFixnum seed) {
+            return randomFromLong(RubyNumeric.num2long(seed));
+        }
+
+        public static Random randomFromLong(long seed) {
+            long v = Math.abs(seed);
+            if (v == (v & 0xffffffffL)) {
+                return new Random((int) v);
+            } else {
+                int[] ints = new int[2];
+                ints[0] = (int) v;
+                ints[1] = (int) (v >> 32);
+                return new Random(ints);
+            }
+        }
+
+        public static Random randomFromBignum(RubyBignum seed) {
+            BigInteger big = seed.getBigIntegerValue();
+            return randomFromBigInteger(big);
+        }
+
+        public static Random randomFromBigInteger(BigInteger big) {
+            if (big.signum() < 0) {
+                big = big.abs();
+            }
+            byte[] buf = big.toByteArray();
+            int buflen = buf.length;
+            if (buf[0] == 0) {
+                buflen -= 1;
+            }
+            int len = Math.min((buflen + 3) / 4, Random.N);
+            int[] ints = bigEndianToInts(buf, len);
+            if (len <= 1) {
+                return new Random(ints[0]);
+            } else {
+                return new Random(ints);
             }
         }
 
@@ -152,7 +168,7 @@ public class RubyRandom extends RubyObject {
         }
 
         // big endian of bytes to reversed ints
-        private int[] bigEndianToInts(byte[] buf, int initKeyLen) {
+        private static int[] bigEndianToInts(byte[] buf, int initKeyLen) {
             int[] initKey = new int[initKeyLen];
             for (int idx = 0; idx < initKey.length; ++idx) {
                 initKey[idx] = getIntBigIntegerBuffer(buf, idx);
@@ -197,11 +213,15 @@ public class RubyRandom extends RubyObject {
 
     private static final int DEFAULT_SEED_CNT = 4;
 
+    public static BigInteger randomSeedBigInteger(java.util.Random random) {
+        byte[] seed = new byte[DEFAULT_SEED_CNT * 4];
+        random.nextBytes(seed);
+        return new BigInteger(seed).abs();
+    }
+
     // c: random_seed
     public static RubyBignum randomSeed(Ruby runtime) {
-        byte[] seed = new byte[DEFAULT_SEED_CNT * 4];
-        runtime.getRandom().nextBytes(seed);
-        return RubyBignum.newBignum(runtime, (new BigInteger(seed)).abs());
+        return RubyBignum.newBignum(runtime, randomSeedBigInteger(runtime.getRandom()));
     }
 
     public static RubyClass createRandomClass(Ruby runtime) {
@@ -358,6 +378,10 @@ public class RubyRandom extends RubyObject {
     // limited_rand gets/returns ulong but we do this in signed long only.
     private static IRubyObject randLimitedFixnum(ThreadContext context, RandomType random,
             long limit) {
+        return RubyFixnum.newFixnum(context.getRuntime(), randLimitedFixnumInner(random.mt, limit));
+    }
+
+    public static long randLimitedFixnumInner(Random random, long limit) {
         long val;
         if (limit == 0) {
             val = 0;
@@ -378,7 +402,7 @@ public class RubyRandom extends RubyObject {
                 break;
             }
         }
-        return context.runtime.newFixnum(val);
+        return val;
     }
 
     // c: limited_big_rand

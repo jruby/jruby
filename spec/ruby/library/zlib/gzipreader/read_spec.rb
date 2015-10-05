@@ -39,11 +39,11 @@ describe "GzipReader#read" do
   end
 
   it "respects :external_encoding option" do
-    gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-8')
+    gz = Zlib::GzipReader.new(@io, external_encoding: 'UTF-8')
     gz.read.encoding.should == Encoding::UTF_8
 
     @io.rewind
-    gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-16LE')
+    gz = Zlib::GzipReader.new(@io, external_encoding: 'UTF-16LE')
     gz.read.encoding.should == Encoding::UTF_16LE
   end
 

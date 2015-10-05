@@ -1,4 +1,4 @@
-describe :strscan_peek, :shared => true do
+describe :strscan_peek, shared: true do
   before :each do
     @s = StringScanner.new('This is a test')
   end

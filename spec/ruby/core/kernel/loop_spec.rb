@@ -48,7 +48,7 @@ describe "Kernel.loop" do
   end
 
   it "rescues StopIteration's subclasses" do
-    finish = Class::new StopIteration
+    finish = Class.new StopIteration
     n = 42
     loop do
       raise finish
@@ -58,5 +58,15 @@ describe "Kernel.loop" do
 
   it "does not rescue other errors" do
     lambda{ loop do raise StandardError end }.should raise_error( StandardError )
+  end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "returns Float::INFINITY" do
+          loop.size.should == Float::INFINITY
+        end
+      end
+    end
   end
 end

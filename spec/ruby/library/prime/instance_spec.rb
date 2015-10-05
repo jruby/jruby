@@ -7,7 +7,6 @@ describe "Prime.instance" do
   end
 
   it "returns a object with no obsolete features" do
-    Prime.instance.should_not be_kind_of(Prime::OldCompatibility)
     Prime.instance.should_not respond_to(:succ)
     Prime.instance.should_not respond_to(:next)
   end

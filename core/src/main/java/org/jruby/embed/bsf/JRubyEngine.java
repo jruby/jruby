@@ -46,7 +46,6 @@ import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.EmbedRubyObjectAdapter;
@@ -57,7 +56,6 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.Java;
@@ -214,16 +212,7 @@ public class JRubyEngine extends BSFEngineImpl {
      */
     private static void printException(Ruby runtime, Exception exception) {
         assert exception != null;
-    	if (exception instanceof RaiseException) {
-            JumpException je = (JumpException)exception;
-            if (je instanceof RaiseException) {
-                runtime.printError(((RaiseException)je).getException());
-            } else if (je instanceof JumpException.BreakJump) {
-                runtime.getErrorStream().println("break without block.");
-            } else if (je instanceof JumpException.ReturnJump) {
-                runtime.getErrorStream().println("return without block.");
-            }
-    	}
+    	if (exception instanceof RaiseException) runtime.printError(((RaiseException)exception).getException());
     }
 
     private static class FunctionsGlobalVariable implements IAccessor {

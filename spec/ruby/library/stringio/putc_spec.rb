@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#putc when passed [String]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('example')
   end
 
@@ -38,7 +38,7 @@ describe "StringIO#putc when passed [String]" do
 end
 
 describe "StringIO#putc when passed [Object]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('example')
   end
 

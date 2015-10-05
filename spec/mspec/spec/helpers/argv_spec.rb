@@ -6,7 +6,7 @@ describe Object, "#argv" do
   before :each do
     ScratchPad.clear
 
-    @saved_argv = ARGV
+    @saved_argv = ARGV.dup
     @argv = ["a", "b"]
   end
 
@@ -19,7 +19,7 @@ describe Object, "#argv" do
 
   it "yields to the block after setting ARGV" do
     argv @argv do
-      ScratchPad.record ARGV
+      ScratchPad.record ARGV.dup
     end
     ScratchPad.recorded.should == @argv
     ARGV.should == @saved_argv

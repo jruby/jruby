@@ -9,72 +9,55 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.CatchNextNode;
 import org.jruby.truffle.nodes.methods.CatchRetryAsErrorNode;
 import org.jruby.truffle.nodes.methods.CatchReturnAsErrorNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyFile;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class TranslatorDriver {
 
     public static enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE, EVAL
+        TOP_LEVEL, SHELL, MODULE, EVAL, INLINE
     }
 
-    private long nextReturnID = 0;
+    private final ParseEnvironment parseEnvironment;
 
-    public RubyNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, Node currentNode) {
-        final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, Arity.NO_ARGUMENTS, "(unknown)", false, parseTree, false);
-
-        final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
-
-        // Translate to Ruby Truffle nodes
-
-        final MethodTranslator translator;
-
-        try {
-            translator = new MethodTranslator(currentNode, context, null, environment, false, Source.fromFileName(bodyNode.getPosition().getFile()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return translator.compileFunctionNode(null, "(unknown)", argsNode, bodyNode, sharedMethod);
+    public TranslatorDriver(RubyContext context) {
+        parseEnvironment = new ParseEnvironment(context);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
 
         final StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
-
         if (parentFrame != null) {
             /*
              * Note that jruby-parser will be mistaken about how deep the existing variables are,
@@ -88,13 +71,15 @@ public class TranslatorDriver {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String) {
                         final String name = (String) slot.getIdentifier();
-                        staticScope.addVariableThisScope(name);
+                        staticScope.addVariableThisScope(name.intern()); // StaticScope expects interned var names
                     }
                 }
 
                 frame = RubyArguments.getDeclarationFrame(frame.getArguments());
             }
         }
+
+        final DynamicScope dynamicScope = new ManyVarsDynamicScope(staticScope);
 
         boolean isInlineSource = parserContext == ParserContext.SHELL;
         boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.MODULE;
@@ -106,7 +91,7 @@ public class TranslatorDriver {
         org.jruby.ast.RootNode node;
 
         try {
-            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), new ManyVarsDynamicScope(staticScope), parserConfiguration);
+            node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), dynamicScope, parserConfiguration);
         } catch (org.jruby.exceptions.RaiseException e) {
             String message = e.getException().getMessage().asJavaString();
 
@@ -114,33 +99,47 @@ public class TranslatorDriver {
                 message = "(no message)";
             }
 
-            throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode)));
+            throw new RaiseException(context.getCoreLibrary().syntaxError(message, currentNode));
         }
 
-        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node, wrapper);
+        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node);
     }
 
-    public RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
+    private RubyRootNode parse(Node currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
-        // The important thing here is to reset the lexical scope.
-        // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
+        final InternalMethod parentMethod = parentFrame == null ? null : RubyArguments.getMethod(parentFrame.getArguments());
+        LexicalScope lexicalScope;
+        if (parentMethod != null && parentMethod.getSharedMethodInfo().getLexicalScope() != null) {
+            lexicalScope = parentMethod.getSharedMethodInfo().getLexicalScope();
+        } else {
+            lexicalScope = context.getRootLexicalScope();
+        }
+        if (parserContext == ParserContext.MODULE) {
+            Object module = RubyArguments.getSelf(Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.READ_ONLY, true).getArguments());
+            lexicalScope = new LexicalScope(lexicalScope, (DynamicObject) module);
+        }
+        parseEnvironment.resetLexicalScope(lexicalScope);
+
+        // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, parseEnvironment.getLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, null, false, false, false);
+
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame),
+                parseEnvironment, parseEnvironment.allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false, null);
 
         // Get the DATA constant
 
         final Object data = getData(context);
 
         if (data != null) {
-            context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", data);
+            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
         }
 
         // Translate to Ruby Truffle nodes
 
         final BodyTranslator translator;
 
-        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
+        if (parserContext == ParserContext.MODULE) {
             translator = new ModuleTranslator(currentNode, context, null, environment, source);
         } else {
             translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
@@ -149,10 +148,9 @@ public class TranslatorDriver {
         RubyNode truffleNode;
 
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
-            translator.parentSourceSection.push(sharedMethodInfo.getSourceSection());
-            
+            translator.parentSourceSection.push(sourceSection);
             try {
-                truffleNode = new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject());
+                truffleNode = translator.nilNode(sourceSection);
             } finally {
                 translator.parentSourceSection.pop();
             }
@@ -172,46 +170,22 @@ public class TranslatorDriver {
 
         // Catch return
 
-        truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        if (parserContext != ParserContext.INLINE) {
+            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+        }
 
         // Catch retry
 
         truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
-        // Custom node wrapper
-
-        truffleNode = wrapper.wrap(truffleNode);
-
         // Shell result
 
-        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
+        return new RubyRootNode(context, truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode, environment.needsDeclarationFrame());
     }
 
     private Object getData(RubyContext context) {
-        // TODO(CS) how do we know this has been populated already?
-
-        // TODO(CS) rough translation of File object just to get up and running
-
-        final IRubyObject jrubyData = context.getRuntime().getObject().getConstantNoConstMissing("DATA", false, false);
-
-        if (jrubyData == null) {
-            return null;
-        }
-
-        final org.jruby.RubyFile jrubyFile = (org.jruby.RubyFile) jrubyData;
-        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream(), StandardCharsets.UTF_8), null);
-
-        return truffleFile;
-    }
-
-    public long allocateReturnID() {
-        if (nextReturnID == Long.MAX_VALUE) {
-            throw new RuntimeException("Return IDs exhausted");
-        }
-
-        final long allocated = nextReturnID;
-        nextReturnID++;
-        return allocated;
+        // TODO CS 18-Apr-15 restore the DATA functionality
+        return null;
     }
 
     private TranslatorEnvironment environmentForFrame(RubyContext context, MaterializedFrame frame) {
@@ -219,10 +193,11 @@ public class TranslatorDriver {
             return null;
         } else {
             SourceSection sourceSection = new NullSourceSection("Unknown source section", "(unknown)");
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false, false, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), parseEnvironment,
+                    parseEnvironment.allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false, null, frame.getFrameDescriptor());
         }
     }
 

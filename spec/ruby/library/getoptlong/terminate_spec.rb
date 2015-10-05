@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'getoptlong'
 
 describe "GetoptLong#terminate" do
-  before(:each) do
+  before :each do
     @opts = GetoptLong.new(
       [ '--size', '-s',             GetoptLong::REQUIRED_ARGUMENT ],
       [ '--verbose', '-v',          GetoptLong::NO_ARGUMENT ],

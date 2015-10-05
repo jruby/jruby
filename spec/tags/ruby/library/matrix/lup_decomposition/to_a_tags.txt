@@ -1,1 +1,0 @@
-fails:Matrix::LUPDecomposition#to_a returns the right values for rectangular matrices

@@ -12,28 +12,25 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
  * Casts a value into a boolean.
  */
-@NodeChild(value = "child", type = RubyNode.class)
+@NodeChild(value = "value", type = RubyNode.class)
 public abstract class BooleanCastNode extends RubyNode {
 
     public BooleanCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public BooleanCastNode(BooleanCastNode copy) {
-        super(copy.getContext(), copy.getSourceSection());
-    }
+    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
 
-    @Specialization
-    public boolean doNil(@SuppressWarnings("unused") RubyNilClass nil) {
+    @Specialization(guards = "isNil(nil)")
+    public boolean doNil(Object nil) {
         return false;
     }
 
@@ -57,19 +54,12 @@ public abstract class BooleanCastNode extends RubyNode {
         return true;
     }
 
-    @Specialization(guards = "!isRubyNilClass")
-    public boolean doBasicObject(RubyBasicObject object) {
+    @Specialization(guards = "!isNil(object)")
+    public boolean doBasicObject(DynamicObject object) {
         return true;
     }
 
     @Override
     public abstract boolean executeBoolean(VirtualFrame frame);
-
-    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeBoolean(frame);
-    }
 
 }

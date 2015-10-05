@@ -1,5 +1,4 @@
-# For the version at https://github.com/rubinius/rubinius/blob/v1.4.1/kernel/common/comparable.rb:
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,29 +24,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Modifications are subject to:
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-#
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 module Comparable
   def ==(other)
     return true if equal?(other)
 
-    return false if Thread.detect_recursion(self, other) do
-      begin
-        unless comp = (self <=> other)
-          return false
-        end
-
-        return Comparable.compare_int(comp) == 0
-      rescue StandardError
+    begin
+      unless comp = (self <=> other)
         return false
       end
+
+      return Comparable.compare_int(comp) == 0
+    rescue StandardError, SystemStackError
+      return false
     end
   end
 
@@ -93,8 +81,11 @@ module Comparable
 
   # A version of MRI's rb_cmpint (sort of)
   def self.compare_int(int)
-    return  1 if int > 0
+    return int if int.kind_of? Fixnum
+
+    return 1  if int > 0
     return -1 if int < 0
     return 0
   end
 end
+

@@ -1,0 +1,3 @@
+fails:GzipWriter#write writes some compressed data
+fails:GzipWriter#write returns the number of bytes in the input
+fails:GzipWriter#write handles inputs of 2^23 bytes

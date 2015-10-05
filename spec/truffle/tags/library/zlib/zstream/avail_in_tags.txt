@@ -1,0 +1,1 @@
+fails:Zlib::ZStream#avail_in returns bytes in the input buffer

@@ -33,4 +33,18 @@ describe "Module#method_added" do
       $methods_added = nil
     end
   end
+
+  it "is not called when a method is undefined in self" do
+    m = Module.new do
+      def method_to_undef
+      end
+
+      def self.method_added(name)
+        fail("method_added called by undef_method")
+      end
+
+      undef_method :method_to_undef
+    end
+    m.should_not have_method(:method_to_undef)
+  end
 end

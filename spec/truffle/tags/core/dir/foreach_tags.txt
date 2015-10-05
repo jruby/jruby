@@ -1,5 +1,0 @@
-fails:Dir.foreach yields all names in an existing directory to the provided block
-fails:Dir.foreach returns nil when successful
-fails:Dir.foreach calls #to_path on non-String arguments
-fails:Dir.foreach raises a SystemCallError if passed a nonexistent directory
-fails:Dir.foreach returns an Enumerator if no block given

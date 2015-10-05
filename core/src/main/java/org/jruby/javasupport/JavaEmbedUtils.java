@@ -40,9 +40,10 @@ import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.UriLikePathHelper;
 
 /**
  * Utility functions to help embedders out.   These function consolidate logic that is
@@ -189,8 +190,8 @@ public class JavaEmbedUtils {
      * compiler).
      */
     public static class InterpretedEvalUnit implements EvalUnit {
-        private Ruby runtime;
-        private Node node;
+        private final Ruby runtime;
+        private final Node node;
 
         protected InterpretedEvalUnit(Ruby runtime, Node node) {
             this.runtime = runtime;

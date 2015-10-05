@@ -22,4 +22,6 @@ public @interface RubiniusPrimitive {
 
     boolean needsSelf() default true;
 
+    int[] lowerFixnumParameters() default {};
+
 }

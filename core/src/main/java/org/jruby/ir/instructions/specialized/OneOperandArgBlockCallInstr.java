@@ -14,14 +14,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneOperandArgBlockCallInstr extends CallInstr {
-    public OneOperandArgBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.CALL_1OB, callType, result, name, receiver, args, closure);
+    public OneOperandArgBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+                                       Operand closure, boolean isPotentiallyRefined) {
+        super(Operation.CALL_1OB, callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     @Override

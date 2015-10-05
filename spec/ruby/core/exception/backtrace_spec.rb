@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
 describe "Exception#backtrace" do
-  before(:each) do
+  before :each do
     @backtrace = ExceptionSpecs::Backtrace.backtrace
   end
 
@@ -40,10 +40,8 @@ describe "Exception#backtrace" do
 
   it "contains lines of the same format for each prior position in the stack" do
     @backtrace[2..-1].each do |line|
-      # This regexp is deliberately imprecise to account for 1.9 using
-      # absolute paths where 1.8 used relative paths, the need to abstract out
-      # the paths of the included mspec files, the differences in output
-      # between 1.8 and 1.9, and the desire to avoid specifying in any
+      # This regexp is deliberately imprecise to account for the need to abstract out
+      # the paths of the included mspec files and the desire to avoid specifying in any
       # detail what the in `...' portion looks like.
       line.should =~ /^[^ ]+\:\d+(:in `[^`]+')?$/
     end

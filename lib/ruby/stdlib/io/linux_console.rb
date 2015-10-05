@@ -1,6 +1,6 @@
 require 'ffi'
 
-raise LoadError.new("native console only supported on i386 and x86_64") unless FFI::Platform::ARCH =~ /i386|x86_64/
+raise LoadError.new("native console only supported on i386, x86_64 and powerpc64") unless FFI::Platform::ARCH =~ /i386|x86_64|powerpc64/
 
 module IO::LibC
   extend FFI::Library

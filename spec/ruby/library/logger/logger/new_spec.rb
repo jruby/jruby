@@ -23,7 +23,7 @@ describe "Logger#new" do
      l.add(Logger::WARN, "Test message")
 
      @log_file.rewind
-     LoggerSpecs::strip_date(@log_file.readline).should == "WARN -- : Test message\n"
+     LoggerSpecs.strip_date(@log_file.readline).should == "WARN -- : Test message\n"
      l.close
    end
 
@@ -52,8 +52,8 @@ describe "Logger#new" do
     # first line will be a comment so we'll have to skip it.
     f = File.open(path)
     f1 = File.open("#{path}.0")
-    LoggerSpecs::strip_date(f1.readlines.last).should == "WARN -- : foo\n"
-    LoggerSpecs::strip_date(f.readlines.last).should == "WARN -- : bar\n"
+    LoggerSpecs.strip_date(f1.readlines.last).should == "WARN -- : foo\n"
+    LoggerSpecs.strip_date(f.readlines.last).should == "WARN -- : bar\n"
 
     l.close
     f.close

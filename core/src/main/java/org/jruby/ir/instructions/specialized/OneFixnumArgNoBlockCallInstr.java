@@ -17,8 +17,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     private final long fixNum;
 
-    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args) {
-        super(Operation.CALL_1F, callType, result, name, receiver, args, null);
+    public OneFixnumArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, boolean potentiallyRefined) {
+        super(Operation.CALL_1F, callType, result, name, receiver, args, null, potentiallyRefined);
 
         assert args.length == 1;
 
@@ -28,7 +28,7 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneFixnumArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii));
+                cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     public long getFixnumArg() {

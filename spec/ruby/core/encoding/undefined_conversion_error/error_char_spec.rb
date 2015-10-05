@@ -2,7 +2,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::UndefinedConversionError#error_char" do
-    before(:each) do
+    before :each do
       @exception = EncodingSpecs::UndefinedConversionError.exception
       @exception2 = EncodingSpecs::UndefinedConversionErrorIndirect.exception
     end

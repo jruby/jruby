@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe Kernel, "#instance_of?" do
-  before(:each) do
+  before :each do
     @o = KernelSpecs::InstanceClass.new
   end
 

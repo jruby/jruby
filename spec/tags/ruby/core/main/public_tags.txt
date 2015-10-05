@@ -1,1 +1,0 @@
-fails:main#public raises a NameError when given an undefined name

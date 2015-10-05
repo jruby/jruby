@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-describe :io_chars, :shared => true do
+describe :io_chars, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     @kcode, $KCODE = $KCODE, "utf-8"
@@ -23,10 +23,20 @@ describe :io_chars, :shared => true do
     ScratchPad.recorded.should == ["Q", "u", "i", " ", "è"]
   end
 
-  it "returns an Enumerator when passed no block" do
-    enum = @io.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
-    enum.first(5).should == ["V", "o", "i", "c", "i"]
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      enum = @io.send(@method)
+      enum.should be_an_instance_of(enumerator_class)
+      enum.first(5).should == ["V", "o", "i", "c", "i"]
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          @io.send(@method).size.should == nil
+        end
+      end
+    end
   end
 
   it "returns itself" do
@@ -46,11 +56,11 @@ describe :io_chars, :shared => true do
   end
 end
 
-describe :io_chars_empty, :shared => true do
+describe :io_chars_empty, shared: true do
   before :each do
     @kcode, $KCODE = $KCODE, "utf-8"
     @name = tmp("io_each_char")
-    @io = IOSpecs.io_fixture @name, "w+:utf-8"
+    @io = new_io @name, "w+:utf-8"
     ScratchPad.record []
   end
 

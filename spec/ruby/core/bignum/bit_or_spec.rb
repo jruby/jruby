@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Bignum#|" do
-  before(:each) do
+  before :each do
     @bignum = bignum_value(11)
   end
 
@@ -24,9 +24,11 @@ describe "Bignum#|" do
   end
 
   it "raises a TypeError when passed a Float" do
-    lambda {
-      bignum_value | bignum_value(0xffff).to_f
-    }.should raise_error(TypeError)
+    not_supported_on :opal do
+      lambda {
+        bignum_value | bignum_value(0xffff).to_f
+      }.should raise_error(TypeError)
+    end
     lambda { @bignum | 9.9 }.should raise_error(TypeError)
   end
 

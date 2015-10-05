@@ -1,7 +1,0 @@
-fails:Range#min returns the minimum value in the range when called with no arguments
-fails:Range#min returns the minimum value in the Float range when called with no arguments
-fails:Range#min returns nil when the start point is greater than the endpoint
-fails:Range#min returns nil when the start point is greater than the endpoint in a Float range
-fails:Range#min returns start point when the range is Time..Time(included end point)
-fails:Range#min returns start point when the range is Time...Time(excluded end point)
-fails:Range#min given a block returns nil when the start point is greater than the endpoint

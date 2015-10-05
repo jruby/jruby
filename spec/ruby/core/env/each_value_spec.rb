@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "ENV.each_value" do
 
@@ -26,4 +27,6 @@ describe "ENV.each_value" do
       value.encoding.should == Encoding.find('locale')
     end
   end
+
+  it_behaves_like :enumeratorized_with_origin_size, :each_value, ENV
 end

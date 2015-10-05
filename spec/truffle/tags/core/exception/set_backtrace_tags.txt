@@ -1,9 +1,0 @@
-fails:Exception#set_backtrace accepts an Array of Strings
-fails:Exception#set_backtrace allows the user to set the backtrace from a rescued exception
-fails:Exception#set_backtrace accepts an empty Array
-fails:Exception#set_backtrace accepts a String
-fails:Exception#set_backtrace accepts nil
-fails:Exception#set_backtrace raises a TypeError when passed a Symbol
-fails:Exception#set_backtrace raises a TypeError when the Array contains a Symbol
-fails:Exception#set_backtrace raises a TypeError when the array contains nil
-fails:Exception#set_backtrace raises a TypeError when the argument is a nested array

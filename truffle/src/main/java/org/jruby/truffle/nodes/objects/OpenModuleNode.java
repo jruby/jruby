@@ -9,16 +9,20 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 /**
@@ -27,9 +31,10 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 public class OpenModuleNode extends RubyNode {
 
     @Child private RubyNode definingModule;
-    @Child private MethodDefinitionNode definitionMethod;
     final protected LexicalScope lexicalScope;
     @Child private IndirectCallNode callModuleDefinitionNode;
+
+    final private MethodDefinitionNode definitionMethod;
 
     public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, LexicalScope lexicalScope) {
         super(context, sourceSection);
@@ -41,16 +46,17 @@ public class OpenModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         // TODO(CS): cast
-        final RubyModule module = (RubyModule) definingModule.execute(frame);
+        final DynamicObject module = (DynamicObject) definingModule.execute(frame);
 
         lexicalScope.setLiveModule(module);
-        lexicalScope.getParent().getLiveModule().addLexicalDependent(module);
+        Layouts.MODULE.getFields(lexicalScope.getParent().getLiveModule()).addLexicalDependent(module);
 
         final InternalMethod definition = definitionMethod.executeMethod(frame).withDeclaringModule(module);
-        return callModuleDefinitionNode.call(frame, definition.getCallTarget(), RubyArguments.pack(definition, definition.getDeclarationFrame(), module, null, new Object[]{}));
+        return callModuleDefinitionNode.call(frame, definition.getCallTarget(),
+                RubyArguments.pack(definition, definition.getDeclarationFrame(), null, module, null, DeclarationContext.MODULE, new Object[] {}));
     }
 
 }

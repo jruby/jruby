@@ -1,2 +1,0 @@
-fails:MatchData#pre_match keeps taint status from the source string
-fails:MatchData#pre_match keeps untrusted status from the source string

@@ -9,47 +9,57 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyFiber;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.FiberNodes;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages Ruby {@code Fiber} objects.
+ * Manages Ruby {@code Fiber} objects for a given Ruby thread.
  */
 public class FiberManager {
 
-    private final RubyFiber rootFiber;
-    private RubyFiber currentFiber;
+    private final DynamicObject rootFiber;
+    private DynamicObject currentFiber;
+    private final Set<DynamicObject> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<DynamicObject, Boolean>());
 
-    private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
-
-    public FiberManager(RubyContext context) {
-        rootFiber = new RubyFiber(context.getCoreLibrary().getFiberClass(), this, context.getThreadManager(), "root", true);
-        currentFiber = rootFiber;
+    public FiberManager(DynamicObject rubyThread) {
+        this.rootFiber = FiberNodes.newRootFiber(rubyThread, this, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(rubyThread)).getContext().getThreadManager());
+        this.currentFiber = rootFiber;
     }
 
-    public RubyFiber getCurrentFiber() {
+    public DynamicObject getRootFiber() {
+        return rootFiber;
+    }
+
+    public DynamicObject getCurrentFiber() {
         return currentFiber;
     }
 
-    public void setCurrentFiber(RubyFiber fiber) {
+    public void setCurrentFiber(DynamicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         currentFiber = fiber;
     }
 
-    public void registerFiber(RubyFiber fiber) {
+    public void registerFiber(DynamicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         runningFibers.add(fiber);
     }
 
-    public void unregisterFiber(RubyFiber fiber) {
+    public void unregisterFiber(DynamicObject fiber) {
+        assert RubyGuards.isRubyFiber(fiber);
         runningFibers.remove(fiber);
     }
 
     public void shutdown() {
-        for (RubyFiber fiber : runningFibers) {
-            fiber.shutdown();
+        for (DynamicObject fiber : runningFibers) {
+            if (!Layouts.FIBER.getRootFiber(fiber)) {
+                FiberNodes.shutdown(fiber);
+            }
         }
     }
 

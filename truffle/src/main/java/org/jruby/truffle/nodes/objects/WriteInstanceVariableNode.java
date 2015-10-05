@@ -12,14 +12,19 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.translator.WriteNode;
+import org.jruby.util.StringSupport;
 
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
@@ -32,67 +37,67 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
-        writeNode = new WriteHeadObjectFieldNode(name);
+        writeNode = WriteHeadObjectFieldNodeGen.create(name);
         this.isGlobal = isGlobal;
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
-                final int value = rhs.executeIntegerFixnum(frame);
+                final int value = rhs.executeInteger(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
-                final long value = rhs.executeLongFixnum(frame);
+                final long value = rhs.executeLong(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object object = receiver.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
+        if (object instanceof DynamicObject) {
             try {
-                final double value = rhs.executeFloat(frame);
+                final double value = rhs.executeDouble(frame);
 
-                writeNode.execute((RubyBasicObject) object, value);
+                writeNode.execute((DynamicObject) object, value);
                 return value;
             } catch (UnexpectedResultException e) {
-                writeNode.execute((RubyBasicObject) object, e.getResult());
+                writeNode.execute((DynamicObject) object, e.getResult());
                 throw e;
             }
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
     }
 
@@ -101,11 +106,11 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         final Object object = receiver.execute(frame);
         final Object value = rhs.execute(frame);
 
-        if (object instanceof RubyBasicObject) {
-            writeNode.execute((RubyBasicObject) object, value);
+        if (object instanceof DynamicObject) {
+            writeNode.execute((DynamicObject) object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
+            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(object)).getName(), this));
         }
 
         return value;
@@ -118,7 +123,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("assignment");
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
 }

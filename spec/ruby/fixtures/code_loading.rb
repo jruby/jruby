@@ -14,11 +14,7 @@ module CodeLoadingSpecs
 
   def self.spec_setup
     @saved_loaded_features = $LOADED_FEATURES.clone
-    $LOADED_FEATURES.clear
-
     @saved_load_path = $LOAD_PATH.clone
-    $LOAD_PATH.clear
-
     ScratchPad.record []
   end
 

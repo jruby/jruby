@@ -13,13 +13,13 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
+public class CheckArgsArrayArityInstr extends OneOperandInstr implements FixedArityInstr {
     public final int required;
     public final int opt;
-    public final int rest;
+    public final boolean rest;
 
-    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, int rest) {
-        super(Operation.CHECK_ARGS_ARRAY_ARITY, new Operand[] { argsArray });
+    public CheckArgsArrayArityInstr(Operand argsArray, int required, int opt, boolean rest) {
+        super(Operation.CHECK_ARGS_ARRAY_ARITY, argsArray);
 
         this.required = required;
         this.opt = opt;
@@ -27,7 +27,7 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getArgsArray() {
-        return operands[0];
+        return getOperand1();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     }
 
     public static CheckArgsArrayArityInstr decode(IRReaderDecoder d) {
-        return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+        return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeBoolean());
     }
 
     @Override

@@ -5,9 +5,5 @@ fails:IO.select returns supplied objects when they are ready for I/O
 fails:IO.select leaves out IO objects for which there is no I/O ready
 fails:IO.select returns supplied objects correctly even when monitoring the same object in different arrays
 fails:IO.select invokes to_io on supplied objects that are not IO and returns the supplied objects
-fails:IO.select raises TypeError if supplied objects are not IO
-fails:IO.select raises a TypeError if the specified timeout value is not Numeric
-fails:IO.select raises TypeError if the first three arguments are not Arrays
-fails:IO.select raises an ArgumentError when passed a negative timeout
 fails:IO.select when passed nil for timeout sleeps forever
 fails:IO.select when passed nil for timeout sets the thread's status to 'sleep'

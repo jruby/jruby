@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,33 +26,31 @@
 
 #
 #   complex.rb -
-#     $Release Version: 0.5 $
-#     $Revision: 1.3 $
-#     $Date: 1998/07/08 10:05:28 $
-#     by Keiju ISHITSUKA(SHL Japan Inc.)
+#   	$Release Version: 0.5 $
+#   	$Revision: 1.3 $
+#   	$Date: 1998/07/08 10:05:28 $
+#   	by Keiju ISHITSUKA(SHL Japan Inc.)
 #
 
 class Complex < Numeric
 
-  # TODO(CS 7 Jan 15) we don't define all these methods yet
-
-  #undef_method :%
-  #undef_method :<
-  #undef_method :<=
-  #undef_method :<=>
-  #undef_method :>
-  #undef_method :>=
-  #undef_method :between?
-  #undef_method :div
-  #undef_method :divmod
-  #undef_method :floor
-  #undef_method :ceil
-  #undef_method :modulo
-  #undef_method :remainder
-  #undef_method :round
-  #undef_method :step
-  #undef_method :truncate
-  #undef_method :i
+  undef_method :%
+  undef_method :<
+  undef_method :<=
+  undef_method :<=>
+  undef_method :>
+  undef_method :>=
+  undef_method :between?
+  undef_method :div
+  undef_method :divmod
+  undef_method :floor
+  undef_method :ceil
+  undef_method :modulo
+  undef_method :remainder
+  undef_method :round
+  undef_method :step
+  undef_method :truncate
+  undef_method :i
 
   def self.convert(real, imag = undefined)
     if real.equal?(nil) || imag.equal?(nil)

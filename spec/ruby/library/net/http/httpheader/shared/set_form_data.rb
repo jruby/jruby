@@ -1,5 +1,5 @@
-describe :net_httpheader_set_form_data, :shared => true do
-  before(:each) do
+describe :net_httpheader_set_form_data, shared: true do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

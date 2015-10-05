@@ -59,7 +59,9 @@ describe "String#delete" do
   end
 
   it "raises if the given ranges are invalid" do
-    lambda { "hello".delete("\x00-\xFF").should == "" }.should raise_error(ArgumentError)
+    not_supported_on :opal do
+      lambda { "hello".delete("\x00-\xFF").should == "" }.should raise_error(ArgumentError)
+    end
     lambda { "hello".delete("h-e") }.should raise_error(ArgumentError)
     lambda { "hello".delete("^h-e") }.should raise_error(ArgumentError)
   end

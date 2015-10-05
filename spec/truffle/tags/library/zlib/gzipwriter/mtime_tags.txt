@@ -1,0 +1,3 @@
+fails:Zlib::GzipWriter#mtime= sets mtime using Integer
+fails:Zlib::GzipWriter#mtime= sets mtime using Time
+fails:Zlib::GzipWriter#mtime= raises if the header was written

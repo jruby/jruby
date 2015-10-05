@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {
@@ -18,54 +17,32 @@ public class DispatchHeadNodeFactory {
         return new CallDispatchHeadNode(
                 context,
                 false,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                MissingBehavior.CALL_METHOD_MISSING);
+    }
+
+    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
+        return createMethodCall(context, true);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
         return new CallDispatchHeadNode(
                 context,
                 false,
-                false,
-                missingBehavior,
-                null);
+                missingBehavior);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
-                false,
-                missingBehavior,
-                null);
-    }
-
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
-        return new CallDispatchHeadNode(
-                context,
-                ignoreVisibility,
-                indirect,
-                missingBehavior,
-                null);
-    }
-
-    public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
-        return new CallDispatchHeadNode(
-                context,
-                true,
-                false,
-                MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                missingBehavior);
     }
 
 }

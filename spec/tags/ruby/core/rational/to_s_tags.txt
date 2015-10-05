@@ -1,0 +1,1 @@
+fails:Rational#to_s returns a string representation of self

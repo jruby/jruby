@@ -3,10 +3,7 @@ require 'mspec/runner/formatters/dotted'
 
 class YamlFormatter < DottedFormatter
   def initialize(out=nil)
-    @exception = @failure = false
-    @exceptions = []
-    @count = 0
-    @out = $stdout
+    super(nil)
 
     if out.nil?
       @finish = $stdout

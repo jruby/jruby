@@ -17,15 +17,20 @@ describe "Mutex#owned?" do
   end
 
   describe "when locked by another thread" do
+    before :each do
+      @checked = false
+    end
+
     after :each do
       @checked = true
+      @th.join
     end
 
     it "returns false" do
       m = Mutex.new
       locked = false
 
-      th = Thread.new do
+      @th = Thread.new do
         m.lock
         locked = true
         Thread.pass until @checked

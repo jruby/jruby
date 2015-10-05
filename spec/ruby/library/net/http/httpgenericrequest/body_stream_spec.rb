@@ -14,7 +14,7 @@ describe "Net::HTTPGenericRequest#body_stream" do
 end
 
 describe "Net::HTTPGenericRequest#body_stream=" do
-  before(:each) do
+  before :each do
     @request = Net::HTTPGenericRequest.new("POST", true, true, "/some/path")
     @stream = StringIO.new("test")
   end

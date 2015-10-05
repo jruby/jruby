@@ -17,19 +17,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
+public class ToAryInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
     public ToAryInstr(Variable result, Operand array) {
-        super(Operation.TO_ARY, result, new Operand[] { array });
+        super(Operation.TO_ARY, result, array);
 
         assert result != null: "ToAryInstr result is null";
     }
 
     public Operand getArray() {
-        return operands[0];
+        return getOperand1();
     }
 
     @Override
-    public boolean canBeDeleted(IRScope s) {
+    public boolean canBeDeletedFromScope(IRScope s) {
         // This is an instruction that can be safely deleted
         // since it is inserted by JRuby to facilitate other operations
         // and has no real side effects. Currently, this has been marked

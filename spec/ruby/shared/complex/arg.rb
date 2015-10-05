@@ -1,4 +1,4 @@
-describe :complex_arg, :shared => true do
+describe :complex_arg, shared: true do
   it "returns the argument -- i.e., the angle from (1, 0) in the complex plane" do
     TwoPi = 2 * Math::PI
     (Complex(1, 0).send(@method) % TwoPi).should be_close(0, TOLERANCE)

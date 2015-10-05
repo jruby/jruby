@@ -5,7 +5,7 @@ describe "A Java Throwable" do
   it "implements backtrace" do
     ex = java.lang.Exception.new
     trace = nil
-    lambda {trace = ex.backtrace}.should_not raise_error
+    expect {trace = ex.backtrace}.not_to raise_error
     expect(trace).to eq(ex.stack_trace.map(&:to_s))
   end
   

@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' process.rb
+module Process
+  def self.wait_pid_prim(pid, no_hang)
+    Rubinius.primitive :vm_wait_pid
+    raise PrimitiveFailure, "Process.wait_pid primitive failed"
+  end
 
-class Process
   def self.time
     Rubinius.primitive :vm_time
     raise PrimitiveFailure, "Process.time primitive failed"

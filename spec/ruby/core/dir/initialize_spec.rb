@@ -13,6 +13,11 @@ describe "Dir#initialize" do
   it "calls #to_path on non-String arguments" do
     p = mock('path')
     p.stub!(:to_path).and_return(DirSpecs.mock_dir)
-    Dir.new(p).path.should == DirSpecs.mock_dir
+    dir = Dir.new(p)
+    begin
+      dir.path.should == DirSpecs.mock_dir
+    ensure
+      dir.close
+    end
   end
 end

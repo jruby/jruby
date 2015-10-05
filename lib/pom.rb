@@ -17,23 +17,22 @@ class ImportedGem
   end
 end
 
-# the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.6', true ),
+   ImportedGem.new( 'jruby-openssl', '0.9.11', true ),
    ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
-   ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.8', true ),
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
-   ImportedGem.new( 'psych', '2.0.9-SNAPSHOT', true )
+   ImportedGem.new( 'psych', '2.0.15', true ),
+   ImportedGem.new( 'json', 'json.version', true ),
+   ImportedGem.new( 'jar-dependencies', '0.1.15', true )
   ]
 
 project 'JRuby Lib Setup' do
- 
+
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
     def to_pathname
@@ -57,25 +56,25 @@ project 'JRuby Lib Setup' do
   id 'jruby-stdlib'
   inherit "org.jruby:jruby-parent", version
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5',
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
+              'jruby.plugins.version' => '1.0.9',
               'gem.home' => '${basedir}/ruby/gems/shared',
               # we copy everything into the target/classes/META-INF
               # so the jar plugin just packs it - see build/resources below
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/..'
-  end
-
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
               :id => 'rubygems-releases' )
+  repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+              :id => 'tb-rubygems-releases' )
+  # for testing out jruby-ossl before final release :
+  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+  #            :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
@@ -91,13 +90,13 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
+  gem 'ruby-maven', '3.3.3', :scope => :provided
 
   default_gemnames = default_gems.collect { |g| g.name }
 
   # TODO no hardcoded group-ids
   plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
-    execute_goal 'copy-dependencies', :phase => 'package'
+    execute_goal 'copy-dependencies', :phase => 'generate-resources'
   end
 
   execute :install_gems, :'initialize' do |ctx|
@@ -145,8 +144,8 @@ project 'JRuby Lib Setup' do
       ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
-        # do not set bin_dir since its create absolute symbolic links
         installer = Gem::Installer.new( a.file.to_pathname,
+                                        :wrappers => true,
                                         :ignore_dependencies => true,
                                         :install_dir => ghome )
         installer.install
@@ -239,8 +238,8 @@ project 'JRuby Lib Setup' do
   end
 
   execute( 'fix shebang on gem bin files and add *.bat files',
-           'prepare-resources' ) do |ctx|
-    
+           'generate-resources' ) do |ctx|
+
     puts 'fix the gem stub files'
     jruby_home = ctx.project.basedir.to_pathname + '/../'
     bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
@@ -250,7 +249,7 @@ project 'JRuby Lib Setup' do
 " )
       File.open( f, "w" ) { |file| file.print( new_content ) }
     end
-    
+
     puts 'generate the missing bat files'
     Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
       next unless File.file?(fn)
@@ -267,12 +266,12 @@ project 'JRuby Lib Setup' do
       end
     end
   end
-  
+
   execute( 'copy bin/jruby.bash to bin/jruby',
            'process-resources' ) do |ctx|
     require 'fileutils'
     jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
-    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ), 
+    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ),
                   File.join( jruby_complete, 'bin', 'jruby' ) )
   end
 

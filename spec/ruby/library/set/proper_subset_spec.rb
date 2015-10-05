@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'set'
 
 describe "Set#proper_subset?" do
-  before(:each) do
+  before :each do
     @set = Set[1, 2, 3, 4]
   end
 

@@ -1,4 +1,4 @@
-describe :string_each_line, :shared => true do
+describe :string_each_line, shared: true do
   it "splits using default newline separator when none is specified" do
     a = []
     "one\ntwo\r\nthree".send(@method) { |s| a << s }

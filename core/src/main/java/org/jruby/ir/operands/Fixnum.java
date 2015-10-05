@@ -31,8 +31,13 @@ public class Fixnum extends ImmutableLiteral {
     final public long value;
 
     public Fixnum(long val) {
-        super(OperandType.FIXNUM);
+        super();
         value = val;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.FIXNUM;
     }
 
     public Fixnum(BigInteger val) {

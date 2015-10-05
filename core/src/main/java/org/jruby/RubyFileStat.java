@@ -131,10 +131,10 @@ public class RubyFileStat extends RubyObject {
 
         if (Platform.IS_WINDOWS && filename.length() == 2
                 && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
-            filename += "/";
+            filename += '/';
         }
 
-        file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), filename);
+        file = JRubyFile.createResource(runtime, filename);
         stat = lstat ? file.lstat() : file.stat();
 
         if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);
@@ -306,7 +306,7 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
-            buf.append(" ");
+            buf.append(' ');
             // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
             // Using generic posix library makes pushing inspect behavior into specific system impls
             // rather painful.
@@ -325,7 +325,7 @@ public class RubyFileStat extends RubyObject {
             buf.append("mtime=").append(mtime()).append(", ");
             buf.append("ctime=").append(ctime());
         }
-        buf.append(">");
+        buf.append('>');
         
         return getRuntime().newString(buf.toString());
     }

@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import jnr.posix.JavaSecuredFile;
 import org.jruby.Ruby;
 
 import java.net.URL;
@@ -66,42 +65,58 @@ public class ClassExtensionLibrary implements Library {
         // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
         String[] all = searchName.split("/");
 
-        StringBuilder finName = new StringBuilder();
-        for (int i = 0, j = (all.length - 1); i < j; i++) {
-            finName.append(all[i].toLowerCase()).append(".");
-        }
+        // make service name out of last element
+        String serviceName = buildServiceName(all[all.length - 1]);
 
-        try {
-            // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-            // the, together without anything separating them, and last put on "Service" at the end.
-            String[] last = all[all.length - 1].split("_");
-            for (int i = 0, j = last.length; i < j; i++) {
-                if ("".equals(last[i])) break;
-                finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
-            }
-            finName.append("Service");
+        // allocate once with plenty of space, to reduce object churn
+        StringBuilder classNameBuilder = new StringBuilder(searchName.length() * 2);
+        StringBuilder classFileBuilder = new StringBuilder(searchName.length() * 2);
 
-            // We don't want a package name beginning with dots, so we remove them
-            String className = finName.toString().replaceAll("^\\.*", "");
-            String classFile = className.replaceAll("\\.", "/") + ".class";
+        for (int i = all.length - 1; i >= 0; i--) {
+            buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
 
-            // quietly try to load the class, which must be reachable as a .class resource
-            URL resource = runtime.getJRubyClassLoader().getResource(classFile);
-            if (resource != null) {
+            // look for the filename in classloader resources
+            URL resource = runtime.getJRubyClassLoader().getResource(classFileBuilder.toString());
+            if (resource == null) continue;
+
+            String className = classNameBuilder.toString();
+
+            try {
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
                 return new ClassExtensionLibrary(className + ".java", theClass);
+            } catch (ClassNotFoundException cnfe) {
+                // file was found but class couldn't load; continue to next package segment
+                continue;
+            } catch (UnsupportedClassVersionError ucve) {
+                if (runtime.isDebug()) ucve.printStackTrace();
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className.toString());
             }
-
-            return null;
-        } catch (ClassNotFoundException cnfe) {
-            if (runtime.isDebug()) cnfe.printStackTrace();
-
-            // So apparently the class doesn't exist
-            return null;
-        } catch (UnsupportedClassVersionError ucve) {
-            if (runtime.isDebug()) ucve.printStackTrace();
-            throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
         }
+
+        // not found
+        return null;
+    }
+
+    private static void buildClassName(StringBuilder nameBuilder, StringBuilder fileBuilder, String[] all, int i, String serviceName) {
+        nameBuilder.setLength(0);
+        fileBuilder.setLength(0);
+        for (int j = i; j < all.length - 1; j++) {
+            nameBuilder.append(all[j]).append(".");
+            fileBuilder.append(all[j]).append("/");
+        }
+        nameBuilder.append(serviceName);
+        fileBuilder.append(serviceName).append(".class");
+    }
+
+    private static String buildServiceName(String jarName) {
+        String[] last = jarName.split("_");
+        StringBuilder serviceName = new StringBuilder();
+        for (int i = 0, j = last.length; i < j; i++) {
+            if ("".equals(last[i])) break;
+            serviceName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+        }
+        serviceName.append("Service");
+        return serviceName.toString();
     }
 
     public ClassExtensionLibrary(String name, Class extension) {

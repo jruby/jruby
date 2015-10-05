@@ -9,31 +9,110 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
-import org.jruby.truffle.nodes.core.CoreMethodNode;
+import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Rubinius::ByteArray")
 public abstract class ByteArrayNodes {
 
-    @CoreMethod(names = "get_byte", required = 1)
-    public abstract static class GetByteNode extends CoreMethodNode {
+    public static DynamicObject createByteArray(DynamicObject rubyClass, ByteList bytes) {
+        return Layouts.BYTE_ARRAY.createByteArray(Layouts.CLASS.getInstanceFactory(rubyClass), bytes);
+    }
+
+    @CoreMethod(names = "get_byte", required = 1, lowerFixnumParameters = 0)
+    public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public GetByteNode(GetByteNode prev) {
-            super(prev);
+        @Specialization
+        public int getByte(DynamicObject bytes, int index) {
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index) & 0xff;
+        }
+
+    }
+
+    @CoreMethod(names = "prepend", required = 1)
+    public abstract static class PrependNode extends CoreMethodArrayArgumentsNode {
+
+        public PrependNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
+            final int prependLength = StringOperations.getByteList(string).getUnsafeBytes().length;
+            final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
+            final int newLength = prependLength + originalLength;
+            final byte[] prependedBytes = new byte[newLength];
+            System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
+            return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
+        }
+
+    }
+
+    @CoreMethod(names = "set_byte", required = 2, lowerFixnumParameters = {0, 1})
+    public abstract static class SetByteNode extends CoreMethodArrayArgumentsNode {
+
+        public SetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
 
         @Specialization
-        public int getByte(RubiniusByteArray bytes, int index) {
-            return bytes.getBytes().get(index);
+        public Object setByte(DynamicObject bytes, int index, int value) {
+            if (index < 0 || index >= Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexError("index out of bounds", this));
+            }
+
+            Layouts.BYTE_ARRAY.getBytes(bytes).set(index, value);
+            return Layouts.BYTE_ARRAY.getBytes(bytes).get(index);
+        }
+
+    }
+
+    @CoreMethod(names = "size")
+    public abstract static class SizeNode extends CoreMethodArrayArgumentsNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int size(DynamicObject bytes) {
+            return Layouts.BYTE_ARRAY.getBytes(bytes).getRealSize();
+        }
+
+    }
+
+    @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
+    public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
+
+        public LocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization(guards = "isRubyString(pattern)")
+        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteList(pattern));
+
+            if (index == -1) {
+                return nil();
+            } else {
+                return start + index + StringOperations.length(pattern);
+            }
         }
 
     }

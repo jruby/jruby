@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "StringIO#reopen when passed [Object, Integer]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -59,7 +59,7 @@ describe "StringIO#reopen when passed [Object, Integer]" do
 end
 
 describe "StringIO#reopen when passed [Object, Object]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -145,7 +145,7 @@ describe "StringIO#reopen when passed [Object, Object]" do
 end
 
 describe "StringIO#reopen when passed [String]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -180,7 +180,7 @@ describe "StringIO#reopen when passed [String]" do
 end
 
 describe "StringIO#reopen when passed [Object]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -209,7 +209,7 @@ describe "StringIO#reopen when passed [Object]" do
 end
 
 describe "StringIO#reopen when passed no arguments" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("example\nsecond line")
   end
 
@@ -237,7 +237,7 @@ end
 # http://rubyforge.org/tracker/index.php?func=detail&aid=13919&group_id=426&atid=1698
 # for details.
 describe "StringIO#reopen" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('hello','a')
   end
 

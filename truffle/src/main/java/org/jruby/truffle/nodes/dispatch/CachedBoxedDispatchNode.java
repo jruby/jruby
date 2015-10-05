@@ -10,93 +10,47 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.DebugOperations;
-import org.jruby.truffle.runtime.RubyArguments;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
-    private final RubyClass expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
-
-    private final Object value;
 
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
-    @Child private IndirectCallNode indirectCallNode;
 
     public CachedBoxedDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
-            Object value,
+            Shape expectedShape,
+            DynamicObject expectedClass,
             InternalMethod method,
-            boolean indirect,
             DispatchAction dispatchAction) {
-        this(
-                context,
-                cachedName,
-                next,
-                expectedClass,
-                expectedClass.getUnmodifiedAssumption(),
-                value,
-                method,
-                indirect,
-                dispatchAction);
-    }
+        super(context, cachedName, next, dispatchAction);
 
-    /**
-     * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
-     */
-    public CachedBoxedDispatchNode(
-            RubyContext context,
-            Object cachedName,
-            DispatchNode next,
-            RubyClass expectedClass,
-            Assumption unmodifiedAssumption,
-            Object value,
-            InternalMethod method,
-            boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
-
-        this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = unmodifiedAssumption;
+        this.expectedShape = expectedShape;
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
-        this.value = value;
         this.method = method;
-
-        if (method != null) {
-            if (indirect) {
-                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-            } else {
-                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
-                    insert(callNode);
-                    callNode.cloneCallTarget();
-                }
-            }
-        }
+        this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        applySplittingInliningStrategy(callNode, method);
     }
 
     @Override
     public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override
@@ -104,8 +58,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -124,40 +78,17 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }
 
         switch (getDispatchAction()) {
-            case CALL_METHOD: {
-                if (isIndirect()) {
-                    return indirectCallNode.call(
-                            frame,
-                            method.getCallTarget(),
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (RubyProc) blockObject,
-                                    (Object[]) argumentsObjects));
-                } else {
-                    return callNode.call(
-                            frame,
-                            RubyArguments.pack(
-                                    method,
-                                    method.getDeclarationFrame(),
-                                    receiverObject,
-                                    (RubyProc) blockObject,
-                                    (Object[]) argumentsObjects));
-                }
-            }
+            case CALL_METHOD:
+                return call(callNode, frame, method, receiverObject, blockObject, argumentsObjects);
 
             case RESPOND_TO_METHOD:
                 return true;
-
-            case READ_CONSTANT:
-                return value;
 
             default:
                 throw new UnsupportedOperationException();
@@ -166,15 +97,15 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     @Override
     public String toString() {
-        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s, %s)",
+        return String.format("CachedBoxedDispatchNode(:%s, %s@%x, %s)",
                 getCachedNameAsSymbol().toString(),
-                expectedClass.getName(), expectedClass.hashCode(),
-                value == null ? "null" : DebugOperations.inspect(getContext(), value),
+                expectedShape, expectedShape.hashCode(),
                 method == null ? "null" : method.toString());
     }
 
     public boolean couldOptimizeKeywordArguments() {
-        return method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
+        // TODO CS 18-Apr-15 doesn't seem to work with Truffle?
+        return false; //method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
     }
 
     public InternalMethod getMethod() {

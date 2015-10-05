@@ -1,1 +1,0 @@
-fails(2.2 change):File.open with a block does not propagate StandardErrors produced by close

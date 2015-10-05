@@ -6,8 +6,6 @@ describe "Matrix#rank" do
     Matrix[ [7,6], [3,9] ].rank.should == 2
   end
 
-  # The examples below seems to indicate a regression in MRI 1.9.1, as it works
-  # in 1.8.7. On 1.9.1 it just hangs.
   it "doesn't loop forever" do
     Matrix[ [1,2,3], [4,5,6], [7,8,9] ].rank.should == 2
     Matrix[ [1, 2, 0, 3], [1, -2, 3, 0], [0, 0, 4, 8], [2, 4, 0, 6] ].rank.

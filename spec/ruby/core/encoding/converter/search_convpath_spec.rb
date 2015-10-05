@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::Converter.search_convpath" do
-    before(:all) do
+    before :all do
       @perms = Encoding.name_list.permutation(2).map do |pair|
         Encoding::Converter.search_convpath(pair.first, pair.last) rescue []
       end
@@ -55,11 +55,11 @@ with_feature :encoding do
 
     it "indicates if crlf_newline conversion would occur" do
       cp = Encoding::Converter.search_convpath(
-        "ISo-8859-1", "EUC-JP", {:crlf_newline => true})
+        "ISo-8859-1", "EUC-JP", {crlf_newline: true})
       cp.last.should == "crlf_newline"
 
       cp = Encoding::Converter.search_convpath(
-        "ASCII", "UTF-8", {:crlf_newline => false})
+        "ASCII", "UTF-8", {crlf_newline: false})
       cp.last.should_not == "crlf_newline"
     end
 

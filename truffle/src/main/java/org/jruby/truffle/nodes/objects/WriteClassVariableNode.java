@@ -9,13 +9,18 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class WriteClassVariableNode extends RubyNode {
 
@@ -32,20 +37,20 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        final RubyModule moduleObject = lexicalScope.getLiveModule();
+        CompilerDirectives.transferToInterpreter();
 
         final Object rhsValue = rhs.execute(frame);
 
-        ModuleOperations.setClassVariable(moduleObject, name, rhsValue, this);
+        final DynamicObject module = ReadClassVariableNode.resolveTargetModule(lexicalScope);
+
+        ModuleOperations.setClassVariable(module, name, rhsValue, this);
 
         return rhsValue;
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("assignment");
+        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
     }
 
 }

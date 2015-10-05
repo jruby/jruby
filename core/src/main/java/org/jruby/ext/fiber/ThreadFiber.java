@@ -246,10 +246,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 context.setFiber(data.fiber.get());
                 context.setRootThread(data.parent);
                 fiberThread.set(context.getThread());
-                
-                IRubyObject init = data.queue.pop(context);
 
                 try {
+                    IRubyObject init = data.queue.pop(context);
+                    
                     try {
                         IRubyObject result;
 

@@ -71,7 +71,9 @@ public abstract class JVM {
     }
 
     public static String scriptToClass(String name) {
-        if (name.equals("-e")) {
+        if (name == null || name.length() == 0) {
+            return "NullFilename";
+        } else if (name.equals("-e")) {
             return "DashE";
         } else {
             return JavaNameMangler.mangledFilenameForStartupClasspath(name);

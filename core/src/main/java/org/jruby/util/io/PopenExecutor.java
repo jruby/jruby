@@ -23,7 +23,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -171,9 +170,9 @@ public class PopenExecutor {
                 eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
         if (status == -1) {
             if (runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
-                String[] newArgv = new String[argv.length + 1];
-                newArgv[1] = prog;
-                newArgv[0] = "sh";
+                //String[] newArgv = new String[argv.length + 1];
+                //newArgv[1] = prog;
+                //newArgv[0] = "sh";
                 status = runtime.getPosix().posix_spawnp(
                         "/bin/sh",
                         eargp.fileActions,
@@ -314,10 +313,11 @@ public class PopenExecutor {
     }
 
     static void execargSetenv(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject env) {
-        eargp.env_modification = !env.isNil() ? checkExecEnv(context, runtime, (RubyHash)env) : null;
+        eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env) : null;
     }
 
-    static RubyArray checkExecEnv(ThreadContext context, Ruby runtime, RubyHash hash) {
+    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
+        Ruby runtime = context.runtime;
         RubyArray env;
 
         env = runtime.newArray();
@@ -488,7 +488,7 @@ public class PopenExecutor {
         IRubyObject port;
         OpenFile write_fptr;
         IRubyObject write_port;
-        PosixShim posix = new PosixShim(runtime.getPosix());
+        PosixShim posix = new PosixShim(runtime);
 
         Errno e = null;
 
@@ -1080,7 +1080,7 @@ public class PopenExecutor {
         int i;
         int ret;
 
-        for (i = 0; i < ary.size();) {
+        for (i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd;
             RubyArray param = (RubyArray)elt.eltOk(1);
@@ -1183,7 +1183,7 @@ public class PopenExecutor {
             }
             else {
                 envtbl = runtime.getObject().getConstant("ENV");
-                envtbl = TypeConverter.convertToType(envtbl, runtime.getHash(), "to_hash");
+                envtbl = TypeConverter.convertToType(envtbl, runtime.getHash(), "to_hash").dup();
             }
             if (envopts != null) {
                 RubyHash stenv = (RubyHash)envtbl;
@@ -1534,7 +1534,7 @@ public class PopenExecutor {
                     else
                         intFlags = flags.convertToInteger().getIntValue();
                     flags = runtime.newFixnum(intFlags);
-                    perm = ((RubyArray)val).eltOk(2);
+                    perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? runtime.newFixnum(0644) : perm.convertToInteger();
                     param = runtime.newArray(((RubyString)path).strDup(runtime).export(context),
                             flags, perm);
@@ -1753,10 +1753,15 @@ public class PopenExecutor {
         if (!opthash.isNil()) {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
-
         // add chdir if necessary
         if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
-            if (!eargp.chdir_given()) { // only if :chdir is not specified
+            // only if we are inside a jar and spawning org.jruby.Main we
+            // change to the current directory inside the jar
+            if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
+                prog.toString().contains("org.jruby.Main")) {
+                prog = RubyString.newString(runtime, prog.toString().replace("org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()));
+            }
+            else if (!eargp.chdir_given()) { // only if :chdir is not specified
                 eargp.chdir_given_set();
                 eargp.chdir_dir = runtime.getCurrentDirectory();
             }
@@ -1769,7 +1774,7 @@ public class PopenExecutor {
         }
 
         if (!env.isNil()) {
-            eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
+            eargp.env_modification = checkExecEnv(context, (RubyHash) env);
         }
 
         prog = prog.export(context);

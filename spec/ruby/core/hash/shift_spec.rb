@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Hash#shift" do
   it "removes a pair from hash and return it" do
-    h = new_hash(:a => 1, :b => 2, "c" => 3, nil => 4, [] => 5)
+    h = new_hash(a: 1, b: 2, "c" => 3, nil => 4, [] => 5)
     h2 = h.dup
 
     h.size.times do |i|

@@ -1,3 +1,0 @@
-fails:Thread#wakeup can interrupt Kernel#sleep
-fails:Thread#wakeup does not result in a deadlock
-fails:Thread#wakeup raises a ThreadError when trying to wake up a dead thread

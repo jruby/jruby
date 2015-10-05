@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ module Rubinius
         pattern = StringValue(pattern) unless pattern.kind_of?(String)
 
         valid_encoding?(string)
-        valid_encoding?(pattern)
+        valid_encoding?(pattern) 
 
         trim_end = !tail_empty || limit == 0
 

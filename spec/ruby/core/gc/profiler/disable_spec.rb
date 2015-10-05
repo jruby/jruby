@@ -9,13 +9,8 @@ describe "GC::Profiler.disable" do
     @status ? GC::Profiler.enable : GC::Profiler.disable
   end
 
-  it "returns true iff the profiler previously disabled" do
-    GC.enable
-    GC.disable.should == false
-    GC.disable.should == true
-    GC.disable.should == true
-    GC.enable
-    GC.disable.should == false
-    GC.disable.should == true
+  it "disables the profiler" do
+    GC::Profiler.disable
+    GC::Profiler.enabled?.should == false
   end
 end

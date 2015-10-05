@@ -1,6 +1,0 @@
-fails:String#prepend prepends the given argument to self and returns self
-fails:String#prepend converts the given argument to a String using to_str
-fails:String#prepend raises a TypeError if the given argument can't be converted to a String
-fails:String#prepend raises a RuntimeError when self if frozen
-fails:String#prepend works when given a subclass instance
-fails:String#prepend taints self if other is tainted

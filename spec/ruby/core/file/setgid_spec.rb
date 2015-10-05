@@ -6,12 +6,12 @@ describe "File.setgid?" do
 end
 
 describe "File.setgid?" do
-  before(:each) do
+  before :each do
     @name = tmp('test.txt')
     touch @name
   end
 
-  after(:each) do
+  after :each do
     rm_r @name
   end
 

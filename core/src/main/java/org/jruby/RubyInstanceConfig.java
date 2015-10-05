@@ -29,17 +29,24 @@
 package org.jruby;
 
 import jnr.posix.util.Platform;
+
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
+import org.jruby.util.ClassLoaderGetResourses;
+import org.jruby.util.ClasspathLauncher;
+import org.jruby.util.FileResource;
+import org.jruby.util.GetResources;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.URLResource;
+import org.jruby.util.UriLikePathHelper;
 import org.jruby.util.cli.ArgumentProcessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
@@ -49,25 +56,22 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.math.BigDecimal;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
 /**
@@ -77,6 +81,7 @@ import java.util.regex.Pattern;
  * embedding.
  */
 public class RubyInstanceConfig {
+
     public RubyInstanceConfig() {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
 
@@ -111,11 +116,12 @@ public class RubyInstanceConfig {
 
         threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
 
+        environment = new HashMap<String,String>();
         try {
-            environment = System.getenv();
+            environment.putAll(System.getenv());
         } catch (SecurityException se) {
-            environment = new HashMap();
         }
+        setupEnvironment(getJRubyHome());
     }
 
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
@@ -137,11 +143,12 @@ public class RubyInstanceConfig {
         profilingService = parentConfig.profilingService;
         profilingMode = parentConfig.profilingMode;
 
+        environment = new HashMap<String, String>();
         try {
-            environment = System.getenv();
+            environment.putAll(System.getenv());
         } catch (SecurityException se) {
-            environment = new HashMap();
         }
+        setupEnvironment(getJRubyHome());
     }
 
     public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -298,12 +305,15 @@ public class RubyInstanceConfig {
             newJRubyHome = SafePropertyAccessor.getProperty("jruby.home");
         }
 
+        if (newJRubyHome == null && getLoader().getResource("META-INF/jruby.home/.jrubydir") != null) {
+            newJRubyHome = "uri:classloader://META-INF/jruby.home";
+        }
         if (newJRubyHome != null) {
             // verify it if it's there
             newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
-                newJRubyHome = SystemPropertyCatcher.findJRubyHome(this);
+                newJRubyHome = SafePropertyAccessor.getenv("JRUBY_HOME");
             } catch (Exception e) {}
 
             if (newJRubyHome != null) {
@@ -318,7 +328,7 @@ public class RubyInstanceConfig {
         // RegularFileResource absolutePath will canonicalize resources so that will change c: paths to C:.
         // We will cannonicalize on windows so that jruby.home is also C:.
         // assume all those uri-like pathnames are already in absolute form
-        if (Platform.IS_WINDOWS && !newJRubyHome.startsWith("jar:") && !newJRubyHome.startsWith("file:") && !newJRubyHome.startsWith("classpath:") && !newJRubyHome.startsWith("uri:")) {
+        if (Platform.IS_WINDOWS && !RubyFile.PROTOCOL_PATTERN.matcher(newJRubyHome).matches()) {
             File file = new File(newJRubyHome);
 
             try {
@@ -342,7 +352,7 @@ public class RubyInstanceConfig {
         }
         if (home.startsWith("jar:") || ( home.startsWith("file:") && home.contains(".jar!/") ) ||
                 home.startsWith("classpath:") || home.startsWith("uri:")) {
-            error.println("Warning: JRuby home with uri like pathes may not have full functionality - use at your own risk");
+            error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
         }
         // do not normalize on plain jar like pathes coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
@@ -385,42 +395,33 @@ public class RubyInstanceConfig {
                 }
                 return getInput();
             } else {
-                String script = getScriptFileName();
-                InputStream stream = null;
-                if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
-                    stream = new URL("jar:" + script).openStream();
-                } else if (script.startsWith("classpath:")) {
-                    stream = getScriptSourceFromJar(script);
-                } else {
-                    File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
-                    if (isXFlag()) {
-                        // search for a shebang line and
-                        // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                        return findScript(file);
+                final String script = getScriptFileName();
+                FileResource resource = JRubyFile.createRestrictedResource(getCurrentDirectory(), getScriptFileName());
+                if (resource != null && resource.exists()) {
+                    if (resource.isFile() || resource.isSymLink()) {
+                        if (isXFlag()) {
+                            // search for a shebang line and
+                            // return the script between shebang and __END__ or CTRL-Z (0x1A)
+                            return findScript(resource.inputStream());
+                        }
+                        return new BufferedInputStream(resource.inputStream(), 8192);
                     }
-                    stream = new FileInputStream(file);
+                    else {
+                        throw new FileNotFoundException(script + " (Not a file)");
+                    }
                 }
-
-                return new BufferedInputStream(stream, 8192);
+                else {
+                    throw new FileNotFoundException(script + " (No such file or directory)");
+                }
             }
         } catch (IOException e) {
-            // We haven't found any file directly on the file system,
-            // now check for files inside the JARs.
-            InputStream is = getJarScriptSource(scriptFileName);
-            if (is != null) {
-                return new BufferedInputStream(is, 8129);
-            }
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
         }
     }
 
-    private InputStream getScriptSourceFromJar(String script) {
-        return Ruby.getClassLoader().getResourceAsStream(script.substring("classpath:".length()));
-    }
-
-    private static InputStream findScript(File file) throws IOException {
-        StringBuffer buf = new StringBuffer();
-        BufferedReader br = new BufferedReader(new FileReader(file));
+    private static InputStream findScript(InputStream is) throws IOException {
+        StringBuilder buf = new StringBuilder();
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String currentLine = br.readLine();
         while (currentLine != null && !isRubyShebangLine(currentLine)) {
             currentLine = br.readLine();
@@ -432,32 +433,11 @@ public class RubyInstanceConfig {
         do {
             currentLine = br.readLine();
             if (currentLine != null) {
-            buf.append(currentLine);
-            buf.append("\n");
+                buf.append(currentLine);
+                buf.append("\n");
             }
         } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
-    }
-
-    private static InputStream getJarScriptSource(String scriptFileName) {
-        boolean looksLikeJarURL = scriptFileName.startsWith("file:") && scriptFileName.indexOf("!/") != -1;
-        if (!looksLikeJarURL) {
-            return null;
-        }
-
-        String before = scriptFileName.substring("file:".length(), scriptFileName.indexOf("!/"));
-        String after =  scriptFileName.substring(scriptFileName.indexOf("!/") + 2);
-
-        try {
-            JarFile jFile = new JarFile(before);
-            JarEntry entry = jFile.getJarEntry(after);
-
-            if (entry != null && !entry.isDirectory()) {
-                return jFile.getInputStream(entry);
-            }
-        } catch (IOException ignored) {
-        }
-        return null;
     }
 
     public String displayedFileName() {
@@ -507,6 +487,7 @@ public class RubyInstanceConfig {
 
     public void setJRubyHome(String home) {
         jrubyHome = verifyHome(home, error);
+        setupEnvironment(jrubyHome);
     }
 
     public CompileMode getCompileMode() {
@@ -685,12 +666,23 @@ public class RubyInstanceConfig {
         return siphashEnabled;
     }
 
-    public void setEnvironment(Map newEnvironment) {
-        if (newEnvironment == null) newEnvironment = new HashMap();
-        environment = newEnvironment;
+    public void setEnvironment(Map<String, String> newEnvironment) {
+        environment = new HashMap<String, String>();
+        if (newEnvironment != null) {
+            environment.putAll(newEnvironment);
+        }
+        setupEnvironment(getJRubyHome());
     }
 
-    public Map getEnvironment() {
+    private void setupEnvironment(String jrubyHome) {
+        if (RubyFile.PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
+            // the assumption that if JRubyHome is not a regular file that jruby
+            // got launched in an embedded fashion
+            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
+        }
+    }
+
+    public Map<String, String> getEnvironment() {
         return environment;
     }
 
@@ -700,6 +692,52 @@ public class RubyInstanceConfig {
 
     public void setLoader(ClassLoader loader) {
         this.loader = loader;
+    }
+
+    private final List<String> extraLoadPaths = new LinkedList<>();
+    public List<String> getExtraLoadPaths() {
+        return extraLoadPaths;
+    }
+
+    private final List<String> extraGemPaths = new LinkedList<>();
+    public List<String> getExtraGemPaths() {
+        return extraGemPaths;
+    }
+
+    /**
+     * adds a given ClassLoader to jruby. i.e. adds the root of
+     * the classloader to the LOAD_PATH so embedded ruby scripts
+     * can be found. dito for embedded gems.
+     *
+     * since classloaders do not provide directory information (some
+     * do and some do not) the source of the classloader needs to have
+     * a '.jrubydir' in each with the list of files and directories of the
+     * same directory. (see jruby-stdlib.jar or jruby-complete.jar inside
+     * META-INF/jruby.home for examples).
+     *
+     * these files can be generated by <code>jruby -S generate_dir_info {path/to/ruby/files}</code>
+     *
+     * @param loader
+     */
+    public void addLoader(ClassLoader loader) {
+        addLoader(new ClassLoaderGetResourses(loader));
+    }
+
+    /**
+     * adds a given "bundle" to jruby. an OSGi bundle and a classloader
+     * both have common set of method but do not share a common interface.
+     * for adding a bundle or classloader to jruby is done via the base URL of
+     * the classloader/bundle. all we need is the 'getResource'/'getResources'
+     * method to do so.
+     * @param bundle
+     */
+    public void addLoader(GetResources bundle) {
+        // loader can be a ClassLoader or an Bundle from OSGi
+        UriLikePathHelper helper = new UriLikePathHelper(bundle);
+        String uri = helper.getUriLikePath();
+        if (uri != null) extraLoadPaths.add(uri);
+        uri = helper.getUriLikeGemPath();
+        if (uri != null) extraGemPaths.add(uri);
     }
 
     public String[] getArgv() {
@@ -1068,7 +1106,7 @@ public class RubyInstanceConfig {
         return inPlaceBackupExtension;
     }
 
-    public Map getOptionGlobals() {
+    public Map<String, String> getOptionGlobals() {
         return optionGlobals;
     }
 
@@ -1076,7 +1114,7 @@ public class RubyInstanceConfig {
         return managementEnabled;
     }
 
-    public Set getExcludedMethods() {
+    public Set<String> getExcludedMethods() {
         return excludedMethods;
     }
 
@@ -1405,8 +1443,8 @@ public class RubyInstanceConfig {
     public void setProfilingService( String service )  {
         this.profilingService = service;
     }
-    
-    private static ClassLoader setupLoader() {
+
+    public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
         // loader can be null for example when jruby comes from the boot-classLoader
@@ -1443,7 +1481,7 @@ public class RubyInstanceConfig {
     private String currentDirectory;
 
     /** Environment variables; defaults to System.getenv() in constructor */
-    private Map environment;
+    private Map<String, String> environment;
     private String[] argv = {};
 
     private final boolean jitLogging;
@@ -1462,7 +1500,7 @@ public class RubyInstanceConfig {
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     private String profilingService;
 
-    private ClassLoader loader = setupLoader();
+    private ClassLoader loader = defaultClassLoader();
 
     public ClassLoader getCurrentThreadClassLoader() {
         return Thread.currentThread().getContextClassLoader();
@@ -1478,7 +1516,7 @@ public class RubyInstanceConfig {
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private Map optionGlobals = new HashMap();
+    private Map<String, String> optionGlobals = new HashMap<String, String>();
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
@@ -1641,13 +1679,6 @@ public class RubyInstanceConfig {
             = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTSEND.load();
 
     /**
-     * Enable lazy handles optimizations.
-     *
-     * Set with the <tt>jruby.compile.lazyHandles</tt> system property.
-     */
-    public static boolean LAZYHANDLES_COMPILE = Options.COMPILE_LAZYHANDLES.load();
-
-    /**
      * Enable fast multiple assignment optimization.
      *
      * Set with the <tt>jruby.compile.fastMasgn</tt> system property.
@@ -1775,8 +1806,6 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
 
-    public static final String JIT_CODE_CACHE = Options.JIT_CODECACHE.load();
-
     public static final boolean REFLECTED_HANDLES = Options.REFLECTED_HANDLES.load();
 
     public static final boolean NO_UNWRAP_PROCESS_STREAMS = Options.PROCESS_NOUNWRAP.load();
@@ -1809,8 +1838,6 @@ public class RubyInstanceConfig {
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
 
-    private TruffleHooksStub truffleHooks = null;
-
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 
     /**
@@ -1842,13 +1869,6 @@ public class RubyInstanceConfig {
             System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.5");
             return Opcodes.V1_5;
         }
-    }
-    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
-        this.truffleHooks = truffleHooks;
-    }
-
-    public TruffleHooksStub getTruffleHooks() {
-        return truffleHooks;
     }
 
     @Deprecated
@@ -1975,4 +1995,5 @@ public class RubyInstanceConfig {
         return false;
     }
 
+    @Deprecated public static final String JIT_CODE_CACHE = "";
 }

@@ -13,12 +13,14 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child")
 public abstract class FreezeNode extends RubyNode {
@@ -27,11 +29,6 @@ public abstract class FreezeNode extends RubyNode {
 
     public FreezeNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public FreezeNode(FreezeNode prev) {
-        super(prev);
-        writeFrozenNode = prev.writeFrozenNode;
     }
 
     public abstract Object executeFreeze(Object object);
@@ -56,16 +53,26 @@ public abstract class FreezeNode extends RubyNode {
         return object;
     }
 
-    @Specialization
-    public Object freeze(RubySymbol object) {
+    @Specialization(guards = "isNil(nil)")
+    public Object freeze(Object nil) {
+        return nil();
+    }
+
+    @Specialization(guards = "isRubyBignum(object)")
+    public Object freezeBignum(DynamicObject object) {
         return object;
     }
 
-    @Specialization(guards = "!isRubySymbol")
-    public Object freeze(RubyBasicObject object) {
+    @Specialization(guards = "isRubySymbol(symbol)")
+    public Object freezeSymbol(DynamicObject symbol) {
+        return symbol;
+    }
+
+    @Specialization(guards = { "!isNil(object)", "!isRubyBignum(object)", "!isRubySymbol(object)" })
+    public Object freeze(DynamicObject object) {
         if (writeFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
-            writeFrozenNode = insert(new WriteHeadObjectFieldNode(RubyBasicObject.FROZEN_IDENTIFIER));
+            writeFrozenNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.FROZEN_IDENTIFIER));
         }
 
         writeFrozenNode.execute(object, true);

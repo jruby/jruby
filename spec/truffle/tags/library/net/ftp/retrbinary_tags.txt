@@ -1,0 +1,2 @@
+fails:Net::FTP#retrbinary sends the passed command to the server
+fails:Net::FTP#retrbinary yields the received content as binary blocks of the passed size

@@ -1,0 +1,1 @@
+fails:UNIXSocket#send_io sends the fd for an IO object across the socket

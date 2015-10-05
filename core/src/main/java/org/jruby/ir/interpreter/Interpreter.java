@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.IRBindingEvalScript;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -32,22 +31,8 @@ import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger("Interpreter");
-    private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
-
-    // we do not need instances of Interpreter
-    // FIXME: Should we make it real singleton and get rid of static methods?
-    private Interpreter() { }
-
-    private static class InterpreterHolder {
-        // FIXME: Remove static reference unless lifus does later
-        public static final Interpreter instance = new Interpreter();
-    }
-
-    public static Interpreter getInstance() {
-        return InterpreterHolder.instance;
-    }
 
     public static void dumpStats() {
         if ((IRRuntimeHelpers.isDebug() || IRRuntimeHelpers.inProfileMode()) && interpInstrsCount > 10000) {
@@ -179,7 +164,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
-            return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), EMPTY_ARGS, name, block, null);
+            return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), IRubyObject.NULL_ARRAY, name, block, null);
         } finally {
             evalScope.clearEvalType();
             context.popScope();
@@ -217,14 +202,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
         StaticScope staticScope = evalScope.getStaticScope();
-        // Top-level script!
-        IREvalScript script;
 
-        if (evalType == EvalType.BINDING_EVAL) {
-            script = new IRBindingEvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
-        } else {
-            script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
-        }
+        // Top-level script!
+        IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
 
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.

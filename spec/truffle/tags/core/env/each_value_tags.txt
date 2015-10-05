@@ -1,2 +1,0 @@
-fails:ENV.each_value returns each value
-fails:ENV.each_value uses the locale encoding

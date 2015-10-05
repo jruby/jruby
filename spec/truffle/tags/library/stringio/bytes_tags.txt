@@ -1,2 +1,0 @@
-fails:StringIO#bytes returns nil
-fails:StringIO#bytes yields a LocalJumpError when passed no block

@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
 
 describe "Enumerable#each_entry" do
   before :each do
@@ -25,7 +26,7 @@ describe "Enumerable#each_entry" do
     ScratchPad.recorded.should == [[:a, 0], [:b, 1]]
   end
 
-  it "raises an Argument error when extra arguments" do
+  it "raises an ArgumentError when extra arguments" do
     lambda { @enum.each_entry("one").to_a   }.should raise_error(ArgumentError)
     lambda { @enum.each_entry("one"){}.to_a }.should raise_error(ArgumentError)
   end
@@ -35,4 +36,6 @@ describe "Enumerable#each_entry" do
     enum.each_entry(:foo, "bar").to_a.should == [1,2]
     enum.arguments_passed.should == [:foo, "bar"]
   end
+
+  it_behaves_like :enumerable_enumeratorized_with_origin_size, :each_entry
 end

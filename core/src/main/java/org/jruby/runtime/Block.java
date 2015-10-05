@@ -204,8 +204,13 @@ public final class Block {
      * 
      * @return the arity
      */
+    @Deprecated
     public Arity arity() {
-        return body.arity();
+        return body.getSignature().arity();
+    }
+
+    public Signature getSignature() {
+        return body.getSignature();
     }
 
     /**

@@ -9,28 +9,15 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.dsl.NodeFactory;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ReturnID;
+import org.jruby.truffle.runtime.RubyContext;
 
-/**
- * Packages up the original {@link RubiniusPrimitive annotation} with the {@link NodeFactory}.
- */
-public class RubiniusPrimitiveConstructor {
+public interface RubiniusPrimitiveConstructor {
+    public int getPrimitiveArity();
 
-    private final RubiniusPrimitive annotation;
-    private final NodeFactory<? extends RubyNode> factory;
+    public RubyNode createCallPrimitiveNode(RubyContext context, SourceSection sourceSection, ReturnID returnID);
 
-    public RubiniusPrimitiveConstructor(RubiniusPrimitive annotation, NodeFactory<? extends RubyNode> factory) {
-        this.annotation = annotation;
-        this.factory = factory;
-    }
-
-    public RubiniusPrimitive getAnnotation() {
-        return annotation;
-    }
-
-    public NodeFactory<? extends RubyNode> getFactory() {
-        return factory;
-    }
-
+    public RubyNode createInvokePrimitiveNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments);
 }

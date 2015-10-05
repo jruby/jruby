@@ -91,7 +91,7 @@ public class ParameterCollector extends AbstractNodeVisitor<Object> {
     }
 
     @Override
-    public Object visitMultipleAsgnNode(MultipleAsgn19Node node) {
+    public Object visitMultipleAsgnNode(MultipleAsgnNode node) {
         visitChildren(node);
         return null;
     }

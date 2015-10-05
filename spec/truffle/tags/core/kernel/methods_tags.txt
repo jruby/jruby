@@ -1,5 +1,0 @@
-fails:Kernel#methods returns the publicly accessible methods of the object
-fails:Kernel#methods does not return undefined singleton methods defined by obj.meth
-fails:Kernel#methods does not return superclass methods undefined in the object's class
-fails:Kernel#methods does not return superclass methods undefined in a superclass
-fails:Kernel#methods does not return included module methods undefined in the object's class

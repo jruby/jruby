@@ -1,0 +1,2 @@
+fails:Net::HTTPHeader#key? when passed key returns true if the header entry with the passed key exists
+fails:Net::HTTPHeader#key? when passed key is case-insensitive

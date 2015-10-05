@@ -34,99 +34,96 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
  * Finds SPI based services from classpath.
- * 
+ *
  * @author Yoko Harada <yokolet@gmail.com>
  */
-class ServiceFinder {
-    private ClassLoader loader = null;
-    private String serviceName;
-    private HashSet<?> services;
+class ServiceFinder<T> {
 
-    ServiceFinder(ClassLoader loader, String serviceName) throws IOException {
-        this.serviceName = serviceName;
-        Enumeration<URL> urls = findResources(loader);
-        List<String> classNames = getClassNames(urls);
-        services = instantiateClasses(classNames);
-    }
+    private final Set<T> services;
 
-    HashSet<?> getServices() {
-        return services;
-    }
+    ServiceFinder(final String serviceName, ClassLoader loader) throws IOException {
+        final Enumeration<URL> urls;
 
-    private Enumeration<URL> findResources(ClassLoader loader) throws IOException {
-        Enumeration<URL> urls;
         if (loader == null) {
-            this.loader = ClassLoader.getSystemClassLoader();
+            loader = ClassLoader.getSystemClassLoader();
             urls = ClassLoader.getSystemResources(serviceName);
         } else {
-            this.loader = loader;
             urls = loader.getResources(serviceName);
         }
-        return urls;
+
+        List<String> classNames = readClassNames(urls);
+        services = instantiateClasses(classNames, loader);
     }
 
-    private List<String> getClassNames(Enumeration<URL> urls) {
+    Collection<T> getServices() { return services; }
+
+    private static List<String> readClassNames(Enumeration<URL> urls) {
         String encoding = System.getProperty("file.encoding");
-        List<String> names = new ArrayList();
-        URL url = null;
-        while (urls.hasMoreElements()) {
+        ArrayList<String> names = new ArrayList<String>();
+        while ( urls.hasMoreElements() ) {
+            URL url = null;
             try {
-            url = urls.nextElement();
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(url.openStream(), encoding));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if ((line = deleteComments(line)) != null) {
-                    names.add(line);
+                url = urls.nextElement();
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(url.openStream(), encoding));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if ((line = deleteComments(line)) != null) {
+                        names.add(line);
+                    }
                 }
             }
-            } catch (IOException e) {
-                System.err.println("Failed to get a class name from " + url.toString());
+            catch (IOException e) {
+                System.err.println("Failed to get a class name from " + url);
                 continue;
             }
         }
         return names;
     }
 
-    private String deleteComments(String line) {
-        if (line.startsWith("#")) {
-            return null;
-        }
-        if (line.length() < 1) {
-            return null;
-        }
+    private static String deleteComments(final String line) {
+        if ( line.startsWith("#") ) return null;
+        if ( line.length() < 1 ) return null;
         StringTokenizer st = new StringTokenizer(line, "#");
         return ((String) st.nextElement()).trim();
     }
 
-    private <T> HashSet<T> instantiateClasses(List<String> names) {
-        HashSet<T> instances = new HashSet<T>();
+    private Set<T> instantiateClasses(final Collection<String> names,
+        final ClassLoader loader) {
+        HashSet<T> instances = new HashSet<T>( names.size() );
         for (String name : names) {
             try {
-                Class clazz = Class.forName(name, true, loader);
-                T instance = (T) clazz.newInstance();
-                instances.add(instance);
-            } catch (ClassNotFoundException e) {
+                @SuppressWarnings("unchecked")
+                Class<T> clazz = (Class<T>) Class.forName(name, true, loader);
+                instances.add( clazz.newInstance() );
+            }
+            catch (ClassNotFoundException e) {
                 System.err.println(name + " was not found");
                 continue;
-            } catch (InstantiationException e) {
+            }
+            catch (InstantiationException e) {
                 System.err.println(name + " was not instantiated");
                 continue;
-            } catch (IllegalAccessException e) {
+            }
+            catch (IllegalAccessException e) {
                 System.err.println(name + " committed illegal access");
                 continue;
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 System.err.println("failed to instantiate " + name);
                 continue;
             }
         }
         return instances;
     }
+
 }

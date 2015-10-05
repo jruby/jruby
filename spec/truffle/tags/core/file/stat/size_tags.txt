@@ -1,8 +1,0 @@
-fails:File::Stat.size? returns the size of the file if it exists and is not empty
-fails:File::Stat.size? accepts a String-like (to_str) parameter
-fails:File::Stat.size? accepts an object that has a #to_path method
-fails:File::Stat.size? returns nil if file_name is empty
-fails:File::Stat.size returns the size of the file if it exists and is not empty
-fails:File::Stat.size accepts a String-like (to_str) parameter
-fails:File::Stat.size accepts an object that has a #to_path method
-fails:File::Stat.size returns 0 if the file is empty

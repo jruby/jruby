@@ -1,1 +1,0 @@
-fails:FileTest.setgid? needs to be reviewed for spec completeness

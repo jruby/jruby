@@ -1,5 +1,5 @@
-describe :sorted_set_collect_bang, :shared => true do
-  before(:each) do
+describe :sorted_set_collect_bang, shared: true do
+  before :each do
     @set = SortedSet[1, 2, 3, 4, 5]
   end
 

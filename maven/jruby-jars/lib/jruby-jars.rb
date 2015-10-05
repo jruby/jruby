@@ -10,8 +10,4 @@ module JRubyJars
   def self.stdlib_jar_path
     "#{PATH }/jruby-stdlib-#{JRubyJars::MAVEN_VERSION}.jar"
   end
-
-  def self.truffle_jar_path
-    "#{PATH }/jruby-truffle-#{JRubyJars::MAVEN_VERSION}-complete.jar"
-  end
 end

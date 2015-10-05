@@ -9,13 +9,13 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
-    public OneArgOperandAttrAssignInstr(Operand obj, String attr, Operand[] args) {
-        super(obj, attr, args);
+    public OneArgOperandAttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
+        super(obj, attr, args, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii));
+        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override

@@ -20,7 +20,8 @@ namespace :test do
   desc "Compile test code"
   task :compile do
     mkdir_p "test/target/test-classes"
-    sh "javac -cp lib/jruby.jar:test/target/junit.jar -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
+    classpath = %w[lib/jruby.jar test/target/junit.jar].join(File::PATH_SEPARATOR)
+    sh "javac -cp #{classpath} -d test/target/test-classes #{Dir['spec/java_integration/fixtures/**/*.java'].to_a.join(' ')}"
   end
 
   short_tests = ['jruby', 'mri']
@@ -58,7 +59,7 @@ namespace :test do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
-    :jit => ["-Xjit.threshold=0", "-Xjit.background=false" "-J-XX:MaxPermSize=512M"],
+    :jit => ["-Xjit.threshold=0", "-Xjit.background=false", "-J-XX:MaxPermSize=512M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=512M"],
     :all => [:int, :jit, :aot]
   }
@@ -105,8 +106,11 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-Xaot.loadClasses=true' # disabled by default now
+    t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
-    t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
+    classpath = %w[test test/target/test-classes core/target/test-classes].join(File::PATH_SEPARATOR)
+    t.ruby_opts << "-J-cp #{classpath}"
   end
 
   permute_tests(:slow, compile_flags) do |t|
@@ -121,7 +125,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.test_files = files_in_file 'test/slow.index'
-    t.ruby_opts << '-J-ea' << '--1.8'
+    t.ruby_opts << '-J-ea' << '-I.'
     t.ruby_opts << '-J-cp target/test-classes'
   end
 

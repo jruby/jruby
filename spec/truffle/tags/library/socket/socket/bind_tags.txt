@@ -1,0 +1,2 @@
+fails:Socket#bind on SOCK_DGRAM socket raises Errno::EADDRNOTAVAIL when the specified sockaddr is not available from the local machine
+fails:Socket#bind on SOCK_STREAM socket raises Errno::EADDRNOTAVAIL when the specified sockaddr is not available from the local machine

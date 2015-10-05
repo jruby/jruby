@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/common', __FILE__)
 require 'cgi'
 
 describe "CGI::HtmlExtension#frameset" do
-  before(:each) do
+  before :each do
     @html = CGISpecs.cgi_new("html4Fr")
   end
 

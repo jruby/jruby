@@ -12,24 +12,17 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.lexer.yacc.DetailedSourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
-    public static final Set<String> PRINT_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_AST.load().split(",")));
-    public static final Set<String> PRINT_FULL_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_FULL_AST.load().split(",")));
-    public static final Set<String> PRINT_PARSE_TREE_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE.load().split(",")));
+    public static final Set<String> ALWAYS_DEFINED_GLOBALS = new HashSet<>(Arrays.asList("$~"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
 
     protected final Node currentNode;
     protected final RubyContext context;
@@ -58,20 +51,23 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             } else {
                 return parentSourceSection.peek();
             }
-        } else if (sourcePosition instanceof DetailedSourcePosition) {
-            final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
-
-            try {
-                return source.createSection(identifier, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
-            } catch (IllegalArgumentException e) {
-                // In some cases we still get bad offsets with the detailed source positions
-                return source.createSection(identifier, sourcePosition.getLine() + 1);
-            }
-        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
-            return source.createSection(identifier, sourcePosition.getLine() + 1);
         } else {
-            throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
+            return source.createSection(identifier, sourcePosition.getLine() + 1);
         }
+    }
+
+    protected RubyNode nilNode(SourceSection sourceSection) {
+        return new NilNode(context, sourceSection);
+    }
+
+    protected RubyNode translateNodeOrNil(SourceSection sourceSection, org.jruby.ast.Node node) {
+        final RubyNode rubyNode;
+        if (node != null) {
+            rubyNode = node.accept(this);
+        } else {
+            rubyNode = nilNode(sourceSection);
+        }
+        return rubyNode;
     }
 
     protected abstract String getIdentifier();

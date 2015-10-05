@@ -36,6 +36,9 @@ import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 
+/**
+ * Used when a Regexp literal is the RHS of a match call.  E.g., "abc" =~ /.+/
+ */
 public class Match3Node extends Node {
     private final Node receiverNode;
     private final Node valueNode;

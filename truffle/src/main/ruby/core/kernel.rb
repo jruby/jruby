@@ -8,30 +8,11 @@
 
 module Kernel
 
-  def p(*args)
-    args.each do |arg|
-      print arg.inspect
-      print "\n"
-    end
-
-    args.size <= 1 ? args.first : args
+  def __dir__
+    path = caller_locations(1, 1).first.absolute_path
+    File.dirname(path)
   end
-  module_function :p
-
-  def puts(*args)
-    print "\n" if args.empty?
-    args.each do |arg|
-      if arg.is_a?(Array)
-        arg.each do |child|
-          puts child
-        end
-      else
-        print arg
-        print "\n"
-      end
-    end
-  end
-  module_function :puts
+  module_function :__dir__
 
   def printf(*args)
     print sprintf(*args)
@@ -41,5 +22,21 @@ module Kernel
   alias_method :trust, :untaint
   alias_method :untrust, :taint
   alias_method :untrusted?, :tainted?
+
+  def caller(start = 1, limit = nil)
+    start += 1
+    if limit.nil?
+      args = [start]
+    else
+      args = [start, limit]
+    end
+    Kernel.caller_locations(*args).map(&:inspect)
+  end
+  module_function :caller
+
+  def at_exit(&block)
+    Truffle::Primitive.at_exit false, &block
+  end
+  module_function :at_exit
 
 end

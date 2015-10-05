@@ -17,7 +17,7 @@ class TestLoadCompiledRuby < Test::Unit::TestCase
       assert !(File.exist? FILENAME)
       assert File.exist? COMPILED
 
-      $:.unshift('.')
+      $:.unshift(File.dirname(File.expand_path(FILENAME)))
       load FILENAME
       assert $test_load_compiled_ruby
     ensure

@@ -1,0 +1,1 @@
+fails:Truffle::Primitive.coverage_result returns nil

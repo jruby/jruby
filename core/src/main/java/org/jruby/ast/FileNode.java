@@ -34,7 +34,7 @@ import org.jruby.util.ByteList;
 /**
  * Represents __FILE__ nodes
  */
-public class FileNode extends StrNode {
+public class FileNode extends StrNode implements SideEffectFree {
     public FileNode(ISourcePosition position, ByteList value) {
         super(position, value);
     }

@@ -1,5 +1,8 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/constants', __FILE__)
+require File.expand_path('../fixtures/constant_unicode', __FILE__)
 
 describe "Module#const_defined?" do
   it "returns true if the given Symbol names a constant defined in the receiver" do
@@ -44,12 +47,22 @@ describe "Module#const_defined?" do
     ConstantSpecs::ContainerA.const_defined?("ChildA").should == true
   end
 
+  it "returns true when passed a constant name with unicode characters" do
+    ConstantUnicodeSpecs.const_defined?("CS_CONSTλ").should be_true
+  end
+
+  it "returns true when passed a constant name with EUC-JP characters" do
+    str = "CS_CONSTλ".encode("euc-jp")
+    ConstantSpecs.const_set str, 1
+    ConstantSpecs.const_defined?(str).should be_true
+  end
+
   it "returns false if the constant is not defined in the receiver, its superclass, or any included modules" do
     # The following constant isn't defined at all.
     ConstantSpecs::ContainerA::ChildA.const_defined?(:CS_CONST4726).should be_false
-    # DETATCHED_CONSTANT is defined in ConstantSpecs::Detatched, which isn't
+    # DETACHED_CONSTANT is defined in ConstantSpecs::Detached, which isn't
     # included by or inherited from ParentA
-    ConstantSpecs::ParentA.const_defined?(:DETATCHED_CONSTANT).should be_false
+    ConstantSpecs::ParentA.const_defined?(:DETACHED_CONSTANT).should be_false
   end
 
   it "does not call #const_missing if the constant is not defined in the receiver" do
@@ -118,7 +131,7 @@ describe "Module#const_defined?" do
 
   ruby_version_is "2.1" do
     it "returns true or false for the nested name" do
-      ConstantSpecs.const_defined?("A::Name").should == false
+      ConstantSpecs.const_defined?("NotExist::Name").should == false
       ConstantSpecs.const_defined?("::Name").should == false
       ConstantSpecs.const_defined?("::Object").should == true
       ConstantSpecs.const_defined?("ClassA::CS_CONST10").should == true

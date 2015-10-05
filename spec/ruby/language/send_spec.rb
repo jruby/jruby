@@ -9,7 +9,7 @@ require File.expand_path('../fixtures/send', __FILE__)
 # M - Manditory Args
 # O - Optional Arg
 # R - Rest Arg
-# Q - Post Manditory Args (1.9)
+# Q - Post Manditory Args
 
 specs = LangSendSpecs
 
@@ -26,7 +26,7 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with only manditory arguments" do
+  describe "with only mandatory arguments" do
     it "requires exactly the same number of passed values" do
       specs.fooM1(1).should == [1]
       specs.fooM2(1,2).should == [1,2]
@@ -58,12 +58,12 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with manditory and optional arguments" do
+  describe "with mandatory and optional arguments" do
     it "uses the passed values in left to right order" do
       specs.fooM1O1(2).should == [2,1]
     end
 
-    it "raises an ArgumentError if there are no values for the manditory args" do
+    it "raises an ArgumentError if there are no values for the mandatory args" do
       lambda {
         specs.fooM1O1
       }.should raise_error(ArgumentError)
@@ -179,19 +179,28 @@ describe "Invoking a method" do
   end
 
   it "allows to literal hashes without curly braces as the only parameter" do
-    specs.fooM1(:rbx => :cool, :specs => :fail_sometimes).should ==
-      [{ :rbx => :cool, :specs => :fail_sometimes }]
+    specs.fooM1(rbx: :cool, specs: :fail_sometimes).should ==
+      [{ rbx: :cool, specs: :fail_sometimes }]
 
-    (specs.fooM1 :rbx => :cool, :specs => :fail_sometimes).should ==
-      [{ :rbx => :cool, :specs => :fail_sometimes }]
+    (specs.fooM1 rbx: :cool, specs: :fail_sometimes).should ==
+      [{ rbx: :cool, specs: :fail_sometimes }]
   end
 
   describe "when the method is not available" do
-    it "invokes method_missing" do
+    it "invokes method_missing if it is defined" do
       o = LangSendSpecs::MethodMissing.new
       o.not_there(1,2)
       o.message.should == :not_there
       o.args.should == [1,2]
+    end
+
+    it "raises NameError if invoked as a vcall" do
+      lambda { no_such_method }.should raise_error NameError
+    end
+
+    it "raises NoMethodError if invoked as an unambiguous method call" do
+      lambda { no_such_method() }.should raise_error NoMethodError
+      lambda { no_such_method(1,2,3) }.should raise_error NoMethodError
     end
   end
 
@@ -242,7 +251,7 @@ describe "Invoking a method" do
     end
   end
 
-  describe "with manditory arguments after optional arguments" do
+  describe "with mandatory arguments after optional arguments" do
     it "binds the required arguments first" do
       specs.fooO1Q1(0,1).should == [0,1]
       specs.fooO1Q1(2).should == [1,2]
@@ -312,44 +321,44 @@ describe "Invoking a method" do
 
   it "accepts final explicit literal Hash arguments after the splat" do
     a = [1, 2]
-    specs.fooM0RQ1(*a, { :a => 1 }).should == [[1, 2], { :a => 1 }]
+    specs.fooM0RQ1(*a, { a: 1 }).should == [[1, 2], { a: 1 }]
   end
 
   it "accepts final implicit literal Hash arguments after the splat" do
     a = [1, 2]
-    specs.fooM0RQ1(*a, :a => 1).should == [[1, 2], { :a => 1 }]
+    specs.fooM0RQ1(*a, a: 1).should == [[1, 2], { a: 1 }]
   end
 
   it "accepts final Hash arguments after the splat" do
     a = [1, 2]
-    b = { :a => 1 }
-    specs.fooM0RQ1(*a, b).should == [[1, 2], { :a => 1 }]
+    b = { a: 1 }
+    specs.fooM0RQ1(*a, b).should == [[1, 2], { a: 1 }]
   end
 
   it "accepts mandatory and explicit literal Hash arguments after the splat" do
     a = [1, 2]
-    specs.fooM0RQ2(*a, 3, { :a => 1 }).should == [[1, 2], 3, { :a => 1 }]
+    specs.fooM0RQ2(*a, 3, { a: 1 }).should == [[1, 2], 3, { a: 1 }]
   end
 
   it "accepts mandatory and implicit literal Hash arguments after the splat" do
     a = [1, 2]
-    specs.fooM0RQ2(*a, 3, :a => 1).should == [[1, 2], 3, { :a => 1 }]
+    specs.fooM0RQ2(*a, 3, a: 1).should == [[1, 2], 3, { a: 1 }]
   end
 
   it "accepts mandatory and Hash arguments after the splat" do
     a = [1, 2]
-    b = { :a => 1 }
-    specs.fooM0RQ2(*a, 3, b).should == [[1, 2], 3, { :a => 1 }]
+    b = { a: 1 }
+    specs.fooM0RQ2(*a, 3, b).should == [[1, 2], 3, { a: 1 }]
   end
 
   it "converts a final splatted explicit Hash to an Array" do
     a = [1, 2]
-    specs.fooR(*a, 3, *{ :a => 1 }).should == [1, 2, 3, [:a, 1]]
+    specs.fooR(*a, 3, *{ a: 1 }).should == [1, 2, 3, [:a, 1]]
   end
 
   it "calls #to_a to convert a final splatted Hash object to an Array" do
     a = [1, 2]
-    b = { :a => 1 }
+    b = { a: 1 }
     b.should_receive(:to_a).and_return([:a, 1])
 
     specs.fooR(*a, 3, *b).should == [1, 2, 3, :a, 1]
@@ -400,36 +409,36 @@ describe "Invoking a method" do
     describe "as the only parameter" do
       it "passes without curly braces" do
         specs.fooM1(rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "passes without curly braces or parens" do
         (specs.fooM1 rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "handles a hanging comma without curly braces" do
-        specs.fooM1(abc: 123,).should == [{:abc => 123}]
+        specs.fooM1(abc: 123,).should == [{abc: 123}]
         specs.fooM1(rbx: 'cool', specs: :fail_sometimes, non_sym: 1234,).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
     end
 
     describe "as the last parameter" do
       it "passes without curly braces" do
         specs.fooM3('abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "passes without curly braces or parens" do
         (specs.fooM3 'abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "handles a hanging comma without curly braces" do
-        specs.fooM3('abc', 123, abc: 123,).should == ['abc', 123, {:abc => 123}]
+        specs.fooM3('abc', 123, abc: 123,).should == ['abc', 123, {abc: 123}]
         specs.fooM3('abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234,).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
     end
   end
@@ -437,35 +446,35 @@ describe "Invoking a method" do
   describe "mixed new- and old-style hash arguments" do
     describe "as the only parameter" do
       it "passes without curly braces" do
-        specs.fooM1(rbx: 'cool', :specs => :fail_sometimes, non_sym: 1234).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        specs.fooM1(rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "passes without curly braces or parens" do
-        (specs.fooM1 :rbx => 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        (specs.fooM1 rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "handles a hanging comma without curly braces" do
-        specs.fooM1(rbx: 'cool', specs: :fail_sometimes, :non_sym => 1234,).should ==
-          [{ :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        specs.fooM1(rbx: 'cool', specs: :fail_sometimes, non_sym: 1234,).should ==
+          [{ rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
     end
 
     describe "as the last parameter" do
       it "passes without curly braces" do
-        specs.fooM3('abc', 123, rbx: 'cool', :specs => :fail_sometimes, non_sym: 1234).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        specs.fooM3('abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "passes without curly braces or parens" do
-        (specs.fooM3 'abc', 123, :rbx => 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        (specs.fooM3 'abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234).should ==
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
 
       it "handles a hanging comma without curly braces" do
-        specs.fooM3('abc', 123, rbx: 'cool', specs: :fail_sometimes, :non_sym => 1234,).should ==
-          ['abc', 123, { :rbx => 'cool', :specs => :fail_sometimes, :non_sym => 1234 }]
+        specs.fooM3('abc', 123, rbx: 'cool', specs: :fail_sometimes, non_sym: 1234,).should ==
+          ['abc', 123, { rbx: 'cool', specs: :fail_sometimes, non_sym: 1234 }]
       end
     end
   end

@@ -6,48 +6,48 @@ describe "Scala operators" do
   it "are callable using symbolic names" do
     obj = ScalaOperators.new
 
-    obj.send(:"+").should == "$plus"
-    obj.send(:"-").should == "$minus"
-    obj.send(:":").should == "$colon"
-    obj.send(:"/").should == "$div"
-    obj.send(:"=").should == "$eq"
-    obj.send(:"<").should == "$less"
-    obj.send(:">").should == "$greater"
-    obj.send(:"\\").should == "$bslash"
-    obj.send(:"#").should == "$hash"
-    obj.send(:"*").should == "$times"
-    obj.send(:"!").should == "$bang"
-    obj.send(:"@").should == "$at"
-    obj.send(:"%").should == "$percent"
-    obj.send(:"^").should == "$up"
-    obj.send(:"&").should == "$amp"
-    obj.send(:"~").should == "$tilde"
-    obj.send(:"?").should == "$qmark"
-    obj.send(:"|").should == "$bar"
-    obj.send(:"+=").should == "$plus$eq"
+    expect(obj.send(:"+")).to eq("$plus")
+    expect(obj.send(:"-")).to eq("$minus")
+    expect(obj.send(:":")).to eq("$colon")
+    expect(obj.send(:"/")).to eq("$div")
+    expect(obj.send(:"=")).to eq("$eq")
+    expect(obj.send(:"<")).to eq("$less")
+    expect(obj.send(:">")).to eq("$greater")
+    expect(obj.send(:"\\")).to eq("$bslash")
+    expect(obj.send(:"#")).to eq("$hash")
+    expect(obj.send(:"*")).to eq("$times")
+    expect(obj.send(:"!")).to eq("$bang")
+    expect(obj.send(:"@")).to eq("$at")
+    expect(obj.send(:"%")).to eq("$percent")
+    expect(obj.send(:"^")).to eq("$up")
+    expect(obj.send(:"&")).to eq("$amp")
+    expect(obj.send(:"~")).to eq("$tilde")
+    expect(obj.send(:"?")).to eq("$qmark")
+    expect(obj.send(:"|")).to eq("$bar")
+    expect(obj.send(:"+=")).to eq("$plus$eq")
   end
 
   it "are callable using original names" do
     obj = ScalaOperators.new
     
-    obj.send(:"$plus").should == "$plus"
-    obj.send(:"$minus").should == "$minus"
-    obj.send(:"$colon").should == "$colon"
-    obj.send(:"$div").should == "$div"
-    obj.send(:"$eq").should == "$eq"
-    obj.send(:"$less").should == "$less"
-    obj.send(:"$greater").should == "$greater"
-    obj.send(:"$bslash").should == "$bslash"
-    obj.send(:"$hash").should == "$hash"
-    obj.send(:"$times").should == "$times"
-    obj.send(:"$bang").should == "$bang"
-    obj.send(:"$at").should == "$at"
-    obj.send(:"$percent").should == "$percent"
-    obj.send(:"$up").should == "$up"
-    obj.send(:"$amp").should == "$amp"
-    obj.send(:"$tilde").should == "$tilde"
-    obj.send(:"$qmark").should == "$qmark"
-    obj.send(:"$bar").should == "$bar"
-    obj.send(:"$plus$eq").should == "$plus$eq"
+    expect(obj.send(:"$plus")).to eq("$plus")
+    expect(obj.send(:"$minus")).to eq("$minus")
+    expect(obj.send(:"$colon")).to eq("$colon")
+    expect(obj.send(:"$div")).to eq("$div")
+    expect(obj.send(:"$eq")).to eq("$eq")
+    expect(obj.send(:"$less")).to eq("$less")
+    expect(obj.send(:"$greater")).to eq("$greater")
+    expect(obj.send(:"$bslash")).to eq("$bslash")
+    expect(obj.send(:"$hash")).to eq("$hash")
+    expect(obj.send(:"$times")).to eq("$times")
+    expect(obj.send(:"$bang")).to eq("$bang")
+    expect(obj.send(:"$at")).to eq("$at")
+    expect(obj.send(:"$percent")).to eq("$percent")
+    expect(obj.send(:"$up")).to eq("$up")
+    expect(obj.send(:"$amp")).to eq("$amp")
+    expect(obj.send(:"$tilde")).to eq("$tilde")
+    expect(obj.send(:"$qmark")).to eq("$qmark")
+    expect(obj.send(:"$bar")).to eq("$bar")
+    expect(obj.send(:"$plus$eq")).to eq("$plus$eq")
   end
 end

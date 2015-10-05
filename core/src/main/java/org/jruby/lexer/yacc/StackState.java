@@ -43,6 +43,10 @@ public class StackState implements Cloneable {
         stack = backup;
     }
 
+    public long getStack() {
+        return stack;
+    }
+
     // PUSH(1)
     public long begin() {
         long old = stack;

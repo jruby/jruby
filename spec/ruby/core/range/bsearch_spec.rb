@@ -1,9 +1,12 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Range#bsearch" do
   it "returns an Enumerator when not passed a block" do
     (0..1).bsearch.should be_an_instance_of(enumerator_class)
   end
+
+  it_behaves_like :enumeratorized_with_unknown_size, :bsearch, (1..3)
 
   it "raises a TypeError if the block returns an Object" do
     lambda { (0..1).bsearch { Object.new } }.should raise_error(TypeError)
@@ -41,6 +44,11 @@ describe "Range#bsearch" do
       it "returns the smallest element for which block returns true" do
         (0..4).bsearch { |x| x >= 2 }.should == 2
         (-1..4).bsearch { |x| x >= 1 }.should == 1
+      end
+
+      it "returns the last element if the block returns true for the last element" do
+        (0..4).bsearch { |x| x >= 4 }.should == 4
+        (0...4).bsearch { |x| x >= 3 }.should == 3
       end
     end
 

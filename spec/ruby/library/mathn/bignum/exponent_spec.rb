@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'mathn'
 
 describe "Bignum#**" do
-  before(:each) do
+  before :each do
     @bignum = bignum_value(47)
   end
 

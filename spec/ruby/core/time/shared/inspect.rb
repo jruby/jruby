@@ -1,6 +1,6 @@
 # -*- encoding: us-ascii -*-
 
-describe :inspect, :shared => true do
+describe :inspect, shared: true do
   it "formats the local time following the pattern 'yyyy-MM-dd HH:mm:ss Z'" do
     with_timezone("PST", +1) do
       Time.local(2000, 1, 1, 20, 15, 1).send(@method).should == "2000-01-01 20:15:01 +0100"

@@ -1,2 +1,0 @@
-fails:Process.abort sets the exception message to the given message
-fails:Process.abort coerces the argument with #to_str

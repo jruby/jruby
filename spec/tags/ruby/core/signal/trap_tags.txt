@@ -1,14 +1,5 @@
 fails(JRUBY-4869):Signal.trap ignores the signal when passed nil
-fails(JRUBY-4869):Signal.trap accepts 'SIG_DFL' in place of a proc
-fails(JRUBY-4869):Signal.trap accepts 'DEFAULT' in place of a proc
-fails(JRUBY-4869):Signal.trap accepts 'SIG_IGN' in place of a proc
-fails(JRUBY-4869):Signal.trap accepts 'IGNORE' in place of a proc
 fails:Signal.trap ignores the signal when passed nil
-fails:Signal.trap accepts 'SIG_DFL' in place of a proc
-fails:Signal.trap accepts 'DEFAULT' in place of a proc
-fails:Signal.trap accepts 'SIG_IGN' in place of a proc
-fails:Signal.trap accepts 'IGNORE' in place of a proc
-fails(JRUBY-5666):Signal.trap the special EXIT signal code accepts the EXIT code
 fails(JRUBY-5666):Signal.trap the special EXIT signal code runs the proc before at_exit handlers
 fails:Signal.trap accepts 'DEFAULT' as a symbol in place of a proc
 fails:Signal.trap accepts 'SIG_DFL' as a symbol in place of a proc

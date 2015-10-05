@@ -53,11 +53,12 @@ describe "Kernel#test" do
   end
 
   context "time commands" do
-    before :all do
+    before :each do
       @tmp_file = File.new(tmp("file.kernel.test"), "w") { |f| f.write "foo" }
     end
 
-    after :all do
+    after :each do
+      @tmp_file.close
       rm_r @tmp_file
     end
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -234,7 +234,8 @@ module Rubinius
       end
 
       name = coerce_to_constant_name name
-      current, constant = mod, undefined
+      current = mod
+      constant = undefined
 
       while current and object_kind_of? current, Module
         if bucket = current.constant_table.lookup(name)
@@ -347,7 +348,7 @@ module Rubinius
             changed = true
           end
 
-          constants_changed ||= mod.constants.any?
+          constants_changed ||= mod.constant_table.size > 0
         end
 
         mod = mod.direct_superclass

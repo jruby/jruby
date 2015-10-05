@@ -1,6 +1,0 @@
-fails:Dir.mkdir creates the named directory with the given permissions
-fails:Dir.mkdir calls #to_path on non-String arguments
-fails:Dir.mkdir raises a SystemCallError if any of the directories in the path before the last does not exist
-fails:Dir.mkdir raises Errno::EEXIST if the specified directory already exists
-fails:Dir.mkdir raises Errno::EEXIST if the argument points to the existing file
-fails:Dir.mkdir raises a SystemCallError when lacking adequate permissions in the parent dir

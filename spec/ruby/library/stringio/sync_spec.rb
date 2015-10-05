@@ -8,7 +8,7 @@ describe "StringIO#sync" do
 end
 
 describe "StringIO#sync=" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('')
   end
 

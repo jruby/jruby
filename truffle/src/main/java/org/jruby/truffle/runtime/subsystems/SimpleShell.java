@@ -11,21 +11,21 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Activation;
-import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.translator.NodeWrapper;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 public class SimpleShell {
@@ -71,19 +71,29 @@ public class SimpleShell {
 
                 default:
                     try {
-                        final Object result = context.execute(
-                                Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE,
-                                TranslatorDriver.ParserContext.EVAL,
-                                RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
-                                false, currentNode, NodeWrapper.IDENTITY);
+                        final Object result = context.parseAndExecute(
+                                Source.fromText(shellLine, "shell"),
+                                UTF8Encoding.INSTANCE,
+                                ParserContext.EVAL,
+                                RubyArguments.getSelf(currentFrame.getArguments()),
+                                currentFrame,
+                                false,
+                                RubyArguments.getDeclarationContext(currentFrame.getArguments()),
+                                currentNode);
 
-                        System.console().writer().println(DebugOperations.inspect(context, result));
-                    } catch (RaiseException e) {
-                        final RubyException rubyException = e.getRubyException();
+                        String inspected;
 
-                        for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
-                            System.console().writer().println(line);
+                        try {
+                            inspected = context.send(result, "inspect", null).toString();
+                        } catch (Exception e) {
+                            inspected = String.format("(error inspecting %s@%x %s)", result.getClass().getSimpleName(), result.hashCode(), e.toString());
                         }
+
+                        System.console().writer().println(inspected);
+                    } catch (RaiseException e) {
+                        final Object rubyException = e.getRubyException();
+
+                        BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException), System.console().writer());
                     }
             }
         }
@@ -99,7 +109,7 @@ public class SimpleShell {
                 System.console().writer().printf("%3d", n);
             }
 
-            System.console().writer().println(DebugBacktraceFormatter.formatBasicLine(activation));
+            System.console().writer().println(BacktraceFormatter.createDefaultFormatter(context).formatLine(Arrays.asList(activation), 0));
             n++;
         }
     }

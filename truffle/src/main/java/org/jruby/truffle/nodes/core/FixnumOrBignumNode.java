@@ -9,18 +9,22 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends RubyNode {
+
+    public static FixnumOrBignumNode create(RubyContext context, SourceSection sourceSection) {
+        return new FixnumOrBignumNode(context, sourceSection);
+    }
 
     public FixnumOrBignumNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -50,7 +54,7 @@ public class FixnumOrBignumNode extends RubyNode {
                 return longValue;
             }
         } else {
-            return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+            return Layouts.BIGNUM.createBignum(getContext().getCoreLibrary().getBignumFactory(), value);
         }
     }
 
@@ -72,7 +76,7 @@ public class FixnumOrBignumNode extends RubyNode {
         return fixnumOrBignum(doubleToBigInteger(value));
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private static BigInteger doubleToBigInteger(double value) {
         return new BigDecimal(value).toBigInteger();
     }

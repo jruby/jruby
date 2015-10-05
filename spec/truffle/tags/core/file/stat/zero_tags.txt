@@ -1,10 +1,2 @@
-fails:File::Stat#zero? returns true if the file is empty
-fails:File::Stat#zero? returns false if the file is not empty
-fails:File::Stat#zero? accepts an object that has a #to_path method
-fails:File::Stat#zero? returns true for /dev/null
-fails:File::Stat#zero? raises an ArgumentError if not passed one argument
-fails:File::Stat#zero? raises a TypeError if not passed a String type
-fails:File::Stat#zero? returns true inside a block opening a file if it is empty
-fails:File::Stat#zero? returns false for a directory
 fails(windows):File::Stat#zero? returns true for NUL
 fails(windows):File::Stat#zero? returns true for a directory

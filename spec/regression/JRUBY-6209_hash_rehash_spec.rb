@@ -8,6 +8,6 @@ describe "JRUBY-6209: Hash#rehash does not work under some condition" do
     hash = Hash[key => 100]
     key[0] = b
     hash.rehash
-    hash[key].should == 100
+    expect(hash[key]).to eq(100)
   end
 end

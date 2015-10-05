@@ -1,2 +1,1 @@
-fails(inherited):Encoding#dummy? returns true for dummy encodings
 windows:Encoding#dummy? returns true for dummy encodings

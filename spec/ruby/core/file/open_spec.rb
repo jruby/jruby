@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 require File.expand_path('../shared/open', __FILE__)
@@ -5,6 +7,7 @@ require File.expand_path('../shared/open', __FILE__)
 describe "File.open" do
   before :all do
     @file = tmp("file_open.txt")
+    @unicode_path = tmp("こんにちは.txt")
     @nonexistent = tmp("fake.txt")
     rm_r @file, @nonexistent
   end
@@ -19,7 +22,7 @@ describe "File.open" do
 
   after :each do
     @fh.close if @fh and not @fh.closed?
-    rm_r @file, @nonexistent
+    rm_r @file, @unicode_path, @nonexistent
   end
 
   describe "with a block" do
@@ -61,6 +64,12 @@ describe "File.open" do
     @fh = File.open(@file)
     @fh.should be_kind_of(File)
     File.exist?(@file).should == true
+  end
+
+  it "opens the file with unicode characters" do
+    @fh = File.open(@unicode_path, "w")
+    @fh.should be_kind_of(File)
+    File.exist?(@unicode_path).should == true
   end
 
   it "opens a file when called with a block" do
@@ -145,13 +154,11 @@ describe "File.open" do
   end
 
   it "opens the file when call with fd" do
-    fh_orig = File.open(@file)
-    @fh = File.open(fh_orig.fileno)
-    (@fh.autoclose = false) rescue nil
-    @fh.should be_kind_of(File)
+    @fh = File.open(@file)
+    fh_copy = File.open(@fh.fileno)
+    fh_copy.autoclose = false
+    fh_copy.should be_kind_of(File)
     File.exist?(@file).should == true
-    # don't close fh_orig here to adjust closing cycle between fh_orig and @fh
-    # see also c02c78b3899fcf769084a88777c63de0fcebb48d
   end
 
   it "opens a file with a file descriptor d and a block" do
@@ -164,7 +171,7 @@ describe "File.open" do
         @fh.close
       end
     }.should raise_error(Errno::EBADF)
-    lambda { File.open(@fd) }.should raise_error(SystemCallError)
+    lambda { File.open(@fd) }.should raise_error(Errno::EBADF)
 
     File.exist?(@file).should == true
   end
@@ -533,13 +540,13 @@ describe "File.open" do
   end
 
   it "uses the second argument as an options Hash" do
-    @fh = File.open(@file, :mode => "r")
+    @fh = File.open(@file, mode: "r")
     @fh.should be_an_instance_of(File)
   end
 
   it "calls #to_hash to convert the second argument to a Hash" do
     options = mock("file open options")
-    options.should_receive(:to_hash).and_return({ :mode => "r" })
+    options.should_receive(:to_hash).and_return({ mode: "r" })
 
     @fh = File.open(@file, options)
   end
@@ -559,19 +566,25 @@ describe "File.open" do
         file_w, file_r, read_bytes, written_length = nil
 
         # open in threads, due to blocking open and writes
-        Thread.new do
+        writer = Thread.new do
           file_w = File.open(@fifo, 'w')
           written_length = file_w.syswrite('hello')
         end
-        Thread.new do
+        reader = Thread.new do
           file_r = File.open(@fifo, 'r')
           read_bytes = file_r.sysread(5)
         end
 
-        Thread.pass until read_bytes && written_length
+        begin
+          writer.join
+          reader.join
 
-        written_length.should == 5
-        read_bytes.should == 'hello'
+          written_length.should == 5
+          read_bytes.should == 'hello'
+        ensure
+          file_w.close if file_w
+          file_r.close if file_r
+        end
       end
     end
   end
@@ -592,9 +605,7 @@ describe "File.open when passed a file descriptor" do
   end
 
   it "opens a file" do
-    # This leaks one file descriptor. Do NOT write this spec to
-    # call IO.new with the fd of an existing IO instance.
-    @file = File.open @fd
+    @file = File.open(@fd)
     @file.should be_an_instance_of(File)
     @file.fileno.should equal(@fd)
     @file.write @content

@@ -2,7 +2,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-describe :string_gsub_named_capture, :shared => true do
+describe :string_gsub_named_capture, shared: true do
   it "replaces \\k named backreferences with the regexp's corresponding capture" do
     str = "hello"
 
@@ -279,7 +279,7 @@ describe "String#gsub with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".gsub(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "tattoo".gsub(/(tt)/, 'tt' => 'b', tt: 'z').should == "taboo"
   end
 
   it "uses a key's value as many times as needed" do
@@ -368,7 +368,7 @@ describe "String#gsub! with pattern and Hash" do
   end
 
   it "ignores non-String keys" do
-    "hello".gsub!(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+    "hello".gsub!(/(ll)/, 'll' => 'r', ll: 'z').should == "hero"
   end
 
   it "uses a key's value as many times as needed" do
@@ -553,8 +553,26 @@ describe "String#gsub with pattern and block" do
     s.gsub(/ë/) { |bar| "Русский".force_encoding("iso-8859-5") }.encoding.should == Encoding::ISO_8859_5
   end
 
-  it "raises an ArgumentError if encoding is not valid" do
-    lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+  not_supported_on :opal do
+    it "raises an ArgumentError if encoding is not valid" do
+      lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+    end
+  end
+end
+
+describe "String#gsub with pattern and without replacement and block" do
+  it "returns an enumerator" do
+    enum = "abca".gsub(/a/)
+    enum.should be_an_instance_of(enumerator_class)
+    enum.to_a.should == ["a", "a"]
+  end
+
+  describe "returned Enumerator" do
+    describe "size" do
+      it "should return nil" do
+        "abca".gsub(/a/).size.should == nil
+      end
+    end
   end
 end
 
@@ -653,7 +671,25 @@ describe "String#gsub! with pattern and block" do
     s.gsub!(/ë/) { |bar| "Русский".force_encoding("iso-8859-5") }.encoding.should == Encoding::ISO_8859_5
   end
 
-  it "raises an ArgumentError if encoding is not valid" do
-    lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+  not_supported_on :opal do
+    it "raises an ArgumentError if encoding is not valid" do
+      lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+    end
+  end
+end
+
+describe "String#gsub! with pattern and without replacement and block" do
+  it "returns an enumerator" do
+    enum = "abca".gsub!(/a/)
+    enum.should be_an_instance_of(enumerator_class)
+    enum.to_a.should == ["a", "a"]
+  end
+
+  describe "returned Enumerator" do
+    describe "size" do
+      it "should return nil" do
+        "abca".gsub!(/a/).size.should == nil
+      end
+    end
   end
 end

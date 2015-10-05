@@ -1,4 +1,4 @@
-describe :argf_gets, :shared => true do
+describe :argf_gets, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
@@ -9,20 +9,16 @@ describe :argf_gets, :shared => true do
     @stdin = File.read @stdin_name
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "reads one line of a file" do
-    argv [@file1_name] do
-      ARGF.send(@method).should == @file1.first
+    argf [@file1_name] do
+      @argf.send(@method).should == @file1.first
     end
   end
 
   it "reads all lines of a file" do
-    argv [@file1_name] do
+    argf [@file1_name] do
       lines = []
-      @file1.size.times { lines << ARGF.send(@method) }
+      @file1.size.times { lines << @argf.send(@method) }
       lines.should == @file1
     end
   end
@@ -31,31 +27,31 @@ describe :argf_gets, :shared => true do
     total = @stdin.count $/
     stdin = ruby_exe(
       "#{total}.times { print ARGF.send(#{@method.inspect}) }",
-      :args => "< #{@stdin_name}")
+      args: "< #{@stdin_name}")
     stdin.should == @stdin
   end
 
   it "reads all lines of two files" do
-    argv [@file1_name, @file2_name] do
+    argf [@file1_name, @file2_name] do
       total = @file1.size + @file2.size
       lines = []
-      total.times { lines << ARGF.send(@method) }
+      total.times { lines << @argf.send(@method) }
       lines.should == @file1 + @file2
     end
   end
 
   it "sets $_ global variable with each line read" do
-    argv [@file1_name, @file2_name] do
+    argf [@file1_name, @file2_name] do
       total = @file1.size + @file2.size
       total.times do
-        line = ARGF.send(@method)
+        line = @argf.send(@method)
         $_.should == line
       end
     end
   end
 end
 
-describe :argf_gets_inplace_edit, :shared => true do
+describe :argf_gets_inplace_edit, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
     @file2_name = fixture __FILE__, "file2.txt"
@@ -78,11 +74,11 @@ describe :argf_gets_inplace_edit, :shared => true do
   end
 
   # -i with no backup extension is not supported on Windows
-  platform_is_not :os => :windows do
+  platform_is_not os: :windows do
     it "modifies the files when in place edit mode is on" do
       ruby_exe(@code,
-               :options => "-i",
-               :args => "#{@tmp1_name} #{@tmp2_name}")
+               options: "-i",
+               args: "#{@tmp1_name} #{@tmp2_name}")
 
       File.read(@tmp1_name).should == "x\nx\n"
       File.read(@tmp2_name).should == "x\nx\n"
@@ -91,8 +87,8 @@ describe :argf_gets_inplace_edit, :shared => true do
 
   it "modifies and backups two files when in place edit mode is on" do
     ruby_exe(@code,
-             :options => "-i.bak",
-             :args => "#{@tmp1_name} #{@tmp2_name}")
+             options: "-i.bak",
+             args: "#{@tmp1_name} #{@tmp2_name}")
 
     File.read(@tmp1_name).should == "x\nx\n"
     File.read(@tmp2_name).should == "x\nx\n"

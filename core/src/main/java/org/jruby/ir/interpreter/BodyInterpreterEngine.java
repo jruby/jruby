@@ -2,7 +2,6 @@ package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.OpClass;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -15,13 +14,8 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryFixnumVariable;
-import org.jruby.ir.operands.TemporaryFloatVariable;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -34,7 +28,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**
- * Created by enebo on 2/5/15.
+ * An interpreter which puts common subset of instrs in main switch.
  */
 public class BodyInterpreterEngine extends InterpreterEngine {
     @Override
@@ -47,7 +41,6 @@ public class BodyInterpreterEngine extends InterpreterEngine {
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
 
         // Init profiling this scope
         boolean debug = IRRuntimeHelpers.isDebug();
@@ -56,13 +49,13 @@ public class BodyInterpreterEngine extends InterpreterEngine {
         while (ipc < n) {
             Instr instr = instrs[ipc];
 
-            ipc++;
-
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {}", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
                 Interpreter.interpInstrsCount++;
             }
+
+            ipc++;
 
             try {
                 switch (operation) {
@@ -205,7 +198,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 ipc = instr.getRPC();
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 

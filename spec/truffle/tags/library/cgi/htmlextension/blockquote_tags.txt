@@ -1,0 +1,2 @@
+fails:CGI::HtmlExtension#blockquote when passed a String includes the passed block's return value when passed a block
+fails:CGI::HtmlExtension#blockquote when passed a Hash includes the passed block's return value when passed a block

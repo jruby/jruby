@@ -36,53 +36,35 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 
 /**
  * Represents the argument declarations of a method.  The fields:
- * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn)
+ * foo(p1, ..., pn, o1 = v1, ..., on = v2, *r, q1, ..., qn, k1:, ..., kn:, **K, &b)
  *
  * p1...pn = pre arguments
  * o1...on = optional arguments
  * r       = rest argument
  * q1...qn = post arguments (only in 1.9)
+ * k1...kn = keyword arguments
+ * K       = keyword rest argument
+ * b       = block arg
  */
 public class ArgsNode extends Node {
-    private final ListNode pre;
-    private final int preCount;
-    private final ListNode optArgs;
+    private Node[] args;
+    private short optIndex;
+    private short postIndex;
+    private short keywordsIndex;
+
     protected final ArgumentNode restArgNode;
-    protected final int restArg;
-    private final BlockArgNode blockArgNode;
-    protected Arity arity;
-    private final int requiredArgsCount;
-    protected final boolean hasOptArgs;
-    protected final boolean hasMasgnArgs;
-    protected final boolean hasKwargs;
-    protected int maxArgsCount;
-    protected final boolean isSimple;
-
-    // Only in ruby 1.9 methods
-    private final ListNode post;
-    private final int postCount;
-    private final int postIndex;
-
-    // Only in ruby 2.0 methods
-    private final ListNode keywords;
     private final KeywordRestArgNode keyRest;
+    private final BlockArgNode blockArgNode;
 
+    private static final Node[] NO_ARGS = new Node[] {};
     /**
      * Construct a new ArgsNode with no keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
                     RestArgNode rest, ListNode post, BlockArgNode blockArgNode) {
@@ -91,15 +73,6 @@ public class ArgsNode extends Node {
 
     /**
      * Construct a new ArgsNode with keyword arguments.
-     *
-     * @param position
-     * @param pre
-     * @param optionalArguments
-     * @param rest
-     * @param post
-     * @param keywords
-     * @param keyRest
-     * @param blockArgNode
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
@@ -111,33 +84,41 @@ public class ArgsNode extends Node {
                         keyRest != null && keyRest.containsVariableAssignment() ||
                         blockArgNode != null && blockArgNode.containsVariableAssignment());
 
-        this.pre = pre;
-        this.preCount = pre == null ? 0 : pre.size();
-        this.post = post;
-        this.postCount = post == null ? 0 : post.size();
-        int optArgCount = optionalArguments == null ? 0 : optionalArguments.size();
-        this.postIndex = getPostCount(preCount, optArgCount, rest);
-        this.optArgs = optionalArguments;
-        this.restArg = rest == null ? -1 : rest.getIndex();
+        int preSize = pre != null ? pre.size() : 0;
+        int optSize = optionalArguments != null ? optionalArguments.size() : 0;
+        int postSize = post != null ? post.size() : 0;
+        int keywordsSize = keywords != null ? keywords.size() : 0;
+        int size = preSize + optSize + postSize + keywordsSize;
+
+        args = size > 0 ? new Node[size] : NO_ARGS;
+        optIndex = (short) (preSize != 0 ? preSize : 0);
+        postIndex = (short) (optSize != 0 ? optIndex + optSize : optIndex);
+        keywordsIndex = (short) (postSize != 0 ? postIndex + postSize : postIndex);
+
+        if (preSize > 0) System.arraycopy(pre.children(), 0,  args, 0, preSize);
+        if (optSize > 0) System.arraycopy(optionalArguments.children(), 0, args, optIndex, optSize);
+        if (postSize > 0) System.arraycopy(post.children(), 0, args, postIndex, postSize);
+        if (keywordsSize > 0) System.arraycopy(keywords.children(), 0, args, keywordsIndex, keywordsSize);
+
         this.restArgNode = rest;
         this.blockArgNode = blockArgNode;
-        this.keywords = keywords;
         this.keyRest = keyRest;
-        this.requiredArgsCount = preCount + postCount;
-        this.hasOptArgs = getOptArgs() != null;
-        this.hasMasgnArgs = hasMasgnArgs();
-        this.hasKwargs = keywords != null || keyRest != null;
-        this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
-        this.arity = calculateArity();
-
-        this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0 || hasKwargs);
     }
-    
-    private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
-        // Simple-case: If we have a rest we know where it is
-        if (rest != null) return rest.getIndex() + 1;
 
-        return preCount + optArgCount;
+    public Node[] getArgs() {
+        return args;
+    }
+
+    public int getOptArgIndex() {
+        return optIndex;
+    }
+
+    public int getPostIndex() {
+        return postIndex;
+    }
+
+    public int getKeywordsIndex() {
+        return keywordsIndex;
     }
 
     @Override
@@ -145,36 +126,26 @@ public class ArgsNode extends Node {
         return NodeType.ARGSNODE;
     }
 
-    protected Arity calculateArity() {
-        if (getOptArgs() != null || getRestArg() >= 0) return Arity.required(getRequiredArgsCount());
-
-        return Arity.createArity(getRequiredArgsCount());
-    }
-
     public boolean hasKwargs() {
-        return hasKwargs;
+        boolean keywords = getKeywordCount() > 0;
+        return keywords || keyRest != null;
     }
     
     public int countKeywords() {
-        if (hasKwargs) {
-            if (keywords == null) {
+        if (hasKwargs()) {
+            boolean keywords = args.length - keywordsIndex > 0;
+            if (keywords) {
                 // Rest keyword argument
                 return 0;
             }
-            return keywords.size();
+            return args.length - keywordsIndex;
         } else {
             return 0;
         }
     }
 
-    protected boolean hasMasgnArgs() {
-        if (preCount > 0) for (Node node : pre.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        if (postCount > 0) for (Node node : post.childNodes()) {
-            if (node instanceof AssignableNode) return true;
-        }
-        return false;
+    public boolean hasRestArg() {
+        return restArgNode != null;
     }
 
     /**
@@ -190,27 +161,23 @@ public class ArgsNode extends Node {
      * Gets the required arguments at the beginning of the argument definition
      */
     public ListNode getPre() {
-        return pre;
-    }
-
-    public Arity getArity() {
-        return arity;
+        return new ListNode(getPosition()).addAll(args, 0, getPreCount());
     }
 
     public int getRequiredArgsCount() {
-        return requiredArgsCount;
+        return getPreCount() + getPostCount();
     }
 
     public int getOptionalArgsCount() {
-        return optArgs == null ? 0 : optArgs.size();
+        return postIndex - optIndex;
     }
 
     public ListNode getPost() {
-        return post;
+        return new ListNode(getPosition()).addAll(args, postIndex, getPostCount());
     }
 
     public int getMaxArgumentsCount() {
-        return maxArgsCount;
+        return hasRestArg() ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
     }
 
     /**
@@ -218,15 +185,7 @@ public class ArgsNode extends Node {
      * @return Returns a ListNode
      */
     public ListNode getOptArgs() {
-        return optArgs;
-    }
-
-    /**
-     * Gets the restArg.
-     * @return Returns a int
-     */
-    public int getRestArg() {
-        return restArg;
+        return new ListNode(getPosition()).addAll(args, optIndex, getOptionalArgsCount());
     }
 
     /**
@@ -247,19 +206,15 @@ public class ArgsNode extends Node {
     }
 
     public int getPostCount() {
-        return postCount;
-    }
-
-    public int getPostIndex() {
-        return postIndex;
+        return keywordsIndex - postIndex;
     }
 
     public int getPreCount() {
-        return preCount;
+        return optIndex;
     }
 
     public ListNode getKeywords() {
-        return keywords;
+        return new ListNode(getPosition()).addAll(args, keywordsIndex, getKeywordCount());
     }
 
     public KeywordRestArgNode getKeyRest() {
@@ -270,17 +225,15 @@ public class ArgsNode extends Node {
         return keyRest != null;
     }
 
-    public void checkArgCount(Ruby runtime, int argsLength) {
-        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
-    }
-
-    public void checkArgCount(Ruby runtime, String name, int argsLength) {
-        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
-    }
-
     // FIXME: This is a hot mess and I think we will still have some extra nulls inserted
     @Override
     public List<Node> childNodes() {
+        ListNode post = getPost();
+        ListNode keywords = getKeywords();
+        ListNode pre = getPre();
+        ListNode optArgs = getOptArgs();
+
+
         if (post != null) {
             if (keywords != null) {
                 if (keyRest != null) return Node.createList(pre, optArgs, restArgNode, post, keywords, keyRest, blockArgNode);
@@ -300,26 +253,22 @@ public class ArgsNode extends Node {
         return Node.createList(pre, optArgs, restArgNode, blockArgNode);
     }
 
-    public int getRequiredKeywordCount() {
-        if (hasRequiredKeywordArg()) return 1;
-        return 0;
+    public int getKeywordCount() {
+        return args.length - keywordsIndex;
     }
 
-    private boolean hasRequiredKeywordArg() {
-        if (getKeywords() == null) return false;
+    /**
+     * How many of the keywords listed happen to be required keyword args.  Note: total kwargs - req kwarg = opt kwargs.
+     */
+    public int getRequiredKeywordCount() {
+        if (getKeywordCount() < 1) return 0;
 
-        for (Node keyWordNode :getKeywords().childNodes()) {
-            for (Node asgnNode : keyWordNode.childNodes()) {
-                if (isRequiredKeywordArgumentValueNode(asgnNode)) {
-                    return true;
-                }
+        int count = 0;
+        for (int i = 0; i < getKeywordCount(); i++) {
+            for (Node asgnNode : args[keywordsIndex + i].childNodes()) {
+                if (Helpers.isRequiredKeywordArgumentValueNode(asgnNode)) count++;
             }
         }
-        return false;
+        return count;
     }
-
-    private boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
-        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
-    }
-
 }

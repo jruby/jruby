@@ -1,4 +1,4 @@
-describe :array_pack_string, :shared => true do
+describe :array_pack_string, shared: true do
   it "adds count bytes of a String to the output" do
     ["abc"].pack(pack_format(2)).should == "ab"
   end

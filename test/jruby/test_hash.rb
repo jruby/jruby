@@ -56,4 +56,39 @@ class TestHash < Test::Unit::TestCase
     hash = {equal1 => 'bar'}
     assert_nil(hash[equal2])
   end
+
+  def test_yield_arguments
+    hash = { :a => 1, :b => 2, :c => 3 }
+
+    passed = []; ret = hash.select { |pair| passed << pair; passed.size < 3 }
+    assert_equal [:a, :b, :c], passed
+    assert_equal( { :a => 1, :b => 2 }, ret )
+    passed = []; ret = hash.select { |k,v| passed << k; passed << v }
+    assert_equal [:a, 1, :b, 2, :c, 3], passed
+    assert_equal hash, ret
+
+    passed = []; ret = hash.reject { |pair| passed << pair; passed.size < 2 }
+    assert_equal [:a, :b, :c], passed
+    assert_equal( { :b => 2, :c => 3 }, ret )
+    passed = []; ret = hash.reject { |k,v| passed << k; passed << v }
+    assert_equal [:a, 1, :b, 2, :c, 3], passed
+    assert_equal( {}, ret )
+
+    passed = []; ret = hash.take_while { |pair| passed << pair; true }
+    assert_equal [[:a, 1], [:b, 2], [:c, 3]], passed
+    assert_equal [[:a, 1], [:b, 2], [:c, 3]], ret
+
+    passed = []; ret = hash.take_while { |k,v| passed << k; passed << v; passed.size < 3 }
+    assert_equal [:a, 1, :b, 2], passed
+    assert_equal [[:a, 1]], ret
+
+    passed = []; ret = hash.collect { |pair| passed << pair }
+    assert_equal [[:a, 1], [:b, 2], [:c, 3]], passed
+
+    passed = []; ret = hash.collect { |k,v| passed << k; passed << v; passed.size < 3 }
+    assert_equal [:a, 1, :b, 2, :c, 3], passed
+    assert_equal [true, false, false], ret
+
+  end
+
 end

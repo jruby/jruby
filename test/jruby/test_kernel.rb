@@ -57,7 +57,7 @@ class TestKernel < Test::Unit::TestCase
 
   def test_Array_should_use_to_ary_and_make_sure_that_it_returns_either_array_or_nil
     assert_equal [1], Kernel.Array(ToAryReturnsAnArray.new)
-    assert_raises(TypeError) { Kernel.Array(ToAryReturnsAnInteger.new) }    
+    assert_raises(TypeError) { Kernel.Array(ToAryReturnsAnInteger.new) }
   end
 
   class BothToAryAndToADefined; def to_ary() [3] end; def to_a() raise "to_a() should not be called" end; end
@@ -71,7 +71,7 @@ class TestKernel < Test::Unit::TestCase
   def test_Array_should_return_array_containing_argument_if_the_argument_has_neither_to_ary_nor_to_a
     assert_equal [1], Kernel.Array(1)
     assert_equal [:foo], Kernel.Array(:foo)
-    obj = NeitherToANorToAryDefined.new 
+    obj = NeitherToANorToAryDefined.new
     assert_equal [obj], Kernel.Array(obj)
   end
 
@@ -96,21 +96,6 @@ class TestKernel < Test::Unit::TestCase
     assert_raises(ArgumentError) { Kernel.Float("abc") }
     assert_raises(ArgumentError) { Kernel.Float("x10") }
     assert_raises(ArgumentError) { Kernel.Float("xxxx10000000000000000000000000000000000000000000000000000") }
-  end
-
-#  String
-#  URI
-#  `
-#  abort
-#  at_exit
-#  binding
-#  block_given?
-  class CheckBlockGiven; def self.go() block_given? end; end
-  def test_iterator?
-    assert !(Kernel.block_given?)
-    assert(CheckBlockGiven.go { true })
-    assert(!CheckBlockGiven.go)
-    assert(!CheckBlockGiven.go(&Proc.new))
   end
 
 #  callcc
@@ -142,7 +127,7 @@ class TestKernel < Test::Unit::TestCase
       end
       been_at_fred2 = true
     end
-    assert been_at_fred2 
+    assert been_at_fred2
   end
 
   def test_invalid_throw_after_inner_catch_should_unwind_the_stack_all_the_way_to_the_top
@@ -200,8 +185,8 @@ class TestKernel < Test::Unit::TestCase
 
     Kernel.eval("new_variable = another_variable = existing_variable")
 
-    assert_equal 0, existing_variable 
-    assert_equal 0, another_variable 
+    assert_equal 0, existing_variable
+    assert_equal 0, another_variable
     assert !(defined? new_variable)
   end
 
@@ -214,7 +199,7 @@ class TestKernel < Test::Unit::TestCase
 #  fork
 
   def test_format
-    assert_equal "Hello, world", Kernel.format("Hello, %s", "world") 
+    assert_equal "Hello, world", Kernel.format("Hello, %s", "world")
     assert_raises(TypeError) { Kernel.format("%01.3f", nil) }
   end
 
@@ -244,26 +229,6 @@ class TestKernel < Test::Unit::TestCase
     assert $target_required
 
     assert_raises(TypeError) { Kernel.load Object.new }
-  end
-
-  def test_shall_load_from_load_path
-    tmp = ENV["TEMP"] || ENV["TMP"] || ENV["TMPDIR"] || "/tmp"
-    Dir.chdir(tmp) do
-      load_path_save = $LOAD_PATH.dup
-      begin
-        File.open(File.expand_path('.') +'/file_to_be_loaded','w' ) do |f|
-          f.puts "raise"
-        end
-        $LOAD_PATH.delete_if{|dir| dir=='.'}
-        assert_raise(LoadError) {
-          load 'file_to_be_loaded'
-        }
-      ensure
-        File.delete(File.expand_path('.') +'/file_to_be_loaded')
-        $LOAD_PATH.clear
-        $LOAD_PATH.concat(load_path_save)
-      end
-    end
   end
 
   def test_local_variables
@@ -360,14 +325,71 @@ class TestKernel < Test::Unit::TestCase
 
   def test_sleep
     assert_raises(ArgumentError) { sleep(-10) }
-    # FIXME: below is true for MRI, but not for JRuby 
-    # assert_raises(TypeError) { sleep "foo" }
+    assert_raises(TypeError) { sleep "foo" }
+
     assert_equal 0, sleep(0)
     t1 = Time.now
     sleep(0.1)
     t2 = Time.now
     # this should cover systems with 10 msec clock resolution
     assert t2 >= t1 + 0.08
+  end
+
+  class SecDuration
+
+    def initialize(value); @value = value end
+
+    def respond_to?(name)
+      @value.respond_to?(name)
+    end
+
+    private
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+
+  end
+
+  def test_sleep_arg
+    sleep SecDuration.new(0.01)
+
+    begin
+      sleep SecDuration.new(-0.01)
+    rescue ArgumentError => e
+      assert_equal "time interval must be positive", e.message
+    else
+      fail 'argument error expected'
+    end
+
+    begin
+      sleep []
+    rescue TypeError => e
+      assert_equal "can't convert Array into time interval", e.message
+    else
+      fail 'type error expected'
+    end
+  end
+
+  class SecDuration19
+
+    def initialize(value); @value = value end
+
+    def respond_to_missing?(name, include_private = false)
+      @value.respond_to?(name)
+    end
+
+    private
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+
+  end
+
+  def test_sleep_arg19
+    sleep(SecDuration19.new(0.10))
+    assert_raises(ArgumentError) { sleep(SecDuration19.new(-0.01)) }
   end
 
   def test_sprintf
@@ -497,20 +519,19 @@ class TestKernel < Test::Unit::TestCase
   end
 
   # JRUBY-4834
-  # GH #2047 backquote fails with null byte ArgumentError
-  # def test_backquote_with_changed_path
-  #   orig_env = ENV['PATH']
+  def test_backquote_with_changed_path
+    orig_env = ENV['PATH']
 
-  #   # Append a directory where testapp resides to the PATH
-  #   paths = (ENV["PATH"] || "").split(File::PATH_SEPARATOR)
-  #   paths.unshift TESTAPP_DIR
-  #   ENV["PATH"] = paths.uniq.join(File::PATH_SEPARATOR)
+    # Append a directory where testapp resides to the PATH
+    paths = (ENV["PATH"] || "").split(File::PATH_SEPARATOR)
+    paths.unshift TESTAPP_DIR
+    ENV["PATH"] = paths.uniq.join(File::PATH_SEPARATOR)
 
-  #   res = `testapp`.chomp
-  #   assert_equal("NO_ARGS", res)
-  # ensure
-  #   ENV['PATH'] = orig_env
-  # end
+    res = `testapp`.chomp
+    assert_equal("NO_ARGS", res)
+  ensure
+    ENV['PATH'] = orig_env
+  end
 
   # JRUBY-4127
   def test_backquote_with_quotes
@@ -545,20 +566,19 @@ class TestKernel < Test::Unit::TestCase
     assert_equal(expected, result)
   end
 
-  # GH #2047 backquote fails with null byte ArgumentError
-  # def test_backquote2
-  #   TESTAPPS.each { |app|
-  #     if (app =~ /\/.*\.bat/ && Pathname.new(app).relative?)
-  #       # MRI can't launch relative BAT files with / in their paths
-  #       log "-- skipping #{app}"
-  #       next
-  #     end
-  #     log "testing #{app}"
+  def test_backquote2
+    TESTAPPS.each { |app|
+      if (app =~ /\/.*\.bat/ && Pathname.new(app).relative?)
+        # MRI can't launch relative BAT files with / in their paths
+        log "-- skipping #{app}"
+        next
+      end
+      log "testing #{app}"
 
-  #     result = `#{app}`.strip
-  #     assert_equal('NO_ARGS', result, "Can't properly launch '#{app}'")
-  #   }
-  # end
+      result = `#{app}`.strip
+      assert_equal('NO_ARGS', result, "Can't properly launch '#{app}'")
+    }
+  end
 
   def test_backquote2_1
     TESTAPPS.each { |app|
@@ -683,7 +703,7 @@ class TestKernel < Test::Unit::TestCase
         next
       end
       log "testing #{app}"
-      
+
       if (TESTAPP_DIR =~ /\s/) # spaces in paths, quote!
         app = '"' + app + '"'
       end

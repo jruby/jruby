@@ -214,7 +214,7 @@ module JRuby::Compiler
       node.post && node.post.child_nodes.each do |post_arg|
         current_method.args << post_arg.name
       end
-      if node.rest_arg >= 0
+      if node.has_rest_arg
         current_method.args << node.rest_arg_node.name
       end
       if node.block
@@ -374,7 +374,7 @@ module JRuby::Compiler
 
     def interface_string
       if @interfaces.size > 0
-        "implements " + @interfaces.join('.')
+        "implements " + @interfaces.join(', ')
       else
         ""
       end

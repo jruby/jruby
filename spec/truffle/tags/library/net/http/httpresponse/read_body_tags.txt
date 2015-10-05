@@ -1,0 +1,9 @@
+fails:Net::HTTPResponse#read_body when passed no arguments returns the read body
+fails:Net::HTTPResponse#read_body when passed no arguments returns the previously read body if called a second time
+fails:Net::HTTPResponse#read_body when passed a buffer reads the body to the passed buffer
+fails:Net::HTTPResponse#read_body when passed a buffer returns the passed buffer
+fails:Net::HTTPResponse#read_body when passed a buffer raises an IOError if called a second time
+fails:Net::HTTPResponse#read_body when passed a block reads the body and yields it to the passed block (in chunks)
+fails:Net::HTTPResponse#read_body when passed a block returns the ReadAdapter
+fails:Net::HTTPResponse#read_body when passed a block raises an IOError if called a second time
+fails:Net::HTTPResponse#read_body when passed buffer and block rauses an ArgumentError

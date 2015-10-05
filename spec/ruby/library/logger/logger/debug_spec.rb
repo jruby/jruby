@@ -41,12 +41,12 @@ describe "Logger#debug" do
   it "logs a DEBUG message" do
     @logger.debug("test")
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "DEBUG -- : test\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "DEBUG -- : test\n"
   end
 
   it "accepts an application name with a block" do
     @logger.debug("MyApp") { "Test message" }
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "DEBUG -- MyApp: Test message\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "DEBUG -- MyApp: Test message\n"
   end
 end

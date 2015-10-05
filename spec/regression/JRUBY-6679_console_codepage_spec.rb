@@ -16,7 +16,7 @@ describe "JRUBY-6679: Encoding.default_external" do
       con_enc = org.jruby.Ruby.globalRuntime.encodingService.loadEncoding bl
 
       if enc_ext.to_s != 'UTF-8'
-        enc_ext.to_s.should == con_enc.to_s
+        expect(enc_ext.to_s).to eq(con_enc.to_s)
         #enc_ext.should == con_enc
       end
     end

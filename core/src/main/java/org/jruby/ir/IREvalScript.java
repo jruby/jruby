@@ -13,12 +13,14 @@ import org.jruby.parser.StaticScope;
 public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
     private EvalType evalType;
+    private String fileName;
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope, EvalType evalType) {
-        super(manager, lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
+        super(manager, lexicalParent, lineNumber, staticScope, "EVAL_");
 
         this.evalType = evalType;
+        this.fileName = fileName;
 
         if (!getManager().isDryRun() && staticScope != null) {
             // SSS FIXME: This is awkward!
@@ -83,5 +85,10 @@ public class IREvalScript extends IRClosure {
     @Override
     public boolean isFlipScope() {
         return true;
+    }
+
+    @Override
+    public String getFileName() {
+        return fileName;
     }
 }

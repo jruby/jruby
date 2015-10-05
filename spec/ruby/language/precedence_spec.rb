@@ -56,7 +56,7 @@ completeness.
 =end
 
 # -----------------------------------------------------------------------
-# It seems that this table is not correct as of MRI 1.8.6
+# It seems that this table is not correct anymore
 # The correct table derived from MRI's parse.y is as follows:
 #
 # Operator              Assoc    Description

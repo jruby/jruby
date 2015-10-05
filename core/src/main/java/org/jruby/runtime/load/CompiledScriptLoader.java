@@ -5,70 +5,84 @@
 
 package org.jruby.runtime.load;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.jruby.Ruby;
-import org.jruby.ast.executable.Script;
+import org.jruby.ir.IRScope;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.objectweb.asm.ClassReader;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+
+import static org.jruby.RubyFile.canonicalize;
+import static org.jruby.util.JRubyFile.normalizeSeps;
+
 /**
- *
- * @author headius
+ * Load serialized IR from the .class file requested.
  */
 public class CompiledScriptLoader {
-    public static Script loadScriptFromFile(Ruby runtime, InputStream inStream, String resourceName) {
-        InputStream in = null;
+    public static IRScope loadScriptFromFile(Ruby runtime, InputStream inStream, File resourcePath, String resourceName, boolean isAbsolute) {
+        String name = getFilenameFromPathAndName(resourcePath, resourceName, isAbsolute);
         try {
-            in = new BufferedInputStream(inStream, 8192);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buf = new byte[8196];
-            int read = 0;
-            while ((read = in.read(buf)) != -1) {
-                baos.write(buf, 0, read);
-            }
-            buf = baos.toByteArray();
-            JRubyClassLoader jcl = runtime.getJRubyClassLoader();
-            OneShotClassLoader oscl = new OneShotClassLoader(jcl);
+            Class clazz = loadCompiledScriptFromClass(runtime, inStream);
 
-            ClassReader cr = new ClassReader(buf);
-            String className = cr.getClassName().replace('/', '.');
-
-            Class clazz = oscl.defineClass(className, buf);
-
-            // if it's a compiled JRuby script, instantiate and run it
-            if (Script.class.isAssignableFrom(clazz)) {
-                return (Script)clazz.newInstance();
-            } else {
-                throw runtime.newLoadError("use `java_import' to load normal Java classes: "+className);
+            try {
+                Method method = clazz.getMethod("loadIR", Ruby.class, String.class);
+                return (IRScope)method.invoke(null, runtime, name);
+            } catch (Exception e) {
+                if (runtime.getDebug().isTrue()) {
+                    e.printStackTrace();
+                }
+                throw runtime.newLoadError(name + " is not compiled Ruby; use java_import to load normal classes");
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        } catch (InstantiationException ie) {
-            if (runtime.getDebug().isTrue()) {
-                ie.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resourceName + "': " + ie);
-        } catch (IllegalAccessException iae) {
-            if (runtime.getDebug().isTrue()) {
-                iae.printStackTrace();
-            }
-            throw runtime.newLoadError("Error loading compiled script '" + resourceName + "': " + iae);
         } catch (LinkageError le) {
             if (runtime.getDebug().isTrue()) {
                 le.printStackTrace();
             }
-            throw runtime.newLoadError("Linkage error loading compiled script; you may need to recompile '" + resourceName + "': " + le);
+            throw runtime.newLoadError("Linkage error loading compiled script; you may need to recompile '" + name + "': " + le);
         } finally {
             try {
-                in.close();
+                inStream.close();
             } catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);
             }
         }
+    }
+
+    private static Class loadCompiledScriptFromClass(Ruby runtime, InputStream in) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buf = new byte[8192];
+        int read;
+        while ((read = in.read(buf)) != -1) {
+            baos.write(buf, 0, read);
+        }
+        buf = baos.toByteArray();
+        JRubyClassLoader jcl = runtime.getJRubyClassLoader();
+        OneShotClassLoader oscl = new OneShotClassLoader(jcl);
+
+        ClassReader cr = new ClassReader(buf);
+        String className = cr.getClassName().replace('/', '.');
+
+        return oscl.defineClass(className, buf);
+    }
+
+    public static String getFilenameFromPathAndName(File resourcePath, String resourceName, boolean isAbsolute) {
+        String name = normalizeSeps(resourceName);
+        File path = resourcePath;
+
+        if(path != null && !isAbsolute) {
+            // Note: We use RubyFile's canonicalize rather than Java's,
+            // because Java's will follow symlinks and result in __FILE__
+            // being set to the target of the symlink rather than the
+            // filename provided.
+            name = normalizeSeps(canonicalize(path.getPath()));
+        }
+        return name;
     }
 }

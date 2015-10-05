@@ -35,6 +35,9 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.lexer.ByteListLexerSource;
+import org.jruby.lexer.GetsLexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -317,7 +320,7 @@ public class RubyRipper extends RubyObject {
         parseStarted = true;
         
         try {
-            return (IRubyObject) parser.parse(true);
+            return parser.parse(true);
         } catch (IOException e) {
             System.out.println("ERRROR: " + e);
         } catch (SyntaxException e) {
@@ -342,10 +345,10 @@ public class RubyRipper extends RubyObject {
         DynamicMethod method = src.getMetaClass().searchMethod("gets");
         
         if (method.isUndefined() || method.getVisibility() == Visibility.PRIVATE) {
-            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList());
+            return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList(), null);
         }
 
-        return new GetsLexerSource(filename, lineno, src);
+        return new GetsLexerSource(filename, lineno, src, null);
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {

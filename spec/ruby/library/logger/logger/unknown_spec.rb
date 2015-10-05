@@ -17,13 +17,13 @@ describe "Logger#unknown" do
   it "logs a message with unknown severity" do
     @logger.unknown "Test"
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should == "ANY -- : Test\n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should == "ANY -- : Test\n"
   end
 
   it "defaults the priority value to 5 and text value to ANY" do
     @logger.unknown "Test"
     @log_file.rewind
-    message = LoggerSpecs::strip_date(@log_file.readlines.first)[0..2]
+    message = LoggerSpecs.strip_date(@log_file.readlines.first)[0..2]
     message.should == "ANY"
     Logger::UNKNOWN.should == 5
   end
@@ -31,6 +31,6 @@ describe "Logger#unknown" do
   it "receives empty messages" do
     lambda { @logger.unknown("") }.should_not raise_error
     @log_file.rewind
-    LoggerSpecs::strip_date(@log_file.readlines.first).should ==  "ANY -- : \n"
+    LoggerSpecs.strip_date(@log_file.readlines.first).should ==  "ANY -- : \n"
   end
 end

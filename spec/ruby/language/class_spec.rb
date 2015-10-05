@@ -7,6 +7,21 @@ module ClassSpecs
   Number = 12
 end
 
+describe "The class keyword" do
+  it "creates a new class with semicolon" do
+    class ClassSpecsKeywordWithSemicolon; end
+    ClassSpecsKeywordWithSemicolon.should be_an_instance_of(Class)
+  end
+
+  ruby_version_is "2.3" do
+    it "does not raise a SyntaxError when opening a class without a semicolon" do
+      lambda { eval "class ClassSpecsKeywordWithoutSemicolon end" }
+        .should_not raise_error(SyntaxError)
+      ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
+    end
+  end
+end
+
 describe "A class definition" do
   it "creates a new class" do
     ClassSpecs::A.should be_kind_of(Class)
@@ -18,15 +33,13 @@ describe "A class definition" do
   end
 
   it "raises TypeError if constant given as class name exists and is not a Module" do
-    # 1.9 needs the constant defined here because of it's scoping rules
-    ClassSpecsNumber = 12
     lambda {
       class ClassSpecsNumber
       end
     }.should raise_error(TypeError)
   end
 
-  # test case known to be detecting bugs (JRuby, MRI 1.9)
+  # test case known to be detecting bugs (JRuby, MRI)
   it "raises TypeError if the constant qualifying the class is nil" do
     lambda {
       class nil::Foo
@@ -59,11 +72,6 @@ describe "A class definition" do
     meta = obj.singleton_class
     lambda { class ClassSpecs::MetaclassSuper < meta; end }.should raise_error(TypeError)
   end
-
-#  # I do not think this is a valid spec   -- rue
-#  it "has no class-level instance variables" do
-#    ClassSpecs::A.instance_variables.should == []
-#  end
 
   it "allows the declaration of class variables in the body" do
     ClassSpecs.string_class_variables(ClassSpecs::B).should == ["@@cvar"]
@@ -116,6 +124,60 @@ describe "A class definition" do
     class ClassSpecs::Twenty; 20; end.should == 20
     class ClassSpecs::Plus; 10 + 20; end.should == 30
     class ClassSpecs::Singleton; class << self; :singleton; end; end.should == :singleton
+  end
+
+  describe "within a block creates a new class in the lexical scope" do
+    it "for named classes at the toplevel" do
+      klass = Class.new do
+        class Howdy
+        end
+
+        def self.get_class_name
+          Howdy.name
+        end
+      end
+
+      Howdy.name.should == 'Howdy'
+      klass.get_class_name.should == 'Howdy'
+    end
+
+    it "for named classes in a module" do
+      klass = ClassSpecs::ANON_CLASS_FOR_NEW.call
+
+      ClassSpecs::NamedInModule.name.should == 'ClassSpecs::NamedInModule'
+      klass.get_class_name.should == 'ClassSpecs::NamedInModule'
+    end
+
+    it "for anonymous classes" do
+      klass = Class.new do
+        def self.get_class
+          Class.new do
+            def self.foo
+              'bar'
+            end
+          end
+        end
+
+        def self.get_result
+          get_class.foo
+        end
+      end
+
+      klass.get_result.should == 'bar'
+    end
+
+    it "for anonymous classes assigned to a constant" do
+      klass = Class.new do
+        AnonWithConstant = Class.new
+
+        def self.get_class_name
+          AnonWithConstant.name
+        end
+      end
+
+      AnonWithConstant.name.should == 'AnonWithConstant'
+      klass.get_class_name.should == 'AnonWithConstant'
+    end
   end
 end
 

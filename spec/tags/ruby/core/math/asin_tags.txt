@@ -1,0 +1,2 @@
+fails:Math.asin returns NaN given NaN
+fails:Math.asin accepts any argument that can be coerced with Float()

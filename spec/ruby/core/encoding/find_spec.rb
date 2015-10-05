@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding.find" do
-    before(:all) do
+    before :all do
       @encodings = Encoding.aliases.to_a.flatten.uniq
     end
 

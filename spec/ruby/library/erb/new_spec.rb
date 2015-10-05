@@ -94,7 +94,6 @@ END
 
 
   it "regard lines starting with '%' as '<% ... %>' and spaces around '<%- -%>' when trim_mode is '%-'" do
-
     expected = "<ul>\n<li>1</li>\n<li>2</li>\n</ul>\n%%\n"
     input = <<'END'
 <ul>
@@ -106,14 +105,6 @@ END
 END
 
     ERB.new(input, nil, '%-').result.should == expected
-  end
-
-  not_compliant_on :rubinius do
-    it "accepts a safe level as second argument" do
-      input = "<b><%=- 2+2 %>"
-      safe_level = 3
-      lambda { ERB.new(input, safe_level).result }.should_not raise_error
-    end
   end
 
   it "changes '_erbout' variable name in the produced source" do

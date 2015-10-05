@@ -107,9 +107,13 @@ public abstract class JavaSupport {
 
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
-    public abstract ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache();
-
     public abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
 
     public abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
+
+    public abstract void beginProxy(Class cls, RubyModule proxy);
+
+    public abstract void endProxy(Class cls);
+
+    public abstract RubyModule getUnfinishedProxy(Class cls);
 }

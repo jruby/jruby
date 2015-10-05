@@ -10,7 +10,7 @@ describe "Classes that implement Collection" do
 
   it "should support multiple assignment" do
     first_item, second_item = @collection
-    first_item.should eql @first_item
-    second_item.should eql @second_item
+    expect(first_item).to eql @first_item
+    expect(second_item).to eql @second_item
   end
 end

@@ -20,8 +20,13 @@ public class Splat extends Operand implements DepthCloneable {
     final private Operand array;
 
     public Splat(Operand array) {
-        super(OperandType.SPLAT);
+        super();
         this.array = array;
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.SPLAT;
     }
 
     @Override

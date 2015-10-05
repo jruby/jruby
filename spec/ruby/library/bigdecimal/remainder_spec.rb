@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#remainder" do
 
-  before(:each) do
+  before :each do
     @zero = BigDecimal("0")
     @one = BigDecimal("0")
     @mixed = BigDecimal("1.23456789")

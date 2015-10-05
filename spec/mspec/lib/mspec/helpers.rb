@@ -1,3 +1,4 @@
+require 'mspec/helpers/argf'
 require 'mspec/helpers/argv'
 require 'mspec/helpers/const_lookup'
 require 'mspec/helpers/datetime'

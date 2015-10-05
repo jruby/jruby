@@ -1,0 +1,2 @@
+fails:Net::HTTPServerException is a subclass of Net::ProtoServerError
+fails:Net::HTTPServerException includes the Net::HTTPExceptions module

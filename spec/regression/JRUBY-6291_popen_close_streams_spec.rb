@@ -12,7 +12,7 @@ describe 'JRUBY-6291: Closing Stream in IO.popen4 and Open3.popen3' do
       stdin.close
       stdout.each_line { |l| output << l }
     end
-    output.strip.should == 'success'
+    expect(output.strip).to eq('success')
   end
 
   it 'should not error when reading from other streams using Open3.popen3' do
@@ -27,6 +27,6 @@ describe 'JRUBY-6291: Closing Stream in IO.popen4 and Open3.popen3' do
       stdin.close
       stdout.each_line { |l| output << l }
     end
-    output.strip.should == 'success'
+    expect(output.strip).to eq('success')
   end
 end

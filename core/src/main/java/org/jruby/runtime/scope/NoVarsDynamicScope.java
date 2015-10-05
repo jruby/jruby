@@ -102,47 +102,4 @@ public class NoVarsDynamicScope extends DynamicScope {
     public IRubyObject setValueThreeDepthZero(IRubyObject value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }
-
-    /**
-     * Set all values which represent 'normal' parameters in a call list to this dynamic
-     * scope.  Function calls bind to local scopes by assuming that the indexes or the
-     * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
-     * the first two slots).  We pass in a second argument because we sometimes get more
-     * values than we are expecting.  The rest get compacted by original caller into 
-     * rest args.
-     * 
-     * @param values up to size specified to be mapped as ordinary parm values
-     * @param size is the number of values to assign as ordinary parm values
-     */
-    public void setArgValues(IRubyObject[] values, int size) {
-        assert size <= SIZE : this.getClass().getSimpleName() + " does not support scopes with " + size + " variables";
-    }
-    
-    public void setArgValues(IRubyObject arg0) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 1 variable");
-    }
-    
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 2 variables");
-    }
-    
-    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 3 variables");
-    }
-
-    public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assert false : this.getClass().getSimpleName() + " does not support any variables";
-    }
-
-    @Override
-    public IRubyObject[] getArgValues() {
-        // if we're not the "argument scope" for zsuper, try our parent
-        if (!staticScope.isArgumentScope()) {
-            return parent.getArgValues();
-        }
-        int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        assert totalArgs == 0 : this.getClass().getSimpleName() + " only supports scopes with no variables";
-        
-        return IRubyObject.NULL_ARRAY;
-    }
 }

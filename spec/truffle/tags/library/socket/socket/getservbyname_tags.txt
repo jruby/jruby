@@ -1,0 +1,5 @@
+fails:Socket#getservbyname returns the port for service 'http'
+fails:Socket#getservbyname returns the port for service 'http' with protocol 'tcp'
+fails:Socket#getservbyname returns the port for service 'domain' with protocol 'udp'
+fails:Socket#getservbyname returns the port for service 'daytime'
+fails:Socket#getservbyname raises a SocketError when the service or port is invalid

@@ -14,8 +14,9 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
-    public ClassSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure) {
-        super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure);
+    public ClassSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure,
+                           boolean isPotentiallyRefined) {
+        super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
     }
 
     public Operand getDefiningModule() {
@@ -25,7 +26,7 @@ public class ClassSuperInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ClassSuperInstr(ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), name,
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {
@@ -47,7 +48,7 @@ public class ClassSuperInstr extends CallInstr {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure);
+        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
     // We cannot convert this into a NoCallResultInstr
     @Override

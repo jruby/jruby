@@ -18,6 +18,10 @@ module KernelSpecs
       (1..2).map { __method__ }
     end
 
+    def from_send
+      send "__method__"
+    end
+
     def from_eval
       eval "__method__"
     end

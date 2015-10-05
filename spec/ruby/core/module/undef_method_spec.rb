@@ -25,7 +25,7 @@ module ModuleSpecs
 end
 
 describe "Module#undef_method" do
-  before(:each) do
+  before :each do
     @module = Module.new { def method_to_undef; end }
   end
 
@@ -53,7 +53,7 @@ describe "Module#undef_method" do
   end
 
   describe "on frozen instance" do
-    before(:each) do
+    before :each do
       @frozen = @module.dup.freeze
     end
 

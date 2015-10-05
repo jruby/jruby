@@ -13,7 +13,7 @@ describe 'unmarshalling multiple strings with encodings' do
       Marshal.load(f)
     end
 
-    unmarshalled.should include('a')
-    unmarshalled.should include('b')
+    expect(unmarshalled).to include('a')
+    expect(unmarshalled).to include('b')
   end
 end

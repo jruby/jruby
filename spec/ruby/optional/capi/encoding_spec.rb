@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/encoding', __FILE__)
 
 load_extension('encoding')
 
-describe :rb_enc_get_index, :shared => true do
+describe :rb_enc_get_index, shared: true do
   it "returns the index of the encoding of a String" do
     @s.send(@method, "string").should >= 0
   end
@@ -32,7 +32,7 @@ describe :rb_enc_get_index, :shared => true do
   end
 end
 
-describe :rb_enc_set_index, :shared => true do
+describe :rb_enc_set_index, shared: true do
   it "sets the object's encoding to the Encoding specified by the index" do
     obj = "abc"
     result = @s.send(@method, obj, 2)
@@ -401,9 +401,18 @@ describe "C-API Encoding function" do
       enc.should == Encoding::UTF_8
     end
 
-    it "sets the encoding of a Symbol to the encoding" do
-      index = @s.rb_enc_find_index("UTF-8")
-      lambda { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(RuntimeError)
+    ruby_version_is ""..."2.1" do
+      it "sets the encoding of a Symbol to the encoding" do
+        index = @s.rb_enc_find_index("UTF-8")
+        lambda { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(ArgumentError)
+      end
+    end
+
+    ruby_version_is "2.1" do
+      it "sets the encoding of a Symbol to the encoding" do
+        index = @s.rb_enc_find_index("UTF-8")
+        lambda { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(RuntimeError)
+      end
     end
   end
 

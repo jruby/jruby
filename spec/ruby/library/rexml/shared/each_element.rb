@@ -1,7 +1,7 @@
 require 'rexml/document'
 require File.expand_path('../../../../spec_helper', __FILE__)
 
-describe :rexml_each_element, :shared => true do
+describe :rexml_each_element, shared: true do
   before :each do
     @e = REXML::Element.new "root"
     s1 = REXML::Element.new "node1"

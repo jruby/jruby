@@ -79,7 +79,7 @@ describe "A singleton class" do
 end
 
 describe "A constant on a singleton class" do
-  before(:each) do
+  before :each do
     @object = Object.new
     class << @object
       CONST = self

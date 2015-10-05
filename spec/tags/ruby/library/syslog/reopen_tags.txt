@@ -1,4 +1,0 @@
-fails:Syslog.reopen reopens the log
-fails:Syslog.reopen fails with RuntimeError if the log is closed
-fails:Syslog.reopen receives the same parameters as Syslog.open
-fails:Syslog.reopen returns the module

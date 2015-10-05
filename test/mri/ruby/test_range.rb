@@ -69,6 +69,7 @@ class TestRange < Test::Unit::TestCase
     assert_equal(2, (1..2).max)
     assert_equal(nil, (2..1).max)
     assert_equal(1, (1...2).max)
+    assert_equal(18446744073709551615, (0...2**64).max)
 
     assert_equal(2.0, (1.0..2.0).max)
     assert_equal(nil, (2.0..1.0).max)

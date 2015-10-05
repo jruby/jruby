@@ -22,13 +22,6 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.build.directory}/rubygems-provided</directory>
-      <outputDirectory>/lib/ruby/gems/shared</outputDirectory>
-      <includes>
-        <include>**/*.jar</include>
-      </includes>
-    </fileSet>
-    <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>

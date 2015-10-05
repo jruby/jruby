@@ -20,6 +20,10 @@ describe "Proc#parameters" do
     proc {|x| }.parameters.first.first.should == :opt
   end
 
+  it "regards optional keyword parameters in procs as optional" do
+    proc {|x: :y| }.parameters.first.first.should == :key
+  end
+
   it "regards parameters with default values as optional" do
     lambda {|x=1| }.parameters.first.first.should == :opt
     proc {|x=1| }.parameters.first.first.should == :opt
@@ -34,11 +38,24 @@ describe "Proc#parameters" do
     lambda {|x| }.parameters.first.first.should == :req
   end
 
+  ruby_version_is "2.1" do
+    it "regards keyword parameters in lambdas as required" do
+      eval("lambda {|x:| }").parameters.first.first.should == :keyreq
+    end
+  end
+
   it "sets the first element of each sub-Array to :rest for parameters prefixed with asterisks" do
     lambda {|*x| }.parameters.first.first.should == :rest
     lambda {|x,*y| }.parameters.last.first.should == :rest
     proc {|*x| }.parameters.first.first.should == :rest
     proc {|x,*y| }.parameters.last.first.should == :rest
+  end
+
+  it "sets the first element of each sub-Array to :keyrest for parameters prefixed with double asterisks" do
+    lambda {|**x| }.parameters.first.first.should == :keyrest
+    lambda {|x,**y| }.parameters.last.first.should == :keyrest
+    proc {|**x| }.parameters.first.first.should == :keyrest
+    proc {|x,**y| }.parameters.last.first.should == :keyrest
   end
 
   it "sets the first element of each sub-Array to :block for parameters prefixed with ampersands" do

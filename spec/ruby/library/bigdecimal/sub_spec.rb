@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#sub" do
 
-  before(:each) do
+  before :each do
     @one = BigDecimal("1")
     @zero = BigDecimal("0")
     @two = BigDecimal("2")

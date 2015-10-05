@@ -1,11 +1,11 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require 'abbrev'
 
-#test both Abbrev::abbrev and Array#abbrev in
+#test both Abbrev.abbrev and Array#abbrev in
 #the same manner, as they're more or less aliases
 #of one another
 
-[["Abbrev::abbrev", lambda {|a| Abbrev::abbrev(a)}],
+[["Abbrev.abbrev", lambda {|a| Abbrev.abbrev(a)}],
  ["Array#abbrev", lambda {|a| a.abbrev}]
 ].each do |(name, func)|
 

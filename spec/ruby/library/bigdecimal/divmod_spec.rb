@@ -46,7 +46,7 @@ end
 
 describe "BigDecimal#divmod" do
 
-  before(:each) do
+  before :each do
     @a = BigDecimal("42.00000000000000000001")
 
     @zero = BigDecimal("0")
@@ -80,7 +80,7 @@ describe "BigDecimal#divmod" do
 
   it "array contains quotient and modulus as BigDecimal" do
     res = @a.divmod(5)
-    DivmodSpecs::check_both_bigdecimal(res)
+    DivmodSpecs.check_both_bigdecimal(res)
     res[0].should == BigDecimal('0.8E1')
     res[1].should == BigDecimal('2.00000000000000000001')
 
@@ -123,7 +123,7 @@ describe "BigDecimal#divmod" do
     values_and_zeroes.each do |val1|
       values.each do |val2|
         res = val1.divmod(val2)
-        DivmodSpecs::check_both_bigdecimal(res)
+        DivmodSpecs.check_both_bigdecimal(res)
         res[0].should == ((val1/val2).floor)
         res[1].should == (val1 - res[0] * val2)
       end
@@ -132,8 +132,8 @@ describe "BigDecimal#divmod" do
 
   it "returns an array of two NaNs if NaN is involved" do
     (@special_vals + @regular_vals + @zeroes).each do |val|
-      DivmodSpecs::check_both_nan(val.divmod(@nan))
-      DivmodSpecs::check_both_nan(@nan.divmod(val))
+      DivmodSpecs.check_both_nan(val.divmod(@nan))
+      DivmodSpecs.check_both_nan(@nan.divmod(val))
     end
   end
 

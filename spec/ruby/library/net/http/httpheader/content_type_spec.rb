@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/set_content_type', __FILE__)
 
 describe "Net::HTTPHeader#content_type" do
-  before(:each) do
+  before :each do
     @headers = NetHTTPHeaderSpecs::Example.new
   end
 

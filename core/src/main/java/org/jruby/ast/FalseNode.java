@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents a false literal.
  */
-public class FalseNode extends Node implements INameNode {
+public class FalseNode extends Node implements INameNode, SideEffectFree {
     public FalseNode(ISourcePosition position) {
         super(position, false);
     }

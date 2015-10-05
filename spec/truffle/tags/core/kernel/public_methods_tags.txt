@@ -1,4 +1,0 @@
-fails:Kernel#public_methods returns methods mixed in to the metaclass
-fails:Kernel#public_methods returns public methods for immediates
-fails:Kernel#public_methods when passed false returns a list of public methods in without its ancestors
-fails:Kernel#public_methods when passed nil returns a list of public methods in without its ancestors

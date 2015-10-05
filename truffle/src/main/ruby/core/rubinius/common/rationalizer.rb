@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,8 @@ class String
         de = m[3]
         re = m.post_match
 
-        ifp, exp = nu.split(/[eE]/)
-        ip, fp = ifp.split(/\./)
+        ifp, exp = nu.split /[eE]/
+        ip, fp = ifp.split /\./
 
         value = Rational.new(ip.to_i, 1)
 

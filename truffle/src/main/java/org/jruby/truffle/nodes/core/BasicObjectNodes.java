@@ -11,28 +11,32 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.Node.Child;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyCallNode;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.RubyCallNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.ObjectIDOperations;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -44,12 +48,8 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        public NotNode(NotNode prev) {
-            super(prev);
-        }
-
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
-            return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
+            return BooleanCastNodeGen.create(getContext(), getSourceSection(), operand);
         }
 
         @Specialization
@@ -59,65 +59,14 @@ public abstract class BasicObjectNodes {
 
     }
 
-
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends BinaryCoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
-        @Specialization public boolean equal(int a, int b) { return a == b; }
-        @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return a == b; }
-
-        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a == b;
-        }
-
-        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
-        public boolean equal(Object a, Object b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(left)")
-        public boolean equal(Object a, RubyBasicObject b) {
-            return false;
-        }
-
-        @Specialization(guards = "isNotRubyBasicObject(right)")
-        public boolean equal(RubyBasicObject a, Object b) {
-            return false;
-        }
-
-        protected boolean isNotRubyBasicObject(Object value) {
-            return !(value instanceof RubyBasicObject);
-        }
-
-        protected boolean notSameClass(Object a, Object b) {
-            return a.getClass() != b.getClass();
-        }
-
-    }
-
     @CoreMethod(names = "!=", required = 1)
-    public abstract static class NotEqualNode extends CoreMethodNode {
+    public abstract static class NotEqualNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode equalNode;
 
         public NotEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-        }
-
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
+            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
@@ -127,15 +76,11 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "equal?", required = 1)
+    @CoreMethod(names = { "equal?", "==" }, required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReferenceEqualNode(ReferenceEqualNode prev) {
-            super(prev);
         }
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
@@ -145,27 +90,27 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(long a, long b) { return a == b; }
         @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
 
-        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        @Specialization public boolean equal(DynamicObject a, DynamicObject b) {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
+        @Specialization(guards = {"isNotDynamicObject(a)", "isNotDynamicObject(b)", "notSameClass(a, b)"})
         public boolean equal(Object a, Object b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(left)")
-        public boolean equal(Object a, RubyBasicObject b) {
+        @Specialization(guards = "isNotDynamicObject(a)")
+        public boolean equal(Object a, DynamicObject b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(right)")
-        public boolean equal(RubyBasicObject a, Object b) {
+        @Specialization(guards = "isNotDynamicObject(b)")
+        public boolean equal(DynamicObject a, Object b) {
             return false;
         }
 
-        protected boolean isNotRubyBasicObject(Object value) {
-            return !(value instanceof RubyBasicObject);
+        protected boolean isNotDynamicObject(Object value) {
+            return !(value instanceof DynamicObject);
         }
 
         protected boolean notSameClass(Object a, Object b) {
@@ -174,75 +119,62 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsSelf = false, visibility = Visibility.PRIVATE)
-    public abstract static class InitializeNode extends CoreMethodNode {
+    @CoreMethod(names = "initialize", needsSelf = false)
+    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyNilClass initialize() {
+        public DynamicObject initialize() {
             return nil();
         }
 
     }
 
     @CoreMethod(names = "instance_eval", needsBlock = true, optional = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
-    public abstract static class InstanceEvalNode extends CoreMethodNode {
+    public abstract static class InstanceEvalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private YieldDispatchHeadNode yield;
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        public InstanceEvalNode(InstanceEvalNode prev) {
-            super(prev);
-            yield = prev.yield;
+        @CompilerDirectives.TruffleBoundary
+        @Specialization(guards = "isRubyString(string)")
+        public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
+            return getContext().instanceEval(StringOperations.getByteList(string), receiver, "(eval)", this);
         }
 
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, RubyString string, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            return getContext().instanceEval(string.getBytes(), receiver, this);
-        }
-
-        @Specialization
-        public Object instanceEval(VirtualFrame frame, Object receiver, UndefinedPlaceholder string, RubyProc block) {
-            notDesignedForCompilation();
-
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
 
     }
 
-    @CoreMethod(names = "instance_exec", needsBlock = true, argumentsAsArray = true)
-    public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
+    @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
+    public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private YieldDispatchHeadNode yield;
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        public InstanceExecNode(InstanceExecNode prev) {
-            super(prev);
-        }
+        @Specialization(guards = "isRubyProc(block)")
+        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
+            CompilerDirectives.transferToInterpreter();
 
-        @Specialization
-        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
-            notDesignedForCompilation();
-
-            return yieldWithModifiedSelf(frame, block, receiver, arguments);
+            return yield.dispatchWithModifiedSelf(frame, block, receiver, arguments);
         }
 
         @Specialization
-        public Object instanceExec(Object receiver, Object[] arguments, UndefinedPlaceholder block) {
+        public Object instanceExec(Object receiver, Object[] arguments, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
 
             throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
@@ -250,48 +182,43 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, visibility = Visibility.PRIVATE)
-    public abstract static class MethodMissingNode extends CoreMethodNode {
+    @CoreMethod(names = "method_missing", needsBlock = true, rest = true, optional = 1, visibility = Visibility.PRIVATE)
+    public abstract static class MethodMissingNode extends CoreMethodArrayArgumentsNode {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public MethodMissingNode(MethodMissingNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public Object methodMissing(Object self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            return methodMissing(self, args, (RubyProc) null);
-        }
-
-        @Specialization
-        public Object methodMissing(Object self, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubySymbol name = (RubySymbol) args[0];
-            final Object[] sentArgs = ArrayUtils.extractRange(args, 1, args.length);
-            return methodMissing(self, name, sentArgs, block);
-        }
-
-        private Object methodMissing(Object self, RubySymbol name, Object[] args, RubyProc block) {
+        public Object methodMissingNoName(Object self, NotProvided name, Object[] args, NotProvided block) {
             CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("no id given", this));
+        }
+
+        @Specialization
+        public Object methodMissingNoBlock(Object self, DynamicObject name, Object[] args, NotProvided block) {
+            return methodMissingBlock(self, name, args, (DynamicObject) null);
+        }
+
+        @Specialization(guards = "isRubyProc(block)")
+        public Object methodMissingBlock(Object self, DynamicObject name, Object[] args, DynamicObject block) {
+            return methodMissing(self, name, args, block);
+        }
+
+        private Object methodMissing(Object self, DynamicObject name, Object[] args, DynamicObject block) {
+            CompilerDirectives.transferToInterpreter();
+
+            assert block == null || RubyGuards.isRubyProc(block);
+
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
                 throw new RaiseException(
                         getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
-                                name.toString(),
-                                getContext().getCoreLibrary().getLogicalClass(self).getName(),
+                                Layouts.SYMBOL.getString(name),
+                                Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
                                 this));
             } else {
-                throw new RaiseException(
-                        getContext().getCoreLibrary().noMethodError(
-                                name.toString(),
-                                getContext().getCoreLibrary().getLogicalClass(self),
-                                this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(Layouts.SYMBOL.getString(name), self, this));
             }
         }
 
@@ -308,36 +235,43 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = "__send__", needsBlock = true, required = 1, argumentsAsArray = true)
-    public abstract static class SendNode extends CoreMethodNode {
+    @CoreMethod(names = "__send__", needsBlock = true, rest = true, required = 1)
+    public abstract static class SendNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode dispatchNode;
 
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatchNode = DispatchHeadNodeFactory.createMethodCall(context, true, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), MissingBehavior.CALL_METHOD_MISSING);
-
-            if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                dispatchNode.forceUncached();
-            }
-        }
-
-        public SendNode(SendNode prev) {
-            super(prev);
-            dispatchNode = prev.dispatchNode;
+            dispatchNode = new CallDispatchHeadNode(context, true,
+                    MissingBehavior.CALL_METHOD_MISSING);
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, UndefinedPlaceholder block) {
-            return send(frame, self, args, (RubyProc) null);
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, NotProvided block) {
+            return send(frame, self, name, args, (DynamicObject) null);
+        }
+
+        @Specialization(guards = "isRubyProc(block)")
+        public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
+            return dispatchNode.call(frame, self, name, block, args);
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
-        public Object send(VirtualFrame frame, Object self, Object[] args, RubyProc block) {
-            final Object name = args[0];
-            final Object[] sendArgs = ArrayUtils.extractRange(args, 1, args.length);
-            return dispatchNode.call(frame, self, name, block, sendArgs);
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            return allocateObjectNode.allocate(rubyClass);
         }
 
     }

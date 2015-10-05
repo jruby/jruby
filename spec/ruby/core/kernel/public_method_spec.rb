@@ -5,7 +5,7 @@ require File.expand_path('../shared/method', __FILE__)
 describe "Kernel#public_method" do
   it_behaves_like(:kernel_method, :public_method)
 
-  before(:each) do
+  before :each do
     @obj = KernelSpecs::A.new
   end
 

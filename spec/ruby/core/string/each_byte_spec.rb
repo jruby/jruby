@@ -38,9 +38,27 @@ describe "String#each_byte" do
     (s.each_byte {}).should equal(s)
   end
 
-  it "returns an enumerator when no block given" do
-    enum = "hello".each_byte
-    enum.should be_an_instance_of(enumerator_class)
-    enum.to_a.should == [104, 101, 108, 108, 111]
+  describe "when no block is given" do
+    it "returns an enumerator" do
+      enum = "hello".each_byte
+      enum.should be_an_instance_of(enumerator_class)
+      enum.to_a.should == [104, 101, 108, 108, 111]
+    end
+
+    describe "returned enumerator" do
+      describe "size" do
+        it "should return the bytesize of the string" do
+          str = "hello"
+          str.each_byte.size.should == str.bytesize
+          str = "ola"
+          str.each_byte.size.should == str.bytesize
+          before = $KCODE
+          $KCODE = "UTF-8"
+          str = "\303\207\342\210\202\303\251\306\222g"
+          str.each_byte.size.should == str.bytesize
+          $KCODE = before
+        end
+      end
+    end
   end
 end

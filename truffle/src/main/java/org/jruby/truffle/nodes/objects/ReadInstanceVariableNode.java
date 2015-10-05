@@ -12,16 +12,20 @@ package org.jruby.truffle.nodes.objects;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
-import org.jruby.truffle.nodes.ReadNode;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.translator.ReadNode;
+import org.jruby.util.StringSupport;
 
 public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
@@ -29,22 +33,21 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     @Child private ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
-    private final BranchProfile nullProfile = BranchProfile.create();
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
-        readNode = new ReadHeadObjectFieldNode(name);
+        readNode = ReadHeadObjectFieldNodeGen.create(name, nil());
         this.isGlobal = isGlobal;
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeInteger(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof RubyBasicObject) {
-            return readNode.executeInteger((RubyBasicObject) receiverObject);
+        if (receiverObject instanceof DynamicObject) {
+            return readNode.executeInteger((DynamicObject) receiverObject);
         } else {
             // TODO(CS): need to put this onto the fast path?
 
@@ -54,11 +57,11 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public long executeLong(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof RubyBasicObject) {
-            return readNode.executeLong((RubyBasicObject) receiverObject);
+        if (receiverObject instanceof DynamicObject) {
+            return readNode.executeLong((DynamicObject) receiverObject);
         } else {
             // TODO(CS): need to put this onto the fast path?
 
@@ -68,11 +71,11 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+    public double executeDouble(VirtualFrame frame) throws UnexpectedResultException {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof RubyBasicObject) {
-            return readNode.executeDouble((RubyBasicObject) receiverObject);
+        if (receiverObject instanceof DynamicObject) {
+            return readNode.executeDouble((DynamicObject) receiverObject);
         } else {
             // TODO(CS): need to put this onto the fast path?
 
@@ -85,15 +88,8 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof RubyBasicObject) {
-            Object value = readNode.execute((RubyBasicObject) receiverObject);
-
-            if (value == null) {
-                nullProfile.enter();
-                value = nil();
-            }
-
-            return value;
+        if (receiverObject instanceof DynamicObject) {
+            return readNode.execute((DynamicObject) receiverObject);
         } else {
             primitiveProfile.enter();
             return nil();
@@ -102,36 +98,28 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         if (isGlobal) {
-            final RubyBasicObject receiverValue = (RubyBasicObject) receiver.execute(frame);
+            final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
 
-            if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
-                return getContext().makeString("global-variable");
-            } else if (readNode.isSet(receiverValue)) {
-                if (readNode.execute(receiverValue) == nil()) {
-                    return nil();
-                } else {
-                    return getContext().makeString("global-variable");
-                }
+            if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }
         }
 
-        final RubyContext context = getContext();
-
         final Object receiverObject = receiver.execute(frame);
 
-        if (receiverObject instanceof RubyBasicObject) {
-            final RubyBasicObject receiverRubyObject = (RubyBasicObject) receiverObject;
+        if (receiverObject instanceof DynamicObject) {
+            final DynamicObject receiverRubyObject = (DynamicObject) receiverObject;
 
-            final Shape layout = receiverRubyObject.getDynamicObject().getShape();
+            final Shape layout = receiverRubyObject.getShape();
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {
-                return context.makeString("instance-variable");
+                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
             } else {
                 return nil();
             }

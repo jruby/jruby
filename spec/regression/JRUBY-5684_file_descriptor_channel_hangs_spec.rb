@@ -28,7 +28,7 @@ if RbConfig::CONFIG['host_os'] !~ /mingw|mswin/
       r, w = @libc.pipe
       w.puts 'hi'
       w.close
-      r.read.chomp.should == "hi"
+      expect(r.read.chomp).to eq("hi")
     end
   end
 end

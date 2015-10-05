@@ -15,6 +15,7 @@ package org.jruby.truffle.runtime.hash;
  */
 public class Entry {
 
+    private int hashed;
     private Object key;
     private Object value;
 
@@ -23,9 +24,18 @@ public class Entry {
     private Entry previousInSequence;
     private Entry nextInSequence;
 
-    public Entry(Object key, Object value) {
+    public Entry(int hashed, Object key, Object value) {
+        this.hashed = hashed;
         this.key = key;
         this.value = value;
+    }
+
+    public int getHashed() {
+        return hashed;
+    }
+
+    public void setHashed(int hashed) {
+        this.hashed = hashed;
     }
 
     public Object getKey() {
@@ -41,6 +51,12 @@ public class Entry {
     }
 
     public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public void setKeyValue(int hashed, Object key, Object value) {
+        this.hashed = hashed;
+        this.key = key;
         this.value = value;
     }
 

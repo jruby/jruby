@@ -43,9 +43,9 @@ import org.jruby.parser.StaticScope;
  */
 public class DefsNode extends MethodDefNode implements INameNode {
     private final Node receiverNode;
-    public DefsNode(ISourcePosition position, Node receiverNode, ArgumentNode nameNode, ArgsNode argsNode, 
+    public DefsNode(ISourcePosition position, Node receiverNode, String name, ArgsNode argsNode,
             StaticScope scope, Node bodyNode) {
-        super(position, nameNode, argsNode, scope, bodyNode);
+        super(position, name, argsNode, scope, bodyNode);
         
         assert receiverNode != null : "receiverNode is not null";
         
@@ -72,15 +72,7 @@ public class DefsNode extends MethodDefNode implements INameNode {
         return receiverNode;
     }
     
-    /**
-     * Gets the name of this method
-     */
-    @Override
-    public String getName() {
-        return nameNode.getName();
-    }
-    
     public List<Node> childNodes() {
-        return Node.createList(receiverNode, nameNode, argsNode, bodyNode);
+        return Node.createList(receiverNode, argsNode, bodyNode);
     }
 }

@@ -38,4 +38,19 @@ describe "Dir.foreach" do
     Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
     Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
   end
+
+  describe "when no block is given" do
+    it "returns an Enumerator" do
+      Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
+      Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
+    end
+
+    describe "returned Enumerator" do
+      describe "size" do
+        it "should return nil" do
+          Dir.foreach(DirSpecs.mock_dir).size.should == nil
+        end
+      end
+    end
+  end
 end

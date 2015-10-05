@@ -1,1 +1,0 @@
-fails:Proc#to_proc returns self

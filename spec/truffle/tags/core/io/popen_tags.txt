@@ -17,9 +17,6 @@ fails:IO.popen with a block yields an instance of a subclass when called on a su
 fails:IO.popen with a block closes the IO after yielding
 fails:IO.popen with a block allows the IO to be closed inside the block
 fails:IO.popen with a block returns the value of the block
-fails:IO.popen with a leading Array parameter uses the Array as command plus args for the child process
-fails:IO.popen with a leading Array parameter uses a leading Hash in the Array as additional environment variables
-fails:IO.popen with a leading Array parameter uses a trailing Hash in the Array for spawn-like settings
 fails:IO.popen with a leading ENV Hash accepts a single String command
 fails:IO.popen with a leading ENV Hash accepts a single String command, and an IO mode
 fails:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options

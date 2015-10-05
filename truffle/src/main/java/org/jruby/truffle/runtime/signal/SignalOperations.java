@@ -9,20 +9,12 @@
  */
 package org.jruby.truffle.runtime.signal;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.jruby.RubySignal;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
+import java.util.Collections;
+import java.util.Map;
 
-@SuppressWarnings("restriction")
 public class SignalOperations {
-
-    private static final ConcurrentMap<Signal, SignalHandler> ORIGINAL_HANDLERS = new ConcurrentHashMap<Signal, SignalHandler>();
 
     public static final Map<String, Integer> SIGNALS_LIST = Collections.unmodifiableMap(RubySignal.list());
 
@@ -34,15 +26,11 @@ public class SignalOperations {
     };
 
     public static void watchSignal(Signal signal, SignalHandler newHandler) {
-        SignalHandler oldHandler = Signal.handle(signal, newHandler);
-        ORIGINAL_HANDLERS.putIfAbsent(signal, oldHandler);
+        Signal.handle(signal, newHandler);
     }
 
     public static void watchDefaultForSignal(Signal signal) {
-        SignalHandler defaultHandler = ORIGINAL_HANDLERS.get(signal);
-        if (defaultHandler != null) {
-            Signal.handle(signal, defaultHandler);
-        }
+        Signal.handleDefault(signal);
     }
 
     public static void raise(Signal signal) {

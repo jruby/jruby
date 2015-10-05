@@ -1,5 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require 'thread'
 
 describe "Module#autoload?" do
   it "returns the name of the file that will be autoloaded" do
@@ -439,38 +440,5 @@ describe "Module#autoload" do
         ScratchPad.recorded.get.should == mod_count
       end
     end
-  end
-end
-
-describe "Module#autoload" do
-  # It would be nice to check this with a simple obj.should_not_receive,
-  # but getting at that obj is implementation specific. This method is the
-  # least implementation specific because it inserts the method that raises
-  # an exception into the dynamic lookup chain.
-  before :all do
-    module Kernel
-      alias_method :original_require, :require
-      alias_method :original_load,    :load
-
-      def require(name)
-        raise Exception, "Kernel#require called"
-      end
-
-      def load(name)
-        raise Exception, "Kernel#load called"
-      end
-    end
-  end
-
-  after :all do
-    module Kernel
-      alias_method :require, :original_require
-      alias_method :load,    :original_load
-    end
-  end
-
-  it "does not call Kernel#require or Kernel#load dynamically" do
-    ModuleSpecs::Autoload.autoload :N, fixture(__FILE__, "autoload_n.rb")
-    ModuleSpecs::Autoload::N.should == :autoload_n
   end
 end

@@ -13,54 +13,6 @@ static VALUE array_spec_rb_Array(VALUE self, VALUE object) {
 }
 #endif
 
-#ifdef HAVE_RARRAY
-static VALUE array_spec_RARRAY_ptr_assign(VALUE self, VALUE ary, VALUE content, VALUE length) {
-  int i;
-  for (i = 0; i < NUM2INT(length); i++) {
-    RARRAY(ary)->ptr[i] = content;
-  }
-  RARRAY(ary)->len = i;
-  return ary;
-}
-
-static VALUE array_spec_RARRAY_ptr_assign_call(VALUE self, VALUE array) {
-  VALUE* ptr;
-
-  ptr = RARRAY(array)->ptr;
-  ptr[1] = INT2FIX(5);
-  ptr[2] = INT2FIX(7);
-  rb_ary_push(array, INT2FIX(9));
-
-  return array;
-}
-
-static VALUE array_spec_RARRAY_ptr_assign_funcall(VALUE self, VALUE array) {
-  VALUE* ptr;
-
-  ptr = RARRAY(array)->ptr;
-  ptr[1] = INT2FIX(1);
-  ptr[2] = INT2FIX(2);
-  rb_funcall(array, rb_intern("<<"), 1, INT2FIX(3));
-
-  return array;
-}
-
-static VALUE array_spec_RARRAY_len(VALUE self, VALUE array) {
-  return INT2FIX(RARRAY(array)->len);
-}
-
-static VALUE array_spec_RARRAY_ptr_iterate(VALUE self, VALUE array) {
-  int i;
-  VALUE* ptr;
-
-  ptr = RARRAY(array)->ptr;
-  for(i = 0; i < RARRAY_LEN(array); i++) {
-    rb_yield(ptr[i]);
-  }
-  return Qnil;
-}
-#endif
-
 #if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)
 static VALUE array_spec_RARRAY_PTR_iterate(VALUE self, VALUE array) {
   int i;
@@ -325,16 +277,6 @@ void Init_array_spec() {
 
 #ifdef HAVE_RB_ARRAY
   rb_define_method(cls, "rb_Array", array_spec_rb_Array, 1);
-#endif
-
-#ifdef HAVE_RARRAY
-  rb_define_method(cls, "RARRAY_ptr_iterate", array_spec_RARRAY_ptr_iterate, 1);
-  rb_define_method(cls, "RARRAY_ptr_assign", array_spec_RARRAY_ptr_assign, 3);
-  rb_define_method(cls, "RARRAY_ptr_assign_call",
-      array_spec_RARRAY_ptr_assign_call, 1);
-  rb_define_method(cls, "RARRAY_ptr_assign_funcall",
-      array_spec_RARRAY_ptr_assign_funcall, 1);
-  rb_define_method(cls, "RARRAY_len", array_spec_RARRAY_len, 1);
 #endif
 
 #if defined(HAVE_RARRAY_LEN) && defined(HAVE_RARRAY_PTR)

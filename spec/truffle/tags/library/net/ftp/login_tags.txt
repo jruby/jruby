@@ -1,0 +1,29 @@
+fails:Net::FTP#login when passed no arguments sends the USER command with 'anonymous' as name to the server
+fails:Net::FTP#login when passed no arguments sends 'anonymous@' as a password when required
+fails:Net::FTP#login when passed no arguments raises a Net::FTPReplyError when the server requests an account
+fails:Net::FTP#login when passed name sends the USER command with the passed name to the server
+fails:Net::FTP#login when passed name raises a Net::FTPReplyError when the server requests a password, but none was given
+fails:Net::FTP#login when passed name raises a Net::FTPReplyError when the server requests an account, but none was given
+fails:Net::FTP#login when passed name, password sends the USER command with the passed name to the server
+fails:Net::FTP#login when passed name, password sends the passed password when required
+fails:Net::FTP#login when passed name, password raises a Net::FTPReplyError when the server requests an account
+fails:Net::FTP#login when passed name, password, account sends the USER command with the passed name to the server
+fails:Net::FTP#login when passed name, password, account sends the passed password when required
+fails:Net::FTP#login when passed name, password, account sends the passed account when required
+fails:Net::FTP#login when the USER command fails raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#login when the USER command fails raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#login when the USER command fails raises a Net::FTPPermError when the response code is 502
+fails:Net::FTP#login when the USER command fails raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#login when the USER command fails raises a Net::FTPPermError when the response code is 530
+fails:Net::FTP#login when the PASS command fails does not raise an Error when the response code is 202
+fails:Net::FTP#login when the PASS command fails raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#login when the PASS command fails raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#login when the PASS command fails raises a Net::FTPPermError when the response code is 502
+fails:Net::FTP#login when the PASS command fails raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#login when the PASS command fails raises a Net::FTPPermError when the response code is 530
+fails:Net::FTP#login when the ACCT command fails does not raise an Error when the response code is 202
+fails:Net::FTP#login when the ACCT command fails raises a Net::FTPPermError when the response code is 500
+fails:Net::FTP#login when the ACCT command fails raises a Net::FTPPermError when the response code is 501
+fails:Net::FTP#login when the ACCT command fails raises a Net::FTPPermError when the response code is 502
+fails:Net::FTP#login when the ACCT command fails raises a Net::FTPTempError when the response code is 421
+fails:Net::FTP#login when the ACCT command fails raises a Net::FTPPermError when the response code is 530

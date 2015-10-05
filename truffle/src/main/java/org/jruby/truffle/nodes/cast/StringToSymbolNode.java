@@ -9,14 +9,12 @@
  */
 package org.jruby.truffle.nodes.cast;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
 
 /**
  * Creates a symbol from a string.
@@ -28,16 +26,9 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public StringToSymbolNode(StringToSymbolNode prev) {
-        super(prev);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    @Specialization
-    public RubySymbol doString(RubyString string) {
-        notDesignedForCompilation();
-
-        return getContext().newSymbol(string.toString());
+    @Specialization(guards = "isRubyString(string)")
+    public DynamicObject doString(DynamicObject string) {
+        return getSymbol(string.toString());
     }
 
 }

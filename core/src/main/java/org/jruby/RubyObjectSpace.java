@@ -114,7 +114,7 @@ public class RubyObjectSpace {
                 return object;
             } else {
                 runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                return runtime.getNil();
+                throw recv.getRuntime().newRangeError(String.format("0x%016x is not id value", longId));
             }
         }
     }

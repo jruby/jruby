@@ -11,26 +11,25 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
-import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
-    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.CALL_METHOD);
+    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
+        super(context, ignoreVisibility, missingBehavior, DispatchAction.CALL_METHOD);
     }
 
     public Object call(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            DynamicObject blockObject,
             Object... argumentsObjects) {
         return dispatch(
                 frame,
@@ -44,13 +43,12 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
+            DynamicObject blockObject,
             Object... argumentsObjects) {
         if (booleanCastNode == null) {
             CompilerDirectives.transferToInterpreter();
-            booleanCastNode = insert(BooleanCastNodeFactory.create(context, getSourceSection(), null));
+            booleanCastNode = insert(BooleanCastNodeGen.create(context, getSourceSection(), null));
         }
-
         return booleanCastNode.executeBoolean(frame,
                 dispatch(frame, receiverObject, methodName, blockObject, argumentsObjects));
     }
@@ -59,34 +57,31 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
-            Object... argumentsObjects) throws UseMethodMissingException {
+            DynamicObject blockObject,
+            Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
-
-        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
-            throw new UseMethodMissingException();
-        }
 
         if (value instanceof Double) {
             return (double) value;
         }
 
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
+        if (value == DispatchNode.MISSING) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(
+                    receiverObject, context.getCoreLibrary().getFloatClass(), this));
+        } else {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                    receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
+        }
     }
 
     public long callLongFixnum(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
-            Object... argumentsObjects) throws UseMethodMissingException {
+            DynamicObject blockObject,
+            Object... argumentsObjects) {
         final Object value = call(frame, receiverObject, methodName, blockObject, argumentsObjects);
-
-        if (missingBehavior == MissingBehavior.RETURN_MISSING && value == DispatchNode.MISSING) {
-            throw new UseMethodMissingException();
-        }
 
         if (value instanceof Integer) {
             return (int) value;
@@ -97,8 +92,13 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
+        if (value == DispatchNode.MISSING) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertInto(
+                    receiverObject, context.getCoreLibrary().getFixnumClass(), this));
+        } else {
+            throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
+                    receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
+        }
     }
 
 }

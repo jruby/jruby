@@ -1,2 +1,0 @@
-fails:Kernel#frozen? on integers returns true
-fails:Kernel#frozen? on a Symbol returns true

@@ -1,1 +1,0 @@
-fails:Socket#socketpair raises SocketError if given symbol is not a Socket constants reference

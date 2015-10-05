@@ -10,10 +10,10 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.core.RubyThread;
+import com.oracle.truffle.api.object.DynamicObject;
 
 public interface SafepointAction {
 
-    void run(RubyThread thread, Node currentNode);
+    void run(DynamicObject thread, Node currentNode);
 
 }

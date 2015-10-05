@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_to_r, :shared => true do
+describe :rational_to_r, shared: true do
   conflicts_with :Prime do
     it "returns self" do
       a = Rational(3, 4)

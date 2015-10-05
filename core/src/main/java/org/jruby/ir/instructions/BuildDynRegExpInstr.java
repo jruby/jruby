@@ -15,13 +15,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 // Represents a dynamic regexp in Ruby
 // Ex: /#{a}#{b}/
-public class BuildDynRegExpInstr extends ResultBaseInstr {
+public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
     final private RegexpOptions options;
 
     // Cached regexp
-    private RubyRegexp rubyRegexp;
+    private volatile RubyRegexp rubyRegexp;
+
+    private static final AtomicReferenceFieldUpdater<BuildDynRegExpInstr, RubyRegexp> UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BuildDynRegExpInstr.class, RubyRegexp.class, "rubyRegexp");
 
     public BuildDynRegExpInstr(Variable result, Operand[] pieces, RegexpOptions options) {
         super(Operation.BUILD_DREGEXP, result, pieces);
@@ -30,7 +35,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     public Operand[] getPieces() {
-       return operands;
+       return getOperands();
     }
 
     public RegexpOptions getOptions() {
@@ -52,6 +57,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     private RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        Operand[] operands = getOperands();
         int length = operands.length;
         RubyString[] strings = new RubyString[length];
         for (int i = 0; i < length; i++) {
@@ -81,7 +87,13 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
             RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             re.setLiteral();
-            rubyRegexp = re;
+            if (options.isOnce()) {
+                // Atomically update this, so we only see one instance cached ever.
+                // See MRI's ruby/test_regexp.rb, test_once_multithread
+                UPDATER.compareAndSet(this, null, re);
+            } else {
+                rubyRegexp = re;
+            }
         }
 
         return rubyRegexp;

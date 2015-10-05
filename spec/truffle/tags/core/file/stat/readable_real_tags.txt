@@ -1,2 +1,0 @@
-fails:File::Stat#readable_real? returns true if named file is readable by the real user id of the process, otherwise false
-fails:File::Stat#readable_real? accepts an object that has a #to_path method

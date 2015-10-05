@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,11 +36,11 @@ module Enumerable
       previous = nil
       accumulate = []
       block = if initial_state.nil?
-                original_block
-              else
-                duplicated_initial_state = initial_state.dup
-                Proc.new{ |val| original_block.yield(val, duplicated_initial_state)}
-              end
+        original_block
+      else
+        duplicated_initial_state = initial_state.dup
+        Proc.new{ |val| original_block.yield(val, duplicated_initial_state)}
+      end
       each do |val|
         key = block.yield(val)
         if key.nil? || (key.is_a?(Symbol) && key.to_s[0, 1] == "_")
@@ -48,11 +48,11 @@ module Enumerable
           accumulate = []
           previous = nil
           case key
-            when nil, :_separator
-            when :_alone
-              yielder.yield [key, [val]]
-            else
-              raise RuntimeError, "symbols beginning with an underscore are reserved"
+          when nil, :_separator
+          when :_alone
+            yielder.yield [key, [val]]
+          else
+            raise RuntimeError, "symbols beginning with an underscore are reserved"
           end
         else
           if previous.nil? || previous == key
@@ -76,7 +76,7 @@ module Enumerable
       end
       ary
     else
-      to_enum :collect
+      to_enum(:collect) { enumerator_size }
     end
   end
 
@@ -95,7 +95,7 @@ module Enumerable
   end
 
   def each_entry(*pass)
-    return to_enum :each_entry, *pass unless block_given?
+    return to_enum(:each_entry, *pass) { enumerator_size } unless block_given?
     each(*pass) do |*args|
       yield args.size == 1 ? args[0] : args
     end
@@ -103,7 +103,7 @@ module Enumerable
   end
 
   def each_with_object(memo)
-    return to_enum :each_with_object, memo unless block_given?
+    return to_enum(:each_with_object, memo) { enumerator_size } unless block_given?
     each do
       obj = Rubinius.single_block_arg
       yield obj, memo
@@ -114,13 +114,22 @@ module Enumerable
   alias_method :with_object, :each_with_object
 
   def flat_map
-    return to_enum(:flat_map) unless block_given?
+    return to_enum(:flat_map) { enumerator_size } unless block_given?
 
-    inject([]) do |a, e|
-      result = yield e
+    array = []
+    each do |*args|
+      result = yield(*args)
 
-      Rubinius::Type.object_respond_to_ary?(result) ? a.concat(result) : a.push(result)
+      value = Rubinius::Type.try_convert(result, Array, :to_ary) || result
+
+      if value.kind_of? Array
+        array.concat value
+      else
+        array.push value
+      end
     end
+
+    array
   end
 
   alias_method :collect_concat, :flat_map
@@ -137,7 +146,7 @@ module Enumerable
   private :enumerator_size
 
   def group_by
-    return to_enum(:group_by) unless block_given?
+    return to_enum(:group_by) { enumerator_size } unless block_given?
 
     h = {}
     each do
@@ -221,14 +230,14 @@ module Enumerable
       o = Rubinius.single_block_arg
       entry = args.inject([o]) do |ary, a|
         ary << case a
-                 when Array
-                   a[i]
-                 else
-                   begin
-                     a.next
-                   rescue StopIteration
-                     nil
-                   end
+               when Array
+                 a[i]
+               else
+                 begin
+                   a.next
+                 rescue StopIteration
+                   nil
+                 end
                end
       end
 
@@ -243,7 +252,7 @@ module Enumerable
   end
 
   def each_with_index(*args)
-    return to_enum(:each_with_index, *args) unless block_given?
+    return to_enum(:each_with_index, *args) { enumerator_size } unless block_given?
 
     idx = 0
     each(*args) do
@@ -298,7 +307,7 @@ module Enumerable
   end
 
   def sort_by
-    return to_enum :sort_by unless block_given?
+    return to_enum(:sort_by) { enumerator_size } unless block_given?
 
     # Transform each value to a tuple with the value and it's sort by value
     sort_values = map do
@@ -368,7 +377,11 @@ module Enumerable
   end
 
   def cycle(many=nil)
-    return to_enum(:cycle, many) unless block_given?
+    unless block_given?
+      return to_enum(:cycle, many) do
+        Rubinius::EnumerableHelper.cycle_size(enumerator_size, many)
+      end
+    end
 
     if many
       many = Rubinius::Type.coerce_to_collection_index many
@@ -425,10 +438,21 @@ module Enumerable
   end
 
   def each_cons(num)
-    return to_enum(:each_cons, num) unless block_given?
-
     n = Rubinius::Type.coerce_to_collection_index num
     raise ArgumentError, "invalid size: #{n}" if n <= 0
+
+    unless block_given?
+      return to_enum(:each_cons, num) do
+        enum_size = enumerator_size
+        if enum_size.nil?
+          nil
+        elsif enum_size == 0 || enum_size < n
+          0
+        else
+          enum_size - n + 1
+        end
+      end
+    end
 
     array = []
     each do
@@ -441,10 +465,15 @@ module Enumerable
   end
 
   def each_slice(slice_size)
-    return to_enum(:each_slice, slice_size) unless block_given?
-
     n = Rubinius::Type.coerce_to_collection_index slice_size
     raise ArgumentError, "invalid slice size: #{n}" if n <= 0
+
+    unless block_given?
+      return to_enum(:each_slice, slice_size) do
+        enum_size = enumerator_size
+        enum_size.nil? ? nil : (enum_size.to_f / n).ceil
+      end
+    end
 
     a = []
     each do
@@ -474,7 +503,7 @@ module Enumerable
   alias_method :detect, :find
 
   def find_all
-    return to_enum(:find_all) unless block_given?
+    return to_enum(:find_all) { enumerator_size } unless block_given?
 
     ary = []
     each do
@@ -555,7 +584,7 @@ module Enumerable
   end
 
   def max_by
-    return to_enum(:max_by) unless block_given?
+    return to_enum(:max_by) { enumerator_size } unless block_given?
 
     max_object = nil
     max_result = undefined
@@ -575,7 +604,7 @@ module Enumerable
   end
 
   def min_by
-    return to_enum(:min_by) unless block_given?
+    return to_enum(:min_by) { enumerator_size } unless block_given?
 
     min_object = nil
     min_result = undefined
@@ -630,7 +659,7 @@ module Enumerable
   end
 
   def minmax_by(&block)
-    return to_enum(:minmax_by) unless block_given?
+    return to_enum(:minmax_by) { enumerator_size } unless block_given?
 
     min_object = nil
     min_result = undefined
@@ -691,7 +720,7 @@ module Enumerable
   end
 
   def partition
-    return to_enum(:partition) unless block_given?
+    return to_enum(:partition) { enumerator_size } unless block_given?
 
     left = []
     right = []
@@ -704,7 +733,7 @@ module Enumerable
   end
 
   def reject
-    return to_enum(:reject) unless block_given?
+    return to_enum(:reject) { enumerator_size } unless block_given?
 
     ary = []
     each do
@@ -716,7 +745,7 @@ module Enumerable
   end
 
   def reverse_each(&block)
-    return to_enum(:reverse_each) unless block_given?
+    return to_enum(:reverse_each) { enumerator_size } unless block_given?
 
     # There is no other way then to convert to an array first... see 1.9's source.
     to_a.reverse_each(&block)

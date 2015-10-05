@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_atan, :shared => true do
+describe :complex_math_atan, shared: true do
   it "returns the arctangent of the argument" do
     @object.send(:atan, 1).should be_close(Math::PI/4, TOLERANCE)
     @object.send(:atan, 0).should be_close(0.0, TOLERANCE)
@@ -16,7 +16,7 @@ describe :complex_math_atan, :shared => true do
   end
 end
 
-describe :complex_math_atan_bang, :shared => true do
+describe :complex_math_atan_bang, shared: true do
   it "returns the arctangent of the argument" do
     @object.send(:atan!, 1).should be_close(Math::PI/4, TOLERANCE)
     @object.send(:atan!, 0).should be_close(0.0, TOLERANCE)

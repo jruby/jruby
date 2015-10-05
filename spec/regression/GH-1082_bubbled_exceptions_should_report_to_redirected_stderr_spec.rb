@@ -16,8 +16,8 @@ describe "An exception that bubbles out when $stderr is redirected" do
     )
 
     lines = File.readlines(@tmpfile.path)
-    lines[0].should == "first line\n"
-    lines[1].should == "second line\n"
-    lines[2].should == "RuntimeError: No current exception\n"
+    expect(lines[0]).to eq("first line\n")
+    expect(lines[1]).to eq("second line\n")
+    expect(lines[2]).to eq("RuntimeError: No current exception\n")
   end
 end

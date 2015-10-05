@@ -1,0 +1,1 @@
+fails:Time.httpdate parses RFC-2616 strings

@@ -4,13 +4,13 @@ require 'java'
 describe "Loading scripts from jar files" do
   it "should correctly report $LOADED_FEATURES" do
     jar = File.expand_path("test/jruby/dir with spaces/test_jar.jar")
-    require("#{jar}!abc/foo").should == true
-    $LOADED_FEATURES.pop.should =~ %r{dir with spaces/test_jar.jar!abc/foo.rb}
+    expect(require("#{jar}!abc/foo")).to eq(true)
+    expect($LOADED_FEATURES.pop).to match(%r{dir with spaces/test_jar.jar!abc/foo.rb})
 
     # JRuby has supported a test_jar.jar!/abc/foo.rb alias for 'abc/foo.rb' entry in the test.jar for quite some time
     # (more correct would be test.jar!foo.rb)
-    require("#{jar}!/abc/foo").should == true
-    $LOADED_FEATURES.pop.should == "#{jar}!/abc/foo.rb"
+    expect(require("#{jar}!/abc/foo")).to eq(true)
+    expect($LOADED_FEATURES.pop).to eq("#{jar}!/abc/foo.rb")
   end
 
   # JRUBY-4774, WARBLER-15
@@ -18,23 +18,23 @@ describe "Loading scripts from jar files" do
     url_loader = java.net.URLClassLoader.new([java.net.URL.new("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar"))].to_java(java.net.URL))
     container = org.jruby.embed.ScriptingContainer.new(org.jruby.embed.LocalContextScope::SINGLETHREAD)
     container.setClassLoader(url_loader)
-    container.runScriptlet("begin; require 'abc/foo'; rescue LoadError; false; end").should be_true
+    expect(container.runScriptlet("begin; require 'abc/foo'; rescue LoadError; false; end")).to be_truthy
   end
 
   it "works when the jar path contains '#' symbols" do
-    require("jar:file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!/abc/foo.rb").should == true
-    $LOADED_FEATURES.pop.should =~ /foo\.rb$/
+    expect(require("jar:file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!/abc/foo.rb")).to eq(true)
+    expect($LOADED_FEATURES.pop).to match(/foo\.rb$/)
 
-    require("file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!/abc/foo.rb").should == true
-    $LOADED_FEATURES.pop.should =~ /foo\.rb$/
+    expect(require("file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!/abc/foo.rb")).to eq(true)
+    expect($LOADED_FEATURES.pop).to match(/foo\.rb$/)
   end
 
   it "works when the load path is a jar and the path contains '#' symbols" do
     begin
       $LOAD_PATH.unshift "jar:file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!/abc"
 
-      require("foo").should == true
-      $LOADED_FEATURES.pop.should =~ /foo\.rb$/
+      expect(require("foo")).to eq(true)
+      expect($LOADED_FEATURES.pop).to match(/foo\.rb$/)
     ensure
       $LOAD_PATH.shift
     end
@@ -42,8 +42,8 @@ describe "Loading scripts from jar files" do
     begin
       $LOAD_PATH.unshift "file:" + File.expand_path("test/jruby/dir with spaces/test#hash#symbol##jar.jar") + "!"
 
-      require("abc/foo").should == true
-      $LOADED_FEATURES.pop.should =~ /foo\.rb$/
+      expect(require("abc/foo")).to eq(true)
+      expect($LOADED_FEATURES.pop).to match(/foo\.rb$/)
     ensure
       $LOAD_PATH.shift
     end

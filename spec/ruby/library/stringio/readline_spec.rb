@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 
 describe "StringIO#readline when passed [separator]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this>is>an>example")
   end
 
@@ -56,7 +56,7 @@ describe "StringIO#readline when passed [separator]" do
 end
 
 describe "StringIO#readline when passed no argument" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this is\nan example\nfor StringIO#readline")
   end
 

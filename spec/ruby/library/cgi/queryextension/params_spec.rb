@@ -2,13 +2,13 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 require 'cgi'
 
 describe "CGI::QueryExtension#params" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     ENV['QUERY_STRING'], @old_query_string = "one=a&two=b&two=c&three", ENV['QUERY_STRING']
     @cgi = CGI.new
   end
 
-  after(:each) do
+  after :each do
     ENV['QUERY_STRING'] = @old_query_string
     ENV['REQUEST_METHOD'] = @old_request_method
   end
@@ -19,12 +19,12 @@ describe "CGI::QueryExtension#params" do
 end
 
 describe "CGI::QueryExtension#params=" do
-  before(:each) do
+  before :each do
     ENV['REQUEST_METHOD'], @old_request_method = "GET", ENV['REQUEST_METHOD']
     @cgi = CGI.new
   end
 
-  after(:each) do
+  after :each do
     ENV['REQUEST_METHOD'] = @old_request_method
   end
 

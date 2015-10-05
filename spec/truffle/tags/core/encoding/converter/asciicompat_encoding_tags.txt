@@ -1,1 +1,0 @@
-fails:Encoding::Converter.asciicompat_encoding returns a corresponding ASCII compatible encoding for ASCII-incompatible encodings

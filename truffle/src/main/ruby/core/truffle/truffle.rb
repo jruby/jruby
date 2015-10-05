@@ -12,7 +12,7 @@
 module Truffle
 
   # The version of Truffle and Graal in use.
-  # @return [String] a version string such as `"0.6"`, or `"undefined"` if running on a non-Graal JVM.
+  # @return [String] a version string such as `"0.7"`, or `"undefined"` if running on a non-Graal JVM.
   def self.version
     Primitive.graal_version
   end
@@ -26,5 +26,16 @@ module Truffle
   def self.substrate?
     Primitive.substrate?
   end
+
+  # Return the Binding of the method which calls this method.
+  # @return [Binding]
+  # @!scope class
+  define_singleton_method :binding_of_caller, Truffle::Primitive.method(:binding_of_caller).unbind
+
+  # Returns the source (such as the file name) of the method which calls this
+  # method.
+  # @return [String]
+  # @!scope class
+  define_singleton_method :source_of_caller, Truffle::Primitive.method(:source_of_caller).unbind
 
 end

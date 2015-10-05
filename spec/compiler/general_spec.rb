@@ -32,7 +32,7 @@ module JITSpecUtils
   def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
     run( "def __temp; #{src}; end; __temp", filename, line)
   end
-  
+
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
     yield compile_run(src, filename, line) unless (ENV['COMPILER_TEST'] == 'false')
   end
@@ -68,14 +68,15 @@ module JITSpecUtils
         oj.runtime.builtin.IRubyObject[].java_class,
         oj.runtime.Block.java_class,
         oj.RubyModule.java_class,
-        java.lang.String.java_class);
-    handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
+        java.lang.String.java_class)
+    handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
         oj.runtime.Visibility::PUBLIC,
-        currModule)
+        currModule,
+        false)
   end
 
   def compile_run(src, filename, line)
@@ -333,7 +334,6 @@ modes.each do |mode|
 
     it "compiles splatted values" do
       run("def foo(a,b,c);[a,b,c];end;foo(1, *[2, 3])") {|result| expect(result).to eq([1,2,3]) }
-      run("class Coercible1;def to_ary;[2,3];end;end; [1, *Coercible1.new]") {|result| expect(result).to eq([1,2,3]) }
     end
 
     it "compiles multiple assignment" do
@@ -408,7 +408,7 @@ modes.each do |mode|
 
     it "compiles constant access" do
       const_code = <<-EOS
-        A = 'a'; module X; B = 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
+        A ||= 'a'; module X; B ||= 'b'; end; module Y; def self.go; [A, X::B, ::A]; end; end; Y.go
       EOS
       run(const_code) {|result| expect(result).to eq(["a", "b", "a"]) }
     end
@@ -573,8 +573,8 @@ modes.each do |mode|
         end.new
       ') do |obj|
         $~ = nil
-        obj.blank?.should == false
-        $~.should be_nil
+        expect(obj).not_to be_blank
+        expect($~).to be_nil
       end
     end
 
@@ -603,7 +603,7 @@ modes.each do |mode|
 
     it "prevents reopening or extending non-modules" do
       # ensure that invalid classes and modules raise errors
-      AFixnum = 1;
+      AFixnum ||= 1
       expect { run("class AFixnum; end")}.to raise_error(TypeError)
       expect { run("class B < AFixnum; end")}.to raise_error(TypeError)
       expect { run("module AFixnum; end")}.to raise_error(TypeError)
@@ -671,7 +671,9 @@ modes.each do |mode|
 
     it "resolves Foo::Bar style constants" do
       # JRUBY-1388, Foo::Bar broke in the compiler
-      run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      silence_warnings do
+        run("module Foo2; end; Foo2::Foo3 = 5; Foo2::Foo3") {|result| expect(result).to eq 5 }
+      end
     end
 
     it "re-runs enclosing block when redo is called from ensure" do
@@ -699,8 +701,8 @@ modes.each do |mode|
       run("def foo; x = {1 => 2}; x.inject({}) do |hash, (key, value)|; hash[key.to_s] = value; hash; end; end; foo") {|result| expect(result).to eq({"1" => 2}) }
     end
 
-    it "compiles very long code bodies", pending: "JIT support" do
-      # JRUBY-2246
+    it "compiles very long code bodies" do
+      skip "JRUBY-2246"
       long_src = "a = 1\n"
       5000.times { long_src << "a += 1\n" }
       run(long_src) {|result| expect(result).to eq 5001 }
@@ -756,8 +758,9 @@ modes.each do |mode|
       EOS
     end
 
-    it "can compile large literal arrays and hashes", pending: "JIT support" do
-      # JRUBY-4757 and JRUBY-2621: can't compile large array/hash
+    it "can compile large literal arrays and hashes" do
+      skip "JRUBY-4757 and JRUBY-2621: can't compile large array/hash"
+
       large_array = (1..10000).to_a.inspect
       large_hash = large_array.clone
       large_hash.gsub!('[', '{')
@@ -848,11 +851,13 @@ modes.each do |mode|
       class JRUBY4925
       end
 
-      run 'JRUBY4925::BLAH, a = 1, 2' do |x|
-        expect(JRUBY4925::BLAH).to eq 1
-      end
-      run '::JRUBY4925_BLAH, a = 1, 2' do |x|
-        expect(JRUBY4925_BLAH).to eq 1
+      silence_warnings do
+        run 'JRUBY4925::BLAH, a = 1, 2' do |x|
+          expect(JRUBY4925::BLAH).to eq 1
+        end
+        run '::JRUBY4925_BLAH, a = 1, 2' do |x|
+          expect(JRUBY4925_BLAH).to eq 1
+        end
       end
     end
 
@@ -962,7 +967,7 @@ modes.each do |mode|
 
         [C.new.foo, D.new.foo, D.new.foo(str: "d", num:75, a:1, b:2)]
       ' do |x|
-        
+
         expect(x).to eq [
             ["foo", 42, {}],
             ["bar", 45, {}],
@@ -1037,6 +1042,21 @@ modes.each do |mode|
     it "preserves 'encoding none' flag for literal regexp" do
       run('/a/n.options') do |x|
         expect(x).to eq(32)
+      end
+    end
+
+    it "handles nested [], loops, and break" do
+      run('def foo
+             while 1
+               "x"[0]
+               while 1
+                 raise "ok"
+                 break
+               end
+             end
+           end
+           foo rescue $!') do |x|
+        expect(x.message).to eq("ok")
       end
     end
   end

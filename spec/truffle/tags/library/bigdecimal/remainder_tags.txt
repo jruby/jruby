@@ -1,0 +1,1 @@
+fails:BigDecimal#remainder raises TypeError if the argument cannot be coerced to BigDecimal

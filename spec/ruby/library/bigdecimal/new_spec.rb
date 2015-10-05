@@ -9,16 +9,13 @@ describe "BigDecimal.new" do
       BigDecimal.new("1#{i}").should == 10 + i
       BigDecimal.new("-1#{i}").should == -10 - i
       BigDecimal.new("1E#{i}").should == 10**i
-      BigDecimal.new("1000000E-#{i}").should == 10**(6-i)
+      BigDecimal.new("1000000E-#{i}").should == 10**(6-i).to_f
+      # ^ to_f to avoid Rational type
     }
     (1..9).each {|i|
       BigDecimal.new("100.#{i}").to_s.should == "0.100#{i}E3"
       BigDecimal.new("-100.#{i}").to_s.should == "-0.100#{i}E3"
     }
-  end
-
-  it "doesn't segfault when using a very large string to build the number" do
-    BigDecimal.new("1" + "0"*10000000)._dump.should == "10000017:0.1E10000001"
   end
 
   it "Number of significant digits >= given precision" do

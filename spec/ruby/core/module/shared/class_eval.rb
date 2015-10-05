@@ -1,4 +1,4 @@
-describe :module_class_eval, :shared => true do
+describe :module_class_eval, shared: true do
   # TODO: This should probably be replaced with a "should behave like" that uses
   # the many scoping/binding specs from kernel/eval_spec, since most of those
   # behaviors are the same for instance_eval. See also module_eval/class_eval.
@@ -17,9 +17,22 @@ describe :module_class_eval, :shared => true do
     lambda {42.foo}.should raise_error(NoMethodError)
   end
 
+  it "resolves constants in the caller scope" do
+    ModuleSpecs::ClassEvalTest.get_constant_from_scope.should == ModuleSpecs::Lookup
+  end
+
+  it "resolves constants in the caller scope ignoring send" do
+    ModuleSpecs::ClassEvalTest.get_constant_from_scope_with_send(@method).should == ModuleSpecs::Lookup
+  end
+
+  it "resolves constants in the receiver's scope" do
+    ModuleSpecs.send(@method, "Lookup").should == ModuleSpecs::Lookup
+    ModuleSpecs.send(@method, "Lookup::LOOKIE").should == ModuleSpecs::Lookup::LOOKIE
+  end
+
   it "defines constants in the receiver's scope" do
     ModuleSpecs.send(@method, "module NewEvaluatedModule;end")
-    ModuleSpecs.const_defined?(:NewEvaluatedModule).should == true
+    ModuleSpecs.const_defined?(:NewEvaluatedModule, false).should == true
   end
 
   it "evaluates a given block in the context of self" do

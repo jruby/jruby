@@ -123,12 +123,14 @@ public class RealClassGenerator {
 
                 int cacheSize = 0;
 
+                final HashSet<String> implementedNames = new HashSet<String>();
+
                 // for each simple method name, implement the complex methods, calling the simple version
                 for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
                     String simpleName = entry.getKey();
                     Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
 
-                    Set<String> implementedNames = new HashSet<String>();
+                    implementedNames.clear();
 
                     for (Method method : entry.getValue()) {
                         Class[] paramTypes = method.getParameterTypes();
@@ -345,13 +347,15 @@ public class RealClassGenerator {
         }
 
         int cacheSize = 0;
-        
+
+        final HashSet<String> implementedNames = new HashSet<String>();
+
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {
             String simpleName = entry.getKey();
             Set<String> nameSet = JavaUtil.getRubyNamesForJavaName(simpleName, entry.getValue());
 
-            Set<String> implementedNames = new HashSet<String>();
+            implementedNames.clear();
 
             for (Method method : entry.getValue()) {
                 Class[] paramTypes = method.getParameterTypes();

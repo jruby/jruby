@@ -22,7 +22,7 @@ end
 
 describe "Proc as an implicit block pass argument" do
   def revivify
-    Proc::new
+    Proc.new
   end
 
   it "remains the same object if re-vivified by the target method" do

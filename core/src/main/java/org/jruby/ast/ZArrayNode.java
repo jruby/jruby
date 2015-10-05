@@ -41,9 +41,9 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * zero length list
  *
  */
-public class ZArrayNode extends Node implements ILiteralNode {
+public class ZArrayNode extends ListNode implements ILiteralNode {
     public ZArrayNode(ISourcePosition position) {
-        super(position, false);
+        super(position);
     }
 
     public NodeType getNodeType() {
@@ -52,13 +52,10 @@ public class ZArrayNode extends Node implements ILiteralNode {
 
     /**
      * Accept for the visitor pattern.
+     *
      * @param iVisitor the visitor
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitZArrayNode(this);
-    }
-    
-    public List<Node> childNodes() {
-        return EMPTY_LIST;
     }
 }

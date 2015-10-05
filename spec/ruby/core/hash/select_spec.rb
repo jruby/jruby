@@ -1,9 +1,10 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/iteration', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Hash#select" do
-  before(:each) do
+  before :each do
     @hsh = new_hash(1 => 2, 3 => 4, 5 => 6)
     @empty = new_hash
   end
@@ -21,7 +22,7 @@ describe "Hash#select" do
   end
 
   it "processes entries with the same order as reject" do
-    h = new_hash(:a => 9, :c => 4, :b => 5, :d => 2)
+    h = new_hash(a: 9, c: 4, b: 5, d: 2)
 
     select_pairs = []
     reject_pairs = []
@@ -40,16 +41,17 @@ describe "Hash#select" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select)
+  it_behaves_like(:enumeratorized_with_origin_size, :select, new_hash(1 => 2, 3 => 4, 5 => 6))
 end
 
 describe "Hash#select!" do
-  before(:each) do
+  before :each do
     @hsh = new_hash(1 => 2, 3 => 4, 5 => 6)
     @empty = new_hash
   end
 
   it "is equivalent to keep_if if changes are made" do
-    h = new_hash(:a => 2)
+    h = new_hash(a: 2)
     h.select! { |k,v| v <= 1 }.should equal h
 
     h = new_hash(1 => 2, 3 => 4)
@@ -59,7 +61,7 @@ describe "Hash#select!" do
   end
 
   it "returns nil if no changes were made" do
-    new_hash(:a => 1).select! { |k,v| v <= 1 }.should == nil
+    new_hash(a: 1).select! { |k,v| v <= 1 }.should == nil
   end
 
   it "raises a RuntimeError if called on an empty frozen instance" do
@@ -71,4 +73,5 @@ describe "Hash#select!" do
   end
 
   it_behaves_like(:hash_iteration_no_block, :select!)
+  it_behaves_like(:enumeratorized_with_origin_size, :select!, new_hash(1 => 2, 3 => 4, 5 => 6))
 end

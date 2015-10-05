@@ -1,4 +1,0 @@
-fails:File.atime returns the last access time for the named file as a Time object
-fails:File.atime raises an Errno::ENOENT exception if the file is not found
-fails:File.atime accepts an object that has a #to_path method
-fails:File#atime returns the last access time to self

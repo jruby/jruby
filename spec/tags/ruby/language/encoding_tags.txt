@@ -1,2 +1,0 @@
-fails:The __ENCODING__ pseudo-variable is Encoding::Windows_31J when the interpreter is invoked with -Ks
-fails:The __ENCODING__ pseudo-variable is Encoding::Windows_31J when the interpreter is invoked with -KS

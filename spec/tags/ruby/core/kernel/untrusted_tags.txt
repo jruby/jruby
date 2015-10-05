@@ -1,1 +1,0 @@
-fails:Kernel#untrusted? has no effect on immediate values

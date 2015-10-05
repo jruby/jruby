@@ -1,4 +1,6 @@
-describe :env_each, :shared => true do
+require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
+
+describe :env_each, shared: true do
   it "returns each pair" do
     orig = ENV.to_hash
     e = []
@@ -17,6 +19,11 @@ describe :env_each, :shared => true do
   it "returns an Enumerator if called without a block" do
     ENV.send(@method).should be_an_instance_of(enumerator_class)
   end
+
+  before :all do
+    @object = ENV
+  end
+  it_should_behave_like :enumeratorized_with_origin_size
 
   with_feature :encoding do
     describe "with encoding" do

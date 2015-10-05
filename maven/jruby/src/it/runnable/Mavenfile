@@ -1,31 +1,37 @@
 #-*- mode: ruby -*-
 
-properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.dump.readOnly' => true,
-            'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.8' )
+# default versions will be overwritten by pom.rb from root directory
+properties( 'jruby.plugins.version' => '1.0.10' )
 
 gemfile
+
+model.repositories.clear
+repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases', :id => 'rubygems-releases' )
 
 gem 'bundler', '1.7.7'
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
-jar 'de.saumya.mojo:jruby-mains', '0.1.0'
+jar 'de.saumya.mojo:jruby-mains', '0.3.1'
 
 build do
   directory 'pkg'
 end
 
-files = [ 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+files = [ '.rspec', '*.rb', 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
           'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
 jruby_plugin!( :gem,
                # need a jruby-complete from maven central here
                # TODO fix plugin to use the one from compile-artifacts
-               :jrubyVersion => '1.7.19',
+               :jrubyVersion => '9.0.0.0',
                :includeRubygemsInResources => true ) do
   execute_goals( 'generate-resources', 'process-resources', :includeBinStubs => true, :includeRubyResources => files )
 end
+
+plugin :jar, '2.4', :outputDirectory => '.', :finalName => 'runnable' do
+  execute_goal :jar, :phase => :'prepare-package'
+end
+plugin :clean, '2.4', :filesets => [ { :directory => '.', :includes => ['runnable.jar', '*/**/*.jar'] } ]
 
 if File.file?('Jarfile.lock')
   phase 'generate-resources' do
@@ -35,7 +41,7 @@ if File.file?('Jarfile.lock')
         data = l.sub(/-\ /, '').strip.split(':')
         if data.size > 3
           data = Hash[ [:groupId, :artifactId, :type, :version, :classifier].zip( data ) ]
-          data[ :outputDirectory ] = File.join( '${project.build.outputDirectory}',
+          data[ :outputDirectory ] = File.join( '${project.build.outputDirectory}/jars',
                                                 data[:groupId].gsub(/[.]/, '/'),
                                                 data[:artifactId],
                                                 data[:version] )
@@ -49,7 +55,7 @@ if File.file?('Jarfile.lock')
   end
 end
 
-plugin :shade do
+plugin :shade, '2.1' do
   execute_goals( 'shade',
                  :id => 'pack',
                  :artifactSet => { :excludes => ['rubygems:*'] },
@@ -63,7 +69,6 @@ phase :package do
   plugin( 'org.codehaus.mojo:exec-maven-plugin:1.2',
           :executable => 'java',
           :environmentVariables => {
-            'PATH' => '${basedir}',
             'HOME' => '${basedir}',
             'GEM_PATH' => '${basedir}',
             'GEM_HOME' => '${basedir}'
@@ -72,9 +77,15 @@ phase :package do
     execute_goal( :exec, :id => 'rake -T',
                   :arguments => [ '-jar', 'runnable.jar', '-S', 'rake', '-T' ] )
     
+    execute_goal( :exec, :id => 'rake spec',
+                  :arguments => [ '-jar', 'runnable.jar', '-S', 'rake', 'spec' ] )
+
     execute_goal( :exec, :id => 'rspec',
                   :arguments => [ '-jar', 'runnable.jar', '-S', 'rspec' ] )
     
+    execute_goal( :exec, :id => 'nested IsolatedScriptingContainer',
+                  :arguments => [ '-jar', 'runnable.jar', 'nested.rb' ] )
+
   end
 end
  

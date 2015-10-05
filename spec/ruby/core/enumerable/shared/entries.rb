@@ -1,4 +1,4 @@
-describe :enumerable_entries, :shared => true do
+describe :enumerable_entries, shared: true do
   it "returns an array containing the elements" do
     numerous = EnumerableSpecs::Numerous.new(1, nil, 'a', 2, false, true)
     numerous.send(@method).should == [1, nil, "a", 2, false, true]

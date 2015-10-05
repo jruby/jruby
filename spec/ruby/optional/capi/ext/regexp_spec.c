@@ -1,11 +1,7 @@
 #include "ruby.h"
 #include "rubyspec.h"
 
-#ifdef RUBY_VERSION_IS_1_9
 #include "ruby/re.h"
-#else
-#include "re.h"
-#endif
 
 #include <string.h>
 

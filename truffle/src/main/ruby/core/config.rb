@@ -7,11 +7,19 @@
 # GNU Lesser General Public License version 2.1
 
 module RbConfig
-CONFIG = {
-  'ruby_install_name' => 'rubytruffle',
-  'RUBY_INSTALL_NAME' => 'rubytruffle',
-  'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
-  'exeext' => '',
-  'EXEEXT' => 'rubytruffle',
-}
+  CONFIG = {
+    'exeext' => '',
+    'EXEEXT' => '',
+    'host_os' => Truffle::Primitive.host_os,
+    'bindir' => "#{Truffle::Primitive.jruby_home_directory}/bin",
+    'libdir' => "#{Truffle::Primitive.jruby_home_directory}/lib/ruby/truffle",
+    'ruby_install_name' => 'jruby',
+    'RUBY_INSTALL_NAME' => 'jruby',
+    'ruby_version' => '2.2.0',
+  }
+
+  def self.ruby
+    # TODO CS 19-May-15 should return the original command? Not sure that's possible
+    "ruby"
+  end
 end

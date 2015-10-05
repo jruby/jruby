@@ -1,1 +1,0 @@
-fails:Array#join fails for arrays with incompatibly-encoded strings

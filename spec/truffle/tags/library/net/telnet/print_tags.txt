@@ -1,0 +1,1 @@
+fails:Net::Telnet#print needs to be reviewed for spec completeness

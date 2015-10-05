@@ -13,9 +13,9 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
+import org.jruby.ir.IRScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
-import org.jruby.util.ClasspathResource;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
@@ -61,25 +61,16 @@ class LibrarySearcher {
     }
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
-        boolean searchedForServiceLibrary = false;
-
         for (String suffix : suffixType.getSuffixes()) {
             FoundLibrary library = findBuiltinLibrary(baseName, suffix);
             if (library == null) library = findResourceLibrary(baseName, suffix);
-
-            // Since searching for a service library doesn't take the suffix into account, there's no need
-            // to perform it more than once.
-            if (library == null && !searchedForServiceLibrary) {
-                library = findServiceLibrary(baseName, suffix);
-                searchedForServiceLibrary = true;
-            }
 
             if (library != null) {
                 return library;
             }
         }
 
-        return null;
+        return findServiceLibrary(baseName);
     }
 
     private FoundLibrary findBuiltinLibrary(String name, String suffix) {
@@ -95,7 +86,7 @@ class LibrarySearcher {
         return null;
     }
 
-    private FoundLibrary findServiceLibrary(String name, String ignored) {
+    private FoundLibrary findServiceLibrary(String name) {
         DebugLog.JarExtension.logTry(name);
         Library extensionLibrary = ClassExtensionLibrary.tryFind(runtime, name);
         if (extensionLibrary != null) {
@@ -133,6 +124,7 @@ class LibrarySearcher {
           return findFileResource(baseName, suffix);
         }
 
+        // search the $LOAD_PATH
         try {
             for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
                 FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry));
@@ -142,7 +134,19 @@ class LibrarySearcher {
             t.printStackTrace();
         }
 
-        return null;
+        // inside a classloader the path "." is the place where to find the jruby kernel
+        if (!runtime.getCurrentDirectory().startsWith(URLResource.URI_CLASSLOADER)) {
+
+            // ruby does not load a relative path unless the current working directory is in $LOAD_PATH
+            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, ".");
+
+            // we did not find the file on the $LOAD_PATH but in current directory so we need to treat it
+            // as not found (the classloader search below will find it otherwise)
+            if (library != null) return null;
+        }
+
+        // load the jruby kernel and all resource added to $CLASSPATH
+        return findFileResourceWithLoadPath(baseName, suffix, URLResource.URI_CLASSLOADER);
     }
 
     // FIXME: to_path should not be called n times it should only be once and that means a cache which would
@@ -162,15 +166,13 @@ class LibrarySearcher {
         String pathWithSuffix = fullPath + suffix;
 
         DebugLog.Resource.logTry(pathWithSuffix);
-        FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
+        FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
         if (resource.exists()) {
             DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveScriptName(resource, pathWithSuffix);
             String loadName = resolveLoadName(resource, searchName + suffix);
 
-            return new FoundLibrary(
-                    new ResourceLibrary(searchName, scriptName, resource),
-                    loadName);
+            return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
         }
 
         return null;
@@ -205,17 +207,46 @@ class LibrarySearcher {
     }
 
     static class ResourceLibrary implements Library {
-        private final String searchName;
-        private final String scriptName;
-        private final FileResource resource;
-        private final String location;
+        public static ResourceLibrary create(String searchName, String scriptName, FileResource resource) {
+            String location = resource.absolutePath();
+
+            if (location.endsWith(".class")) return new ClassResourceLibrary(searchName, scriptName, resource);
+            if (location.endsWith(".jar")) return new JarResourceLibrary(searchName, scriptName, resource);
+
+            return new ResourceLibrary(searchName, scriptName, resource); // just .rb?
+        }
+
+        protected final String searchName;
+        protected final String scriptName;
+        protected final FileResource resource;
+        protected final String location;
 
         public ResourceLibrary(String searchName, String scriptName, FileResource resource) {
             this.searchName = searchName;
             this.scriptName = scriptName;
             this.location = resource.absolutePath();
-
             this.resource = resource;
+        }
+
+        @Override
+        public void load(Ruby runtime, boolean wrap) {
+            InputStream ris = null;
+            try {
+                ris = resource.inputStream();
+                runtime.loadFile(scriptName, new LoadServiceResourceInputStream(ris), wrap);
+            } catch(IOException e) {
+                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
+            } finally {
+                try {
+                    if (ris != null) ris.close();
+                } catch (IOException ioE) { /* At least we tried.... */}
+            }
+        }
+    }
+
+    static class ClassResourceLibrary extends ResourceLibrary {
+        public ClassResourceLibrary(String searchName, String scriptName, FileResource resource) {
+            super(searchName, scriptName, resource);
         }
 
         @Override
@@ -223,70 +254,48 @@ class LibrarySearcher {
             InputStream is = null;
             try {
                 is = new BufferedInputStream(resource.inputStream(), 32768);
-            }
-            catch(IOException e) {
-                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
-            }
+                IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
-            try {
-                if (location.endsWith(".jar")) {
-                    loadJar(runtime, wrap);
-                } else if (location.endsWith(".class")) {
-                    loadClass(runtime, is, wrap);
-                } else {
-                    loadScript(runtime, is, wrap);
-                }
+                // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
+                // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
+                if (script == null) return;
+                
+                runtime.loadScope(script, wrap);
+            } catch(IOException e) {
+                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             } finally {
                 try {
-                    is.close();
-                } catch (IOException ioE) {
-                    // At least we tried....
-                }
+                    if (is != null) is.close();
+                } catch (IOException ioE) { /* At least we tried.... */ }
             }
         }
+    }
 
-        private void loadScript(Ruby runtime, InputStream is, boolean wrap) {
-            runtime.loadFile(scriptName, is, wrap);
+    static class JarResourceLibrary extends ResourceLibrary {
+        public JarResourceLibrary(String searchName, String scriptName, FileResource resource) {
+            super(searchName, scriptName, resource);
         }
 
-        private void loadClass(Ruby runtime, InputStream is, boolean wrap) {
-            Script script = CompiledScriptLoader.loadScriptFromFile(runtime, is, searchName);
-            if (script == null) {
-                // we're depending on the side effect of the load, which loads the class but does not turn it into a script
-                // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
-                return;
-            }
-            script.setFilename(scriptName);
-            runtime.loadScript(script, wrap);
-        }
-
-        private void loadJar(Ruby runtime, boolean wrap) {
+        @Override
+        public void load(Ruby runtime, boolean wrap) {
             try {
                 URL url;
-                if (location.startsWith(ClasspathResource.CLASSPATH)){
-                    // get URL directly from the classloader with its StreamHandler set
-                    // by the classloader itself
-                    url = ClasspathResource.getResourceURL(location);
-                }
-                else if (location.startsWith(URLResource.URI)){
-                    url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
-                }
-                else {
+                if (location.startsWith(URLResource.URI)) {
+                    url = URLResource.getResourceURL(runtime, location);
+                } else {
+                    // convert file urls with !/ into jar urls so the classloader
+                    // can handle them via protocol handler
                     File f = new File(location);
                     if (f.exists() || location.contains( "!")){
                         url = f.toURI().toURL();
-                        if ( location.contains( "!") ) {
+                        if (location.contains( "!")) {
                             url = new URL( "jar:" + url );
                         }
-                    }
-                    else {
+                    } else {
                         url = new URL(location);
                     }
                 }
-                if ( url != null ) {
-                    runtime.getJRubyClassLoader().addURL(url);
-                }
+                runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
             }

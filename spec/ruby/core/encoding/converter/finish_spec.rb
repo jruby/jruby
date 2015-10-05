@@ -2,7 +2,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::Converter#finish" do
-    before(:each) do
+    before :each do
       @ec = Encoding::Converter.new("utf-8", "iso-2022-jp")
     end
 

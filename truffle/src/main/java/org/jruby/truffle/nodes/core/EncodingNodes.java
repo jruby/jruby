@@ -11,180 +11,222 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
-import org.jruby.Ruby;
-import org.jruby.RubyObject;
-import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
-import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.core.EncodingOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
 
+    // Both are mutated only in CoreLibrary.initializeEncodingConstants().
+    private static DynamicObject[] encodingList = new DynamicObject[EncodingDB.getEncodings().size()];
+    private static Map<String, DynamicObject> lookup = new HashMap<>();
+
+    @TruffleBoundary
+    public static synchronized DynamicObject getEncoding(Encoding encoding) {
+        return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
+    }
+
+    @TruffleBoundary
+    public static DynamicObject getEncoding(String name) {
+        return lookup.get(name.toLowerCase(Locale.ENGLISH));
+    }
+
+    public static DynamicObject getEncoding(int index) {
+        return encodingList[index];
+    }
+
+    @TruffleBoundary
+    public static void storeEncoding(int encodingListIndex, DynamicObject encoding) {
+        assert RubyGuards.isRubyEncoding(encoding);
+        encodingList[encodingListIndex] = encoding;
+        lookup.put(Layouts.ENCODING.getName(encoding).toString().toLowerCase(Locale.ENGLISH), encoding);
+    }
+
+    @TruffleBoundary
+    public static void storeAlias(String aliasName, DynamicObject encoding) {
+        assert RubyGuards.isRubyEncoding(encoding);
+        lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
+    }
+
+    public static DynamicObject newEncoding(DynamicObject encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+        return createRubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
+    }
+
+    public static DynamicObject[] cloneEncodingList() {
+        final DynamicObject[] clone = new DynamicObject[encodingList.length];
+
+        System.arraycopy(encodingList, 0, clone, 0, encodingList.length);
+
+        return clone;
+    }
+
+    public static DynamicObject createRubyEncoding(DynamicObject encodingClass, Encoding encoding, ByteList name, boolean dummy) {
+        return Layouts.ENCODING.createEncoding(Layouts.CLASS.getInstanceFactory(encodingClass), encoding, name, dummy);
+    }
+
     @CoreMethod(names = "ascii_compatible?")
-    public abstract static class AsciiCompatibleNode extends CoreMethodNode {
+    public abstract static class AsciiCompatibleNode extends CoreMethodArrayArgumentsNode {
 
         public AsciiCompatibleNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public AsciiCompatibleNode(AsciiCompatibleNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public Object isCompatible(RubyEncoding encoding) {
-            notDesignedForCompilation();
-            return encoding.getEncoding().isAsciiCompatible();
+        public Object isCompatible(DynamicObject encoding) {
+            CompilerDirectives.transferToInterpreter();
+            return EncodingOperations.getEncoding(encoding).isAsciiCompatible();
         }
     }
 
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
-    public abstract static class CompatibleQueryNode extends CoreMethodNode {
+    public abstract static class CompatibleQueryNode extends CoreMethodArrayArgumentsNode {
 
         public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CompatibleQueryNode(CompatibleQueryNode prev) {
-            super(prev);
-        }
-
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyString first, RubyString second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+        @Specialization(guards = {"isRubyString(first)", "isRubyString(second)"})
+        public Object isCompatibleStringString(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(first), StringOperations.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyEncoding first, RubyEncoding second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getEncoding(), second.getEncoding());
+        @Specialization(guards = {"isRubyEncoding(first)", "isRubyEncoding(second)"})
+        public Object isCompatibleEncodingEncoding(DynamicObject first, DynamicObject second) {
+            final Encoding firstEncoding = EncodingOperations.getEncoding(first);
+            final Encoding secondEncoding = EncodingOperations.getEncoding(second);
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(firstEncoding, secondEncoding);
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyString first, RubyRegexp second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+        @Specialization(guards = {"isRubyString(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleStringRegexp(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyRegexp first, RubyString second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubyString(second)"})
+        public Object isCompatibleRegexpString(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), StringOperations.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyRegexp first, RubyRegexp second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getRegex().getEncoding());
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleRegexpRegexp(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyRegexp first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+        @Specialization(guards = {"isRubyRegexp(first)", "isRubySymbol(second)"})
+        public Object isCompatibleRegexpSymbol(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.REGEXP.getRegex(first).getEncoding(), Layouts.SYMBOL.getByteList(second).getEncoding());
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubyRegexp second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+        @Specialization(guards = {"isRubySymbol(first)", "isRubyRegexp(second)"})
+        public Object isCompatibleSymbolRegexp(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(Layouts.SYMBOL.getByteList(first).getEncoding(), Layouts.REGEXP.getRegex(second).getEncoding());
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubyString first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+        @Specialization(guards = {"isRubyString(first)", "isRubySymbol(second)"})
+        public Object isCompatibleStringSymbol(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
         }
 
         @TruffleBoundary
-        @Specialization
-        public Object isCompatible(RubySymbol first, RubySymbol second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+        @Specialization(guards = {"isRubySymbol(first)", "isRubySymbol(second)"})
+        public Object isCompatibleSymbolSymbol(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(SymbolNodes.getCodeRangeable(first), SymbolNodes.getCodeRangeable(second));
 
             if (compatibleEncoding != null) {
-                return RubyEncoding.getEncoding(compatibleEncoding);
+                return getEncoding(compatibleEncoding);
+            } else {
+                return nil();
+            }
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = {"isRubyString(first)", "isRubyEncoding(second)"})
+        public Object isCompatibleStringEncoding(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getByteList(first).getEncoding(), EncodingOperations.getEncoding(second));
+
+            if (compatibleEncoding != null) {
+                return getEncoding(compatibleEncoding);
             } else {
                 return nil();
             }
@@ -194,45 +236,53 @@ public abstract class EncodingNodes {
 
     @RubiniusOnly
     @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultExternalNode extends CoreMethodNode {
+    public abstract static class SetDefaultExternalNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private ToStrNode toStrNode;
 
         public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SetDefaultExternalNode(SetDefaultExternalNode prev) {
-            super(prev);
-        }
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public DynamicObject defaultExternalEncoding(DynamicObject encoding) {
+            CompilerDirectives.transferToInterpreter();
 
-        @Specialization
-        public RubyEncoding defaultExternal(RubyEncoding encoding) {
-            notDesignedForCompilation();
-
-            getContext().getRuntime().setDefaultExternalEncoding(encoding.getEncoding());
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
 
-        @Specialization
-        public RubyEncoding defaultExternal(RubyString encodingString) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isRubyString(encodingString)")
+        public DynamicObject defaultExternal(DynamicObject encodingString) {
+            CompilerDirectives.transferToInterpreter();
 
-            final RubyEncoding rubyEncoding = RubyEncoding.getEncoding(encodingString.toString());
-            getContext().getRuntime().setDefaultExternalEncoding(rubyEncoding.getEncoding());
+            final DynamicObject rubyEncoding = getEncoding(encodingString.toString());
+            getContext().getRuntime().setDefaultExternalEncoding(EncodingOperations.getEncoding(rubyEncoding));
 
             return rubyEncoding;
         }
 
-        @Specialization
-        public RubyEncoding defaultExternal(RubyNilClass nil) {
+        @Specialization(guards = "isNil(nil)")
+        public DynamicObject defaultExternal(Object nil) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
+        }
+
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isRubyString(encoding)", "!isNil(encoding)" })
+        public DynamicObject defaultExternal(VirtualFrame frame, Object encoding) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
+            }
+
+            return defaultExternal(toStrNode.executeToStr(frame, encoding));
         }
 
     }
 
     @RubiniusOnly
     @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
-    public abstract static class SetDefaultInternalNode extends CoreMethodNode {
+    public abstract static class SetDefaultInternalNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
 
@@ -240,39 +290,35 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        public SetDefaultInternalNode(SetDefaultInternalNode prev) {
-            super(prev);
-        }
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public DynamicObject defaultInternal(DynamicObject encoding) {
+            CompilerDirectives.transferToInterpreter();
 
-        @Specialization
-        public RubyEncoding defaultInternal(RubyEncoding encoding) {
-            notDesignedForCompilation();
-
-            getContext().getRuntime().setDefaultInternalEncoding(encoding.getEncoding());
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(encoding));
 
             return encoding;
         }
 
-        @Specialization
-        public RubyNilClass defaultInternal(RubyNilClass encoding) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isNil(encoding)")
+        public DynamicObject defaultInternal(Object encoding) {
+            CompilerDirectives.transferToInterpreter();
 
             getContext().getRuntime().setDefaultInternalEncoding(null);
 
-            return encoding;
+            return nil();
         }
 
-        @Specialization(guards = { "!isRubyEncoding", "!isRubyNilClass" })
-        public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
-            notDesignedForCompilation();
+        @Specialization(guards = { "!isRubyEncoding(encoding)", "!isNil(encoding)" })
+        public DynamicObject defaultInternal(VirtualFrame frame, Object encoding) {
+            CompilerDirectives.transferToInterpreter();
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            final RubyString encodingName = toStrNode.executeRubyString(frame, encoding);
-            getContext().getRuntime().setDefaultInternalEncoding(RubyEncoding.getEncoding(encodingName.toString()).getEncoding());
+            final DynamicObject encodingName = toStrNode.executeToStr(frame, encoding);
+            getContext().getRuntime().setDefaultInternalEncoding(EncodingOperations.getEncoding(getEncoding(encodingName.toString())));
 
             return encodingName;
         }
@@ -280,68 +326,54 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = "list", onSingleton = true)
-    public abstract static class ListNode extends CoreMethodNode {
+    public abstract static class ListNode extends CoreMethodArrayArgumentsNode {
 
         public ListNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ListNode(ListNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyArray list() {
-            notDesignedForCompilation();
+        public DynamicObject list() {
+            CompilerDirectives.transferToInterpreter();
 
-            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
+            final DynamicObject[] encodings = cloneEncodingList();
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), encodings, encodings.length);
         }
     }
 
 
     @CoreMethod(names = "locale_charmap", onSingleton = true)
-    public abstract static class LocaleCharacterMapNode extends CoreMethodNode {
+    public abstract static class LocaleCharacterMapNode extends CoreMethodArrayArgumentsNode {
 
         public LocaleCharacterMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public LocaleCharacterMapNode(LocaleCharacterMapNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public RubyString localeCharacterMap() {
-            notDesignedForCompilation();
+        public DynamicObject localeCharacterMap() {
+            CompilerDirectives.transferToInterpreter();
             final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
-            return getContext().makeString(name);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), name, StringSupport.CR_UNKNOWN, null);
         }
     }
 
     @CoreMethod(names = "dummy?")
-    public abstract static class DummyNode extends CoreMethodNode {
+    public abstract static class DummyNode extends CoreMethodArrayArgumentsNode {
 
         public DummyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DummyNode(DummyNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public boolean isDummy(RubyEncoding encoding) {
-            notDesignedForCompilation();
-
-            return encoding.isDummy();
+        public boolean isDummy(DynamicObject encoding) {
+            return Layouts.ENCODING.getDummy(encoding);
         }
     }
 
     @RubiniusOnly
     @CoreMethod(names = "encoding_map", onSingleton = true)
-    public abstract static class EncodingMapNode extends CoreMethodNode {
+    public abstract static class EncodingMapNode extends CoreMethodArrayArgumentsNode {
 
         @Child private CallDispatchHeadNode upcaseNode;
         @Child private CallDispatchHeadNode toSymNode;
@@ -358,36 +390,27 @@ public abstract class EncodingNodes {
             newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public EncodingMapNode(EncodingMapNode prev) {
-            super(prev);
-            upcaseNode = prev.upcaseNode;
-            toSymNode = prev.toSymNode;
-            newLookupTableNode = prev.newLookupTableNode;
-            lookupTableWriteNode = prev.lookupTableWriteNode;
-            newTupleNode = prev.newTupleNode;
-        }
-
         @Specialization
         public Object encodingMap(VirtualFrame frame) {
             Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
+            final DynamicObject[] encodings = cloneEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, getContext().makeString(encodings[i].getName()), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.ENCODING.getName(encodings[i]), StringSupport.CR_UNKNOWN, null), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
 
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            final Hash<EncodingDB.Entry>.HashEntryIterator i = EncodingDB.getAliases().entryIterator();
             while (i.hasNext()) {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
 
-                final Object upcased = upcaseNode.call(frame, getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.bytes, e.p, e.end - e.p), StringSupport.CR_UNKNOWN, null), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
+                final DynamicObject alias = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.bytes, e.p, e.end - e.p), StringSupport.CR_UNKNOWN, null);
                 final int index = e.value.getIndex();
 
 
@@ -396,33 +419,40 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("internal"), indexLookup(encodings, defaultInternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("INTERNAL"), internalTuple);
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("internal", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultInternalEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("external"), indexLookup(encodings, defaultExternalEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("external", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultExternalEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
-            final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("locale"), indexLookup(encodings, localeEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
+            final Encoding localeEncoding = getLocaleEncoding();
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("locale", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, localeEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
-            final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("filesystem"), indexLookup(encodings, filesystemEncoding));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("FILESYSTEM"), filesystemTuple);
+            final Encoding filesystemEncoding = getLocaleEncoding();
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, filesystemEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
         }
 
         @TruffleBoundary
-        public Object indexLookup(RubyEncoding[] encodings, Encoding encoding) {
+        private Encoding getLocaleEncoding() {
+            return getContext().getRuntime().getEncodingService().getLocaleEncoding();
+        }
+
+        @TruffleBoundary
+        public Object indexLookup(DynamicObject[] encodings, Encoding encoding) {
             // TODO (nirvdrum 25-Mar-15): Build up this lookup table in RubyEncoding as we register encodings.
             if (encoding == null) {
                 return nil();
             }
 
+            final ByteList encodingName = new ByteList(encoding.getName());
+
             for (int i = 0; i < encodings.length; i++) {
-                if (encodings[i].getEncoding() == encoding) {
+                if (Layouts.ENCODING.getName(encodings[i]).equals(encodingName)) {
                     return i;
                 }
             }
@@ -432,22 +462,18 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = { "name", "to_s" })
-    public abstract static class ToSNode extends CoreMethodNode {
+    public abstract static class ToSNode extends CoreMethodArrayArgumentsNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
-        @CompilerDirectives.TruffleBoundary
+        @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyEncoding encoding) {
-            final ByteList name = encoding.getName().dup();
+        public DynamicObject toS(DynamicObject encoding) {
+            final ByteList name = Layouts.ENCODING.getName(encoding).dup();
             name.setEncoding(ASCIIEncoding.INSTANCE);
-            return getContext().makeString(name);
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), name, StringSupport.CR_UNKNOWN, null);
         }
     }
 

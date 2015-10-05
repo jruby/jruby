@@ -1,5 +1,5 @@
-describe :net_httpresponse_body, :shared => true do
-  before(:each) do
+describe :net_httpresponse_body, shared: true do
+  before :each do
     @res = Net::HTTPUnknownResponse.new("1.0", "???", "test response")
     @socket = Net::BufferedIO.new(StringIO.new("test body"))
   end

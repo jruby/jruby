@@ -10,15 +10,15 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ProcNodes;
+import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
 /**
  * Create a RubyProc to pass as a block to the called method.
@@ -27,44 +27,36 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
  */
 public class BlockDefinitionNode extends RubyNode {
 
+    private final Type type;
     private final SharedMethodInfo sharedMethodInfo;
 
-    // TODO(CS, 10-Jan-15) having three call targets isn't ideal, but they all have different semantics, and we don't
+    // TODO(CS, 10-Jan-15) having two call targets isn't ideal, but they all have different semantics, and we don't
     // want to move logic into the call site
 
-    private final CallTarget callTargetForBlocks;
     private final CallTarget callTargetForProcs;
-    private final CallTarget callTargetForMethods;
+    private final CallTarget callTargetForLambdas;
 
-    private final boolean requiresDeclarationFrame;
+    private final BreakID breakID;
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, SharedMethodInfo sharedMethodInfo,
-                               boolean requiresDeclarationFrame, CallTarget callTargetForBlocks,
-                               CallTarget callTargetForProcs, CallTarget callTargetForMethods) {
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, Type type, SharedMethodInfo sharedMethodInfo,
+                               CallTarget callTargetForProcs, CallTarget callTargetForLambdas, BreakID breakID) {
         super(context, sourceSection);
+        this.type = type;
         this.sharedMethodInfo = sharedMethodInfo;
 
-        this.callTargetForBlocks = callTargetForBlocks;
         this.callTargetForProcs = callTargetForProcs;
-        this.callTargetForMethods = callTargetForMethods;
+        this.callTargetForLambdas = callTargetForLambdas;
+        this.breakID = breakID;
+    }
 
-        this.requiresDeclarationFrame = requiresDeclarationFrame;
-
+    public BreakID getBreakID() {
+        return breakID;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final MaterializedFrame declarationFrame;
-
-        if (requiresDeclarationFrame) {
-            declarationFrame = frame.materialize();
-        } else {
-            declarationFrame = null;
-        }
-
-        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTargetForBlocks, callTargetForProcs, callTargetForMethods,
-                declarationFrame,
+        return ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), type, sharedMethodInfo,
+                callTargetForProcs, callTargetForLambdas, frame.materialize(),
                 RubyArguments.getMethod(frame.getArguments()),
                 RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));

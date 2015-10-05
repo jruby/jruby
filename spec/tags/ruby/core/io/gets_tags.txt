@@ -1,1 +1,0 @@
-fails:IO#gets ignores the internal encoding if the IO object's external encoding is ASCII-8BIT

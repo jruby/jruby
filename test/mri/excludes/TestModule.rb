@@ -1,7 +1,6 @@
 exclude :test_alias, "needs investigation"
 exclude :test_attr, "needs investigation"
 exclude :test_attr_inherited_visibility, "IR regression"
-exclude :test_class_variables, "needs investigation"
 exclude :test_classpath, "needs investigation"
 exclude :test_const_get_inherited, "needs investigation"
 exclude :test_const_set_invalid_name, "UTF-16 invalid name is accepted as ok"

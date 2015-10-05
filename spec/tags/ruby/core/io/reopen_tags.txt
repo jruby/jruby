@@ -1,4 +1,3 @@
-fails:IO#reopen with a String passes all mode flags through
 fails:IO#reopen with an IO sets path equals to the other IO's path if other IO is File
 fails:IO#reopen changes the class of the instance to the class of the object returned by #to_io
 fails:IO#reopen with an IO may change the class of the instance

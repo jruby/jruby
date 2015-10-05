@@ -5,6 +5,6 @@ describe 'Kernel#` on Windows' do
     # testing same on all platforms, for simplicity
     result = `#{ENV_JAVA['jruby.home']}/bin/jruby --properties`
 
-    result.should_not match(/\r\n/)
+    expect(result).not_to match(/\r\n/)
   end
 end

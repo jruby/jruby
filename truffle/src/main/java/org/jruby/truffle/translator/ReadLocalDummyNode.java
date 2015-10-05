@@ -37,7 +37,7 @@ public class ReadLocalDummyNode extends org.jruby.ast.Node {
 
     @Override
     public List<Node> childNodes() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

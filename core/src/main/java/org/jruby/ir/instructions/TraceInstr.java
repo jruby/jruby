@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -14,14 +15,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Instrumented trace.
  */
-public class TraceInstr extends Instr {
+public class TraceInstr extends NoOperandInstr {
     private final RubyEvent event;
     private final String name;
     private final String filename;
     private final int linenumber;
 
     public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
-        super(Operation.TRACE, EMPTY_OPERANDS);
+        super(Operation.TRACE);
 
         this.event = event;
         this.name = name;
@@ -58,10 +59,14 @@ public class TraceInstr extends Instr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getEvent().ordinal());
+        e.encode(getEvent());
         e.encode(getName());
         e.encode(getFilename());
         e.encode(getLinenumber());
+    }
+
+    public static TraceInstr decode(IRReaderDecoder d) {
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeString(), d.decodeString(), d.decodeInt());
     }
 
     @Override

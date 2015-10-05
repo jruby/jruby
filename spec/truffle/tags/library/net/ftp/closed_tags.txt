@@ -1,0 +1,2 @@
+fails:Net::FTP#closed? returns true when the socket is closed
+fails:Net::FTP#closed? returns true when the socket is nil

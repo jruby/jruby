@@ -1,4 +1,1 @@
-fails:Dir#pos returns an Integer representing the current position in the directory
-fails:Dir#pos returns a different Integer if moved from previous position
 fails:Dir#pos raises an IOError when called on a closed Dir instance
-fails:Dir#pos= moves the read position to a previously obtained position

@@ -9,30 +9,18 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
-
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
-import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.util.cli.Options;
 
 public abstract class DispatchNode extends RubyNode {
-
-    public static final int DISPATCH_POLYMORPHIC_MAX = Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load();
-    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load();
-    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load();
 
     private final DispatchAction dispatchAction;
 
@@ -47,11 +35,6 @@ public abstract class DispatchNode extends RubyNode {
         assert dispatchAction != null;
     }
 
-    public DispatchNode(DispatchNode prev) {
-        super(prev);
-        dispatchAction = prev.dispatchAction;
-    }
-
     protected abstract boolean guard(Object methodName, Object receiver);
 
     protected DispatchNode getNext() {
@@ -62,36 +45,17 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects);
+            DynamicObject blockObject,
+            Object[] argumentsObjects);
 
-    @CompilerDirectives.TruffleBoundary
-    protected RubyConstant lookupConstant(
-            RubyModule module,
-            String name,
-            boolean ignoreVisibility) {
-        final LexicalScope lexicalScope = getHeadNode().getLexicalScope();
-
-        RubyConstant constant = ModuleOperations.lookupConstant(getContext(), lexicalScope, module, name);
-
-        // If no constant was found, use #const_missing
-        if (constant == null) {
-            return null;
-        }
-
-        if (!ignoreVisibility && !constant.isVisibleTo(getContext(), lexicalScope, module)) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(module, name, this));
-        }
-
-        return constant;
-    }
-
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     protected InternalMethod lookup(
-            RubyClass callerClass,
+            DynamicObject callerClass,
             Object receiver,
             String name,
             boolean ignoreVisibility) {
+        assert callerClass == null || RubyGuards.isRubyClass(callerClass);
+
         InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
@@ -103,7 +67,7 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
+            return null;
         }
 
         // Check visibility
@@ -127,8 +91,8 @@ public abstract class DispatchNode extends RubyNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            RubyProc blockObject,
-            Object argumentsObjects,
+            DynamicObject blockObject,
+            Object[] argumentsObjects,
             String reason) {
         final DispatchHeadNode head = getHeadNode();
         head.reset(reason);

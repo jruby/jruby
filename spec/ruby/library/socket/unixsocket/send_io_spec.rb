@@ -6,26 +6,30 @@ describe "UNIXSocket#send_io" do
   platform_is_not :windows do
     before :each do
       @path = SocketSpecs.socket_path
-      rm_r @path
-
       @server = UNIXServer.open(@path)
       @client = UNIXSocket.open(@path)
+
+      @send_io_path = File.expand_path('../../fixtures/send_io.txt', __FILE__)
+      @file = File.open(@send_io_path)
     end
 
     after :each do
+      @io.close if @io
+      @socket.close if @socket
+
+      @file.close
       @client.close
       @server.close
       rm_r @path
     end
 
     it "sends the fd for an IO object across the socket" do
-      path = File.expand_path('../../fixtures/send_io.txt', __FILE__)
-      f = File.open(path)
+      @client.send_io(@file)
 
-      @client.send_io(f)
-      io = @server.accept.recv_io
+      @socket = @server.accept
+      @io = @socket.recv_io
 
-      io.read.should == File.read(path)
+      @io.read.should == File.read(@send_io_path)
     end
   end
 end

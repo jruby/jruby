@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,7 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.proxy;
 
-/** this interface is implemented by proxies generated from a JavaProxyClass */
+/**
+ * Interface is implemented by proxies generated from a JavaProxyClass.
+ *
+ * @see JavaProxyClassFactory
+ */
 public interface InternalJavaProxy {
 
     /**
@@ -40,6 +44,8 @@ public interface InternalJavaProxy {
      */
     JavaProxyInvocationHandler ___getInvocationHandler();
 
-    final Object[] NO_ARGS = new Object[0];
+    // NOTE: used in JavaProxyClassFactory indirectly
+    // ... getStatic(JAVA_PROXY_TYPE, "NO_ARGS", ...)
+    static final Object[] NO_ARGS = new Object[0];
 
 }

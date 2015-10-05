@@ -9,39 +9,31 @@ describe "ARGF.rewind" do
     @file2 = File.readlines @file2_name
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   # NOTE: this test assumes that fixtures files have two lines each
   it "goes back to beginning of current file" do
-    argv [@file1_name, @file2_name] do
-      ARGF.gets;
-      ARGF.rewind;
-      ARGF.gets.should == @file1.first
+    argf [@file1_name, @file2_name] do
+      @argf.gets
+      @argf.rewind
+      @argf.gets.should == @file1.first
 
-      ARGF.gets # finish reading file1
+      @argf.gets # finish reading file1
 
-      ARGF.gets
-      ARGF.rewind
-      ARGF.gets.should == @file2.first
+      @argf.gets
+      @argf.rewind
+      @argf.gets.should == @file2.first
     end
   end
 
   it "resets ARGF.lineno to 0" do
-    argv [@file2_name] do
-      ARGF.lineno = 0
-      ARGF.gets;
-      ARGF.lineno.should > 0
-      ARGF.rewind;
-      ARGF.lineno.should == 0
-    end
+    script = fixture __FILE__, "rewind.rb"
+    out = ruby_exe(script, args: [@file1_name, @file2_name])
+    out.should == "0\n1\n0\n"
   end
 
   it "raises an ArgumentError when end of stream reached" do
-    argv [@file1_name, @file2_name] do
-      ARGF.read
-      lambda { ARGF.rewind }.should raise_error(ArgumentError)
+    argf [@file1_name, @file2_name] do
+      @argf.read
+      lambda { @argf.rewind }.should raise_error(ArgumentError)
     end
   end
 end

@@ -12,7 +12,7 @@ public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable im
     private final String oldName;
 
     public TemporaryLocalReplacementVariable(String oldName, int offset) {
-        super(PREFIX + oldName + "_" + offset, offset);
+        super(offset);
 
         this.oldName = oldName;
     }
@@ -24,7 +24,7 @@ public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable im
 
     @Override
     public String getPrefix() {
-        return "%t_" + oldName + "_";
+        return PREFIX + oldName + "_";
     }
 
     @Override

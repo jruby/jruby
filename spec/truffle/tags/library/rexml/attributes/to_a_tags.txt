@@ -1,0 +1,2 @@
+fails:REXML::Attributes#to_a returns an array with the attributes
+fails:REXML::Attributes#to_a returns an empty array if it has no attributes

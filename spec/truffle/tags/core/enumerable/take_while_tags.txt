@@ -1,1 +1,0 @@
-fails:Enumerable#take_while will only go through what's needed

@@ -1,2 +1,0 @@
-fails:#to_enum uses the passed block's value to calculate the size of the enumerator
-fails:#to_enum defers the evaluation of the passed block until #size is called

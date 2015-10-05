@@ -7,8 +7,8 @@ if RUBY_VERSION > '1.9'
       t1 = Time.new(2014, 1, 2, 3, 4, 5, '+05:00')
       t2 = Time.new(2014, 1, 2, 3, 4, 5, 18000)
       
-      t1.to_s.should == '2014-01-02 03:04:05 +0500'
-      t1.to_s.should == t2.to_s
+      expect(t1.to_s).to eq('2014-01-02 03:04:05 +0500')
+      expect(t1.to_s).to eq(t2.to_s)
     end
   end
   
@@ -17,7 +17,7 @@ if RUBY_VERSION > '1.9'
       t1 = Time.new(2014, 1, 2, 3, 4, 5, '+05:00')
       t2 = Time.new(2014, 1, 2, 3, 4, 5, 18000)
       
-      t1.eql?(t2).should == true
+      expect(t1.eql?(t2)).to eq(true)
     end
   end
   
@@ -26,7 +26,7 @@ if RUBY_VERSION > '1.9'
       t1 = Time.new(2014, 1, 2, 3, 4, 5, '+05:00')
       
       # in ruby 1.9.3, t1.zone return nil 
-      t1.zone.should == nil
+      expect(t1.zone).to eq(nil)
     end
   end
   
@@ -35,7 +35,7 @@ if RUBY_VERSION > '1.9'
       t1 = Time.new(2014, 1, 2, 3, 4, 5, '+05:00')
       
       # in ruby 1.9.3, t1.utc_offset return 18000
-      t1.utc_offset.should == 18000
+      expect(t1.utc_offset).to eq(18000)
     end
   end
   

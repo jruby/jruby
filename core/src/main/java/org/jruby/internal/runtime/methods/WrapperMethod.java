@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -46,7 +47,7 @@ public class WrapperMethod extends DynamicMethod {
      * @param visibility
      */
     public WrapperMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility, null);
+        super(implementationClass, visibility);
         this.method = method;
     }
     
@@ -99,6 +100,11 @@ public class WrapperMethod extends DynamicMethod {
     }
     
     public DynamicMethod getRealMethod() {
-        return method;
+        return method.getRealMethod();
+    }
+
+    @Override
+    public Arity getArity() {
+        return method.getArity();
     }
 }

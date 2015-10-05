@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
+import org.jruby.lexer.LexerSource;
+
 /**
  */
 public abstract class StrTerm {

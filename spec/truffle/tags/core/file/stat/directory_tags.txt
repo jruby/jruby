@@ -1,5 +1,0 @@
-fails:File::Stat#directory? returns true if the argument is a directory
-fails:File::Stat#directory? returns false if the argument is not a directory
-fails:File::Stat#directory? accepts an object that has a #to_path method
-fails:File::Stat#directory? raises a TypeError when passed an Integer
-fails:File::Stat#directory? raises a TypeError when passed nil

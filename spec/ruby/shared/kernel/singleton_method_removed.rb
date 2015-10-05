@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/kernel/singleton_method', __FILE__)
 
-describe :singleton_method_removed, :shared => true do
+describe :singleton_method_removed, shared: true do
   it "is a private method" do
     @object.should have_private_instance_method(@method)
   end

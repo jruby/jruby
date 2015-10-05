@@ -37,17 +37,15 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.InterpretedIRBlockBody;
-import org.jruby.runtime.MethodBlock;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
@@ -61,7 +59,8 @@ import java.util.Arrays;
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
     private Block.Type type;
-    private ISourcePosition sourcePosition;
+    private String file = null;
+    private int line = -1;
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
         super(runtime, rubyClass);
@@ -69,13 +68,16 @@ public class RubyProc extends RubyObject implements DataType {
         this.type = type;
     }
 
+    @Deprecated
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
-        this(runtime, rubyClass, type);
-        this.sourcePosition = sourcePosition;
+        this(runtime, rubyClass, type, sourcePosition.getFile(), sourcePosition.getLine());
     }
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
-        this(runtime, rubyClass, type, new SimpleSourcePosition(file, line));
+        this(runtime, rubyClass, type);
+
+        this.file = file;
+        this.line = line;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
@@ -102,9 +104,13 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
-        return newProc(runtime, block, type, null);
+        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
+        proc.setup(block);
+
+        return proc;
     }
 
+    @Deprecated
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
         proc.setup(block);
@@ -187,7 +193,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "clone")
     @Override
     public IRubyObject rbClone() {
-    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
+    	RubyProc newProc = newProc(getRuntime(), block, type, file, line);
     	// TODO: CLONE_SETUP here
     	return newProc;
     }
@@ -195,13 +201,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-        return newProc(getRuntime(), block, type, sourcePosition);
-    }
-    
-    @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        return getRuntime().newBoolean(other instanceof RubyProc &&
-                (this == other || this.block.equals(((RubyProc)other).block)));
+        return newProc(getRuntime(), block, type, file, line);
     }
     
     @Override
@@ -211,12 +211,20 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
-                block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
+        StringBuilder sb = new StringBuilder(32);
+        sb.append("#<Proc:0x").append(Integer.toString(block.hashCode(), 16));
+
+        String file = block.getBody().getFile();
+        if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
+
         if (isLambda()) sb.append(" (lambda)");
-        sb.append(">");
+        sb.append('>');
+
+        IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
+
+        if (isTaint()) string.setTaint(true);
         
-        return RubyString.newString(getRuntime(), sb.toString());
+        return string;
     }
 
     @JRubyMethod(name = "binding")
@@ -239,41 +247,53 @@ public class RubyProc extends RubyObject implements DataType {
      * arity of one, etc.)
      */
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        // FIXME: Arity marked for death
-        Arity arity = blockBody.arity();
-        if (arity == null) return args;
+        Signature signature = blockBody.getSignature();
 
         if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {
-            if (blockBody instanceof InterpretedIRBlockBody) {
-                ((InterpretedIRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
-            } else {
-                arity.checkArity(context.runtime, args.length);
-            }
+            signature.checkArity(context.runtime, args);
             return args;
         }
 
-        boolean isFixed = arity.isFixed();
-        int required = arity.required();
+        boolean isFixed = signature.isFixed();
+        int required = signature.required();
         int actual = args.length;
+        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs();
 
+        // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
         // for procs and blocks, single array passed to multi-arg must be spread
-        if (arity != Arity.ONE_ARGUMENT &&  required != 0 &&
-                (isFixed || arity != Arity.OPTIONAL) &&
+        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || restKwargs) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
             args = args[0].convertToArray().toJavaArray();
             actual = args.length;
         }
 
+        // FIXME: NOTE IN THE BLOCKCAPALYPSE: I think we only care if there is any kwargs syntax at all and if so it is +1
+        // argument.  This ended up more complex because required() on signature adds +1 is required kwargs.  I suspect
+        // required() is used for two purposes and the +1 might be useful in some other way so I made it all work and
+        // after this we should clean this up (IRBlockBody and BlockBody are also messing with args[] so that should
+        // be part of this cleanup.
+
+        // We add one to our fill and adjust number of incoming args code when there are kwargs.  We subtract one
+        // if it happens to be requiredkwargs since required gets a +1.  This is horrible :)
+        int needsKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs() ?
+                1 - ((IRBlockBody) blockBody).getSignature().getRequiredKeywordForArityCount() : 0;
+
         // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required != actual) {
+        if (isFixed && required > 0 && required+needsKwargs != actual) {
+            IRubyObject[] newArgs = Arrays.copyOf(args, required+needsKwargs);
 
-            IRubyObject[] newArgs = Arrays.copyOf(args, required);
 
-            // pad with nil
-            if (required > actual) {
+            if (required > actual) {                      // Not enough required args pad.
                 Helpers.fillNil(newArgs, actual, required, context.runtime);
+                // ENEBO: what if we need kwargs here?
+            } else if (needsKwargs != 0) {
+                if (args.length < required+needsKwargs) { // Not enough args and we need an empty {} for kwargs processing.
+                    newArgs[newArgs.length - 1] = RubyHash.newHash(context.runtime);
+                } else {                                  // We have more args than we need and kwargs is always the last arg.
+                    newArgs[newArgs.length - 1] = args[args.length - 1];
+                }
             }
 
             args = newArgs;
@@ -307,7 +327,12 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "arity")
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(block.arity().getValue());
+        Signature signature = block.getSignature();
+
+        if (block.type == Block.Type.LAMBDA) return getRuntime().newFixnum(signature.arityValue());
+
+        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
+        return getRuntime().newFixnum(signature.hasRest() ? signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
     
     @JRubyMethod(name = "to_proc")
@@ -318,10 +343,9 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (sourcePosition != null) {
-            return runtime.newArray(runtime.newString(sourcePosition.getFile()),
-                    runtime.newFixnum(sourcePosition.getLine() + 1 /*zero-based*/));
-        } else if (block != null) {
+        if (file != null) return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+
+        if (block != null) {
             Binding binding = block.getBinding();
             return runtime.newArray(runtime.newString(binding.getFile()),
                     runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
@@ -334,10 +358,8 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject parameters(ThreadContext context) {
         BlockBody body = this.getBlock().getBody();
 
-        if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
-
-        return Helpers.parameterListToParameters(context.runtime,
-                body.getParameterList(), isLambda());
+        return Helpers.argumentDescriptorsToParameters(context.runtime,
+                body.getArgumentDescriptors(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?")

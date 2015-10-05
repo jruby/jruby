@@ -3,7 +3,7 @@ require File.expand_path('../../../../spec_helper', __FILE__)
 
 with_feature :encoding do
   describe "Encoding::Converter#putback" do
-    before(:each) do
+    before :each do
       @ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
       @ret = @ec.primitive_convert(@src="abc\xa1def", @dst="", nil, 10)
     end

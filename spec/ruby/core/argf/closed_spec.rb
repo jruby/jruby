@@ -6,17 +6,13 @@ describe "ARGF.closed?" do
     @file2_name = fixture __FILE__, "file2.txt"
   end
 
-  after :each do
-    ARGF.close unless ARGF.closed?
-  end
-
   it "returns true if the current stream has been closed" do
-    argv [@file1_name, @file2_name] do
-      stream = ARGF.to_io
+    argf [@file1_name, @file2_name] do
+      stream = @argf.to_io
       stream.close
 
-      ARGF.closed?.should be_true
-      stream.reopen(ARGF.filename, 'r')
+      @argf.closed?.should be_true
+      stream.reopen(@argf.filename, 'r')
     end
   end
 end

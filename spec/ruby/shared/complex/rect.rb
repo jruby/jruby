@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :complex_rect, :shared => true do
-  before(:each) do
+describe :complex_rect, shared: true do
+  before :each do
     @numbers = [
       Complex(1),
       Complex(0, 20),
@@ -44,7 +44,7 @@ describe :complex_rect, :shared => true do
   end
 end
 
-describe :complex_rect_class, :shared => true do
+describe :complex_rect_class, shared: true do
   describe "passed a Numeric n which responds to #real? with true" do
     it "returns a Complex with real part n and imaginary part 0" do
       n = mock_numeric('n')

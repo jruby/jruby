@@ -9,20 +9,16 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeChild(value = "arguments", type = RubyNode[].class)
+@GenerateNodeFactory
 public abstract class CoreMethodNode extends RubyNode {
 
     public CoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public CoreMethodNode(CoreMethodNode prev) {
-        super(prev);
     }
 
 }

@@ -23,49 +23,60 @@ public @interface CoreMethod {
 
     String[] names();
 
+    // where the method is to be defined
     Visibility visibility() default Visibility.PUBLIC;
 
     /**
      * Defines the method on the singleton class.
-     * needsSelf is always false.
+     * {@link #needsSelf() needsSelf} is always false.
+     * See {@link #constructor() constructor} if you need self.
      * */
     boolean onSingleton() default false;
 
     /**
+     * Like {@link #onSingleton() onSingleton} but with {@link #needsSelf() needsSelf} always true.
+     */
+    boolean constructor() default false;
+
+    /**
      * Defines the method as public on the singleton class
      * and as a private instance method.
-     * needsSelf is always false.
+     * {@link #needsSelf() needsSelf} is always false
+     * as it could be either a module or any receiver.
      */
     boolean isModuleFunction() default false;
 
-    boolean needsSelf() default true;
+    boolean needsCallerFrame() default false;
 
-    // TODO CS 3-Mar-15 needsSelf() gets ignored in some cases - see CoreMethodNodeManager#addMethod
-    boolean reallyDoesNeedSelf() default false;
+    // arguments specification
+    /** Whether <code>self</code> is passed as first argument to specializations. */
+    boolean needsSelf() default true;
 
     int required() default 0;
 
     int optional() default 0;
 
     /**
-     * Give arguments as a Object[] and allows unlimited arguments.
+     * Give the remaining arguments as a Object[] and allows unlimited arguments.
      */
-    boolean argumentsAsArray() default false;
+    boolean rest() default false;
 
     boolean needsBlock() default false;
 
+    // arguments transformation
     boolean lowerFixnumSelf() default false;
 
     int[] lowerFixnumParameters() default {};
 
     boolean taintFromSelf() default false;
 
-    int[] taintFromParameters() default {};
+    int taintFromParameter() default -1;
 
     boolean raiseIfFrozenSelf() default false;
 
     int[] raiseIfFrozenParameters() default {};
 
+    // extra behavior
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
     boolean returnsEnumeratorIfNoBlock() default false;

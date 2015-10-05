@@ -7,7 +7,7 @@ describe "StopIteration" do
 end
 
 describe "StopIteration#result" do
-  before(:each) do
+  before :each do
     obj = Object.new
     def obj.each
       yield :yield_returned_1

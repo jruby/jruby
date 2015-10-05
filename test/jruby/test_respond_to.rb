@@ -23,7 +23,7 @@ class TestRespondToConcurrency < Test::Unit::TestCase
       attr_reader :hashable_methods
       def method_added(method_name)
         @hashable_methods ||= []
-        @hashable_methods << {:method_name => method_name, :key => method_name.to_s } 
+        @hashable_methods << {:method_name => method_name, :key => method_name.to_s }
       end
     end
   end
@@ -85,7 +85,7 @@ class TestRespondToViaMethodMissing < Test::Unit::TestCase
     instance_methods.each do |m|
       undef_method(m) if m.to_s !~ /(?:^__|^nil\?$|^send$|^object_id$)/
     end
-    
+
     attr_accessor :respond_to_called
 
     def method_missing(name, *args)
@@ -106,4 +106,63 @@ class TestRespondToViaMethodMissing < Test::Unit::TestCase
       assert "string" == obj
     end
   end
+end
+
+class TestRespondToMissingFastPath < Test::Unit::TestCase
+  class Duration
+    def initialize
+      @value = 10
+    end
+
+    def respond_to_missing?(method, include_private=false)
+      @value.respond_to?(method, include_private)
+    end
+
+    def method_missing(method, *args, &block)
+      @value.send(method, *args, &block)
+    end
+  end
+
+  def test_respond_to_doesnt_fastpath_if_respond_to_missing_exists
+    obj = Duration.new
+    assert(10 * obj == 100)
+  end
+end
+
+class TestRespondToMissing < Test::Unit::TestCase
+
+  class Foo
+    def respond_to_missing?(method, private = false)
+      return true if method.to_s == 'foo'
+      super(method, private)
+    end
+
+    def method_missing(method, *args)
+      return method if method.to_s == 'foo'
+      super
+    end
+  end
+
+  def test_respond_to_missing
+    obj = Foo.new
+    assert obj.respond_to?(:to_s)
+    assert ! obj.respond_to?(:fo)
+    assert obj.respond_to?(:foo)
+
+    assert_equal :foo, obj.foo
+  end
+
+  class Bar
+    def respond_to_missing?(method, private = false)
+      method.eql? :bar
+    end
+  end
+
+  def test_respond_to_missing_gets_a_symbol_name
+    obj = Bar.new
+    assert obj.respond_to?(:bar)
+    assert ! obj.respond_to?(:ba)
+    assert obj.respond_to?('bar')
+  end
+
 end

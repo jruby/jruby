@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,22 +30,21 @@ package org.jruby.javasupport.test;
 
 public class Room {
     private final String name;
-	
+
     public Room(String name) {
         this.name = name;
     }
-	
+
     public boolean equals(Object obj) {
-        if (! (obj instanceof Room))
-            return false;
-            Room that = (Room) obj;
-            return name.equals(that.name);
+        if (! (obj instanceof Room)) return false;
+        Room that = (Room) obj;
+        return name.equals(that.name);
     }
-	
+
     public String toString() {
         return name;
     }
-	
+
     public int hashCode() {
         return name.hashCode();
     }

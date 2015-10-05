@@ -1,0 +1,1 @@
+fails:Truffle::CExt.load_extconf raises a RuntimeError

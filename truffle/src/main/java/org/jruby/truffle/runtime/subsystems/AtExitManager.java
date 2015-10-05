@@ -9,30 +9,76 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import org.jruby.truffle.runtime.core.RubyProc;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.ProcNodes;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
-/**
- * Manages at_exit callbacks.
- */
 public class AtExitManager {
 
-    private final List<RubyProc> blocks = new LinkedList<>();
+    private final RubyContext context;
 
-    public synchronized void add(RubyProc block) {
-        blocks.add(block);
+    private final Deque<DynamicObject> runOnExit = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
+
+    public AtExitManager(RubyContext context) {
+        this.context = context;
     }
 
-    public synchronized void run() {
-        final ListIterator<RubyProc> iterator = blocks.listIterator(blocks.size());
+    public void add(DynamicObject block, boolean always) {
+        assert RubyGuards.isRubyProc(block);
 
-        while (iterator.hasPrevious()) {
-            RubyProc hook = iterator.previous();
-            iterator.remove();
-            hook.rootCall();
+        if (always) {
+            runOnExitAlways.push(block);
+        } else {
+            runOnExit.push(block);
         }
     }
+
+    public void run(boolean normalExit) {
+        try {
+            if (normalExit) {
+                runExitHooks(runOnExit);
+            }
+        } finally {
+            runExitHooks(runOnExitAlways);
+        }
+    }
+
+    private void runExitHooks(Deque<DynamicObject> stack) {
+        while (true) {
+            DynamicObject block;
+            try {
+                block = stack.pop();
+            } catch (NoSuchElementException e) {
+                break;
+            }
+
+            try {
+                ProcNodes.rootCall(block);
+            } catch (RaiseException e) {
+                final Object rubyException = e.getRubyException();
+                BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public List<DynamicObject> getHandlers() {
+        final List<DynamicObject> handlers = new ArrayList<>();
+        handlers.addAll(runOnExit);
+        handlers.addAll(runOnExitAlways);
+        return handlers;
+    }
+
 }

@@ -21,18 +21,19 @@
 package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * This is a port of MRI's rb_cmpint, as taken from RubyComparable and broken out into specialized nodes.
@@ -52,11 +53,7 @@ public abstract class CmpIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public CmpIntNode(CmpIntNode prev) {
-        super(prev);
-        gtNode = prev.gtNode;
-        ltNode = prev.ltNode;
-    }
+    public abstract int executeCmpInt(VirtualFrame frame, Object cmpResult, Object a, Object b);
 
     @Specialization
     public int cmpInt(int value, Object receiver, Object other) {
@@ -84,18 +81,19 @@ public abstract class CmpIntNode extends RubyNode {
         return 0;
     }
 
-    @Specialization
-    public int cmpBignum(RubyBignum value, Object receiver, Object other) {
-        return value.bigIntegerValue().signum();
+    @Specialization(guards = "isRubyBignum(value)")
+    public int cmpBignum(DynamicObject value, Object receiver, Object other) {
+        return Layouts.BIGNUM.getValue(value).signum();
     }
 
-    @Specialization
-    public int cmpNil(RubyNilClass value, Object receiver, Object other) {
+    @TruffleBoundary
+    @Specialization(guards = "isNil(nil)")
+    public int cmpNil(Object nil, Object receiver, Object other) {
         throw new RaiseException(
             getContext().getCoreLibrary().argumentError(
                 String.format("comparison of %s with %s failed",
-                    getContext().getCoreLibrary().getLogicalClass(receiver).getName(),
-                    getContext().getCoreLibrary().getLogicalClass(other).getName()), this)
+                        Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(receiver)).getName(),
+                        Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(other)).getName()), this)
         );
     }
 
@@ -103,7 +101,7 @@ public abstract class CmpIntNode extends RubyNode {
             "!isInteger(value)",
             "!isLong(value)",
             "!isRubyBignum(value)",
-            "!isRubyNilClass(value)" })
+            "!isNil(value)" })
     public int cmpObject(VirtualFrame frame, Object value, Object receiver, Object other) {
         if (gtNode == null) {
             CompilerDirectives.transferToInterpreter();
@@ -125,6 +123,4 @@ public abstract class CmpIntNode extends RubyNode {
 
         return 0;
     }
-
-    public abstract int executeIntegerFixnum(VirtualFrame frame, Object value, Object receiver, Object other);
 }

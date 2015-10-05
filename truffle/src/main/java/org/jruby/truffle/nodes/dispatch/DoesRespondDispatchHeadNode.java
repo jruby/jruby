@@ -15,8 +15,8 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class DoesRespondDispatchHeadNode extends DispatchHeadNode {
 
-    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.RESPOND_TO_METHOD);
+    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
+        super(context, ignoreVisibility, missingBehavior, DispatchAction.RESPOND_TO_METHOD);
     }
 
     /**

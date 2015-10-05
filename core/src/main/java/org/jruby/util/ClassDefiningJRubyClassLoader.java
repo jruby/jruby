@@ -31,9 +31,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
-
 public class ClassDefiningJRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
     final static ProtectionDomain DEFAULT_DOMAIN;

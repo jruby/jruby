@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
-describe :rational_modulo, :shared => true do
+describe :rational_modulo, shared: true do
   it "returns the remainder when this value is divided by other" do
     Rational(2, 3).send(@method, Rational(2, 3)).should == Rational(0, 1)
     Rational(4, 3).send(@method, Rational(2, 3)).should == Rational(0, 1)

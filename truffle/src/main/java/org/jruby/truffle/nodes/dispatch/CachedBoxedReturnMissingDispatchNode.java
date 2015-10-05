@@ -10,40 +10,37 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Fallback;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
 
-    private final RubyClass expectedClass;
+    private final Shape expectedShape;
     private final Assumption unmodifiedAssumption;
 
     public CachedBoxedReturnMissingDispatchNode(
             RubyContext context,
             Object cachedName,
             DispatchNode next,
-            RubyClass expectedClass,
-            boolean indirect,
+            Shape expectedShape,
+            DynamicObject expectedClass,
             DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
-        assert expectedClass != null;
-        this.expectedClass = expectedClass;
-        unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
+        super(context, cachedName, next, dispatchAction);
+
+        this.expectedShape = expectedShape;
+        this.unmodifiedAssumption = Layouts.MODULE.getFields(expectedClass).getUnmodifiedAssumption();
         this.next = next;
     }
 
     @Override
     protected boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
-                (receiver instanceof RubyBasicObject) &&
-                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+                (receiver instanceof DynamicObject) &&
+                ((DynamicObject) receiver).getShape() == expectedShape;
     }
 
     @Override
@@ -51,8 +48,8 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            DynamicObject blockObject,
+            Object[] argumentsObjects) {
         if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
@@ -71,7 +68,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    (RubyProc) blockObject,
+                    blockObject,
                     argumentsObjects,
                     "class modified");
         }

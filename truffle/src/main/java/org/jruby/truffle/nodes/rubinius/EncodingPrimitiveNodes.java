@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import org.jruby.truffle.runtime.RubyContext;
-
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.nodes.core.EncodingNodes;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..
@@ -27,31 +29,23 @@ public abstract class EncodingPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingGetObjectEncodingNode(EncodingGetObjectEncodingNode prev) {
-            super(prev);
+        @Specialization(guards = "isRubyString(string)")
+        public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
+            return EncodingNodes.getEncoding(StringOperations.getByteList(string).getEncoding());
         }
 
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubyString string) {
-            notDesignedForCompilation();
-
-            return RubyEncoding.getEncoding(string.getBytes().getEncoding());
+        @Specialization(guards = "isRubySymbol(symbol)")
+        public DynamicObject encodingGetObjectEncodingSymbol(DynamicObject symbol) {
+            return EncodingNodes.getEncoding(Layouts.SYMBOL.getByteList(symbol).getEncoding());
         }
 
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubySymbol symbol) {
-            notDesignedForCompilation();
-
-            return RubyEncoding.getEncoding(symbol.getSymbolBytes().getEncoding());
-        }
-
-        @Specialization
-        public RubyEncoding encodingGetObjectEncoding(RubyEncoding encoding) {
+        @Specialization(guards = "isRubyEncoding(encoding)")
+        public DynamicObject encodingGetObjectEncoding(DynamicObject encoding) {
             return encoding;
         }
 
-        @Specialization(guards = {"!isRubyString", "!isRubySymbol", "!isRubyEncoding"})
-        public RubyNilClass encodingGetObjectEncoding(RubyBasicObject object) {
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
+        public DynamicObject encodingGetObjectEncodingNil(DynamicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return nil();
         }

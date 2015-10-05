@@ -1,6 +1,6 @@
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :complex_math_tan, :shared => true do
+describe :complex_math_tan, shared: true do
   it "returns the tangent of the argument" do
     @object.send(:tan, 0.0).should == 0.0
     @object.send(:tan, -0.0).should == -0.0
@@ -14,7 +14,7 @@ describe :complex_math_tan, :shared => true do
   end
 end
 
-describe :complex_math_tan_bang, :shared => true do
+describe :complex_math_tan_bang, shared: true do
   it "returns the tangent of the argument" do
     @object.send(:tan!, 0.0).should == 0.0
     @object.send(:tan!, -0.0).should == -0.0

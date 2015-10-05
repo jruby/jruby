@@ -1,4 +1,4 @@
-describe :module_class_exec, :shared => true do
+describe :module_class_exec, shared: true do
   it "does not add defined methods to other classes" do
     FalseClass.send(@method) do
       def foo

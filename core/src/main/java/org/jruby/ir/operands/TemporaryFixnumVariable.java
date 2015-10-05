@@ -38,7 +38,7 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 public class TemporaryFixnumVariable extends TemporaryLocalVariable {
     public static final String PREFIX = "%i_";
     public TemporaryFixnumVariable(int offset) {
-        super(PREFIX+offset, offset);
+        super(offset);
     }
 
     @Override

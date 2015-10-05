@@ -7,7 +7,7 @@ describe "IO#pid" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io
   end
 
   it "returns nil for IO not associated with a process" do
@@ -21,7 +21,7 @@ describe "IO#pid" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io && !@io.closed?
   end
 
   it "returns the ID of a process associated with stream" do

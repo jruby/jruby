@@ -5,8 +5,8 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
 
               'tzdata.version' => '2013d',
               'tzdata.scope' => 'provided',
@@ -40,20 +40,21 @@ project 'JRuby Core' do
   jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
-  jar 'com.github.jnr:jnr-netdb:1.1.4'
-  jar 'com.github.jnr:jnr-enxio:0.7'
-  jar 'com.github.jnr:jnr-x86asm:1.0.2'
-  jar 'com.github.jnr:jnr-unixsocket:0.6'
-  jar 'com.github.jnr:jnr-posix:3.0.10'
-  jar 'com.github.jnr:jnr-constants:0.8.6'
-  jar 'com.github.jnr:jnr-ffi:2.0.2'
+  # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
+  jar 'com.github.jnr:jnr-netdb:1.1.4', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.9', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.8', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.18-SNAPSHOT', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.0', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.0.4'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.5'
-  jar 'org.jruby.extras:bytelist:1.0.12'
-  jar 'org.jruby.jcodings:jcodings:1.0.13-SNAPSHOT'
-  jar 'org.jruby:dirgra:0.2'
+  jar 'org.jruby.joni:joni:2.1.6'
+  jar 'org.jruby.extras:bytelist:1.0.13'
+  jar 'org.jruby.jcodings:jcodings:1.0.13'
+  jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.5'
   jar 'com.headius:options:1.1'
@@ -205,7 +206,11 @@ project 'JRuby Core' do
                    :id => 'default-clean',
                    :phase => 'clean',
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
-                                     'includes' => [ '${Constants.java}' ] } ],
+                                     'includes' => [ '${Constants.java}' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'bin/jruby' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'lib/jni/**' ] } ],
                    'failOnError' =>  'false' )
   end
 
@@ -253,15 +258,43 @@ project 'JRuby Core' do
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ] )
-    execute_goals( 'shade',
-                   :id => 'shade the asm classes',
-                   :phase => 'verify',
-                   'artifactSet' => {
-                     'includes' => [ 'com.github.jnr:jnr-ffi',
-                                     'org.ow2.asm:*' ]
-                   },
-                   'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                        'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+  end
+
+  [:release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
+    profile name do
+      plugin :shade do
+        execute_goals( 'shade',
+                       :id => 'shade the asm classes',
+                       :phase => 'package',
+                       'artifactSet' => {
+                         'includes' => [ 'com.github.jnr:jnr-ffi',
+                                         'org.ow2.asm:*' ]
+                       },
+                       'relocations' => [ { 'pattern' =>  'org.objectweb',
+                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+      end
+    end
+  end
+
+  jruby_bin_config = [ 'run', { :id => 'copy',
+                                'tasks' => {
+                                  'exec' => {
+                                    '@executable' =>  '/bin/sh',
+                                    '@osfamily' =>  'unix',
+                                    'arg' => {
+                                      '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
+                                    }
+                                  },
+                                  'chmod' => {
+                                    '@file' =>  '${jruby.basedir}/bin/jruby',
+                                    '@perm' =>  '755'
+                                  }
+                                } } ]
+
+  phase :clean do
+    plugin :antrun do
+      execute_goals( *jruby_bin_config )
+    end
   end
 
   profile 'jruby.bash' do
@@ -270,25 +303,28 @@ project 'JRuby Core' do
       file( :missing => '../bin/jruby' )
     end
 
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'copy',
-                     :phase => 'initialize',
-                     'tasks' => {
-                       'exec' => {
-                         '@executable' =>  '/bin/sh',
-                         '@osfamily' =>  'unix',
-                         'arg' => {
-                           '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
-                         }
-                       },
-                       'chmod' => {
-                         '@file' =>  '${jruby.basedir}/bin/jruby',
-                         '@perm' =>  '755'
-                       }
-                     } )
+    phase :initialize do
+      plugin :antrun do
+        execute_goals( *jruby_bin_config )
+      end
     end
 
+  end
+
+  jni_config = [ 'unpack', { :id => 'unzip native',
+                             'excludes' =>  'META-INF,META-INF/*',
+                             'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
+                                                    'artifactId' =>  'jffi',
+                                                    'version' =>  '${jffi.version}',
+                                                    'type' =>  'jar',
+                                                    'classifier' =>  'native',
+                                                    'overWrite' =>  'false',
+                                                    'outputDirectory' =>  '${jruby.basedir}/lib' } ] } ]
+
+  phase :clean do
+    plugin :dependency do
+      execute_goals( *jni_config  )
+    end
   end
 
   profile 'native' do
@@ -297,20 +333,11 @@ project 'JRuby Core' do
       file( :missing => '../lib/jni' )
     end
 
-    plugin :dependency do
-      execute_goals( 'unpack',
-                     :id => 'unzip native',
-                     :phase => 'process-classes',
-                     'excludes' =>  'META-INF,META-INF/*',
-                     'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
-                                            'artifactId' =>  'jffi',
-                                            'version' =>  '${jffi.version}',
-                                            'type' =>  'jar',
-                                            'classifier' =>  'native',
-                                            'overWrite' =>  'false',
-                                            'outputDirectory' =>  '${jruby.basedir}/lib' } ] )
+    phase 'process-classes' do
+      plugin :dependency do
+        execute_goals( *jni_config  )
+      end
     end
-
   end
 
   profile 'test' do
@@ -322,7 +349,7 @@ project 'JRuby Core' do
   profile 'build.properties' do
 
     activation do
-      file( :exits => '../build.properties' )
+      file( :exists => '../build.properties' )
     end
 
     plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do

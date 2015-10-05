@@ -1,9 +1,12 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Array#bsearch" do
   it "returns an Enumerator when not passed a block" do
     [1].bsearch.should be_an_instance_of(enumerator_class)
   end
+
+  it_behaves_like :enumeratorized_with_unknown_size, :bsearch, [1,2,3]
 
   it "raises a TypeError if the block returns an Object" do
     lambda { [1].bsearch { Object.new } }.should raise_error(TypeError)
@@ -60,6 +63,22 @@ describe "Array#bsearch" do
     it "returns an element at an index for which block returns 0" do
       result = [0, 1, 2, 3, 4].bsearch { |x| x < 1 ? 1 : x > 3 ? -1 : 0 }
       [1, 2].should include(result)
+    end
+  end
+
+  context "with a block that calls break" do
+    it "returns nil if break is called without a value" do
+      ['a', 'b', 'c'].bsearch { |v| break }.should be_nil
+    end
+
+    it "returns nil if break is called with a nil value" do
+      ['a', 'b', 'c'].bsearch { |v| break nil }.should be_nil
+    end
+
+    it "returns object if break is called with an object" do
+      ['a', 'b', 'c'].bsearch { |v| break 1234 }.should == 1234
+      ['a', 'b', 'c'].bsearch { |v| break 'hi' }.should == 'hi'
+      ['a', 'b', 'c'].bsearch { |v| break [42] }.should == [42]
     end
   end
 end

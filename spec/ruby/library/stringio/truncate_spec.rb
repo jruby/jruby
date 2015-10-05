@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require "stringio"
 
 describe "StringIO#truncate when passed [length]" do
-  before(:each) do
+  before :each do
     @io = StringIO.new('123456789')
   end
 

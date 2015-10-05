@@ -11,6 +11,12 @@ module EnumerableSpecs
     end
   end
 
+  class NumerousWithSize < Numerous
+    def size
+      @list.size
+    end
+  end
+
   class EachCounter < Numerous
     attr_reader :times_called, :times_yielded, :arguments_passed
     def initialize(*list)
@@ -32,6 +38,15 @@ module EnumerableSpecs
   class Empty
     include Enumerable
     def each
+    end
+  end
+
+  class EmptyWithSize
+    include Enumerable
+    def each
+    end
+    def size
+      0
     end
   end
 

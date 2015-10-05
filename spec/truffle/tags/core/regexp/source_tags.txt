@@ -1,3 +1,0 @@
-fails:Regexp#source returns the original string of the pattern
-fails:Regexp#source has US-ASCII encoding when created from an ASCII-only \u{} literal
-fails:Regexp#source has UTF-8 encoding when created from a non-ASCII-only \u{} literal

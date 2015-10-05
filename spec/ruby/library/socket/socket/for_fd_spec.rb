@@ -9,16 +9,15 @@ describe "Socket.for_fd" do
   end
 
   after :each do
-    @socket.shutdown Socket::SHUT_RD if @socket
-    @client.shutdown Socket::SHUT_WR
-
-    @host.close if @host
+    @socket.close
+    @client.close
+    @host.close
     @server.close
   end
 
   it "creates a new Socket that aliases the existing Socket's file descriptor" do
     @socket = Socket.for_fd(@client.fileno)
-    @socket.autoclose = false if @socket.respond_to?(:autoclose) # for 1.8.7
+    @socket.autoclose = false
     @socket.fileno.should == @client.fileno
 
     @socket.send("foo", 0)

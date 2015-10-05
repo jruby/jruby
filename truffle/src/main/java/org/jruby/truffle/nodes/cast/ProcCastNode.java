@@ -12,15 +12,12 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
 
 /**
  * Casts an object to a Ruby Proc object.
@@ -35,26 +32,19 @@ public abstract class ProcCastNode extends RubyNode {
         toProc = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public ProcCastNode(ProcCastNode prev) {
-        super(prev);
-        toProc = prev.toProc;
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject doNil(Object nil) {
+        return nil();
     }
 
-    @Specialization
-    public RubyNilClass doNil(RubyNilClass nil) {
-        return nil;
-    }
-
-    @Specialization
-    public RubyProc doRubyProc(RubyProc proc) {
+    @Specialization(guards = "isRubyProc(proc)")
+    public DynamicObject doRubyProc(DynamicObject proc) {
         return proc;
     }
 
     @Specialization
-    public RubyProc doObject(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
-        return (RubyProc) toProc.call(frame, object, "to_proc", null);
+    public Object doObject(VirtualFrame frame, DynamicObject object) {
+        return toProc.call(frame, object, "to_proc", null);
     }
 
 }

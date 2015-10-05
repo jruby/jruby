@@ -1,4 +1,0 @@
-fails:ARGF.seek sets the absolute position relative to beginning of file
-fails:ARGF.seek sets the position relative to current position in file
-fails:ARGF.seek sets the absolute position relative to end of file
-fails:ARGF.seek takes at least one argument (offset)

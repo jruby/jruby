@@ -1,4 +1,0 @@
-fails:File::Stat#writable_real? returns true if named file is writable by the real user id of the process, otherwise false
-fails:File::Stat#writable_real? accepts an object that has a #to_path method
-fails:File::Stat#writable_real? raises an ArgumentError if not passed one argument
-fails:File::Stat#writable_real? raises a TypeError if not passed a String type

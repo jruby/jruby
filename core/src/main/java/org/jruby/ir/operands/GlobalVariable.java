@@ -10,7 +10,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable extends Reference {
     public GlobalVariable(String name) {
-        super(OperandType.GLOBAL_VARIABLE, name);
+        super(name);
+    }
+
+    @Override
+    public OperandType getOperandType() {
+        return OperandType.GLOBAL_VARIABLE;
     }
 
     public int compareTo(Object arg0) {

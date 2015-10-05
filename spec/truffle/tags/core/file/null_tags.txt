@@ -1,2 +1,1 @@
-fails:File::NULL returns /dev/null as a string
 fails(windows):File::NULL returns NUL as a string

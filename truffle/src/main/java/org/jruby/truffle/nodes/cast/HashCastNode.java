@@ -13,15 +13,16 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 
 // TODO(CS): copy and paste of ArrayCastNode
 
@@ -35,61 +36,54 @@ public abstract class HashCastNode extends RubyNode {
         toHashNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
     }
 
-    public HashCastNode(HashCastNode prev) {
-        super(prev);
-        toHashNode = prev.toHashNode;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization
-    public RubyNilClass cast(boolean value) {
+    public DynamicObject cast(boolean value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(int value) {
+    public DynamicObject cast(int value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(long value) {
+    public DynamicObject cast(long value) {
         return nil();
     }
 
     @Specialization
-    public RubyNilClass cast(double value) {
+    public DynamicObject cast(double value) {
         return nil();
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyBignum value) {
+    @Specialization(guards = "isNil(nil)")
+    public DynamicObject castNil(DynamicObject nil) {
         return nil();
     }
 
-    @Specialization
-    public RubyHash cast(RubyHash hash) {
+    @Specialization(guards = "isRubyBignum(value)")
+    public DynamicObject castBignum(DynamicObject value) {
+        return nil();
+    }
+
+    @Specialization(guards = "isRubyHash(hash)")
+    public DynamicObject castHash(DynamicObject hash) {
         return hash;
     }
 
-    @Specialization
-    public RubyNilClass cast(RubyNilClass nil) {
-        return nil;
-    }
-
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyHash"})
-    public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
-
+    @Specialization(guards = {"!isNil(object)", "!isRubyBignum(object)", "!isRubyHash(object)"})
+    public Object cast(VirtualFrame frame, DynamicObject object) {
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
             return nil();
         }
 
-        if (!(result instanceof RubyHash)) {
+        if (!RubyGuards.isRubyHash(result)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_hash", "HAsh", this));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), "to_hash", "Hash", this));
         }
 
         return result;

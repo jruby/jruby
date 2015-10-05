@@ -9,24 +9,21 @@
  */
 package org.jruby.truffle.runtime.util;
 
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
+
 import java.io.IOException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-
 public class FileUtils {
 
     public static byte[] readAllBytesInterruptedly(RubyContext context, String file) {
-        RubyNode.notDesignedForCompilation();
-
         final Path path = Paths.get(file);
 
-        return context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<byte[]>() {
+        return context.getThreadManager().runUntilResult(null, new BlockingAction<byte[]>() {
             @Override
             public byte[] block() throws InterruptedException {
                 try {

@@ -9,15 +9,18 @@
  */
 package org.jruby.truffle.runtime;
 
-import org.jruby.truffle.runtime.core.RubyModule;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.object.DynamicObject;
+import org.jruby.truffle.nodes.RubyGuards;
 
 public class LexicalScope {
     public static final LexicalScope NONE = null;
 
     private final LexicalScope parent;
-    private RubyModule liveModule;
+    @CompilationFinal private DynamicObject liveModule;
 
-    public LexicalScope(LexicalScope parent, RubyModule liveModule) {
+    public LexicalScope(LexicalScope parent, DynamicObject liveModule) {
+        assert liveModule == null || RubyGuards.isRubyModule(liveModule);
         this.parent = parent;
         this.liveModule = liveModule;
     }
@@ -30,11 +33,11 @@ public class LexicalScope {
         return parent;
     }
 
-    public RubyModule getLiveModule() {
+    public DynamicObject getLiveModule() {
         return liveModule;
     }
 
-    public void setLiveModule(RubyModule liveModule) {
+    public void setLiveModule(DynamicObject liveModule) {
         this.liveModule = liveModule;
     }
 

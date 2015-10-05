@@ -1,0 +1,1 @@
+fails:Process.waitpid returns nil when the process has not yet completed and WNOHANG is specified

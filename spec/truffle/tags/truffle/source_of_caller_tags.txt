@@ -1,0 +1,2 @@
+fails:Truffle.source_of_caller returns a String
+fails:Truffle.source_of_caller returns the name of the file at the call site

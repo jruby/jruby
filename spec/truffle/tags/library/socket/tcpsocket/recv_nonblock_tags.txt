@@ -1,0 +1,1 @@
+fails:TCPSocket#recv_nonblock returns a String read from the socket

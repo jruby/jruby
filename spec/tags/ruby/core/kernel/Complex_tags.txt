@@ -1,1 +1,2 @@
 fails:Kernel.Complex() when passed a single non-Numeric coerces the passed argument using #to_c
+fails:Kernel.Complex() when passed [Integer] returns a new Complex number with 0 as the imaginary component

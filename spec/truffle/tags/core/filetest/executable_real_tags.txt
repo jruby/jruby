@@ -1,6 +1,0 @@
-fails:FileTest.executable_real? returns true if the file its an executable
-fails:FileTest.executable_real? accepts an object that has a #to_path method
-fails:FileTest.executable_real? returns true if named file is readable by the real user id of the process, otherwise false
-fails:FileTest.executable_real? raises an ArgumentError if not passed one argument
-fails:FileTest.executable_real? raises a TypeError if not passed a String type
-fails:FileTest.executable_real? returns false if the file does not exist

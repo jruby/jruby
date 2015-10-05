@@ -39,17 +39,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.StrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
@@ -76,7 +79,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -90,7 +92,6 @@ import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
@@ -111,7 +112,6 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
@@ -166,6 +166,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -174,6 +175,7 @@ import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -470,7 +472,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
+            return interpreter.execute(this, rootNode, context.getFrameSelf());
         } finally {
             context.postEvalScriptlet();
         }
@@ -489,14 +491,14 @@ public final class Ruby implements Constantizable {
     public IRubyObject executeScript(String script, String filename) {
         byte[] bytes = script.getBytes();
 
-        Node node = parseInline(new ByteArrayInputStream(bytes), filename, null);
+        RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
         int oldLine = context.getLine();
         try {
-            context.setFileAndLine(node.getPosition());
-            return runInterpreter(node);
+            context.setFileAndLine(root.getFile(), root.getLine());
+            return runInterpreter(root);
         } finally {
             context.setFileAndLine(oldFile, oldLine);
         }
@@ -526,26 +528,23 @@ public final class Ruby implements Constantizable {
         getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
         getGlobalVariables().define("$0", d, GLOBAL);
 
-        for (Iterator i = config.getOptionGlobals().entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry) i.next();
-            Object value = entry.getValue();
-            IRubyObject varvalue;
-            if (value != null) {
-                varvalue = newString(value.toString());
+        for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
+            final IRubyObject varvalue;
+            if (entry.getValue() != null) {
+                varvalue = newString(entry.getValue());
             } else {
                 varvalue = getTrue();
             }
-            getGlobalVariables().set("$" + entry.getKey().toString(), varvalue);
+            getGlobalVariables().set('$' + entry.getKey(), varvalue);
         }
 
         if (filename.endsWith(".class")) {
             // we are presumably running a precompiled class; load directly
-            Script script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, filename);
+            IRScope script = CompiledScriptLoader.loadScriptFromFile(this, inputStream, null, filename, false);
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
-            script.setFilename(filename);
-            runScript(script);
+            runInterpreter(script);
             return;
         }
 
@@ -564,7 +563,7 @@ public final class Ruby implements Constantizable {
             String oldFile = context.getFile();
             int oldLine = context.getLine();
             try {
-                context.setFileAndLine(scriptNode.getPosition());
+                context.setFileAndLine(scriptNode.getFile(), scriptNode.getLine());
 
                 if (config.isAssumePrinting() || config.isAssumeLoop()) {
                     runWithGetsLoop(scriptNode, config.isAssumePrinting(), config.isProcessLineEnds(),
@@ -622,7 +621,7 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated
     public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean unused) {
-        return runWithGetsLoop(scriptNode, printing, processLineEnds, split);
+        return runWithGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
     }
 
     /**
@@ -639,12 +638,12 @@ public final class Ruby implements Constantizable {
      * bytecode before executing.
      * @return The result of executing the specified script
      */
-    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split) {
+    public IRubyObject runWithGetsLoop(RootNode scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
         // We do not want special scope types in IR so we ammend the AST tree to contain the elements representing
         // a while gets; ...your code...; end
-        scriptNode = addGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
+        scriptNode = addGetsLoop(scriptNode, printing, processLineEnds, split);
 
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
@@ -652,11 +651,11 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: " + scriptNode.getPosition().getFile());
+                    LOG.info("Successfully compiled: " + scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.error("Failed to compile: " + scriptNode.getPosition().getFile());
+                    LOG.error("Failed to compile: " + scriptNode.getFile());
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
                         LOG.error(e);
                     }
@@ -690,26 +689,26 @@ public final class Ruby implements Constantizable {
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         ISourcePosition pos = oldRoot.getPosition();
         BlockNode newBody = new BlockNode(pos);
+        newBody.add(new GlobalAsgnNode(pos, "$/", new StrNode(pos, new ByteList(getInstanceConfig().getRecordSeparator().getBytes()))));
 
         if (processLineEndings) newBody.add(new GlobalAsgnNode(pos, "$\\", new GlobalVarNode(pos, "$/")));
 
-        BlockNode whileBody;
+        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
+
+        BlockNode whileBody = new BlockNode(pos);
+        newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
+
+        if (processLineEndings) whileBody.add(new CallNode(pos, dollarUnderscore, "chop!", null, null));
+        if (split) whileBody.add(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
+        if (printing) whileBody.add(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
+
         if (oldRoot.getBodyNode() instanceof BlockNode) {   // common case n stmts
-            whileBody = (BlockNode) oldRoot.getBodyNode();
+            whileBody.addAll(oldRoot.getBodyNode());
         } else {                                            // single expr script
-            whileBody = new BlockNode(pos);
             whileBody.add(oldRoot.getBodyNode());
         }
 
-        GlobalVarNode dollarUnderscore = new GlobalVarNode(pos, "$_");
-
-        newBody.add(new WhileNode(pos, new VCallNode(pos, "gets"), whileBody));
-
-        if (printing) whileBody.prepend(new FCallNode(pos, "puts", new ArrayNode(pos, dollarUnderscore), null));
-        if (split) whileBody.prepend(new GlobalAsgnNode(pos, "$F", new CallNode(pos, dollarUnderscore, "split", null, null)));
-        if (processLineEndings) whileBody.prepend(new CallNode(pos, dollarUnderscore, "chop!", null, null));
-
-        return new RootNode(pos, oldRoot.getScope(), newBody);
+        return new RootNode(pos, oldRoot.getScope(), newBody, oldRoot.getFile());
     }
 
     /**
@@ -737,7 +736,7 @@ public final class Ruby implements Constantizable {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            scriptAndCode = precompileCLI(scriptNode);
+            scriptAndCode = precompileCLI((RootNode) scriptNode);
         }
 
         if (scriptAndCode != null) {
@@ -757,7 +756,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private ScriptAndCode precompileCLI(Node scriptNode) {
+    private ScriptAndCode precompileCLI(RootNode scriptNode) {
         ScriptAndCode scriptAndCode = null;
 
         // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
@@ -765,11 +764,11 @@ public final class Ruby implements Constantizable {
         try {
             scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()));
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
-                LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
+                LOG.info("done compiling target script: " + scriptNode.getFile());
             }
         } catch (Exception e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
+                LOG.error("failed to compile target script '" + scriptNode.getFile() + "'");
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
                     e.printStackTrace();
                 }
@@ -787,31 +786,23 @@ public final class Ruby implements Constantizable {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
+        return tryCompile((RootNode) node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
-    private void failForcedCompile(Node scriptNode) throws RaiseException {
+    private void failForcedCompile(RootNode scriptNode) throws RaiseException {
         if (config.getCompileMode().shouldPrecompileAll()) {
-            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getPosition().getFile());
+            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getFile());
         }
     }
 
-    private void handeCompileError(Node node, Throwable t) {
-        if (config.isJitLoggingVerbose() || config.isDebug()) {
-            LOG.error("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
-            LOG.error(t.getMessage(), t);
-        }
-    }
-
-    private ScriptAndCode tryCompile(Node node, ClassDefiningClassLoader classLoader) {
+    private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
         try {
-            return Compiler.getInstance().execute(this, node, classLoader);
+            return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script " + node.getPosition().getFile() + ": " + e.getLocalizedMessage());
-                if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    LOG.error(e);
-                }
+                LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+
+                if (Options.JIT_LOGGING_VERBOSE.load()) LOG.error(e);
             }
             return null;
         }
@@ -822,13 +813,11 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
-        ThreadContext context = getCurrentContext();
-
-        try {
-            return script.load(context, getTopSelf(), wrap);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
         }
+
+        return script.load(getCurrentContext(), getTopSelf(), wrap);
     }
 
     /**
@@ -836,27 +825,15 @@ public final class Ruby implements Constantizable {
      * already-prepared, already-pushed scope for the script body.
      */
     public IRubyObject runScriptBody(Script script) {
-        ThreadContext context = getCurrentContext();
-
-        try {
-            return script.__file__(context, getTopSelf(), Block.NULL_BLOCK);
-        } catch (JumpException.ReturnJump rj) {
-            return (IRubyObject) rj.getValue();
-        }
+        return script.__file__(getCurrentContext(), getTopSelf(), Block.NULL_BLOCK);
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-       if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
-           assert parseResult instanceof RootNode;
-           getTruffleBridge().execute(getTruffleBridge().toTruffle(self), (RootNode) parseResult);
-           return getNil();
-       } else {
-           try {
-               return Interpreter.getInstance().execute(this, parseResult, self);
-           } catch (JumpException.ReturnJump rj) {
-               return (IRubyObject) rj.getValue();
-           }
-       }
+        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
+            throw new UnsupportedOperationException();
+        }
+
+        return interpreter.execute(this, parseResult, self);
    }
 
     public IRubyObject runInterpreter(ThreadContext context, Node rootNode, IRubyObject self) {
@@ -864,16 +841,14 @@ public final class Ruby implements Constantizable {
 
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
-            getTruffleBridge().execute(getTruffleBridge().toTruffle(self), (RootNode) rootNode);
+            assert self == getTopSelf();
+            final TruffleContextInterface truffleContext = getTruffleContext();
+            Main.printTruffleTimeMetric("before-run");
+            truffleContext.execute((RootNode) rootNode);
+            Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
-            try {
-
-                // FIXME: retrieve from IRManager unless lifus does it later
-                return Interpreter.getInstance().execute(this, rootNode, self);
-            } catch (JumpException.ReturnJump rj) {
-                return (IRubyObject) rj.getValue();
-            }
+            return interpreter.execute(this, rootNode, self);
         }
     }
 
@@ -908,47 +883,46 @@ public final class Ruby implements Constantizable {
         return jitCompiler;
     }
 
-    public TruffleBridge getTruffleBridge() {
-        synchronized (truffleBridgeMutex) {
-            if (truffleBridge == null) {
-                truffleBridge = loadTruffleBridge();
+    public TruffleContextInterface getTruffleContext() {
+        synchronized (truffleContextMonitor) {
+            if (truffleContext == null) {
+                truffleContext = loadTruffleContext();
             }
-            return truffleBridge;
+            return truffleContext;
         }
     }
 
-    private TruffleBridge loadTruffleBridge() {
-        /*
-         * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
-         * explanation when the classes are not found.
-         */
+    private TruffleContextInterface loadTruffleContext() {
+        Main.printTruffleTimeMetric("before-load-truffle-context");
 
         final Class<?> clazz;
 
         try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.runtime.RubyContext");
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+            throw new RuntimeException("Truffle backend not available", e);
         }
 
-        final TruffleBridge truffleBridge;
+        final TruffleContextInterface truffleContext;
 
         try {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
-            truffleBridge = (TruffleBridge) con.newInstance(this);
+            truffleContext = (TruffleContextInterface) con.newInstance(this);
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+            throw new RuntimeException("Error while calling the constructor of Truffle's RubyContext", e);
         }
 
-        truffleBridge.init();
+        truffleContext.initialize();
 
-        return truffleBridge;
+        Main.printTruffleTimeMetric("after-load-truffle-context");
+
+        return truffleContext;
     }
 
-    public void shutdownTruffleBridge() {
-        synchronized (truffleBridgeMutex) {
-            if (truffleBridge != null) {
-                truffleBridge.shutdown();
+    public void shutdownTruffleContextIfRunning() {
+        synchronized (truffleContextMonitor) {
+            if (truffleContext != null) {
+                truffleContext.shutdown();
             }
         }
     }
@@ -1286,6 +1260,20 @@ public final class Ruby implements Constantizable {
             loadService.require("jruby");
         }
 
+        // attempt to enable unlimited-strength crypto on OpenJDK
+        try {
+            Class jceSecurity = Class.forName("javax.crypto.JceSecurity");
+            Field isRestricted = jceSecurity.getDeclaredField("isRestricted");
+            isRestricted.setAccessible(true);
+            isRestricted.set(null, false);
+            isRestricted.setAccessible(false);
+        } catch (Exception e) {
+            if (isDebug()) {
+                System.err.println("unable to enable unlimited-strength crypto");
+                e.printStackTrace();
+            }
+        }
+
         // out of base boot mode
         bootingCore = false;
 
@@ -1319,8 +1307,10 @@ public final class Ruby implements Constantizable {
         bootingRuntime = false;
 
         // Require in all libraries specified on command line
-        for (String scriptName : config.getRequiredLibraries()) {
-            topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+        if (getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
+            for (String scriptName : config.getRequiredLibraries()) {
+                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+            }
         }
     }
 
@@ -1397,7 +1387,7 @@ public final class Ruby implements Constantizable {
 
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         if (config.getKernelGsubDefined()) {
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, CallConfiguration.FrameFullScopeNone) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE) {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -1516,9 +1506,6 @@ public final class Ruby implements Constantizable {
 
         if (profile.allowClass("Struct")) {
             RubyStruct.createStructClass(this);
-        }
-        if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(structClass, new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
         if (profile.allowClass("Binding")) {
@@ -1932,8 +1919,14 @@ public final class Ruby implements Constantizable {
         return defaultMethodMissing;
     }
 
-    public void setDefaultMethodMissing(DynamicMethod method) {
+    public boolean isDefaultMethodMissing(DynamicMethod method) {
+        return defaultMethodMissing == method || defaultModuleMethodMissing == method;
+
+    }
+
+    public void setDefaultMethodMissing(DynamicMethod method, DynamicMethod moduleMethod) {
         defaultMethodMissing = method;
+        defaultModuleMethodMissing = moduleMethod;
     }
 
     public DynamicMethod getRespondToMethod() {
@@ -2698,7 +2691,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2719,7 +2712,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             System.out.println(e);
             e.printStackTrace();
@@ -2734,7 +2727,7 @@ public final class Ruby implements Constantizable {
      private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
          ParserConfiguration parserConfig =
                  new ParserConfiguration(this, lineNumber, false, true, config);
-         setupSourceEncoding(parserConfig);
+         setupSourceEncoding(parserConfig, UTF8Encoding.INSTANCE);
          return parser.parse(file, in, scope, parserConfig);
      }
 
@@ -2742,18 +2735,18 @@ public final class Ruby implements Constantizable {
         addEvalParseToStats();
         ParserConfiguration parserConfig =
                 new ParserConfiguration(this, 0, false, true, false, config);
-        setupSourceEncoding(parserConfig);
+        setupSourceEncoding(parserConfig, getEncodingService().getLocaleEncoding());
         return parser.parse(file, in, scope, parserConfig);
     }
 
-    private void setupSourceEncoding(ParserConfiguration parserConfig) {
+    private void setupSourceEncoding(ParserConfiguration parserConfig, Encoding defaultEncoding) {
         if (config.getSourceEncoding() != null) {
             if (config.isVerbose()) {
                 config.getError().println("-K is specified; it is for 1.8 compatibility and may cause odd behavior");
             }
             parserConfig.setDefaultEncoding(getEncodingService().getEncodingFromString(config.getSourceEncoding()));
         } else {
-            parserConfig.setDefaultEncoding(getEncodingService().getLocaleEncoding());
+            parserConfig.setDefaultEncoding(defaultEncoding);
         }
     }
 
@@ -2870,7 +2863,7 @@ public final class Ruby implements Constantizable {
 
             IRubyObject cc = c.getConstant(str);
             if(!(cc instanceof RubyModule)) {
-                throw newTypeError("" + path + " does not refer to class/module");
+                throw newTypeError(path + " does not refer to class/module");
             }
             c = (RubyModule)cc;
         }
@@ -2912,8 +2905,27 @@ public final class Ruby implements Constantizable {
             }
 
             runInterpreter(context, parseResult, self);
-        } catch (JumpException.ReturnJump rj) {
-            return;
+        } finally {
+            context.postNodeEval();
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    public void loadScope(IRScope scope, boolean wrap) {
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        ThreadContext context = getCurrentContext();
+        String file = context.getFile();
+
+        try {
+            ThreadContext.pushBacktrace(context, "(root)", file, 0);
+            context.preNodeEval(self);
+
+            if (wrap) {
+                // toss an anonymous module into the search path
+                scope.getStaticScope().setModule(RubyModule.newModule(this));
+            }
+
+            runInterpreter(context, scope, self);
         } finally {
             context.postNodeEval();
             ThreadContext.popBacktrace(context);
@@ -2923,65 +2935,61 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         InputStream readStream = in;
 
+        Script script = null;
+
         try {
-            Script script = null;
-            ScriptAndCode scriptAndCode = null;
-            String className = null;
+            // read full contents of file, hash it, and try to load that class first
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int num;
+            while ((num = in.read(buffer)) > -1) {
+                baos.write(buffer, 0, num);
+            }
+            buffer = baos.toByteArray();
+            String hash = JITCompiler.getHashForBytes(buffer);
+            final String className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
 
+            // FIXME: duplicated from ClassCache
+            Class contents;
             try {
-                // read full contents of file, hash it, and try to load that class first
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int num;
-                while ((num = in.read(buffer)) > -1) {
-                    baos.write(buffer, 0, num);
+                contents = getJRubyClassLoader().loadClass(className);
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("found jitted code for " + filename + " at class: " + className);
                 }
-                buffer = baos.toByteArray();
-                String hash = JITCompiler.getHashForBytes(buffer);
-                className = JITCompiler.RUBY_JIT_PREFIX + ".FILE_" + hash;
-
-                // FIXME: duplicated from ClassCache
-                Class contents;
-                try {
-                    contents = jrubyClassLoader.loadClass(className);
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("found jitted code for " + filename + " at class: " + className);
-                    }
-                    script = (Script)contents.newInstance();
-                    readStream = new ByteArrayInputStream(buffer);
-                } catch (ClassNotFoundException cnfe) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
-                    }
-                } catch (InstantiationException ie) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
-                    }
-                } catch (IllegalAccessException iae) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
-                    }
+                script = (Script) contents.newInstance();
+                readStream = new ByteArrayInputStream(buffer);
+            } catch (ClassNotFoundException cnfe) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("no jitted code in classloader for file " + filename + " at class: " + className);
                 }
-            } catch (IOException ioe) {
-                // TODO: log something?
+            } catch (InstantiationException ie) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                }
+            } catch (IllegalAccessException iae) {
+                if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                    LOG.info("jitted code could not be instantiated for file " + filename + " at class: " + className);
+                }
             }
+        } catch (IOException ioe) {
+            // TODO: log something?
+        }
 
-            // script was not found in cache above, so proceed to compile
-            Node scriptNode = parseFile(readStream, filename, null);
-            if (script == null) {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
-                if (scriptAndCode != null) script = scriptAndCode.script();
-            }
+        // script was not found in cache above, so proceed to compile
+        RootNode scriptNode = (RootNode) parseFile(readStream, filename, null);
+        if (script == null) {
+            ScriptAndCode scriptAndCode = tryCompile(scriptNode,
+                new ClassDefiningJRubyClassLoader(getJRubyClassLoader())
+            );
+            if (scriptAndCode != null) script = scriptAndCode.script();
+        }
 
-            if (script == null) {
-                failForcedCompile(scriptNode);
+        if (script == null) {
+            failForcedCompile(scriptNode);
 
-                runInterpreter(scriptNode);
-            } else {
-                runScript(script, wrap);
-            }
-        } catch (JumpException.ReturnJump rj) {
-            return;
+            runInterpreter(scriptNode);
+        } else {
+            runScript(script, wrap);
         }
     }
 
@@ -2990,14 +2998,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadScript(Script script, boolean wrap) {
-        IRubyObject self = getTopSelf();
-        ThreadContext context = getCurrentContext();
-
-        try {
-            script.load(context, self, wrap);
-        } catch (JumpException.ReturnJump rj) {
-            return;
-        }
+        script.load(getCurrentContext(), getTopSelf(), wrap);
     }
 
     /**
@@ -3018,8 +3019,6 @@ public final class Ruby implements Constantizable {
             extension.basicLoad(this);
         } catch (IOException ioe) {
             throw newIOErrorFromException(ioe);
-        } catch (JumpException.ReturnJump rj) {
-            return;
         } finally {
             context.postNodeEval();
         }
@@ -3101,17 +3100,25 @@ public final class Ruby implements Constantizable {
 
     public synchronized void removeEventHook(EventHook hook) {
         EventHook[] hooks = eventHooks;
+
         if (hooks.length == 0) return;
-        EventHook[] newHooks = new EventHook[hooks.length - 1];
-        boolean found = false;
-        for (int i = 0, j = 0; i < hooks.length; i++) {
-            if (!found && hooks[i] == hook && !found) { // exclude first found
-                found = true;
-                continue;
+
+        int pivot = -1;
+        for (int i = 0; i < hooks.length; i++) {
+            if (hooks[i] == hook) {
+                pivot = i;
+                break;
             }
-            newHooks[j] = hooks[i];
-            j++;
         }
+
+        if (pivot == -1) return; // No such hook found.
+
+        EventHook[] newHooks = new EventHook[hooks.length - 1];
+        // copy before and after pivot into the new array but don't bother
+        // to arraycopy if pivot is first/last element of the old list.
+        if (pivot != 0) System.arraycopy(hooks, 0, newHooks, 0, pivot);
+        if (pivot != hooks.length-1) System.arraycopy(hooks, pivot + 1, newHooks, pivot, hooks.length - (pivot + 1));
+
         eventHooks = newHooks;
         hasEventHooks = newHooks.length > 0;
     }
@@ -3129,7 +3136,9 @@ public final class Ruby implements Constantizable {
 
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
         if (context.isEventHooksEnabled()) {
-            for (EventHook eventHook : eventHooks) {
+            for (int i = 0; i < eventHooks.length; i++) {
+                EventHook eventHook = eventHooks[i];
+
                 if (eventHook.isInterestedInEvent(event)) {
                     eventHook.event(context, event, file, line, name, type);
                 }
@@ -3304,7 +3313,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        tearDownClassLoader();
+        // NOTE: its intentional that we're not doing releaseClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3329,9 +3338,18 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void tearDownClassLoader() {
-        if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().tearDown(isDebug());
+    /**
+     * By default {@link #tearDown(boolean)} does not release the class-loader's
+     * resources as threads might be still running accessing the classes/packages
+     * even after the runtime has been torn down.
+     *
+     * This method exists to handle such cases, e.g. with embedded uses we always
+     * release the runtime loader but not otherwise - you should do that manually.
+     */
+    public void releaseClassLoader() {
+        if ( jrubyClassLoader != null ) {
+            getJRubyClassLoader().close();
+            jrubyClassLoader = null;
         }
     }
 
@@ -3681,6 +3699,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("ENOENT"), message);
     }
 
+    public RaiseException newErrnoEOPNOTSUPPError(String message) {
+        return newRaiseException(getErrno().getClass("EOPNOTSUPP"), message);
+    }
+
     public RaiseException newErrnoESPIPEError(String message) {
         return newRaiseException(getErrno().getClass("ESPIPE"), message);
     }
@@ -3711,6 +3733,10 @@ public final class Ruby implements Constantizable {
 
     public RaiseException newErrnoEDESTADDRREQError(String func) {
         return newRaiseException(getErrno().getClass("EDESTADDRREQ"), func);
+    }
+
+    public RaiseException newErrnoENETUNREACHError() {
+        return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
     }
 
     public RaiseException newIndexError(String message) {
@@ -3964,6 +3990,8 @@ public final class Ruby implements Constantizable {
                 return newErrnoEMFILEError();
             } else if ("Too many open files in system".equals(e.getMessage())) {
                 return newErrnoENFILEError();
+            } else if ("Network is unreachable".equals(e.getMessage())) {
+                return newErrnoENETUNREACHError();
             }
             return newRaiseException(getIOError(), e.getMessage());
         } else {
@@ -4716,8 +4744,8 @@ public final class Ruby implements Constantizable {
      * @return the freeze-duped version of the string
      */
     public RubyString freezeAndDedupString(RubyString string) {
-        if (string.getMetaClass().isSingleton()) {
-            // never cache a singleton
+        if (string.getMetaClass() != stringClass) {
+            // never cache a non-natural String
             RubyString duped = string.strDup(this);
             duped.setFrozen(true);
             return duped;
@@ -4786,15 +4814,6 @@ public final class Ruby implements Constantizable {
 
     private void addEvalParseToStats() {
         if (parserStats != null) parserStats.addEvalParse();
-    }
-
-    private void addJRubyModuleParseToStats() {
-        if (parserStats != null) parserStats.addJRubyModuleParse();
-    }
-
-    @Deprecated
-    public CallbackFactory callbackFactory(Class<?> type) {
-        throw new RuntimeException("callback-style handles are no longer supported in JRuby");
     }
 
     @Deprecated
@@ -4886,7 +4905,8 @@ public final class Ruby implements Constantizable {
             procSysModule, precisionModule, errnoModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
-            superMethodMissing, normalMethodMissing, defaultMethodMissing, respondTo, respondToMissing;
+            superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
+            respondTo, respondToMissing;
 
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;
@@ -4920,8 +4940,8 @@ public final class Ruby implements Constantizable {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private TruffleBridge truffleBridge;
-    private final Object truffleBridgeMutex = new Object();
+    private TruffleContextInterface truffleContext;
+    private final Object truffleContextMonitor = new Object();
 
     // Note: this field and the following static initializer
     // must be located be in this order!
@@ -5076,7 +5096,7 @@ public final class Ruby implements Constantizable {
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
-    private interface ObjectSpacer {
+    public interface ObjectSpacer {
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
@@ -5106,7 +5126,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private WeakHashMap<RubyString, WeakReference<RubyString>> dedupMap = new WeakHashMap<RubyString, WeakReference<RubyString>>();
+    private Map<RubyString, WeakReference<RubyString>> dedupMap = Collections.synchronizedMap(new WeakHashMap<RubyString, WeakReference<RubyString>>());
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
@@ -5115,6 +5135,8 @@ public final class Ruby implements Constantizable {
     private final org.jruby.management.Runtime runtimeBean;
 
     private final FilenoUtil filenoUtil = new FilenoUtil();
+
+    private Interpreter interpreter = new Interpreter();
 
     /**
      * A representation of this runtime as a JIT-optimizable constant. Used for e.g. invokedynamic binding of runtime

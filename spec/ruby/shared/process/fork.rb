@@ -1,4 +1,4 @@
-describe :process_fork, :shared => true do
+describe :process_fork, shared: true do
   platform_is :windows do
     it "returns false from #respond_to?" do
       @object.respond_to?(:fork).should be_false

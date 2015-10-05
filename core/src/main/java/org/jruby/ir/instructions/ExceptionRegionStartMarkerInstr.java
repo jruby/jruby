@@ -3,23 +3,22 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
+public class ExceptionRegionStartMarkerInstr extends OneOperandInstr implements FixedArityInstr {
     public ExceptionRegionStartMarkerInstr(Label firstRescueBlockLabel) {
-        super(Operation.EXC_REGION_START, new Operand[] { firstRescueBlockLabel });
+        super(Operation.EXC_REGION_START, firstRescueBlockLabel);
     }
 
     public Label getFirstRescueBlockLabel() {
-        return (Label) operands[0];
+        return (Label) getOperand1();
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel((Label) operands[0]));
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(getFirstRescueBlockLabel()));
     }
 
     @Override

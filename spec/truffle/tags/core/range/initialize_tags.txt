@@ -1,2 +1,0 @@
-fails:Range#initialize raises a NameError if called on an already initialized Range
-fails:Range#initialize raises an ArgumentError if arguments don't respond to <=>

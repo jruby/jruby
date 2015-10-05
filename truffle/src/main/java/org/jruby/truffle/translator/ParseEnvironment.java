@@ -10,17 +10,22 @@
 package org.jruby.truffle.translator;
 
 import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.ReturnID;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.translator.TranslatorEnvironment.BreakID;
 
 /**
  * Translator environment, unique per parse/translation.
  */
 public class ParseEnvironment {
 
-    private LexicalScope lexicalScope;
+    private LexicalScope lexicalScope = null;
 
     public ParseEnvironment(RubyContext context) {
-        lexicalScope = context.getRootLexicalScope();
+    }
+
+    public void resetLexicalScope(LexicalScope lexicalScope) {
+        this.lexicalScope = lexicalScope;
     }
 
     public LexicalScope getLexicalScope() {
@@ -33,6 +38,14 @@ public class ParseEnvironment {
 
     public void popLexicalScope() {
         lexicalScope = lexicalScope.getParent();
+    }
+
+    public ReturnID allocateReturnID() {
+        return new ReturnID();
+    }
+
+    public BreakID allocateBreakID() {
+        return new BreakID();
     }
 
 }

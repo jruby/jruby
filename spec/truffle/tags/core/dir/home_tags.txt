@@ -1,3 +1,0 @@
-fails:Dir.home returns the current user's home directory as a string if called without arguments
-fails:Dir.home returns the named user's home directory as a string if called with an argument
-fails:Dir.home raises an ArgumentError if the named user doesn't exist

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -33,48 +32,73 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
     protected final JavaCallable[] javaVarargsCallables; /* != null if any var args callables */
-    protected final int minVarargsArity;
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
     final IntHashMap<JavaCallable> cache;
 
     private final Ruby runtime;
-    private final Member[] members;
+
+    RubyToJavaInvoker(RubyModule host, Member member) {
+        super(host, Visibility.PUBLIC);
+        this.runtime = host.getRuntime();
+
+        final JavaCallable callable;
+        JavaCallable[] varargsCallables = null;
+        int minVarArgsArity = -1;
+
+        callable = createCallable(runtime, member);
+        int minArity = callable.getArity();
+        if ( callable.isVarArgs() ) { // TODO does it need to happen?
+            varargsCallables = createCallableArray(callable);
+            minVarArgsArity = getMemberArity(member) - 1;
+        }
+
+        cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+
+        this.javaCallable = callable;
+        this.javaCallables = null;
+        this.javaVarargsCallables = varargsCallables;
+
+        setArity(minArity, minArity, minVarArgsArity);
+        setupNativeCall();
+    }
 
     RubyToJavaInvoker(RubyModule host, Member[] members) {
-        super(host, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
-        this.members = members;
+        super(host, Visibility.PUBLIC);
         this.runtime = host.getRuntime();
-        // we set all Java methods to optional, since many/most have overloads
-        setArity(Arity.OPTIONAL);
 
         // initialize all the callables for this method
         final JavaCallable callable;
         final JavaCallable[][] callables;
         JavaCallable[] varargsCallables = null;
-        int varArgsArity = Integer.MAX_VALUE;
+        int minVarArgsArity = -1; int maxArity, minArity;
 
         final int length = members.length;
         if ( length == 1 ) {
             callable = createCallable(runtime, members[0]);
+            maxArity = minArity = callable.getArity();
             if ( callable.isVarArgs() ) {
                 varargsCallables = createCallableArray(callable);
+                minVarArgsArity = getMemberArity(members[0]) - 1;
             }
             callables = null;
 
             cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
         }
         else {
-            callable = null;
+            callable = null; maxArity = -1; minArity = Integer.MAX_VALUE;
 
             IntHashMap<ArrayList<JavaCallable>> arityMap = new IntHashMap<ArrayList<JavaCallable>>(length, 1);
 
-            ArrayList<JavaCallable> varArgs = null; int maxArity = 0;
+            ArrayList<JavaCallable> varArgs = null;
             for ( int i = 0; i < length; i++ ) {
                 final Member method = members[i];
-                final int currentArity = getMemberParameterTypes(method).length;
+                final int currentArity = getMemberArity(method);
                 maxArity = Math.max(currentArity, maxArity);
+                minArity = Math.min(currentArity, minArity);
+
+                final JavaCallable javaMethod = createCallable(runtime, method);
 
                 ArrayList<JavaCallable> methodsForArity = arityMap.get(currentArity);
                 if (methodsForArity == null) {
@@ -84,14 +108,22 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                     methodsForArity = new ArrayList<JavaCallable>(length);
                     arityMap.put(currentArity, methodsForArity);
                 }
-
-                final JavaCallable javaMethod = createCallable(runtime, method);
                 methodsForArity.add(javaMethod);
 
-                if ( isMemberVarArgs(method) ) {
-                    varArgsArity = Math.min(currentArity - 1, varArgsArity);
+                if ( javaMethod.isVarArgs() ) {
+                    final int usableArity = currentArity - 1;
+                    // (String, Object...) has usable arity == 1 ... (String)
+                    if ((methodsForArity = arityMap.get(usableArity)) == null) {
+                        methodsForArity = new ArrayList<JavaCallable>(length);
+                        arityMap.put(usableArity, methodsForArity);
+                    }
+                    methodsForArity.add(javaMethod);
+
                     if (varArgs == null) varArgs = new ArrayList<JavaCallable>(length);
                     varArgs.add(javaMethod);
+
+                    if ( minVarArgsArity == -1 ) minVarArgsArity = Integer.MAX_VALUE;
+                    minVarArgsArity = Math.min(usableArity, minVarArgsArity);
                 }
             }
 
@@ -113,9 +145,26 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         this.javaCallable = callable;
         this.javaCallables = callables;
         this.javaVarargsCallables = varargsCallables;
-        this.minVarargsArity = varArgsArity;
 
-        // if it's not overloaded, set up a NativeCall
+        setArity(minArity, maxArity, minVarArgsArity);
+        setupNativeCall();
+    }
+
+    private void setArity(final int minArity,  final int maxArity, final int minVarArgsArity) {
+        if ( minVarArgsArity == -1 ) { // no var-args
+            if ( minArity == maxArity ) {
+                setArity( Arity.fixed(minArity) );
+            }
+            else { // multiple overloads
+                setArity( Arity.required(minArity) ); // but <= maxArity
+            }
+        }
+        else {
+            setArity( Arity.required(minVarArgsArity < minArity ? minVarArgsArity : minArity) );
+        }
+    }
+
+    final void setupNativeCall() { // if it's not overloaded, set up a NativeCall
         if (javaCallable != null) {
             // no constructor support yet
             if (javaCallable instanceof org.jruby.javasupport.JavaMethod) {
@@ -142,14 +191,6 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         return false;
     }
 
-    protected final Member[] getMembers() {
-        return members;
-    }
-
-    protected AccessibleObject[] getAccessibleObjects() {
-        return (AccessibleObject[]) getMembers();
-    }
-
     protected abstract JavaCallable createCallable(Ruby runtime, Member member);
 
     protected abstract JavaCallable[] createCallableArray(JavaCallable callable);
@@ -160,33 +201,51 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     protected abstract Class[] getMemberParameterTypes(Member member);
 
+    @Deprecated // no longer used!
     protected abstract boolean isMemberVarArgs(Member member);
 
-    static Object convertArg(IRubyObject arg, JavaCallable method, int index) {
-        return arg.toJava(method.getParameterTypes()[index]);
+    final int getMemberArity(Member member) {
+        return getMemberParameterTypes(member).length;
     }
 
-    static Object convertVarArgs(IRubyObject[] args, JavaCallable method) {
-        final Class[] types = method.getParameterTypes();
-        final Class<?> varArrayType = types[types.length - 1];
-        final int varStart = types.length - 1;
+    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args) {
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        final Object[] javaArgs; final int len = args.length;
+
+        if ( method.isVarArgs() ) {
+            final int last = paramTypes.length - 1;
+            javaArgs = new Object[ last + 1 ];
+            for ( int i = 0; i < last; i++ ) {
+                javaArgs[i] = args[i].toJava(paramTypes[i]);
+            }
+            javaArgs[ last ] = convertVarArgumentsOnly(paramTypes[ last ], last, args);
+        }
+        else {
+            javaArgs = new Object[len];
+            for ( int i = 0; i < len; i++ ) {
+                javaArgs[i] = args[i].toJava(paramTypes[i]);
+            }
+        }
+        return javaArgs;
+    }
+
+    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+        final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
-        if ( args.length == 0 ) {
+        if ( args.length == 0 || varCount <= 0 ) {
             return Array.newInstance(varArrayType.getComponentType(), 0);
         }
 
-        final Object varArgs;
         if ( varCount == 1 && args[varStart] instanceof ArrayJavaProxy ) {
             // we may have a pre-created array to pass; try that first
-            varArgs = args[varStart].toJava(varArrayType);
+            return args[varStart].toJava(varArrayType);
         }
-        else {
-            final Class compType = varArrayType.getComponentType();
-            varArgs = Array.newInstance(compType, varCount);
-            for ( int i = 0; i < varCount; i++ ) {
-                Array.set(varArgs, i, args[varStart + i].toJava(compType));
-            }
+
+        final Class<?> compType = varArrayType.getComponentType();
+        final Object varArgs = Array.newInstance(compType, varCount);
+        for ( int i = 0; i < varCount; i++ ) {
+            Array.set(varArgs, i, args[varStart + i].toJava(compType));
         }
         return varArgs;
     }
@@ -196,11 +255,20 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         return (JavaProxy) self;
     }
 
-    static void trySetAccessible(AccessibleObject... accesibles) {
+    static <T extends AccessibleObject> T setAccessible(T accessible) {
         if ( ! Ruby.isSecurityRestricted() ) {
-            try { AccessibleObject.setAccessible(accesibles, true); }
-            catch(SecurityException e) {}
+            try { accessible.setAccessible(true); }
+            catch (SecurityException e) {}
         }
+        return accessible;
+    }
+
+    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+        if ( ! Ruby.isSecurityRestricted() ) {
+            try { AccessibleObject.setAccessible(accessibles, true); }
+            catch (SecurityException e) {}
+        }
+        return accessibles;
     }
 
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {

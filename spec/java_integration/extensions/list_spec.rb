@@ -9,41 +9,41 @@ describe "List Ruby extensions" do
   end
 
   it "should support index() with one argument" do
-    @list.index("quux").should == 1
+    expect(@list.index("quux")).to eq(1)
   end
 
   it "should return nil on index() with one argument that does not exist" do
-    @list.index(451).should == nil
+    expect(@list.index(451)).to eq(nil)
   end
 
   it "should support index() with a block" do
-    @list.index{|x| x == "bar" }.should == 2
+    expect(@list.index{|x| x == "bar" }).to eq(2)
   end
 
   it "should support index() with a block that does not exist" do
-    @list.index{|x| x == :nazgul }.should == nil
+    expect(@list.index{|x| x == :nazgul }).to eq(nil)
   end
 
   it "should support index() with nil (not found)" do
-    @list.index(nil).should == nil
+    expect(@list.index(nil)).to eq(nil)
   end
 
   it "should support index() with nil (found)" do
-    ArrayList.new(["foo", "quux", nil, "bar", "aa"]).index(nil).should == 2
+    expect(ArrayList.new(["foo", "quux", nil, "bar", "aa"]).index(nil)).to eq(2)
   end
 
   it "should support index() with no arguments" do
-    @list.index.each {|x| x == "foo" }.should == 0
+    expect(@list.index.each {|x| x == "foo" }).to eq(0)
   end
 
   it "should support index() with no arguments (not existing)" do
-    @list.index.each {|x| x == ":-(" }.should == nil
+    expect(@list.index.each {|x| x == ":-(" }).to eq(nil)
   end
 
   # Java 8 adds a single-parameter sort method to List that sorts in-place
   if ENV_JAVA['java.specification.version'] < '1.8'
     it "should be sortable with sort() without block" do
-      @list.sort.to_a.should == @data.sort
+      expect(@list.sort.to_a).to eq(@data.sort)
     end
 
     it "should be sortable with sort() with block" do
@@ -55,14 +55,14 @@ describe "List Ruby extensions" do
         a.length <=> b.length
       end
 
-      result.to_a.should == expected
+      expect(result.to_a).to eq(expected)
     end
   end
 
   it "should be sortable with sort!() without block" do
     list = ArrayList.new(@data)
     list.sort!
-    list.to_a.should == @data.sort
+    expect(list.to_a).to eq(@data.sort)
   end
 
   it "should be sortable with sort!() with block" do
@@ -75,19 +75,19 @@ describe "List Ruby extensions" do
       a.length <=> b.length
     end
 
-    list.to_a.should == expected
+    expect(list.to_a).to eq(expected)
   end
 
   it "should support slicing with 2 arguments" do
-    @list[0,3].to_a.should == @data[0,3]
+    expect(@list[0,3].to_a).to eq(@data[0,3])
   end
 
   it "should support slicing with inclusive ranges" do
-    @list[0..3].to_a.should == @data[0..3]
+    expect(@list[0..3].to_a).to eq(@data[0..3])
   end
 
    it "should support slicing with exclusive ranges" do
-    @list[0...2].to_a.should == @data[0...2]
+    expect(@list[0...2].to_a).to eq(@data[0...2])
   end
 
   it "should respect to_ary objects defined on iteration" do
@@ -103,8 +103,8 @@ describe "List Ruby extensions" do
     end
 
     ArrayList.new([Pair.new(:x, :y)]).each do |car, cdr|
-      car.should == :x
-      cdr.should == :y
+      expect(car).to eq(:x)
+      expect(cdr).to eq(:y)
     end
   end
 end

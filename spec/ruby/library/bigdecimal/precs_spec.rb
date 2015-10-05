@@ -3,7 +3,7 @@ require 'bigdecimal'
 
 describe "BigDecimal#precs" do
 
-  before(:each) do
+  before :each do
     @infinity = BigDecimal("Infinity")
     @infinity_neg = BigDecimal("-Infinity")
     @nan = BigDecimal("NaN")

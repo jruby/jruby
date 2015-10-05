@@ -19,7 +19,7 @@ ruby_version_is ''...'2.2' do
       @app.log(Logger::WARN, "Test message")
       @log_file.rewind
       message = @log_file.readlines.last
-      LoggerSpecs::strip_date(message).should == "WARN -- TestApp: Test message\n"
+      LoggerSpecs.strip_date(message).should == "WARN -- TestApp: Test message\n"
     end
 
     it "receives a severity" do
@@ -31,18 +31,18 @@ ruby_version_is ''...'2.2' do
       @log_file.rewind
       messages = @log_file.readlines[3..-1] # remove default messages
 
-      LoggerSpecs::strip_date(messages[0]).should == "INFO -- TestApp: Info message\n"
-      LoggerSpecs::strip_date(messages[1]).should == "DEBUG -- TestApp: Debug message\n"
-      LoggerSpecs::strip_date(messages[2]).should == "WARN -- TestApp: Warn message\n"
-      LoggerSpecs::strip_date(messages[3]).should == "ERROR -- TestApp: Error message\n"
-      LoggerSpecs::strip_date(messages[4]).should == "FATAL -- TestApp: Fatal message\n"
+      LoggerSpecs.strip_date(messages[0]).should == "INFO -- TestApp: Info message\n"
+      LoggerSpecs.strip_date(messages[1]).should == "DEBUG -- TestApp: Debug message\n"
+      LoggerSpecs.strip_date(messages[2]).should == "WARN -- TestApp: Warn message\n"
+      LoggerSpecs.strip_date(messages[3]).should == "ERROR -- TestApp: Error message\n"
+      LoggerSpecs.strip_date(messages[4]).should == "FATAL -- TestApp: Fatal message\n"
     end
 
     it "uses app name for Application Name" do
       @app.log(Logger::INFO,  "Info message")
       @log_file.rewind
       test_message = @log_file.readlines.last
-      Regexp.new(/TestApp/).should =~ LoggerSpecs::strip_date(test_message)
+      Regexp.new(/TestApp/).should =~ LoggerSpecs.strip_date(test_message)
     end
 
     it "receives a block and calls it if message is nil" do

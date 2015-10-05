@@ -48,7 +48,7 @@ public class SimpleSourcePosition implements ISourcePosition {
 
     @Override
     public String toString() {
-        return String.format("%s:%d", getFile(), getLine() + 1);
+        return String.format("%s:%d", filename, getLine() + 1);
     }
 
 }

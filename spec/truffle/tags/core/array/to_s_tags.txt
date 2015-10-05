@@ -1,1 +1,0 @@
-fails:Array#to_s with encoding raises if inspected result is not default external encoding

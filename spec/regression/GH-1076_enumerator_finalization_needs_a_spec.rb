@@ -42,6 +42,6 @@ describe "An Enumerator that has been abandoned" do
     # but waiting for that here would take too long. Using 200 is a safe
     # threshold, since if enumerators are not being cleaned up we should have
     # thousands of extra threads here.
-    (thread_bean.thread_count - thread_count).should < 200
+    expect(thread_bean.thread_count - thread_count).to be < 200
   end
 end

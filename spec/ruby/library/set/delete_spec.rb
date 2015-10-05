@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require 'set'
 
 describe "Set#delete" do
-  before(:each) do
+  before :each do
     @set = Set["a", "b", "c"]
   end
 
@@ -18,7 +18,7 @@ describe "Set#delete" do
 end
 
 describe "Set#delete?" do
-  before(:each) do
+  before :each do
     @set = Set["a", "b", "c"]
   end
 

@@ -1,0 +1,7 @@
+fails:TCPSocket.new requires a hostname and a port as arguments
+fails:TCPSocket.new refuses the connection when there is no server to connect to
+fails:TCPSocket.new with a running server silently ignores 'nil' as the third parameter
+fails:TCPSocket.new with a running server connects to a listening server with host and port
+fails:TCPSocket.new with a running server connects to a server when passed local_host argument
+fails:TCPSocket.new with a running server connects to a server when passed local_host and local_port arguments
+fails:TCPSocket.new with a running server has an address once it has connected to a listening server

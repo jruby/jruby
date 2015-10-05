@@ -31,15 +31,15 @@ describe "Module#private_instance_methods" do
   end
 end
 
-describe :module_private_instance_methods_supers, :shared => true do
+describe :module_private_instance_methods_supers, shared: true do
   it "returns a unique list for a class including a module" do
     m = ReflectSpecs::D.private_instance_methods(*@object)
-    m.select { |x| x == stasy(:pri) }.sort.should == [stasy(:pri)]
+    m.select { |x| x == :pri }.sort.should == [:pri]
   end
 
   it "returns a unique list for a subclass" do
     m = ReflectSpecs::E.private_instance_methods(*@object)
-    m.select { |x| x == stasy(:pri) }.sort.should == [stasy(:pri)]
+    m.select { |x| x == :pri }.sort.should == [:pri]
   end
 end
 

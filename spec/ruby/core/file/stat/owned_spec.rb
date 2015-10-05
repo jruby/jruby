@@ -7,12 +7,12 @@ describe "File::Stat#owned?" do
 end
 
 describe "File::Stat#owned?" do
-  before(:each) do
+  before :each do
     @file = tmp("i_exist")
     touch(@file)
   end
 
-  after(:each) do
+  after :each do
     rm_r @file
   end
 

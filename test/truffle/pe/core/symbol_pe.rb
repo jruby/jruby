@@ -6,8 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example ":foo"
-example ":foo == :foo"
-
-# fails because != is !(==), and the inner call to == is not inlined
-tagged_example ":foo != :bar"
+example ":foo", :foo
+example ":foo == :foo", true
+example ":foo != :bar", true

@@ -9,80 +9,43 @@
  */
 package org.jruby.truffle.nodes.methods;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="module", type=RubyNode.class)
 public abstract class AliasNode extends RubyNode {
 
-    @Child private RubyNode module;
+    @Child private SingletonClassNode singletonClassNode;
+
     final String newName;
     final String oldName;
 
     public AliasNode(RubyContext context, SourceSection sourceSection, String newName, String oldName) {
         super(context, sourceSection);
+        this.singletonClassNode = SingletonClassNodeGen.create(context, sourceSection, null);
         this.newName = newName;
         this.oldName = oldName;
     }
 
-    public AliasNode(AliasNode prev) {
-        super(prev);
-        newName = prev.newName;
-        oldName = prev.oldName;
+    @Specialization(guards = "isRubyModule(module)")
+    public Object alias(DynamicObject module) {
+        Layouts.MODULE.getFields(module).alias(this, newName, oldName);
+        return module;
     }
 
-    public Object noClass() {
-        CompilerDirectives.transferToInterpreter();
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoClassToMakeAlias(this));
-    }
-
-    @Specialization
-    public Object alias(boolean value) {
-        return noClass();
-    }
-
-    @Specialization
-    public Object alias(int value) {
-        return noClass();
-    }
-
-    @Specialization
-    public Object alias(long value) {
-        return noClass();
-    }
-
-    @Specialization
-    public Object alias(double value) {
-        return noClass();
-    }
-
-    @Specialization
-    public Object alias(RubyBignum value) {
-        return noClass();
-    }
-
-    @Specialization
-    public Object alias(RubyModule module) {
-        notDesignedForCompilation();
-
-        module.alias(this, newName, oldName);
-        return null;
-    }
-
-    @Specialization(guards = {"!isRubyModule", "!isRubyBignum"})
-    public Object alias(RubyBasicObject object) {
-        notDesignedForCompilation();
-
-        object.getSingletonClass(this).alias(this, newName, oldName);
-        return null;
+    // TODO (eregon, 10 May 2015): we should only have the module case as the child should be the default definee
+    @Specialization(guards = "!isRubyModule(object)")
+    public Object alias(Object object) {
+        Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(object)).alias(this, newName, oldName);
+        return object;
     }
 
 }

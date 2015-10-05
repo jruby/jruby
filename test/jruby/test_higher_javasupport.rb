@@ -56,6 +56,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_raises(NoMethodError) { Integer.new(10) }
   end
 
+  def test_java_alias_prior_to_import
+    mod = Module.new do
+      java_alias :SYS, 'System'
+      import 'java.lang'
+    end
+    mod::SYS.currentTimeMillis # nothing raised
+  end
+
+  def test_include_package_with_package
+    mod = Module.new do
+      include_package java.util.concurrent
+      include_package Java::JavaUtilConcurrentAtomic
+    end
+    mod::ConcurrentSkipListMap.new
+    mod::AtomicInteger.new(666666)
+  end
+
   Random = java.util.Random
   Double = java.lang.Double
   def test_constructors_and_instance_methods
@@ -95,10 +112,165 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   Character = java.lang.Character
   def test_constants
-    assert_equal(9223372036854775807, Long::MAX_VALUE)
+    assert_equal 9223372036854775807, Long::MAX_VALUE
     assert(! defined? Character::Y_DATA)  # Known private field in Character
+
     # class definition with "_" constant causes error
-    assert_nothing_raised { org.jruby.javasupport.test.ConstantHolder }
+    org.jruby.javasupport.test.VariableArguments
+    assert_equal '_', org.jruby.javasupport.test.VariableArguments::_LEADING_UNDERSCORE
+  end
+
+  VarArgsCtor = org.jruby.javasupport.test.VariableArguments
+
+  def test_varargs_constructor
+    var_ar = VarArgsCtor.new
+    assert_equal nil, var_ar.constants
+
+    var_ar = VarArgsCtor.new '0'
+    assert_equal '0', var_ar.constants[0]
+
+    var_ar = org.jruby.javasupport.test.VariableArguments.new '0', '1'
+    assert_equal '1', var_ar.constants[1]
+
+    assert_raises(NameError) do
+      org.jruby.javasupport.test.VariableArguments.new '0', 1
+    end
+  end
+
+  class RubyVarArgsCtor1 < VarArgsCtor
+    def initialize(a1, a2); super(a1, a2) end
+  end
+
+  class RubyVarArgsCtor2 < VarArgsCtor
+    def initialize(); super(nil) end
+  end
+
+  class RubyVarArgsCtor3 < VarArgsCtor
+    def initialize(); super() end
+  end
+
+  class RubyVarArgsCtor4 < VarArgsCtor
+    # implicit initialize()
+  end
+
+  VarArgOnly = org.jruby.javasupport.test.VariableArguments::VarArgOnly
+
+  class RubyVarArgsOnlyCtor1 < VarArgOnly
+    # implicit initialize()
+  end
+
+  class RubyVarArgsOnlyCtor2 < VarArgOnly
+    def initialize(); end
+  end
+
+  class RubyVarArgsOnlyCtor3 < VarArgOnly
+    def initialize(*args); super end
+  end
+
+  class RubyVarArgsOnlyCtor4 < VarArgOnly
+    def initialize(*args)
+      super(args.to_java)
+    end
+  end
+
+  StringVarArgOnly = org.jruby.javasupport.test.VariableArguments::StringVarArgOnly
+
+  class RubyVarArgsOnlyCtor5 < StringVarArgOnly
+    # NOTE: do not work (so far) due component type mismatch :
+    #def initialize(*args); super end
+    #def initialize(*args); super(*args) end
+    def initialize(*args)
+      super(args.to_java(:String))
+    end
+  end
+
+  def test_varargs_constructor_in_ruby_subclass
+    var_args = RubyVarArgsCtor1.new 'foo', 'bar'
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
+
+    var_args = RubyVarArgsCtor2.new
+    assert_equal nil, var_args.constants[0]
+
+    var_args = RubyVarArgsCtor3.new
+    assert_equal nil, var_args.constants
+
+    var_args = RubyVarArgsCtor4.new
+    assert_equal nil, var_args.constants
+
+    #
+
+    var_args = RubyVarArgsOnlyCtor1.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor2.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor3.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor3.new('1')
+    assert_equal 1, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new(1)
+    assert_equal 1, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new(1, 2)
+    assert_equal 2, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor5.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor5.new('1')
+    assert_equal 1, var_args.constants.length
+  end
+
+  def test_varargs_overloaded_method
+    var_args = VarArgsCtor.new 'foo'
+    var_args.setConstants 'bar'
+    assert_equal 'bar', var_args.constants[0]
+
+    var_args.setConstants 'foo,bar' # (String)
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
+
+    var_args = RubyVarArgsOnlyCtor2.new
+    var_args.setConstants 'foo', 'bar' # (String, String)
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
+
+    var_args.setConstants 'foo', 'bar', 'baz' # (String, String...)
+    assert_equal 'bar', var_args.constants[0]
+    assert_equal 'baz', var_args.constants[1]
+    assert_equal 'foo', var_args.constants[2]
+
+    var_args.setConstants '1', '2', '3', '4', '5'
+    assert_equal '2', var_args.constants[0]
+    assert_equal '1', var_args.constants[4]
+  end
+
+  def test_varargs_only_method
+    a = java.util.Arrays.asList(1)
+    assert_equal 1, a[0]
+    a = java.util.Arrays.asList('1', '2', '3')
+    assert_equal '1', a[0]
+    assert_equal '3', a[2]
+    a = java.util.Arrays.asList('1', 2, 3.0, 4)
+    assert_equal '1', a[0]
+    assert_equal 2, a[1]
+    a = java.util.Arrays.asList([1, 2])
+    assert_equal [1, 2], a[0]
+    a = java.util.Arrays.asList([1, 2], [3])
+    assert_equal [1, 2], a[0]
+    assert_equal [3], a[1]
+    a = java.util.Arrays.asList([1, 2].to_java)
+    assert_equal 1, a[0]
+    assert_equal 2, a[1]
+    a = java.util.Arrays.asList
+    assert_equal 0, a.size
   end
 
   java_import org.jruby.javasupport.test.Room
@@ -555,6 +727,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_big_decimal_interaction
     assert_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
+  end
+
+  #JRUBY-3818
+  def test_decimal_format
+    format = java.text.DecimalFormat.new("#,##0.00")
+    locale_separator = java.text.DecimalFormatSymbols.new().getDecimalSeparator()
+    value = java.math.BigDecimal.new("10")
+    assert_equal "10" + locale_separator.chr + "00", format.format(value)
   end
 
   def test_direct_package_access
@@ -1133,7 +1313,7 @@ CLASSDEF
   # JRUBY-3046
   def test_java_methods_have_arity
     assert_nothing_raised do
-      assert_equal(-1, java.lang.String.instance_method(:toString).arity)
+      assert java.lang.String.instance_method(:toString).arity
     end
   end
 

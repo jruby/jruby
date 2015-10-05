@@ -483,6 +483,15 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return getc();
     }
 
+    @JRubyMethod(name = "readbyte")
+    public IRubyObject readbyte() {
+        IRubyObject dst = getbyte();
+        if (dst.isNil()) {
+            throw getRuntime().newEOFError();
+        }
+        return dst;
+    }
+
     @JRubyMethod(name = "getc")
     public IRubyObject getc_19() {
         try {
@@ -492,7 +501,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             position++;
             // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
             // TODO: StringIO needs a love, too.
-            return getRuntime().newString("" + (char) (value & 0xFF));
+            return getRuntime().newString(String.valueOf((char) (value & 0xFF)));
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         }

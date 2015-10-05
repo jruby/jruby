@@ -11,6 +11,6 @@ describe "A ThreadGroup subclass" do
     end
 
     obj = cls.new(1,2,3)
-    [obj.a, obj.b, obj.c].should == [1,2,3]
+    expect([obj.a, obj.b, obj.c]).to eq([1,2,3])
   end
 end

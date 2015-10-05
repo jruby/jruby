@@ -237,14 +237,14 @@ public abstract class IRBytecodeAdapter {
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushString(ByteList bl);
+    public abstract void pushString(ByteList bl, int cr);
 
     /**
      * Stack required: none
      *
      * @param bl ByteList for the String to push
      */
-    public abstract void pushFrozenString(ByteList bl);
+    public abstract void pushFrozenString(ByteList bl, int cr);
 
     /**
      * Stack required: none
@@ -307,7 +307,7 @@ public abstract class IRBytecodeAdapter {
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
      */
-    public abstract void invokeOther(String name, int arity, boolean hasClosure);
+    public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -338,7 +338,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a closure will be on the stack for passing
      * @param callType
      */
-    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType);
+    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.
@@ -495,6 +495,20 @@ public abstract class IRBytecodeAdapter {
      * Stack required: none
      */
     public abstract void checkpoint();
+
+    /**
+     * Retrieve a global variable with the given name.
+     *
+     * Stack required: none
+     */
+    public abstract void getGlobalVariable(String name);
+
+    /**
+     * Set the global variable with the given name to the value on stack.
+     *
+     * Stack required: the new value
+     */
+    public abstract void setGlobalVariable(String name);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

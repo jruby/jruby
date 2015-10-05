@@ -107,4 +107,35 @@ describe "Comparable#==" do
       lambda { (a == b) }.should raise_error(Exception)
     end
   end
+
+  context "when #<=> is not defined" do
+    before :each do
+      @a = ComparableSpecs::WithoutCompareDefined.new
+      @b = ComparableSpecs::WithoutCompareDefined.new
+    end
+
+    it "returns true for identical objects" do
+      @a.should == @a
+    end
+
+    it "returns false and does not recurse infinitely" do
+      @a.should_not == @b
+    end
+  end
+
+  context "when #<=> calls super" do
+    before :each do
+      @a = ComparableSpecs::CompareCallingSuper.new
+      @b = ComparableSpecs::CompareCallingSuper.new
+    end
+
+    it "returns true for identical objects" do
+      @a.should == @a
+    end
+
+    it "calls the defined #<=> only once for different objects" do
+      @a.should_not == @b
+      @a.calls.should == 1
+    end
+  end
 end

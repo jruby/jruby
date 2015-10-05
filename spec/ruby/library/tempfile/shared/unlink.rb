@@ -1,10 +1,6 @@
-describe :tempfile_unlink, :shared => true do
+describe :tempfile_unlink, shared: true do
   before :each do
     @tempfile = Tempfile.new("specs")
-  end
-
-  after :each do
-    TempfileSpecs.cleanup @tempfile
   end
 
   it "unlinks self" do

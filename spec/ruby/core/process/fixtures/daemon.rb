@@ -1,15 +1,13 @@
 module ProcessSpecs
   class Daemon
     def initialize(argv)
-      args, @input, @data, @signal, @behavior = argv
+      args, @input, @data, @behavior = argv
       @args = Marshal.load [args].pack("H*")
       @no_at_exit = false
     end
 
     def run
-      File.delete @signal if File.exist? @signal
       send @behavior
-      File.open(@signal, "w") { }
 
       # Exit without running any at_exit handlers
       exit!(0) if @no_at_exit
@@ -63,11 +61,13 @@ module ProcessSpecs
     def keep_stdio_open_false_stdout
       Process.daemon *@args
       $stdout.write "writing to stdout"
+      write ""
     end
 
     def keep_stdio_open_false_stderr
       Process.daemon *@args
       $stderr.write "writing to stderr"
+      write ""
     end
 
     def keep_stdio_open_false_stdin

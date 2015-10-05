@@ -1,0 +1,1 @@
+fails:Integer#round returns itself rounded if passed a negative value

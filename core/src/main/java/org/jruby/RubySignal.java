@@ -31,6 +31,7 @@ import jnr.constants.platform.Signal;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SignalFacade;
@@ -52,6 +53,17 @@ public class RubySignal {
     }
     
     public static void createSignal(Ruby runtime) {
+        // We force java.lang.Process et al to load so that JVM's CHLD handler can be
+        // overwritten by users (jruby/jruby#3283)
+        if (!Platform.IS_WINDOWS) {
+            try {
+                Class.forName("java.lang.Process");
+                Class.forName("java.lang.UNIXProcess");
+            } catch (Throwable t) {
+                // if we can't access Process, other things will fail anyway; ignore for now
+            }
+        }
+
         RubyModule mSignal = runtime.defineModule("Signal");
         
         mSignal.defineAnnotatedMethods(RubySignal.class);

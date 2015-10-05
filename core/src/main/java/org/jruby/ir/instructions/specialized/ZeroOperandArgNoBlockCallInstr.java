@@ -14,14 +14,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
-    public ZeroOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args) {
-        super(Operation.CALL_0O, callType, result, name, receiver, args, null);
+    public ZeroOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver,
+                                          Operand[] args, boolean isPotentiallyRefined) {
+        super(Operation.CALL_0O, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZeroOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii));
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override

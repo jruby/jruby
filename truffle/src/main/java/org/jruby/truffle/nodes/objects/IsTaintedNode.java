@@ -9,16 +9,17 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class IsTaintedNode extends RubyNode {
@@ -27,11 +28,6 @@ public abstract class IsTaintedNode extends RubyNode {
 
     public IsTaintedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-    }
-
-    public IsTaintedNode(IsTaintedNode prev) {
-        super(prev);
-        readTaintNode = prev.readTaintNode;
     }
 
     public abstract boolean executeIsTainted(Object object);
@@ -57,22 +53,17 @@ public abstract class IsTaintedNode extends RubyNode {
     }
 
     @Specialization
-    public boolean isTainted(RubySymbol object) {
-        return false;
+    protected boolean isTainted(DynamicObject object,
+            @Cached("createReadTaintedNode()") ReadHeadObjectFieldNode readTaintedNode) {
+        try {
+            return readTaintedNode.executeBoolean(object);
+        } catch (UnexpectedResultException e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 
-    @Specialization(guards = "!isRubySymbol")
-    public boolean isTainted(RubyBasicObject object) {
-        if (readTaintNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            readTaintNode = insert(new ReadHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER));
-        }
-
-        try {
-            return readTaintNode.isSet(object) && readTaintNode.executeBoolean(object);
-        } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(readTaintNode.execute(object).toString());
-        }
+    protected ReadHeadObjectFieldNode createReadTaintedNode() {
+        return ReadHeadObjectFieldNodeGen.create(Layouts.TAINTED_IDENTIFIER, false);
     }
 
 }

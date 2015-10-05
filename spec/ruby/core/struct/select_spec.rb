@@ -1,6 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 require File.expand_path('../shared/accessor', __FILE__)
+require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
 
 describe "Struct#select" do
   it "raises an ArgumentError if given any non-block arguments" do
@@ -25,4 +26,5 @@ describe "Struct#select" do
   end
 
   it_behaves_like :struct_accessor, :select
+  it_behaves_like :enumeratorized_with_origin_size, :select, Struct.new(:foo).new
 end

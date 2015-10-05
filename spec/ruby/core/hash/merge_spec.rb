@@ -5,25 +5,35 @@ require File.expand_path('../shared/update', __FILE__)
 
 describe "Hash#merge" do
   it "returns a new hash by combining self with the contents of other" do
-    h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(:a => 1, :c => 2)
-    h.should == new_hash(:c => 2, 1 => :a, 2 => :b, :a => 1, 3 => :c)
+    h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(a: 1, c: 2)
+    h.should == new_hash(c: 2, 1 => :a, 2 => :b, a: 1, 3 => :c)
+
+    hash = new_hash(a: 1, b: 2)
+    new_hash().merge(hash).should == hash
+    hash.merge(new_hash()).should == hash
+
+    h = new_hash(1 => :a, 2 => :b, 3 => :c).merge(1 => :b)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
+
+    h = new_hash(1 => :a, 2 => :b).merge(1 => :b, 3 => :c)
+    h.should == new_hash(1 => :b, 2 => :b, 3 => :c)
   end
 
   it "sets any duplicate key to the value of block if passed a block" do
-    h1 = new_hash(:a => 2, :b => 1, :d => 5)
-    h2 = new_hash(:a => -2, :b => 4, :c => -3)
+    h1 = new_hash(a: 2, b: 1, d: 5)
+    h2 = new_hash(a: -2, b: 4, c: -3)
     r = h1.merge(h2) { |k,x,y| nil }
-    r.should == new_hash(:a => nil, :b => nil, :c => -3, :d => 5)
+    r.should == new_hash(a: nil, b: nil, c: -3, d: 5)
 
     r = h1.merge(h2) { |k,x,y| "#{k}:#{x+2*y}" }
-    r.should == new_hash(:a => "a:-2", :b => "b:9", :c => -3, :d => 5)
+    r.should == new_hash(a: "a:-2", b: "b:9", c: -3, d: 5)
 
     lambda {
       h1.merge(h2) { |k, x, y| raise(IndexError) }
     }.should raise_error(IndexError)
 
     r = h1.merge(h1) { |k,x,y| :x }
-    r.should == new_hash(:a => :x, :b => :x, :d => :x)
+    r.should == new_hash(a: :x, b: :x, d: :x)
   end
 
   it "tries to convert the passed argument to a hash using #to_hash" do

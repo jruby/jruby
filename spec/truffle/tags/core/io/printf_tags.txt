@@ -1,3 +1,0 @@
-fails:IO#printf calls #to_str to convert the format object to a String
-fails:IO#printf writes the #sprintf formatted string
-fails:IO#printf raises IOError on closed stream

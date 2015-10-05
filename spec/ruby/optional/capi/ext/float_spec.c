@@ -25,17 +25,6 @@ static VALUE float_spec_rb_Float(VALUE self, VALUE float_str) {
 }
 #endif
 
-#ifdef HAVE_RFLOAT
-static VALUE float_spec_RFLOAT_value_set(VALUE self, VALUE float_h, VALUE new_value) {
-  RFLOAT(float_h)->value = (double)NUM2INT(new_value);
-  return Qnil;
-}
-
-static VALUE float_spec_RFLOAT_value(VALUE self, VALUE float_h) {
-  return rb_float_new(RFLOAT(float_h)->value);
-}
-#endif
-
 #ifdef HAVE_RFLOAT_VALUE
 static VALUE float_spec_RFLOAT_VALUE(VALUE self, VALUE float_h) {
   return rb_float_new(RFLOAT_VALUE(float_h));
@@ -53,11 +42,6 @@ void Init_float_spec() {
 
 #ifdef HAVE_RB_RFLOAT
   rb_define_method(cls, "rb_Float", float_spec_rb_Float, 1);
-#endif
-
-#ifdef HAVE_RFLOAT
-  rb_define_method(cls, "RFLOAT_value", float_spec_RFLOAT_value, 1);
-  rb_define_method(cls, "RFLOAT_value_set", float_spec_RFLOAT_value_set, 2);
 #endif
 
 #ifdef HAVE_RFLOAT_VALUE

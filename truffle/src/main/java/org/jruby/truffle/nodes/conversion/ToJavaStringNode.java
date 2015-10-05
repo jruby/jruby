@@ -9,15 +9,15 @@
  */
 package org.jruby.truffle.nodes.conversion;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.layouts.Layouts;
 
 @NodeChild(value="child", type=RubyNode.class)
 public abstract class ToJavaStringNode extends RubyNode {
@@ -26,23 +26,19 @@ public abstract class ToJavaStringNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToJavaStringNode(ToJavaStringNode prev) {
-        super(prev);
-    }
-
     public abstract String executeJavaString(VirtualFrame frame, Object object);
 
     // TODO(CS): cache the conversion to a Java String? Or should the user do that themselves?
 
-    @CompilerDirectives.TruffleBoundary
-    @Specialization
-    protected String toJavaString(RubySymbol symbol) {
-        return symbol.toString();
+    @TruffleBoundary
+    @Specialization(guards = "isRubySymbol(symbol)")
+    protected String toJavaStringSymbol(DynamicObject symbol) {
+        return Layouts.SYMBOL.getString(symbol);
     }
 
-    @CompilerDirectives.TruffleBoundary
-    @Specialization
-    protected String toJavaString(RubyString string) {
+    @TruffleBoundary
+    @Specialization(guards = "isRubyString(string)")
+    protected String toJavaStringString(DynamicObject string) {
         return string.toString();
     }
 

@@ -4,7 +4,7 @@ Building JRuby from Source
 Prerequisites:
 
 * A Java 7-compatible (or higher) Java development kit (JDK).
-  MAKE SURE JAVA_HOME IS SET ON OS X!
+  * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
 * Maven 3+
 * Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
 * make and a C++ compiler for installing the jruby-launcher gem
@@ -20,16 +20,15 @@ from a git clone), you need to build the lib/jruby.jar. The
 command to execute is:
 
 ```
-mvn
+./mvnw
 ```
 
 This will run the default "install" goal (```mvn install```) and will do all of the following:
 
 * Compile JRuby
-* Compile JRuby-Truffle
+* Compile JRuby-Truffle and place it in `lib/jruby-truffle.jar`
 * Build `lib/jruby.jar`, needed for running at command line
-* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of
-  those gems in `lib/ruby/stdlib/`.
+* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
 
@@ -63,6 +62,14 @@ Developing and Testing
 JRuby employs a large suite of tests, so there are many ways you can
 verify that JRuby is still fully functional.
 
+### Hacking the Build System
+
+for a general overview of the different directories and maven artifacts see [JRuby Build)](https://github.com/jruby/jruby/wiki/JRuby-Build----Some-Inside-Info)
+
+For this only  the ***pom.rb*** needs to edited. using mvn-3.3.x or the maven wrapper `./mvnw` will generate the pom.xml file where needed. For the jar files of the build those pom.xml will be generated for some use-cases, i.e. some IDEs need them.
+
+To regenerate the pom.xml just run `./mvnw` which will create them.
+
 ### Setup Testing
 
 In order to prepare JRuby for testing, you must bootstrap the dev
@@ -86,11 +93,14 @@ one of the gems to a newer version or clean out all installed gems.
 
 ### Incremental compiling
 
-After changing Java code, you can recompile quickly by running:
+After changing Java code, you can recompile quickly by running one of the
+jar files by
 
 ```
-mvn
+mvn -pl core
+mvn -pl truffle
 ```
+
 
 ### Day to Day Testing
 
@@ -228,10 +238,12 @@ mvn -Pclean
 Distribution Packages
 ---------------------
 
+all distribution packages need maven-3.3.x or the use of supplied maven wrapper. all examples below will show the use of the maven wrapper.
+
 ###the tar.gz and zip distribution packages###
 
 ```
-mvn -Pdist
+./mvnw -Pdist
 ```
 
 the files will be found in ./maven/jruby-dist/target
@@ -239,7 +251,7 @@ the files will be found in ./maven/jruby-dist/target
 ###jruby-complete.jar###
 
 ```
-mvn -Pcomplete
+./mvnw -Pcomplete
 ```
 
 the file will be in ./maven/jruby-complete/target
@@ -247,7 +259,7 @@ the file will be in ./maven/jruby-complete/target
 ###jruby maven artifacts###
 
 ```
-mvn -Pmain
+./mvnw -Pmain
 ```
 
 and those files will be installed in you maven local-repository ready to use with maven, ivy, buildr, etc
@@ -255,7 +267,7 @@ and those files will be installed in you maven local-repository ready to use wit
 ###jruby jars gem###
 
 ```
-mvn -Pjruby-jars
+./mvnw -Pjruby-jars
 ```
 
 the gem will be in ./maven/jruby-jars/pkg
@@ -263,7 +275,7 @@ the gem will be in ./maven/jruby-jars/pkg
 ### building ALL packages ###
 
 ```
-mvn -Pall
+./mvnw -Pall
 ```
 
 ### cleaning the build ###
@@ -271,57 +283,23 @@ mvn -Pall
 this will also clean the **ext** directories, i.e. a new build will then use the latest code from there for **lib/ruby**
 
 ```
-jruby -S rmvn -Pclean
+./mvnw -Pclean
 ```
 
 ## release ##
 
-first set the new version in the file *VERSION* inside the root directory and then
+first set the new version in the file *VERSION* inside the root directory and then to deploy the maven artifact to sonatype oss execute:
 
 ```
-rake maven:dump_poms
-```
-or
-```
-rmvn installe -Pall
-```
-
-Now deploy the maven 
-artifact to sonatype oss.
-
-```
-mvn clean deploy -Psonatype-oss-release
+./mvnw clean deploy -Psonatype-oss-release
 ```
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
-
-hacking the build system
-------------------------
-
-the build system uses the **ruby-maven** gem and with this the build files are **pom.rb** and **Mavenfile**. the **Mavenfile** are used whenever the module produces a gem and uses the gemspec file for the gem for setting up the POM. otherwise **pom.rb** are used. so any change in the build-system is done in those files !!!!
-
-instead of ```mvn``` the ```rmvn``` command is used. this command will also generate **pom.xml** files which can be used by regular maven.
-
-to (re)generate all pom.xml use
-```
-rake maven:dump_poms
-```
-(which is basically ```rmvn validate -Pall```)
-
-about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documentation to come).
-
-regular maven uses the the jruby from the installation, i.e. 9.0.0.0. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
-
-at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 
 ### Start a new version
 
 After the release set the new development version in *VERSION* and generate the pom.xml files
 
 ```
-rake maven:dump_poms
-```
-or
-```
-rmvn install -Pall
+./mvnw
 ```

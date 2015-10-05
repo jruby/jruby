@@ -261,4 +261,87 @@ describe "Range#step" do
       end
     end
   end
+
+  describe "when no block is given" do
+    describe "returned Enumerator" do
+      describe "size" do
+        it "raises a TypeError if step does not respond to #to_int" do
+          obj = mock("Range#step non-integer")
+          enum = (1..2).step(obj)
+          lambda { enum.size }.should raise_error(TypeError)
+        end
+
+        it "raises a TypeError if #to_int does not return an Integer" do
+          obj = mock("Range#step non-integer")
+          obj.should_receive(:to_int).and_return("1")
+          enum = (1..2).step(obj)
+
+          lambda { enum.size }.should raise_error(TypeError)
+        end
+
+        it "raises an ArgumentError if step is 0" do
+          enum = (-1..1).step(0)
+          lambda { enum.size }.should raise_error(ArgumentError)
+        end
+
+        it "raises an ArgumentError if step is 0.0" do
+          enum = (-1..1).step(0.0)
+          lambda { enum.size }.should raise_error(ArgumentError)
+        end
+
+        it "raises an ArgumentError if step is negative" do
+          enum = (-1..1).step(-2)
+          lambda {  enum.size }.should raise_error(ArgumentError)
+        end
+
+        it "returns the ceil of range size divided by the number of steps" do
+          (1..10).step(4).size.should == 3
+          (1..10).step(3).size.should == 4
+          (1..10).step(2).size.should == 5
+          (1..10).step(1).size.should == 10
+          (-5..5).step(2).size.should == 6
+          (1...10).step(4).size.should == 3
+          (1...10).step(3).size.should == 3
+          (1...10).step(2).size.should == 5
+          (1...10).step(1).size.should == 9
+          (-5...5).step(2).size.should == 5
+        end
+
+        it "returns the correct number of steps when one of the arguments is a float" do
+          (-1..1.0).step(0.5).size.should == 5
+          (-1.0...1.0).step(0.5).size.should == 4
+        end
+
+        it "returns the range size when there's no step_size" do
+          (-2..2).step.size.should == 5
+          (-2.0..2.0).step.size.should == 5
+          (-2..2.0).step.size.should == 5
+          (-2.0..2).step.size.should == 5
+          (1.0..6.4).step(1.8).size.should == 4
+          (1.0..12.7).step(1.3).size.should == 10
+          (-2...2).step.size.should == 4
+          (-2.0...2.0).step.size.should == 4
+          (-2...2.0).step.size.should == 4
+          (-2.0...2).step.size.should == 4
+          (1.0...6.4).step(1.8).size.should == 3
+          (1.0...55.6).step(18.2).size.should == 3
+        end
+
+        it "returns nil with begin and end are String" do
+          ("A".."E").step(2).size.should == nil
+          ("A"..."E").step(2).size.should == nil
+          ("A".."E").step.size.should == nil
+          ("A"..."E").step.size.should == nil
+        end
+
+        it "return nil and not raises a TypeError if the first element does not respond to #succ" do
+          obj = mock("Range#step non-comparable")
+          obj.should_receive(:<=>).with(obj).and_return(1)
+          enum = (obj..obj).step
+          lambda { enum.size }.should_not raise_error
+          enum.size.should == nil
+        end
+      end
+    end
+  end
 end

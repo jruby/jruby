@@ -1,0 +1,1 @@
+fails:Rational#integer? returns false for a rational with a numerator and no denominator

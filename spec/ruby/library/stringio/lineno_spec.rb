@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require "stringio"
 
 describe "StringIO#lineno" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this\nis\nan\nexample")
   end
 
@@ -15,7 +15,7 @@ describe "StringIO#lineno" do
 end
 
 describe "StringIO#lineno=" do
-  before(:each) do
+  before :each do
     @io = StringIO.new("this\nis\nan\nexample")
   end
 

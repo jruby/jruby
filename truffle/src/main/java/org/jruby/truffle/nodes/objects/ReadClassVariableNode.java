@@ -9,13 +9,20 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 public class ReadClassVariableNode extends RubyNode {
 
@@ -28,18 +35,27 @@ public class ReadClassVariableNode extends RubyNode {
         this.lexicalScope = lexicalScope;
     }
 
+    public static DynamicObject resolveTargetModule(LexicalScope lexicalScope) {
+        // MRI logic: ignore lexical scopes (cref) referring to singleton classes
+        while (RubyGuards.isRubyClass(lexicalScope.getLiveModule()) && Layouts.CLASS.getIsSingleton((lexicalScope.getLiveModule()))) {
+            lexicalScope = lexicalScope.getParent();
+        }
+        return lexicalScope.getLiveModule();
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
-        final RubyModule moduleObject = lexicalScope.getLiveModule();
+        final DynamicObject module = resolveTargetModule(lexicalScope);
 
-        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
+        assert RubyGuards.isRubyModule(module);
+
+        final Object value = ModuleOperations.lookupClassVariable(module, name);
 
         if (value == null) {
-            // TODO(CS): is this right?
-            // TODO: NameError!
-            return nil();
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedClassVariable(module, name, this));
         }
 
         return value;
@@ -47,14 +63,14 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyModule moduleObject = lexicalScope.getLiveModule();
+        final DynamicObject module = resolveTargetModule(lexicalScope);
 
-        final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
+        final Object value = ModuleOperations.lookupClassVariable(module, name);
 
         if (value == null) {
             return nil();
         } else {
-            return getContext().makeString("class variable");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("class variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

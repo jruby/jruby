@@ -16,6 +16,14 @@ describe "The break statement in a block" do
     @program.break_value
     ScratchPad.recorded.should == [:a, :aa, :b, :break, :d]
   end
+
+  describe "yielded inside a while" do
+    it "breaks out of the block" do
+      value = @program.break_in_block_in_while
+      ScratchPad.recorded.should == [:aa, :break]
+      value.should == :value
+    end
+  end
 end
 
 describe "The break statement in a captured block" do

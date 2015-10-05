@@ -39,6 +39,16 @@ frame = JFrame.new(FRAME_TITLE).tap do |frame|
 
       tar = org.jruby.demo.readline.TextAreaReadline.new(text, HEADER)
       tar.hook_into_runtime_with_streams(JRuby.runtime)
+
+      # Ruby does not like redefining constants but we do not want the warnings
+      # readline reads constants and not the globals so we need to reassign
+      # the globals.
+      saved_verbose = $VERBOSE
+      $VERBOSE = nil
+      STDIN = $stdin
+      STDOUT = $stdout
+      STDERR = $stderr
+      $VERBOSE = saved_verbose
     end
   end)
   

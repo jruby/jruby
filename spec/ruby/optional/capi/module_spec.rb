@@ -260,7 +260,7 @@ describe "CApiModule" do
   end
 
   describe "rb_undef_method" do
-    before(:each) do
+    before :each do
       @class = Class.new do
         def ruby_test_method
           :ruby_test_method
@@ -279,7 +279,7 @@ describe "CApiModule" do
     end
 
     describe "when given a frozen Class" do
-      before(:each) do
+      before :each do
         @frozen = @class.dup.freeze
       end
 

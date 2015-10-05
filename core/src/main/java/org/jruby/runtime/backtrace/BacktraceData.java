@@ -1,14 +1,11 @@
 package org.jruby.runtime.backtrace;
 
 import org.jruby.Ruby;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] backtraceElements;
@@ -17,8 +14,6 @@ public class BacktraceData implements Serializable {
     private final boolean fullTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
-
-    private final Pattern FILTER_CLASSES = Pattern.compile("^(org\\.jruby)|(sun\\.reflect)");
 
     public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
         this.javaTrace = javaTrace;
@@ -37,17 +32,16 @@ public class BacktraceData implements Serializable {
 
     public RubyStackTraceElement[] getBacktrace(Ruby runtime) {
         if (backtraceElements == null) {
-            backtraceElements = transformBacktrace(runtime.getBoundMethods());
+            backtraceElements = constructBacktrace(runtime.getBoundMethods());
         }
         return backtraceElements;
     }
 
-    private RubyStackTraceElement[] transformBacktrace(Map<String, Map<String, String>> boundMethods) {
-        List<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+    private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
 
         // used for duplicating the previous Ruby frame when masking native calls
-        boolean dupFrame = false;
-        String dupFrameName = null;
+        boolean dupFrame = false; String dupFrameName = null;
 
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
@@ -89,13 +83,9 @@ public class BacktraceData implements Serializable {
             }
 
             // Java-based Ruby core methods
-            String rubyName = null;
-            if (
-                    fullTrace || // full traces show all elements
-                    (rubyName = getBoundMethodName(boundMethods, className, methodName)) != null // if a bound Java impl, always show
-                    ) {
-
-                if (rubyName == null) rubyName = methodName;
+            String rubyName = methodName; // when fullTrace == true
+            if ( fullTrace || // full traces show all elements
+                 ( rubyName = getBoundMethodName(boundMethods, className, methodName) ) != null ) { // if a bound Java impl, always show
 
                 // add package to filename
                 filename = packagedFilenameFromElement(filename, className);
@@ -103,29 +93,23 @@ public class BacktraceData implements Serializable {
                 // mask .java frames out for e.g. Kernel#caller
                 if (maskNative) {
                     // for Kernel#caller, don't show .java frames in the trace
-                    dupFrame = true;
-                    dupFrameName = rubyName;
-                    continue;
+                    dupFrame = true; dupFrameName = rubyName; continue;
                 }
 
                 // construct Ruby trace element
                 trace.add(new RubyStackTraceElement(className, rubyName, filename, line, false));
 
                 // if not full trace, we're done; don't check interpreted marker
-                if (!fullTrace) {
-                    continue;
-                }
+                if ( ! fullTrace ) continue;
             }
 
             // Interpreted frames
-            if (rubyFrameIndex >= 0 &&
-                    FrameType.INTERPRETED_CLASSES.contains(className) &&
-                    FrameType.INTERPRETED_FRAMES.containsKey(methodName)) {
+            if ( rubyFrameIndex >= 0 && FrameType.isInterpreterFrame(className, methodName) ) {
 
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
 
-                FrameType frameType = FrameType.INTERPRETED_FRAMES.get(methodName);
+                FrameType frameType = FrameType.getInterpreterFrame(methodName);
 
                 // construct Ruby trace element
                 String newName = rubyFrame.method;
@@ -152,19 +136,12 @@ public class BacktraceData implements Serializable {
 
             // if all else fails and this is a non-JRuby element we want to include, add it
             if (includeNonFiltered && !isFilteredClass(className)) {
-                trace.add(new RubyStackTraceElement(
-                        className,
-                        methodName,
-                        packagedFilenameFromElement(filename, className),
-                        line,
-                        false
-                ));
-                continue;
+                filename = packagedFilenameFromElement(filename, className);
+                trace.add(new RubyStackTraceElement(className, methodName, filename, line, false));
             }
         }
 
-        RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
-        return trace.toArray(rubyStackTrace);
+        return trace.toArray(new RubyStackTraceElement[trace.size()]);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {
@@ -175,21 +152,23 @@ public class BacktraceData implements Serializable {
         return javaToRuby.get(methodName);
     }
 
-    private static String packagedFilenameFromElement(String filename, String className) {
+    private static String packagedFilenameFromElement(final String filename, final String className) {
         // stick package on the beginning
-        if (filename == null) {
-            filename = className.replaceAll("\\.", "/");
-        } else {
-            int lastDot = className.lastIndexOf('.');
-            if (lastDot != -1) {
-                filename = className.substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
-            }
-        }
+        if (filename == null) return className.replace('.', '/');
 
-        return filename;
+        int lastDot = className.lastIndexOf('.');
+        if (lastDot == -1) return filename;
+
+        final String pkgPath = className.substring(0, lastDot + 1).replace('.', '/');
+        // in case a native exception is re-thrown we might end-up rewriting twice e.g. :
+        // 1st time className = org.jruby.RubyArray filename = RubyArray.java
+        // 2nd time className = org.jruby.RubyArray filename = org/jruby/RubyArray.java
+        if (filename.indexOf('/') > -1 && filename.startsWith(pkgPath)) return filename;
+        return pkgPath + filename;
     }
 
-    private boolean isFilteredClass(String className) {
-        return FILTER_CLASSES.matcher(className).find();
+    // ^(org\\.jruby)|(sun\\.reflect)
+    private static boolean isFilteredClass(final String className) {
+        return className.startsWith("org.jruby") || className.startsWith("sun.reflect") ;
     }
 }

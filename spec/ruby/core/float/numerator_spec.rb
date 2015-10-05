@@ -1,7 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Float#numerator" do
-  before(:all) do
+  before :all do
     @numbers = [
       29871.2722891,
       999.1**99.928888,

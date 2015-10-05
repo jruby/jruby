@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,8 +23,6 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# Note TODO on line 279 (CS 30-Jan-15)
 
 module Enumerable
   class Enumerator
@@ -111,7 +109,7 @@ module Enumerable
     private :each_with_block
 
     def each_with_index
-      return to_enum(:each_with_index) unless block_given?
+      return to_enum(:each_with_index) { size } unless block_given?
 
       idx = 0
 
@@ -172,11 +170,12 @@ module Enumerable
       @object.rewind if @object.respond_to? :rewind
       @generator.rewind if @generator
       @lookahead = []
+      @feedvalue = nil
       self
     end
 
     def size
-      @size.kind_of?(Proc) ? @size.call : @size
+      @size.respond_to?(:call) ? @size.call : @size
     end
 
     def with_index(offset=0)
@@ -186,7 +185,7 @@ module Enumerable
         offset = 0
       end
 
-      return to_enum(:with_index, offset) unless block_given?
+      return to_enum(:with_index, offset) { size } unless block_given?
 
       each do
         o = Rubinius.single_block_arg
@@ -213,7 +212,7 @@ module Enumerable
       private :initialize
 
       def yield(*args)
-        @proc.call(*args)
+        @proc.call *args
       end
 
       def <<(*args)
@@ -235,7 +234,7 @@ module Enumerable
       private :initialize
 
       def each(*args)
-        enclosed_yield = Proc.new { |*enclosed_args| yield(*enclosed_args) }
+        enclosed_yield = Proc.new { |*enclosed_args| yield *enclosed_args }
 
         @proc.call Yielder.new(&enclosed_yield), *args
       end
@@ -278,24 +277,27 @@ module Enumerable
         self
       end
 
-      # TODO alias_method :force, :to_a
+      alias_method :force, :to_a
 
       def take(n)
         n = Rubinius::Type.coerce_to n, Integer, :to_int
         raise ArgumentError, "attempt to take negative size" if n < 0
 
         current_size = enumerator_size
-        set_size = if current_size.kind_of?(Integer)
+        set_size = if current_size.kind_of?(Numeric)
           n < current_size ? n : current_size
         else
           current_size
         end
+
+        return to_enum(:cycle, 0).lazy if n.zero?
 
         taken = 0
         Lazy.new(self, set_size) do |yielder, *args|
           if taken < n
             yielder.yield(*args)
             taken += 1
+            raise StopLazyError unless taken < n
           else
             raise StopLazyError
           end
@@ -494,7 +496,7 @@ module Enumerable
           @fiber = Rubinius::Fiber.new(0) do
             obj = @object
             @result = obj.each do |*val|
-              Rubinius::Fiber.yield(*val)
+              Rubinius::Fiber.yield *val
             end
             @done = true
           end

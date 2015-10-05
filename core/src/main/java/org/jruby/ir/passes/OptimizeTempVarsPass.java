@@ -70,7 +70,6 @@ public class OptimizeTempVarsPass {
 
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
-        // * Find copies where constant values are set
 
         ListIterator<Instr> instrs = instructions.listIterator();
         while (instrs.hasNext()) {
@@ -95,82 +94,6 @@ public class OptimizeTempVarsPass {
                         //  but it is left here. For some instrs which assign the result to a tempvar but we notice it is not used
                         //  we can eliminate setting the result.  In pratice this seems to mostly happen in module bodies.
                         //  i.markUnusedResult();
-                        }
-                    }
-                    // Replace <operand> in use from def if single-def and single-use:   %v = <operand>; ... %v ...
-                    else if (use != NopInstr.NOP && def != null && def != NopInstr.NOP && i instanceof CopyInstr) {
-                        // Conservatively avoid optimizing return values since
-                        // intervening cloned ensure block code can modify the
-                        // copy source (if it is a variable).
-                        //
-                        // Ex:
-                        //    v = 1
-                        //    %v_1 = v
-                        // L1:
-                        //    v = 2
-                        //    return %v_1 <-- cannot be replaced with v
-                        //    ....
-                        if (!(use instanceof ReturnInstr)) {
-                            CopyInstr ci = (CopyInstr)i;
-                            Operand src = ci.getSource();
-                            // Only tmp vars are in SSA form post IR-building and it is safe to
-                            // replace uses with defs without examining intervening instrs. But,
-                            // not true for local vars and other operands that use local vars.
-                            //   a = 0
-                            //   %v_1 = a
-                            //   a = 1
-                            //   x = %v_1
-                            // In that snippet, it would be buggy to rewrite it to:
-                            //   a = 0
-                            //   a = 1
-                            //   x = a
-                            if (src instanceof TemporaryVariable || src instanceof ImmutableLiteral) {
-                                i.markDead();
-                                instrs.remove();
-
-                                // Fix up use
-                                Map<Operand, Operand> copyMap = new HashMap<>();
-                                copyMap.put(v, src);
-                                use.simplifyOperands(copyMap, true);
-                            }
-                        }
-                    }
-                }
-                // Deal with this code pattern:
-                //    1: %v = ... (not a copy)
-                //    2: x = %v
-                // If %v is not used anywhere else, the result of 1. can be updated to use x and 2. can be removed
-                //
-                // CAVEATS:
-                // --------
-                // 1. We only do this if 'x' is a temporary variable since only tmp vars are in SSA form.
-                //      %v = ...(not a copy-1)
-                //      x = .. (not a copy-2)
-                //      x = %v
-                //    In that snippet above, it would be buggy to replace it with:
-                //      x = ...(not a copy-1)
-                //      x = .. (not a copy-2)
-                //
-                // 2. Consider this pattern
-                //      %v = <operand> (copy instr)
-                //      x = %v
-                //    This code will have been captured in the previous if branch which would have deleted %v = 5
-                //    Hence the check for whether the src def instr is dead
-                else if (i instanceof CopyInstr) {
-                    CopyInstr ci = (CopyInstr)i;
-                    Operand src = ci.getSource();
-                    if (src instanceof TemporaryVariable) {
-                        TemporaryVariable vsrc = (TemporaryVariable)src;
-                        Instr use = tmpVarUses.get(vsrc);
-                        Instr def = tmpVarDefs.get(vsrc);
-                        if (use != null && use != NopInstr.NOP &&
-                            def != null && def != NopInstr.NOP &&
-                            !def.isDead() && ((ResultInstr)def).getResult() instanceof TemporaryVariable)
-                        {
-                            // Fix up def
-                            ((ResultInstr) def).updateResult(ci.getResult());
-                            ci.markDead();
-                            instrs.remove();
                         }
                     }
                 }

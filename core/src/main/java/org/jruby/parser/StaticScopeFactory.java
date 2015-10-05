@@ -14,6 +14,10 @@ public class StaticScopeFactory {
         dummyScope.setModule(runtime.getObject());
     }
 
+    public StaticScope newBlockScope(StaticScope parent, String file) {
+        return new StaticScope(StaticScope.Type.BLOCK, parent, file);
+    }
+
     public StaticScope newBlockScope(StaticScope parent) {
         return new StaticScope(StaticScope.Type.BLOCK, parent);
     }
@@ -28,6 +32,10 @@ public class StaticScopeFactory {
 
     public StaticScope newEvalScope(StaticScope parent, String[] names) {
         return new StaticScope(StaticScope.Type.EVAL, parent, names);
+    }
+
+    public StaticScope newLocalScope(StaticScope parent, String file) {
+        return new StaticScope(StaticScope.Type.LOCAL, parent, file);
     }
 
     public StaticScope newLocalScope(StaticScope parent) {

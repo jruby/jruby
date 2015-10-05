@@ -1,6 +1,2 @@
-windows(JRUBY-4151):Execution variable $: does not include '.' when the taint check level > 1
-critical(JRUBY-5656,hangs):Processing RUBYOPT raises a RuntimeError for '-p'
-critical(JRUBY-5656,hangs):Processing RUBYOPT raises a RuntimeError for '-n'
-fails(JRUBY-5668):Processing RUBYOPT prints the version number for '-v'
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Global variable $0 actually sets the program name

@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 require 'bigdecimal'
 
 describe "BigDecimal#sqrt" do
-  before(:each) do
+  before :each do
     @one = BigDecimal("1")
     @zero = BigDecimal("0")
     @zero_pos = BigDecimal("+0")

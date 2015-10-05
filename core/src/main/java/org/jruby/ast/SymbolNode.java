@@ -33,6 +33,7 @@
 package org.jruby.ast;
 
 import java.awt.image.ByteLookupTable;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.jcodings.Encoding;
@@ -48,30 +49,36 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode {
+public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
     private String name;
-    private RubySymbol symbol;
     private Encoding encoding;
 
-    public SymbolNode(ISourcePosition position, String name) {
+    // Interned ident path (e.g. [':', ident]).
+    public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
         super(position, false);
+        this.name = name;  // Assumed all names are already intern'd by lexer.
 
-        this.name = name;
-        this.encoding = null;
+        if (encoding == USASCIIEncoding.INSTANCE || cr == StringSupport.CR_7BIT) {
+            this.encoding = USASCIIEncoding.INSTANCE;
+        } else {
+            this.encoding = encoding;
+        }
     }
 
+    // String path (e.g. [':', str_beg, str_content, str_end])
     public SymbolNode(ISourcePosition position, ByteList value) {
         super(position, false);
         this.name = value.toString().intern();
-        // FIXME: A full scan to determine whether we should back off to US-ASCII.  Lexer should just do this properly.
-        if (value.lengthEnc() == value.length()) {
-            this.encoding = USASCIIEncoding.INSTANCE;
-        } else {
-            this.encoding = value.getEncoding();
+
+        if (value.getEncoding() != USASCIIEncoding.INSTANCE) {
+            int size = value.realSize();
+            this.encoding = value.getEncoding().strLength(value.unsafeBytes(), value.begin(), size) == size ?
+                    USASCIIEncoding.INSTANCE : value.getEncoding();
         }
     }
 
@@ -97,13 +104,5 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public RubySymbol getSymbol(Ruby runtime) {
-        RubySymbol sym;
-        if ((sym = symbol) != null) return sym;
-        sym = runtime.fastNewSymbol(name);
-        if (encoding != null) sym.associateEncoding(encoding);
-        return symbol = sym;
     }
 }

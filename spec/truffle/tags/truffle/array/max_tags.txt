@@ -1,0 +1,3 @@
+fails:Array#max raises an ArgumentError for incomparable elements
+fails:Array#max returns the maximum element (with block)
+fails:Array#max returns the minimum for enumerables that contain nils

@@ -3,11 +3,11 @@ package org.jruby.ir.interpreter;
 import java.util.Stack;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -39,30 +39,33 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
+        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<Integer> rescuePCs = new Stack<>();
+        Stack<Integer> rescuePCs = null;
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        Integer scopeVersion = profile ? Profiler.initProfiling(interpreterContext.getScope()) : 0;
 
         // Enter the looooop!
         while (ipc < n) {
             Instr instr = instrs[ipc];
-            ipc++;
+
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {}", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr + "; <#RPCs=" + rescuePCs.size() + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
+
+            ipc++;
 
             try {
                 switch (operation.opClass) {
@@ -70,26 +73,42 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                        if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
                         return processReturnOp(context, instr, operation, currDynScope, temp, self, blockType, currScope);
                     case BRANCH_OP:
                         switch (operation) {
-                            case JUMP: ipc = ((JumpInstr)instr).getJumpTarget().getTargetPC(); break;
-                            default: ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc); break;
+                            case JUMP:
+                                JumpInstr jump = ((JumpInstr)instr);
+                                if (jump.exitsExcRegion()) {
+                                    rescuePCs.pop();
+                                }
+                                ipc = jump.getJumpTarget().getTargetPC();
+                                break;
+                            default:
+                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
+                                break;
                         }
                         break;
                     case BOOK_KEEPING_OP:
-                        if (operation == Operation.PUSH_BINDING) {
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
-                            currDynScope = interpreterContext.newDynamicScope(context);
-                            context.pushScope(currDynScope);
-                        } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, rescuePCs);
+                        switch (operation) {
+                            case PUSH_BINDING:
+                                // IMPORTANT: Preserve this update of currDynScope.
+                                // This affects execution of all instructions in this scope
+                                // which will now use the updated value of currDynScope.
+                                currDynScope = interpreterContext.newDynamicScope(context);
+                                context.pushScope(currDynScope);
+                            case EXC_REGION_START:
+                                if (rescuePCs == null) rescuePCs = new Stack<>();
+                                rescuePCs.push(((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC());
+                                break;
+                            case EXC_REGION_END:
+                                rescuePCs.pop();
+                                break;
+                            default:
+                                processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -99,7 +118,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
+                if (rescuePCs == null || rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
                         (t instanceof IRReturnJump && instr instanceof NonlocalReturnInstr)) {
                     ipc = -1;
                 } else {
@@ -107,7 +126,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 }
 
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 

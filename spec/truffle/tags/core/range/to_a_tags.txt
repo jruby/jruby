@@ -1,3 +1,0 @@
-fails:Range#to_a converts self to an array
-fails:Range#to_a returns empty array for descending-ordered
-fails:Range#to_a works with Ranges of Symbols

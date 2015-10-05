@@ -1,31 +1,26 @@
 module ProcessSpecs
   class Daemonizer
-    attr_reader :input, :data, :signal
+    attr_reader :input, :data
 
     def initialize
+      # Fast feedback for implementations without Process.daemon
+      raise NotImplementedError, "Process.daemon is not implemented" unless Process.respond_to? :daemon
+
       @script = fixture __FILE__, "daemon.rb"
       @input = tmp("process_daemon_input_file")
       @data = tmp("process_daemon_data_file")
-      @signal = tmp("process_daemon_signal_file")
       @args = []
     end
 
     def wait_for_daemon
-      10.times do
-        return true if File.exist? @signal and
-                       File.exist? @data and
-                       File.size? @data
-        sleep 0.1
-      end
-
-      return false
+      sleep 0.1 until File.exist?(@data) and File.size?(@data)
     end
 
     def invoke(behavior, arguments=[])
       args = Marshal.dump(arguments).unpack("H*")
-      args << @input << @data << @signal << behavior
+      args << @input << @data << behavior
 
-      ruby_exe @script, :args => args
+      ruby_exe @script, args: args
 
       wait_for_daemon
 
@@ -45,7 +40,7 @@ module ProcessSpecs
 
       @thread = Thread.new do
         args = [@pid_file, scenario, ruby_exe]
-        @result = ruby_exe @script, :args => args
+        @result = ruby_exe @script, args: args
       end
       Thread.pass until File.exist? @pid_file
       while @pid.nil? || @pid == 0

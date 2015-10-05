@@ -1,7 +1,5 @@
 package org.jruby.runtime.scope;
 
-import org.jruby.RubyArray;
-import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -106,73 +104,5 @@ public class OneVarDynamicScope extends NoVarsDynamicScope {
     @Override
     public IRubyObject setValueZeroDepthZero(IRubyObject value) {
         return variableValueZero = value;
-    }
-
-    /**
-     * Set all values which represent 'normal' parameters in a call list to this dynamic
-     * scope.  Function calls bind to local scopes by assuming that the indexes or the
-     * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
-     * the first two slots).  We pass in a second argument because we sometimes get more
-     * values than we are expecting.  The rest get compacted by original caller into 
-     * rest args.
-     * 
-     * @param values up to size specified to be mapped as ordinary parm values
-     * @param size is the number of values to assign as ordinary parm values
-     */
-    @Override
-    public void setArgValues(IRubyObject[] values, int size) {
-        if (size == 1) {
-            variableValueZero = values[0];
-        }
-    }
-    
-    @Override
-    public void setArgValues(IRubyObject arg0) {
-        variableValueZero = arg0;
-    }
-
-    /*
-     * If we are setting post arguments we can assume there are no pre or others
-     */
-    @Override
-    public void setEndArgValues(IRubyObject[] values, int index, int size) {
-        assert index == 0;
-        assert size <= 1;
-        
-        if (size == 1) {
-            variableValueZero = values[values.length - 1];
-        }
-    }
-
-    @Override
-    public IRubyObject[] getArgValues() {
-        // if we're not the "argument scope" for zsuper, try our parent
-        if (!staticScope.isArgumentScope()) {
-            return parent.getArgValues();
-        }
-        int totalArgs = staticScope.getRequiredArgs() + staticScope.getOptionalArgs();
-        
-        // copy and splat arguments out of the scope to use for zsuper call
-        if (staticScope.getRestArg() < 0) {
-            if (totalArgs == 1) {
-                return new IRubyObject[] {variableValueZero};
-            } else {
-                return IRubyObject.NULL_ARRAY;
-            }
-        } else {
-            // rest arg must be splatted
-            IRubyObject restArg = getValue(staticScope.getRestArg(), 0);
-            
-            // FIXME: not very efficient
-            RubyArray splattedArgs = Helpers.splatValue(restArg);
-            IRubyObject[] argValues = new IRubyObject[totalArgs + splattedArgs.size()];
-            System.arraycopy(splattedArgs.toJavaArray(), 0, argValues, totalArgs, splattedArgs.size());
-            
-            if (totalArgs == 1) {
-                argValues[0] = variableValueZero;
-            }
-            
-            return argValues;
-        }
     }
 }

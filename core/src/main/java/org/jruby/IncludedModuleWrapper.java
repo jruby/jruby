@@ -17,7 +17,7 @@
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -48,11 +48,11 @@ import org.jruby.runtime.builtin.Variable;
  * other modules. It inserts itself as the immediate superClass of the includer, but defers all
  * module methods to the actual superclass. Multiple of these intermediate superclasses can be
  * added for multiple included modules.
- * 
+ *
  * This allows the normal superclass-based searches (searchMethod, getConstant, etc) to traverse
  * the superclass ancestors as normal while the included modules do not actually show up in
  * direct inheritance traversal.
- * 
+ *
  * @see org.jruby.RubyModule
  */
 public class IncludedModuleWrapper extends IncludedModule {
@@ -65,19 +65,19 @@ public class IncludedModuleWrapper extends IncludedModule {
     /**
      * Overridden newIncludeClass implementation to allow attaching future includes to the correct module
      * (i.e. the one to which this is attached)
-     * 
+     *
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     @Override
     @Deprecated
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
-        
+
         // include its parent (and in turn that module's parents)
         if (getSuperClass() != null) {
             includedModule.includeModule(getSuperClass());
         }
-        
+
         return includedModule;
     }
 
@@ -179,18 +179,23 @@ public class IncludedModuleWrapper extends IncludedModule {
         return origin.constantTableStore(name, value);
     }
 
+    protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
+        // FIXME: legal here? may want UnsupportedOperationException
+        return origin.constantTableStore(name, value, hidden);
+    }
+
     @Override
     protected IRubyObject constantTableRemove(String name) {
         // this _is_ legal (when removing an undef)
         return origin.constantTableRemove(name);
     }
-    
+
     @Override
     @Deprecated
     public List<String> getStoredConstantNameList() {
         return origin.getStoredConstantNameList();
     }
-    
+
     @Override
     public Collection<String> getConstantNames() {
         return origin.getConstantNames();
@@ -204,5 +209,23 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     public IRubyObject getAutoloadConstant(String name) {
         return origin.getAutoloadConstant(name);
+    }
+
+    @Override
+    protected DynamicMethod searchMethodCommon(String name) {
+        // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
+        RubyModule module = origin;
+        RubyModule methodLoc = origin.getMethodLocation();
+
+        for (; module != methodLoc; module = module.getSuperClass()) {
+            DynamicMethod method = module.getMethods().get(name);
+            if (method != null) return method.isNull() ? null : method;
+        }
+
+        // one last search for method location
+        DynamicMethod method = module.getMethods().get(name);
+        if (method != null) return method.isNull() ? null : method;
+
+        return null;
     }
 }

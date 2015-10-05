@@ -1,11 +1,22 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.List;
+import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.Signature;
 
+/**
+ * Represents a method object that can return a Signature and an array of ArgumentDescriptors.
+ */
 public interface IRMethodArgs {
-    public String[] getParameterList();
+    // FIXME: Should get pushed to DynamicMethod
 
-    public enum ArgType {
-        key, keyreq, keyrest, block, opt, rest, req
-    }
+    /**
+     * Get the Signature for this method.
+     */
+    public Signature getSignature();
+
+    /**
+     * Get the array of ArgumentDescriptors that represent the arguments to this method.
+     */
+    public ArgumentDescriptor[] getArgumentDescriptors();
+
 }

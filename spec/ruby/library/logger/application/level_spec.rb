@@ -23,7 +23,7 @@ ruby_version_is ''...'2.2' do
       @log_file.rewind
       messages = @log_file.readlines
       messages.length.should == 1
-      LoggerSpecs::strip_date(messages.first).should == "ERROR -- TestApp: Show me\n"
+      LoggerSpecs.strip_date(messages.first).should == "ERROR -- TestApp: Show me\n"
     end
 
     it "can set the threshold to unknown values" do

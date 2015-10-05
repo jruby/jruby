@@ -1,0 +1,5 @@
+exclude :test_coerce, "needs investigation"
+exclude :test_dummynumeric, "needs investigation"
+exclude :test_dup, "needs investigation"
+exclude :test_singleton_method, "needs investigation"
+exclude :test_step, "needs investigation"

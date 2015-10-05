@@ -10,7 +10,7 @@ module NetHTTPRequestSpecs
 end
 
 describe "Net::HTTPRequest#initialize" do
-  before(:each) do
+  before :each do
     @req = NetHTTPRequestSpecs::TestRequest.allocate
   end
 

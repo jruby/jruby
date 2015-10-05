@@ -1,16 +1,5 @@
 package org.jruby.util.io;
 
-import jnr.constants.platform.Errno;
-import jnr.constants.platform.Fcntl;
-import jnr.enxio.channels.NativeDeviceChannel;
-import jnr.posix.FileStat;
-import jnr.posix.POSIX;
-import org.jruby.ext.fcntl.FcntlLibrary;
-import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.ResourceException;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -19,6 +8,18 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
+
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.Fcntl;
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
+
+import org.jruby.Ruby;
+import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.platform.Platform;
+import org.jruby.runtime.Helpers;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -33,8 +34,9 @@ public class PosixShim {
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
 
-    public PosixShim(POSIX posix) {
-        this.posix = posix;
+    public PosixShim(Ruby runtime) {
+        this.runtime = runtime;
+        this.posix = runtime.getPosix();
     }
     
     // pseudo lseek(2)
@@ -89,7 +91,7 @@ public class PosixShim {
 
             int written = fd.chWrite.write(tmp);
 
-            if (written == 0) {
+            if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
                 if (nonblock) {
                     errno = Errno.EAGAIN;
@@ -171,7 +173,9 @@ public class PosixShim {
 
         int real_fd = fd.realFileno;
 
-        if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD) {
+        if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD && !Platform.IS_SOLARIS) {
+            // we have a real fd and not on Solaris...try native flocking
+            // see jruby/jruby#3254 and jnr/jnr-posix#60
             int result = posix.flock(real_fd, lockMode);
             if (result < 0) {
                 errno = Errno.valueOf(posix.errno());
@@ -388,21 +392,12 @@ public class PosixShim {
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
-        return open(cwd, path, flags, perm, null);
-    }
-
-    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
         if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
-            path = "nul:";
-        }
-
-        if (path.startsWith("classpath:/") && classLoader != null) {
-            path = path.substring("classpath:/".length());
-            return Channels.newChannel(classLoader.getResourceAsStream(path));
+            path = "NUL:";
         }
 
         try {
-            return JRubyFile.createResource(posix, cwd, path).openChannel(flags, perm);
+            return JRubyFile.createResource(runtime, cwd, path).openChannel(flags, perm);
         } catch (ResourceException.FileExists e) {
             errno = Errno.EEXIST;
         } catch (ResourceException.FileIsDirectory e) {
@@ -417,6 +412,16 @@ public class PosixShim {
             throw new RuntimeException("Unhandled IOException: " + e.getLocalizedMessage(), e);
         }
         return null;
+    }
+
+    @Deprecated // special case is already handled with JRubyFile.createResource
+    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
+        if (path.startsWith("classpath:/") && classLoader != null) {
+            path = path.substring("classpath:/".length());
+            return Channels.newChannel(classLoader.getResourceAsStream(path));
+        }
+
+        return open(cwd, path, flags, perm);
     }
 
     /**
@@ -606,6 +611,11 @@ public class PosixShim {
      * The POSIX instance to use for native calls
      */
     private final POSIX posix;
+
+    /**
+     * The current runtime
+     */
+    private final Ruby runtime;
 
     /**
      * An object to synchronize calls to umask

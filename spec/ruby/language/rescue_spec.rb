@@ -76,25 +76,29 @@ describe "The rescue keyword" do
   end
 
   it "will execute an else block only if no exceptions were raised" do
-    begin
+    result = begin
       ScratchPad << :one
     rescue
       ScratchPad << :does_not_run
     else
       ScratchPad << :two
+      :val
     end
+    result.should == :val
     ScratchPad.recorded.should == [:one, :two]
   end
 
   it "will not execute an else block if an exception was raised" do
-    begin
+    result = begin
       ScratchPad << :one
       raise "an error occurred"
     rescue
       ScratchPad << :two
+      :val
     else
       ScratchPad << :does_not_run
     end
+    result.should == :val
     ScratchPad.recorded.should == [:one, :two]
   end
 
@@ -117,5 +121,15 @@ describe "The rescue keyword" do
     c = 'c'
     a += b rescue c
     a.should == 'ac'
+  end
+
+  it "without classes will not rescue Exception" do
+    lambda do
+      begin
+        raise Exception
+      rescue
+        'Exception wrongly rescued'
+      end
+    end.should raise_error(Exception)
   end
 end

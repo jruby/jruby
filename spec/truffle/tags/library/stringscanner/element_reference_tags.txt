@@ -1,0 +1,2 @@
+fails:StringScanner#[] raises a IndexError when there's no named capture
+fails:StringScanner#[] returns named capture

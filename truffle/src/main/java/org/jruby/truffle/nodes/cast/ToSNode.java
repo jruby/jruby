@@ -14,16 +14,15 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyTypesGen;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeChild(type = RubyNode.class)
 public abstract class ToSNode extends RubyNode {
@@ -36,7 +35,7 @@ public abstract class ToSNode extends RubyNode {
         callToSNode = DispatchHeadNodeFactory.createMethodCall(context, true);
     }
 
-    protected RubyString kernelToS(VirtualFrame frame, Object object) {
+    protected DynamicObject kernelToS(VirtualFrame frame, Object object) {
         if (kernelToSNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             kernelToSNode = insert(KernelNodesFactory.ToSNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {null}));
@@ -44,39 +43,31 @@ public abstract class ToSNode extends RubyNode {
         return kernelToSNode.executeToS(frame, object);
     }
 
-
-    public ToSNode(ToSNode prev) {
-        super(prev);
-        callToSNode = prev.callToSNode;
-    }
-
-    @Override
-    public abstract RubyString executeRubyString(VirtualFrame frame);
-
-    @Specialization
-    public RubyString toS(RubyString string) {
+    @Specialization(guards = "isRubyString(string)")
+    public DynamicObject toS(DynamicObject string) {
         return string;
     }
 
-    @Specialization(guards = "!isRubyString", rewriteOn = UnexpectedResultException.class)
-    public RubyString toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyString(callToSNode.call(frame, object, "to_s", null));
-    }
-
-    @Specialization(guards = "!isRubyString")
-    public RubyString toSFallback(VirtualFrame frame, Object object) {
+    @Specialization(guards = "!isRubyString(object)", rewriteOn = UnexpectedResultException.class)
+    public DynamicObject toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 
-        if (value instanceof RubyString) {
-            return (RubyString) value;
+        if (RubyGuards.isRubyString(value)) {
+            return (DynamicObject) value;
+        }
+
+        throw new UnexpectedResultException(value);
+    }
+
+    @Specialization(guards = "!isRubyString(object)")
+    public DynamicObject toSFallback(VirtualFrame frame, Object object) {
+        final Object value = callToSNode.call(frame, object, "to_s", null);
+
+        if (RubyGuards.isRubyString(value)) {
+            return (DynamicObject) value;
         } else {
             return kernelToS(frame, object);
         }
-    }
-
-    @Override
-    public final Object execute(VirtualFrame frame) {
-        return executeRubyString(frame);
     }
 
 }

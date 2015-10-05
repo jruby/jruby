@@ -9,30 +9,19 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
-
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.RubyGC;
+import org.jruby.truffle.nodes.core.ThreadNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
-import com.oracle.truffle.api.frame.FrameSlot;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.*;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
@@ -41,19 +30,19 @@ import com.oracle.truffle.api.frame.FrameSlot;
  */
 public class ObjectSpaceManager {
 
-    private static class FinalizerReference extends WeakReference<RubyBasicObject> {
+    private static class FinalizerReference extends WeakReference<DynamicObject> {
 
-        public List<RubyProc> finalizers = new LinkedList<>();
+        public List<Object> finalizers = new LinkedList<>();
 
-        public FinalizerReference(RubyBasicObject object, ReferenceQueue<? super RubyBasicObject> queue) {
+        public FinalizerReference(DynamicObject object, ReferenceQueue<? super DynamicObject> queue) {
             super(object, queue);
         }
 
-        public void addFinalizer(RubyProc proc) {
-            finalizers.add(proc);
+        public void addFinalizer(Object callable) {
+            finalizers.add(callable);
         }
 
-        public List<RubyProc> getFinalizers() {
+        public List<Object> getFinalizers() {
             return finalizers;
         }
 
@@ -65,17 +54,21 @@ public class ObjectSpaceManager {
 
     private final RubyContext context;
 
-    private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
-    private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
-    private RubyThread finalizerThread;
+    private final Map<DynamicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
+    private final ReferenceQueue<DynamicObject> finalizerQueue = new ReferenceQueue<>();
+    private DynamicObject finalizerThread;
+
+    private final CyclicAssumption tracingAssumption = new CyclicAssumption("objspace-tracing");
+    @CompilerDirectives.CompilationFinal private boolean isTracing = false;
+    private int tracingAssumptionActivations = 0;
+    private boolean tracingPaused = false;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
     }
 
-    public synchronized void defineFinalizer(RubyBasicObject object, RubyProc proc) {
-        RubyNode.notDesignedForCompilation();
-
+    @CompilerDirectives.TruffleBoundary
+    public synchronized void defineFinalizer(DynamicObject object, Object callable) {
         // Record the finalizer against the object
 
         FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -85,15 +78,15 @@ public class ObjectSpaceManager {
             finalizerReferences.put(object, finalizerReference);
         }
 
-        finalizerReference.addFinalizer(proc);
+        finalizerReference.addFinalizer(callable);
 
         // If there is no finalizer thread, start one
 
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
 
-            finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
-            finalizerThread.initialize(context, null, "finalizer", new Runnable() {
+            finalizerThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
+            ThreadNodes.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
                     runFinalizers();
@@ -102,9 +95,7 @@ public class ObjectSpaceManager {
         }
     }
 
-    public synchronized void undefineFinalizer(RubyBasicObject object) {
-        RubyNode.notDesignedForCompilation();
-
+    public synchronized void undefineFinalizer(DynamicObject object) {
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
 
         if (finalizerReference != null) {
@@ -116,98 +107,80 @@ public class ObjectSpaceManager {
         // Run in a loop
 
         while (true) {
-            // Leave the global lock and wait on the finalizer queue
-
-            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
+            // Wait on the finalizer queue
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(null, new BlockingAction<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();
                 }
             });
 
-            runFinalizers(finalizerReference);
+            runFinalizers(context, finalizerReference);
         }
     }
 
-    private static void runFinalizers(FinalizerReference finalizerReference) {
+    private static void runFinalizers(RubyContext context, FinalizerReference finalizerReference) {
         try {
-            for (RubyProc proc : finalizerReference.getFinalizers()) {
-                proc.rootCall();
+            for (Object callable : finalizerReference.getFinalizers()) {
+                context.send(callable, "call", null);
             }
         } catch (RaiseException e) {
             // MRI seems to silently ignore exceptions in finalizers
         }
     }
 
-    public static interface ObjectGraphVisitor {
+    public List<DynamicObject> getFinalizerHandlers() {
+        final List<DynamicObject> handlers = new ArrayList<>();
 
-        boolean visit(RubyBasicObject object);
-
-    }
-
-    @TruffleBoundary
-    public Map<Long, RubyBasicObject> collectLiveObjects() {
-        RubyNode.notDesignedForCompilation();
-
-        final Map<Long, RubyBasicObject> liveObjects = new HashMap<>();
-
-        final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {
-
-            @Override
-            public boolean visit(RubyBasicObject object) {
-                return liveObjects.put(object.verySlowGetObjectID(), object) == null;
-            }
-
-        };
-
-        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
-
-            @Override
-            public void run(RubyThread currentThread, Node currentNode) {
-                synchronized (liveObjects) {
-                    currentThread.visitObjectGraph(visitor);
-                    context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-
-                    // Needs to be called from the corresponding Java thread or it will not use the correct call stack.
-                    visitCallStack(visitor);
+        for (FinalizerReference finalizer : finalizerReferences.values()) {
+            for (Object handler : finalizer.getFinalizers()) {
+                if (handler instanceof DynamicObject) {
+                    handlers.add((DynamicObject) handler);
                 }
             }
-
-        });
-
-        return Collections.unmodifiableMap(liveObjects);
-    }
-
-    private void visitCallStack(final ObjectGraphVisitor visitor) {
-        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        if (currentFrame != null) {
-            visitFrameInstance(currentFrame, visitor);
         }
 
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-            @Override
-            public Void visitFrame(FrameInstance frameInstance) {
-                visitFrameInstance(frameInstance, visitor);
-                return null;
-            }
-        });
+        return handlers;
     }
 
-    public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
-        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true), visitor);
+    public void traceAllocationsStart() {
+        tracingAssumptionActivations++;
+
+        if (tracingAssumptionActivations == 1) {
+            isTracing = true;
+            tracingAssumption.invalidate();
+        }
     }
 
-    public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
-        if (frame == null) {
+    public void traceAllocationsStop() {
+        tracingAssumptionActivations--;
+
+        if (tracingAssumptionActivations == 0) {
+            isTracing = false;
+            tracingAssumption.invalidate();
+        }
+    }
+
+    public void traceAllocation(DynamicObject object, DynamicObject classPath, DynamicObject methodId, DynamicObject sourcefile, int sourceline) {
+        if (tracingPaused) {
             return;
         }
 
-        for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
-            Object value = frame.getValue(slot);
-            if (value instanceof RubyBasicObject) {
-                ((RubyBasicObject) value).visitObjectGraph(visitor);
-            }
+        tracingPaused = true;
+
+        try {
+            context.send(context.getCoreLibrary().getObjectSpaceModule(), "trace_allocation", null, object, classPath, methodId, sourcefile, sourceline, RubyGC.getCollectionCount());
+        } finally {
+            tracingPaused = false;
         }
+    }
+
+    public Assumption getTracingAssumption() {
+        return tracingAssumption.getAssumption();
+    }
+
+    public boolean isTracing() {
+        return isTracing;
     }
 
 }

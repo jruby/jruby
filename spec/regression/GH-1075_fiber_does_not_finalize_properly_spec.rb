@@ -41,7 +41,7 @@ describe "A Fiber that has been abandoned" do
 
       # Final thread count should be within ~10 threads of original (allowing for
       # JVM GC, finalizer, reference queue, etc threads to have spun up).
-      (thread_bean.thread_count - thread_count).should < 10
+      expect(thread_bean.thread_count - thread_count).to be < 10
     ensure
       JRuby.runtime.fiber_executor.maximum_pool_size = max_threads
     end

@@ -9,13 +9,17 @@
  */
 package org.jruby.truffle.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.ArrayOperations;
 
 public class WhenSplatNode extends RubyNode {
 
@@ -27,24 +31,29 @@ public class WhenSplatNode extends RubyNode {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchCaseEqual = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+        dispatchCaseEqual = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
+        CompilerDirectives.transferToInterpreter();
 
         final Object caseExpression = readCaseExpression.execute(frame);
 
-        final RubyArray array;
+        final DynamicObject array;
 
         try {
-            array = splat.executeArray(frame);
+            array = splat.executeDynamicObject(frame);
         } catch (UnexpectedResultException e) {
-            throw new UnsupportedOperationException(e);
+            throw new UnsupportedOperationException();
         }
 
-        for (Object value : array.slowToArray()) {
+        if (!RubyGuards.isRubyArray(array)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        for (Object value : ArrayOperations.toIterable(array)) {
             if (dispatchCaseEqual.callBoolean(frame, caseExpression, "===", null, value)) {
                 return true;
             }

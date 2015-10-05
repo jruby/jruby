@@ -1,6 +1,8 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -18,12 +20,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
-public class RuntimeHelperCall extends ResultBaseInstr {
+public class RuntimeHelperCall extends NOperandResultBaseInstr {
     public enum Methods {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS;
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, RESTORE_EXCEPTION_VAR;
 
         public static Methods fromOrdinal(int value) {
             return value < 0 || value >= values().length ? null : values()[value];
@@ -38,7 +40,7 @@ public class RuntimeHelperCall extends ResultBaseInstr {
     }
 
     public Operand[] getArgs() {
-        return operands;
+        return getOperands();
     }
 
     public Methods getHelperMethod() {
@@ -90,6 +92,7 @@ public class RuntimeHelperCall extends ResultBaseInstr {
         StaticScope scope = currDynScope.getStaticScope();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) return IRRuntimeHelpers.isDefinedBackref(context);
+        Operand[] operands = getOperands();
 
         switch (helperMethod) {
             case IS_DEFINED_NTH_REF:
@@ -125,6 +128,16 @@ public class RuntimeHelperCall extends ResultBaseInstr {
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context, (IRubyObject) arg1,
                         (IRubyObject) getArgs()[1].retrieve(context, self, currScope, currDynScope, temp));
+            case RESTORE_EXCEPTION_VAR:
+                Object exc = getArgs()[0].retrieve(context, self, currScope, currDynScope, temp);
+                // SSS FIXME: These are non-local control-flow exit scenarios that just
+                // happen to use exceptions for exiting scopes and we should
+                // continue to clear $! for them.
+                if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
+                    IRubyObject savedExc = (IRubyObject)getArgs()[1].retrieve(context, self, currScope, currDynScope, temp);
+                    context.runtime.getGlobalVariables().set("$!", savedExc);
+                }
+                return null;
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

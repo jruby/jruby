@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Symbol#inspect" do
   symbols = {
-    :fred      => ":fred",
+    fred:         ":fred",
     :fred?     => ":fred?",
     :fred!     => ":fred!",
     :$ruby     => ":$ruby",

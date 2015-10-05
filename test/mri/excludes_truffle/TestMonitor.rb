@@ -1,0 +1,6 @@
+exclude :"test_cond", "needs investigation"
+exclude :"test_enter", "needs investigation"
+exclude :"test_killed_thread_in_synchronize", "needs investigation"
+exclude :"test_synchronize", "needs investigation"
+exclude :"test_timedwait", "needs investigation"
+exclude :"test_try_enter", "needs investigation"

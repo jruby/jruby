@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents a big integer literal.
  */
-public class BignumNode extends NumericNode {
+public class BignumNode extends NumericNode implements SideEffectFree {
     private BigInteger value;
 
     public BignumNode(ISourcePosition position, BigInteger value) {

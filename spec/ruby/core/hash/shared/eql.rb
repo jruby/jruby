@@ -1,4 +1,4 @@
-describe :hash_eql, :shared => true do
+describe :hash_eql, shared: true do
   it "does not compare values when keys don't match" do
     value = mock('x')
     value.should_not_receive(:==)
@@ -53,12 +53,12 @@ describe :hash_eql, :shared => true do
 
   it "computes equality for complex recursive hashes" do
     a, b = {}, {}
-    a.merge! :self => a, :other => b
-    b.merge! :self => b, :other => a
+    a.merge! self: a, other: b
+    b.merge! self: b, other: a
     a.send(@method, b).should be_true # they both have the same structure!
 
     c = {}
-    c.merge! :other => c, :self => c
+    c.merge! other: c, self: c
     c.send(@method, a).should be_true # subtle, but they both have the same structure!
     a[:delta] = c[:delta] = a
     c.send(@method, a).should be_false # not quite the same structure, as a[:other][:delta] = nil
@@ -72,7 +72,7 @@ describe :hash_eql, :shared => true do
 
   it "computes equality for recursive hashes & arrays" do
     x, y, z = [], [], []
-    a, b, c = {:foo => x, :bar => 42}, {:foo => y, :bar => 42}, {:foo => z, :bar => 42}
+    a, b, c = {foo: x, bar: 42}, {foo: y, bar: 42}, {foo: z, bar: 42}
     x << a
     y << c
     z << b
@@ -92,8 +92,7 @@ describe :hash_eql, :shared => true do
   end
 end
 
-# All these tests are true for ==, and for eql? when Ruby >= 1.8.7
-describe :hash_eql_additional, :shared => true do
+describe :hash_eql_additional, shared: true do
   it "compares values when keys match" do
     x = mock('x')
     y = mock('y')
@@ -120,14 +119,22 @@ describe :hash_eql_additional, :shared => true do
   end
 
   it "returns true iff other Hash has the same number of keys and each key-value pair matches" do
-    a = new_hash(:a => 5)
+    a = new_hash(a: 5)
     b = new_hash
     a.send(@method, b).should be_false
 
     b[:a] = 5
     a.send(@method, b).should be_true
 
-    c = new_hash("a" => 5)
+    not_supported_on :opal do
+      c = new_hash("a" => 5)
+      a.send(@method, c).should be_false
+    end
+
+    c = new_hash("A" => 5)
+    a.send(@method, c).should be_false
+
+    c = new_hash(a: 6)
     a.send(@method, c).should be_false
   end
 
@@ -144,17 +151,14 @@ describe :hash_eql_additional, :shared => true do
 
   # Why isn't this true of eql? too ?
   it "compares keys with matching hash codes via eql?" do
-    # Can't use should_receive because it uses hash and eql? internally
     a = Array.new(2) do
       obj = mock('0')
+      obj.should_receive(:hash).at_least(1).and_return(0)
 
-      def obj.hash()
-        return 0
-      end
       # It's undefined whether the impl does a[0].eql?(a[1]) or
       # a[1].eql?(a[0]) so we taint both.
       def obj.eql?(o)
-        return true if self == o
+        return true if self.equal?(o)
         taint
         o.taint
         false
@@ -169,12 +173,14 @@ describe :hash_eql_additional, :shared => true do
 
     a = Array.new(2) do
       obj = mock('0')
+      obj.should_receive(:hash).at_least(1).and_return(0)
 
-      def obj.hash()
+      def obj.eql?(o)
         # It's undefined whether the impl does a[0].send(@method, a[1]) or
         # a[1].send(@method, a[0]) so we taint both.
-        def self.eql?(o) taint; o.taint; true; end
-        return 0
+        taint
+        o.taint
+        true
       end
 
       obj
@@ -185,8 +191,6 @@ describe :hash_eql_additional, :shared => true do
     a[1].tainted?.should be_true
   end
 
-  # The specs above all pass in 1.8.6p287 for Hash#== but not Hash#eql
-  # except this one, which does not pass for Hash#==.
   it "compares the values in self to values in other hash" do
     l_val = mock("left")
     r_val = mock("right")
@@ -197,7 +201,7 @@ describe :hash_eql_additional, :shared => true do
   end
 end
 
-describe :hash_eql_additional_more, :shared => true do
+describe :hash_eql_additional_more, shared: true do
   it "returns true if other Hash has the same number of keys and each key-value pair matches, even though the default-value are not same" do
     new_hash(5).send(@method, new_hash(1)).should be_true
     new_hash {|h, k| 1}.send(@method, new_hash {}).should be_true

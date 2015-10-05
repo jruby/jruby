@@ -10,15 +10,21 @@
 package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.util.StringSupport;
 
 /**
  * Yield to the current block.
@@ -45,7 +51,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
+        final DynamicObject block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
@@ -53,25 +59,26 @@ public class YieldNode extends RubyNode {
         }
 
         if (unsplat) {
-            notDesignedForCompilation();
-
-            // TOOD(CS): what is the error behaviour here?
-            assert argumentsObjects.length == 1;
-            assert argumentsObjects[0] instanceof RubyArray;
-            argumentsObjects = ((RubyArray) argumentsObjects[0]).slowToArray();
+            argumentsObjects = unsplat(argumentsObjects);
         }
 
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
+    @TruffleBoundary
+    private Object[] unsplat(Object[] argumentsObjects) {
+        // TOOD(CS): what is the error behaviour here?
+        assert argumentsObjects.length == 1;
+        assert RubyGuards.isRubyArray(argumentsObjects[0]);
+        return ArrayOperations.toObjectArray(((DynamicObject) argumentsObjects[0]));
+    }
+
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return nil();
         } else {
-            return getContext().makeString("yield");
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("yield", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
         }
     }
 

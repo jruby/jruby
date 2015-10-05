@@ -13,7 +13,7 @@ describe "IO#each_codepoint" do
   end
 
   after :each do
-    @io.close
+    @io.close if @io
   end
 
   it "calls the given block" do

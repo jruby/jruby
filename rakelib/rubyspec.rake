@@ -18,7 +18,7 @@ namespace :spec do
     mspec :compile_mode => "OFF",
           :format => 'd',
           :spec_target => ":fast",
-          :jruby_opts => "--dev"
+          :jruby_opts => "-I. --dev"
   end
 
   desc "Run fast specs that do not spawn many subprocesses"

@@ -1,6 +1,0 @@
-fails:Dir.unlink removes empty directories
-fails:Dir.unlink calls #to_path on non-String arguments
-fails:Dir.unlink raises an Errno::ENOTEMPTY when trying to remove a nonempty directory
-fails:Dir.unlink raises an Errno::ENOENT when trying to remove a non-existing directory
-fails:Dir.unlink raises an Errno::ENOTDIR when trying to remove a non-directory
-fails:Dir.unlink raises an Errno::EACCES if lacking adequate permissions to remove the directory

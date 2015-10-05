@@ -48,3 +48,10 @@ class Object
     RaiseErrorMatcher.new(exception, message, &block)
   end
 end
+
+# Legacy alias
+RaiseExceptionMatcher = RaiseErrorMatcher
+
+class Object
+  alias_method :raise_exception, :raise_error
+end

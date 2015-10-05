@@ -38,24 +38,21 @@ describe "C-API Exception function" do
     end
   end
 
-  extended_on :rubinius do
-    # TODO make these shared and test on 1.9 too.
-    describe "rb_set_errinfo" do
-      after :each do
-        @s.rb_set_errinfo(nil)
-      end
+  describe "rb_set_errinfo" do
+    after :each do
+      @s.rb_set_errinfo(nil)
+    end
 
-      it "accepts nil" do
-        @s.rb_set_errinfo(nil).should be_nil
-      end
+    it "accepts nil" do
+      @s.rb_set_errinfo(nil).should be_nil
+    end
 
-      it "accepts an Exception instance" do
-        @s.rb_set_errinfo(Exception.new).should be_nil
-      end
+    it "accepts an Exception instance" do
+      @s.rb_set_errinfo(Exception.new).should be_nil
+    end
 
-      it "raises a TypeError if the object is not nil or an Exception instance" do
-        lambda { @s.rb_set_errinfo("error") }.should raise_error(TypeError)
-      end
+    it "raises a TypeError if the object is not nil or an Exception instance" do
+      lambda { @s.rb_set_errinfo("error") }.should raise_error(TypeError)
     end
   end
 end

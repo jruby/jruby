@@ -48,7 +48,7 @@ lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/krypt*
-lib/ruby/stdlib/openssl
+lib/ruby/stdlib/openssl*
 lib/ruby/stdlib/org/
 lib/ruby/stdlib/readline/*readline*.jar
 lib/ruby/stdlib/ripper.jar
@@ -64,6 +64,7 @@ release.properties
 share
 spaces test
 target
+test/pom.xml
 test/prawn
 test/rails
 test/testapp/testapp
@@ -73,6 +74,9 @@ tool/nailgun/config.log
 tool/nailgun/config.status
 tool/nailgun/ng
 reference.txt
+rubyspec_temp
+.polyglot.pom.rb
+tool/truffle/jruby_truffle_runner/jruby+truffle_runner-*.gem
 
 # binaries
 !bin/gem
@@ -83,8 +87,11 @@ install/updates.xml
 
 # generated ITs
 maven/jruby/src/it/osgi_*
+maven/jruby/src/it/hellowarld_*
 maven/jruby/src/it/j2ee_wlp
 maven/jruby-complete/src/it/osgi*
+maven/jruby-complete/pom.xml
+maven/pom.xml
 
 # IntelliJ project files
 .idea
@@ -105,3 +112,6 @@ build.eclipse
 truffle-findbugs-report.html
 findbugs-noUpdateChecks-3.0.0.tar.gz
 findbugs-3.0.0
+
+# Vagrant
+.vagrant

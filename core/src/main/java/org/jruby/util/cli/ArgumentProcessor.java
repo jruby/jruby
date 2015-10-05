@@ -33,6 +33,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -56,7 +57,7 @@ import java.util.HashSet;
  * script or by a native executable.
  */
 public class ArgumentProcessor {
-    private final class Argument {
+    private static final class Argument {
         public final String originalValue;
         public final String dashedValue;
         public Argument(String value, boolean dashed) {
@@ -174,7 +175,7 @@ public class ArgumentProcessor {
                         } else {
                             try {
                                 int val = Integer.parseInt(temp, 8);
-                                config.setRecordSeparator("" + (char) val);
+                                config.setRecordSeparator(String.valueOf((char) val));
                             } catch (Exception e) {
                                 MainExitException mee = new MainExitException(1, getArgumentError(" -0 must be followed by either 0, 777, or a valid octal value"));
                                 mee.setUsageError(true);
@@ -197,12 +198,14 @@ public class ArgumentProcessor {
                         String saved = grabValue(getArgumentError(" -C must be followed by a directory expression"));
                         File base = new File(config.getCurrentDirectory());
                         File newDir = new File(saved);
-                        if (newDir.isAbsolute()) {
+                        if (saved.startsWith("uri:classloader:")) {
+                            config.setCurrentDirectory(saved);
+                        } else if (newDir.isAbsolute()) {
                             config.setCurrentDirectory(newDir.getCanonicalPath());
                         } else {
                             config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                         }
-                        if (!(new File(config.getCurrentDirectory()).isDirectory())) {
+                        if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
                             MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                             throw mee;
                         }
@@ -246,8 +249,12 @@ public class ArgumentProcessor {
                     config.getLoadPaths().addAll(Arrays.asList(ls));
                     break FOR;
                 case 'J':
-                    grabOptionalValue();
+                    String js = grabOptionalValue();
                     config.getError().println("warning: " + argument + " argument ignored (launched in same VM?)");
+                    if (js.equals("-cp") || js.equals("-classpath")) {
+                        for(;grabOptionalValue() != null;) {}
+                        grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
+                    }
                     break FOR;
                 case 'K':
                     // FIXME: No argument seems to work for -K in MRI plus this should not
@@ -337,12 +344,14 @@ public class ArgumentProcessor {
                         if (saved != null) {
                             File base = new File(config.getCurrentDirectory());
                             File newDir = new File(saved);
-                            if (newDir.isAbsolute()) {
+                            if (saved.startsWith("uri:classloader:")) {
+                                config.setCurrentDirectory(saved);
+                            } else if (newDir.isAbsolute()) {
                                 config.setCurrentDirectory(newDir.getCanonicalPath());
                             } else {
                                 config.setCurrentDirectory(new File(base, newDir.getPath()).getCanonicalPath());
                             }
-                            if (!(new File(config.getCurrentDirectory()).isDirectory())) {
+                            if (!(new File(config.getCurrentDirectory()).isDirectory()) && !config.getCurrentDirectory().startsWith("uri:classloader:")) {
                                 MainExitException mee = new MainExitException(1, "jruby: Can't chdir to " + saved + " (fatal)");
                                 throw mee;
                             }
@@ -372,9 +381,9 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+T")) {
                         checkGraalVersion();
+                        Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
-                        Options.PARSER_DETAILED_SOURCE_POSITIONS.force(Boolean.toString(true));
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
@@ -408,6 +417,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--debug")) {
                         disallowedInRubyOpts(argument);
+                        Options.DEBUG_FULLTRACE.force("true");
                         RubyInstanceConfig.FULL_TRACE_ENABLED = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                         break FOR;
@@ -612,65 +622,59 @@ public class ArgumentProcessor {
         endOfArguments = true;
     }
 
+    private String resolve(String path, String scriptName) {
+        if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+            config.getError().println("Trying path: " + path);
+        }
+        try {
+            FileResource fullName = JRubyFile.createRestrictedResource(path, scriptName);
+            if (fullName.exists() && fullName.isFile()) {
+                if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
+                    config.getError().println("Found: " + fullName.absolutePath());
+                }
+                return fullName.absolutePath();
+            }
+        } catch (Exception e) {
+            // keep going
+        }
+        return null;
+    }
+
     private String resolveScript(String scriptName) {
         // These try/catches are to allow failing over to the "commands" logic
         // when running from within a jruby-complete jar file, which has
         // jruby.home = a jar file URL that does not resolve correctly with
         // JRubyFile.create.
-        File fullName = null;
-        try {
-            // try cwd first
-            fullName = JRubyFile.create(config.getCurrentDirectory(), scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                logScriptResolutionSuccess(fullName.getAbsolutePath());
-                return scriptName;
-            } else {
-                logScriptResolutionFailure(config.getCurrentDirectory());
+        String result = resolve(config.getCurrentDirectory(), scriptName);
+        if (result != null) return scriptName;// use relative filename
+                result = resolve(config.getJRubyHome() + "/bin", scriptName);
+        if (result != null) return result;
+        // since the current directory is also on the classpath we
+        // want to find it on filesystem first
+        result = resolve(config.getCurrentDirectory() + "/bin", scriptName);
+        if (result != null) return result;
+        result = resolve("uri:classloader:/bin", scriptName);
+        if (result != null) return result;
+
+        Object maybePath = config.getEnvironment().get("PATH");
+        if (maybePath != null) {
+            String path = maybePath.toString();
+            String[] paths = path.split(System.getProperty("path.separator"));
+            for (int i = 0; i < paths.length; i++) {
+                result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
+                if (result != null) return result;
             }
-        } catch (Exception e) {
-            // keep going, try bin/#{scriptName}
         }
-        try {
-            fullName = JRubyFile.create(config.getJRubyHome(), "bin/" + scriptName);
-            if (fullName.exists() && fullName.isFile()) {
-                logScriptResolutionSuccess(fullName.getAbsolutePath());
-                return fullName.getAbsolutePath();
-            } else {
-                logScriptResolutionFailure(config.getJRubyHome() + "/bin");
-            }
-        } catch (Exception e) {
-            // keep going, try PATH
+        if (config.isDebug()) {
+            config.getError().println("warning: could not resolve -S script: " + scriptName);
         }
-        String resolved = resolveScriptUsingClassLoader(scriptName);
-        if (resolved != null) {
-            return resolved;
-        }
-        try {
-            Object pathObj = config.getEnvironment().get("PATH");
-            String path = pathObj.toString();
-            if (path != null) {
-                String[] paths = path.split(System.getProperty("path.separator"));
-                for (int i = 0; i < paths.length; i++) {
-                    fullName = JRubyFile.create(new File(paths[i]).getAbsolutePath(), scriptName);
-                    if (fullName.exists() && fullName.isFile()) {
-                        logScriptResolutionSuccess(fullName.getAbsolutePath());
-                        return fullName.getAbsolutePath();
-                    }
-                }
-                logScriptResolutionFailure("PATH=" + path);
-            }
-        } catch (Exception e) {
-            // will fall back to JRuby::Commands
-        }
-        if (config.isDebug() || RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
-            config.getError().println("warning: could not resolve -S script on filesystem: " + scriptName);
-        }
+        // fall back to JRuby::Commands
         return null;
     }
 
     public String resolveScriptUsingClassLoader(String scriptName) {
-        if(Ruby.getClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:bin/" + scriptName;
+        if(RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
+            return "classpath:/bin/" + scriptName;
         } else {
             return null;
         }
@@ -712,38 +716,62 @@ public class ArgumentProcessor {
     }
 
     public static void checkGraalVersion() {
-        if (Options.TRUFFLE_RUNTIME_VERSION_CHECK.load()) {
-            final String graalVersion = System.getProperty("graal.version", "unknown");
-            final String expectedGraalVersion = "0.6";
+        final String graalVersion = System.getProperty("graal.version", "unknown");
+        final String expectedGraalVersion = "0.7";
 
-            if (graalVersion.equals("unknown")) {
-                return;
-            } else if (!graalVersion.equals(expectedGraalVersion)) {
-                throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
-            }
+        if (graalVersion.equals("unknown")) {
+            return;
+        } else if (!graalVersion.equals(expectedGraalVersion)) {
+            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion +
+                    " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
         }
     }
 
-    private void checkProperties() {
-        final Set<String> propertyNames = new HashSet<>();
-        propertyNames.addAll(Options.getPropertyNames());
-        propertyNames.add("jruby.home");
-        propertyNames.add("jruby.script");
-        propertyNames.add("jruby.shell");
-        propertyNames.add("jruby.lib");
-        propertyNames.add("jruby.bindir");
-        propertyNames.add("jruby.jar");
-        propertyNames.add("jruby.compat.version");
-        propertyNames.add("jruby.reflection");
-        propertyNames.add("jruby.thread.pool.enabled");
+    private static final Set<String> KNOWN_PROPERTIES = new HashSet<>();
 
+    static {
+        KNOWN_PROPERTIES.addAll(Options.getPropertyNames());
+        KNOWN_PROPERTIES.add("jruby.home");
+        KNOWN_PROPERTIES.add("jruby.script");
+        KNOWN_PROPERTIES.add("jruby.shell");
+        KNOWN_PROPERTIES.add("jruby.lib");
+        KNOWN_PROPERTIES.add("jruby.bindir");
+        KNOWN_PROPERTIES.add("jruby.jar");
+        KNOWN_PROPERTIES.add("jruby.compat.version");
+        KNOWN_PROPERTIES.add("jruby.reflection");
+        KNOWN_PROPERTIES.add("jruby.thread.pool.enabled");
+        KNOWN_PROPERTIES.add("jruby.memory.max");
+        KNOWN_PROPERTIES.add("jruby.stack.max");
+    }
+
+    private static final List<String> KNOWN_PROPERTY_PREFIXES = new ArrayList<>();
+
+    static {
+        KNOWN_PROPERTY_PREFIXES.add("jruby.openssl.");
+    }
+
+    private void checkProperties() {
         for (String propertyName : System.getProperties().stringPropertyNames()) {
             if (propertyName.startsWith("jruby.")) {
-                if (!propertyNames.contains(propertyName)) {
+                if (!isPropertySupported(propertyName)) {
                     System.err.println("jruby: warning: unknown property " + propertyName);
                 }
             }
         }
+    }
+
+    private boolean isPropertySupported(String propertyName) {
+        if (KNOWN_PROPERTIES.contains(propertyName)) {
+            return true;
+        }
+
+        for (String prefix : KNOWN_PROPERTY_PREFIXES) {
+            if (propertyName.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

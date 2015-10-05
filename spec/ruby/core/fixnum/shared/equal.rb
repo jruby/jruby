@@ -1,4 +1,4 @@
-describe :fixnum_equal, :shared => true do
+describe :fixnum_equal, shared: true do
   it "returns true if self has the same value as other" do
     1.send(@method, 1).should == true
     9.send(@method, 5).should == false

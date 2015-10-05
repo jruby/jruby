@@ -1,8 +1,10 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "Regexp.try_convert" do
-  it "returns the argument if given a Regexp" do
-    Regexp.try_convert(/foo/s).should == /foo/s
+  not_supported_on :opal do
+    it "returns the argument if given a Regexp" do
+      Regexp.try_convert(/foo/s).should == /foo/s
+    end
   end
 
   it "returns nil if given an argument that can't be converted to a Regexp" do

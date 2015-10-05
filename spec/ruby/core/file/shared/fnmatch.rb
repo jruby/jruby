@@ -1,4 +1,4 @@
-describe :file_fnmatch, :shared => true do
+describe :file_fnmatch, shared: true do
   it "matches entire strings" do
     File.send(@method, 'cat', 'cat').should == true
   end
@@ -233,5 +233,9 @@ describe :file_fnmatch, :shared => true do
     flags = mock("flags")
     flags.should_receive(:to_int).and_return(10)
     lambda { File.send(@method, "*/place", "path/to/file", flags) }.should_not raise_error
+  end
+
+  it "matches multibyte characters" do
+    File.fnmatch("*/ä/ø/ñ", "a/ä/ø/ñ").should == true
   end
 end

@@ -14,15 +14,13 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
-import org.jruby.truffle.nodes.methods.AliasNodeFactory;
+import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
+import org.jruby.truffle.nodes.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -45,16 +43,11 @@ class ModuleTranslator extends BodyTranslator {
     public MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
         RubyNode body;
 
-        if (bodyNode != null) {
-            parentSourceSection.push(sourceSection);
-
-            try {
-                body = bodyNode.accept(this);
-            } finally {
-                parentSourceSection.pop();
-            }
-        } else {
-            body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
         }
 
         if (environment.getFlipFlopStates().size() > 0) {
@@ -63,24 +56,45 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
-        body = new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC, name, body);
-
-        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
 
         return new MethodDefinitionNode(
                 context,
                 sourceSection,
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
-                environment.needsDeclarationFrame(),
                 Truffle.getRuntime().createCallTarget(rootNode));
     }
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
+        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);//new SelfNode(context, sourceSection);
+
+        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
+        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
+        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
+        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
+        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
+
+        String methodName = node.getName();
+        boolean rubiniusMethodRename = false;
+
+        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/array.rb")) {
+            rubiniusMethodRename = methodName.equals("zip");
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/float.rb")) {
+            rubiniusMethodRename = methodName.equals("round");
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
+            rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
+        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/integer.rb")) {
+            rubiniusMethodRename = methodName.equals("downto") || methodName.equals("upto");
+        }
+
+        if (rubiniusMethodRename) {
+            methodName = methodName + "_internal";
+        }
+
+        return translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override
@@ -90,7 +104,7 @@ class ModuleTranslator extends BodyTranslator {
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
         final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
 
-        return AliasNodeFactory.create(context, sourceSection, newName.getName(), oldName.getName(), new SelfNode(context, sourceSection));
+        return AliasNodeGen.create(context, sourceSection, newName.getName(), oldName.getName(), new SelfNode(context, sourceSection));
     }
 
 }

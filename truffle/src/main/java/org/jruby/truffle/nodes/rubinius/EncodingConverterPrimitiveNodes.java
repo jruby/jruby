@@ -11,25 +11,27 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jcodings.Encoding;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvResult;
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.core.EncodingConverterNodes;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyEncodingConverter;
-import org.jruby.truffle.runtime.core.RubyException;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.StringOperations;
+import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding::Converter} class..
@@ -43,53 +45,62 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterAllocateNode(EncodingConverterAllocateNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public Object encodingConverterAllocate(RubyEncoding fromEncoding, RubyEncoding toEncoding, RubyHash options) {
-            return new RubyEncodingConverter(getContext().getCoreLibrary().getEncodingConverterClass(), null);
+        public Object encodingConverterAllocate(DynamicObject encodingConverterClass, NotProvided unused1, NotProvided unused2) {
+            return EncodingConverterNodes.createEncodingConverter(encodingConverterClass, null);
         }
 
     }
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
-    public static abstract class EncodingConverterPrimitiveConvertNode extends RubiniusPrimitiveNode {
+    public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
 
-        public EncodingConverterPrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
+        private final ConditionProfile nonNullSourceProfile = ConditionProfile.createBinaryProfile();
+
+        public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public EncodingConverterPrimitiveConvertNode(EncodingConverterPrimitiveConvertNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, RubyHash options) {
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)", "isRubyHash(options)"})
+        public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, DynamicObject options) {
             throw new UnsupportedOperationException("not implemented");
         }
 
-        @Specialization
-        public Object encodingConverterPrimitiveConvert(RubyEncodingConverter encodingConverter, RubyString source,
-                                                        RubyString target, int offset, int size, int options) {
+        @Specialization(guards = {"isNil(source)", "isRubyString(target)"})
+        public Object primitiveConvertNilSource(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, int options) {
+            return primitiveConvertHelper(encodingConverter, new ByteList(), source, target, offset, size, options);
+        }
+
+        @Specialization(guards = {"isRubyString(source)", "isRubyString(target)"})
+        public Object encodingConverterPrimitiveConvert(DynamicObject encodingConverter, DynamicObject source,
+                                                        DynamicObject target, int offset, int size, int options) {
 
             // Taken from org.jruby.RubyConverter#primitive_convert.
 
-            source.modify();
-            source.clearCodeRange();
+            StringOperations.modify(source);
+            StringOperations.clearCodeRange(source);
 
-            target.modify();
-            target.clearCodeRange();
+            return primitiveConvertHelper(encodingConverter, StringOperations.getByteList(source), source, target, offset, size, options);
+        }
 
-            final ByteList inBytes = source.getByteList();
-            final ByteList outBytes = target.getByteList();
+        @TruffleBoundary
+        private Object primitiveConvertHelper(DynamicObject encodingConverter, ByteList inBytes, DynamicObject source,
+                                              DynamicObject target, int offset, int size, int options) {
+            // Taken from org.jruby.RubyConverter#primitive_convert.
+
+            final boolean nonNullSource = source != nil();
+
+            StringOperations.modify(target);
+            StringOperations.clearCodeRange(target);
+
+            final ByteList outBytes = StringOperations.getByteList(target);
 
             final Ptr inPtr = new Ptr();
             final Ptr outPtr = new Ptr();
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
             final boolean changeOffset = (offset == 0);
             final boolean growOutputBuffer = (size == -1);
@@ -97,8 +108,10 @@ public abstract class EncodingConverterPrimitiveNodes {
             if (size == -1) {
                 size = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
 
-                if (size < source.getByteList().getRealSize()) {
-                    size = source.getByteList().getRealSize();
+                if (nonNullSourceProfile.profile(nonNullSource)) {
+                    if (size < StringOperations.getByteList(source).getRealSize()) {
+                        size = StringOperations.getByteList(source).getRealSize();
+                    }
                 }
             }
 
@@ -123,7 +136,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     );
                 }
 
-                outBytes.ensure((int)outputByteEnd);
+                outBytes.ensure((int) outputByteEnd);
 
                 inPtr.p = inBytes.getBegin();
                 outPtr.p = outBytes.getBegin() + offset;
@@ -132,8 +145,10 @@ public abstract class EncodingConverterPrimitiveNodes {
 
                 outBytes.setRealSize(outPtr.p - outBytes.begin());
 
-                source.getByteList().setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
-                source.getByteList().setBegin(inPtr.p);
+                if (nonNullSourceProfile.profile(nonNullSource)) {
+                    StringOperations.getByteList(source).setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                    StringOperations.getByteList(source).setBegin(inPtr.p);
+                }
 
                 if (growOutputBuffer && res == EConvResult.DestinationBufferFull) {
                     if (Integer.MAX_VALUE / 2 < size) {
@@ -149,7 +164,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                     outBytes.setEncoding(ec.destinationEncoding);
                 }
 
-                return getContext().newSymbol(res.symbolicName());
+                return getSymbol(res.symbolicName());
             }
         }
 
@@ -162,39 +177,95 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterPutbackNode(EncodingConverterPutbackNode prev) {
-            super(prev);
+        @Specialization
+        public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, int maxBytes) {
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
+            final int putbackable = ec.putbackable();
+
+            return putback(encodingConverter, putbackable < maxBytes ? putbackable : maxBytes);
         }
 
         @Specialization
-        public Object encodingConverterPutback(RubyBasicObject encodingConverter, int maxBytes) {
-            throw new UnsupportedOperationException("not implemented");
+        public DynamicObject encodingConverterPutback(DynamicObject encodingConverter, NotProvided maxBytes) {
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
+
+            return putback(encodingConverter, ec.putbackable());
         }
 
+        private DynamicObject putback(DynamicObject encodingConverter, int n) {
+            assert RubyGuards.isRubyEncodingConverter(encodingConverter);
+
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
+
+            final ByteList bytes = new ByteList(n);
+            ec.putback(bytes.getUnsafeBytes(), bytes.getBegin(), n);
+            bytes.setRealSize(n);
+
+            if (ec.sourceEncoding != null) {
+                bytes.setEncoding(ec.sourceEncoding);
+            }
+
+            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+        }
     }
 
     @RubiniusPrimitive(name = "encoding_converter_last_error")
     public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveNode {
 
+        @Child private CallDispatchHeadNode newLookupTableNode;
+        @Child private CallDispatchHeadNode lookupTableWriteNode;
+
         public EncodingConverterLastErrorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingConverterLastErrorNode(EncodingConverterLastErrorNode prev) {
-            super(prev);
+            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
+            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
-        public Object encodingConverterLastError(RubyEncodingConverter encodingConverter) {
-            notDesignedForCompilation();
+        public Object encodingConverterLastError(VirtualFrame frame, DynamicObject encodingConverter) {
+            CompilerDirectives.transferToInterpreter();
 
-            final org.jruby.exceptions.RaiseException e = EncodingUtils.makeEconvException(getContext().getRuntime(), encodingConverter.getEConv());
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
+            final EConv.LastError lastError = ec.lastError;
 
-            if (e == null) {
+            if (lastError.getResult() != EConvResult.InvalidByteSequence &&
+                    lastError.getResult() != EConvResult.IncompleteInput &&
+                    lastError.getResult() != EConvResult.UndefinedConversion) {
                 return nil();
             }
 
-            return getContext().toTruffle(e.getException());
+            Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getSource()), StringSupport.CR_UNKNOWN, null));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("destination_encoding_name"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getDestination()), StringSupport.CR_UNKNOWN, null));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("error_bytes"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getErrorBytes()), StringSupport.CR_UNKNOWN, null));
+
+            if (lastError.getReadAgainLength() != 0) {
+                lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("read_again_bytes"), lastError.getReadAgainLength());
+            }
+
+            return ret;
+        }
+
+        private DynamicObject eConvResultToSymbol(EConvResult result) {
+            switch(result) {
+                case InvalidByteSequence: return getSymbol("invalid_byte_sequence");
+                case UndefinedConversion: return getSymbol("undefined_conversion");
+                case DestinationBufferFull: return getSymbol("destination_buffer_full");
+                case SourceBufferEmpty: return getSymbol("source_buffer_empty");
+                case Finished: return getSymbol("finished");
+                case AfterOutput: return getSymbol("after_output");
+                case IncompleteInput: return getSymbol("incomplete_input");
+            }
+
+            throw new UnsupportedOperationException(String.format("Unknown EConv result: %s", result));
         }
 
     }
@@ -206,32 +277,28 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterErrinfoNode(EncodingConverterErrinfoNode prev) {
-            super(prev);
-        }
-
         @Specialization
-        public Object encodingConverterLastError(RubyEncodingConverter encodingConverter) {
-            notDesignedForCompilation();
+        public Object encodingConverterLastError(DynamicObject encodingConverter) {
+            CompilerDirectives.transferToInterpreter();
 
-            final EConv ec = encodingConverter.getEConv();
+            final EConv ec = Layouts.ENCODING_CONVERTER.getEconv(encodingConverter);
 
-            final Object[] ret = { getContext().newSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
+            final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 
             if (ec.lastError.getSource() != null) {
-                ret[1] = getContext().makeString(new ByteList(ec.lastError.getSource()));
+                ret[1] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getSource()), StringSupport.CR_UNKNOWN, null);
             }
 
             if (ec.lastError.getDestination() != null) {
-                ret[2] = getContext().makeString(new ByteList(ec.lastError.getDestination()));
+                ret[2] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getDestination()), StringSupport.CR_UNKNOWN, null);
             }
 
             if (ec.lastError.getErrorBytes() != null) {
-                ret[3] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength()));
-                ret[4] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
+                ret[3] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength()), StringSupport.CR_UNKNOWN, null);
+                ret[4] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()), StringSupport.CR_UNKNOWN, null);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ret, ret.length);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ret, ret.length);
         }
 
     }

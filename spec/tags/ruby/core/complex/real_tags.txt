@@ -1,0 +1,3 @@
+fails:Complex#real? returns false if there is not an imaginary part
+fails:Complex#real? returns false if the real part is Infinity
+fails:Complex#real? returns false if the real part is NaN

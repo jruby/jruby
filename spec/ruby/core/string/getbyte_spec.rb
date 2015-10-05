@@ -46,8 +46,7 @@ describe "String#getbyte" do
 
   it "interprets bytes relative to the String's encoding" do
     str = "\u{333}"
-    str.encode('utf-8').getbyte(0).should_not == \
-      str.encode('utf-16le').getbyte(0)
+    str.encode('utf-8').getbyte(0).should_not == str.encode('utf-16le').getbyte(0)
   end
 
   it "returns nil for out-of-bound indexes" do

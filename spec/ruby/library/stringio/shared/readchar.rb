@@ -1,5 +1,5 @@
-describe :stringio_readchar, :shared => true do
-  before(:each) do
+describe :stringio_readchar, shared: true do
+  before :each do
     @io = StringIO.new("example")
   end
 
@@ -17,7 +17,7 @@ describe :stringio_readchar, :shared => true do
   end
 end
 
-describe :stringio_readchar_not_readable, :shared => true do
+describe :stringio_readchar_not_readable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("a b c d e", "w")
     lambda { io.send(@method) }.should raise_error(IOError)

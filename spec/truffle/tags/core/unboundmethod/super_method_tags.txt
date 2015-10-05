@@ -1,0 +1,3 @@
+fails:UnboundMethod#super_method returns the method that would be called by super in the method
+fails:UnboundMethod#super_method returns nil when there's no super method in the parent
+fails:UnboundMethod#super_method returns nil when the parent's method is removed

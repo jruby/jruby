@@ -1,0 +1,1 @@
+fails:Thread::SizedQueue#new raises a TypeError when the given argument is not Numeric

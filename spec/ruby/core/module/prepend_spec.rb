@@ -8,6 +8,10 @@ describe "Module#prepend" do
     end
   end
 
+  it "does not affect the superclass" do
+    Class.new { prepend Module.new }.superclass.should == Object
+  end
+
   it "calls #prepend_features(self) in reversed order on each module" do
     ScratchPad.record []
 
@@ -82,6 +86,25 @@ describe "Module#prepend" do
     Class.new { prepend(m) }.ancestors.should include(m)
   end
 
+  it "reports the prepended module as the method owner" do
+    m = Module.new { def meth; end }
+    c = Class.new { def meth; end; prepend(m) }
+    c.new.method(:meth).owner.should == m
+  end
+
+  it "reports the prepended module as the unbound method owner" do
+    m = Module.new { def meth; end }
+    c = Class.new { def meth; end; prepend(m) }
+    c.instance_method(:meth).owner.should == m
+    c.public_instance_method(:meth).owner.should == m
+  end
+
+  it "causes the prepended module's method to be aliased by alias_method" do
+    m = Module.new { def meth; :m end }
+    c = Class.new { def meth; :c end; prepend(m); alias_method :alias, :meth }
+    c.new.alias.should == :m
+  end
+
   it "sees an instance of a prepended class as kind of the prepended module" do
     m = Module.new
     c = Class.new { prepend(m) }
@@ -98,14 +121,30 @@ describe "Module#prepend" do
     m1 = Module.new { def calc(x) x end }
     m2 = Module.new { prepend(m1) }
     c1 = Class.new { prepend(m2) }
-    c2 = Class.new { prepend(m2.dup) }
+    m2dup = m2.dup
+    m2dup.ancestors.should == [m2dup,m1,m2]
+    c2 = Class.new { prepend(m2dup) }
+    c1.ancestors[0,3].should == [m1,m2,c1]
     c1.new.should be_kind_of(m1)
+    c2.ancestors[0,4].should == [m2dup,m1,m2,c2]
     c2.new.should be_kind_of(m1)
   end
 
   it "depends on prepend_features to add the module" do
     m = Module.new { def self.prepend_features(mod) end }
     Class.new { prepend(m) }.ancestors.should_not include(m)
+  end
+
+  it "adds the module in the subclass chains" do
+    parent = Class.new { def chain; [:parent]; end }
+    child = Class.new(parent) { def chain; super << :child; end }
+    mod = Module.new { def chain; super << :mod; end }
+    parent.send(:prepend, mod)
+    parent.ancestors[0,2].should == [mod, parent]
+    child.ancestors[0,3].should == [child, mod, parent]
+
+    parent.new.chain.should == [:parent, :mod]
+    child.new.chain.should == [:parent, :mod, :child]
   end
 
   it "inserts a later prepended module into the chain" do
@@ -227,5 +266,25 @@ describe "Module#prepend" do
 
       c.get.should == :m2
     end
+  end
+
+  it "supports super when the module is prepended into a singleton class" do
+    module ModuleSpecs::PrependSuperInSingleton
+      def included(base)
+        super
+      end
+    end
+
+    module ModuleSpecs::PrependSuperInSingletonModule
+      class << self
+        prepend ModuleSpecs::PrependSuperInSingleton
+      end
+    end
+
+    lambda do
+      class ModuleSpecs::PrependSuperInSingletonClass
+        include ModuleSpecs::PrependSuperInSingletonModule
+      end
+    end.should_not raise_error
   end
 end

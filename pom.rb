@@ -20,22 +20,20 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
-  [ 'user', 'dev', 'scm', 'annouce' ].each do |id|
-    mailing_list "jruby-#{id}" do
-      archives "http://markmail.org/search/list:org.codehaus.jruby.#{id}"
-    end
+  mailing_list "jruby" do
+    archives "http://blade.nagaokaut.ac.jp/ruby/jruby/index.shtml"
   end
 
   license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
   license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
   license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
 
-  plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+  repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
               :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
@@ -53,40 +51,35 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   properties( 'its.j2ee' => 'j2ee*/pom.xml',
               'its.osgi' => 'osgi*/pom.xml',
-              'tesla.version' => '0.1.1',
-              'rspec-core.version' => '2.14.2',
+              'rspec-core.version' => '3.3.2',
               'jruby.basedir' => '${project.basedir}',
               'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
               'diff-lcs.version' => '1.1.3',
-              'jffi.version' => '1.2.8',
+              'jffi.version' => '1.2.9',
               'rake.version' => '10.1.0',
               'project.build.sourceEncoding' => 'utf-8',
               'jruby-launcher.version' => '1.1.1',
               'asm.version' => '5.0.3',
-              'rspec-expectations.version' => '2.14.0',
+              'rspec-expectations.version' => '3.3.1',
               'base.javac.version' => '1.7',
               'krypt.version' => '0.0.2.rc1',
               'rdoc.version' => '4.1.0',
-              'tesla.dump.pom' => 'pom.xml',
-              'rspec.version' => '2.14.1',
+              'polyglot.dump.pom' => 'pom.xml',
+              'rspec.version' => '3.3.0',
               'base.java.version' => '1.7',
-              'tesla.dump.readonly' => 'true',
-              'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.7',
+              'polyglot.dump.readonly' => 'true',
+              'rspec-mocks.version' => '3.3.2',
+              'jruby.plugins.version' => '1.0.10',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'joda.time.version' => '2.5',
+              'joda.time.version' => '2.8.2',
               'test-unit.version' => '3.0.3',
-              'power_assert.version' => '0.1.4' )
-
-  unless version =~ /-SNAPSHOT/
-    properties 'jruby.home' => '${basedir}/..'
-  end
+              'power_assert.version' => '0.2.3' )
 
   modules [ 'truffle', 'core', 'lib' ]
 
@@ -115,6 +108,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :assembly, '2.4'
     plugin :install, '2.4'
     plugin :deploy, '2.7'
+    plugin :javadoc, '2.7'
     plugin :resources, '2.6'
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
@@ -123,14 +117,21 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jar 'org.codehaus.plexus:plexus-io:2.0.5'
     end
 
+    rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
+    unless model.version =~ /-SNAPSHOT/
+       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+    end
+    plugin :enforcer, '1.4' do
+      execute_goal :enforce, :rules => rules
+    end
+
     plugin :compiler, '3.1'
     plugin :shade, '2.1'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
-            'settingsFile' =>  '${basedir}/src/it/settings.xml',
-            'localRepositoryPath' =>  '${project.build.directory}/local-repo',
-            'properties' => { 'project.version' => '${project.version}' },
+            'properties' => { 'jruby.version' => '${project.version}',
+                              'jruby.plugins.version' => '${jruby.plugins.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
             'pomExcludes' => [ 'extended/pom.xml', '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',
@@ -176,9 +177,17 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   [
-    'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core',
-    'truffle-specs-library', 'truffle-specs-language-report',
-    'truffle-specs-core-report', 'truffle-specs-library-report', 'truffle-test-pe'
+    'rake',
+    'exec',
+    'truffle-specs-language',
+    'truffle-specs-core',
+    'truffle-specs-library',
+    'truffle-specs-truffle',
+    'truffle-specs-language-report',
+    'truffle-specs-core-report',
+    'truffle-specs-library-report',
+    'truffle-test-pe',
+    'truffle-mri-tests'
   ].each do |name|
     profile name do
 
@@ -206,7 +215,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       build do
         default_goal 'install'
-	plugin_management do
+        plugin_management do
           plugin :surefire, '2.15', :skipTests => true
         end
       end
@@ -228,6 +237,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  profile 'apps' do
+    modules ['maven']
+
+    build do
+      default_goal 'install'
+    end
+  end
+  
   profile 'jruby_complete_jar_extended' do
 
     modules [ 'test', 'maven' ]
@@ -263,20 +280,23 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'snapshots' do
-    snapshots_dir = '/builds/snapshots'
 
-    properties 'snapshots.dir' => snapshots_dir
-    activation do
-      file( :exists => snapshots_dir )
-    end
+    modules [ 'maven' ]
 
     distribution_management do
-      repository( "file:#{snapshots_dir}/maven", :id => 'local releases' )
-      snapshot_repository( "file:#{snapshots_dir}/maven",
+      repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
+      snapshot_repository( :url => "file:${project.build.directory}/maven",
                            :id => 'local snapshots' )
     end
     build do
       default_goal :deploy
+    end
+
+    plugin(:source) do
+      execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
+    plugin(:javadoc) do
+      execute_goals('jar', :id => 'attach-javadocs')
     end
   end
 
@@ -285,6 +305,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       property :name => 'invoker.test'
     end
     properties 'invoker.skip' => false
+  end
+
+  profile 'jdk8' do
+    activation do
+      jdk '1.8'
+    end
+    plugin :javadoc, :additionalparam => '-Xdoclint:none'
   end
 
   reporting do

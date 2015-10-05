@@ -1,6 +1,2 @@
-fails:String#unpack with format 'D' ignores whitespace in the format string
 fails:String#unpack with format 'D' calls #to_str to coerce the directives string
-fails:String#unpack with format 'D' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'd' ignores whitespace in the format string
 fails:String#unpack with format 'd' calls #to_str to coerce the directives string
-fails:String#unpack with format 'd' adds nil for each element requested beyond the end of the String

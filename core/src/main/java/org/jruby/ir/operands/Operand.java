@@ -14,15 +14,11 @@ import java.util.Map;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
-    private final OperandType type;
 
-    public Operand(OperandType type) {
-        this.type = type;
+    public Operand() {
     }
 
-    public final OperandType getOperandType() {
-        return type;
-    }
+    public abstract OperandType getOperandType();
 
     /**
      * Do we know the value of this operand at compile-time?

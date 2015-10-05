@@ -22,6 +22,7 @@
 	<configuration>
 	  <executable>java</executable>
 	  <environmentVariables>
+            <JRUBY_HOME>${basedir}</JRUBY_HOME>
 	    <PATH>${basedir}</PATH>
 	    <HOME>${basedir}</HOME>
 	    <GEM_PATH>${basedir}</GEM_PATH>
@@ -80,6 +81,22 @@
 	      </arguments>
 	    </configuration>
 	  </execution>
+	  <execution>
+	    <id>check jruby-home</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+	    <configuration>
+	      <arguments>
+		<argument>-classpath</argument>
+		<classpath/>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<argument>p JRuby.runtime.jruby_home</argument>
+              </arguments>
+            </configuration>
+          </execution>
 	  <execution>
 	    <id>count installed gems</id>
 	    <phase>test</phase>
@@ -157,8 +174,154 @@
               </arguments>
             </configuration>
 	  </execution>
-	</executions>
-      </plugin>
-    </plugins>
-  </build>
+      <execution>
+        <id>jruby classpath:hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>classpath:hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby classpath:/hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>classpath:/hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby uri:classloader:/hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>uri:classloader:/hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby uri:classloader://hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>uri:classloader://hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby -C uri:classloader:// hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>-C</argument>
+            <argument>uri:classloader://</argument>
+            <argument>hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby jar:file://hello.jar!/helo.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>jar:file://${project.build.outputDirectory}/hello.jar!/helo.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby file://hello.jar!/helo.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>file://${project.build.outputDirectory}/hello.jar!/helo.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby file://hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>file://${project.build.outputDirectory}/hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+      <execution>
+        <id>jruby hello.rb</id>
+        <phase>test</phase>
+        <goals>
+          <goal>exec</goal>
+        </goals>
+        <configuration>
+          <executable>java</executable>
+          <arguments>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>org.jruby.Main</argument>
+            <argument>${project.build.outputDirectory}/hello.rb</argument>
+          </arguments>
+        </configuration>
+      </execution>
+    </executions>
+  </plugin>
+</plugins>
+</build>
 </project>

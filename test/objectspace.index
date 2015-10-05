@@ -1,2 +1,2 @@
-test_objectspace
-test_cache_map_leak
+jruby/test_objectspace
+jruby/test_cache_map_leak

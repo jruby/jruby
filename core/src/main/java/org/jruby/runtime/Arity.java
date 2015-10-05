@@ -35,12 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.types.IArityNode;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -154,25 +148,6 @@ public final class Arity implements Serializable {
     public static Arity twoArguments() {
         return TWO_ARGUMENTS;
     }
-    
-    public static Arity procArityOf(Node node) {
-        if (node instanceof AttrAssignNode && node != null) {
-            node = ((AttrAssignNode) node).getArgsNode();
-        }
-        if (node == null) {
-            return Arity.optional();
-        } else if (node instanceof IArityNode) {
-            return ((IArityNode) node).getArity();
-        } else if (node instanceof CallNode) {
-            return Arity.singleArgument();
-        } else if (node instanceof ArrayNode) {
-            return Arity.singleArgument();
-        } else if (node instanceof ArgsNode) {
-            return ((ArgsNode)node).getArity();
-        }
-
-        throw new Error("unexpected type " + node.getClass() + " at " + node.getPosition());
-    }
 
     public int getValue() {
         return value;
@@ -225,6 +200,10 @@ public final class Arity implements Serializable {
 
     public static int checkArgumentCount(ThreadContext context, IRubyObject[] args, int min, int max) {
         return checkArgumentCount(context, args.length, min, max);
+    }
+
+    public static int checkArgumentCount(ThreadContext context, String name, IRubyObject[] args, int min, int max) {
+        return checkArgumentCount(context.runtime, name, args.length, min, max);
     }
 
     public static int checkArgumentCount(Ruby runtime, String name, IRubyObject[] args, int min, int max) {

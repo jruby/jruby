@@ -32,34 +32,29 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Visibility;
 
 public abstract class TypePopulator {
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, CallConfiguration callConfig, boolean notImplemented) {
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented) {
         javaMethod.setIsBuiltin(true);
         javaMethod.setArity(Arity.createArity(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
-        javaMethod.setCallConfig(callConfig);
         javaMethod.setNotImplemented(notImplemented);
     }
     
-    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, CallConfiguration callConfig, boolean notImplemented,
-            Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments, CallConfiguration callerRequirement) {
+    public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented,
+            Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments) {
         javaMethod.setIsBuiltin(true);
         javaMethod.setArity(Arity.createArity(arity));
         javaMethod.setJavaName(simpleName);
         javaMethod.setSingleton(isStatic);
-        javaMethod.setCallConfig(callConfig);
         javaMethod.setNotImplemented(notImplemented);
         javaMethod.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeArguments, isStatic, false);
-        javaMethod.setCallerRequirement(callerRequirement);
     }
     
     public static DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {
@@ -80,18 +75,6 @@ public abstract class TypePopulator {
             
             RubyModule.MethodClumper clumper = new RubyModule.MethodClumper();
             clumper.clump(clazz);
-
-            for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAllAnnotatedMethods().entrySet()) {
-                for (JavaMethodDescriptor desc : entry.getValue()) {
-                    JRubyMethod anno = desc.anno;
-                    
-                    // check for frame field reads or writes
-                    if (anno.frame() || (anno.reads() != null && anno.reads().length >= 1) || (anno.writes() != null && anno.writes().length >= 1)) {
-                        // add all names for this annotation
-                        MethodIndex.addFrameAwareMethods(anno.name());
-                    }
-                }
-            }
             
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 clsmod.defineAnnotatedMethod(entry.getKey(), entry.getValue(), methodFactory);

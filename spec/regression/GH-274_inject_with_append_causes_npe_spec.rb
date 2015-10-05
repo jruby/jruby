@@ -8,6 +8,6 @@ describe 'Enumerable#inject passed a symbol and called as a proc' do
       [1,2,3,4].each {|x| block.call(x)}
     end
 
-    o.inject([], :<<).should == [1,2,3,4]
+    expect(o.inject([], :<<)).to eq([1,2,3,4])
   end
 end

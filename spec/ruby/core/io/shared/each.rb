@@ -1,14 +1,14 @@
 # -*- encoding: utf-8 -*-
 require File.expand_path('../../fixtures/classes', __FILE__)
 
-describe :io_each, :shared => true do
+describe :io_each, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     ScratchPad.record []
   end
 
   after :each do
-    @io.close
+    @io.close if @io
   end
 
   describe "with no separator" do
@@ -38,10 +38,7 @@ describe :io_each, :shared => true do
     end
 
     it "raises an IOError when self is not readable" do
-      # method must have a block in order to raise the IOError.
-      # MRI 1.8.7 returns enumerator if block is not provided.
-      # See [ruby-core:16557].
-      lambda { IOSpecs.closed_io.send(@method){} }.should raise_error(IOError)
+      lambda { IOSpecs.closed_io.send(@method) {} }.should raise_error(IOError)
     end
 
     it "makes line count accessible via lineno" do
@@ -54,12 +51,22 @@ describe :io_each, :shared => true do
       ScratchPad.recorded.should == [ 1,2,3,4,5,6,7,8,9 ]
     end
 
-    it "returns an Enumerator when passed no block" do
-      enum = @io.send(@method)
-      enum.should be_an_instance_of(enumerator_class)
+    describe "when no block is given" do
+      it "returns an Enumerator" do
+        enum = @io.send(@method)
+        enum.should be_an_instance_of(enumerator_class)
 
-      enum.each { |l| ScratchPad << l }
-      ScratchPad.recorded.should == IOSpecs.lines
+        enum.each { |l| ScratchPad << l }
+        ScratchPad.recorded.should == IOSpecs.lines
+      end
+
+      describe "returned Enumerator" do
+        describe "size" do
+          it "should return nil" do
+            @io.send(@method).size.should == nil
+          end
+        end
+      end
     end
   end
 
@@ -100,7 +107,7 @@ describe :io_each, :shared => true do
   end
 end
 
-describe :io_each_default_separator, :shared => true do
+describe :io_each_default_separator, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
     ScratchPad.record []
@@ -108,7 +115,7 @@ describe :io_each_default_separator, :shared => true do
   end
 
   after :each do
-    @io.close
+    @io.close if @io
     $/ = @sep
   end
 

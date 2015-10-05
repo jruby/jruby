@@ -6,12 +6,12 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -24,6 +24,7 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.instructions.ToggleBacktraceInstr;
 import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
@@ -40,7 +41,6 @@ import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
@@ -113,28 +113,31 @@ public class InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
+        if (interpreterContext.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, interpreterContext.getRequiredArgsCount(), args);
+
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        IRScope scope = currScope.getIRScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
-        Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        Integer scopeVersion = profile ? Profiler.initProfiling(interpreterContext.getScope()) : 0;
 
         // Enter the looooop!
         while (ipc < n) {
             Instr instr = instrs[ipc];
-            ipc++;
+
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {}", instr);
+                Interpreter.LOG.info("I: {" + ipc + "} ", instr);
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
+
+            ipc++;
 
             try {
                 switch (operation.opClass) {
@@ -148,7 +151,7 @@ public class InterpreterEngine {
                         receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                         break;
                     case CALL_OP:
-                        if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
+                        if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self);
                         break;
                     case RET_OP:
@@ -167,7 +170,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, null);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -180,7 +183,7 @@ public class InterpreterEngine {
                 ipc = instr.getRPC();
 
                 if (debug) {
-                    Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
+                    Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
                 }
 
@@ -244,9 +247,8 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
-                // For blocks, missing arg translates to nil
-                setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, acceptsKeywordArgument);
+                setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
                 setResult(temp, currDynScope, instr.getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
@@ -325,15 +327,9 @@ public class InterpreterEngine {
 
     protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             RubyModule implClass, Stack<Integer> rescuePCs) {
+                                             Block.Type blockType, RubyModule implClass) {
         switch(operation) {
             case LABEL:
-                break;
-            case EXC_REGION_START:
-                rescuePCs.push(((Label)instr.getOperands()[0]).getTargetPC());
-                break;
-            case EXC_REGION_END:
-                rescuePCs.pop();
                 break;
             case PUSH_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, block);
@@ -353,10 +349,13 @@ public class InterpreterEngine {
                 context.callThreadPoll();
                 break;
             case CHECK_ARITY:
-                ((CheckArityInstr)instr).checkArity(context, args);
+                ((CheckArityInstr)instr).checkArity(context, args, blockType);
                 break;
             case LINE_NUM:
                 context.setLine(((LineNumberInstr)instr).lineNumber);
+                break;
+            case TOGGLE_BACKTRACE:
+                context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
             case TRACE: {
                 if (context.runtime.hasEventHooks()) {

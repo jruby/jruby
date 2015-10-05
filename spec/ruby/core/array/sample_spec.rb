@@ -73,13 +73,13 @@ describe "Array#sample" do
       obj = mock("array_sample_random")
       obj.should_receive(:rand).and_return(0.5)
 
-      [1, 2].sample(:random => obj).should be_an_instance_of(Fixnum)
+      [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
     end
 
     it "ignores an Object passed for the RNG if it does not define #rand" do
       obj = mock("array_sample_random")
 
-      [1, 2].sample(:random => obj).should be_an_instance_of(Fixnum)
+      [1, 2].sample(random: obj).should be_an_instance_of(Fixnum)
     end
 
     describe "when the object returned by #rand is a Fixnum" do
@@ -87,26 +87,26 @@ describe "Array#sample" do
         random = mock("array_sample_random_ret")
         random.should_receive(:rand).and_return(0)
 
-        [1, 2].sample(:random => random).should == 1
+        [1, 2].sample(random: random).should == 1
 
         random = mock("array_sample_random_ret")
         random.should_receive(:rand).and_return(1)
 
-        [1, 2].sample(:random => random).should == 2
+        [1, 2].sample(random: random).should == 2
       end
 
       it "raises a RangeError if the value is less than zero" do
         random = mock("array_sample_random")
         random.should_receive(:rand).and_return(-1)
 
-        lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
+        lambda { [1, 2].sample(random: random) }.should raise_error(RangeError)
       end
 
       it "raises a RangeError if the value is equal to the Array size" do
         random = mock("array_sample_random")
         random.should_receive(:rand).and_return(2)
 
-        lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
+        lambda { [1, 2].sample(random: random) }.should raise_error(RangeError)
       end
     end
   end
@@ -118,7 +118,7 @@ describe "Array#sample" do
       random = mock("array_sample_random")
       random.should_receive(:rand).and_return(value)
 
-      [1, 2].sample(:random => random).should == 2
+      [1, 2].sample(random: random).should == 2
     end
 
     it "raises a RangeError if the value is less than zero" do
@@ -127,7 +127,7 @@ describe "Array#sample" do
       random = mock("array_sample_random")
       random.should_receive(:rand).and_return(value)
 
-      lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
+      lambda { [1, 2].sample(random: random) }.should raise_error(RangeError)
     end
 
     it "raises a RangeError if the value is equal to the Array size" do
@@ -136,7 +136,7 @@ describe "Array#sample" do
       random = mock("array_sample_random")
       random.should_receive(:rand).and_return(value)
 
-      lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
+      lambda { [1, 2].sample(random: random) }.should raise_error(RangeError)
     end
   end
 end

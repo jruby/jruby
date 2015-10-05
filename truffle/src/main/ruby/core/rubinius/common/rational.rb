@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2015, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -224,7 +224,10 @@ class Rational < Numeric
     a = self - e
     b = self + e
 
-    p0, p1, q0, q1 = 0, 1, 1, 0
+    p0 = 0
+    p1 = 1
+    q0 = 1
+    q1 = 0
 
     while true
       c = a.ceil
@@ -238,7 +241,10 @@ class Rational < Numeric
       b = 1 / (a - k)
       a = t
 
-      p0, q0, p1, q1 = p1, q1, p2, q2
+      p0 = p1
+      q0 = q1
+      p1 = p2
+      q1 = q2
     end
 
     # The rational number is guaranteed to be in lowest terms.

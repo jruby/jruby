@@ -1,2 +1,0 @@
-fails:Enumerable#each_cons tries to convert n to an Integer using #to_int
-fails:Enumerable#each_cons yields only as much as needed

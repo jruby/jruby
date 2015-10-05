@@ -41,7 +41,8 @@ import org.jruby.runtime.builtin.InstanceVariables;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class InstanceVariable extends AbstractVariable {
-    private static String pattern = "@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
+
+    private static final String VALID_NAME = "@([a-zA-Z]|_)([a-zA-Z]|_|\\d)*";
 
     /**
      * Returns an instance of this class. This factory method is used when an instance
@@ -53,7 +54,7 @@ public class InstanceVariable extends AbstractVariable {
      * @return the instance of InstanceVariable
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(pattern)) {
+        if (name.matches(VALID_NAME)) {
             return new InstanceVariable(receiver, name, javaObject);
         }
         return null;
@@ -76,6 +77,10 @@ public class InstanceVariable extends AbstractVariable {
         super(receiver, name, true, irubyObject);
     }
 
+    InstanceVariable(RubyObject receiver, String name, IRubyObject irubyObject) {
+        this((IRubyObject) receiver, name, irubyObject);
+    }
+
     /**
      * Retrieves instance variables from Ruby after the evaluation.
      *
@@ -86,10 +91,10 @@ public class InstanceVariable extends AbstractVariable {
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
         if (vars.isLazy()) return;
         updateInstanceVar(receiver, vars);
-        updateInstanceVar((RubyObject)receiver.getRuntime().getTopSelf(), vars);
+        updateInstanceVar(getTopSelf(receiver), vars);
     }
 
-    static void updateInstanceVar(RubyObject receiver, BiVariableMap vars) {
+    static void updateInstanceVar(final RubyObject receiver, final BiVariableMap vars) {
         InstanceVariables ivars = receiver.getInstanceVariables();
         List<String> keys = ivars.getInstanceVariableNameList();
         for (String key : keys) {
@@ -136,6 +141,7 @@ public class InstanceVariable extends AbstractVariable {
      *
      * @return this enum type, BiVariable.Type.InstanceVariable.
      */
+    @Override
     public Type getType() {
         return Type.InstanceVariable;
     }
@@ -148,7 +154,7 @@ public class InstanceVariable extends AbstractVariable {
      * @return true if the given name is of a Ruby instance variable.
      */
     public static boolean isValidName(Object name) {
-        return isValidName(pattern, name);
+        return isValidName(VALID_NAME, name);
     }
 
     /**
@@ -158,15 +164,17 @@ public class InstanceVariable extends AbstractVariable {
      * @param runtime is environment where a variable injection occurs
      * @param receiver is the instance that will have variable injection.
      */
+    @Override
     public void inject() {
-        ((RubyObject)receiver).setInstanceVariable(name.intern(), getRubyObject());
+        ((RubyObject) getReceiver()).setInstanceVariable(name.intern(), getRubyObject());
     }
 
     /**
      * Attempts to remove this variable from top self or receiver.
-     * 
+     *
      */
+    @Override
     public void remove() {
-        ((RubyObject)receiver).removeInstanceVariable(name);
+        ((RubyObject) getReceiver()).removeInstanceVariable(name);
     }
 }

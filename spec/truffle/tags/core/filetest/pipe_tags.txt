@@ -1,2 +1,0 @@
-fails:FileTest.pipe? accepts an object that has a #to_path method
-fails:FileTest.pipe? needs to be reviewed for spec completeness

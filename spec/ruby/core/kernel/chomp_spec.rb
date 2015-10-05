@@ -2,7 +2,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
-describe :kernel_chomp, :shared => true do
+describe :kernel_chomp, shared: true do
   it "removes the final newline of $_" do
     KernelSpecs.chomp("abc\n", @method).should == "abc"
   end
@@ -24,7 +24,7 @@ describe :kernel_chomp, :shared => true do
   end
 end
 
-describe :kernel_chomp_private, :shared => true do
+describe :kernel_chomp_private, shared: true do
   it "is a private method" do
     KernelSpecs.has_private_method(@method).should be_true
   end
@@ -41,7 +41,7 @@ describe "Kernel#chomp" do
 end
 
 with_feature :encoding do
-  describe :kernel_chomp_encoded, :shared => true do
+  describe :kernel_chomp_encoded, shared: true do
     before :each do
       @external = Encoding.default_external
       Encoding.default_external = Encoding::UTF_8

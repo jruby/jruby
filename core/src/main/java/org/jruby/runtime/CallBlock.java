@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,20 +36,23 @@ import org.jruby.runtime.builtin.IRubyObject;
  * lightweight block logic within Java code.
  */
 public class CallBlock extends BlockBody {
-    private final Arity arity;
     private final BlockCallback callback;
     private final StaticScope dummyScope;
-    
-    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+
+    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Signature signature, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(arity, callback, context);
-        
+        BlockBody body = new CallBlock(signature, callback, context);
+
         return new Block(body, binding);
     }
 
-    private CallBlock(Arity arity, BlockCallback callback, ThreadContext context) {
-        super(BlockBody.SINGLE_RESTARG);
-        this.arity = arity;
+    @Deprecated
+    public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
+        return newCallClosure(self, imClass, Signature.from(arity), callback, context);
+    }
+
+    private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
+        super(signature);
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
@@ -85,17 +88,13 @@ public class CallBlock extends BlockBody {
                                   Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
-    
+
     public StaticScope getStaticScope() {
         return dummyScope;
     }
 
     public void setStaticScope(StaticScope newScope) {
         // ignore
-    }
-
-    public Arity arity() {
-        return arity;
     }
 
     public String getFile() {

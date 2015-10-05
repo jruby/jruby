@@ -15,7 +15,7 @@ describe "File::Stat#<=>" do
   end
 
   it "is able to compare files by the same modification times" do
-    now = Time.now
+    now = Time.now - 1 # 1 second ago to avoid NFS cache issue
     File.utime(now, now, @name1)
     File.utime(now, now, @name2)
     (@file1.stat <=> @file2.stat).should == 0

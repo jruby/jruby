@@ -1,0 +1,5 @@
+fails:CGI::HtmlExtension#a when passed a String includes the passed block's return value when passed a block
+fails:CGI::HtmlExtension#a when passed a Hash includes the passed block's return value when passed a block
+fails:CGI::HtmlExtension#a when each HTML generation returns the doctype declaration for HTML3
+fails:CGI::HtmlExtension#a when each HTML generation returns the doctype declaration for HTML4
+fails:CGI::HtmlExtension#a when each HTML generation returns the doctype declaration for the Transitional version of HTML4
