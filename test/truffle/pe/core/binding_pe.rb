@@ -13,8 +13,7 @@ tagged_example "x = 14; binding.local_variable_get(:x)", 14
 example "x = 14; binding.local_variable_get(:x) * 2", 28
 
 # Proc#binding
-tagged_example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)", 14
-example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x) * 2", 28
+example "x = 14; p = Proc.new { }; p.binding.local_variable_get(:x)", 14
 
 # set + get
 tagged_example "b = binding; b.local_variable_set(:x, 14); b.local_variable_get(:x)", 14
