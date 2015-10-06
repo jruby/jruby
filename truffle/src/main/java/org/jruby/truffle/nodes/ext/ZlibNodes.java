@@ -178,7 +178,7 @@ public abstract class ZlibNodes {
         public long adler32(DynamicObject string, NotProvided adler) {
             final ByteList bytes = Layouts.STRING.getByteList(string);
             final Adler32 adler32 = new Adler32();
-            adler32.update(bytes.unsafeBytes());
+            adler32.update(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             return adler32.getValue();
         }
 
@@ -194,7 +194,7 @@ public abstract class ZlibNodes {
                 throw new RuntimeException(e);
             }
 
-            adler32.update(bytes.unsafeBytes());
+            adler32.update(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             return adler32.getValue();
         }
 
