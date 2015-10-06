@@ -1,6 +1,6 @@
 package org.jruby.ir;
 
-import org.jruby.ast.MethodDefNode;
+import org.jruby.ast.DefNode;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
@@ -13,9 +13,9 @@ public class IRMethod extends IRScope {
     // Argument description
     protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
-    private MethodDefNode defn;
+    private DefNode defn;
 
-    public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
+    public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 

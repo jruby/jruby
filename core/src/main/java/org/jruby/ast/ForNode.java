@@ -59,6 +59,10 @@ public class ForNode extends IterNode {
         this.iterNode = iterNode;
     }
 
+    public ArgsNode getArgsNode() {
+        throw new IllegalArgumentException("For nodes are not technically def nodes so they do not have args");
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.FORNODE;
