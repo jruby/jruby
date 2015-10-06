@@ -316,8 +316,6 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile negativeInfinityProfile = ConditionProfile.createBinaryProfile();
-
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -327,12 +325,17 @@ public abstract class BignumNodes {
             return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
         }
 
-        @Specialization
+        @Specialization(guards = "!isInfinity(b)")
         public int compare(DynamicObject a, double b) {
-            if (negativeInfinityProfile.profile(b == Double.NEGATIVE_INFINITY)) {
-                return 1;
+            return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
+        }
+
+        @Specialization(guards = "isInfinity(b)")
+        public int compareInfinity(DynamicObject a, double b) {
+            if (b < 0) {
+                return +1;
             } else {
-                return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
+                return -1;
             }
         }
 
