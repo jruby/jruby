@@ -53,14 +53,17 @@ import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -1786,6 +1789,22 @@ public class RubyModule extends RubyObject {
 
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
+        }
+
+        // If we know it comes from IR we can convert this directly to a method and
+        // avoid overhead of invoking it as a block
+        if (block.getBody() instanceof IRBlockBody &&
+                runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
+            IRBlockBody body = (IRBlockBody) block.getBody();
+            IRClosure closure = body.getScope();
+
+            // Ask closure to give us a method equivalent.
+            IRMethod method = closure.convertToMethod(name);
+            if (method != null) {
+                newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
+                Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                return nameSym;
+            }
         }
 
         block = block.cloneBlockAndFrame();

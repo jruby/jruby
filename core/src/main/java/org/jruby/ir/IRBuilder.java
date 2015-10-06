@@ -1683,7 +1683,7 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected InterpreterContext defineMethodInner(MethodDefNode defNode, IRScope parent) {
+    protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
@@ -2308,6 +2308,18 @@ public class IRBuilder {
         Variable  callResult   = createTemporaryVariable();
 
         determineIfMaybeUsingMethod(fcallNode.getName(), args);
+
+        // We will stuff away the iters AST source into the closure in the hope we can convert
+        // this closure to a method.
+        if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
+            IRClosure closure = ((WrappedIRClosure) block).getClosure();
+
+            // To convert to a method we need its variable scoping to appear like a normal method.
+            if (!closure.getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) &&
+                    fcallNode.getIterNode() instanceof IterNode) {
+                closure.setSource((IterNode) fcallNode.getIterNode());
+            }
+        }
 
         CallInstr callInstr    = CallInstr.create(scope, CallType.FUNCTIONAL, callResult, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);

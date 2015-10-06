@@ -156,6 +156,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
 
+    public IRClosure getScope() {
+        return closure;
+    }
+
     @Override
     public String getFile() {
         return fileName;

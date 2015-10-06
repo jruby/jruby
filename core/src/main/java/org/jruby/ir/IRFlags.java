@@ -36,6 +36,7 @@ public enum IRFlags {
     //
     // This logic was extracted from an email thread on the JRuby mailing list -- Yehuda Katz & Charles Nutter
     // contributed this analysis above.
+    ACCESS_PARENTS_LOCAL_VARIABLES, // Closure is capturing parent(s) variable state
     CAN_CAPTURE_CALLERS_BINDING,
     CAN_RECEIVE_BREAKS,           // may receive a break during execution
     CAN_RECEIVE_NONLOCAL_RETURNS, // may receive a non-local return during execution
