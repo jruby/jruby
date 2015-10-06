@@ -1113,7 +1113,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "default=", required = 1)
+    @CoreMethod(names = "default=", required = 1, raiseIfFrozenSelf = true)
     public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
         public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
@@ -1121,8 +1121,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public Object setDefault(VirtualFrame frame, DynamicObject hash, Object defaultValue) {
-            ruby(frame, "Rubinius.check_frozen");
+        public Object setDefault(DynamicObject hash, Object defaultValue) {
             Layouts.HASH.setDefaultValue(hash, defaultValue);
             Layouts.HASH.setDefaultBlock(hash, null);
             return defaultValue;
