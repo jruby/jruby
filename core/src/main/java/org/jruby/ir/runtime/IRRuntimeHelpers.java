@@ -1442,4 +1442,14 @@ public class IRRuntimeHelpers {
     public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
         accessor.set(self, value);
     }
+
+    @JIT
+    public static RubyFixnum getArgScopeDepth(ThreadContext context, StaticScope currScope) {
+        int i = 0;
+        while (!currScope.isArgumentScope()) {
+            currScope = currScope.getEnclosingScope();
+            i++;
+        }
+        return context.runtime.newFixnum(i);
+    }
 }

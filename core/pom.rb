@@ -208,7 +208,9 @@ project 'JRuby Core' do
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'bin/jruby' ] } ],
+                                     'includes' => [ 'bin/jruby' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'lib/jni/**' ] } ],
                    'failOnError' =>  'false' )
   end
 
@@ -274,31 +276,55 @@ project 'JRuby Core' do
     end
   end
 
+  jruby_bin_config = [ 'run', { :id => 'copy',
+                                'tasks' => {
+                                  'exec' => {
+                                    '@executable' =>  '/bin/sh',
+                                    '@osfamily' =>  'unix',
+                                    'arg' => {
+                                      '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
+                                    }
+                                  },
+                                  'chmod' => {
+                                    '@file' =>  '${jruby.basedir}/bin/jruby',
+                                    '@perm' =>  '755'
+                                  }
+                                } } ]
+
+  phase :clean do
+    plugin :antrun do
+      execute_goals( *jruby_bin_config )
+    end
+  end
+
   profile 'jruby.bash' do
 
     activation do
       file( :missing => '../bin/jruby' )
     end
 
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'copy',
-                     :phase => 'initialize',
-                     'tasks' => {
-                       'exec' => {
-                         '@executable' =>  '/bin/sh',
-                         '@osfamily' =>  'unix',
-                         'arg' => {
-                           '@line' =>  '-c \'cp "${jruby.basedir}/bin/jruby.bash" "${jruby.basedir}/bin/jruby"\''
-                         }
-                       },
-                       'chmod' => {
-                         '@file' =>  '${jruby.basedir}/bin/jruby',
-                         '@perm' =>  '755'
-                       }
-                     } )
+    phase :initialize do
+      plugin :antrun do
+        execute_goals( *jruby_bin_config )
+      end
     end
 
+  end
+
+  jni_config = [ 'unpack', { :id => 'unzip native',
+                             'excludes' =>  'META-INF,META-INF/*',
+                             'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
+                                                    'artifactId' =>  'jffi',
+                                                    'version' =>  '${jffi.version}',
+                                                    'type' =>  'jar',
+                                                    'classifier' =>  'native',
+                                                    'overWrite' =>  'false',
+                                                    'outputDirectory' =>  '${jruby.basedir}/lib' } ] } ]
+
+  phase :clean do
+    plugin :dependency do
+      execute_goals( *jni_config  )
+    end
   end
 
   profile 'native' do
@@ -307,20 +333,11 @@ project 'JRuby Core' do
       file( :missing => '../lib/jni' )
     end
 
-    plugin :dependency do
-      execute_goals( 'unpack',
-                     :id => 'unzip native',
-                     :phase => 'process-classes',
-                     'excludes' =>  'META-INF,META-INF/*',
-                     'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
-                                            'artifactId' =>  'jffi',
-                                            'version' =>  '${jffi.version}',
-                                            'type' =>  'jar',
-                                            'classifier' =>  'native',
-                                            'overWrite' =>  'false',
-                                            'outputDirectory' =>  '${jruby.basedir}/lib' } ] )
+    phase 'process-classes' do
+      plugin :dependency do
+        execute_goals( *jni_config  )
+      end
     end
-
   end
 
   profile 'test' do

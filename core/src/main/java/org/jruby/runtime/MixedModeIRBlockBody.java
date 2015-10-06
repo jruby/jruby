@@ -49,6 +49,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
         this.callCount = -1;
+        blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
     }
 

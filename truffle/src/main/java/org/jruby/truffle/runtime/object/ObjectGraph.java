@@ -54,7 +54,7 @@ public abstract class ObjectGraph {
                     final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
                     if (currentFrame != null) {
-                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+                        stack.addAll(getObjectsInFrame(currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
@@ -62,7 +62,7 @@ public abstract class ObjectGraph {
                         @Override
                         public Object visitFrame(FrameInstance frameInstance) {
                             stack.addAll(getObjectsInFrame(frameInstance
-                                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+                                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
 
                             return null;
                         }

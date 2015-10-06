@@ -499,7 +499,6 @@ public abstract class HashNodes {
             assert HashOperations.verifyStore(getContext(), hash);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
-            final int size = Layouts.HASH.getSize(hash);
 
             int count = 0;
 
@@ -509,7 +508,7 @@ public abstract class HashNodes {
                         count++;
                     }
 
-                    if (n < size) {
+                    if (n < Layouts.HASH.getSize(hash)) {
                         yield(frame, block, Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{PackedArrayStrategy.getKey(store, n), PackedArrayStrategy.getValue(store, n)}, 2));
                     }
                 }
@@ -1114,7 +1113,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "default=", required = 1)
+    @CoreMethod(names = "default=", required = 1, raiseIfFrozenSelf = true)
     public abstract static class SetDefaultNode extends CoreMethodArrayArgumentsNode {
 
         public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
@@ -1122,8 +1121,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public Object setDefault(VirtualFrame frame, DynamicObject hash, Object defaultValue) {
-            ruby(frame, "Rubinius.check_frozen");
+        public Object setDefault(DynamicObject hash, Object defaultValue) {
             Layouts.HASH.setDefaultValue(hash, defaultValue);
             Layouts.HASH.setDefaultBlock(hash, null);
             return defaultValue;

@@ -635,11 +635,12 @@ public abstract class ModuleNodes {
             return classEvalSource(module, code, toStr(frame, file).toString());
         }
 
+        @TruffleBoundary
         private Object classEvalSource(DynamicObject module, DynamicObject code, String file) {
             assert RubyGuards.isRubyString(code);
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
-                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
+                    .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize();
             Encoding encoding = StringOperations.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();

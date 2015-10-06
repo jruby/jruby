@@ -294,8 +294,13 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(vm_options, rest)
-    jruby_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../..").
-        relative_path_from(Pathname('.')).to_s
+    jruby_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../..")
+
+    unless jruby_path.absolute?
+      jruby_path = jruby_path.relative_path_from(Pathname('.'))
+    end
+
+    jruby_path = jruby_path.to_s
 
     if @options[:run][:build] || @options[:run][:rebuild]
       Dir.chdir jruby_path do

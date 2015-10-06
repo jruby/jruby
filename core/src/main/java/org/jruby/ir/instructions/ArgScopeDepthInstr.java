@@ -2,9 +2,9 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -28,12 +28,7 @@ public class ArgScopeDepthInstr extends NoOperandResultBaseInstr implements Fixe
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        int i = 0;
-        while (!currDynScope.getStaticScope().isArgumentScope()) {
-            currDynScope = currDynScope.getParentScope();
-            i++;
-        }
-        return context.runtime.newFixnum(i);
+        return IRRuntimeHelpers.getArgScopeDepth(context, currScope);
     }
 
     public static ArgScopeDepthInstr decode(IRReaderDecoder d) {

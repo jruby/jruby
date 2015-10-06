@@ -237,6 +237,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  profile 'apps' do
+    modules ['maven']
+
+    build do
+      default_goal 'install'
+    end
+  end
+  
   profile 'jruby_complete_jar_extended' do
 
     modules [ 'test', 'maven' ]
