@@ -329,7 +329,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(DynamicObject a, double b) {
-            if (negativeInfinityProfile.profile(Double.isInfinite(b) && b < 0)) {
+            if (negativeInfinityProfile.profile(b == Double.NEGATIVE_INFINITY)) {
                 return 1;
             } else {
                 return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
