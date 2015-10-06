@@ -213,13 +213,13 @@ public abstract class SetNode extends RubyNode {
         return setBuckets(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
     }
 
-    private DynamicObject freezeAndDupIfNeeded(VirtualFrame frame, DynamicObject key) {
+    private Object freezeAndDupIfNeeded(VirtualFrame frame, DynamicObject key) {
         if (isFrozenNode == null) {
             CompilerDirectives.transferToInterpreter();
             isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
         }
 
-        if (frozenProfile.profile(isFrozenNode.executeIsFrozen(key))) {
+        if (!frozenProfile.profile(isFrozenNode.executeIsFrozen(key))) {
             if (dupNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -230,8 +230,7 @@ public abstract class SetNode extends RubyNode {
                 freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object dupped = dupNode.call(frame, key, "dup", null);
-            return (DynamicObject) freezeNode.call(frame, dupped, "freeze", null);
+            return freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
         } else {
             return key;
         }
