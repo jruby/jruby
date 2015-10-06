@@ -63,6 +63,7 @@ public abstract class HashLiteralNode extends RubyNode {
         }
     }
 
+    @ExplodeLoop
     @Override
     public void executeVoid(VirtualFrame frame) {
         for (RubyNode child : keyValues) {
@@ -150,6 +151,7 @@ public abstract class HashLiteralNode extends RubyNode {
             super(context, sourceSection, keyValues);
         }
 
+        @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
             if (setNode == null) {
