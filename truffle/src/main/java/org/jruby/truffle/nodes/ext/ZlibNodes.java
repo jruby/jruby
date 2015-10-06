@@ -28,6 +28,8 @@ import org.jruby.util.StringSupport;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -159,11 +161,24 @@ public abstract class ZlibNodes {
 
         static {
             try {
-                final Field f = Adler32.class.getDeclaredField("adler");
-                f.setAccessible(true);
+                final Field f = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+                    @Override
+                    public Field run() {
+                        final Field f;
+
+                        try {
+                            f = Adler32.class.getDeclaredField("adler");
+                            f.setAccessible(true);
+
+                            return f;
+                        } catch (NoSuchFieldException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
 
                 ADLER_PRIVATE_FIELD = MethodHandles.lookup().unreflectSetter(f);
-            } catch (IllegalAccessException | NoSuchFieldException e) {
+            } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         }
