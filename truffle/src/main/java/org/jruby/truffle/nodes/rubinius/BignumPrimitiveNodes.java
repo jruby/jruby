@@ -9,11 +9,14 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import java.math.BigInteger;
+
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -21,6 +24,44 @@ import org.jruby.truffle.runtime.layouts.Layouts;
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
  */
 public abstract class BignumPrimitiveNodes {
+
+    @RubiniusPrimitive(name = "bignum_compare")
+    public abstract static class BignumCompareNode extends RubiniusPrimitiveNode {
+
+        public BignumCompareNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public int compare(DynamicObject a, long b) {
+            return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
+        }
+
+        @Specialization(guards = "!isInfinity(b)")
+        public int compare(DynamicObject a, double b) {
+            return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
+        }
+
+        @Specialization(guards = "isInfinity(b)")
+        public int compareInfinity(DynamicObject a, double b) {
+            if (b < 0) {
+                return +1;
+            } else {
+                return -1;
+            }
+        }
+
+        @Specialization(guards = "isRubyBignum(b)")
+        public int compare(DynamicObject a, DynamicObject b) {
+            return Layouts.BIGNUM.getValue(a).compareTo(Layouts.BIGNUM.getValue(b));
+        }
+
+        @Specialization(guards = "!isRubyBignum(b)")
+        public Object compareFallback(DynamicObject a, DynamicObject b) {
+            return null; // Primitive failure
+        }
+
+    }
 
     @RubiniusPrimitive(name = "bignum_pow")
     public static abstract class BignumPowPrimitiveNode extends RubiniusPrimitiveNode {

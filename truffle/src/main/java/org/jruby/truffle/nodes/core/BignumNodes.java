@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -310,38 +309,6 @@ public abstract class BignumNodes {
             final Object reversedResult = reverseCallNode.call(frame, b, "==", null, a);
 
             return booleanCastNode.executeBoolean(frame, reversedResult);
-        }
-    }
-
-    @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
-
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public int compare(DynamicObject a, long b) {
-            return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
-        }
-
-        @Specialization(guards = "!isInfinity(b)")
-        public int compare(DynamicObject a, double b) {
-            return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-        }
-
-        @Specialization(guards = "isInfinity(b)")
-        public int compareInfinity(DynamicObject a, double b) {
-            if (b < 0) {
-                return +1;
-            } else {
-                return -1;
-            }
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public int compare(DynamicObject a, DynamicObject b) {
-            return Layouts.BIGNUM.getValue(a).compareTo(Layouts.BIGNUM.getValue(b));
         }
     }
 
