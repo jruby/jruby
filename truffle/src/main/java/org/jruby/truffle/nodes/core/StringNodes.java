@@ -384,6 +384,7 @@ public abstract class StringNodes {
 
                 if (enc == USASCIIEncoding.INSTANCE) {
                     if (c > 0xff) {
+                        CompilerDirectives.transferToInterpreter();
                         throw new RaiseException(charRangeException(c));
 
                     }
@@ -395,6 +396,7 @@ public abstract class StringNodes {
 
                 enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
             } catch (EncodingException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(charRangeException(c));
             }
 
@@ -2244,6 +2246,7 @@ public abstract class StringNodes {
             final Encoding enc = value.getEncoding();
 
             if (enc.isDummy()) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(
                         getContext().getCoreLibrary().encodingCompatibilityError(
                                 String.format("incompatible encoding with this operation: %s", enc), this));
