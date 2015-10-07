@@ -55,8 +55,8 @@ import org.jruby.util.StringSupport;
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
-    private String name;
-    private Encoding encoding;
+    private final String name;
+    private final Encoding encoding;
 
     // Interned ident path (e.g. [':', ident]).
     public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
@@ -79,6 +79,8 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
             int size = value.realSize();
             this.encoding = value.getEncoding().strLength(value.unsafeBytes(), value.begin(), size) == size ?
                     USASCIIEncoding.INSTANCE : value.getEncoding();
+        } else {
+            this.encoding = USASCIIEncoding.INSTANCE;
         }
     }
 

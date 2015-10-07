@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
@@ -22,10 +23,11 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.util.MethodHandleUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -153,16 +155,7 @@ public abstract class ZlibNodes {
     @CoreMethod(names = "adler32", isModuleFunction = true, required = 0, optional = 2, lowerFixnumParameters = 1)
     public abstract static class Adler32Node extends CoreMethodArrayArgumentsNode {
 
-        private static final Field ADLER_PRIVATE_FIELD;
-
-        static {
-            try {
-                ADLER_PRIVATE_FIELD = Adler32.class.getDeclaredField("adler");
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            }
-            ADLER_PRIVATE_FIELD.setAccessible(true);
-        }
+        private static final MethodHandle ADLER_FIELD_SETTER = MethodHandleUtils.getPrivateSetter(Adler32.class, "adler");
 
         public Adler32Node(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -178,7 +171,7 @@ public abstract class ZlibNodes {
         public long adler32(DynamicObject string, NotProvided adler) {
             final ByteList bytes = Layouts.STRING.getByteList(string);
             final Adler32 adler32 = new Adler32();
-            adler32.update(bytes.unsafeBytes());
+            adler32.update(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             return adler32.getValue();
         }
 
@@ -189,12 +182,12 @@ public abstract class ZlibNodes {
             final Adler32 adler32 = new Adler32();
 
             try {
-                ADLER_PRIVATE_FIELD.setInt(adler32, adler);
-            } catch (IllegalAccessException e) {
+                ADLER_FIELD_SETTER.invokeExact(adler32, adler);
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
 
-            adler32.update(bytes.unsafeBytes());
+            adler32.update(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
             return adler32.getValue();
         }
 

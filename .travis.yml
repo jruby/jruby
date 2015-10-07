@@ -54,7 +54,7 @@ matrix:
     - env: PHASE='-Pjruby-jars'
       jdk: openjdk7
     - env: PHASE='-Pmain'
-      jdk: oraclejdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
     - env: PHASE='-Posgi'

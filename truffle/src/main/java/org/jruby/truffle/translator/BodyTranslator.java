@@ -563,31 +563,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
-        /*
-         * Translate
-         *
-         *   Rubinius.check_frozen
-         *
-         * into
-         *
-         *   raise RuntimeError.new("can't modify frozen ClassName") if frozen?
-         *
-         * TODO(CS, 30-Jan-15) usual questions about monkey patching of the methods we're using
-         */
-
-        final RubyNode frozen = new RubyCallNode(context, sourceSection, "frozen?", new SelfNode(context, sourceSection), null, false);
-
-        final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
-                new LiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
-                null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO"), StringSupport.CR_UNKNOWN));
-
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, constructException);
-
-        return new IfNode(context, sourceSection,
-                frozen,
-                raise,
-                nilNode(sourceSection));
+        return new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
     }
 
     /**

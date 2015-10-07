@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
@@ -24,8 +25,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
-import org.jruby.util.unsafe.UnsafeHolder;
+import org.jruby.truffle.runtime.util.MethodHandleUtils;
 
+import java.lang.invoke.MethodHandle;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -230,21 +232,27 @@ public abstract class QueueNodes {
     @CoreMethod(names = "num_waiting")
     public abstract static class NumWaitingNode extends CoreMethodArrayArgumentsNode {
 
-        private static final long LOCK_FIELD_OFFSET = UnsafeHolder.fieldOffset(LinkedBlockingQueue.class, "takeLock");
-        private static final long NOT_EMPTY_CONDITION_FIELD_OFFSET = UnsafeHolder.fieldOffset(LinkedBlockingQueue.class, "notEmpty");
+        private static final MethodHandle TAKE_LOCK_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "takeLock");
+        private static final MethodHandle NOT_EMPTY_CONDITION_FIELD_GETTER = MethodHandleUtils.getPrivateGetter(LinkedBlockingQueue.class, "notEmpty");
 
         public NumWaitingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @SuppressWarnings("restriction")
         @Specialization
         public int num_waiting(DynamicObject self) {
             final BlockingQueue<Object> queue = Layouts.QUEUE.getQueue(self);
 
             final LinkedBlockingQueue<Object> linkedBlockingQueue = (LinkedBlockingQueue<Object>) queue;
-            final ReentrantLock lock = (ReentrantLock) UnsafeHolder.U.getObject(linkedBlockingQueue, LOCK_FIELD_OFFSET);
-            final Condition notEmptyCondition = (Condition) UnsafeHolder.U.getObject(linkedBlockingQueue, NOT_EMPTY_CONDITION_FIELD_OFFSET);
+
+            final ReentrantLock lock;
+            final Condition notEmptyCondition;
+            try {
+                lock = (ReentrantLock) TAKE_LOCK_FIELD_GETTER.invokeExact(linkedBlockingQueue);
+                notEmptyCondition = (Condition) NOT_EMPTY_CONDITION_FIELD_GETTER.invokeExact(linkedBlockingQueue);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
 
             getContext().getThreadManager().runUntilResult(this, new BlockingAction<Boolean>() {
                 @Override
