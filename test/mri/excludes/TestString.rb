@@ -1,7 +1,5 @@
 exclude :test_count, "needs investigation"
-exclude :test_eq_tilde_can_be_overridden, "needs investigation"
 exclude :test_partition, "needs investigation"
-exclude :test_regexp_match_subclass, "String subclass with overridden =~ should see obj =~ dispatch (#2157)"
 exclude :test_rpartition, "needs investigation"
 exclude :test_rstrip, "needs investigation"
 exclude :test_to_i, "needs investigation"
