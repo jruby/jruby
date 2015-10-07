@@ -3573,7 +3573,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     private RubyRegexp getPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
-        return RubyRegexp.newRegexp(getRuntime(), getStringForPattern(obj).value);
+        return RubyRegexp.newRegexpFromStr(getRuntime(), getStringForPattern(obj), 0);
     }
 
     private Regex getStringPattern19(Ruby runtime, IRubyObject obj) {
