@@ -41,12 +41,11 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private final DynamicObject objectClass;
+    private final RubyContext context;
     private final SingletonClassNode singletonClassNode;
 
-    public CoreMethodNodeManager(DynamicObject objectClass, SingletonClassNode singletonClassNode) {
-        assert RubyGuards.isRubyClass(objectClass);
-        this.objectClass = objectClass;
+    public CoreMethodNodeManager(RubyContext context, SingletonClassNode singletonClassNode) {
+        this.context = context;
         this.singletonClassNode = singletonClassNode;
     }
 
@@ -68,15 +67,13 @@ public class CoreMethodNodeManager {
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(objectClass)).getContext();
-
         DynamicObject module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
             module = getSingletonClass(context.getCoreLibrary().getMainObject());
         } else {
-            module = objectClass;
+            module = context.getCoreLibrary().getObjectClass();
 
             for (String moduleName : fullName.split("::")) {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
