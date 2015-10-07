@@ -75,7 +75,7 @@ public abstract class ClassNodes {
         if (model.lexicalParent == null) { // bootstrap or anonymous module
             Layouts.MODULE.getFields(rubyClass).name = Layouts.MODULE.getFields(rubyClass).givenBaseName;
         } else {
-            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
         }
 
         if (superclass != null) {
@@ -118,7 +118,7 @@ public abstract class ClassNodes {
         if (model.lexicalParent == null) { // bootstrap or anonymous module
             Layouts.MODULE.getFields(rubyClass).name = Layouts.MODULE.getFields(rubyClass).givenBaseName;
         } else {
-            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(model.lexicalParent, model.givenBaseName, null);
+            Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
         }
 
         if (superclass != null) {

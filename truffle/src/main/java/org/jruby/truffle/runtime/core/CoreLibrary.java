@@ -257,10 +257,10 @@ public class CoreLibrary {
         Layouts.MODULE.getFields(moduleClass).addDependent(Layouts.MODULE.getFields(classClass).rubyModuleObject);
         Layouts.MODULE.getFields(classClass).newVersion();
 
-        Layouts.MODULE.getFields(classClass).getAdoptedByLexicalParent(objectClass, "Class", node);
-        Layouts.MODULE.getFields(basicObjectClass).getAdoptedByLexicalParent(objectClass, "BasicObject", node);
-        Layouts.MODULE.getFields(objectClass).getAdoptedByLexicalParent(objectClass, "Object", node);
-        Layouts.MODULE.getFields(moduleClass).getAdoptedByLexicalParent(objectClass, "Module", node);
+        Layouts.MODULE.getFields(classClass).getAdoptedByLexicalParent(context, objectClass, "Class", node);
+        Layouts.MODULE.getFields(basicObjectClass).getAdoptedByLexicalParent(context, objectClass, "BasicObject", node);
+        Layouts.MODULE.getFields(objectClass).getAdoptedByLexicalParent(context, objectClass, "Object", node);
+        Layouts.MODULE.getFields(moduleClass).getAdoptedByLexicalParent(context, objectClass, "Module", node);
 
         // Create Exception classes
 

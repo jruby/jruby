@@ -90,10 +90,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         start = new PrependMarker(this);
     }
 
-    public void getAdoptedByLexicalParent(DynamicObject lexicalParent, String name, Node currentNode) {
+    public void getAdoptedByLexicalParent(RubyContext context, DynamicObject lexicalParent, String name, Node currentNode) {
         assert RubyGuards.isRubyModule(lexicalParent);
 
-        Layouts.MODULE.getFields(lexicalParent).setConstantInternal(currentNode, name, rubyModuleObject, false);
+        Layouts.MODULE.getFields(lexicalParent).setConstantInternal(context, currentNode, name, rubyModuleObject, false);
         Layouts.MODULE.getFields(lexicalParent).addLexicalDependent(rubyModuleObject);
 
         if (this.name == null) {
@@ -103,23 +103,23 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
             if (lexicalParent == objectClass) {
                 this.name = name;
-                updateAnonymousChildrenModules();
+                updateAnonymousChildrenModules(context);
             } else if (Layouts.MODULE.getFields(lexicalParent).hasName()) {
                 this.name = Layouts.MODULE.getFields(lexicalParent).getName() + "::" + name;
-                updateAnonymousChildrenModules();
+                updateAnonymousChildrenModules(context);
             }
             // else: Our lexicalParent is also an anonymous module
             // and will name us when it gets named via updateAnonymousChildrenModules()
         }
     }
 
-    public void updateAnonymousChildrenModules() {
+    public void updateAnonymousChildrenModules(RubyContext context) {
         for (Map.Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
             if (RubyGuards.isRubyModule(constant.getValue())) {
                 DynamicObject module = (DynamicObject) constant.getValue();
                 if (!Layouts.MODULE.getFields(module).hasName()) {
-                    Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(rubyModuleObject, entry.getKey(), null);
+                    Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, rubyModuleObject, entry.getKey(), null);
                 }
             }
         }
@@ -268,19 +268,19 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         if (RubyGuards.isRubyModule(value)) {
-            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(rubyModuleObject, name, currentNode);
+            Layouts.MODULE.getFields(((DynamicObject) value)).getAdoptedByLexicalParent(context, rubyModuleObject, name, currentNode);
         } else {
-            setConstantInternal(currentNode, name, value, false);
+            setConstantInternal(context, currentNode, name, value, false);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void setAutoloadConstant(Node currentNode, String name, DynamicObject filename) {
+    public void setAutoloadConstant(RubyContext context, Node currentNode, String name, DynamicObject filename) {
         assert RubyGuards.isRubyString(filename);
-        setConstantInternal(currentNode, name, filename, true);
+        setConstantInternal(context, currentNode, name, filename, true);
     }
 
-    public void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
+    public void setConstantInternal(RubyContext context, Node currentNode, String name, Object value, boolean autoload) {
         checkFrozen(context, currentNode);
 
         RubyConstant previous = constants.get(name);
@@ -296,7 +296,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyConstant removeConstant(Node currentNode, String name) {
+    public RubyConstant removeConstant(RubyContext context, Node currentNode, String name) {
         checkFrozen(context, currentNode);
         RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
@@ -304,14 +304,14 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void setClassVariable(Node currentNode, String variableName, Object value) {
+    public void setClassVariable(RubyContext context, Node currentNode, String variableName, Object value) {
         checkFrozen(context, currentNode);
 
         classVariables.put(variableName, value);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object removeClassVariable(Node currentNode, String name) {
+    public Object removeClassVariable(RubyContext context, Node currentNode, String name) {
         checkFrozen(context, currentNode);
 
         final Object found = classVariables.remove(name);
@@ -355,21 +355,22 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (method == null) {
             throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
-            undefMethod(currentNode, method);
+            undefMethod(context, currentNode, method);
         }
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void undefMethod(Node currentNode, InternalMethod method) {
+    public void undefMethod(RubyContext context, Node currentNode, InternalMethod method) {
         addMethod(context, currentNode, method.undefined());
     }
 
     /**
      * Also searches on Object for modules.
      * Used for alias_method, visibility changes, etc.
+     * @param context TODO
      */
     @CompilerDirectives.TruffleBoundary
-    public InternalMethod deepMethodSearch(String name) {
+    public InternalMethod deepMethodSearch(RubyContext context, String name) {
         InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, name);
         if (method != null && !method.isUndefined()) {
             return method;
@@ -389,7 +390,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     @CompilerDirectives.TruffleBoundary
     public void alias(RubyContext context, Node currentNode, String newName, String oldName) {
-        InternalMethod method = deepMethodSearch(oldName);
+        InternalMethod method = deepMethodSearch(context, oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
@@ -406,7 +407,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void changeConstantVisibility(Node currentNode, String name, boolean isPrivate) {
+    public void changeConstantVisibility(RubyContext context, Node currentNode, String name, boolean isPrivate) {
         checkFrozen(context, currentNode);
         RubyConstant rubyConstant = constants.get(name);
 

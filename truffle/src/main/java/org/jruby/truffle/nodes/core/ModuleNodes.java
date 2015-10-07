@@ -78,7 +78,7 @@ public abstract class ModuleNodes {
         if (lexicalParent == null) { // bootstrap or anonymous module
             Layouts.MODULE.getFields(module).name = Layouts.MODULE.getFields(module).givenBaseName;
         } else {
-            Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+            Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, lexicalParent, name, currentNode);
         }
         return module;
     }
@@ -557,7 +557,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            Layouts.MODULE.getFields(module).setAutoloadConstant(this, name, filename);
+            Layouts.MODULE.getFields(module).setAutoloadConstant(getContext(), this, name, filename);
 
             return nil();
         }
@@ -776,7 +776,7 @@ public abstract class ModuleNodes {
         public Object setClassVariable(DynamicObject module, String name, Object value) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
-            ModuleOperations.setClassVariable(module, name, value, this);
+            ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
             return value;
         }
@@ -1706,7 +1706,7 @@ public abstract class ModuleNodes {
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, true);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(getContext(), this, name, true);
             }
             return module;
         }
@@ -1726,7 +1726,7 @@ public abstract class ModuleNodes {
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, false);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(getContext(), this, name, false);
             }
             return module;
         }
@@ -1769,7 +1769,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
-            return Layouts.MODULE.getFields(module).removeClassVariable(this, name);
+            return Layouts.MODULE.getFields(module).removeClassVariable(getContext(), this, name);
         }
 
     }
@@ -1792,7 +1792,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         Object removeConstant(DynamicObject module, String name) {
-            RubyConstant oldConstant = Layouts.MODULE.getFields(module).removeConstant(this, name);
+            RubyConstant oldConstant = Layouts.MODULE.getFields(module).removeConstant(getContext(), this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
@@ -1884,7 +1884,7 @@ public abstract class ModuleNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method != null) {
-                Layouts.MODULE.getFields(module).undefMethod(this, method);
+                Layouts.MODULE.getFields(module).undefMethod(getContext(), this, method);
                 methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1950,7 +1950,7 @@ public abstract class ModuleNodes {
         public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
-            final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(methodName);
+            final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(getContext(), methodName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
