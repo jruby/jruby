@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNode;
@@ -26,7 +27,6 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,13 +34,20 @@ import java.util.concurrent.LinkedBlockingQueue;
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    public static DynamicObject newRootFiber(DynamicObject thread, FiberManager fiberManager, ThreadManager threadManager) {
-        assert RubyGuards.isRubyThread(thread);
-        RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(thread)).getContext();
-        return createRubyFiber(thread, fiberManager, threadManager, context.getCoreLibrary().getFiberClass(), "root Fiber for Thread", true);
+    public static DynamicObject createFiber(DynamicObject thread, DynamicObject rubyClass, String name) {
+        return createFiber(thread, rubyClass, name, false);
     }
 
-    public static void initialize(final DynamicObject fiber, final DynamicObject block) {
+    public static DynamicObject createRootFiber(RubyContext context, DynamicObject thread) {
+        return createFiber(thread, context.getCoreLibrary().getFiberClass(), "root Fiber for Thread", true);
+    }
+
+    private static DynamicObject createFiber(DynamicObject thread, DynamicObject rubyClass, String name, boolean isRootFiber) {
+        assert RubyGuards.isRubyThread(thread);
+        return Layouts.FIBER.createFiber(Layouts.CLASS.getInstanceFactory(rubyClass), isRootFiber, new LinkedBlockingQueue<FiberMessage>(2), thread, name, null, true, null);
+    }
+
+    public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
         final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
@@ -48,22 +55,22 @@ public abstract class FiberNodes {
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                handleFiberExceptions(fiber, block);
+                handleFiberExceptions(context, fiber, block);
             }
         });
         thread.setName(name);
         thread.start();
     }
 
-    private static void handleFiberExceptions(final DynamicObject fiber, final DynamicObject block) {
+    private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
 
-        run(fiber, new Runnable() {
+        run(context, fiber, new Runnable() {
             @Override
             public void run() {
                 try {
-                    final Object[] args = waitForResume(fiber);
+                    final Object[] args = waitForResume(context, fiber);
                     final Object result;
                     try {
                         result = ProcNodes.rootCall(block, args);
@@ -76,9 +83,9 @@ public abstract class FiberNodes {
                     assert !Layouts.FIBER.getRootFiber(fiber);
                     // Naturally exit the Java thread on catching this
                 } catch (BreakException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getCoreLibrary().breakFromProcClosure(null)));
+                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().breakFromProcClosure(null)));
                 } catch (ReturnException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getCoreLibrary().unexpectedReturn(null)));
+                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
                     Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage((DynamicObject) e.getRubyException()));
                 }
@@ -86,31 +93,31 @@ public abstract class FiberNodes {
         });
     }
 
-    public static void run(DynamicObject fiber, final Runnable task) {
+    public static void run(RubyContext context, DynamicObject fiber, final Runnable task) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        start(fiber);
+        start(context, fiber);
         try {
             task.run();
         } finally {
-            cleanup(fiber);
+            cleanup(context, fiber);
         }
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public static void start(DynamicObject fiber) {
+    public static void start(RubyContext context, DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.setThread(fiber, Thread.currentThread());
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getThreadManager().initializeCurrentThread(Layouts.FIBER.getRubyThread(fiber));
+        context.getThreadManager().initializeCurrentThread(Layouts.FIBER.getRubyThread(fiber));
         Layouts.THREAD.getFiberManager(Layouts.FIBER.getRubyThread(fiber)).registerFiber(fiber);
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getSafepointManager().enterThread();
+        context.getSafepointManager().enterThread();
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public static void cleanup(DynamicObject fiber) {
+    public static void cleanup(RubyContext context, DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         Layouts.FIBER.setAlive(fiber, false);
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext().getSafepointManager().leaveThread();
+        context.getSafepointManager().leaveThread();
         Layouts.THREAD.getFiberManager(Layouts.FIBER.getRubyThread(fiber)).unregisterFiber(fiber);
         Layouts.FIBER.setThread(fiber, null);
     }
@@ -118,12 +125,12 @@ public abstract class FiberNodes {
     /**
      * Send the Java thread that represents this fiber to sleep until it receives a resume or exit
      * message.
+     * @param context TODO
      * @param fiber
      */
-    private static Object[] waitForResume(final DynamicObject fiber) {
+    private static Object[] waitForResume(RubyContext context, final DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
 
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(fiber)).getContext();
         final FiberMessage message = context.getThreadManager().runUntilResult(null, new ThreadManager.BlockingAction<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
@@ -161,27 +168,19 @@ public abstract class FiberNodes {
         Layouts.FIBER.getMessageQueue(fiber).add(new FiberResumeMessage(yield, fromFiber, args));
     }
 
-    public static Object[] transferControlTo(DynamicObject fromFiber, DynamicObject fiber, boolean yield, Object[] args) {
+    public static Object[] transferControlTo(RubyContext context, DynamicObject fromFiber, DynamicObject fiber, boolean yield, Object[] args) {
         assert RubyGuards.isRubyFiber(fromFiber);
         assert RubyGuards.isRubyFiber(fiber);
 
         resume(fromFiber, fiber, yield, args);
 
-        return waitForResume(fromFiber);
+        return waitForResume(context, fromFiber);
     }
 
     public static void shutdown(DynamicObject fiber) {
         assert RubyGuards.isRubyFiber(fiber);
         assert !Layouts.FIBER.getRootFiber(fiber);
         Layouts.FIBER.getMessageQueue(fiber).add(new FiberExitMessage());
-    }
-
-    public static DynamicObject createRubyFiber(DynamicObject parent, DynamicObject rubyClass, String name) {
-        return Layouts.FIBER.createFiber(Layouts.CLASS.getInstanceFactory(rubyClass), false, new LinkedBlockingQueue<FiberMessage>(2), parent, name, null, true, null);
-    }
-
-    public static DynamicObject createRubyFiber(DynamicObject parent, FiberManager fiberManager, ThreadManager threadManager, DynamicObject rubyClass, String name, boolean isRootFiber) {
-        return Layouts.FIBER.createFiber(Layouts.CLASS.getInstanceFactory(rubyClass), false, new LinkedBlockingQueue<FiberMessage>(2), parent, name, null, true, null);
     }
 
     public interface FiberMessage {
@@ -221,7 +220,7 @@ public abstract class FiberNodes {
 
             final DynamicObject sendingFiber = Layouts.THREAD.getFiberManager(currentThread).getCurrentFiber();
 
-            return singleValue(frame, transferControlTo(sendingFiber, fiber, isYield, args));
+            return singleValue(frame, transferControlTo(getContext(), sendingFiber, fiber, isYield, args));
         }
 
     }
@@ -237,7 +236,7 @@ public abstract class FiberNodes {
         public DynamicObject initialize(DynamicObject fiber, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
-            FiberNodes.initialize(fiber, block);
+            FiberNodes.initialize(getContext(), fiber, block);
             return nil();
         }
 
@@ -343,7 +342,7 @@ public abstract class FiberNodes {
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
             DynamicObject parent = getContext().getThreadManager().getCurrentThread();
-            return createRubyFiber(parent, rubyClass, null);
+            return createFiber(parent, rubyClass, null);
         }
 
     }

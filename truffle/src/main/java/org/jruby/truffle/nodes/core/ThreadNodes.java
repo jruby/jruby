@@ -40,10 +40,11 @@ import java.util.concurrent.locks.Lock;
 @CoreClass(name = "Thread")
 public abstract class ThreadNodes {
 
-    public static DynamicObject createRubyThread(DynamicObject rubyClass) {
-        final DynamicObject objectClass = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(rubyClass)).getContext().getCoreLibrary().getObjectClass();
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass)), new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new AtomicBoolean(false), 0);
-        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(object));
+    public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
+        final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
+        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass));
+        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), threadLocals, new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new AtomicBoolean(false), 0);
+        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
         return object;
     }
 
@@ -76,10 +77,10 @@ public abstract class ThreadNodes {
         Layouts.THREAD.setName(thread, name);
         Thread.currentThread().setName(name);
 
-        start(thread);
+        start(context, thread);
         try {
             DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
-            FiberNodes.run(fiber, task);
+            FiberNodes.run(context, fiber, task);
         } catch (ThreadExitException e) {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;
@@ -88,23 +89,23 @@ public abstract class ThreadNodes {
         } catch (ReturnException e) {
             Layouts.THREAD.setException(thread, context.getCoreLibrary().unexpectedReturn(currentNode));
         } finally {
-            cleanup(thread);
+            cleanup(context, thread);
         }
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public static void start(DynamicObject thread) {
+    public static void start(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
         Layouts.THREAD.setThread(thread, Thread.currentThread());
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(thread)).getContext().getThreadManager().registerThread(thread);
+        context.getThreadManager().registerThread(thread);
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
-    public static void cleanup(DynamicObject thread) {
+    public static void cleanup(RubyContext context, DynamicObject thread) {
         assert RubyGuards.isRubyThread(thread);
 
         Layouts.THREAD.setStatus(thread, Status.ABORTING);
-        Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getMetaClass(thread)).getContext().getThreadManager().unregisterThread(thread);
+        context.getThreadManager().unregisterThread(thread);
 
         Layouts.THREAD.setStatus(thread, Status.DEAD);
         Layouts.THREAD.setThread(thread, null);
@@ -451,7 +452,7 @@ public abstract class ThreadNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyThread(rubyClass);
+            return createRubyThread(getContext(), rubyClass);
         }
 
     }
