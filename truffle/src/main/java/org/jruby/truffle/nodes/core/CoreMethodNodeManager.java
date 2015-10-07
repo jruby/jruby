@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -116,16 +117,16 @@ public class CoreMethodNodeManager {
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
         if (method.isModuleFunction()) {
-            addMethod(module, rootNode, names, Visibility.PRIVATE);
-            addMethod(getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
+            addMethod(context, module, rootNode, names, Visibility.PRIVATE);
+            addMethod(context, getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
         } else if (method.onSingleton() || method.constructor()) {
-            addMethod(getSingletonClass(module), rootNode, names, visibility);
+            addMethod(context, getSingletonClass(module), rootNode, names, visibility);
         } else {
-            addMethod(module, rootNode, names, visibility);
+            addMethod(context, module, rootNode, names, visibility);
         }
     }
 
-    private static void addMethod(DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+    private static void addMethod(RubyContext context, DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
         assert RubyGuards.isRubyModule(module);
 
         for (String name : names) {
@@ -139,7 +140,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            Layouts.MODULE.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
+            Layouts.MODULE.getFields(module).addMethod(context, null, method.withVisibility(visibility).withName(name));
         }
     }
 

@@ -146,10 +146,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     // TODO (eregon, 12 May 2015): ideally all callers would be nodes and check themselves.
-    public void checkFrozen(Node currentNode) {
-        if (getContext().getCoreLibrary() != null && verySlowIsFrozen(getContext(), rubyModuleObject)) {
+    public void checkFrozen(RubyContext context, Node currentNode) {
+        if (context.getCoreLibrary() != null && verySlowIsFrozen(context, rubyModuleObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
+            throw new RaiseException(context.getCoreLibrary().frozenError(Layouts.MODULE.getFields(getLogicalClass()).getName(), currentNode));
         }
     }
 
@@ -168,14 +168,14 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void include(Node currentNode, DynamicObject module) {
+    public void include(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         // If the module we want to include already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic include detected", currentNode));
+            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic include detected", currentNode));
         }
 
         // We need to include the module ancestors in reverse order for a given inclusionPoint
@@ -228,14 +228,14 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void prepend(Node currentNode, DynamicObject module) {
+    public void prepend(RubyContext context, Node currentNode, DynamicObject module) {
         assert RubyGuards.isRubyModule(module);
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         // If the module we want to prepend already includes us, it is cyclic
         if (ModuleOperations.includesModule(module, rubyModuleObject)) {
-            throw new RaiseException(getContext().getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
+            throw new RaiseException(context.getCoreLibrary().argumentError("cyclic prepend detected", currentNode));
         }
 
         ModuleChain mod = Layouts.MODULE.getFields(module).start;
@@ -258,8 +258,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
      * Set the value of a constant, possibly redefining it.
      */
     @CompilerDirectives.TruffleBoundary
-    public void setConstant(Node currentNode, String name, Object value) {
-        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+    public void setConstant(RubyContext context, Node currentNode, String name, Object value) {
+        if (context.getCoreLibrary().isLoadingRubyCore()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {
@@ -281,7 +281,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         RubyConstant previous = constants.get(name);
         if (previous == null) {
@@ -297,7 +297,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     @CompilerDirectives.TruffleBoundary
     public RubyConstant removeConstant(Node currentNode, String name) {
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
         RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
         return oldConstant;
@@ -305,14 +305,14 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     @CompilerDirectives.TruffleBoundary
     public void setClassVariable(Node currentNode, String variableName, Object value) {
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         classVariables.put(variableName, value);
     }
 
     @CompilerDirectives.TruffleBoundary
     public Object removeClassVariable(Node currentNode, String name) {
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
 
         final Object found = classVariables.remove(name);
         if (found == null) {
@@ -323,10 +323,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void addMethod(Node currentNode, InternalMethod method) {
+    public void addMethod(RubyContext context, Node currentNode, InternalMethod method) {
         assert method != null;
 
-        if (getContext().getCoreLibrary().isLoadingRubyCore()) {
+        if (context.getCoreLibrary().isLoadingRubyCore()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
@@ -334,7 +334,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             }
         }
 
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
         methods.put(method.getName(), method.withDeclaringModule(rubyModuleObject));
         newVersion();
 
@@ -350,10 +350,10 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void undefMethod(Node currentNode, String methodName) {
+    public void undefMethod(RubyContext context, Node currentNode, String methodName) {
         final InternalMethod method = ModuleOperations.lookupMethod(rubyModuleObject, methodName);
         if (method == null) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
             undefMethod(currentNode, method);
         }
@@ -361,7 +361,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     @CompilerDirectives.TruffleBoundary
     public void undefMethod(Node currentNode, InternalMethod method) {
-        addMethod(currentNode, method.undefined());
+        addMethod(context, currentNode, method.undefined());
     }
 
     /**
@@ -388,12 +388,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public void alias(Node currentNode, String newName, String oldName) {
+    public void alias(RubyContext context, Node currentNode, String newName, String oldName) {
         InternalMethod method = deepMethodSearch(oldName);
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreLibrary().noMethodErrorOnModule(oldName, rubyModuleObject, currentNode));
         }
 
         InternalMethod aliasMethod = method.withName(newName);
@@ -402,12 +402,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             aliasMethod = aliasMethod.withVisibility(Visibility.PRIVATE);
         }
 
-        addMethod(currentNode, aliasMethod);
+        addMethod(context, currentNode, aliasMethod);
     }
 
     @CompilerDirectives.TruffleBoundary
     public void changeConstantVisibility(Node currentNode, String name, boolean isPrivate) {
-        checkFrozen(currentNode);
+        checkFrozen(context, currentNode);
         RubyConstant rubyConstant = constants.get(name);
 
         if (rubyConstant != null) {
@@ -550,43 +550,43 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         };
     }
 
-    public Collection<DynamicObject> filterMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
             allMethods = getMethods();
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterMethodsOnObject(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethodsOnObject(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getAllMethods(rubyModuleObject);
         } else {
             allMethods = ModuleOperations.getMethodsUntilLogicalClass(rubyModuleObject);
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterSingletonMethods(boolean includeAncestors, MethodFilter filter) {
+    public Collection<DynamicObject> filterSingletonMethods(RubyContext context, boolean includeAncestors, MethodFilter filter) {
         final Map<String, InternalMethod> allMethods;
         if (includeAncestors) {
             allMethods = ModuleOperations.getMethodsBeforeLogicalClass(rubyModuleObject);
         } else {
             allMethods = getMethods();
         }
-        return filterMethods(allMethods, filter);
+        return filterMethods(context, allMethods, filter);
     }
 
-    public Collection<DynamicObject> filterMethods(Map<String, InternalMethod> allMethods, MethodFilter filter) {
+    public Collection<DynamicObject> filterMethods(RubyContext context, Map<String, InternalMethod> allMethods, MethodFilter filter) {
         final Map<String, InternalMethod> methods = ModuleOperations.withoutUndefinedMethods(allMethods);
 
         final Set<DynamicObject> filtered = new HashSet<>();
         for (InternalMethod method : methods.values()) {
             if (filter.filter(method)) {
-                filtered.add(getContext().getSymbolTable().getSymbol(method.getName()));
+                filtered.add(context.getSymbolTable().getSymbol(method.getName()));
             }
         }
 

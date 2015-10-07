@@ -132,7 +132,7 @@ public class TranslatorDriver {
         final Object data = getData(context);
 
         if (data != null) {
-            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
+            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", data);
         }
 
         // Translate to Ruby Truffle nodes
