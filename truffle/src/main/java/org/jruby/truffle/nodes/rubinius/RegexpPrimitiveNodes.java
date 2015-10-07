@@ -69,7 +69,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
-            RegexpNodes.initialize(regexp, this, StringOperations.getByteList(pattern), options);
+            RegexpNodes.initialize(getContext(), regexp, this, StringOperations.getByteList(pattern), options);
             return regexp;
         }
 
@@ -145,10 +145,10 @@ public abstract class RegexpPrimitiveNodes {
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
+                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
+                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
             }
         }
 

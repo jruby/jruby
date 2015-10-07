@@ -48,7 +48,7 @@ public class InterpolatedRegexpNode extends RubyNode {
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
 
-        final DynamicObject regexp = RegexpNodes.createRubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
+        final DynamicObject regexp = RegexpNodes.createRubyRegexp(getContext(), this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
 
         if (options.isEncodingNone()) {
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
