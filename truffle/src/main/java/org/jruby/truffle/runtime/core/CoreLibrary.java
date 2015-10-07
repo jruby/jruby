@@ -583,8 +583,8 @@ public class CoreLibrary {
 
         globals.define("$LOAD_PATH", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
         globals.define("$LOADED_FEATURES", Layouts.ARRAY.createArray(Layouts.CLASS.getInstanceFactory(arrayClass), null, 0), 0);
-        globals.define("$:", globals.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
-        globals.define("$\"", globals.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globals)).getContext().getCoreLibrary().getNilObject()), 0);
+        globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
+        globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
         globals.define("$0", Layouts.STRING.createString(stringFactory, StringOperations.encodeByteList(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), 0);
 
@@ -1403,11 +1403,11 @@ public class CoreLibrary {
     }
 
     public DynamicObject getLoadPath() {
-        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globalVariablesObject)).getContext().getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariablesObject.get("$LOAD_PATH", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getLoadedFeatures() {
-        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(globalVariablesObject)).getContext().getCoreLibrary().getNilObject());
+        return (DynamicObject) globalVariablesObject.get("$LOADED_FEATURES", context.getCoreLibrary().getNilObject());
     }
 
     public DynamicObject getMainObject() {

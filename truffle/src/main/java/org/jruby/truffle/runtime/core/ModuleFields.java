@@ -432,7 +432,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
                 return "#<cyclic>";
             } else {
-                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(rubyModuleObject)) + ">";
+                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(context, rubyModuleObject)) + ">";
             }
         }
     }

@@ -918,7 +918,7 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final Encoding encoding = StringOperations.checkEncoding(string, StringOperations.getCodeRangeable(pattern), this);
+            final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(pattern), this);
             int p = StringOperations.getByteList(string).getBegin();
             final int e = p + StringOperations.getByteList(string).getRealSize();
             int pp = StringOperations.getByteList(pattern).getBegin();

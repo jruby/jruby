@@ -108,7 +108,7 @@ public abstract class SingletonClassNode extends RubyNode {
             attached = object;
         }
 
-        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), ObjectIDOperations.verySlowGetObjectID(object));
+        final String name = String.format("#<Class:#<%s:0x%x>>", Layouts.MODULE.getFields(logicalClass).getName(), ObjectIDOperations.verySlowGetObjectID(getContext(), object));
         final DynamicObject singletonClass = ClassNodes.createSingletonClassOfObject(getContext(), logicalClass, attached, name);
         propagateFrozen(object, singletonClass);
 
