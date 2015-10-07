@@ -4319,7 +4319,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", rest = true, required = 1)
+    @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
@@ -4329,7 +4329,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final int[] b = (int[]) Layouts.ARRAY.getStore(other);
@@ -4358,7 +4358,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final Object[] b = (Object[]) Layouts.ARRAY.getStore(other);
@@ -4388,25 +4388,29 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
-        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
         @Specialization(guards = { "!isRubyArray(other)" })
-        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
-        private Object zipRuby(VirtualFrame frame, DynamicObject array) {
+        @Specialization
+        public Object zipBlock(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, DynamicObject block) {
+            return zipRuby(frame, array, block);
+        }
+
+        private Object zipRuby(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             if (zipInternalCall == null) {
                 CompilerDirectives.transferToInterpreter();
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final DynamicObject proc = RubyArguments.getBlock(frame.getArguments());
             final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
 
-            return zipInternalCall.call(frame, array, "zip_internal", proc, others);
+            return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {
