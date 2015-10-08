@@ -63,6 +63,7 @@ import org.jruby.truffle.nodes.literal.RangeLiteralNodeGen;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
+import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
@@ -133,7 +134,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
         final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
 
-        final RubyNode ret = AliasNodeGen.create(context, sourceSection, newName.getName(), oldName.getName(), new SelfNode(context, sourceSection));
+        final RubyNode ret = new AliasNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection), newName.getName(), oldName.getName());
         return addNewlineIfNeeded(node, ret);
     }
 

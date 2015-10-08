@@ -17,7 +17,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.methods.AliasNodeGen;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
@@ -95,16 +94,6 @@ class ModuleTranslator extends BodyTranslator {
         }
 
         return translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
-    }
-
-    @Override
-    public RubyNode visitAliasNode(org.jruby.ast.AliasNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
-        final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
-
-        return AliasNodeGen.create(context, sourceSection, newName.getName(), oldName.getName(), new SelfNode(context, sourceSection));
     }
 
 }
