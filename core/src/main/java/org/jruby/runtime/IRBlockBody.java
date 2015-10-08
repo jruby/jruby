@@ -44,7 +44,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
-        return call(context, new IRubyObject[] {arg0, arg1, arg2}, binding, type, Block.NULL_BLOCK);
+        return call(context, new IRubyObject[]{arg0, arg1, arg2}, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
@@ -97,16 +97,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Type type) {
-        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1 }, binding, type);
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[]{arg0, arg1}, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
-        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1, arg2 }, binding, type);
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[]{arg0, arg1, arg2}, binding, type);
     }
 
     private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
         IRubyObject val0 = Helpers.aryToAry(value);
+
+        if (val0.isNil()) return new IRubyObject[] { value };
 
         if (!(val0 instanceof RubyArray)) {
             throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
