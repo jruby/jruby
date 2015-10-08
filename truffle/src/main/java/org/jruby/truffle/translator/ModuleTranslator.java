@@ -18,9 +18,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
-import org.jruby.truffle.nodes.methods.GetDefaultDefineeNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -63,37 +61,6 @@ class ModuleTranslator extends BodyTranslator {
                 environment.getSharedMethodInfo().getName(),
                 environment.getSharedMethodInfo(),
                 Truffle.getRuntime().createCallTarget(rootNode));
-    }
-
-    @Override
-    public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);//new SelfNode(context, sourceSection);
-
-        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
-        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
-        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
-        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
-        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
-
-        String methodName = node.getName();
-        boolean rubiniusMethodRename = false;
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/array.rb")) {
-            rubiniusMethodRename = methodName.equals("zip");
-        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/float.rb")) {
-            rubiniusMethodRename = methodName.equals("round");
-        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
-            rubiniusMethodRename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
-        } else if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/integer.rb")) {
-            rubiniusMethodRename = methodName.equals("downto") || methodName.equals("upto");
-        }
-
-        if (rubiniusMethodRename) {
-            methodName = methodName + "_internal";
-        }
-
-        return translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
     }
 
 }

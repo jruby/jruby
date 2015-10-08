@@ -23,7 +23,6 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
@@ -1080,7 +1079,36 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode(), false);
+        String methodName = node.getName();
+
+        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
+        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
+        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
+        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
+        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
+
+        final String path = sourceSection.getSource().getPath();
+        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
+        if (path.startsWith(coreRubiniusPath)) {
+            boolean rename = false;
+
+            if (path.equals(coreRubiniusPath + "common/array.rb")) {
+                rename = methodName.equals("zip");
+            } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
+                rename = methodName.equals("round");
+            } else if (path.equals(coreRubiniusPath + "common/range.rb")) {
+                rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
+            } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
+                rename = methodName.equals("downto") || methodName.equals("upto");
+            }
+
+            if (rename) {
+                methodName = methodName + "_internal";
+            }
+        }
+
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
+
         return addNewlineIfNeeded(node, ret);
     }
 
