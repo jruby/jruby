@@ -119,7 +119,12 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     protected IRubyObject doYieldLambda(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         // Lambda does not splat arrays even if a rest arg is present when it wants a single parameter filled.
-        IRubyObject[] args = signature.required() == 1 ? new IRubyObject[] { value } : toAry(context, value);
+        IRubyObject[] args;
+        if (signature.required() == 1 || signature.arityValue() == -1) {
+            args = new IRubyObject[] { value };
+        } else {
+            args = toAry(context, value);
+        }
 
         signature.checkArity(context.runtime, args);
 
