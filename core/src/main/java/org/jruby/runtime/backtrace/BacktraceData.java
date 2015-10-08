@@ -5,6 +5,7 @@ import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public class BacktraceData implements Serializable {
@@ -35,6 +36,10 @@ public class BacktraceData implements Serializable {
             backtraceElements = constructBacktrace(runtime.getBoundMethods());
         }
         return backtraceElements;
+    }
+
+    public RubyStackTraceElement[] getBacktraceWithoutRuby() {
+        return constructBacktrace(Collections.EMPTY_MAP);
     }
 
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {

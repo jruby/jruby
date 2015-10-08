@@ -744,30 +744,16 @@ public final class ThreadContext {
         return newTrace;
     }
 
-    private static StringBuilder appendRubyBacktraceString(final StringBuilder buffer, StackTraceElement element) {
-        return buffer.append( element.getFileName() ).append(':')
-                     .append( element.getLineNumber() ).append(":in `")
-                     .append( element.getMethodName() ).append('\'');
-    }
-
-    public static String createRawBacktraceStringFromThrowable(final Throwable ex) {
+    public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         StackTraceElement[] javaStackTrace = ex.getStackTrace();
 
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
-        final StringBuilder buffer = new StringBuilder(160);
-
-        StackTraceElement element = javaStackTrace[0];
-        buffer.append( appendRubyBacktraceString(buffer, element) )
-              .append(": ").append( ex.toString() );
-
-        for (int i = 1; i < javaStackTrace.length; i++) {
-            element = javaStackTrace[i];
-            buffer.append('\n');
-            buffer.append("\tfrom ").append( appendRubyBacktraceString(buffer, element) );
-        }
-
-        return buffer.toString();
+        return TraceType.printBacktraceJRuby(
+                new BacktraceData(javaStackTrace, new BacktraceElement[0], true, false, false).getBacktraceWithoutRuby(),
+                ex.getClass().getName(),
+                ex.getLocalizedMessage(),
+                color);
     }
 
     private Frame pushFrameForBlock(Binding binding) {

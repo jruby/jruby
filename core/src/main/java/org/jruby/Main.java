@@ -211,10 +211,11 @@ public class Main {
                 t.printStackTrace(System.err);
             } else {
                 // print out as a nice Ruby backtrace
-                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
+                System.err.println("Unhandled Java exception: " + t);
+                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
                 while ((t = t.getCause()) != null) {
                     System.err.println("Caused by:");
-                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
+                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
                 }
             }
 

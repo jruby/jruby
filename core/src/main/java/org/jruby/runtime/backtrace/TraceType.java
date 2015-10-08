@@ -320,11 +320,27 @@ public class TraceType {
     private static final String EVAL_COLOR = "\033[0;33m";
     private static final String CLEAR_COLOR = "\033[0m";
 
+    public static String printBacktraceJRuby(RubyStackTraceElement[] frames, String type, String message, boolean color) {
+        StringBuilder buffer = new StringBuilder();
+
+        // exception line
+        buffer
+                .append(type)
+                .append(": ")
+                .append(message)
+                .append('\n');
+
+        if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
+        renderBacktraceJRuby(frames, buffer, color);
+
+
+        return buffer.toString();
+    }
+
     protected static String printBacktraceJRuby(RubyException exception, boolean console) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
-        StringBuilder buffer = new StringBuilder();
         boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // exception line
@@ -332,18 +348,12 @@ public class TraceType {
         if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
             message = "No current exception";
         }
-        buffer
-                .append(exception.getMetaClass().getName())
-                .append(": ")
-                .append(message)
-                .append('\n');
+        String type = exception.getMetaClass().getName();
 
         RubyStackTraceElement[] frames = exception.getBacktraceElements();
         if (frames == null) frames = RubyStackTraceElement.EMPTY_ARRAY;
-        renderBacktraceJRuby(frames, buffer, color);
 
-
-        return buffer.toString();
+        return printBacktraceJRuby(frames, type, message, color);
     }
 
     private static void renderBacktraceJRuby(RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
