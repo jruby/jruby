@@ -98,7 +98,6 @@ public class BodyTranslator extends Translator {
     protected final TranslatorEnvironment environment;
 
     public boolean translatingForStatement = false;
-    public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private boolean translatingWhile = false;
     protected String currentCallMethodName = null;
@@ -1801,10 +1800,6 @@ public class BodyTranslator extends Translator {
                 sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
         methodCompiler.translatingForStatement = translatingForStatement;
-
-        if (translatingForStatement && useClassVariablesAsIfInClass) {
-            methodCompiler.useClassVariablesAsIfInClass = true;
-        }
 
         final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.PROC);
         return addNewlineIfNeeded(node, ret);

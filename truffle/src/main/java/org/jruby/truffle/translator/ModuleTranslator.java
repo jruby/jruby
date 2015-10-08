@@ -34,7 +34,6 @@ class ModuleTranslator extends BodyTranslator {
 
     public ModuleTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(currentNode, context, parent, environment, source, false);
-        useClassVariablesAsIfInClass = true;
     }
 
     public MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
