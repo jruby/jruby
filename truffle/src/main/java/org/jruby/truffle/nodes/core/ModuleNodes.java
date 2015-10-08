@@ -78,7 +78,7 @@ public abstract class ModuleNodes {
         if (lexicalParent == null) { // bootstrap or anonymous module
             Layouts.MODULE.getFields(module).name = Layouts.MODULE.getFields(module).givenBaseName;
         } else {
-            Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+            Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, lexicalParent, name, currentNode);
         }
         return module;
     }
@@ -322,7 +322,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public DynamicObject aliasMethod(DynamicObject module, String newName, String oldName) {
-            Layouts.MODULE.getFields(module).alias(this, newName, oldName);
+            Layouts.MODULE.getFields(module).alias(getContext(), this, newName, oldName);
             return module;
         }
 
@@ -365,7 +365,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("append_features must be called only on modules", this));
             }
-            Layouts.MODULE.getFields(target).include(this, features);
+            Layouts.MODULE.getFields(target).include(getContext(), this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -414,7 +414,7 @@ public abstract class ModuleNodes {
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
 
-            Layouts.MODULE.getFields(module).addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
             return nil();
         }
     }
@@ -557,7 +557,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            Layouts.MODULE.getFields(module).setAutoloadConstant(this, name, filename);
+            Layouts.MODULE.getFields(module).setAutoloadConstant(getContext(), this, name, filename);
 
             return nil();
         }
@@ -776,7 +776,7 @@ public abstract class ModuleNodes {
         public Object setClassVariable(DynamicObject module, String name, Object value) {
             RubyContext.checkClassVariableName(getContext(), name, this);
 
-            ModuleOperations.setClassVariable(module, name, value, this);
+            ModuleOperations.setClassVariable(getContext(), module, name, value, this);
 
             return value;
         }
@@ -1007,7 +1007,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
             }
 
-            Layouts.MODULE.getFields(module).setConstant(this, name, value);
+            Layouts.MODULE.getFields(module).setConstant(getContext(), this, name, value);
             return value;
         }
 
@@ -1067,7 +1067,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            Layouts.MODULE.getFields(module).addMethod(this, method.withName(name));
+            Layouts.MODULE.getFields(module).addMethod(getContext(), this, method.withName(name));
             return getSymbol(name);
         }
 
@@ -1105,7 +1105,7 @@ public abstract class ModuleNodes {
                 method = method.withVisibility(Visibility.PRIVATE);
             }
 
-            Layouts.MODULE.getFields(module).addMethod(this, method);
+            Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
             return getSymbol(name);
         }
 
@@ -1132,7 +1132,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorWrongArgumentType(module, "Module", this));
             }
 
-            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(object)).include(this, module);
+            Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(object)).include(getContext(), this, module);
             return module;
         }
 
@@ -1426,7 +1426,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError("prepend_features must be called only on modules", this));
             }
-            Layouts.MODULE.getFields(target).prepend(this, features);
+            Layouts.MODULE.getFields(target).prepend(getContext(), this, features);
             taintResultNode.maybeTaint(features, target);
             return nil();
         }
@@ -1499,7 +1499,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject protectedInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PROTECTED).toArray();
+            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PROTECTED).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
@@ -1548,7 +1548,7 @@ public abstract class ModuleNodes {
         public DynamicObject privateInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PRIVATE).toArray();
+            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PRIVATE).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
@@ -1607,7 +1607,7 @@ public abstract class ModuleNodes {
         public DynamicObject publicInstanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC).toArray();
+            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PUBLIC).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
@@ -1656,7 +1656,7 @@ public abstract class ModuleNodes {
         public DynamicObject instanceMethods(DynamicObject module, boolean includeAncestors) {
             CompilerDirectives.transferToInterpreter();
 
-            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
+            Object[] objects = Layouts.MODULE.getFields(module).filterMethods(getContext(), includeAncestors, MethodFilter.PUBLIC_PROTECTED).toArray();
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }
@@ -1706,7 +1706,7 @@ public abstract class ModuleNodes {
         public DynamicObject privateConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, true);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(getContext(), this, name, true);
             }
             return module;
         }
@@ -1726,7 +1726,7 @@ public abstract class ModuleNodes {
         public DynamicObject publicConstant(VirtualFrame frame, DynamicObject module, Object[] args) {
             for (Object arg : args) {
                 String name = nameToJavaStringNode.executeToJavaString(frame, arg);
-                Layouts.MODULE.getFields(module).changeConstantVisibility(this, name, false);
+                Layouts.MODULE.getFields(module).changeConstantVisibility(getContext(), this, name, false);
             }
             return module;
         }
@@ -1769,7 +1769,7 @@ public abstract class ModuleNodes {
         @Specialization
         public Object removeClassVariableString(DynamicObject module, String name) {
             RubyContext.checkClassVariableName(getContext(), name, this);
-            return Layouts.MODULE.getFields(module).removeClassVariable(this, name);
+            return Layouts.MODULE.getFields(module).removeClassVariable(getContext(), this, name);
         }
 
     }
@@ -1792,7 +1792,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         Object removeConstant(DynamicObject module, String name) {
-            RubyConstant oldConstant = Layouts.MODULE.getFields(module).removeConstant(this, name);
+            RubyConstant oldConstant = Layouts.MODULE.getFields(module).removeConstant(getContext(), this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
@@ -1884,7 +1884,7 @@ public abstract class ModuleNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
 
             if (method != null) {
-                Layouts.MODULE.getFields(module).undefMethod(this, method);
+                Layouts.MODULE.getFields(module).undefMethod(getContext(), this, method);
                 methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
             } else {
                 CompilerDirectives.transferToInterpreter();
@@ -1950,7 +1950,7 @@ public abstract class ModuleNodes {
         public DynamicObject setMethodVisibility(VirtualFrame frame, DynamicObject module, Object name) {
             final String methodName = nameToJavaStringNode.executeToJavaString(frame, name);
 
-            final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(methodName);
+            final InternalMethod method = Layouts.MODULE.getFields(module).deepMethodSearch(getContext(), methodName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1964,10 +1964,10 @@ public abstract class ModuleNodes {
              * to this module.
              */
             if (visibility == Visibility.MODULE_FUNCTION) {
-                Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(Visibility.PRIVATE));
-                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(module)).addMethod(this, method.withVisibility(Visibility.PUBLIC));
+                Layouts.MODULE.getFields(module).addMethod(getContext(), this, method.withVisibility(Visibility.PRIVATE));
+                Layouts.MODULE.getFields(singletonClassNode.executeSingletonClass(module)).addMethod(getContext(), this, method.withVisibility(Visibility.PUBLIC));
             } else {
-                Layouts.MODULE.getFields(module).addMethod(this, method.withVisibility(visibility));
+                Layouts.MODULE.getFields(module).addMethod(getContext(), this, method.withVisibility(visibility));
             }
 
             return module;

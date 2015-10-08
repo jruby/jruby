@@ -36,19 +36,13 @@ public abstract class MethodHandleUtils {
     }
 
     private static Field getPrivateField(final Class<?> klass, final String fieldName) {
-        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            @Override
-            public Field run() {
-                final Field field;
-                try {
-                    field = klass.getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    return field;
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        try {
+            final Field field = klass.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field;
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

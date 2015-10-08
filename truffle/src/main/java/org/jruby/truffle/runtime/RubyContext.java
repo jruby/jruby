@@ -273,7 +273,7 @@ public class RubyContext extends ExecutionContext {
         // Set the load path
 
         DynamicObject receiver = coreLibrary.getGlobalVariablesObject();
-        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(receiver)).getContext().getCoreLibrary().getNilObject());
+        final DynamicObject loadPath = (DynamicObject) receiver.get("$:", coreLibrary.getNilObject());
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             String pathString = path.toString();
@@ -498,7 +498,7 @@ public class RubyContext extends ExecutionContext {
 
         final org.jruby.RubyString jrubyString = runtime.newString(StringOperations.getByteList(string).dup());
 
-        final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().getNilObject());
+        final Object tainted = string.get(Layouts.TAINTED_IDENTIFIER, coreLibrary.getNilObject());
 
         if (tainted instanceof Boolean && (boolean) tainted) {
             jrubyString.setTaint(true);

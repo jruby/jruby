@@ -27,10 +27,12 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jcodings.Encoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -42,8 +44,8 @@ public abstract class StringOperations {
 
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
-    public static String getString(DynamicObject string) {
-        return Helpers.decodeByteList(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getRuntime(), StringOperations.getByteList(string));
+    public static String getString(RubyContext context, DynamicObject string) {
+        return Helpers.decodeByteList(context.getRuntime(), StringOperations.getByteList(string));
     }
 
     public static StringCodeRangeableWrapper getCodeRangeable(DynamicObject string) {
@@ -153,16 +155,14 @@ public abstract class StringOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static Encoding checkEncoding(DynamicObject string, CodeRangeable other, Node node) {
+    public static Encoding checkEncoding(RubyContext context, DynamicObject string, CodeRangeable other, Node node) {
         final Encoding encoding = StringSupport.areCompatible(getCodeRangeable(string), other);
 
         if (encoding == null) {
-            throw new RaiseException(
-                    Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(string)).getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
-                            StringOperations.getByteList(string).getEncoding().toString(),
-                            other.getByteList().getEncoding().toString(),
-                            node)
-            );
+            throw new RaiseException(context.getCoreLibrary().encodingCompatibilityErrorIncompatible(
+                    StringOperations.getByteList(string).getEncoding().toString(),
+                    other.getByteList().getEncoding().toString(),
+                    node));
         }
 
         return encoding;

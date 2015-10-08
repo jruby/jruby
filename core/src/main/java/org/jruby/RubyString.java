@@ -3573,20 +3573,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     private RubyRegexp getPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
-        return RubyRegexp.newRegexp(getRuntime(), getStringForPattern(obj).value);
-    }
-
-    private Regex getStringPattern19(Ruby runtime, IRubyObject obj) {
-        RubyString str = getStringForPattern(obj);
-        if (str.scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newRegexpError("invalid multybyte character: " +
-                    RegexpSupport.regexpDescription19(runtime, str.value, new RegexpOptions(), str.value.getEncoding()).toString());
-        }
-        if (str.value.getEncoding().isDummy()) {
-            throw runtime.newArgumentError("can't make regexp with dummy encoding");
-        }
-
-        return RubyRegexp.getQuotedRegexpFromCache19(runtime, str.value, new RegexpOptions(), str.isAsciiOnly());
+        return RubyRegexp.newRegexpFromStr(getRuntime(), getStringForPattern(obj), 0);
     }
 
     // MRI: get_pat_quoted

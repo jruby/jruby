@@ -41,7 +41,7 @@ public class UndefNode extends RubyNode {
             throw new RuntimeException(e);
         }
 
-        Layouts.MODULE.getFields(moduleObject).undefMethod(this, name);
+        Layouts.MODULE.getFields(moduleObject).undefMethod(getContext(), this, name);
     }
 
     @Override

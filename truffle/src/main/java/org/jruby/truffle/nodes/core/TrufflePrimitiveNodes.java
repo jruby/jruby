@@ -650,9 +650,9 @@ public abstract class TrufflePrimitiveNodes {
     }
 
     @CoreMethod(names = "spawn_process", onSingleton = true, required = 3)
-    public abstract static class SpawnProcess extends CoreMethodArrayArgumentsNode {
+    public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
 
-        public SpawnProcess(RubyContext context, SourceSection sourceSection) {
+        public SpawnProcessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -665,7 +665,7 @@ public abstract class TrufflePrimitiveNodes {
                          DynamicObject environmentVariables) {
 
             final long longPid = call(
-                    StringOperations.getString(command),
+                    StringOperations.getString(getContext(), command),
                     toStringArray(arguments),
                     toStringArray(environmentVariables));
             assert longPid <= Integer.MAX_VALUE;
@@ -687,7 +687,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (int i = 0; i < size; i++) {
                 assert Layouts.STRING.isString(unconvertedStrings[i]);
-                strings[i] = StringOperations.getString((DynamicObject) unconvertedStrings[i]);
+                strings[i] = StringOperations.getString(getContext(), (DynamicObject) unconvertedStrings[i]);
             }
 
             return strings;

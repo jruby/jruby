@@ -39,13 +39,13 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         this.context = context;
-        this.rootThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
+        this.rootThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
         Layouts.THREAD.setName(rootThread, "main");
     }
 
     public void initialize() {
-        ThreadNodes.start(rootThread);
-        FiberNodes.start(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
+        ThreadNodes.start(context, rootThread);
+        FiberNodes.start(context, Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
     }
 
     public DynamicObject getRootThread() {
@@ -119,8 +119,8 @@ public class ThreadManager {
             }
         } finally {
             Layouts.THREAD.getFiberManager(rootThread).shutdown();
-            FiberNodes.cleanup(Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
-            ThreadNodes.cleanup(rootThread);
+            FiberNodes.cleanup(context, Layouts.THREAD.getFiberManager(rootThread).getRootFiber());
+            ThreadNodes.cleanup(context, rootThread);
         }
     }
 

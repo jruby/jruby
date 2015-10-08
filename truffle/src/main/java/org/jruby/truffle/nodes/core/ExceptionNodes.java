@@ -33,11 +33,9 @@ import java.util.List;
 public abstract class ExceptionNodes {
 
     @TruffleBoundary
-    public static DynamicObject asRubyStringArray(DynamicObject exception) {
+    public static DynamicObject asRubyStringArray(RubyContext context, DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
         assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext();
 
         final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
                 .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
@@ -45,10 +43,10 @@ public abstract class ExceptionNodes {
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0;n < lines.size(); n++) {
-            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
         }
 
-        return Layouts.ARRAY.createArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
     }
 
     public static void setMessage(DynamicObject exception, Object message) {
@@ -100,7 +98,7 @@ public abstract class ExceptionNodes {
             if (customBacktrace != null) {
                 return customBacktrace;
             } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
-                return asRubyStringArray(exception);
+                return asRubyStringArray(getContext(), exception);
             } else {
                 return nil();
             }

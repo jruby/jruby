@@ -157,4 +157,9 @@ describe "The alias keyword" do
       end
     end.should raise_error(TypeError)
   end
+
+  it "on top level defines the alias on Object" do
+    # because it defines on the default definee / current module
+    ruby_exe("def foo; end; alias bla foo; print method(:bla).owner", escape: true).should == "Object"
+  end
 end

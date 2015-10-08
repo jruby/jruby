@@ -351,7 +351,7 @@ public class Main {
 
         String oomeMessage = oome.getMessage();
 
-        if (oomeMessage.contains("PermGen")) { // report permgen memory error
+        if (oomeMessage != null && oomeMessage.contains("PermGen")) { // report permgen memory error
             config.getError().println("Error: Your application exhausted PermGen area of the heap.");
             config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
 

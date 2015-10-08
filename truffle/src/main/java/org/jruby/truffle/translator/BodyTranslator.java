@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -23,8 +24,8 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
@@ -63,6 +64,7 @@ import org.jruby.truffle.nodes.literal.RangeLiteralNodeGen;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
+import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
@@ -98,7 +100,6 @@ public class BodyTranslator extends Translator {
     protected final TranslatorEnvironment environment;
 
     public boolean translatingForStatement = false;
-    public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
     private boolean translatingWhile = false;
     protected String currentCallMethodName = null;
@@ -133,7 +134,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
         final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
 
-        final RubyNode ret = AliasNodeGen.create(context, sourceSection, newName.getName(), oldName.getName(), new SelfNode(context, sourceSection));
+        final RubyNode ret = new AliasNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection), newName.getName(), oldName.getName());
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -827,14 +828,48 @@ public class BodyTranslator extends Translator {
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                     environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
 
-            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
-            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
+            final MethodDefinitionNode definitionMethod = moduleTranslator.compileClassNode(sourceSection, name, bodyNode);
 
             return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
         } finally {
             environment.popLexicalScope();
         }
+    }
+
+    /**
+     * Translates module and class nodes.
+     * <p>
+     * In Ruby, a module or class definition is somewhat like a method. It has a local scope and a value
+     * for self, which is the module or class object that is being defined. Therefore for a module or
+     * class definition we translate into a special method. We run that method with self set to be the
+     * newly allocated module or class.
+     */
+    private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
+        RubyNode body;
+
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
+        }
+
+        if (environment.getFlipFlopStates().size() > 0) {
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+        }
+
+        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
+
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+
+        return new MethodDefinitionNode(
+                context,
+                sourceSection,
+                environment.getSharedMethodInfo().getName(),
+                environment.getSharedMethodInfo(),
+                Truffle.getRuntime().createCallTarget(rootNode));
     }
 
     @Override
@@ -1079,7 +1114,36 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
 
-        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode(), false);
+        String methodName = node.getName();
+
+        // If we have a method we've defined in a node, but would like to delegate some corner cases out to the
+        // Rubinius implementation for simplicity, we need a way to resolve the naming conflict.  The naive solution
+        // here is to append "_internal" to the method name, which can then be called like any other method.  This is
+        // a bit different than aliasing because normally if a Rubinius method name conflicts with an already defined
+        // method, we simply ignore the method definition.  Here we explicitly rename the method so it's always defined.
+
+        final String path = sourceSection.getSource().getPath();
+        final String coreRubiniusPath = context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/";
+        if (path.startsWith(coreRubiniusPath)) {
+            boolean rename = false;
+
+            if (path.equals(coreRubiniusPath + "common/array.rb")) {
+                rename = methodName.equals("zip");
+            } else if (path.equals(coreRubiniusPath + "common/float.rb")) {
+                rename = methodName.equals("round");
+            } else if (path.equals(coreRubiniusPath + "common/range.rb")) {
+                rename = methodName.equals("each") || methodName.equals("step") || methodName.equals("to_a");
+            } else if (path.equals(coreRubiniusPath + "common/integer.rb")) {
+                rename = methodName.equals("downto") || methodName.equals("upto");
+            }
+
+            if (rename) {
+                methodName = methodName + "_internal";
+            }
+        }
+
+        final RubyNode ret = translateMethodDefinition(sourceSection, classNode, methodName, node.getArgsNode(), node.getBodyNode(), false);
+
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1772,10 +1836,6 @@ public class BodyTranslator extends Translator {
                 sharedMethodInfo, environment.getNamedMethodName(), true, environment.getParseEnvironment().allocateBreakID());
         final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, true, source, argsNode);
         methodCompiler.translatingForStatement = translatingForStatement;
-
-        if (translatingForStatement && useClassVariablesAsIfInClass) {
-            methodCompiler.useClassVariablesAsIfInClass = true;
-        }
 
         final RubyNode ret = methodCompiler.compileBlockNode(translate(node.getPosition()), sharedMethodInfo.getName(), node.getBodyNode(), sharedMethodInfo, Type.PROC);
         return addNewlineIfNeeded(node, ret);

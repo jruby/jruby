@@ -62,7 +62,7 @@ public class RubyObjectType extends ObjectType {
     }
 
     private RubyContext getContext() {
-        return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(Layouts.BASIC_OBJECT.getLogicalClass(this))).getContext();
+        return Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(this)).getContext();
     }
 
 }

@@ -335,14 +335,14 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static void setClassVariable(DynamicObject module, final String name, final Object value, final Node currentNode) {
+    public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
 
         DynamicObject found = classVariableLookup(module, new Function<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
                 if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
-                    Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
+                    Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
                     return module;
                 } else {
                     return null;
@@ -352,7 +352,7 @@ public abstract class ModuleOperations {
 
         if (found == null) {
             // Not existing class variable - set in the current module
-            Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
+            Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
         }
     }
 

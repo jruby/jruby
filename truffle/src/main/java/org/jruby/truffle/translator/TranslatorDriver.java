@@ -131,18 +131,12 @@ public class TranslatorDriver {
         final Object data = getData(context);
 
         if (data != null) {
-            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", data);
+            Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", data);
         }
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator;
-
-        if (parserContext == ParserContext.MODULE) {
-            translator = new ModuleTranslator(currentNode, context, null, environment, source);
-        } else {
-            translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
-        }
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
 
         RubyNode truffleNode;
 
