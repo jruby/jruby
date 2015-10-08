@@ -481,10 +481,14 @@ public class IRRuntimeHelpers {
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
                     IRubyObject val0 = Helpers.aryToAry(value);
-                    if (!(val0 instanceof RubyArray)) {
+                    // FIXME: This logic exists in RubyProc and IRRubyBlockBody. consolidate when we do block call protocol work
+                    if (val0.isNil()) {
+                        return new IRubyObject[] { value };
+                    } else if (!(val0 instanceof RubyArray)) {
                         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+                    } else {
+                        return ((RubyArray) val0).toJavaArray();
                     }
-                    return ((RubyArray)val0).toJavaArray();
                 }
         }
     }
