@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -24,6 +25,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
@@ -826,14 +828,48 @@ public class BodyTranslator extends Translator {
             final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParseEnvironment(),
                     environment.getParseEnvironment().allocateReturnID(), true, true, sharedMethodInfo, name, false, null);
 
-            final ModuleTranslator classTranslator = new ModuleTranslator(currentNode, context, this, newEnvironment, source);
+            final BodyTranslator moduleTranslator = new BodyTranslator(currentNode, context, this, newEnvironment, source, false);
 
-            final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(sourceSection, name, bodyNode);
+            final MethodDefinitionNode definitionMethod = moduleTranslator.compileClassNode(sourceSection, name, bodyNode);
 
             return new OpenModuleNode(context, sourceSection, defineOrGetNode, definitionMethod, newLexicalScope);
         } finally {
             environment.popLexicalScope();
         }
+    }
+
+    /**
+     * Translates module and class nodes.
+     * <p>
+     * In Ruby, a module or class definition is somewhat like a method. It has a local scope and a value
+     * for self, which is the module or class object that is being defined. Therefore for a module or
+     * class definition we translate into a special method. We run that method with self set to be the
+     * newly allocated module or class.
+     */
+    private MethodDefinitionNode compileClassNode(SourceSection sourceSection, String name, org.jruby.ast.Node bodyNode) {
+        RubyNode body;
+
+        parentSourceSection.push(sourceSection);
+        try {
+            body = translateNodeOrNil(sourceSection, bodyNode);
+        } finally {
+            parentSourceSection.pop();
+        }
+
+        if (environment.getFlipFlopStates().size() > 0) {
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
+        }
+
+        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
+
+        final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body, environment.needsDeclarationFrame());
+
+        return new MethodDefinitionNode(
+                context,
+                sourceSection,
+                environment.getSharedMethodInfo().getName(),
+                environment.getSharedMethodInfo(),
+                Truffle.getRuntime().createCallTarget(rootNode));
     }
 
     @Override

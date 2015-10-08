@@ -137,13 +137,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final BodyTranslator translator;
-
-        if (parserContext == ParserContext.MODULE) {
-            translator = new ModuleTranslator(currentNode, context, null, environment, source);
-        } else {
-            translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
-        }
+        final BodyTranslator translator = new BodyTranslator(currentNode, context, null, environment, source, parserContext == ParserContext.TOP_LEVEL);
 
         RubyNode truffleNode;
 
