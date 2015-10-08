@@ -511,10 +511,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
             return getCoreLibrary().getKernelModule();
         } else if (object instanceof RubyNil) {
             return getCoreLibrary().getNilObject();
-        } else if (object instanceof org.jruby.RubyBoolean.True) {
-            return true;
-        } else if (object instanceof org.jruby.RubyBoolean.False) {
-            return false;
         } else if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
