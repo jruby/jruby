@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Property;
+
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.Entry;
@@ -24,6 +25,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,27 +48,20 @@ public abstract class ObjectGraph {
                     stack.add(thread);
 
                     if (Thread.currentThread() == stoppingThread) {
-                        stack.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
-                        stack.addAll(context.getAtExitManager().getHandlers());
-                        stack.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
+                        visitContextRoots(context, stack);
                     }
 
                     final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
                     if (currentFrame != null) {
                         stack.addAll(getObjectsInFrame(currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
                     }
 
                     Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-
                         @Override
                         public Object visitFrame(FrameInstance frameInstance) {
-                            stack.addAll(getObjectsInFrame(frameInstance
-                                    .getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
-
+                            stack.addAll(getObjectsInFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
                             return null;
                         }
-
                     });
 
                     while (!stack.isEmpty()) {
@@ -78,7 +73,6 @@ public abstract class ObjectGraph {
                     }
                 }
             }
-
         });
 
         return visited;
@@ -90,21 +84,23 @@ public abstract class ObjectGraph {
         final Thread stoppingThread = Thread.currentThread();
 
         context.getSafepointManager().pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
-
             @Override
             public void run(DynamicObject thread, Node currentNode) {
                 objects.add(thread);
 
                 if (Thread.currentThread() == stoppingThread) {
-                    objects.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
-                    objects.addAll(context.getAtExitManager().getHandlers());
-                    objects.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
+                    visitContextRoots(context, objects);
                 }
             }
-
         });
 
         return objects;
+    }
+
+    private static void visitContextRoots(RubyContext context, Collection<DynamicObject> stack) {
+        stack.addAll(ObjectGraph.getAdjacentObjects(context.getCoreLibrary().getGlobalVariablesObject()));
+        stack.addAll(context.getAtExitManager().getHandlers());
+        stack.addAll(context.getObjectSpaceManager().getFinalizerHandlers());
     }
 
     public static Set<DynamicObject> getAdjacentObjects(DynamicObject object) {
@@ -152,7 +148,6 @@ public abstract class ObjectGraph {
         final Set<DynamicObject> objects = new HashSet<>();
 
         final Frame lexicalParentFrame = RubyArguments.tryGetDeclarationFrame(frame.getArguments());
-
         if (lexicalParentFrame != null) {
             objects.addAll(getObjectsInFrame(lexicalParentFrame));
         }
