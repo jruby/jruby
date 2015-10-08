@@ -307,7 +307,7 @@ public class Helpers {
                 callConfig,
                 parameterDesc);
 
-        addInstanceMethod(containingClass, rubyName, method, visibility,context, runtime);
+        addInstanceMethod(containingClass, rubyName, method, visibility, context, runtime);
 
         return runtime.getNil();
     }
@@ -968,7 +968,7 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception, ThreadContext context) {
-        return isExceptionHandled((IRubyObject)currentException, exception, context);
+        return isExceptionHandled((IRubyObject) currentException, exception, context);
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
@@ -2840,7 +2840,18 @@ public class Helpers {
     public static IRubyObject[] restructureBlockArgs19(IRubyObject value, Arity arity, Block.Type type, boolean needsSplat, boolean alreadyArray) {
         if (!type.checkArity && arity == Arity.NO_ARGUMENTS) return IRubyObject.NULL_ARRAY;
 
-        if (value != null && !(value instanceof RubyArray) && needsSplat) value = Helpers.aryToAry(value);
+        if (value != null && !(value instanceof RubyArray) && needsSplat) {
+            // This is a little ugly but so much flows through here I decided to potentially replicate a little
+            // logic here to minimize chance of breaking anything.
+            IRubyObject newAry = Helpers.aryToAry(value);
+            if (newAry.isNil()) {
+                return new IRubyObject[] { value };
+            } else if (newAry instanceof RubyArray){
+                value = newAry;
+            } else {
+                throw value.getRuntime().newTypeError(value.getType().getName() + "#to_ary should return Array");
+            }
+        }
 
         IRubyObject[] parameters;
         if (value == null) {

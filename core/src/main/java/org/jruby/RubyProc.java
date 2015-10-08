@@ -243,7 +243,15 @@ public class RubyProc extends RubyObject implements DataType {
         if (arity != Arity.ONE_ARGUMENT &&  required != 0 &&
                 (isFixed || arity != Arity.OPTIONAL) &&
                 actual == 1 && args[0].respondsTo("to_ary")) {
-            args = args[0].convertToArray().toJavaArray();
+            IRubyObject newAry = Helpers.aryToAry(args[0]);
+
+            if (newAry.isNil()) {
+                args = new IRubyObject[] { args[0] };
+            } else if (newAry instanceof RubyArray){
+                args = ((RubyArray) newAry).toJavaArray();
+            } else {
+                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
+            }
             actual = args.length;
         }
 
