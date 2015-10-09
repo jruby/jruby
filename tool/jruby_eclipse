@@ -34,7 +34,7 @@ if rest.include?('-X+T')
   bootclasspath << TRUFFLEJAR
   classpath << SNAKEYAMLJAR
   classpath << "#{JRUBY}/truffle/build.eclipse"
-  java_flags << "-Djruby.truffle.core.load_path=truffle/src/main/ruby"
+  java_flags << "-Djruby.truffle.core.load_path=#{JRUBY}/truffle/src/main/ruby"
 end
 
 args = [java]
