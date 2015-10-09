@@ -447,42 +447,15 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     public IRubyObject toJRuby(Object object) {
         if (object == getCoreLibrary().getNilObject()) {
             return runtime.getNil();
-        } else if (object == getCoreLibrary().getKernelModule()) {
-            return runtime.getKernel();
-        } else if (object == getCoreLibrary().getMainObject()) {
-            return runtime.getTopSelf();
         } else if (object instanceof Boolean) {
             return runtime.newBoolean((boolean) object);
-        } else if (object instanceof Integer) {
-            return runtime.newFixnum((int) object);
-        } else if (object instanceof Long) {
-            return runtime.newFixnum((long) object);
-        } else if (object instanceof Double) {
-            return runtime.newFloat((double) object);
         } else if (RubyGuards.isRubyString(object)) {
             return toJRubyString((DynamicObject) object);
-        } else if (RubyGuards.isRubyArray(object)) {
-            return toJRubyArray((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
             return toJRubyEncoding((DynamicObject) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
-    }
-
-    public IRubyObject[] toJRuby(Object... objects) {
-        final IRubyObject[] store = new IRubyObject[objects.length];
-
-        for (int n = 0; n < objects.length; n++) {
-            store[n] = toJRuby(objects[n]);
-        }
-
-        return store;
-    }
-
-    public org.jruby.RubyArray toJRubyArray(DynamicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        return runtime.newArray(toJRuby(ArrayOperations.toObjectArray(array)));
     }
 
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {
