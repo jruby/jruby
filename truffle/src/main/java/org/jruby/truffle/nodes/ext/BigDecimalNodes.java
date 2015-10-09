@@ -193,7 +193,7 @@ public abstract class BigDecimalNodes {
             setupLimitCall();
             setupLimitIntegerCast();
 
-            return limitIntegerCast.executeInteger(frame, limitCall.call(frame, getBigDecimalClass(), "limit", null));
+            return limitIntegerCast.executeCastInt(limitCall.call(frame, getBigDecimalClass(), "limit", null));
         }
 
         private void setupRoundModeCall() {
@@ -214,9 +214,8 @@ public abstract class BigDecimalNodes {
             setupRoundModeCall();
             setupRoundModeIntegerCast();
 
-            return toRoundingMode(roundModeIntegerCast.executeInteger(frame,
-                    // TODO (pitr 21-Jun-2015): read the actual constant
-                    roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
+            return toRoundingMode(roundModeIntegerCast.executeCastInt(// TODO (pitr 21-Jun-2015): read the actual constant
+            roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
         }
 
         protected DynamicObject getBigDecimalClass() {
@@ -1233,7 +1232,7 @@ public abstract class BigDecimalNodes {
                 setupLimitIntegerCast();
 
                 final int signA = aType == Type.POSITIVE_INFINITY ? 1 : -1;
-                final int signB = Integer.signum(signIntegerCast.executeInteger(frame, signCall.call(frame, b, "sign", null)));
+                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
@@ -1656,7 +1655,7 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isRubyModule(module)")
         public int doInteger(VirtualFrame frame, DynamicObject module, String name) {
             final Object value = readConstantNode.readConstant(frame, module, name);
-            return integerCastNode.executeInteger(frame, toIntNode.executeIntOrLong(frame, value));
+            return integerCastNode.executeCastInt(toIntNode.executeIntOrLong(frame, value));
         }
     }
 
