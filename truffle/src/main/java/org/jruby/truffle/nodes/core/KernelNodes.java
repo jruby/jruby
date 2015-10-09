@@ -969,6 +969,11 @@ public abstract class KernelNodes {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         @TruffleBoundary
         @Specialization
         public boolean isInstanceVariableDefined(DynamicObject object, String name) {
