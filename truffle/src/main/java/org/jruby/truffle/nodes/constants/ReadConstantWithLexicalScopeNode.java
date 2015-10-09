@@ -56,7 +56,7 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         try {
             constant = lookupConstantNode.executeLookupConstant(frame);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }

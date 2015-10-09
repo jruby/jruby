@@ -50,7 +50,7 @@ public abstract class ToAryNode extends RubyNode {
         try {
             coerced = toAryNode.call(frame, object, "to_ary", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(

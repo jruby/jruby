@@ -87,7 +87,7 @@ public abstract class FiberNodes {
                 } catch (ReturnException e) {
                     Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage((DynamicObject) e.getRubyException()));
+                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(e.getRubyException()));
                 }
             }
         });
