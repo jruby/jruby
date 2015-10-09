@@ -331,7 +331,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        if (!name.startsWith("@@")) {
+        if (!IdUtil.isValidClassVariableName(name)) {
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
