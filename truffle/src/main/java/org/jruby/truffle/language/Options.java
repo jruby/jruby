@@ -93,6 +93,10 @@ public class Options {
     public final boolean COVERAGE_GLOBAL = TRUFFLE_COVERAGE_GLOBAL.load();
     public final boolean INLINE_JS = TRUFFLE_INLINE_JS.load();
 
+    public static final boolean SHARED_OBJECTS = org.jruby.util.cli.Options.TRUFFLE_SHARED_OBJECTS_ENABLED.load();
+    public static final boolean SHARED_OBJECTS_DEBUG = org.jruby.util.cli.Options.TRUFFLE_SHARED_OBJECTS_DEBUG.load();
+    public static final boolean SHARED_OBJECTS_FORCE = org.jruby.util.cli.Options.TRUFFLE_SHARED_OBJECTS_FORCE.load();
+
     // Resources
 
     public final String CORE_LOAD_PATH = TRUFFLE_CORE_LOAD_PATH.load();

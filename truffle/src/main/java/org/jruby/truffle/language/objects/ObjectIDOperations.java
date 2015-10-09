@@ -15,6 +15,7 @@ import com.oracle.truffle.api.object.Property;
 import org.jruby.truffle.Layouts;
 import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.numeric.BignumOperations;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 import java.math.BigInteger;
 
@@ -119,7 +120,16 @@ public abstract class ObjectIDOperations {
         }
 
         final long objectID = context.getObjectSpaceManager().getNextObjectID();
-        object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+
+        if (SharedObjects.isShared(object)) {
+            synchronized (object) {
+                // no need for a write barrier here, objectID is a long.
+                object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+            }
+        } else {
+            object.define(Layouts.OBJECT_ID_IDENTIFIER, objectID, 0);
+        }
+
         return objectID;
     }
 }

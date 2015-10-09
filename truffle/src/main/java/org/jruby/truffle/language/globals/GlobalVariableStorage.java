@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.util.cli.Options;
 
 public class GlobalVariableStorage {
@@ -43,6 +44,7 @@ public class GlobalVariableStorage {
     public void setValue(Object value) {
         if (assumeConstant) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
+            SharedObjects.writeBarrier(value);
             this.value = value;
 
             synchronized (this) {
@@ -60,6 +62,7 @@ public class GlobalVariableStorage {
                 }
             }
         } else {
+            SharedObjects.writeBarrier(value);
             this.value = value;
         }
     }

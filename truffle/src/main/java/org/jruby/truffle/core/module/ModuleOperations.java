@@ -21,10 +21,10 @@ import org.jruby.truffle.language.RubyConstant;
 import org.jruby.truffle.language.RubyGuards;
 import org.jruby.truffle.language.control.RaiseException;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.util.StringUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.func.Function1;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -356,6 +356,7 @@ public abstract class ModuleOperations {
         assert RubyGuards.isRubyModule(module);
         ModuleFields moduleFields = Layouts.MODULE.getFields(module);
         moduleFields.checkFrozen(context, currentNode);
+        SharedObjects.propagate(module, value);
 
         // if the cvar is not already defined we need to take lock and ensure there is only one
         // defined in the class tree

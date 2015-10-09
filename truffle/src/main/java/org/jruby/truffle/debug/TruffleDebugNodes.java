@@ -26,9 +26,9 @@ import org.jruby.truffle.core.array.ArrayStrategy;
 import org.jruby.truffle.core.string.StringOperations;
 import org.jruby.truffle.language.backtrace.BacktraceFormatter;
 import org.jruby.truffle.language.methods.InternalMethod;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.platform.UnsafeGroup;
 import org.jruby.truffle.tools.simpleshell.SimpleShell;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,6 +146,16 @@ public abstract class TruffleDebugNodes {
         public DynamicObject arrayStorage(DynamicObject array) {
             String storage = ArrayStrategy.of(array).toString();
             return StringOperations.createString(getContext(), StringOperations.createRope(storage, USASCIIEncoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "shared?", onSingleton = true, required = 1)
+    public abstract static class IsSharedNode extends CoreMethodArrayArgumentsNode {
+
+        @Specialization
+        public boolean isShared(DynamicObject object) {
+            return SharedObjects.isShared(object);
         }
 
     }

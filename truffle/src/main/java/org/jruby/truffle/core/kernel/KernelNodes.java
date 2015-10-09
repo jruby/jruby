@@ -135,6 +135,7 @@ import org.jruby.truffle.language.objects.TaintNode;
 import org.jruby.truffle.language.objects.TaintNodeGen;
 import org.jruby.truffle.language.objects.WriteObjectFieldNode;
 import org.jruby.truffle.language.objects.WriteObjectFieldNodeGen;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.language.threadlocal.ThreadLocalObject;
 import org.jruby.truffle.parser.ParserContext;
 import org.jruby.truffle.parser.TranslatorDriver;
@@ -401,6 +402,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private void copyInstanceVariables(DynamicObject from, DynamicObject to) {
+            // Concurrency: OK if callers create the object and publish it after copy
             for (Property property : from.getShape().getProperties()) {
                 if (property.getKey() instanceof String) {
                     to.define(property.getKey(), property.get(from, from.getShape()), 0);
@@ -1033,12 +1035,23 @@ public abstract class KernelNodes {
         public Object removeInstanceVariable(DynamicObject object, String name) {
             final String ivar = SymbolTable.checkInstanceVariableName(getContext(), name, object, this);
             final Object value = object.get(ivar, nil());
-            if (!object.delete(name)) {
-                throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, object, this));
+
+            if (SharedObjects.isShared(object)) {
+                System.err.println("WARNING: removing field " + name + " on a shared object.");
+                synchronized (object) {
+                    removeField(object, name);
+                }
+            } else {
+                removeField(object, name);
             }
             return value;
         }
 
+        private void removeField(DynamicObject object, String name) {
+            if (!object.delete(name)) {
+                throw new RaiseException(coreExceptions().nameErrorInstanceVariableNotDefined(name, object, this));
+            }
+        }
     }
 
     @CoreMethod(names = "instance_variables")

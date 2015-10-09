@@ -22,6 +22,7 @@ import org.jruby.truffle.RubyContext;
 import org.jruby.truffle.core.klass.ClassNodes;
 import org.jruby.truffle.language.RubyNode;
 import org.jruby.truffle.language.control.RaiseException;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 import org.jruby.truffle.util.StringUtils;
 
 @NodeChild(value = "value", type = RubyNode.class)
@@ -156,6 +157,8 @@ public abstract class SingletonClassNode extends RubyNode {
             if (isFrozen(object)) {
                 freeze(singletonClass);
             }
+
+            SharedObjects.propagate(object, singletonClass);
 
             Layouts.BASIC_OBJECT.setMetaClass(object, singletonClass);
             return singletonClass;

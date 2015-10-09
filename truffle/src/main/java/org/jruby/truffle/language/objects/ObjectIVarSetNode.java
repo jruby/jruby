@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.truffle.core.symbol.SymbolTable;
 import org.jruby.truffle.language.RubyNode;
+import org.jruby.truffle.language.objects.shared.SharedObjects;
 
 @NodeChildren({ @NodeChild("object"), @NodeChild("name"), @NodeChild("value") })
 public abstract class ObjectIVarSetNode extends RubyNode {
@@ -40,7 +41,14 @@ public abstract class ObjectIVarSetNode extends RubyNode {
     @TruffleBoundary
     @Specialization(contains = "ivarSetCached")
     public Object ivarSetUncached(DynamicObject object, String name, Object value) {
-        object.define(checkName(name, object), value, 0);
+        if (SharedObjects.isShared(object)) {
+            SharedObjects.writeBarrier(value);
+            synchronized (object) {
+                object.define(checkName(name, object), value, 0);
+            }
+        } else {
+            object.define(checkName(name, object), value, 0);
+        }
         return value;
     }
 

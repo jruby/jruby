@@ -313,6 +313,10 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_GRAAL_WARNING_UNLESS = bool(TRUFFLE, "truffle.graal.warn_unless", true, "Warn unless the JVM has the Graal compiler.");
     public static final Option<Boolean> TRUFFLE_PERF_WARNING = bool(TRUFFLE, "truffle.perf.warn", false, "Warn when using a fature which is not optimized yet.");
 
+    public static final Option<Boolean> TRUFFLE_SHARED_OBJECTS_ENABLED = bool(TRUFFLE, "truffle.shared.objects", true, "Enable shared objects.");
+    public static final Option<Boolean> TRUFFLE_SHARED_OBJECTS_DEBUG = bool(TRUFFLE, "truffle.shared.objects.debug", false, "Print information about shared objects.");
+    public static final Option<Boolean> TRUFFLE_SHARED_OBJECTS_FORCE = bool(TRUFFLE, "truffle.shared.objects.force", false, "Force sharing of objects roots at startup.");
+
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
                 Option.formatValues(_loadedOptions);
