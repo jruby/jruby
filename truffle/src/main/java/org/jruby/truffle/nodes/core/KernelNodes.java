@@ -754,59 +754,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit", isModuleFunction = true, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class ExitNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object exit(NotProvided exitCode) {
-            return exit(0);
-        }
-
-        @Specialization
-        public Object exit(int exitCode) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(exitCode);
-            return null;
-        }
-
-        @Specialization
-        public Object exit(boolean status) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(status ? 0 : -1);
-            return null;
-        }
-
-    }
-
-    @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
-    public abstract static class ExitBangNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject exit(NotProvided exitCode) {
-            return exit(1);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject exit(int exitCode) {
-            getContext().innerShutdown(false);
-            throw new MainExitException(exitCode, true);
-        }
-
-    }
-
     @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 

@@ -125,6 +125,7 @@ public class CoreLibrary {
     private final DynamicObject symbolClass;
     private final DynamicObject syntaxErrorClass;
     private final DynamicObject systemCallErrorClass;
+    private final DynamicObject systemExitClass;
     private final DynamicObject threadClass;
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
@@ -327,7 +328,7 @@ public class CoreLibrary {
         defineClass(signalExceptionClass, "Interrupt");
 
         // SystemExit
-        defineClass(exceptionClass, "SystemExit");
+        systemExitClass = defineClass(exceptionClass, "SystemExit");
 
         // SystemStackError
         defineClass(exceptionClass, "SystemStackError");
@@ -1572,6 +1573,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getTimeFactory() {
         return timeFactory;
+    }
+
+    public DynamicObject getSystemExitClass() {
+        return systemExitClass;
     }
 
 }

@@ -39,13 +39,16 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -137,6 +140,29 @@ public abstract class VMPrimitiveNodes {
         public DynamicObject vmGCStart() {
             System.gc();
             return nil();
+        }
+
+    }
+
+    // The hard #exit!
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object vmExit(int status) {
+            getContext().innerShutdown(false);
+
+            System.exit(status);
+            return nil();
+        }
+
+        @Fallback
+        public Object vmExit(Object status) {
+            return null; // Primitive failure
         }
 
     }
