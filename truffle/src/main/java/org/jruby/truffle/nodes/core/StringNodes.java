@@ -152,8 +152,7 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
-            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, StringSupport.CR_UNKNOWN, null);
-            Layouts.STRING.setCodeRange(ret, Layouts.STRING.getCodeRange(string));
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), outputBytes, Layouts.STRING.getCodeRange(string), null);
 
             return ret;
         }
