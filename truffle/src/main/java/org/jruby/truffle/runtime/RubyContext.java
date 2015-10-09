@@ -508,16 +508,8 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object toTruffle(IRubyObject object) {
-        if (object == runtime.getTopSelf()) {
-            return getCoreLibrary().getMainObject();
-        } else if (object == runtime.getKernel()) {
-            return getCoreLibrary().getKernelModule();
-        } else if (object instanceof RubyNil) {
+        if (object instanceof RubyNil) {
             return getCoreLibrary().getNilObject();
-        } else if (object instanceof org.jruby.RubyBoolean.True) {
-            return true;
-        } else if (object instanceof org.jruby.RubyBoolean.False) {
-            return false;
         } else if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
@@ -533,10 +525,6 @@ public class RubyContext extends ExecutionContext {
             return Layouts.BIGNUM.createBignum(coreLibrary.getBignumFactory(), value);
         } else if (object instanceof org.jruby.RubyString) {
             return toTruffle((org.jruby.RubyString) object);
-        } else if (object instanceof org.jruby.RubySymbol) {
-            return getSymbolTable().getSymbol(object.toString());
-        } else if (object instanceof org.jruby.RubyArray) {
-            return toTruffle((org.jruby.RubyArray) object);
         } else if (object instanceof org.jruby.RubyException) {
             return toTruffle((org.jruby.RubyException) object, null);
         } else {

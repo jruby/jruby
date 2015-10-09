@@ -1,3 +1,5 @@
+require File.expand_path('../../fixtures/common', __FILE__)
+
 describe :proc_call, shared: true do
   it "invokes self" do
     Proc.new { "test!" }.send(@method).should == "test!"
@@ -47,6 +49,12 @@ describe :proc_call_on_proc_or_lambda, shared: true do
 
     a = proc {|x| x}.send(@method, 1, 2, 3)
     a.should == 1
+  end
+
+  it "will call #to_ary on argument and return self if return is nil" do
+    argument = ProcSpecs::ToAryAsNil.new
+    result = proc { |x, _| x }.send(@method, argument)
+    result.should == argument
   end
 
   it "substitutes nil for missing arguments when self is a proc" do

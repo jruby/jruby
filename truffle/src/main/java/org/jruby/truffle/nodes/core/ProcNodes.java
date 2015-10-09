@@ -41,6 +41,7 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Proc")
@@ -265,8 +266,7 @@ public abstract class ProcNodes {
         public DynamicObject parameters(DynamicObject proc) {
             final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
 
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA);
         }
 
     }

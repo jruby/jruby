@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "UnboundMethod")
@@ -158,8 +159,7 @@ public abstract class UnboundMethodNodes {
         public DynamicObject parameters(DynamicObject method) {
             final ArgumentDescriptor[] argsDesc = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, true));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, true);
         }
 
     }
