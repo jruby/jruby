@@ -1,7 +1,0 @@
-fails:Kernel#instance_variable_set raises a NameError exception if the argument is an invalid instance variable name
-fails:Kernel#instance_variable_set raises a NameError when the argument is '@'
-fails:Kernel#instance_variable_set raises a NameError if the passed object, when coerced with to_str, does not start with @
-fails:Kernel#instance_variable_set accepts as instance variable name any instance of a class that responds to to_str
-fails:Kernel#instance_variable_set on frozen objects keeps stored object after any exceptions
-fails:Kernel#instance_variable_set on frozen objects raises a RuntimeError when passed replacement is identical to stored object
-fails:Kernel#instance_variable_set on frozen objects raises a RuntimeError when passed replacement is different from stored object

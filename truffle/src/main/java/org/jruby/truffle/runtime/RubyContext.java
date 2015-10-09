@@ -69,6 +69,7 @@ import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 
 import java.io.File;
@@ -322,7 +323,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        if (!name.startsWith("@")) {
+        if (!IdUtil.isValidInstanceVariableName(name)) {
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
