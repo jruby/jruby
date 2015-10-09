@@ -980,50 +980,54 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "instance_variable_get", required = 1)
-    public abstract static class InstanceVariableGetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableGetNode extends CoreMethodNode {
 
         public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object instanceVariableGetString(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, Layouts.SYMBOL.getString(name));
-        }
-
-        private Object instanceVariableGet(DynamicObject object, String name) {
-            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), nil());
+        @Specialization
+        public Object instanceVariableGetString(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return object.get(ivar, nil());
         }
 
     }
 
     @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
-    public abstract static class InstanceVariableSetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "value")
+    })
+    public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         // TODO CS 4-Mar-15 this badly needs to be cached
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value, 0);
-            return value;
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value, 0);
+        @Specialization
+        public Object instanceVariableSetString(DynamicObject object, String name, Object value) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            object.define(ivar, value, 0);
             return value;
         }
 

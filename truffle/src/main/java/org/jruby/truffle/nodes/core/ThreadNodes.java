@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -55,7 +56,8 @@ public abstract class ThreadNodes {
         initialize(thread, context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                Layouts.THREAD.setValue(thread, ProcNodes.rootCall(block, arguments));
+                final Object value = ProcNodes.rootCall(block, arguments);
+                Layouts.THREAD.setValue(thread, value);
             }
         });
     }
