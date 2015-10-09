@@ -959,22 +959,21 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "instance_variable_defined?", required = 1)
-    public abstract static class InstanceVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
         public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public boolean isInstanceVariableDefinedString(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public boolean isInstanceVariableDefinedSymbol(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
+        @Specialization
+        public boolean isInstanceVariableDefined(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return object.getShape().hasProperty(ivar);
         }
 
     }
@@ -997,7 +996,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object instanceVariableGetString(DynamicObject object, String name) {
+        public Object instanceVariableGet(DynamicObject object, String name) {
             final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
             return object.get(ivar, nil());
         }
@@ -1025,7 +1024,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object instanceVariableSetString(DynamicObject object, String name, Object value) {
+        public Object instanceVariableSet(DynamicObject object, String name, Object value) {
             final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
             object.define(ivar, value, 0);
             return value;
