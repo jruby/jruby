@@ -322,19 +322,23 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
     }
 
+    // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        if (!IdUtil.isValidInstanceVariableName(name)) {
+        // if (!IdUtil.isValidInstanceVariableName(name)) {
+
+        // check like Rubinius does for compatibility with their Struct Ruby implementation.
+        if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
-
         return name;
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
         if (!IdUtil.isValidClassVariableName(name)) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
-
         return name;
     }
 
