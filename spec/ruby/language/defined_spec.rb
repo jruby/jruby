@@ -755,8 +755,20 @@ describe "The defined? keyword for a scoped constant" do
     defined?(DefinedSpecs::Child::B).should be_nil
   end
 
+  it "returns nil when a constant is scoped to an undefined constant" do
+    defined?(Undefined::Object).should be_nil
+  end
+
   it "returns nil when the undefined constant is scoped to an undefined constant" do
     defined?(DefinedSpecs::Undefined::Undefined).should be_nil
+  end
+
+  it "returns nil when a constant is defined on top-level but not on the module" do
+    defined?(DefinedSpecs::String).should be_nil
+  end
+
+  it "returns 'constant' when a constant is defined on top-level but not on the class" do
+    defined?(DefinedSpecs::Basic::String).should == "constant"
   end
 
   it "returns 'constant' if the scoped-scoped constant is defined" do
