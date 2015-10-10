@@ -1,1 +1,0 @@
-fails:Thread.list includes threads of non-default thread groups
