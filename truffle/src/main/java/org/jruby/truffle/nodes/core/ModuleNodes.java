@@ -886,11 +886,11 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, null, null);
+            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, true, null, null);
         }
 
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
@@ -900,12 +900,12 @@ public abstract class ModuleNodes {
         }
 
         // Symbol
-        @Specialization(guards = {"inherit", "isRubySymbol(name)"})
+        @Specialization(guards = { "inherit", "isRubySymbol(name)" })
         public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
             return readConstantNode.readConstant(frame, module, Layouts.SYMBOL.getString(name));
         }
 
-        @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
+        @Specialization(guards = { "!inherit", "isRubySymbol(name)" })
         public Object getConstantNoInherit(DynamicObject module, DynamicObject name, boolean inherit) {
             return getConstantNoInherit(module, Layouts.SYMBOL.getString(name), this);
         }

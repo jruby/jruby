@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
@@ -20,7 +19,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 public class ReadLiteralConstantNode extends RubyNode {
 
@@ -29,7 +27,7 @@ public class ReadLiteralConstantNode extends RubyNode {
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = new ReadConstantNode(context, sourceSection, false,  moduleNode, nameNode);
+        this.readConstantNode = new ReadConstantNode(context, sourceSection, false, false, moduleNode, nameNode);
     }
 
     @Override

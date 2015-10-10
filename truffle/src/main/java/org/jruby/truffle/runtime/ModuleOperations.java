@@ -79,25 +79,6 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final DynamicObject module = lexicalScope.getLiveModule();
-
-        // Look in lexical scope
-        while (lexicalScope != context.getRootLexicalScope()) {
-            RubyConstant constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
-            if (constant != null) {
-                return constant;
-            }
-
-            lexicalScope = lexicalScope.getParent();
-        }
-
-        return lookupConstant(context, module, name);
-    }
-
-    @TruffleBoundary
     public static RubyConstant lookupConstant(RubyContext context, DynamicObject module, String name) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
@@ -116,11 +97,16 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Look in Object and its included modules
-        if (RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject)) {
+        // Nothing found
+        return null;
+    }
+
+    private static RubyConstant lookupConstantInObject(RubyContext context, DynamicObject module, String name) {
+        // Look in Object and its included modules for modules (not for classes)
+        if (!RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject)) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
-            constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
+            RubyConstant constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
@@ -133,8 +119,37 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Nothing found
         return null;
+    }
+
+    public static RubyConstant lookupConstantAndObject(RubyContext context, DynamicObject module, String name) {
+        final RubyConstant constant = lookupConstant(context, module, name);
+        if (constant != null) {
+            return constant;
+        }
+
+        return lookupConstantInObject(context, module, name);
+    }
+
+    @TruffleBoundary
+    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final DynamicObject module = lexicalScope.getLiveModule();
+
+        RubyConstant constant = null;
+
+        // Look in lexical scope
+        while (lexicalScope != context.getRootLexicalScope()) {
+            constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
+            if (constant != null) {
+                return constant;
+            }
+
+            lexicalScope = lexicalScope.getParent();
+        }
+
+        return lookupConstantAndObject(context, module, name);
     }
 
     public static RubyConstant lookupScopedConstant(RubyContext context, DynamicObject module, String fullName, boolean inherit, Node currentNode) {
@@ -178,7 +193,7 @@ public abstract class ModuleOperations {
         }
 
         if (inherit) {
-            return ModuleOperations.lookupConstant(context, module, name);
+            return ModuleOperations.lookupConstantAndObject(context, module, name);
         } else {
             return Layouts.MODULE.getFields(module).getConstants().get(name);
         }

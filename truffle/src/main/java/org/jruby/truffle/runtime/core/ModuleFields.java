@@ -367,7 +367,6 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     /**
      * Also searches on Object for modules.
      * Used for alias_method, visibility changes, etc.
-     * @param context TODO
      */
     @CompilerDirectives.TruffleBoundary
     public InternalMethod deepMethodSearch(RubyContext context, String name) {
