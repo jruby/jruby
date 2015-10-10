@@ -27,7 +27,7 @@ package org.jruby.runtime.profile.builtin;
 
 import java.util.ArrayList;
 
-class MethodData extends InvocationSet {
+public class MethodData extends InvocationSet {
     
     final int serialNumber;
 
