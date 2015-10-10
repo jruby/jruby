@@ -10,19 +10,14 @@
 
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
-import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.tools.LineToProbesMap;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
-import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -51,69 +46,7 @@ public class AttachmentsManager {
 
         final String info = String.format("Truffle::Primitive.attach@%s:%d", file, line);
 
-        final AdvancedInstrumentResultListener listener = new AdvancedInstrumentResultListener() {
-
-            @Override
-            public void onExecution(Node node, VirtualFrame virtualFrame, Object result) {
-            }
-
-            @Override
-            public void onFailure(Node node, VirtualFrame virtualFrame, RuntimeException exception) {
-            }
-
-        };
-
-        final AdvancedInstrumentRootFactory rootFactory = new AdvancedInstrumentRootFactory() {
-
-            @Override
-            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                return new AdvancedInstrumentRoot() {
-
-                    @Node.Child
-                    private DirectCallNode callNode;
-
-                    @Override
-                    public Object executeRoot(Node node, VirtualFrame frame) {
-                        final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
-
-                        if (callNode == null) {
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                            callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(block)));
-
-                            if (callNode.isCallTargetCloningAllowed()) {
-                                callNode.cloneCallTarget();
-                            }
-
-                            if (callNode.isInlinable()) {
-                                callNode.forceInlining();
-                            }
-                        }
-
-                        callNode.call(frame, RubyArguments.pack(
-                                Layouts.PROC.getMethod(block),
-                                Layouts.PROC.getDeclarationFrame(block),
-                                null,
-                                Layouts.PROC.getSelf(block),
-                                Layouts.PROC.getBlock(block),
-                                DeclarationContext.METHOD,
-                                new Object[]{binding}));
-
-                        return null;
-                    }
-
-                    @Override
-                    public String instrumentationInfo() {
-                        return info;
-                    }
-
-                };
-            }
-
-        };
-
         final Source source = context.getSourceCache().getBestSourceFuzzily(file);
-
         final LineLocation lineLocation = source.createLineLocation(line);
 
         List<Instrument> instruments = attachments.get(lineLocation);
@@ -125,7 +58,7 @@ public class AttachmentsManager {
 
         for (Probe probe : lineToProbesMap.findProbes(lineLocation)) {
             if (probe.isTaggedAs(StandardSyntaxTag.STATEMENT)) {
-                instruments.add(context.getEnv().instrumenter().attach(probe, listener, rootFactory, null, info));
+                instruments.add(context.getEnv().instrumenter().attach(probe, new AttachmentManagerInstrumentListener(context, block), info));
                 return;
             }
         }
@@ -147,4 +80,33 @@ public class AttachmentsManager {
         }
     }
 
+    private final class AttachmentManagerInstrumentListener implements StandardInstrumentListener {
+
+        private final RubyContext context;
+        private final DynamicObject block;
+
+        public AttachmentManagerInstrumentListener(RubyContext context, DynamicObject block) {
+            this.context = context;
+            this.block = block;
+        }
+
+        @Override
+        public void onEnter(Probe probe, Node node, VirtualFrame frame) {
+            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
+
+            context.inlineRubyHelper(node, frame, "x.call(binding)", "x", block, "binding", binding);
+        }
+
+        @Override
+        public void onReturnVoid(Probe probe, Node node, VirtualFrame frame) {
+        }
+
+        @Override
+        public void onReturnValue(Probe probe, Node node, VirtualFrame frame, Object result) {
+        }
+
+        @Override
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
+        }
+    }
 }

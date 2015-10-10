@@ -9,11 +9,9 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
-import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -22,7 +20,6 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
@@ -33,6 +30,7 @@ import org.jruby.util.StringSupport;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class TraceManager {
@@ -41,7 +39,7 @@ public class TraceManager {
 
     private Collection<ProbeInstrument> instruments;
     private boolean isInTraceFunc = false;
-    private final Map<SyntaxTag, AdvancedInstrumentRootFactory> eventFactories = new HashMap<>();
+    private final Map<SyntaxTag, TraceFuncEventFactory> eventFactories = new LinkedHashMap<>();
 
     public TraceManager(RubyContext context) {
         this.context = context;
@@ -61,123 +59,31 @@ public class TraceManager {
             return;
         }
 
-        final AdvancedInstrumentResultListener listener = new AdvancedInstrumentResultListener() {
-
+        final TraceFuncEventFactory lineEventFactory = new TraceFuncEventFactory() {
             @Override
-            public void onExecution(Node node, VirtualFrame vFrame, Object result) {
-            }
+            public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
-            @Override
-            public void onFailure(Node node, VirtualFrame vFrame, RuntimeException ex) {
+                return new BaseEventInstrumentListener(context, traceFunc, event);
             }
-
         };
 
-        final AdvancedInstrumentRootFactory lineEventFactory = new AdvancedInstrumentRootFactory() {
-
+        final TraceFuncEventFactory callEventFactory = new TraceFuncEventFactory() {
             @Override
-            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("call", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
-                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
-
-                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
-                final int line = sourceSection.getStartLine();
-
-                return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);
+                return new CallEventInstrumentListener(context, traceFunc, event);
             }
-
         };
 
-        final AdvancedInstrumentRootFactory callEventFactory = new AdvancedInstrumentRootFactory() {
-
+        final TraceFuncEventFactory classEventFactory = new TraceFuncEventFactory() {
             @Override
-            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("call", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("class", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
-                return new AdvancedInstrumentRoot() {
-
-                    @Child private DirectCallNode callNode;
-
-                    private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
-
-                    @Override
-                    public Object executeRoot(Node node, VirtualFrame frame) {
-                        if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                            // set_trace_func reports the file and line of the call site.
-                            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-                            final String filename = sourceSection.getSource().getName();
-                            final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
-
-                            if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
-                                return context.getCoreLibrary().getNilObject();
-                            }
-
-                            final int line = sourceSection.getStartLine();
-
-                            final Object self = RubyArguments.getSelf(frame.getArguments());
-                            final Object classname = context.getCoreLibrary().getLogicalClass(self);
-                            final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
-
-                            final DynamicObject binding = Layouts.BINDING.createBinding(
-                                    context.getCoreLibrary().getBindingFactory(),
-                                    frame.materialize());
-
-                            if (callNode == null) {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                                callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
-
-                                if (callNode.isCallTargetCloningAllowed()) {
-                                    callNode.cloneCallTarget();
-                                }
-
-                                if (callNode.isInlinable()) {
-                                    callNode.forceInlining();
-                                }
-                            }
-
-                            isInTraceFunc = true;
-
-                            callNode.call(frame, RubyArguments.pack(
-                                    Layouts.PROC.getMethod(traceFunc),
-                                    Layouts.PROC.getDeclarationFrame(traceFunc),
-                                    null,
-                                    Layouts.PROC.getSelf(traceFunc),
-                                    Layouts.PROC.getBlock(traceFunc),
-                                    DeclarationContext.METHOD,
-                                    new Object[]{event, file, line, id, binding, classname}));
-
-                            isInTraceFunc = false;
-                        }
-
-                        return null;
-                    }
-
-                    @Override
-                    public String instrumentationInfo() {
-                        return "set_trace_func";
-                    }
-
-                };
+                return new BaseEventInstrumentListener(context, traceFunc, event);
             }
-
-        };
-
-        final AdvancedInstrumentRootFactory classEventFactory = new AdvancedInstrumentRootFactory() {
-
-            @Override
-            public AdvancedInstrumentRoot createInstrumentRoot(Probe probe, Node node) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("class", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
-
-                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
-
-                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
-                final int line = sourceSection.getStartLine();
-
-                return new BaseAdvancedIntrumentRoot(traceFunc, event, file, line);
-            }
-
         };
 
         eventFactories.put(RubySyntaxTag.LINE, lineEventFactory);
@@ -186,9 +92,9 @@ public class TraceManager {
 
         instruments = new ArrayList<>();
 
-        for (Map.Entry<SyntaxTag, AdvancedInstrumentRootFactory> entry : eventFactories.entrySet()) {
+        for (Map.Entry<SyntaxTag, TraceFuncEventFactory> entry : eventFactories.entrySet()) {
             for (Probe probe : context.getEnv().instrumenter().findProbesTaggedAs(entry.getKey())) {
-                instruments.add(context.getEnv().instrumenter().attach(probe, listener, entry.getValue(), null, "set_trace_func"));
+                instruments.add(context.getEnv().instrumenter().attach(probe, entry.getValue().createInstrumentListener(context, traceFunc), "set_trace_func"));
             }
         }
 
@@ -205,7 +111,7 @@ public class TraceManager {
             @Override
             public void probeTaggedAs(Probe probe, SyntaxTag tag, Object tagValue) {
                 if (eventFactories.containsKey(tag)) {
-                    instruments.add(context.getEnv().instrumenter().attach(probe, listener, eventFactories.get(tag), null, "set_trace_func"));
+                    instruments.add(context.getEnv().instrumenter().attach(probe, eventFactories.get(tag).createInstrumentListener(context, traceFunc), "set_trace_func"));
                 }
             }
 
@@ -216,26 +122,34 @@ public class TraceManager {
         });
     }
 
-    private final class BaseAdvancedIntrumentRoot extends AdvancedInstrumentRoot {
-        @Child private DirectCallNode callNode;
+    private abstract class TraceFuncEventFactory {
+
+        public abstract StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc);
+
+    }
+
+    private final class BaseEventInstrumentListener implements StandardInstrumentListener {
 
         private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
 
+        private final RubyContext context;
         private final DynamicObject traceFunc;
         private final Object event;
-        private final Object file;
-        private final int line;
 
-        public BaseAdvancedIntrumentRoot(DynamicObject traceFunc, Object event, Object file, int line) {
+        public BaseEventInstrumentListener(RubyContext context, DynamicObject traceFunc, Object event) {
+            this.context = context;
             this.traceFunc = traceFunc;
             this.event = event;
-            this.file = file;
-            this.line = line;
         }
 
         @Override
-        public Object executeRoot(Node node, VirtualFrame frame) {
+        public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
+
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                final int line = sourceSection.getStartLine();
+
                 final Object classname = context.getCoreLibrary().getNilObject();
                 final Object id = context.getCoreLibrary().getNilObject();
 
@@ -243,41 +157,99 @@ public class TraceManager {
                         context.getCoreLibrary().getBindingFactory(),
                         frame.materialize());
 
-                if (callNode == null) {
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                    callNode = insert(Truffle.getRuntime().createDirectCallNode(Layouts.PROC.getCallTargetForType(traceFunc)));
-
-                    if (callNode.isCallTargetCloningAllowed()) {
-                        callNode.cloneCallTarget();
-                    }
-
-                    if (callNode.isInlinable()) {
-                        callNode.forceInlining();
-                    }
-                }
-
                 isInTraceFunc = true;
 
-                callNode.call(frame, RubyArguments.pack(
-                        Layouts.PROC.getMethod(traceFunc),
-                        Layouts.PROC.getDeclarationFrame(traceFunc),
-                        null,
-                        Layouts.PROC.getSelf(traceFunc),
-                        Layouts.PROC.getBlock(traceFunc),
-                        DeclarationContext.METHOD,
-                        new Object[]{event, file, line, id, binding, classname}));
-
-                isInTraceFunc = false;
+                try {
+                    context.inlineRubyHelper(node, frame, "traceFunc.call(event, file, line, id, binding, classname)",
+                            "traceFunc", traceFunc,
+                            "event", event,
+                            "file", file,
+                            "line", line,
+                            "id", id,
+                            "binding", binding,
+                            "classname", classname);
+                } finally {
+                    isInTraceFunc = false;
+                }
             }
-
-            return null;
         }
 
         @Override
-        public String instrumentationInfo() {
-            return "set_trace_func";
+        public void onReturnVoid(Probe probe, Node node, VirtualFrame frame) {
+        }
+
+        @Override
+        public void onReturnValue(Probe probe, Node node, VirtualFrame frame, Object result) {
+        }
+
+        @Override
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
         }
     }
 
+    private final class CallEventInstrumentListener implements StandardInstrumentListener {
+
+        private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
+
+        private final RubyContext context;
+        private final DynamicObject traceFunc;
+        private final Object event;
+
+        public CallEventInstrumentListener(RubyContext context, DynamicObject traceFunc, Object event) {
+            this.context = context;
+            this.traceFunc = traceFunc;
+            this.event = event;
+        }
+
+        @Override
+        public void onEnter(Probe probe, Node node, VirtualFrame frame) {
+            if (!inTraceFuncProfile.profile(isInTraceFunc)) {
+                // set_trace_func reports the file and line of the call site.
+                final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+                final String filename = sourceSection.getSource().getName();
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+
+                if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
+                    return;
+                }
+
+                final int line = sourceSection.getStartLine();
+
+                final Object self = RubyArguments.getSelf(frame.getArguments());
+                final Object classname = context.getCoreLibrary().getLogicalClass(self);
+                final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
+
+                final DynamicObject binding = Layouts.BINDING.createBinding(
+                        context.getCoreLibrary().getBindingFactory(),
+                        frame.materialize());
+
+                isInTraceFunc = true;
+
+                try {
+                    context.inlineRubyHelper(node, frame, "traceFunc.call(event, file, line, id, binding, classname)",
+                            "traceFunc", traceFunc,
+                            "event", event,
+                            "file", file,
+                            "line", line,
+                            "id", id,
+                            "binding", binding,
+                            "classname", classname);
+                } finally {
+                    isInTraceFunc = false;
+                }
+            }
+        }
+
+        @Override
+        public void onReturnVoid(Probe probe, Node node, VirtualFrame frame) {
+        }
+
+        @Override
+        public void onReturnValue(Probe probe, Node node, VirtualFrame frame, Object result) {
+        }
+
+        @Override
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
+        }
+    }
 }

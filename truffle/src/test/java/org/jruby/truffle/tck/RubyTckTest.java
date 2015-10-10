@@ -117,4 +117,9 @@ public class RubyTckTest extends TruffleTCK {
         return "identity";
     }
 
+    @Override
+    protected String globalObject() {
+        return null;
+    }
+
 }
