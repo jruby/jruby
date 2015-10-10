@@ -11,7 +11,9 @@ package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -55,14 +57,15 @@ public class ReadLiteralConstantNode extends RubyNode {
             throw e;
         }
 
+        if (!RubyGuards.isRubyModule(module)) {
+            return nil();
+        }
+
         final RubyConstant constant;
         try {
             constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getTypeErrorClass()) {
-                // module is not a class/module
-                return nil();
-            } else if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }
