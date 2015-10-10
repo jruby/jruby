@@ -190,7 +190,7 @@ public abstract class TimePrimitiveNodes {
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
             } else {
-                zone = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
@@ -211,7 +211,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
+            return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
         }
 
     }
@@ -332,7 +332,7 @@ public abstract class TimePrimitiveNodes {
 
             final String timezone = dt.getZone().getShortName(dt.getMillis());
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(timezone, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(timezone, UTF8Encoding.INSTANCE));
         }
 
     }

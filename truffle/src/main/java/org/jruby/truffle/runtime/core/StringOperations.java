@@ -42,6 +42,16 @@ import org.jruby.util.io.EncodingUtils;
 
 public abstract class StringOperations {
 
+    /** Creates a String from the ByteList, with unknown CR */
+    public static DynamicObject createString(RubyContext context, ByteList bytes) {
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+    }
+
+    /** Creates a String from the ByteList, with 7-bit CR */
+    public static DynamicObject create7BitString(RubyContext context, ByteList bytes) {
+        return Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_7BIT, null);
+    }
+
     // Since ByteList.toString does not decode properly
     @CompilerDirectives.TruffleBoundary
     public static String getString(RubyContext context, DynamicObject string) {

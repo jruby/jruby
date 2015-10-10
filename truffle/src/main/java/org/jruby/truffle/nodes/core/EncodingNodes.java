@@ -354,7 +354,7 @@ public abstract class EncodingNodes {
         public DynamicObject localeCharacterMap() {
             CompilerDirectives.transferToInterpreter();
             final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), name, StringSupport.CR_UNKNOWN, null);
+            return createString(name);
         }
     }
 
@@ -396,7 +396,7 @@ public abstract class EncodingNodes {
 
             final DynamicObject[] encodings = cloneEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.ENCODING.getName(encodings[i]), StringSupport.CR_UNKNOWN, null), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, createString(Layouts.ENCODING.getName(encodings[i])), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
 
@@ -408,9 +408,9 @@ public abstract class EncodingNodes {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>) i.next());
 
-                final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.bytes, e.p, e.end - e.p), StringSupport.CR_UNKNOWN, null), "upcase", null);
+                final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
                 final Object key = toSymNode.call(frame, upcased, "to_sym", null);
-                final DynamicObject alias = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.bytes, e.p, e.end - e.p), StringSupport.CR_UNKNOWN, null);
+                final DynamicObject alias = createString(new ByteList(e.bytes, e.p, e.end - e.p));
                 final int index = e.value.getIndex();
 
 
@@ -419,19 +419,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("internal", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultInternalEncoding));
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("internal", UTF8Encoding.INSTANCE)), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("external", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, defaultExternalEncoding));
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("external", UTF8Encoding.INSTANCE)), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getLocaleEncoding();
-            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("locale", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, localeEncoding));
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("locale", UTF8Encoding.INSTANCE)), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getLocaleEncoding();
-            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("filesystem", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), indexLookup(encodings, filesystemEncoding));
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, create7BitString(StringOperations.encodeByteList("filesystem", UTF8Encoding.INSTANCE)), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
@@ -473,7 +473,7 @@ public abstract class EncodingNodes {
         public DynamicObject toS(DynamicObject encoding) {
             final ByteList name = Layouts.ENCODING.getName(encoding).dup();
             name.setEncoding(ASCIIEncoding.INSTANCE);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), name, StringSupport.CR_UNKNOWN, null);
+            return createString(name);
         }
     }
 

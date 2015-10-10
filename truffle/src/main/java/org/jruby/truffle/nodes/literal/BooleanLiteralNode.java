@@ -43,7 +43,7 @@ public class BooleanLiteralNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Boolean.toString(value), UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList(Boolean.toString(value), UTF8Encoding.INSTANCE));
     }
 
 }

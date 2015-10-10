@@ -176,7 +176,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -197,7 +197,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -486,14 +486,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 Object[] objects = new Object[]{
-                        Layouts.STRING.createString(
-                                getContext().getCoreLibrary().getStringFactory(),
-                                StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE),
-                                StringSupport.CR_UNKNOWN, null),
-                        Layouts.STRING.createString(
-                                getContext().getCoreLibrary().getStringFactory(),
-                                StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE),
-                                StringSupport.CR_UNKNOWN, null) };
+                        createString(StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE)),
+                        createString(StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE)) };
                 sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 

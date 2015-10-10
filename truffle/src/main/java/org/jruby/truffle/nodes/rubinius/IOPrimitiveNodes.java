@@ -261,8 +261,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                        new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return createString(new ByteList());
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -297,12 +296,10 @@ public abstract class IOPrimitiveNodes {
             }
 
             if (bytesRead == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                        new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return createString(new ByteList());
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                    new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(bytes));
         }
 
     }
@@ -571,7 +568,7 @@ public abstract class IOPrimitiveNodes {
                 toRead -= readIteration;
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(buffer.array()), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(buffer.array()));
         }
 
     }

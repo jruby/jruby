@@ -176,7 +176,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.SYMBOL.getByteList(symbol).dup(), StringSupport.CR_UNKNOWN, null);
+            return createString(Layouts.SYMBOL.getByteList(symbol).dup());
         }
 
     }

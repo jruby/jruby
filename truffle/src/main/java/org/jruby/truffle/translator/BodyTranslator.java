@@ -89,6 +89,7 @@ import org.jruby.util.StringSupport;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import org.jruby.truffle.runtime.core.StringOperations;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. Therefore there is some namespace
@@ -1210,7 +1211,7 @@ public class BodyTranslator extends Translator {
 
         if (node.getBody() == null) {
             final SourceSection sourceSection = translate(node.getPosition());
-            ret = new LiteralNode(context, sourceSection, Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null));
+            ret = new LiteralNode(context, sourceSection, StringOperations.createString(context, new ByteList()));
         } else {
             ret = node.getBody().accept(this);
         }

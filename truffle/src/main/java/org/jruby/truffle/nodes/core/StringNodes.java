@@ -111,7 +111,7 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject add(DynamicObject string, DynamicObject other) {
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
-            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other)), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject ret = createString(StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other)));
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -200,7 +200,7 @@ public abstract class StringNodes {
                 respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
                 if (objectEqualNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -248,7 +248,7 @@ public abstract class StringNodes {
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToToStrNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
                 if (toStrNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
@@ -272,7 +272,7 @@ public abstract class StringNodes {
                 respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            if (respondToCmpNode.doesRespondToString(frame, b, Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToCmpNode.doesRespondToString(frame, b, create7BitString(StringOperations.encodeByteList("<=>", UTF8Encoding.INSTANCE)), false)) {
                 if (cmpNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
@@ -612,7 +612,7 @@ public abstract class StringNodes {
         public DynamicObject b(DynamicObject string) {
             final ByteList bytes = StringOperations.getByteList(string).dup();
             bytes.setEncoding(ASCIIEncoding.INSTANCE);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+            return createString(bytes);
         }
 
     }
@@ -818,7 +818,7 @@ public abstract class StringNodes {
 
             final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
             ByteList otherBL = StringOperations.getByteList(salt).dup();
-            final DynamicObject otherStr = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), otherBL, StringSupport.CR_UNKNOWN, null);
+            final DynamicObject otherStr = createString(otherBL);
 
             StringOperations.modify(otherStr);
             StringSupport.associateEncoding(StringOperations.getCodeRangeable(otherStr), ascii8bit);
@@ -846,7 +846,7 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix.errno(), this));
             }
 
-            final DynamicObject result = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(cryptedString, 0, cryptedString.length - 1), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject result = createString(new ByteList(cryptedString, 0, cryptedString.length - 1));
             StringSupport.associateEncoding(StringOperations.getCodeRangeable(result), ascii8bit);
 
             return result;

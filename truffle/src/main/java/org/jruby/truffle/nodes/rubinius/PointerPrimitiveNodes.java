@@ -152,7 +152,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
             Layouts.POINTER.getPointer(pointer).get(0, bytes, 0, length);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(bytes));
         }
 
     }
@@ -285,7 +285,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE));
         }
 
         @Specialization(guards = "type == TYPE_PTR")
@@ -328,13 +328,13 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList());
         }
 
         @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public DynamicObject readStringToNull(DynamicObject pointer) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())));
         }
 
     }

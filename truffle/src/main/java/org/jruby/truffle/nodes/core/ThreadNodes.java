@@ -355,7 +355,7 @@ public abstract class ThreadNodes {
                 }
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.THREAD.getStatus(self).bytes, StringSupport.CR_UNKNOWN, null);
+            return createString(Layouts.THREAD.getStatus(self).bytes);
         }
 
     }

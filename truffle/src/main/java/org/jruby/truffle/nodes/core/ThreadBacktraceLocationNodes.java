@@ -41,12 +41,12 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return createString(StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
             // TODO CS 30-Apr-15: not absolute - not sure how to solve that
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(sourceSection.getSource().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(sourceSection.getSource().getPath(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -85,13 +85,13 @@ public class ThreadBacktraceLocationNodes {
             final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return createString(StringOperations.encodeByteList(sourceSection.getShortDescription(), UTF8Encoding.INSTANCE));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(String.format("%s:%d:in `%s'",
+            return createString(StringOperations.encodeByteList(String.format("%s:%d:in `%s'",
                     sourceSection.getSource().getName(),
                     sourceSection.getStartLine(),
-                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                    sourceSection.getIdentifier()), UTF8Encoding.INSTANCE));
         }
 
     }

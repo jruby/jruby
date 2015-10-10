@@ -37,7 +37,7 @@ public class DefinedWrapperNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(definition, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return createString(StringOperations.encodeByteList(definition, UTF8Encoding.INSTANCE));
     }
 
 }

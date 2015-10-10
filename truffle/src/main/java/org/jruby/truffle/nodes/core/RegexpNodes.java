@@ -389,7 +389,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization(guards = "isRubyString(pattern)")
         public DynamicObject escape(DynamicObject pattern) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(org.jruby.RubyRegexp.quote19(new ByteList(StringOperations.getByteList(pattern)), true).toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -439,12 +439,12 @@ public abstract class RegexpNodes {
         @Specialization(guards = "isRubyString(raw)")
         public DynamicObject quoteString(DynamicObject raw) {
             boolean isAsciiOnly = StringOperations.getByteList(raw).getEncoding().isAsciiCompatible() && StringOperations.scanForCodeRange(raw) == CR_7BIT;
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), org.jruby.RubyRegexp.quote19(StringOperations.getByteList(raw), isAsciiOnly), StringSupport.CR_UNKNOWN, null);
+            return createString(org.jruby.RubyRegexp.quote19(StringOperations.getByteList(raw), isAsciiOnly));
         }
 
         @Specialization(guards = "isRubySymbol(raw)")
         public DynamicObject quoteSymbol(DynamicObject raw) {
-            return quoteString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            return quoteString(createString(StringOperations.encodeByteList(Layouts.SYMBOL.getString(raw), UTF8Encoding.INSTANCE)));
         }
 
     }
@@ -472,7 +472,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public DynamicObject source(DynamicObject regexp) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.REGEXP.getSource(regexp).dup(), StringSupport.CR_UNKNOWN, null);
+            return createString(Layouts.REGEXP.getSource(regexp).dup());
         }
 
     }
@@ -487,7 +487,7 @@ public abstract class RegexpNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject regexp) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList(), StringSupport.CR_UNKNOWN, null);
+            return createString(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), Layouts.REGEXP.getSource(regexp), Layouts.REGEXP.getRegex(regexp).getOptions()).to_s()).getByteList());
         }
 
     }

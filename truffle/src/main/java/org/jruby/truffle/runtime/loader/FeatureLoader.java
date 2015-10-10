@@ -123,7 +123,7 @@ public class FeatureLoader {
         }
 
         // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-        final DynamicObject pathString = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(expandedPath, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeByteList(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
             context.loadFile(expandedPath, currentNode);
@@ -169,7 +169,7 @@ public class FeatureLoader {
     public static String expandPath(RubyContext context, String fileName) {
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRubyString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), StringOperations.encodeByteList(fileName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            final org.jruby.RubyString path = context.toJRubyString(StringOperations.createString(context, StringOperations.encodeByteList(fileName, UTF8Encoding.INSTANCE)));
             final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
                     context.getRuntime().getCurrentContext(),
                     null,

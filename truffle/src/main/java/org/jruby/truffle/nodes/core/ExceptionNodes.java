@@ -43,7 +43,7 @@ public abstract class ExceptionNodes {
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0;n < lines.size(); n++) {
-            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            array[n] = StringOperations.createString(context, StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
         return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
@@ -140,7 +140,7 @@ public abstract class ExceptionNodes {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
             if (message == null) {
                 final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return createString(StringOperations.encodeByteList(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;
             }

@@ -211,7 +211,7 @@ public abstract class EncodingConverterPrimitiveNodes {
                 bytes.setEncoding(ec.sourceEncoding);
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+            return createString(bytes);
         }
     }
 
@@ -243,9 +243,9 @@ public abstract class EncodingConverterPrimitiveNodes {
             Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
             lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("result"), eConvResultToSymbol(lastError.getResult()));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getSource()), StringSupport.CR_UNKNOWN, null));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("destination_encoding_name"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getDestination()), StringSupport.CR_UNKNOWN, null));
-            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("error_bytes"), Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(lastError.getErrorBytes()), StringSupport.CR_UNKNOWN, null));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("source_encoding_name"), createString(new ByteList(lastError.getSource())));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("destination_encoding_name"), createString(new ByteList(lastError.getDestination())));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("error_bytes"), createString(new ByteList(lastError.getErrorBytes())));
 
             if (lastError.getReadAgainLength() != 0) {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, getSymbol("read_again_bytes"), lastError.getReadAgainLength());
@@ -286,16 +286,16 @@ public abstract class EncodingConverterPrimitiveNodes {
             final Object[] ret = { getSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
 
             if (ec.lastError.getSource() != null) {
-                ret[1] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getSource()), StringSupport.CR_UNKNOWN, null);
+                ret[1] = createString(new ByteList(ec.lastError.getSource()));
             }
 
             if (ec.lastError.getDestination() != null) {
-                ret[2] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getDestination()), StringSupport.CR_UNKNOWN, null);
+                ret[2] = createString(new ByteList(ec.lastError.getDestination()));
             }
 
             if (ec.lastError.getErrorBytes() != null) {
-                ret[3] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength()), StringSupport.CR_UNKNOWN, null);
-                ret[4] = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()), StringSupport.CR_UNKNOWN, null);
+                ret[3] = createString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength()));
+                ret[4] = createString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
             }
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), ret, ret.length);

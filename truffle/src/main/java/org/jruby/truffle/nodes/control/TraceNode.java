@@ -45,8 +45,8 @@ public class TraceNode extends RubyNode {
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
         callNode = null;
-        event = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
-        file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        event = create7BitString(StringOperations.encodeByteList("line", UTF8Encoding.INSTANCE));
+        file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
         line = sourceSection.getStartLine();
     }
 
