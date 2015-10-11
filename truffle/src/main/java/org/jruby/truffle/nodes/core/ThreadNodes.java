@@ -162,6 +162,10 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
             final Thread toKill = Layouts.THREAD.getThread(rubyThread);
+            if (toKill == null) {
+                // Already dead
+                return rubyThread;
+            }
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
