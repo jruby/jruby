@@ -70,6 +70,15 @@ public abstract class ThreadNodes {
                 ThreadNodes.run(thread, context, currentNode, info, task);
             }
         }).start();
+
+        // Wait for full initialization of the new thread
+        final CountDownLatch initializedLatch = Layouts.FIBER.getInitializedLatch(Layouts.THREAD.getFiberManager(thread).getRootFiber());
+        try {
+            initializedLatch.await();
+        } catch (InterruptedException e) {
+            // Nobody is allowed to have a reference to this Thread yet so this should not happen
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     public static void run(DynamicObject thread, final RubyContext context, Node currentNode, String info, Runnable task) {
