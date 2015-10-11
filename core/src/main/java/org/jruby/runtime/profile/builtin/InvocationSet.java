@@ -29,7 +29,7 @@ import java.util.List;
 
 public class InvocationSet {
     
-    final List<Invocation> invocations;
+    public final List<Invocation> invocations;
 
     InvocationSet(List<Invocation> invocations) {
         this.invocations = invocations;

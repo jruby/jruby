@@ -29,7 +29,7 @@ import java.util.ArrayList;
 
 public class MethodData extends InvocationSet {
     
-    final int serialNumber;
+    public final int serialNumber;
 
     MethodData(int serial) {
         super(new ArrayList<Invocation>());

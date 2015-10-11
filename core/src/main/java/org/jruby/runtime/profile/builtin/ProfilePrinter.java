@@ -107,12 +107,12 @@ public abstract class ProfilePrinter {
         printProfile(new PrintStream(out.getOutStream()));
     }
 
-    boolean isProfilerInvocation(Invocation inv) {
+    public boolean isProfilerInvocation(Invocation inv) {
         return isThisProfilerInvocation(inv.getMethodSerialNumber()) || 
                 (inv.getParent() != null && isProfilerInvocation(inv.getParent()));
     }
     
-    boolean isThisProfilerInvocation(int serial) {
+    public boolean isThisProfilerInvocation(int serial) {
         final String start = PROFILER_START_METHOD;
         final String stop = PROFILER_STOP_METHOD;
         
