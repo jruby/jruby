@@ -27,7 +27,7 @@ package org.jruby.runtime.profile.builtin;
 
 import java.util.List;
 
-class InvocationSet {
+public class InvocationSet {
     
     final List<Invocation> invocations;
 
