@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import java.util.EnumSet;
-
 import org.jruby.truffle.runtime.Options;
 
 import com.oracle.truffle.api.Assumption;
@@ -23,7 +21,6 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.FinalLocationException;
 import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
-import com.oracle.truffle.api.object.LocationModifier;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 
@@ -113,24 +110,7 @@ public abstract class WriteHeadObjectFieldNode extends Node {
     }
 
     protected Shape transitionWithNewField(DynamicObject object, Object value) {
-        final Shape oldShape = object.getShape();
-
-        // This duplicates quite a bit of DynamicObject.define(), but should be fixed in Truffle soon.
-        final Property oldProperty = oldShape.getProperty(name);
-        if (oldProperty != null) {
-            if (oldProperty.getFlags() == 0 && oldProperty.getLocation().canSet(null, value)) {
-                return oldShape; // already the right shape
-            } else {
-                DynamicObject copy = object.copy(oldShape);
-                copy.define(name, value, 0);
-                return copy.getShape();
-            }
-        } else {
-            final Location location = oldShape.allocator().locationForValue(value,
-                    EnumSet.of(LocationModifier.Final, LocationModifier.NonNull));
-            final Property newProperty = Property.create(name, location, 0);
-            return oldShape.addProperty(newProperty);
-        }
+        return object.getShape().defineProperty(name, value, 0);
     }
 
     protected Location getNewLocation(Shape newShape) {
