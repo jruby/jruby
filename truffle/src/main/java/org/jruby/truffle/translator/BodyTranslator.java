@@ -1397,25 +1397,30 @@ public class BodyTranslator extends Translator {
         // The JRuby AST includes assignment nodes without a proper value,
         // so we need to patch them to include the proper rhs value to translate them correctly.
 
-        final org.jruby.ast.Node wrappedRHS = new org.jruby.ast.Node(dummyAssignment.getPosition(), false) {
-            @SuppressWarnings("unchecked")
-            @Override
-            public <T> T accept(NodeVisitor<T> visitor) {
-                return (T) rhs;
-            }
+        if (dummyAssignment instanceof AssignableNode || dummyAssignment instanceof IArgumentNode) {
+            final org.jruby.ast.Node wrappedRHS = new org.jruby.ast.Node(dummyAssignment.getPosition(), false) {
+                @SuppressWarnings("unchecked")
+                @Override
+                public <T> T accept(NodeVisitor<T> visitor) {
+                    return (T) rhs;
+                }
 
-            @Override
-            public List<Node> childNodes() {
-                return Collections.emptyList();
-            }
+                @Override
+                public List<Node> childNodes() {
+                    return Collections.emptyList();
+                }
 
-            @Override
-            public NodeType getNodeType() {
-                return NodeType.FIXNUMNODE; // since we behave like a value
-            }
-        };
+                @Override
+                public NodeType getNodeType() {
+                    return NodeType.FIXNUMNODE; // since we behave like a value
+                }
+            };
 
-        return setRHS(dummyAssignment, wrappedRHS).accept(this);
+            return setRHS(dummyAssignment, wrappedRHS).accept(this);
+        } else {
+            // Nothing to assign to, just execute the RHS
+            return rhs;
+        }
     }
 
     private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
