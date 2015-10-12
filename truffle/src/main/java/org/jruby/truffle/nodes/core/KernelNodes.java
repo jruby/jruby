@@ -1037,6 +1037,36 @@ public abstract class KernelNodes {
 
     }
 
+    @CoreMethod(names = "remove_instance_variable", raiseIfFrozenSelf = true, required = 1)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveInstanceVariableNode extends CoreMethodNode {
+
+        public RemoveInstanceVariableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public Object removeInstanceVariable(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final Object value = object.get(ivar, nil());
+            if (!object.delete(name)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorInstanceVariableNotDefined(name, this));
+            }
+            return value;
+        }
+
+    }
+
     @CoreMethod(names = { "instance_variables", "__instance_variables__" })
     public abstract static class InstanceVariablesNode extends CoreMethodArrayArgumentsNode {
 
