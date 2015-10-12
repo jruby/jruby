@@ -255,7 +255,7 @@ public class CoreLibrary {
 
         // Close the cycles
         Layouts.MODULE.getFields(classClass).parentModule = Layouts.MODULE.getFields(moduleClass).start;
-        Layouts.MODULE.getFields(moduleClass).addDependent(Layouts.MODULE.getFields(classClass).rubyModuleObject);
+        Layouts.MODULE.getFields(moduleClass).addDependent(classClass);
         Layouts.MODULE.getFields(classClass).newVersion();
 
         Layouts.MODULE.getFields(classClass).getAdoptedByLexicalParent(context, objectClass, "Class", node);
