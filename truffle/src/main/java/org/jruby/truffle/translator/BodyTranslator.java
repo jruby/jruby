@@ -896,8 +896,12 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode rhs = node.getValueNode().accept(this);
+        return visitClassVarAsgnNode(node, rhs);
+    }
+
+    private RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node, RubyNode rhs) {
+        final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode ret = new WriteClassVariableNode(context, sourceSection, node.getName(), environment.getLexicalScope(), rhs);
         return addNewlineIfNeeded(node, ret);
     }
@@ -2014,7 +2018,11 @@ public class BodyTranslator extends Translator {
                 && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode
                 && ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
             /*
-             * We can deal with this common case be rewriting as
+             * We can deal with this common case be rewriting
+             *
+             * a, b = c, d
+             *
+             * as
              *
              * temp1 = c; temp2 = d; a = temp1; b = temp2
              *
@@ -2294,6 +2302,8 @@ public class BodyTranslator extends Translator {
             return translateGlobalAsgnNode((org.jruby.ast.GlobalAsgnNode) dummyAssignment, rhs);
         } else if (dummyAssignment instanceof org.jruby.ast.ConstDeclNode) {
             return visitConstDeclNode((org.jruby.ast.ConstDeclNode) dummyAssignment, rhs);
+        } else if (dummyAssignment instanceof org.jruby.ast.ClassVarAsgnNode) {
+            return visitClassVarAsgnNode((org.jruby.ast.ClassVarAsgnNode) dummyAssignment, rhs);
         } else {
             translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
         }
