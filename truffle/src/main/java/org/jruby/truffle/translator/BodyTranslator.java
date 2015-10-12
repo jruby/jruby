@@ -1390,7 +1390,11 @@ public class BodyTranslator extends Translator {
     private static final ParserSupport PARSER_SUPPORT = new ParserSupport();
 
     private static org.jruby.ast.Node setRHS(org.jruby.ast.Node node, org.jruby.ast.Node rhs) {
-        return PARSER_SUPPORT.node_assign(node, rhs);
+        if (node instanceof AssignableNode || node instanceof IArgumentNode) {
+            return PARSER_SUPPORT.node_assign(node, rhs);
+        } else {
+            throw new UnsupportedOperationException("Don't know how to set the RHS of a " + node.getClass().getName());
+        }
     }
 
     private RubyNode translateDummyAssignment(org.jruby.ast.Node dummyAssignment, final RubyNode rhs) {
