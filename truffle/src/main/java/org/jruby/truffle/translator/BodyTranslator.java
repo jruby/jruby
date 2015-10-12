@@ -20,8 +20,10 @@ import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.ast.*;
+import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
+import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
@@ -89,6 +91,7 @@ import org.jruby.util.StringSupport;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
 import org.jruby.truffle.runtime.core.StringOperations;
 
 /**
@@ -1384,30 +1387,35 @@ public class BodyTranslator extends Translator {
         return addNewlineIfNeeded(node, translated);
     }
 
+    private static final ParserSupport PARSER_SUPPORT = new ParserSupport();
+
     private static org.jruby.ast.Node setRHS(org.jruby.ast.Node node, org.jruby.ast.Node rhs) {
-        if (node instanceof org.jruby.ast.LocalAsgnNode) {
-            final org.jruby.ast.LocalAsgnNode localAsgnNode = (org.jruby.ast.LocalAsgnNode) node;
-            return new org.jruby.ast.LocalAsgnNode(node.getPosition(), localAsgnNode.getName(), 0, rhs);
-        } else if (node instanceof org.jruby.ast.DAsgnNode) {
-            final org.jruby.ast.DAsgnNode dAsgnNode = (org.jruby.ast.DAsgnNode) node;
-            return new org.jruby.ast.DAsgnNode(node.getPosition(), dAsgnNode.getName(), 0, rhs);
-        } else if (node instanceof MultipleAsgnNode) {
-            final MultipleAsgnNode multAsgnNode = (MultipleAsgnNode) node;
-            final MultipleAsgnNode newNode = new MultipleAsgnNode(node.getPosition(), multAsgnNode.getPre(), multAsgnNode.getRest(), multAsgnNode.getPost());
-            newNode.setValueNode(rhs);
-            return newNode;
-        } else if (node instanceof org.jruby.ast.InstAsgnNode) {
-            final org.jruby.ast.InstAsgnNode instAsgnNode = (org.jruby.ast.InstAsgnNode) node;
-            return new org.jruby.ast.InstAsgnNode(node.getPosition(), instAsgnNode.getName(), rhs);
-        } else if (node instanceof org.jruby.ast.ClassVarAsgnNode) {
-            final org.jruby.ast.ClassVarAsgnNode instAsgnNode = (org.jruby.ast.ClassVarAsgnNode) node;
-            return new org.jruby.ast.ClassVarAsgnNode(node.getPosition(), instAsgnNode.getName(), rhs);
-        } else if (node instanceof org.jruby.ast.ConstDeclNode) {
-            final org.jruby.ast.ConstDeclNode constDeclNode = (org.jruby.ast.ConstDeclNode) node;
-            return new org.jruby.ast.ConstDeclNode(node.getPosition(), constDeclNode.getName(), (org.jruby.ast.types.INameNode) constDeclNode.getConstNode(), rhs);
-        } else {
-            throw new UnsupportedOperationException("Don't know how to set the RHS of a " + node.getClass().getName());
-        }
+        return PARSER_SUPPORT.node_assign(node, rhs);
+    }
+
+    private RubyNode translateDummyAssignment(org.jruby.ast.Node dummyAssignment, final RubyNode rhs) {
+        // The JRuby AST includes assignment nodes without a proper value,
+        // so we need to patch them to include the proper rhs value to translate them correctly.
+
+        final org.jruby.ast.Node wrappedRHS = new org.jruby.ast.Node(dummyAssignment.getPosition(), false) {
+            @SuppressWarnings("unchecked")
+            @Override
+            public <T> T accept(NodeVisitor<T> visitor) {
+                return (T) rhs;
+            }
+
+            @Override
+            public List<Node> childNodes() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public NodeType getNodeType() {
+                return NodeType.FIXNUMNODE; // since we behave like a value
+            }
+        };
+
+        return setRHS(dummyAssignment, wrappedRHS).accept(this);
     }
 
     private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
@@ -2249,66 +2257,6 @@ public class BodyTranslator extends Translator {
 
         final RubyNode ret = new DefinedWrapperNode(context, sourceSection, result, "assignment");
         return addNewlineIfNeeded(node, ret);
-    }
-
-    private RubyNode translateDummyAssignment(org.jruby.ast.Node dummyAssignment, RubyNode rhs) {
-        final SourceSection sourceSection = translate(dummyAssignment.getPosition());
-
-        /*
-         * This is tricky. To represent the RHS of a multiple assignment they use corrupt assignment
-         * values, in some cases with no value to be assigned, and in other cases with a dummy
-         * value. We can't visit them normally, as they're corrupt. We can't just modify them to
-         * have our RHS, as that's a node in our AST, not theirs. We can't use a dummy value in
-         * their AST because I can't add new visitors to this interface.
-         */
-
-        RubyNode translated;
-
-        if (dummyAssignment instanceof org.jruby.ast.LocalAsgnNode) {
-            /*
-             * They have a dummy NilImplicitNode as the RHS. Translate, convert to read, convert to
-             * write which allows us to set the RHS.
-             */
-
-            final WriteNode dummyTranslated = (WriteNode) (dummyAssignment.accept(this)).getNonProxyNode();
-            translated = ((ReadNode) dummyTranslated.makeReadNode()).makeWriteNode(rhs);
-        } else if (dummyAssignment instanceof org.jruby.ast.InstAsgnNode) {
-            /*
-             * Same as before, just a different type of assignment.
-             */
-
-            final WriteInstanceVariableNode dummyTranslated = (WriteInstanceVariableNode) dummyAssignment.accept(this);
-            translated = ((ReadNode) dummyTranslated.makeReadNode()).makeWriteNode(rhs);
-        } else if (dummyAssignment instanceof org.jruby.ast.AttrAssignNode) {
-            /*
-             * They've given us an AttrAssignNode with the final argument, the assigned value,
-             * missing. If we translate that we'll get foo.[]=(index), so missing the value. To
-             * solve we have a special version of the visitCallNode that allows us to pass another
-             * already translated argument, visitCallNodeExtraArgument. However, we initially have
-             * an AttrAssignNode, so we also need a special version of that.
-             */
-
-            final org.jruby.ast.AttrAssignNode dummyAttrAssignment = (org.jruby.ast.AttrAssignNode) dummyAssignment;
-            translated = visitAttrAssignNodeExtraArgument(dummyAttrAssignment, rhs);
-        } else if (dummyAssignment instanceof org.jruby.ast.DAsgnNode) {
-            final RubyNode dummyTranslated = dummyAssignment.accept(this);
-
-            if (dummyTranslated.getNonProxyNode() instanceof WriteDeclarationVariableNode) {
-                translated = ((ReadNode) ((WriteDeclarationVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
-            } else {
-                translated = ((ReadNode) ((WriteLocalVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
-            }
-        } else if (dummyAssignment instanceof org.jruby.ast.GlobalAsgnNode) {
-            return translateGlobalAsgnNode((org.jruby.ast.GlobalAsgnNode) dummyAssignment, rhs);
-        } else if (dummyAssignment instanceof org.jruby.ast.ConstDeclNode) {
-            return visitConstDeclNode((org.jruby.ast.ConstDeclNode) dummyAssignment, rhs);
-        } else if (dummyAssignment instanceof org.jruby.ast.ClassVarAsgnNode) {
-            return visitClassVarAsgnNode((org.jruby.ast.ClassVarAsgnNode) dummyAssignment, rhs);
-        } else {
-            translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
-        }
-
-        return translated;
     }
 
     @Override
