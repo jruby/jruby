@@ -240,7 +240,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         ModuleChain mod = Layouts.MODULE.getFields(module).start;
         ModuleChain cur = start;
-        while (mod != null && !(RubyGuards.isRubyModule(mod) && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
+        while (mod != null && !(mod instanceof ModuleFields && RubyGuards.isRubyClass(((ModuleFields) mod).rubyModuleObject))) {
             if (!(mod instanceof PrependMarker)) {
                 if (!ModuleOperations.includesModule(rubyModuleObject, mod.getActualModule())) {
                     cur.insertAfter(mod.getActualModule());
@@ -376,7 +376,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
 
         // Also search on Object if we are a Module. JRuby calls it deepMethodSearch().
-        if (RubyGuards.isRubyModule(rubyModuleObject) && !RubyGuards.isRubyClass(rubyModuleObject)) { // TODO: handle undefined methods
+        if (!RubyGuards.isRubyClass(rubyModuleObject)) { // TODO: handle undefined methods
             method = ModuleOperations.lookupMethod(context.getCoreLibrary().getObjectClass(), name);
 
             if (method != null && !method.isUndefined()) {

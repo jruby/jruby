@@ -103,7 +103,7 @@ public abstract class ModuleOperations {
 
     private static RubyConstant lookupConstantInObject(RubyContext context, DynamicObject module, String name) {
         // Look in Object and its included modules for modules (not for classes)
-        if (!RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject)) {
+        if (!RubyGuards.isRubyClass(module)) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
             RubyConstant constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
