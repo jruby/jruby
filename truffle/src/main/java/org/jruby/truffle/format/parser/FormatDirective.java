@@ -23,13 +23,15 @@ public class FormatDirective {
     private final boolean leftJustified;
     private final int precision;
     private final char type;
+    private final Object key;
 
-    public FormatDirective(int spacePadding, int zeroPadding, boolean leftJustified, int precision, char type) {
+    public FormatDirective(int spacePadding, int zeroPadding, boolean leftJustified, int precision, char type, Object key) {
         this.spacePadding = spacePadding;
         this.zeroPadding = zeroPadding;
         this.leftJustified = leftJustified;
         this.precision = precision;
         this.type = type;
+        this.key = key;
     }
 
     public int getSpacePadding() {
@@ -52,4 +54,7 @@ public class FormatDirective {
         return type;
     }
 
+    public Object getKey() {
+        return key;
+    }
 }

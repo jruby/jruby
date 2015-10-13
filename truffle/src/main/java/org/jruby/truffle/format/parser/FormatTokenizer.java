@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.format.parser;
 
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -19,6 +20,7 @@ public class FormatTokenizer {
 
     private static final String TYPE_CHARS = "%-sdiuxXfgGeE";
 
+    private final RubyContext context;
     private final ByteList format;
     private int position;
     private Object peek;
@@ -27,16 +29,9 @@ public class FormatTokenizer {
      * Construct a tokenizer.
      * @param format the pack expression
      */
-    public FormatTokenizer(ByteList format) {
+    public FormatTokenizer(RubyContext context, ByteList format) {
+        this.context = context;
         this.format = format;
-    }
-
-    public Object peek() {
-        if (peek == null) {
-            peek = next();
-        }
-
-        return peek;
     }
 
     public Object next() {
@@ -65,6 +60,15 @@ public class FormatTokenizer {
         }
 
         position++;
+
+        Object key = null;
+
+        if (format.charAt(position) == '{') {
+            position++;
+            key = readUntil('}');
+            position++;
+            return new FormatDirective(0, 0, false, 0, '{', key);
+        }
 
         boolean leftJustified = false;
 
@@ -118,7 +122,7 @@ public class FormatTokenizer {
 
         position++;
 
-        return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type);
+        return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type, key);
     }
 
     private int readInt() {
@@ -129,6 +133,16 @@ public class FormatTokenizer {
         }
 
         return Integer.parseInt(format.subSequence(start, position).toString());
+    }
+
+    private Object readUntil(char end) {
+        final int start = position;
+
+        while (format.charAt(position) != end) {
+            position++;
+        }
+
+        return context.getSymbol((ByteList) format.subSequence(start, position));
     }
 
 }
