@@ -872,6 +872,9 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
+        private final ConditionProfile indexTooLargeProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile invalidByteProfile = ConditionProfile.createBinaryProfile();
+
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -897,14 +900,14 @@ public abstract class StringPrimitiveNodes {
                 final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
 
                 // If it's an invalid byte, just treat it as a single byte
-                if(! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
                     ++p;
                 } else {
                     p += StringSupport.MBCLEN_CHARFOUND_LEN(c);
                 }
             }
 
-            if (i < k) {
+            if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
                 return p - bytes.begin();
