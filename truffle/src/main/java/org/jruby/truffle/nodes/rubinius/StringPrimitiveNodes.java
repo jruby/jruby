@@ -907,7 +907,7 @@ public abstract class StringPrimitiveNodes {
             if (i < k) {
                 return nil();
             } else {
-                return p;
+                return p - bytes.begin();
             }
         }
 
@@ -928,16 +928,19 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
+            final ByteList stringByteList = StringOperations.getByteList(string);
+            final ByteList patternByteList = StringOperations.getByteList(pattern);
+
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(pattern), this);
-            int p = StringOperations.getByteList(string).getBegin();
-            final int e = p + StringOperations.getByteList(string).getRealSize();
-            int pp = StringOperations.getByteList(pattern).getBegin();
-            final int pe = pp + StringOperations.getByteList(pattern).getRealSize();
+            int p = stringByteList.getBegin();
+            final int e = p + stringByteList.getRealSize();
+            int pp = patternByteList.getBegin();
+            final int pe = pp + patternByteList.getRealSize();
             int s;
             int ss;
 
-            final byte[] stringBytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final byte[] patternBytes = StringOperations.getByteList(pattern).getUnsafeBytes();
+            final byte[] stringBytes = stringByteList.getUnsafeBytes();
+            final byte[] patternBytes = patternByteList.getUnsafeBytes();
 
             for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -954,7 +957,7 @@ public abstract class StringPrimitiveNodes {
                     final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                        return s;
+                        return s - stringByteList.begin();
                     } else {
                         return nil();
                     }
