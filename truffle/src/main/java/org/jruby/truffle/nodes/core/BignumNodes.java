@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
@@ -653,6 +654,21 @@ public abstract class BignumNodes {
             }
 
             return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

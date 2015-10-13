@@ -67,9 +67,7 @@ public class BacktraceFormatter {
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
-        try (PrintWriter writer = new PrintWriter(System.err)) {
-            printBacktrace(exception, backtrace, writer);
-        }
+        printBacktrace(exception, backtrace, new PrintWriter(System.err, true));
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {

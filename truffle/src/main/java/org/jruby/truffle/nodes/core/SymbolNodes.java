@@ -19,6 +19,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -26,6 +27,7 @@ import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -177,6 +179,21 @@ public abstract class SymbolNodes {
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
             return createString(Layouts.SYMBOL.getByteList(symbol).dup());
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

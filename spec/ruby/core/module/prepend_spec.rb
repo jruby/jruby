@@ -287,4 +287,10 @@ describe "Module#prepend" do
       end
     end.should_not raise_error
   end
+
+  it "supports super when the module is prepended into a singleton class with a class super" do
+    lambda do
+      Class.new(ModuleSpecs::SuperInClassMethodWithPrepend)
+    end.should_not raise_error
+  end
 end

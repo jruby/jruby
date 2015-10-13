@@ -34,8 +34,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private final boolean ignoreVisibility;
     private final MissingBehavior missingBehavior;
 
-    @Child private SingletonClassNode singletonClassNode;
-
     public UnresolvedDispatchNode(
             RubyContext context,
             boolean ignoreVisibility,

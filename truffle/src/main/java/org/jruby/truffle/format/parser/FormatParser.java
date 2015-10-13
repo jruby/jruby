@@ -18,10 +18,12 @@ import org.jruby.truffle.format.nodes.control.SequenceNode;
 import org.jruby.truffle.format.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.format.nodes.format.FormatIntegerNodeGen;
 import org.jruby.truffle.format.nodes.read.LiteralBytesNode;
+import org.jruby.truffle.format.nodes.read.ReadHashValueNodeGen;
 import org.jruby.truffle.format.nodes.read.ReadStringNodeGen;
 import org.jruby.truffle.format.nodes.read.ReadValueNodeGen;
 import org.jruby.truffle.format.nodes.type.ToDoubleWithCoercionNodeGen;
 import org.jruby.truffle.format.nodes.type.ToIntegerNodeGen;
+import org.jruby.truffle.format.nodes.type.ToStringNodeGen;
 import org.jruby.truffle.format.nodes.write.WriteByteNode;
 import org.jruby.truffle.format.nodes.write.WriteBytesNodeGen;
 import org.jruby.truffle.format.nodes.write.WritePaddedBytesNodeGen;
@@ -46,7 +48,7 @@ public class FormatParser {
     }
 
     public CallTarget parse(ByteList format) {
-        final FormatTokenizer tokenizer = new FormatTokenizer(format);
+        final FormatTokenizer tokenizer = new FormatTokenizer(context, format);
         final PackNode body = parse(tokenizer);
         return Truffle.getRuntime().createCallTarget(new PackRootNode(PackParser.describe(format.toString()), encoding, body));
     }
@@ -74,17 +76,40 @@ public class FormatParser {
             } else if (token instanceof FormatDirective) {
                 final FormatDirective directive = (FormatDirective) token;
 
+                final PackNode valueNode;
+
+                if (directive.getKey() == null) {
+                    valueNode = ReadValueNodeGen.create(context, new SourceNode());
+                } else {
+                    valueNode = ReadHashValueNodeGen.create(context, directive.getKey(), new SourceNode());
+                }
+
                 switch (directive.getType()) {
                     case '%':
                         node = new WriteByteNode(context, (byte) '%');
                         break;
+                    case '{':
+                        node = WriteBytesNodeGen.create(context,
+                                ToStringNodeGen.create(context, true, "to_s", false, new ByteList(),
+                                        valueNode));
+                        break;
                     case 's':
-                        if (directive.getSpacePadding() == FormatDirective.DEFAULT) {
-                            node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
-                                    context, true, "to_s", false, new ByteList(), new SourceNode()));
+                        if (directive.getKey() == null) {
+                            if (directive.getSpacePadding() == FormatDirective.DEFAULT) {
+                                node = WriteBytesNodeGen.create(context, ReadStringNodeGen.create(
+                                        context, true, "to_s", false, new ByteList(), new SourceNode()));
+                            } else {
+                                node = WritePaddedBytesNodeGen.create(context, directive.getSpacePadding(), directive.getLeftJustified(),
+                                        ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(), new SourceNode()));
+                            }
                         } else {
-                            node = WritePaddedBytesNodeGen.create(context, directive.getSpacePadding(), directive.getLeftJustified(),
-                                    ReadStringNodeGen.create(context, true, "to_s", false, new ByteList(), new SourceNode()));
+                            if (directive.getSpacePadding() == FormatDirective.DEFAULT) {
+                                node = WriteBytesNodeGen.create(context, ToStringNodeGen.create(
+                                        context, true, "to_s", false, new ByteList(), valueNode));
+                            } else {
+                                node = WritePaddedBytesNodeGen.create(context, directive.getSpacePadding(), directive.getLeftJustified(),
+                                        ToStringNodeGen.create(context, true, "to_s", false, new ByteList(), valueNode));
+                            }
                         }
                         break;
                     case 'd':
@@ -127,7 +152,7 @@ public class FormatParser {
                         node = WriteBytesNodeGen.create(context,
                                 FormatIntegerNodeGen.create(context, spacePadding, zeroPadding, format,
                                         ToIntegerNodeGen.create(context,
-                                                ReadValueNodeGen.create(context, new SourceNode()))));
+                                                valueNode)));
                         break;
                     case 'f':
                     case 'g':
@@ -139,7 +164,7 @@ public class FormatParser {
                                         directive.getZeroPadding(), directive.getPrecision(),
                                         directive.getType(),
                                         ToDoubleWithCoercionNodeGen.create(context,
-                                                ReadValueNodeGen.create(context, new SourceNode()))));
+                                                valueNode)));
                         break;
                     default:
                         throw new UnsupportedOperationException();

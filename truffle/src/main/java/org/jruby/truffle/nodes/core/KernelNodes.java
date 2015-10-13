@@ -256,32 +256,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "abort", isModuleFunction = true, optional = 1)
-    public abstract static class AbortNode extends CoreMethodArrayArgumentsNode {
-
-        public AbortNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(message)")
-        public DynamicObject abort(DynamicObject message) {
-            System.err.println(message.toString());
-            return abort();
-        }
-
-        @Specialization
-        public DynamicObject abort(NotProvided message) {
-            return abort();
-        }
-
-        @TruffleBoundary
-        private DynamicObject abort() {
-            getContext().innerShutdown(false);
-            throw new MainExitException(1, true);
-        }
-    }
-
     @CoreMethod(names = "binding", isModuleFunction = true)
     public abstract static class BindingNode extends CoreMethodArrayArgumentsNode {
 

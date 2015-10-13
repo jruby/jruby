@@ -154,8 +154,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmExit(int status) {
-            getContext().innerShutdown(false);
-
+            getContext().shutdown();
             System.exit(status);
             return nil();
         }

@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.exceptions;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
@@ -19,10 +18,9 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.subsystems.AtExitManager;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
@@ -36,32 +34,35 @@ public class TopLevelRaiseHandler extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        DynamicObject lastException = null;
+
         try {
-            return body.execute(frame);
+            body.execute(frame);
         } catch (RaiseException e) {
-            handleException(e);
-        } catch (ThreadExitException e) {
-            // Ignore
+            lastException = AtExitManager.handleAtExitException(getContext(), e);
+        } finally {
+            final DynamicObject atExitException = getContext().runAtExitHooks();
+            if (atExitException != null) {
+                lastException = atExitException;
+            }
+
+            getContext().shutdown();
+            final int status = statusFromException(lastException);
+            System.exit(status);
         }
 
+        // unreachable
         return nil();
     }
 
-    @TruffleBoundary
-    private void handleException(RaiseException e) {
-        final DynamicObject rubyException = e.getRubyException();
-        final int status;
-
-        if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == getContext().getCoreLibrary().getSystemExitClass()) {
-            status = castToInt(rubyException.get("@status", null));
+    private int statusFromException(DynamicObject exception) {
+        if (exception == null) {
+            return 0;
+        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == getContext().getCoreLibrary().getSystemExitClass()) {
+            return castToInt(exception.get("@status", null));
         } else {
-            status = 1;
-            BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+            return 1;
         }
-
-        getContext().shutdown();
-
-        System.exit(status);
     }
 
     private int castToInt(Object value) {

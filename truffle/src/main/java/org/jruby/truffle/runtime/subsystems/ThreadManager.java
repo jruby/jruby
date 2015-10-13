@@ -135,7 +135,7 @@ public class ThreadManager {
                     @Override
                     public synchronized void run(DynamicObject thread, Node currentNode) {
                         if (thread != rootThread && Thread.currentThread() == Layouts.THREAD.getThread(thread)) {
-                            ThreadNodes.shutdown(thread);
+                            ThreadNodes.shutdown(context, thread, currentNode);
                         }
                     }
                 });

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.format.parser;
 
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
 /**
@@ -19,33 +20,20 @@ public class FormatTokenizer {
 
     private static final String TYPE_CHARS = "%-sdiuxXfgGeE";
 
+    private final RubyContext context;
     private final ByteList format;
     private int position;
-    private Object peek;
 
     /**
      * Construct a tokenizer.
      * @param format the pack expression
      */
-    public FormatTokenizer(ByteList format) {
+    public FormatTokenizer(RubyContext context, ByteList format) {
+        this.context = context;
         this.format = format;
     }
 
-    public Object peek() {
-        if (peek == null) {
-            peek = next();
-        }
-
-        return peek;
-    }
-
     public Object next() {
-        if (peek != null) {
-            final Object token = peek;
-            peek = null;
-            return token;
-        }
-
         if (position >= format.length()) {
             return null;
         }
@@ -66,9 +54,22 @@ public class FormatTokenizer {
 
         position++;
 
+        Object key = null;
+
+        if (format.charAt(position) == '{') {
+            position++;
+            key = readUntil('}');
+            position++;
+            return new FormatDirective(0, 0, false, 0, '{', key);
+        } else if (format.charAt(position) == '<') {
+            position++;
+            key = readUntil('>');
+            position++;
+        }
+
         boolean leftJustified = false;
 
-        if (format.charAt(position) == '-') {
+        if (position < format.length() && format.charAt(position) == '-') {
             leftJustified = true;
             position++;
         }
@@ -76,20 +77,20 @@ public class FormatTokenizer {
         int spacePadding;
         int zeroPadding;
 
-        if (format.charAt(position) == ' ') {
+        if (position < format.length() && format.charAt(position) == ' ') {
             position++;
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
-        } else if (format.charAt(position) == '0') {
+        } else if (position < format.length() && format.charAt(position) == '0') {
             spacePadding = FormatDirective.DEFAULT;
             zeroPadding = readInt();
-        } else if (Character.isDigit(format.charAt(position))) {
+        } else if (position < format.length() && Character.isDigit(format.charAt(position))) {
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
         } else {
             spacePadding = FormatDirective.DEFAULT;
 
-            if (format.charAt(position) == '0') {
+            if (position < format.length() && format.charAt(position) == '0') {
                 position++;
                 zeroPadding = readInt();
             } else {
@@ -99,26 +100,37 @@ public class FormatTokenizer {
 
         final int precision;
 
-        if (format.charAt(position) == '.') {
+        if (position < format.length() && format.charAt(position) == '.') {
             position++;
             precision = readInt();
         } else {
             precision = FormatDirective.DEFAULT;
         }
 
-        if (Character.isDigit(format.charAt(position))) {
+        if (position < format.length() && Character.isDigit(format.charAt(position))) {
             spacePadding = readInt();
         }
 
-        final char type = format.charAt(position);
+        char type;
 
-        if (TYPE_CHARS.indexOf(type) == -1) {
-            throw new UnsupportedOperationException("Unknown format type '" + format.charAt(position) + "'");
+        if (key != null && position >= format.length()) {
+            type = 's';
+        } else {
+            type = format.charAt(position);
+
+            if (key != null && Character.isWhitespace(type)) {
+                type = 's';
+            } else {
+                if (TYPE_CHARS.indexOf(type) == -1) {
+                    throw new UnsupportedOperationException("Unknown format type '" + format.charAt(position) + "'");
+                }
+            }
+
+            position++;
         }
 
-        position++;
 
-        return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type);
+        return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type, key);
     }
 
     private int readInt() {
@@ -129,6 +141,16 @@ public class FormatTokenizer {
         }
 
         return Integer.parseInt(format.subSequence(start, position).toString());
+    }
+
+    private Object readUntil(char end) {
+        final int start = position;
+
+        while (format.charAt(position) != end) {
+            position++;
+        }
+
+        return context.getSymbol((ByteList) format.subSequence(start, position));
     }
 
 }

@@ -47,7 +47,7 @@ public abstract class ReadStringNode extends PackNode {
     }
 
     @Specialization(guards = "isNull(source)")
-    public long read(VirtualFrame frame, Object source) {
+    public Object read(VirtualFrame frame, Object source) {
         CompilerDirectives.transferToInterpreter();
 
         // Advance will handle the error

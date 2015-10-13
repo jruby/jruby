@@ -127,10 +127,15 @@ public abstract class ThreadNodes {
         Layouts.THREAD.getFinishedLatch(thread).countDown();
     }
 
-    public static void shutdown(DynamicObject thread) {
+    public static void shutdown(RubyContext context, DynamicObject thread, Node currentNode) {
         assert RubyGuards.isRubyThread(thread);
         Layouts.THREAD.getFiberManager(thread).shutdown();
-        throw new ThreadExitException();
+
+        if (thread == context.getThreadManager().getRootThread()) {
+            throw new RaiseException(context.getCoreLibrary().systemExit(0, currentNode));
+        } else {
+            throw new ThreadExitException();
+        }
     }
 
     @CoreMethod(names = "alive?")
@@ -179,7 +184,7 @@ public abstract class ThreadNodes {
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
                 public void run(DynamicObject currentThread, Node currentNode) {
-                    shutdown(currentThread);
+                    shutdown(getContext(), currentThread, currentNode);
                 }
             });
 
@@ -464,6 +469,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
+        // TODO (eregon, 13/10/2015): Thread is not allocatable in MRI
         @TruffleBoundary
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {

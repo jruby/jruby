@@ -96,4 +96,8 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return proc.getBlock().getBody().getArgumentDescriptors();
     }
+
+    public RubyProc getProc() {
+        return proc;
+    }
 }
