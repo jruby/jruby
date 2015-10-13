@@ -716,7 +716,7 @@ public abstract class FloatNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(double value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Double.toString(value), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList(Double.toString(value), USASCIIEncoding.INSTANCE));
         }
 
     }

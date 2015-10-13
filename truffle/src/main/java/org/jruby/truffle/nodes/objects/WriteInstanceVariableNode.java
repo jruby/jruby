@@ -123,7 +123,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("assignment", UTF8Encoding.INSTANCE));
     }
 
 }

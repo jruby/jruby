@@ -29,6 +29,7 @@ import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @CoreClass(name = "Fiber")
@@ -44,7 +45,16 @@ public abstract class FiberNodes {
 
     private static DynamicObject createFiber(DynamicObject thread, DynamicObject rubyClass, String name, boolean isRootFiber) {
         assert RubyGuards.isRubyThread(thread);
-        return Layouts.FIBER.createFiber(Layouts.CLASS.getInstanceFactory(rubyClass), isRootFiber, new LinkedBlockingQueue<FiberMessage>(2), thread, name, null, true, null);
+        return Layouts.FIBER.createFiber(
+                Layouts.CLASS.getInstanceFactory(rubyClass),
+                isRootFiber,
+                new CountDownLatch(1),
+                new LinkedBlockingQueue<FiberMessage>(2),
+                thread,
+                name,
+                null,
+                true,
+                null);
     }
 
     public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
@@ -60,6 +70,15 @@ public abstract class FiberNodes {
         });
         thread.setName(name);
         thread.start();
+
+        // Wait for full initialization of the new fiber
+        final CountDownLatch initializedLatch = Layouts.FIBER.getInitializedLatch(fiber);
+        try {
+            initializedLatch.await();
+        } catch (InterruptedException e) {
+            // Nobody is allowed to have a reference to this Thread yet so this should not happen
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
@@ -87,7 +106,7 @@ public abstract class FiberNodes {
                 } catch (ReturnException e) {
                     Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(context.getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage((DynamicObject) e.getRubyException()));
+                    Layouts.FIBER.getMessageQueue(Layouts.FIBER.getLastResumedByFiber(fiber)).add(new FiberExceptionMessage(e.getRubyException()));
                 }
             }
         });
@@ -111,6 +130,8 @@ public abstract class FiberNodes {
         context.getThreadManager().initializeCurrentThread(Layouts.FIBER.getRubyThread(fiber));
         Layouts.THREAD.getFiberManager(Layouts.FIBER.getRubyThread(fiber)).registerFiber(fiber);
         context.getSafepointManager().enterThread();
+        // fully initialized
+        Layouts.FIBER.getInitializedLatch(fiber).countDown();
     }
 
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.

@@ -109,7 +109,7 @@ public abstract class ZlibNodes {
 
             deflater.end();
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
+            return createString(outputBytes);
         }
 
     }
@@ -147,7 +147,7 @@ public abstract class ZlibNodes {
 
             inflater.end();
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), outputBytes, StringSupport.CR_UNKNOWN, null);
+            return createString(outputBytes);
         }
 
     }

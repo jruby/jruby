@@ -456,7 +456,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public DynamicObject toS(DynamicObject matchData) {
             final ByteList bytes = StringOperations.getByteList(Layouts.MATCH_DATA.getGlobal(matchData)).dup();
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+            return createString(bytes);
         }
     }
 

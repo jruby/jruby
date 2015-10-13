@@ -31,7 +31,7 @@ public abstract class IntegerCastNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public abstract int executeInteger(VirtualFrame frame, Object value);
+    public abstract int executeCastInt(Object value);
 
     @Override
     public abstract int executeInteger(VirtualFrame frame);

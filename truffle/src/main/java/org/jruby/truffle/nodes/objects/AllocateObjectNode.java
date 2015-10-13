@@ -112,11 +112,7 @@ public abstract class AllocateObjectNode extends RubyNode {
     }
 
     private DynamicObject string(String value) {
-        return Layouts.STRING.createString(
-                getContext().getCoreLibrary().getStringFactory(),
-                StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE),
-                StringSupport.CR_UNKNOWN,
-                null);
+        return createString(StringOperations.encodeByteList(value, UTF8Encoding.INSTANCE));
     }
 
     @Specialization(guards = "isSingleton(classToAllocate)")

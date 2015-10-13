@@ -11,12 +11,14 @@ package org.jruby.truffle.runtime.layouts;
 
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
+
 import org.jruby.truffle.nodes.core.FiberNodes;
 import org.jruby.truffle.om.dsl.api.Layout;
 import org.jruby.truffle.om.dsl.api.Nullable;
 import org.jruby.truffle.om.dsl.api.Volatile;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 @Layout
 public interface FiberLayout extends BasicObjectLayout {
@@ -26,6 +28,7 @@ public interface FiberLayout extends BasicObjectLayout {
 
     DynamicObject createFiber(DynamicObjectFactory factory,
                               boolean rootFiber,
+                              CountDownLatch initializedLatch,
                               BlockingQueue<FiberNodes.FiberMessage> messageQueue,
                               DynamicObject rubyThread,
                               @Nullable String name,
@@ -36,6 +39,8 @@ public interface FiberLayout extends BasicObjectLayout {
     boolean isFiber(DynamicObject object);
 
     boolean getRootFiber(DynamicObject object);
+
+    CountDownLatch getInitializedLatch(DynamicObject object);
 
     BlockingQueue<FiberNodes.FiberMessage> getMessageQueue(DynamicObject object);
 

@@ -153,7 +153,7 @@ public abstract class KernelNodes {
             }
 
             // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(resultBuilder.toString(), EncodingOperations.getEncoding(EncodingNodes.getEncoding("UTF-8"))));
         }
 
     }
@@ -754,59 +754,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit", isModuleFunction = true, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class ExitNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public Object exit(NotProvided exitCode) {
-            return exit(0);
-        }
-
-        @Specialization
-        public Object exit(int exitCode) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(exitCode);
-            return null;
-        }
-
-        @Specialization
-        public Object exit(boolean status) {
-            CompilerDirectives.transferToInterpreter();
-
-            getContext().shutdown();
-            System.exit(status ? 0 : -1);
-            return null;
-        }
-
-    }
-
-    @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
-    public abstract static class ExitBangNode extends CoreMethodArrayArgumentsNode {
-
-        public ExitBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public DynamicObject exit(NotProvided exitCode) {
-            return exit(1);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public DynamicObject exit(int exitCode) {
-            getContext().innerShutdown(false);
-            throw new MainExitException(exitCode, true);
-        }
-
-    }
-
     @CoreMethod(names = "fork", isModuleFunction = true, rest = true)
     public abstract static class ForkNode extends CoreMethodArrayArgumentsNode {
 
@@ -890,7 +837,7 @@ public abstract class KernelNodes {
                 }
             });
 
-            final DynamicObject rubyLine = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject rubyLine = createString(StringOperations.encodeByteList(line, UTF8Encoding.INSTANCE));
 
             // Set the local variable $_ in the caller
 
@@ -1012,71 +959,109 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "instance_variable_defined?", required = 1)
-    public abstract static class InstanceVariableDefinedNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableDefinedNode extends CoreMethodNode {
 
         public InstanceVariableDefinedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public boolean isInstanceVariableDefinedString(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public boolean isInstanceVariableDefinedSymbol(DynamicObject object, DynamicObject name) {
-            return object.getShape().hasProperty(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this));
+        @Specialization
+        public boolean isInstanceVariableDefined(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return object.getShape().hasProperty(ivar);
         }
 
     }
 
     @CoreMethod(names = "instance_variable_get", required = 1)
-    public abstract static class InstanceVariableGetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class InstanceVariableGetNode extends CoreMethodNode {
 
         public InstanceVariableGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object instanceVariableGetString(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableGetSymbol(DynamicObject object, DynamicObject name) {
-            return instanceVariableGet(object, Layouts.SYMBOL.getString(name));
-        }
-
-        private Object instanceVariableGet(DynamicObject object, String name) {
-            return object.get(RubyContext.checkInstanceVariableName(getContext(), name, this), nil());
+        @Specialization
+        public Object instanceVariableGet(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            return object.get(ivar, nil());
         }
 
     }
 
     @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
-    public abstract static class InstanceVariableSetNode extends CoreMethodArrayArgumentsNode {
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name"),
+            @NodeChild(type = RubyNode.class, value = "value")
+    })
+    public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         // TODO CS 4-Mar-15 this badly needs to be cached
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(name)")
-        public Object instanceVariableSetString(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value, 0);
+        @Specialization
+        public Object instanceVariableSet(DynamicObject object, String name, Object value) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            object.define(ivar, value, 0);
             return value;
         }
 
+    }
+
+    @CoreMethod(names = "remove_instance_variable", raiseIfFrozenSelf = true, required = 1)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "object"),
+            @NodeChild(type = RubyNode.class, value = "name")
+    })
+    public abstract static class RemoveInstanceVariableNode extends CoreMethodNode {
+
+        public RemoveInstanceVariableNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+        }
+
         @TruffleBoundary
-        @Specialization(guards = "isRubySymbol(name)")
-        public Object instanceVariableSetSymbol(DynamicObject object, DynamicObject name, Object value) {
-            object.define(RubyContext.checkInstanceVariableName(getContext(), Layouts.SYMBOL.getString(name), this), value, 0);
+        @Specialization
+        public Object removeInstanceVariable(DynamicObject object, String name) {
+            final String ivar = RubyContext.checkInstanceVariableName(getContext(), name, this);
+            final Object value = object.get(ivar, nil());
+            if (!object.delete(name)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorInstanceVariableNotDefined(name, this));
+            }
             return value;
         }
 
@@ -1880,7 +1865,7 @@ public abstract class KernelNodes {
 
             // Clear the wakeUp flag, following Ruby semantics:
             // it should only be considered if we are inside the sleep when Thread#{run,wakeup} is called.
-            Layouts.THREAD.getWakeUp(thread).getAndSet(false);
+            Layouts.THREAD.getWakeUp(thread).set(false);
 
             return sleepFor(this, getContext(), durationInMillis);
         }
@@ -1978,7 +1963,7 @@ public abstract class KernelNodes {
         }
 
         private DynamicObject finishFormat(ByteList format, PackResult result) {
-            final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(result.getOutput(), 0, result.getOutputLength()), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -2113,7 +2098,7 @@ public abstract class KernelNodes {
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList("#<" + className + ":0x" + hexID + ">", UTF8Encoding.INSTANCE));
         }
 
     }

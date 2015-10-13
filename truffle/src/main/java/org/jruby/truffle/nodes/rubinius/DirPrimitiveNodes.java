@@ -121,14 +121,14 @@ public abstract class DirPrimitiveNodes {
             Layouts.DIR.setPosition(dir, position + 1);
 
             if (position == -2) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(".", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return create7BitString(StringOperations.encodeByteList(".", UTF8Encoding.INSTANCE));
             } else if (position == -1) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("..", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return create7BitString(StringOperations.encodeByteList("..", UTF8Encoding.INSTANCE));
             } else {
                 final String[] contents = (String[]) Layouts.DIR.getContents(dir);
 
                 if (position < contents.length) {
-                    return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(contents[position], UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                    return createString(StringOperations.encodeByteList(contents[position], UTF8Encoding.INSTANCE));
                 } else {
                     return nil();
                 }

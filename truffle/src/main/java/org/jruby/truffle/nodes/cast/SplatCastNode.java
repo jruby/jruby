@@ -117,7 +117,7 @@ public abstract class SplatCastNode extends RubyNode {
 
     @CompilerDirectives.TruffleBoundary
     private DynamicObject makeMethodNameString(String methodName) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(methodName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        return createString(StringOperations.encodeByteList(methodName, UTF8Encoding.INSTANCE));
     }
 
 }

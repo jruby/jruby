@@ -42,6 +42,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.specific.USASCIIEncoding;
 
 @TypeSystemReference(RubyTypes.class)
 @ImportStatic(RubyGuards.class)
@@ -67,7 +68,7 @@ public abstract class RubyNode extends Node {
     public abstract Object execute(VirtualFrame frame);
 
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList("expression", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("expression", UTF8Encoding.INSTANCE));
     }
 
     // Execute without returning the result
@@ -170,6 +171,16 @@ public abstract class RubyNode extends Node {
 
     public DynamicObject getSymbol(ByteList name) {
         return getContext().getSymbol(name);
+    }
+
+    /** Creates a String from the ByteList, with unknown CR */
+    protected DynamicObject createString(ByteList bytes) {
+        return StringOperations.createString(getContext(), bytes);
+    }
+
+    /** Creates a String from the ByteList, with 7-bit CR */
+    protected DynamicObject create7BitString(ByteList bytes) {
+        return StringOperations.create7BitString(getContext(), bytes);
     }
 
     protected POSIX posix() {

@@ -122,7 +122,7 @@ public class GeneralSuperReCallNode extends RubyNode {
         if (superMethod == null) {
             return nil();
         } else {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList("super", UTF8Encoding.INSTANCE));
         }
     }
 

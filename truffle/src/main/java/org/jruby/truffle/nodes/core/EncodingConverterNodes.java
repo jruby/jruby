@@ -142,11 +142,11 @@ public abstract class EncodingConverterNodes {
                     final TranscoderDB.Entry e = destinationEntry.value;
 
                     if (key == null) {
-                        final Object upcased = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.getSource()), StringSupport.CR_UNKNOWN, null), "upcase", null);
+                        final Object upcased = upcaseNode.call(frame, createString(new ByteList(e.getSource())), "upcase", null);
                         key = toSymNode.call(frame, upcased, "to_sym", null);
                     }
 
-                    final Object upcasedLookupTableKey = upcaseNode.call(frame, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(e.getDestination()), StringSupport.CR_UNKNOWN, null), "upcase", null);
+                    final Object upcasedLookupTableKey = upcaseNode.call(frame, createString(new ByteList(e.getDestination())), "upcase", null);
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
                     final Object lookupTableValue = newTranscodingNode.call(frame, getContext().getCoreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
                     lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);

@@ -585,7 +585,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = {"isRubyEncoding(encoding)", "isSimple(code, encoding)"})
         public DynamicObject stringFromCodepointSimple(int code, DynamicObject encoding) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(new byte[]{(byte) code}, EncodingOperations.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(new byte[]{(byte) code}, EncodingOperations.getEncoding(encoding)));
         }
 
         @TruffleBoundary
@@ -614,7 +614,7 @@ public abstract class StringPrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes, EncodingOperations.getEncoding(encoding)), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(bytes, EncodingOperations.getEncoding(encoding)));
         }
 
         @Specialization(guards = "isRubyEncoding(encoding)")
@@ -1335,7 +1335,7 @@ public abstract class StringPrimitiveNodes {
         public DynamicObject stringFromByteArray(DynamicObject bytes, int start, int count) {
             // Data is copied here - can we do something COW?
             final ByteList byteList = Layouts.BYTE_ARRAY.getBytes(bytes);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(byteList, start, count), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(byteList, start, count));
         }
 
     }

@@ -2246,15 +2246,20 @@ public class IRBuilder {
         activeRescuers.push(ebi.dummyRescueBlockLabel);
 
         // Generate IR for code being protected
+        Variable ensureExprValue = createTemporaryVariable();
         Operand rv = ensureBodyNode instanceof RescueNode ? buildRescueInternal((RescueNode) ensureBodyNode, ebi) : build(ensureBodyNode);
 
         // End of protected region
         addInstr(new ExceptionRegionEndMarkerInstr());
         activeRescuers.pop();
 
-        // Clone the ensure body and jump to the end.  Don't bother if the protected body ended in a return
-        // OR if we are really processing a rescue node
-        if (ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode)) {
+        // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
+        // (vs. returning from protected body)
+        boolean isEnsureExpr = ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
+
+        // Clone the ensure body and jump to the end
+        if (isEnsureExpr) {
+            addInstr(new CopyInstr(ensureExprValue, rv));
             ebi.cloneIntoHostScope(this);
             addInstr(new JumpInstr(ebi.end));
         }
@@ -2290,7 +2295,7 @@ public class IRBuilder {
         // End label for the exception region
         addInstr(new LabelInstr(ebi.end));
 
-        return rv;
+        return isEnsureExpr ? ensureExprValue : rv;
     }
 
     public Operand buildEvStr(EvStrNode node) {

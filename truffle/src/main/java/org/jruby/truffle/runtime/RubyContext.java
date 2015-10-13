@@ -67,6 +67,7 @@ import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 
 import java.io.File;
@@ -324,19 +325,23 @@ public class RubyContext extends ExecutionContext {
         ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
     }
 
+    // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        if (!name.startsWith("@")) {
+        // if (!IdUtil.isValidInstanceVariableName(name)) {
+
+        // check like Rubinius does for compatibility with their Struct Ruby implementation.
+        if (!(name.startsWith("@") && name.length() > 1 && IdUtil.isInitialCharacter(name.charAt(1)))) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
-
         return name;
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        if (!name.startsWith("@@")) {
+        if (!IdUtil.isValidClassVariableName(name)) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
-
         return name;
     }
 
@@ -450,42 +455,15 @@ public class RubyContext extends ExecutionContext {
     public IRubyObject toJRuby(Object object) {
         if (object == getCoreLibrary().getNilObject()) {
             return runtime.getNil();
-        } else if (object == getCoreLibrary().getKernelModule()) {
-            return runtime.getKernel();
-        } else if (object == getCoreLibrary().getMainObject()) {
-            return runtime.getTopSelf();
         } else if (object instanceof Boolean) {
             return runtime.newBoolean((boolean) object);
-        } else if (object instanceof Integer) {
-            return runtime.newFixnum((int) object);
-        } else if (object instanceof Long) {
-            return runtime.newFixnum((long) object);
-        } else if (object instanceof Double) {
-            return runtime.newFloat((double) object);
         } else if (RubyGuards.isRubyString(object)) {
             return toJRubyString((DynamicObject) object);
-        } else if (RubyGuards.isRubyArray(object)) {
-            return toJRubyArray((DynamicObject) object);
         } else if (RubyGuards.isRubyEncoding(object)) {
             return toJRubyEncoding((DynamicObject) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
-    }
-
-    public IRubyObject[] toJRuby(Object... objects) {
-        final IRubyObject[] store = new IRubyObject[objects.length];
-
-        for (int n = 0; n < objects.length; n++) {
-            store[n] = toJRuby(objects[n]);
-        }
-
-        return store;
-    }
-
-    public org.jruby.RubyArray toJRubyArray(DynamicObject array) {
-        assert RubyGuards.isRubyArray(array);
-        return runtime.newArray(toJRuby(ArrayOperations.toObjectArray(array)));
     }
 
     public IRubyObject toJRubyEncoding(DynamicObject encoding) {

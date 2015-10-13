@@ -183,7 +183,7 @@ public abstract class PosixNodes {
                 return nil();
             }
 
-            return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(getContext().getCoreLibrary().getStringClass()), StringOperations.encodeByteList((String) result, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList((String) result, UTF8Encoding.INSTANCE));
         }
     }
 
@@ -859,7 +859,7 @@ public abstract class PosixNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = {"isNil(hostName)", "isRubyString(serviceName)"})
         public int getaddrinfoNil(DynamicObject hostName, DynamicObject serviceName, DynamicObject hintsPointer, DynamicObject resultsPointer) {
-            return getaddrinfoString(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("0.0.0.0", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), serviceName, hintsPointer, resultsPointer);
+            return getaddrinfoString(create7BitString(StringOperations.encodeByteList("0.0.0.0", UTF8Encoding.INSTANCE)), serviceName, hintsPointer, resultsPointer);
         }
 
         @CompilerDirectives.TruffleBoundary

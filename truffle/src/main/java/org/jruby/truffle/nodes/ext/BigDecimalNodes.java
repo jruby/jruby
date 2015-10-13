@@ -41,7 +41,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -193,7 +192,7 @@ public abstract class BigDecimalNodes {
             setupLimitCall();
             setupLimitIntegerCast();
 
-            return limitIntegerCast.executeInteger(frame, limitCall.call(frame, getBigDecimalClass(), "limit", null));
+            return limitIntegerCast.executeCastInt(limitCall.call(frame, getBigDecimalClass(), "limit", null));
         }
 
         private void setupRoundModeCall() {
@@ -214,7 +213,7 @@ public abstract class BigDecimalNodes {
             setupRoundModeCall();
             setupRoundModeIntegerCast();
 
-            return toRoundingMode(roundModeIntegerCast.executeInteger(frame,
+            return toRoundingMode(roundModeIntegerCast.executeCastInt(
                     // TODO (pitr 21-Jun-2015): read the actual constant
                     roundModeCall.call(frame, getBigDecimalClass(), "mode", null, 256)));
         }
@@ -337,6 +336,20 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isRubyString(value)")
         public DynamicObject createString(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
             return executeInitialize(frame, getValueFromString(value.toString(), digits), self, digits);
+        }
+
+        @Specialization(guards = { "!isRubyBignum(value)", "!isRubyBigDecimal(value)", "!isRubyString(value)" })
+        public DynamicObject create(VirtualFrame frame, DynamicObject value, DynamicObject self, int digits) {
+            final Object castedValue = bigDecimalCast.executeObject(frame, value);
+            if (castedValue == nil()) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("could not be casted to BigDecimal", this));
+            }
+
+            setBigDecimalValue(
+                    self,
+                    ((BigDecimal) castedValue).round(new MathContext(digits, getRoundMode(frame))));
+
+            return self;
         }
 
         // TODO (pitr 21-Jun-2015): raise on underflow
@@ -1233,7 +1246,7 @@ public abstract class BigDecimalNodes {
                 setupLimitIntegerCast();
 
                 final int signA = aType == Type.POSITIVE_INFINITY ? 1 : -1;
-                final int signB = Integer.signum(signIntegerCast.executeInteger(frame, signCall.call(frame, b, "sign", null)));
+                final int signB = Integer.signum(signIntegerCast.executeCastInt(signCall.call(frame, b, "sign", null)));
                 final int sign = signA * signB; // is between -1 and 1, 0 when nan
 
                 final Type type = new Type[]{ Type.NEGATIVE_INFINITY, Type.NAN, Type.POSITIVE_INFINITY }[sign + 1];
@@ -1646,7 +1659,7 @@ public abstract class BigDecimalNodes {
 
         public GetIntegerConstantNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readConstantNode = new ReadConstantNode(context, sourceSection, false, null, null);
+            readConstantNode = new ReadConstantNode(context, sourceSection, false, false, null, null);
             toIntNode = ToIntNodeGen.create(context, sourceSection, null);
             integerCastNode = IntegerCastNodeGen.create(context, sourceSection, null);
         }
@@ -1656,7 +1669,7 @@ public abstract class BigDecimalNodes {
         @Specialization(guards = "isRubyModule(module)")
         public int doInteger(VirtualFrame frame, DynamicObject module, String name) {
             final Object value = readConstantNode.readConstant(frame, module, name);
-            return integerCastNode.executeInteger(frame, toIntNode.executeIntOrLong(frame, value));
+            return integerCastNode.executeCastInt(toIntNode.executeIntOrLong(frame, value));
         }
     }
 
@@ -1969,14 +1982,14 @@ public abstract class BigDecimalNodes {
         @TruffleBoundary
         @Specialization(guards = "isNormal(value)")
         public Object unscaled(DynamicObject value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.BIG_DECIMAL.getValue(value).abs().stripTrailingZeros().unscaledValue().toString(), UTF8Encoding.INSTANCE));
         }
 
         @Specialization(guards = "!isNormal(value)")
         public Object unscaledSpecial(DynamicObject value) {
             final String type = Layouts.BIG_DECIMAL.getType(value).getRepresentation();
             String string = type.startsWith("-") ? type.substring(1) : type;
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -2055,6 +2068,19 @@ public abstract class BigDecimalNodes {
             return Layouts.BIG_DECIMAL.getValue(value);
         }
 
+        @Specialization(guards = {"!isRubyBignum(value)", "!isRubyBigDecimal(value)"})
+        public Object doOther(VirtualFrame frame, DynamicObject value) {
+            final Object result = ruby(
+                    frame,
+                    "value.is_a?(Rational) ? value.to_f : nil",
+                    "value", value);
+            if (result != nil()) {
+                return new BigDecimal((double) result);
+            } else {
+                return result;
+            }
+        }
+
         @Fallback
         public Object doBigDecimalFallback(Object value) {
             return nil();
@@ -2097,7 +2123,7 @@ public abstract class BigDecimalNodes {
         public abstract DynamicObject executeBigDecimal(VirtualFrame frame, Object value);
 
         @Specialization
-        public Object doBigDecimal(VirtualFrame frame, Object value, BigDecimal cast) {
+        public DynamicObject doBigDecimal(VirtualFrame frame, Object value, BigDecimal cast) {
             return createBigDecimal(frame, cast);
         }
 
@@ -2123,6 +2149,5 @@ public abstract class BigDecimalNodes {
         }
 
     }
-
 
 }

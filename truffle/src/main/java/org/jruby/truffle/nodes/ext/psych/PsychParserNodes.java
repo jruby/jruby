@@ -295,8 +295,8 @@ public abstract class PsychParserNodes {
                     "line", 0,
                     "col", 0,
                     "offset", re.getPosition(),
-                    "problem", re.getName() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(re.getName().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null),
-                    "context", re.toString() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(re.toString().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null));
+                    "problem", re.getName() == null ? nil() : createString(new ByteList(re.getName().getBytes(StandardCharsets.UTF_8))),
+                    "context", re.toString() == null ? nil() : createString(new ByteList(re.toString().getBytes(StandardCharsets.UTF_8))));
         }
 
         private void raiseParserException(DynamicObject yaml, MarkedYAMLException mye, DynamicObject rbPath) {
@@ -307,8 +307,8 @@ public abstract class PsychParserNodes {
                     "line", mark.getLine(),
                     "col", mark.getColumn(),
                     "offset", mark.getIndex(),
-                    "problem", mye.getProblem() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null),
-                    "context", mye.getContext() == null ? nil() : Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8)), StringSupport.CR_UNKNOWN, null));
+                    "problem", mye.getProblem() == null ? nil() : createString(new ByteList(mye.getProblem().getBytes(StandardCharsets.UTF_8))),
+                    "context", mye.getContext() == null ? nil() : createString(new ByteList(mye.getContext().getBytes(StandardCharsets.UTF_8))));
         }
 
         private Object invoke(Object receiver, String name, Object... args) {
@@ -356,7 +356,7 @@ public abstract class PsychParserNodes {
             }
 
             ByteList bytes = new ByteList(value.getBytes(charset), encoding);
-            Object string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), bytes, StringSupport.CR_UNKNOWN, null);
+            Object string = createString(bytes);
 
             if (tainted) {
                 ruby("string.taint", "string", string);

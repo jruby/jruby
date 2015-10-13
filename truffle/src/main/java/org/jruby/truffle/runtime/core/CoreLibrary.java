@@ -127,6 +127,7 @@ public class CoreLibrary {
     private final DynamicObject symbolClass;
     private final DynamicObject syntaxErrorClass;
     private final DynamicObject systemCallErrorClass;
+    private final DynamicObject systemExitClass;
     private final DynamicObject threadClass;
     private final DynamicObject threadBacktraceClass;
     private final DynamicObject threadBacktraceLocationClass;
@@ -258,7 +259,7 @@ public class CoreLibrary {
 
         // Close the cycles
         Layouts.MODULE.getFields(classClass).parentModule = Layouts.MODULE.getFields(moduleClass).start;
-        Layouts.MODULE.getFields(moduleClass).addDependent(Layouts.MODULE.getFields(classClass).rubyModuleObject);
+        Layouts.MODULE.getFields(moduleClass).addDependent(classClass);
         Layouts.MODULE.getFields(classClass).newVersion();
 
         Layouts.MODULE.getFields(classClass).getAdoptedByLexicalParent(context, objectClass, "Class", node);
@@ -331,7 +332,7 @@ public class CoreLibrary {
         defineClass(signalExceptionClass, "Interrupt");
 
         // SystemExit
-        defineClass(exceptionClass, "SystemExit");
+        systemExitClass = defineClass(exceptionClass, "SystemExit");
 
         // SystemStackError
         defineClass(exceptionClass, "SystemStackError");
@@ -1086,6 +1087,11 @@ public class CoreLibrary {
         return nameError(String.format("`%s' is not allowable as an instance variable name", name), name, currentNode);
     }
 
+    public DynamicObject nameErrorInstanceVariableNotDefined(String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("instance variable %s not defined", name), name, currentNode);
+    }
+
     public DynamicObject nameErrorReadOnly(String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("%s is a read-only variable", name), name, currentNode);
@@ -1592,6 +1598,10 @@ public class CoreLibrary {
 
     public DynamicObjectFactory getTimeFactory() {
         return timeFactory;
+    }
+
+    public DynamicObject getSystemExitClass() {
+        return systemExitClass;
     }
 
 }

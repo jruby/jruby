@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -55,7 +56,8 @@ public abstract class ThreadNodes {
         initialize(thread, context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                Layouts.THREAD.setValue(thread, ProcNodes.rootCall(block, arguments));
+                final Object value = ProcNodes.rootCall(block, arguments);
+                Layouts.THREAD.setValue(thread, value);
             }
         });
     }
@@ -68,6 +70,15 @@ public abstract class ThreadNodes {
                 ThreadNodes.run(thread, context, currentNode, info, task);
             }
         }).start();
+
+        // Wait for full initialization of the new thread
+        final CountDownLatch initializedLatch = Layouts.FIBER.getInitializedLatch(Layouts.THREAD.getFiberManager(thread).getRootFiber());
+        try {
+            initializedLatch.await();
+        } catch (InterruptedException e) {
+            // Nobody is allowed to have a reference to this Thread yet so this should not happen
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     public static void run(DynamicObject thread, final RubyContext context, Node currentNode, String info, Runnable task) {
@@ -160,6 +171,10 @@ public abstract class ThreadNodes {
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
             final Thread toKill = Layouts.THREAD.getThread(rubyThread);
+            if (toKill == null) {
+                // Already dead
+                return rubyThread;
+            }
 
             getContext().getSafepointManager().pauseThreadAndExecuteLater(toKill, this, new SafepointAction() {
                 @Override
@@ -353,7 +368,7 @@ public abstract class ThreadNodes {
                 }
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.THREAD.getStatus(self).bytes, StringSupport.CR_UNKNOWN, null);
+            return createString(Layouts.THREAD.getStatus(self).bytes);
         }
 
     }

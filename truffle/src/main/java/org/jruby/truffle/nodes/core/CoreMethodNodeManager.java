@@ -88,7 +88,7 @@ public class CoreMethodNodeManager {
             }
         }
 
-        assert module != null : fullName;
+        assert RubyGuards.isRubyModule(module) : fullName;
 
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
@@ -107,7 +107,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!(RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject))) {
+            if (RubyGuards.isRubyClass(module)) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }

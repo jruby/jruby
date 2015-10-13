@@ -886,11 +886,11 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, null, null);
+            this.readConstantNode = new ReadConstantNode(context, sourceSection, true, true, null, null);
         }
 
         @CreateCast("name")
-        public RubyNode coerceToString(RubyNode name) {
+        public RubyNode coerceToSymbolOrString(RubyNode name) {
             return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
@@ -900,12 +900,12 @@ public abstract class ModuleNodes {
         }
 
         // Symbol
-        @Specialization(guards = {"inherit", "isRubySymbol(name)"})
+        @Specialization(guards = { "inherit", "isRubySymbol(name)" })
         public Object getConstant(VirtualFrame frame, DynamicObject module, DynamicObject name, boolean inherit) {
             return readConstantNode.readConstant(frame, module, Layouts.SYMBOL.getString(name));
         }
 
-        @Specialization(guards = {"!inherit", "isRubySymbol(name)"})
+        @Specialization(guards = { "!inherit", "isRubySymbol(name)" })
         public Object getConstantNoInherit(DynamicObject module, DynamicObject name, boolean inherit) {
             return getConstantNoInherit(module, Layouts.SYMBOL.getString(name), this);
         }
@@ -1230,7 +1230,7 @@ public abstract class ModuleNodes {
             final List<DynamicObject> modules = new ArrayList<>();
 
             for (DynamicObject included : Layouts.MODULE.getFields(module).ancestors()) {
-                if (RubyGuards.isRubyModule(Layouts.MODULE.getFields(included).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(included).rubyModuleObject) && included != module) {
+                if (!RubyGuards.isRubyClass(included) && included != module) {
                     modules.add(included);
                 }
             }
@@ -1314,7 +1314,7 @@ public abstract class ModuleNodes {
                 return nil();
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
         }
     }
 
@@ -1851,7 +1851,7 @@ public abstract class ModuleNodes {
         @Specialization
         public DynamicObject toS(DynamicObject module) {
             final String name = Layouts.MODULE.getFields(module).getName();
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(name, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(name, UTF8Encoding.INSTANCE));
         }
 
     }

@@ -43,7 +43,7 @@ public class ReadTimeZoneNode extends RubyNode {
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         envNode = new ReadLiteralConstantNode(context, sourceSection,
                 new LiteralNode(context, sourceSection, getContext().getCoreLibrary().getObjectClass()), "ENV");
-        TZ = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        TZ = create7BitString(StringOperations.encodeByteList("TZ", UTF8Encoding.INSTANCE));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ReadTimeZoneNode extends RubyNode {
         // TODO CS 4-May-15 not sure how TZ ends up being nil
 
         if (tzNilProfile.profile(tz == nil())) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), defaultZone.dup(), StringSupport.CR_UNKNOWN, null);
+            return createString(defaultZone.dup());
         } else if (tzStringProfile.profile(RubyGuards.isRubyString(tz))) {
             return tz;
         } else {

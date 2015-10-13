@@ -390,7 +390,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("method", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("method", UTF8Encoding.INSTANCE));
     }
 
     private Object respondToMissing(VirtualFrame frame, Object receiverObject) {

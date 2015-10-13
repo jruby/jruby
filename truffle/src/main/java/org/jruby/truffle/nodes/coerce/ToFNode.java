@@ -81,7 +81,7 @@ public abstract class ToFNode extends RubyNode {
         try {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "Float", this));
             } else {

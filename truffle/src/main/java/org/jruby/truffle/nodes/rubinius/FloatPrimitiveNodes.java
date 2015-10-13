@@ -65,7 +65,7 @@ public abstract class FloatPrimitiveNodes {
 
             final int sign = value < 0 ? 1 : 0;
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), decimal, sign, string.length()}, 4);
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{create7BitString(StringOperations.encodeByteList(string, UTF8Encoding.INSTANCE)), decimal, sign, string.length()}, 4);
         }
 
     }

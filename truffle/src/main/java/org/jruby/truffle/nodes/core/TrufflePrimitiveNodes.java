@@ -110,7 +110,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -182,7 +182,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject javaClassOf(Object value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -205,7 +205,7 @@ public abstract class TrufflePrimitiveNodes {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(builder.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(builder.toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -249,7 +249,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -289,7 +289,7 @@ public abstract class TrufflePrimitiveNodes {
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-                converted.put(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), array);
+                converted.put(createString(StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
             }
 
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
@@ -448,7 +448,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -462,7 +462,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject hostOS() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
         }
 
     }

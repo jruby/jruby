@@ -192,7 +192,7 @@ public abstract class DigestNodes {
                 throw new RuntimeException(e);
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(clonedDigest.digest()), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(clonedDigest.digest()));
         }
 
     }
@@ -223,7 +223,7 @@ public abstract class DigestNodes {
         @Specialization(guards = "isRubyString(message)")
         public DynamicObject bubblebabble(DynamicObject message) {
             final ByteList byteList = StringOperations.getByteList(message);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()), StringSupport.CR_UNKNOWN, null);
+            return createString(BubbleBabble.bubblebabble(byteList.unsafeBytes(), byteList.begin(), byteList.length()));
         }
 
     }

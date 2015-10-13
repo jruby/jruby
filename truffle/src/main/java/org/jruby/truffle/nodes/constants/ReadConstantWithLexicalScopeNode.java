@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 public class ReadConstantWithLexicalScopeNode extends RubyNode implements RestartableReadConstantNode {
 
@@ -56,7 +55,7 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         try {
             constant = lookupConstantNode.executeLookupConstant(frame);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }
@@ -66,7 +65,7 @@ public class ReadConstantWithLexicalScopeNode extends RubyNode implements Restar
         if (constant == null) {
             return nil();
         } else {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE));
         }
     }
 

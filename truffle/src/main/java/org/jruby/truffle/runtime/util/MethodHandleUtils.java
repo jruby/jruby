@@ -12,8 +12,6 @@ package org.jruby.truffle.runtime.util;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 public abstract class MethodHandleUtils {
 

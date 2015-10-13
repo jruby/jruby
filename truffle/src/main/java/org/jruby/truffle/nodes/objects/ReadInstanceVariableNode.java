@@ -104,7 +104,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final DynamicObject receiverValue = (DynamicObject) receiver.execute(frame);
 
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!") || readNode.execute(receiverValue) != nil()) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return create7BitString(StringOperations.encodeByteList("global-variable", UTF8Encoding.INSTANCE));
             } else {
                 return nil();
             }
@@ -119,7 +119,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             final Property storageLocation = layout.getProperty(readNode.getName());
 
             if (storageLocation != null) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                return create7BitString(StringOperations.encodeByteList("instance-variable", UTF8Encoding.INSTANCE));
             } else {
                 return nil();
             }
