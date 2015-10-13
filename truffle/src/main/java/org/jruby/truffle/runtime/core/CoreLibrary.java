@@ -1078,9 +1078,11 @@ public class CoreLibrary {
         return nameError(String.format("%s is a read-only variable", name), name, currentNode);
     }
 
-    public DynamicObject nameErrorUndefinedLocalVariableOrMethod(String name, String object, Node currentNode) {
+    public DynamicObject nameErrorUndefinedLocalVariableOrMethod(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, object), name, currentNode);
+        // TODO: should not be just the class, but rather sth like name_err_mesg_to_str() in MRI error.c
+        String className = Layouts.MODULE.getFields(getLogicalClass(receiver)).getName();
+        return nameError(String.format("undefined local variable or method `%s' for %s", name, className), name, currentNode);
     }
 
     public DynamicObject nameErrorUndefinedMethod(String name, DynamicObject module, Node currentNode) {
@@ -1121,12 +1123,8 @@ public class CoreLibrary {
 
     public DynamicObject noSuperMethodError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        String message = "super called outside of method";
-        // TODO
-        DynamicObject noMethodError = ExceptionNodes.createRubyException(context.getCoreLibrary().getNoMethodErrorClass(),
-                StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)),
-                RubyCallStack.getBacktrace(currentNode));
-        noMethodError.define("@name", nilObject, 0);
+        DynamicObject noMethodError = noMethodError("super called outside of method", "<unknown>", currentNode);
+        noMethodError.define("@name", nilObject, 0); // FIXME: the name of the method is not known in this case currently
         return noMethodError;
     }
 
@@ -1146,10 +1144,10 @@ public class CoreLibrary {
         return noMethodError(String.format("undefined method `%s' for %s", name, repr), name, currentNode);
     }
 
-    public DynamicObject privateMethodError(String name, DynamicObject module, Node currentNode) {
+    public DynamicObject privateMethodError(String name, Object self, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyModule(module);
-        return noMethodError(String.format("private method `%s' called for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
+        String className = Layouts.MODULE.getFields(getLogicalClass(self)).getName();
+        return noMethodError(String.format("private method `%s' called for %s", name, className), name, currentNode);
     }
 
     public DynamicObject loadError(String message, Node currentNode) {
