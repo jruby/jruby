@@ -45,9 +45,9 @@ import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.pack.parser.PackParser;
-import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.pack.runtime.exceptions.*;
+import org.jruby.truffle.format.parser.PackParser;
+import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -64,7 +64,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
