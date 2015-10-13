@@ -111,7 +111,8 @@ public abstract class StringNodes {
         @Specialization(guards = "isRubyString(other)")
         public DynamicObject add(DynamicObject string, DynamicObject other) {
             final Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(other), this);
-            final DynamicObject ret = createString(StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other)));
+            final int codeRange = StringOperations.commonCodeRange(Layouts.STRING.getCodeRange(string), Layouts.STRING.getCodeRange(other));
+            final DynamicObject ret = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), StringSupport.addByteLists(StringOperations.getByteList(string), StringOperations.getByteList(other)), codeRange, null);
 
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();

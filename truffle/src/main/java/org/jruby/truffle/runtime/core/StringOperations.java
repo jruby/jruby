@@ -189,5 +189,21 @@ public abstract class StringOperations {
     public static ByteList getByteList(DynamicObject object) {
         return Layouts.STRING.getByteList(object);
     }
-    
+
+    public static int commonCodeRange(int first, int second) {
+        if (first == second) {
+            return first;
+        }
+
+        if ((first == StringSupport.CR_UNKNOWN) || (second == StringSupport.CR_UNKNOWN)) {
+            return StringSupport.CR_UNKNOWN;
+        }
+
+        if ((first == StringSupport.CR_BROKEN) || (second == StringSupport.CR_BROKEN)) {
+            return StringSupport.CR_BROKEN;
+        }
+
+        // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
+        return StringSupport.CR_VALID;
+    }
 }
