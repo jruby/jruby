@@ -1325,7 +1325,7 @@ public abstract class StringPrimitiveNodes {
 
             final DynamicObject ret = allocateNode.allocate(
                     Layouts.BASIC_OBJECT.getLogicalClass(string),
-                    new ByteList(StringOperations.getByteList(string).unsafeBytes(), beg, len),
+                    new ByteList(StringOperations.getByteList(string), beg, len),
                     StringSupport.CR_UNKNOWN,
                     null);
 
