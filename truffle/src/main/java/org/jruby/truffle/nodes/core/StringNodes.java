@@ -1180,7 +1180,7 @@ public abstract class StringNodes {
                 return nil();
             }
 
-            return StringOperations.getByteList(string).get(index) & 0xff;
+            return bytes.get(index) & 0xff;
         }
     }
 
