@@ -16,6 +16,7 @@
               class Symbol
                 alias :to_str :to_s
               end
+
     bundler.rb: "module Bundler; def self.setup; end; end"
     # mock method_source gem
     method_source.rb: nil
@@ -25,3 +26,6 @@
 :run:
   :require:
     - shims
+    - date
+    - bigdecimal
+    - rubygems
