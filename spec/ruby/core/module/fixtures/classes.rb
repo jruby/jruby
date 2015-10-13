@@ -504,6 +504,14 @@ module ModuleSpecs
       send(method, "Lookup")
     end
   end
+
+  class SuperInClassMethodWithPrepend
+    def self.inherited(base)
+      super
+    end
+  end
+
+  SuperInClassMethodWithPrepend.singleton_class.prepend(Module.new)
 end
 
 class Object
