@@ -9,7 +9,7 @@ curl -L -O 'http://central.maven.org/maven2/org/jacoco/org.jacoco.report/0.7.4.2
 JACOCO_AGENT=`pwd`/jacoco-agent.jar
 JACOCO_LOG=`pwd`/jacoco.exec
 
-export JRUBY_NO_BCP=1
+export VERIFY_JRUBY=1
 export JAVA_OPTS="-javaagent:$JACOCO_AGENT=destfile=$JACOCO_LOG"
 
 rm jacoco.exec
