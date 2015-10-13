@@ -870,6 +870,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @ImportStatic(StringGuards.class)
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         private final ConditionProfile indexTooLargeProfile = ConditionProfile.createBinaryProfile();
@@ -879,7 +880,18 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start) {
+            final ByteList byteList = StringOperations.getByteList(string);
+
+            if (indexTooLargeProfile.profile(byteList.realSize() < index)) {
+                return nil();
+            }
+
+            return index;
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object stringByteIndex(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::byte_index.
 
