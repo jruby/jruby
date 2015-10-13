@@ -975,8 +975,9 @@ public abstract class ModuleNodes {
             return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
+        @TruffleBoundary
         @Specialization
-        public Object methodMissing(DynamicObject module, String name) {
+        public Object constMissing(DynamicObject module, String name) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorUninitializedConstant(module, name, this));
         }
 
