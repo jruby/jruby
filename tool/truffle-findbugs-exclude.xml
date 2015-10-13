@@ -158,7 +158,7 @@
   <!-- Risks we're happy with for the sake of performance -->
 
   <Match>
-    <Class name="org.jruby.truffle.pack.runtime.PackResult" />
+    <Class name="org.jruby.truffle.format.runtime.PackResult" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
