@@ -3063,8 +3063,10 @@ public class RubyModule extends RubyObject {
             if (segment.length() == 0) throw context.runtime.newNameError("wrong constant name " + fullName, symbol);
             symbol = symbol.substring(sep + 2);
             IRubyObject obj = mod.getConstantNoConstMissing(validateConstant(segment, args[0]), inherit, inherit);
-            if(obj instanceof RubyModule) {
-                mod = (RubyModule)obj;
+            if (obj instanceof RubyModule) {
+                mod = (RubyModule) obj;
+            } else if (obj == null) {
+                return runtime.getFalse();
             } else {
                 throw runtime.newTypeError(segment + " does not refer to class/module");
             }
