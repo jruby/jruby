@@ -919,14 +919,6 @@ public final class Ruby implements Constantizable {
         return truffleContext;
     }
 
-    public void shutdownTruffleContextIfRunning() {
-        synchronized (truffleContextMonitor) {
-            if (truffleContext != null) {
-                truffleContext.shutdown();
-            }
-        }
-    }
-
     /**
      * @deprecated use #newInstance()
      */

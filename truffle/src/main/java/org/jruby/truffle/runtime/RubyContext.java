@@ -435,16 +435,6 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return id;
     }
 
-    public void innerShutdown(boolean normalExit) {
-        atExitManager.run(normalExit);
-
-        if (instrumentationServerManager != null) {
-            instrumentationServerManager.shutdown();
-        }
-
-        threadManager.shutdown();
-    }
-
     public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
         return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
     }
@@ -670,9 +660,19 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return execute(ParserContext.TOP_LEVEL, DeclarationContext.TOP_LEVEL, newRootNode, null, coreLibrary.getMainObject());
     }
 
+    public DynamicObject runAtExitHooks() {
+        return atExitManager.runAtExitHooks();
+    }
+
     @Override
     public void shutdown() {
-        innerShutdown(true);
+        atExitManager.runSystemExitHooks();
+
+        if (instrumentationServerManager != null) {
+            instrumentationServerManager.shutdown();
+        }
+
+        threadManager.shutdown();
     }
 
     public PrintStream getDebugStandardOut() {

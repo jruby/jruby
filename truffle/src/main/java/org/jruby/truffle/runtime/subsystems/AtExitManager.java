@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.ProcNodes;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,8 +28,8 @@ public class AtExitManager {
 
     private final RubyContext context;
 
-    private final Deque<DynamicObject> runOnExit = new ConcurrentLinkedDeque<>();
-    private final Deque<DynamicObject> runOnExitAlways = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> atExitHooks = new ConcurrentLinkedDeque<>();
+    private final Deque<DynamicObject> systemExitHooks = new ConcurrentLinkedDeque<>();
 
     public AtExitManager(RubyContext context) {
         this.context = context;
@@ -38,36 +39,35 @@ public class AtExitManager {
         assert RubyGuards.isRubyProc(block);
 
         if (always) {
-            runOnExitAlways.push(block);
+            systemExitHooks.push(block);
         } else {
-            runOnExit.push(block);
+            atExitHooks.push(block);
         }
     }
 
-    public void run(boolean normalExit) {
-        try {
-            if (normalExit) {
-                runExitHooks(runOnExit);
-            }
-        } finally {
-            runExitHooks(runOnExitAlways);
-        }
+    public DynamicObject runAtExitHooks() {
+        return runExitHooks(atExitHooks);
     }
 
-    private void runExitHooks(Deque<DynamicObject> stack) {
+    public void runSystemExitHooks() {
+        runExitHooks(systemExitHooks);
+    }
+
+    private DynamicObject runExitHooks(Deque<DynamicObject> stack) {
+        DynamicObject lastException = null;
+
         while (true) {
             DynamicObject block;
             try {
                 block = stack.pop();
             } catch (NoSuchElementException e) {
-                break;
+                return lastException;
             }
 
             try {
                 ProcNodes.rootCall(block);
             } catch (RaiseException e) {
-                final Object rubyException = e.getRubyException();
-                BacktraceFormatter.createDefaultFormatter(context).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
+                lastException = handleAtExitException(context, e);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -76,9 +76,19 @@ public class AtExitManager {
 
     public List<DynamicObject> getHandlers() {
         final List<DynamicObject> handlers = new ArrayList<>();
-        handlers.addAll(runOnExit);
-        handlers.addAll(runOnExitAlways);
+        handlers.addAll(atExitHooks);
+        handlers.addAll(systemExitHooks);
         return handlers;
+    }
+
+    public static DynamicObject handleAtExitException(RubyContext context, RaiseException raiseException) {
+        final DynamicObject rubyException = raiseException.getRubyException();
+        if (Layouts.BASIC_OBJECT.getLogicalClass(rubyException) == context.getCoreLibrary().getSystemExitClass()) {
+            // Do not show SystemExit errors, just track them for the exit status
+        } else {
+            BacktraceFormatter.createDefaultFormatter(context).printBacktrace(rubyException, Layouts.EXCEPTION.getBacktrace(rubyException));
+        }
+        return rubyException;
     }
 
 }

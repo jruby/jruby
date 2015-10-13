@@ -1265,6 +1265,14 @@ public class CoreLibrary {
         return ExceptionNodes.createRubyException(systemCallErrorClass, StringOperations.createString(context, StringOperations.encodeByteList(message, UTF8Encoding.INSTANCE)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public DynamicObject systemExit(int exitStatus, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        final DynamicObject message = StringOperations.createString(context, StringOperations.encodeByteList("exit", UTF8Encoding.INSTANCE));
+        final DynamicObject systemExit = ExceptionNodes.createRubyException(systemExitClass, message, RubyCallStack.getBacktrace(currentNode));
+        systemExit.define("@status", exitStatus, 0);
+        return systemExit;
+    }
+
     public RubyContext getContext() {
         return context;
     }
