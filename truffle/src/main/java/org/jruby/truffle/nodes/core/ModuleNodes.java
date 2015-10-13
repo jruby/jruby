@@ -1307,10 +1307,9 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object name(DynamicObject module) {
-            CompilerDirectives.transferToInterpreter();
-
             if (!Layouts.MODULE.getFields(module).hasPartialName()) {
                 return nil();
             }
