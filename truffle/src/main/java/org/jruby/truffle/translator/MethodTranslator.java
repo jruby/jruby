@@ -268,7 +268,7 @@ public class MethodTranslator extends BodyTranslator {
     public RubyNode visitSuperNode(org.jruby.ast.SuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null, environment.getNamedMethodName());
+        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), environment.getNamedMethodName());
 
         return new GeneralSuperCallNode(context, sourceSection, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
     }
