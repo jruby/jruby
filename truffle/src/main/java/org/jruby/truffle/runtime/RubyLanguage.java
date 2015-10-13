@@ -115,6 +115,11 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
         return null;
     }
 
+    @Override
+    protected String toString(RubyContext context, Object value) {
+        return context.send(value, "inspect", null).toString();
+    }
+
     public Node unprotectedCreateFindContextNode() {
         return super.createFindContextNode();
     }
