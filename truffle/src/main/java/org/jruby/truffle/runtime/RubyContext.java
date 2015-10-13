@@ -265,7 +265,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            ArrayOperations.append(coreLibrary.getArgv(), Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(coreLibrary.getStringClass()), StringOperations.encodeByteList(arg.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            ArrayOperations.append(coreLibrary.getArgv(), StringOperations.createString(this, StringOperations.encodeByteList(arg.toString(), UTF8Encoding.INSTANCE)));
         }
 
         // Set the load path
@@ -284,7 +284,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
                     pathString = SourceLoader.JRUBY_SCHEME + pathString.substring("uri:classloader:".length());
                 }
 
-                ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(pathString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+                ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(pathString, UTF8Encoding.INSTANCE)));
             }
         }
 
@@ -305,21 +305,21 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         home = home + "/";
 
         // Libraries copied unmodified from MRI
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/mri", UTF8Encoding.INSTANCE)));
 
         // Our own implementations
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/truffle", UTF8Encoding.INSTANCE)));
 
         // Libraries from RubySL
         for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio",
                 "rubysl-complex", "rubysl-date", "rubysl-pathname",
                 "rubysl-tempfile", "rubysl-socket", "rubysl-securerandom",
                 "rubysl-timeout", "rubysl-webrick")) {
-            ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/rubysl/" + lib + "/lib", UTF8Encoding.INSTANCE)));
         }
 
         // Shims
-        ArrayOperations.append(loadPath, Layouts.STRING.createString(coreLibrary.getStringFactory(), StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+        ArrayOperations.append(loadPath, StringOperations.createString(this, StringOperations.encodeByteList(home + "lib/ruby/truffle/shims", UTF8Encoding.INSTANCE)));
     }
 
     // TODO (eregon, 10/10/2015): this check could be done when a Symbol is created to be much cheaper
@@ -518,7 +518,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
     }
 
     public DynamicObject toTruffle(org.jruby.RubyString jrubyString) {
-        final DynamicObject truffleString = Layouts.STRING.createString(coreLibrary.getStringFactory(), jrubyString.getByteList().dup(), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject truffleString = StringOperations.createString(this, jrubyString.getByteList().dup());
 
         if (jrubyString.isTaint()) {
             truffleString.define(Layouts.TAINTED_IDENTIFIER, true, 0);
