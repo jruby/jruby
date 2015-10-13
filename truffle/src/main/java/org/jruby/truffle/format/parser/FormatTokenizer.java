@@ -23,7 +23,6 @@ public class FormatTokenizer {
     private final RubyContext context;
     private final ByteList format;
     private int position;
-    private Object peek;
 
     /**
      * Construct a tokenizer.
@@ -35,12 +34,6 @@ public class FormatTokenizer {
     }
 
     public Object next() {
-        if (peek != null) {
-            final Object token = peek;
-            peek = null;
-            return token;
-        }
-
         if (position >= format.length()) {
             return null;
         }
