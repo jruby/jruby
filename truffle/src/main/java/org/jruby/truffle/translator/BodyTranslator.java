@@ -1401,7 +1401,10 @@ public class BodyTranslator extends Translator {
         // The JRuby AST includes assignment nodes without a proper value,
         // so we need to patch them to include the proper rhs value to translate them correctly.
 
-        if (dummyAssignment instanceof AssignableNode || dummyAssignment instanceof IArgumentNode) {
+        if (dummyAssignment instanceof org.jruby.ast.StarNode) {
+            // Nothing to assign to, just execute the RHS
+            return rhs;
+        } else if (dummyAssignment instanceof AssignableNode || dummyAssignment instanceof IArgumentNode) {
             final org.jruby.ast.Node wrappedRHS = new org.jruby.ast.Node(dummyAssignment.getPosition(), false) {
                 @SuppressWarnings("unchecked")
                 @Override
@@ -1422,8 +1425,7 @@ public class BodyTranslator extends Translator {
 
             return setRHS(dummyAssignment, wrappedRHS).accept(this);
         } else {
-            // Nothing to assign to, just execute the RHS
-            return rhs;
+            throw new UnsupportedOperationException("Don't know how to translate the dummy asgn " + dummyAssignment.getClass().getName());
         }
     }
 
