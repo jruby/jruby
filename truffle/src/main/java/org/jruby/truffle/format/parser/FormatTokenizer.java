@@ -68,11 +68,15 @@ public class FormatTokenizer {
             key = readUntil('}');
             position++;
             return new FormatDirective(0, 0, false, 0, '{', key);
+        } else if (format.charAt(position) == '<') {
+            position++;
+            key = readUntil('>');
+            position++;
         }
 
         boolean leftJustified = false;
 
-        if (format.charAt(position) == '-') {
+        if (position < format.length() && format.charAt(position) == '-') {
             leftJustified = true;
             position++;
         }
@@ -80,20 +84,20 @@ public class FormatTokenizer {
         int spacePadding;
         int zeroPadding;
 
-        if (format.charAt(position) == ' ') {
+        if (position < format.length() && format.charAt(position) == ' ') {
             position++;
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
-        } else if (format.charAt(position) == '0') {
+        } else if (position < format.length() && format.charAt(position) == '0') {
             spacePadding = FormatDirective.DEFAULT;
             zeroPadding = readInt();
-        } else if (Character.isDigit(format.charAt(position))) {
+        } else if (position < format.length() && Character.isDigit(format.charAt(position))) {
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
         } else {
             spacePadding = FormatDirective.DEFAULT;
 
-            if (format.charAt(position) == '0') {
+            if (position < format.length() && format.charAt(position) == '0') {
                 position++;
                 zeroPadding = readInt();
             } else {
@@ -103,24 +107,35 @@ public class FormatTokenizer {
 
         final int precision;
 
-        if (format.charAt(position) == '.') {
+        if (position < format.length() && format.charAt(position) == '.') {
             position++;
             precision = readInt();
         } else {
             precision = FormatDirective.DEFAULT;
         }
 
-        if (Character.isDigit(format.charAt(position))) {
+        if (position < format.length() && Character.isDigit(format.charAt(position))) {
             spacePadding = readInt();
         }
 
-        final char type = format.charAt(position);
+        char type;
 
-        if (TYPE_CHARS.indexOf(type) == -1) {
-            throw new UnsupportedOperationException("Unknown format type '" + format.charAt(position) + "'");
+        if (key != null && position >= format.length()) {
+            type = 's';
+        } else {
+            type = format.charAt(position);
+
+            if (key != null && Character.isWhitespace(type)) {
+                type = 's';
+            } else {
+                if (TYPE_CHARS.indexOf(type) == -1) {
+                    throw new UnsupportedOperationException("Unknown format type '" + format.charAt(position) + "'");
+                }
+            }
+
+            position++;
         }
 
-        position++;
 
         return new FormatDirective(spacePadding, zeroPadding, leftJustified, precision, type, key);
     }
