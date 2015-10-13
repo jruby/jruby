@@ -22,7 +22,7 @@ public class StringGuards {
 
     public static boolean isSingleByteOptimizable(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
-        return StringSupport.isSingleByteOptimizable(StringOperations.getCodeRangeable(string), StringOperations.getByteList(string).getEncoding());
+        return Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT || StringOperations.getByteList(string).getEncoding().maxLength() == 1;
     }
 
     public static boolean isAsciiCompatible(DynamicObject string) {
