@@ -1188,7 +1188,11 @@ public abstract class StringPrimitiveNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateNode;
         @Child private TaintResultNode taintResultNode;
+        private final ConditionProfile negativeLengthProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile tooLargeBeginProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile negativeBeginProfile = ConditionProfile.createBinaryProfile();
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1196,12 +1200,11 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @TruffleBoundary
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19.
 
-            if (len < 0) {
+            if (negativeLengthProfile.profile(len < 0)) {
                 return nil();
             }
 
@@ -1210,14 +1213,14 @@ public abstract class StringPrimitiveNodes {
                 len = 0;
             }
 
-            if (beg > length) {
+            if (tooLargeBeginProfile.profile(beg > length)) {
                 return nil();
             }
 
             if (beg < 0) {
                 beg += length;
 
-                if (beg < 0) {
+                if (negativeBeginProfile.profile(beg < 0)) {
                     return nil();
                 }
             }
@@ -1310,13 +1313,22 @@ public abstract class StringPrimitiveNodes {
         private DynamicObject makeSubstring(DynamicObject string, int beg, int len) {
             assert RubyGuards.isRubyString(string);
 
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
             if (taintResultNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection()));
             }
 
-            final DynamicObject ret = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), new ByteList(StringOperations.getByteList(string), beg, len), StringSupport.CR_UNKNOWN, null);
-            StringOperations.getByteList(ret).setEncoding(StringOperations.getByteList(string).getEncoding());
+            final DynamicObject ret = allocateNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(string),
+                    new ByteList(StringOperations.getByteList(string).unsafeBytes(), beg, len),
+                    StringSupport.CR_UNKNOWN,
+                    null);
+
             taintResultNode.maybeTaint(string, ret);
 
             return ret;
