@@ -605,41 +605,61 @@ public class Java implements Library {
             }
         });
 
-        subclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
+        subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
+    }
 
-            private final IntHashMap<JavaProxyConstructor> cache = newCallableCache();
+    public static class JCreateMethod extends JavaMethodN {
+        private final IntHashMap<JavaProxyConstructor> writeCache = newCallableCache();
+        private volatile IntHashMap<JavaProxyConstructor> readCache = (IntHashMap)writeCache.clone();
 
-            @Override
-            public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
-                if (proxyClass == null || proxyClass.isNil()) {
-                    proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
-                    self.getMetaClass().getInstanceVariables().setInstanceVariable("@java_proxy_class", proxyClass);
-                }
+        JCreateMethod(RubyModule cls) {
+            super(cls, PUBLIC);
+        }
 
-                final int argsLength = args.length;
-                final JavaProxyConstructor[] constructors = ((JavaProxyClass) proxyClass).getConstructors();
-                ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(argsLength, constructors);
+        public JavaProxyConstructor getSignature(int signatureCode) {
+            return readCache.get(signatureCode);
+        }
 
-                if ( forArity.size() == 0 ) {
-                    throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-                }
+        public void putSignature(int signatureCode, JavaProxyConstructor callable) {
+            synchronized (writeCache) {
+                writeCache.put(signatureCode, callable);
+                readCache = (IntHashMap<JavaProxyConstructor>)writeCache.clone();
+            }
+        }
 
-                final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
-                        context.runtime, cache,
+        @Override
+        public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
+            if (proxyClass == null || proxyClass.isNil()) {
+                proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
+                self.getMetaClass().getInstanceVariables().setInstanceVariable("@java_proxy_class", proxyClass);
+            }
+
+            final int argsLength = args.length;
+            final JavaProxyConstructor[] constructors = ((JavaProxyClass) proxyClass).getConstructors();
+            ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(argsLength, constructors);
+
+            if ( forArity.size() == 0 ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+
+            final JavaProxyConstructor matching;
+            synchronized (writeCache) {
+                matching = CallableSelector.matchingCallableArityN(
+                        context.runtime, this,
                         forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
                 );
-
-                if ( matching == null ) {
-                    throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-                }
-
-                final Object[] javaArgs = convertArguments(matching, args);
-                JavaObject newObject = matching.newInstance(self, javaArgs);
-
-                return JavaUtilities.set_java_object(self, self, newObject);
             }
-        });
+
+            if ( matching == null ) {
+                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
+            }
+
+            final Object[] javaArgs = convertArguments(matching, args);
+            JavaObject newObject = matching.newInstance(self, javaArgs);
+
+            return JavaUtilities.set_java_object(self, self, newObject);
+        }
     }
 
     // NOTE: move to RubyToJavaInvoker for re-use ?!
