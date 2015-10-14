@@ -91,6 +91,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
+import org.jruby.util.ByteList;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
@@ -1611,8 +1612,9 @@ public class RubyModule extends RubyObject {
         return getRuntime().defineModuleUnder(name, this);
     }
 
-    private void addAccessor(ThreadContext context, String internedName, Visibility visibility, boolean readable, boolean writeable) {
-        assert internedName == internedName.intern() : internedName + " is not interned";
+    private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
+        ByteList idBytes = identifier.getBytes();
+        String internedIdentifier = identifier.toString();
 
         final Ruby runtime = context.runtime;
 
@@ -1621,19 +1623,22 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
         }
 
-        if (!(IdUtil.isLocal(internedName) || IdUtil.isConstant(internedName))) {
-            throw runtime.newNameError("invalid attribute name", internedName);
+        if (!(IdUtil.isLocal(internedIdentifier) || IdUtil.isConstant(internedIdentifier))) {
+            throw runtime.newNameError("invalid attribute name", internedIdentifier);
         }
 
-        final String variableName = ("@" + internedName).intern();
+        // FIXME: This only works if identifier's encoding is ASCII-compatible
+        final String variableName = TypeConverter.checkID(runtime, "@" + internedIdentifier).toString();
         if (readable) {
-            addMethod(internedName, new AttrReaderMethod(methodLocation, visibility, variableName));
-            callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
+            addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
+            callMethod(context, "method_added", identifier);
         }
         if (writeable) {
-            internedName = (internedName + "=").intern();
-            addMethod(internedName, new AttrWriterMethod(methodLocation, visibility, variableName));
-            callMethod(context, "method_added", runtime.fastNewSymbol(internedName));
+            // FIXME: This only works if identifier's encoding is ASCII-compatible
+            identifier = TypeConverter.checkID(runtime, internedIdentifier + "=");
+            internedIdentifier = identifier.toString();
+            addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
+            callMethod(context, "method_added", identifier);
         }
     }
 
@@ -1777,15 +1782,10 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Ruby runtime = context.runtime;
-        String name = TypeConverter.convertToIdentifier(arg0);
+        RubySymbol nameSym = TypeConverter.checkID(arg0);
+        String name = nameSym.toString();
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
-
-        // We need our identifier to be retrievable and creatable as a symbol.  This side-effect
-        // populates this name into our symbol table so it will exist later if needed.  The
-        // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
-        // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
-        RubySymbol nameSym = RubySymbol.newSymbol(runtime, arg0);
 
         if (!block.isGiven()) {
             throw getRuntime().newArgumentError("tried to create Proc object without a block");
@@ -1823,15 +1823,10 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Ruby runtime = context.runtime;
-        String name = TypeConverter.convertToIdentifier(arg0);
+        RubySymbol nameSym = TypeConverter.checkID(arg0);
+        String name = nameSym.toString();
         DynamicMethod newMethod = null;
         Visibility visibility = PUBLIC;
-
-        // We need our identifier to be retrievable and creatable as a symbol.  This side-effect
-        // populates this name into our symbol table so it will exist later if needed.  The
-        // reason for this hack/side-effect is that symbols store their values as raw bytes.  We lose encoding
-        // info so we need to make an entry so any accesses with raw bytes later gets proper symbol.
-        RubySymbol nameSym = RubySymbol.newSymbol(runtime, arg0);
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
@@ -2180,15 +2175,15 @@ public class RubyModule extends RubyObject {
     }
 
     public void addReadWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), PUBLIC, true, true);
+        addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, true, true);
     }
 
     public void addReadAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), PUBLIC, true, false);
+        addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, true, false);
     }
 
     public void addWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, name.intern(), PUBLIC, false, true);
+        addAccessor(context, TypeConverter.checkID(context.runtime, name), PUBLIC, false, true);
     }
 
     /** rb_mod_attr
@@ -2204,7 +2199,7 @@ public class RubyModule extends RubyObject {
 
         if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
             runtime.getWarnings().warn(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
-            addAccessor(context, args[0].asJavaString().intern(), context.getCurrentVisibility(), args[0].isTrue(), args[1].isTrue());
+            addAccessor(context, TypeConverter.checkID(args[0]), context.getCurrentVisibility(), args[0].isTrue(), args[1].isTrue());
             return runtime.getNil();
         }
 
@@ -2225,7 +2220,7 @@ public class RubyModule extends RubyObject {
         Visibility visibility = context.getCurrentVisibility();
 
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), visibility, true, false);
+            addAccessor(context, TypeConverter.checkID(args[i]), visibility, true, false);
         }
 
         return context.nil;
@@ -2240,7 +2235,7 @@ public class RubyModule extends RubyObject {
         Visibility visibility = context.getCurrentVisibility();
 
         for (int i = 0; i < args.length; i++) {
-            addAccessor(context, args[i].asJavaString().intern(), visibility, false, true);
+            addAccessor(context, TypeConverter.checkID(args[i]), visibility, false, true);
         }
 
         return context.nil;
@@ -2265,7 +2260,7 @@ public class RubyModule extends RubyObject {
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might getService an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
-            addAccessor(context, args[i].asJavaString().intern(), visibility, true, true);
+            addAccessor(context, TypeConverter.checkID(args[i]), visibility, true, true);
         }
 
         return context.nil;
@@ -2648,8 +2643,7 @@ public class RubyModule extends RubyObject {
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
         String newName = newId.asJavaString();
         defineAlias(newName, oldId.asJavaString());
-        RubySymbol newSym = newId instanceof RubySymbol ? (RubySymbol)newId :
-            context.runtime.newSymbol(newName);
+        RubySymbol newSym = TypeConverter.checkID(newId);
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {
