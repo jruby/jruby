@@ -61,6 +61,7 @@ public class SimpleShell {
                     return;
 
                 case "exit":
+                    // We're in the debugger, not normal Ruby, so just hard exit here
                     System.exit(0);
                     break;
 

@@ -722,6 +722,11 @@ public abstract class KernelNodes {
                 }
             });
 
+            /*
+             * We really do want to just exit here as opposed to throwing a MainExitException and tidying up, as we're
+             * pretending that we did exec and so replaced this process with a new one.
+             */
+
             System.exit(exitCode);
         }
 
