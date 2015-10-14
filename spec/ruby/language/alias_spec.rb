@@ -162,4 +162,10 @@ describe "The alias keyword" do
     # because it defines on the default definee / current module
     ruby_exe("def foo; end; alias bla foo; print method(:bla).owner", escape: true).should == "Object"
   end
+
+  it "raises a NameError when passed a missing name" do
+    lambda { @meta.class_eval { alias undef_method not_exist } }.should raise_error(NameError)
+    # a NameError and not a NoMethodError
+    lambda { @meta.class_eval { alias undef_method not_exist } }.should_not raise_error(NoMethodError)
+  end
 end

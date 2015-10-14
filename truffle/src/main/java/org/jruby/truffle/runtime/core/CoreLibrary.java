@@ -1148,12 +1148,6 @@ public class CoreLibrary {
         return noMethodError;
     }
 
-    public DynamicObject noMethodErrorOnModule(String name, DynamicObject module, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        assert RubyGuards.isRubyModule(module);
-        return noMethodError(String.format("undefined method `%s' for %s", name, Layouts.MODULE.getFields(module).getName()), name, currentNode);
-    }
-
     public DynamicObject noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         DynamicObject logicalClass = getLogicalClass(receiver);

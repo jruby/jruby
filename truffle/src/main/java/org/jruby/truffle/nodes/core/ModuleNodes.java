@@ -1881,15 +1881,8 @@ public abstract class ModuleNodes {
         private void undefMethod(VirtualFrame frame, DynamicObject module, String name) {
             raiseIfFrozenNode.execute(frame);
 
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
-
-            if (method != null) {
-                Layouts.MODULE.getFields(module).undefMethod(getContext(), this, method);
-                methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
-            }
+            Layouts.MODULE.getFields(module).undefMethod(getContext(), this, name);
+            methodUndefinedNode.call(frame, module, "method_undefined", null, getSymbol(name));
         }
 
     }

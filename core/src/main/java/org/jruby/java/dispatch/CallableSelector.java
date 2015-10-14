@@ -16,10 +16,13 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.java.invokers.RubyToJavaInvoker;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
+import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import static org.jruby.util.CodegenUtils.getBoxType;
@@ -35,117 +38,62 @@ public class CallableSelector {
 
     //private static final boolean DEBUG = true;
 
-    @SuppressWarnings("unchecked")
-    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args) {
+    public static JavaProxyConstructor matchingCallableArityN(Ruby runtime, Java.JCreateMethod invoker, JavaProxyConstructor[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
-        ParameterTypes method = (ParameterTypes) cache.get(signatureCode);
+        org.jruby.javasupport.proxy.JavaProxyConstructor method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
 
-    // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
-    // when there's already a cached match. Do not condense them into a single
-    // method.
-    @SuppressWarnings("unchecked")
-    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args) {
+    public static <T extends JavaCallable> T matchingCallableArityN(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        T method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityOne(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0) {
+    public static <T extends JavaCallable> T matchingCallableArityOne(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0) {
         final int signatureCode = argsHashCode(arg0);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        T method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, arg0);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityTwo(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
+    public static <T extends JavaCallable> T matchingCallableArityTwo(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1) {
         final int signatureCode = argsHashCode(arg0, arg1);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        T method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityThree(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public static <T extends JavaCallable> T matchingCallableArityThree(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         final int signatureCode = argsHashCode(arg0, arg1, arg2);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        T method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityFour(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    public static <T extends JavaCallable> T matchingCallableArityFour(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
-        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        T method = invoker.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    public static <T extends ParameterTypes> T matchingCallableArityN(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject[] args) {
-        final int signatureCode = argsHashCode(args);
-        T method = cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    public static <T extends ParameterTypes> T matchingCallableArityOne(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0) {
-        final int signatureCode = argsHashCode(arg0);
-        T method = cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    public static <T extends ParameterTypes> T matchingCallableArityTwo(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1) {
-        final int signatureCode = argsHashCode(arg0, arg1);
-        T method = cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    public static <T extends ParameterTypes> T matchingCallableArityThree(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        final int signatureCode = argsHashCode(arg0, arg1, arg2);
-        T method = cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
-            if (method != null) cache.put(signatureCode, method);
-        }
-        return method;
-    }
-
-    public static <T extends ParameterTypes> T matchingCallableArityFour(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
-        T method = cache.get(signatureCode);
-        if (method == null) {
-            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
-            if (method != null) cache.put(signatureCode, method);
+            if (method != null) invoker.putSignature(signatureCode, method);
         }
         return method;
     }
@@ -762,4 +710,74 @@ public class CallableSelector {
         return new IntHashMap<T>(8);
     }
 
+    @SuppressWarnings("unchecked")
+    @Deprecated
+    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args) {
+        final int signatureCode = argsHashCode(args);
+        ParameterTypes method = (ParameterTypes) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
+    // when there's already a cached match. Do not condense them into a single
+    // method.
+    @SuppressWarnings("unchecked")
+    @Deprecated
+    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args) {
+        final int signatureCode = argsHashCode(args);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    @Deprecated
+    public static JavaCallable matchingCallableArityOne(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0) {
+        final int signatureCode = argsHashCode(arg0);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    @Deprecated
+    public static JavaCallable matchingCallableArityTwo(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
+        final int signatureCode = argsHashCode(arg0, arg1);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    @Deprecated
+    public static JavaCallable matchingCallableArityThree(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    @Deprecated
+    public static JavaCallable matchingCallableArityFour(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
 }
