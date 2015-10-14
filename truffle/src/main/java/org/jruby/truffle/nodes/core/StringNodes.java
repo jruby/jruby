@@ -1140,25 +1140,33 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         @Specialization(guards = "isRubyString(encodingName)")
-        public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName) {
+        public DynamicObject forceEncodingString(DynamicObject string, DynamicObject encodingName,
+                                                 @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             final DynamicObject encoding = EncodingNodes.getEncoding(encodingName.toString());
-            return forceEncodingEncoding(string, encoding);
+            return forceEncodingEncoding(string, encoding, differentEncodingProfile);
         }
 
-        @Specialization(guards = "isRubyEncoding(encoding)")
-        public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject encoding) {
-            StringOperations.forceEncoding(string, EncodingOperations.getEncoding(encoding));
+        @Specialization(guards = "isRubyEncoding(rubyEncoding)")
+        public DynamicObject forceEncodingEncoding(DynamicObject string, DynamicObject rubyEncoding,
+                                                   @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
+            final Encoding encoding = EncodingOperations.getEncoding(rubyEncoding);
+
+            if (differentEncodingProfile.profile(StringOperations.getByteList(string).getEncoding() != encoding)) {
+                StringOperations.forceEncoding(string, encoding);
+            }
+
             return string;
         }
 
         @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)" })
-        public DynamicObject forceEncoding(VirtualFrame frame, DynamicObject string, Object encoding) {
+        public DynamicObject forceEncoding(VirtualFrame frame, DynamicObject string, Object encoding,
+                                           @Cached("createBinaryProfile()") ConditionProfile differentEncodingProfile) {
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toStrNode = insert(ToStrNodeGen.create(getContext(), getSourceSection(), null));
             }
 
-            return forceEncodingString(string, toStrNode.executeToStr(frame, encoding));
+            return forceEncodingString(string, toStrNode.executeToStr(frame, encoding), differentEncodingProfile);
         }
 
     }
