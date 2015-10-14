@@ -33,6 +33,7 @@ public class TopLevelRaiseHandler extends RubyNode {
         this.body = body;
     }
 
+    @SuppressWarnings("finally")
     @Override
     public Object execute(VirtualFrame frame) {
         DynamicObject lastException = null;
