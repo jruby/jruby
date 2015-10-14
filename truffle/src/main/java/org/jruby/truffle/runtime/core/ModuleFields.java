@@ -355,13 +355,8 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (method == null) {
             throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(methodName, rubyModuleObject, currentNode));
         } else {
-            undefMethod(context, currentNode, method);
+            addMethod(context, currentNode, method.undefined());
         }
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    public void undefMethod(RubyContext context, Node currentNode, InternalMethod method) {
-        addMethod(context, currentNode, method.undefined());
     }
 
     /**
