@@ -393,7 +393,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().noMethodErrorOnModule(oldName, rubyModuleObject, currentNode));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUndefinedMethod(oldName, rubyModuleObject, currentNode));
         }
 
         InternalMethod aliasMethod = method.withName(newName);
