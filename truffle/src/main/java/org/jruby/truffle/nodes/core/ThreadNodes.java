@@ -21,6 +21,7 @@ import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -30,8 +31,6 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.util.StringSupport;
-
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +90,7 @@ public abstract class ThreadNodes {
         start(context, thread);
         try {
             DynamicObject fiber = Layouts.THREAD.getFiberManager(thread).getRootFiber();
-            FiberNodes.run(context, fiber, task);
+            FiberNodes.run(context, fiber, currentNode, task);
         } catch (ThreadExitException e) {
             Layouts.THREAD.setValue(thread, context.getCoreLibrary().getNilObject());
             return;

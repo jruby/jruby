@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import org.jruby.RubyThread.Status;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.InterruptMode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -181,7 +180,7 @@ public class SafepointManager {
         assumptionInvalidated(currentNode, true);
     }
 
-    public void pauseThreadAndExecuteLater(final Thread thread, RubyNode currentNode, final SafepointAction action) {
+    public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
             DynamicObject rubyThread = context.getThreadManager().getCurrentThread();

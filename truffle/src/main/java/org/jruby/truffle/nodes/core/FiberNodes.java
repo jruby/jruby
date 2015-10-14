@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -22,6 +23,7 @@ import org.jruby.truffle.nodes.cast.SingleValueCastNode;
 import org.jruby.truffle.nodes.cast.SingleValueCastNodeGen;
 import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.nodes.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -57,7 +59,7 @@ public abstract class FiberNodes {
                 null);
     }
 
-    public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
+    public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block, final Node currentNode) {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
         final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
@@ -65,7 +67,7 @@ public abstract class FiberNodes {
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                handleFiberExceptions(context, fiber, block);
+                handleFiberExceptions(context, fiber, block, currentNode);
             }
         });
         thread.setName(name);
@@ -81,11 +83,11 @@ public abstract class FiberNodes {
         }
     }
 
-    private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block) {
+    private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block, Node currentNode) {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
 
-        run(context, fiber, new Runnable() {
+        run(context, fiber, currentNode, new Runnable() {
             @Override
             public void run() {
                 try {
@@ -112,12 +114,18 @@ public abstract class FiberNodes {
         });
     }
 
-    public static void run(RubyContext context, DynamicObject fiber, final Runnable task) {
+    public static void run(RubyContext context, DynamicObject fiber, Node currentNode, final Runnable task) {
         assert RubyGuards.isRubyFiber(fiber);
 
         start(context, fiber);
         try {
             task.run();
+        } catch (RaiseException e) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getSystemExitClass()) {
+                // SystemExit: send it to the main thread if it reached here
+                ThreadRaisePrimitiveNode.raiseInThread(context, context.getThreadManager().getRootThread(), e.getRubyException(), currentNode);
+            }
+            throw e;
         } finally {
             cleanup(context, fiber);
         }
@@ -257,7 +265,7 @@ public abstract class FiberNodes {
         public DynamicObject initialize(DynamicObject fiber, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
-            FiberNodes.initialize(getContext(), fiber, block);
+            FiberNodes.initialize(getContext(), fiber, block, this);
             return nil();
         }
 
