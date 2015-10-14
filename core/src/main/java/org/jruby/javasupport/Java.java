@@ -625,10 +625,13 @@ public class Java implements Library {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
-                final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
-                        context.runtime, cache,
-                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
-                );
+                final JavaProxyConstructor matching;
+                synchronized (cache) {
+                    matching = CallableSelector.matchingCallableArityN(
+                            context.runtime, cache,
+                            forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
+                    );
+                }
 
                 if ( matching == null ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
