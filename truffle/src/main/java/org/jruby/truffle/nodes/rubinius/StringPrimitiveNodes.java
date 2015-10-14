@@ -389,9 +389,9 @@ public abstract class StringPrimitiveNodes {
 
         public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            stringByteSubstringNode = StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {});
         }
 
-        @TruffleBoundary
         @Specialization
         public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
@@ -404,7 +404,7 @@ public abstract class StringPrimitiveNodes {
 
             final int p = bytes.getBegin() + byteIndex;
             final int end = bytes.getBegin() + bytes.getRealSize();
-            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+            final int c = preciseLength(bytes, p, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
                 return nil();
@@ -415,18 +415,12 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            if (stringByteSubstringNode == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                stringByteSubstringNode = insert(
-                        StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(
-                                getContext(),
-                                getSourceSection(),
-                                new RubyNode[]{})
-                );
-            }
-
             return stringByteSubstringNode.stringByteSubstring(frame, string, byteIndex, n);
+        }
+
+        @TruffleBoundary
+        private int preciseLength(final ByteList bytes, final int p, final int end) {
+            return StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
         }
 
     }
