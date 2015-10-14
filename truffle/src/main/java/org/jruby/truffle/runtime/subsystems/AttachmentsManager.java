@@ -80,7 +80,7 @@ public class AttachmentsManager {
         }
     }
 
-    private final class AttachmentManagerInstrumentListener implements StandardInstrumentListener {
+    private static final class AttachmentManagerInstrumentListener implements StandardInstrumentListener {
 
         private final RubyContext context;
         private final DynamicObject block;
