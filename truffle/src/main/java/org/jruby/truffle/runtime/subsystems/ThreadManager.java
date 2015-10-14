@@ -95,29 +95,53 @@ public class ThreadManager {
         return result;
     }
 
-    public <T> T runUntilTimeout(Node currentNode, int timeout, final BlockingTimeoutAction<T> action) {
+    public interface ResultOrTimeout<T> {
+    }
+
+    public static class ResultWithinTime<T> implements ResultOrTimeout<T> {
+
+        private final T value;
+
+        public ResultWithinTime(T value) {
+            this.value = value;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+    }
+
+    public static class TimedOut<T> implements ResultOrTimeout<T> {
+    }
+
+    public <T> ResultOrTimeout<T> runUntilTimeout(Node currentNode, int timeout, final BlockingTimeoutAction<T> action) {
         final Timeval timeoutToUse = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
 
         if (timeout == 0) {
             timeoutToUse.setTime(new long[]{0, 0});
 
-            return runUntilResult(currentNode, new BlockingAction<T>() {
+            return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
 
                 @Override
                 public T block() throws InterruptedException {
                     return action.block(timeoutToUse);
                 }
 
-            });
+            }));
         } else {
             final int pollTime = 500_000_000;
             final long requestedTimeoutAt = System.nanoTime() + timeout * 1_000;
 
-            return runUntilResult(currentNode, new BlockingAction<T>() {
+            return runUntilResult(currentNode, new BlockingAction<ResultOrTimeout<T>>() {
 
                 @Override
-                public T block() throws InterruptedException {
+                public ResultOrTimeout<T> block() throws InterruptedException {
                     final long timeUntilRequestedTimeout = requestedTimeoutAt - System.nanoTime();
+
+                    if (timeUntilRequestedTimeout <= 0) {
+                        return new TimedOut<>();
+                    }
 
                     final boolean timeoutForPoll;
                     final long effectiveTimeout;
@@ -139,7 +163,11 @@ public class ThreadManager {
                         throw new InterruptedException();
                     }
 
-                    return result;
+                    if (result == null) {
+                        return new TimedOut<>();
+                    }
+
+                    return new ResultWithinTime<>(result);
                 }
 
             });

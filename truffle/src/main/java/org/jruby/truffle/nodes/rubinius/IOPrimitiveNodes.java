@@ -594,7 +594,7 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilTimeout(this, timeout, new ThreadManager.BlockingTimeoutAction<Integer>() {
+            final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeout, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
                 public Integer block(Timeval timeoutToUse) throws InterruptedException {
                     final int result = nativeSockets().select(
@@ -612,7 +612,13 @@ public abstract class IOPrimitiveNodes {
                 }
             });
 
-            if (result == -1 || result == 0) {
+            if (result instanceof ThreadManager.TimedOut) {
+                return nil();
+            }
+
+            final int resultCode = ((ThreadManager.ResultWithinTime<Integer>) result).getValue();
+
+            if (resultCode == -1 || resultCode == 0) {
                 return nil();
             }
 
