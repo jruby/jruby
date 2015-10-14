@@ -35,7 +35,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
-    final IntHashMap<T> cache;
+    final IntHashMap<T> writeCache;
+    volatile IntHashMap<T> readCache;
 
     private final Ruby runtime;
 
@@ -54,7 +55,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             minVarArgsArity = getMemberArity(member) - 1;
         }
 
-        cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+        writeCache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+        readCache = writeCache;
 
         this.javaCallable = callable;
         this.javaCallables = null;
@@ -84,7 +86,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             }
             callables = null;
 
-            cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+            writeCache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
+            readCache = writeCache;
         }
         else {
             callable = null; maxArity = -1; minArity = Integer.MAX_VALUE;
@@ -139,7 +142,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
 
-            cache = newCallableCache();
+            writeCache = newCallableCache();
+            readCache = (IntHashMap<T>)writeCache.clone();
         }
 
         this.javaCallable = callable;
@@ -192,14 +196,13 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     public T getSignature(int signatureCode) {
-        synchronized (cache) {
-            return cache.get(signatureCode);
-        }
+        return readCache.get(signatureCode);
     }
 
     public void putSignature(int signatureCode, T callable) {
-        synchronized (cache) {
-            cache.put(signatureCode, callable);
+        synchronized (writeCache) {
+            writeCache.put(signatureCode, callable);
+            readCache = (IntHashMap<T>)writeCache.clone();
         }
     }
 
