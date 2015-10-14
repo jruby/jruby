@@ -45,7 +45,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-import jnr.ffi.Pointer;
+import jnr.ffi.*;
+import jnr.posix.DefaultNativeTimeval;
+import jnr.posix.Timeval;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -100,7 +102,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public boolean connectPipe(VirtualFrame frame, DynamicObject lhs, DynamicObject rhs) {
+        public boolean connectPipe(DynamicObject lhs, DynamicObject rhs) {
             final int[] fds = new int[2];
 
             if (posix().pipe(fds) == -1) {
@@ -269,13 +271,11 @@ public abstract class IOPrimitiveNodes {
             final FDSet fdSet = fdSetFactory.create();
             fdSet.set(fd);
 
-            // TODO CS 2-Sep-15 why are longs 8 bytes? Is that always the case?
-            final Pointer timeout = getContext().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
-            timeout.putLong(0, 0);
-            timeout.putLong(8, 0);
+            final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
+            timeoutObject.setTime(new long[]{0, 0});
 
             final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
-                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeoutObject);
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -594,19 +594,25 @@ public abstract class IOPrimitiveNodes {
                 readableSet.set(fd);
             }
 
-            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
+            final int result = getContext().getThreadManager().runUntilTimeout(this, timeout, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
-                public Integer block() throws InterruptedException {
-                    return nativeSockets().select(
+                public Integer block(Timeval timeoutToUse) throws InterruptedException {
+                    final int result = nativeSockets().select(
                             max(readableFds) + 1,
                             readableSet.getPointer(),
                             PointerNodes.NULL_POINTER,
                             PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER);
+                            timeoutToUse);
+
+                    if (result == 0) {
+                        return null;
+                    }
+
+                    return result;
                 }
             });
 
-            if (result == -1) {
+            if (result == -1 || result == 0) {
                 return nil();
             }
 
@@ -637,7 +643,7 @@ public abstract class IOPrimitiveNodes {
                             PointerNodes.NULL_POINTER,
                             writableSet.getPointer(),
                             PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER);
+                            null);
                 }
             });
 
