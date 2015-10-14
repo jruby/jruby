@@ -62,7 +62,6 @@ import org.jruby.truffle.nodes.exceptions.RescueNode;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
-import org.jruby.truffle.nodes.literal.RangeLiteralNodeGen;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -1142,12 +1141,13 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDotNode(org.jruby.ast.DotNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode begin = node.getBeginNode().accept(this);
         final RubyNode end = node.getEndNode().accept(this);
-        SourceSection sourceSection = translate(node.getPosition());
+        final RubyNode rangeClass = new LiteralNode(context, sourceSection, context.getCoreLibrary().getRangeClass());
+        final RubyNode isExclusive = new LiteralNode(context, sourceSection, node.isExclusive());
 
-        // See RangeNode for why there is a node specifically for creating this one type
-        final RubyNode ret = RangeLiteralNodeGen.create(context, sourceSection, node.isExclusive(), begin, end);
+        final RubyNode ret = RangeNodesFactory.NewNodeFactory.create(context, sourceSection, rangeClass, begin, end, isExclusive);
         return addNewlineIfNeeded(node, ret);
     }
 
