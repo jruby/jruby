@@ -219,6 +219,7 @@ public abstract class StringPrimitiveNodes {
 
         @Child private TaintResultNode taintResultNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private StringNodes.SizeNode sizeNode;
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -227,8 +228,8 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, NotProvided length) {
-            final Object subString = stringByteSubstring(string, index, 1);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, NotProvided length) {
+            final Object subString = stringByteSubstring(frame, string, index, 1);
 
             if (subString == nil()) {
                 return subString;
@@ -242,14 +243,15 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, int length) {
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, int length) {
             final ByteList bytes = StringOperations.getByteList(string);
 
             if (length < 0) {
                 return nil();
             }
 
-            final int normalizedIndex = StringOperations.normalizeIndex(string, index);
+            final int stringLength = getSizeNode().executeInteger(frame, string);
+            final int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
 
             if (normalizedIndex < 0 || normalizedIndex > bytes.length()) {
                 return nil();
@@ -265,13 +267,13 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, long length) {
-            return stringByteSubstring(string, (long) index, length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, long length) {
+            return stringByteSubstring(frame, string, (long) index, length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, int index, double length) {
-            return stringByteSubstring(string, index, (int) length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, int index, double length) {
+            return stringByteSubstring(frame, string, index, (int) length);
         }
 
         @Specialization
@@ -280,17 +282,17 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, long index, NotProvided length) {
-            return stringByteSubstring(string, index, 1);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, NotProvided length) {
+            return stringByteSubstring(frame, string, index, 1);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, long index, int length) {
-            return stringByteSubstring(string, index, (long) length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, int length) {
+            return stringByteSubstring(frame, string, index, (long) length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, long index, long length) {
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, long index, long length) {
             if (index > Integer.MAX_VALUE || index < Integer.MIN_VALUE) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("index out of int range", this));
@@ -299,12 +301,12 @@ public abstract class StringPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("length out of int range", this));
             }
-            return stringByteSubstring(string, (int) index, (int) length);
+            return stringByteSubstring(frame, string, (int) index, (int) length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, long index, double length) {
-            return stringByteSubstring(string, index, (int) length);
+        public Object stringByteSubstring(VirtualFrame frame,DynamicObject string, long index, double length) {
+            return stringByteSubstring(frame, string, index, (int) length);
         }
 
         @Specialization
@@ -313,23 +315,23 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, NotProvided length) {
-            return stringByteSubstring(string, (int) index, 1);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, NotProvided length) {
+            return stringByteSubstring(frame, string, (int) index, 1);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, int length) {
-            return stringByteSubstring(string, (int) index, length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, int length) {
+            return stringByteSubstring(frame, string, (int) index, length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, long length) {
-            return stringByteSubstring(string, (int) index, length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, long length) {
+            return stringByteSubstring(frame, string, (int) index, length);
         }
 
         @Specialization
-        public Object stringByteSubstring(DynamicObject string, double index, double length) {
-            return stringByteSubstring(string, (int) index, (int) length);
+        public Object stringByteSubstring(VirtualFrame frame, DynamicObject string, double index, double length) {
+            return stringByteSubstring(frame, string, (int) index, (int) length);
         }
 
         @Specialization
@@ -347,6 +349,14 @@ public abstract class StringPrimitiveNodes {
             return null;
         }
 
+        private StringNodes.SizeNode getSizeNode() {
+            if (sizeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+
+            return sizeNode;
+        }
     }
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
@@ -383,7 +393,7 @@ public abstract class StringPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization
-        public Object stringChrAt(DynamicObject string, int byteIndex) {
+        public Object stringChrAt(VirtualFrame frame, DynamicObject string, int byteIndex) {
             // Taken from Rubinius's Character::create_from.
 
             final ByteList bytes = StringOperations.getByteList(string);
@@ -416,7 +426,7 @@ public abstract class StringPrimitiveNodes {
                 );
             }
 
-            return stringByteSubstringNode.stringByteSubstring(string, byteIndex, n);
+            return stringByteSubstringNode.stringByteSubstring(frame, string, byteIndex, n);
         }
 
     }
@@ -860,13 +870,28 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_byte_index", needsSelf = false, lowerFixnumParameters = { 0, 1 })
+    @ImportStatic(StringGuards.class)
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        private final ConditionProfile indexTooLargeProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile invalidByteProfile = ConditionProfile.createBinaryProfile();
 
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @Specialization
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start) {
+            final ByteList byteList = StringOperations.getByteList(string);
+
+            if (indexTooLargeProfile.profile(byteList.realSize() < index)) {
+                return nil();
+            }
+
+            return index;
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public Object stringByteIndex(DynamicObject string, int index, int start) {
             // Taken from Rubinius's String::byte_index.
 
@@ -887,17 +912,17 @@ public abstract class StringPrimitiveNodes {
                 final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
 
                 // If it's an invalid byte, just treat it as a single byte
-                if(! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                if(invalidByteProfile.profile(! StringSupport.MBCLEN_CHARFOUND_P(c))) {
                     ++p;
                 } else {
                     p += StringSupport.MBCLEN_CHARFOUND_LEN(c);
                 }
             }
 
-            if (i < k) {
+            if (indexTooLargeProfile.profile(i < k)) {
                 return nil();
             } else {
-                return p;
+                return p - bytes.begin();
             }
         }
 
@@ -918,16 +943,19 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
+            final ByteList stringByteList = StringOperations.getByteList(string);
+            final ByteList patternByteList = StringOperations.getByteList(pattern);
+
             final Encoding encoding = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(pattern), this);
-            int p = StringOperations.getByteList(string).getBegin();
-            final int e = p + StringOperations.getByteList(string).getRealSize();
-            int pp = StringOperations.getByteList(pattern).getBegin();
-            final int pe = pp + StringOperations.getByteList(pattern).getRealSize();
+            int p = stringByteList.getBegin();
+            final int e = p + stringByteList.getRealSize();
+            int pp = patternByteList.getBegin();
+            final int pe = pp + patternByteList.getRealSize();
             int s;
             int ss;
 
-            final byte[] stringBytes = StringOperations.getByteList(string).getUnsafeBytes();
-            final byte[] patternBytes = StringOperations.getByteList(pattern).getUnsafeBytes();
+            final byte[] stringBytes = stringByteList.getUnsafeBytes();
+            final byte[] patternBytes = patternByteList.getUnsafeBytes();
 
             for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
@@ -944,7 +972,7 @@ public abstract class StringPrimitiveNodes {
                     final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
 
                     if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                        return s;
+                        return s - stringByteList.begin();
                     } else {
                         return nil();
                     }
@@ -1191,8 +1219,12 @@ public abstract class StringPrimitiveNodes {
         @Child private AllocateObjectNode allocateNode;
         @Child private TaintResultNode taintResultNode;
         private final ConditionProfile negativeLengthProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile emptyStringProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile tooLargeBeginProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile negativeBeginProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile stillNegativeBeginProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile tooLargeTotalProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile stillNegativeLengthProfile = ConditionProfile.createBinaryProfile();
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1209,7 +1241,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             final int length = StringOperations.getByteList(string).getRealSize();
-            if (length == 0) {
+            if (emptyStringProfile.profile(length == 0)) {
                 len = 0;
             }
 
@@ -1217,19 +1249,19 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            if (beg < 0) {
+            if (negativeBeginProfile.profile(beg < 0)) {
                 beg += length;
 
-                if (negativeBeginProfile.profile(beg < 0)) {
+                if (stillNegativeBeginProfile.profile(beg < 0)) {
                     return nil();
                 }
             }
 
-            if ((beg + len) > length) {
+            if (tooLargeTotalProfile.profile((beg + len) > length)) {
                 len = length - beg;
             }
 
-            if (len <= 0) {
+            if (stillNegativeLengthProfile.profile(len <= 0)) {
                 len = 0;
                 beg = 0;
             }

@@ -505,13 +505,11 @@ module ModuleSpecs
     end
   end
 
-  class SuperInClassMethodWithPrepend
+  class RecordIncludedModules
     def self.inherited(base)
-      super
+      ScratchPad.record base
     end
   end
-
-  SuperInClassMethodWithPrepend.singleton_class.prepend(Module.new)
 end
 
 class Object

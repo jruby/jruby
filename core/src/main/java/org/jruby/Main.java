@@ -198,6 +198,10 @@ public class Main {
 
         try {
             Status status = main.run(args);
+
+            printTruffleTimeMetric("after-main");
+            printTruffleMemoryMetric();
+
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
@@ -221,9 +225,6 @@ public class Main {
 
             System.exit(1);
         }
-
-        printTruffleTimeMetric("after-main");
-        printTruffleMemoryMetric();
     }
 
     public Status run(String[] args) {

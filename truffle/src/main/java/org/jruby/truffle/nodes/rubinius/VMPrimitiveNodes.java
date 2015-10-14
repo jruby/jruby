@@ -50,6 +50,7 @@ import jnr.posix.Passwd;
 import jnr.posix.Times;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -155,8 +156,7 @@ public abstract class VMPrimitiveNodes {
         @Specialization
         public Object vmExit(int status) {
             getContext().shutdown();
-            System.exit(status);
-            return nil();
+            throw new MainExitException(status);
         }
 
         @Fallback

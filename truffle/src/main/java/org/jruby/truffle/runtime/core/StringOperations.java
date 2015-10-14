@@ -139,24 +139,8 @@ public abstract class StringOperations {
         clearCodeRange(string);
     }
 
-    public static int length(DynamicObject string) {
-        if (CompilerDirectives.injectBranchProbability(
-                CompilerDirectives.FASTPATH_PROBABILITY,
-                StringSupport.isSingleByteOptimizable(getCodeRangeable(string), StringOperations.getByteList(string).getEncoding()))) {
-
-            return StringOperations.getByteList(string).getRealSize();
-
-        } else {
-            return StringSupport.strLengthFromRubyString(getCodeRangeable(string));
-        }
-    }
-
     public static int normalizeIndex(int length, int index) {
         return ArrayOperations.normalizeIndex(length, index);
-    }
-
-    public static int normalizeIndex(DynamicObject rubyString, int index) {
-        return normalizeIndex(length(rubyString), index);
     }
 
     public static int clampExclusiveIndex(DynamicObject string, int index) {

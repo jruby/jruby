@@ -13,7 +13,7 @@
 require 'open-uri'
 require 'webrick'
 
-Thread.new do
+request = Thread.new do
   loop do
     begin
       open('http://localhost:8000/hello').read
@@ -33,3 +33,4 @@ server.mount_proc '/hello' do |req, res|
 end
 
 server.start
+request.join

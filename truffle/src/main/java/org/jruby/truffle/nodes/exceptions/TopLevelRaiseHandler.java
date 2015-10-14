@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNode;
 import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
@@ -47,12 +48,9 @@ public class TopLevelRaiseHandler extends RubyNode {
             }
 
             getContext().shutdown();
-            final int status = statusFromException(lastException);
-            System.exit(status);
-        }
 
-        // unreachable
-        return nil();
+            throw new MainExitException(statusFromException(lastException));
+        }
     }
 
     private int statusFromException(DynamicObject exception) {

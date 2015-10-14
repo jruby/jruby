@@ -269,28 +269,38 @@ describe "Module#prepend" do
   end
 
   it "supports super when the module is prepended into a singleton class" do
-    module ModuleSpecs::PrependSuperInSingleton
-      def included(base)
+    ScratchPad.record []
+
+    mod = Module.new do
+      def self.inherited(base)
         super
       end
     end
 
-    module ModuleSpecs::PrependSuperInSingletonModule
-      class << self
-        prepend ModuleSpecs::PrependSuperInSingleton
-      end
+    module_with_singleton_class_prepend = Module.new do
+      singleton_class.prepend mod
     end
 
-    lambda do
-      class ModuleSpecs::PrependSuperInSingletonClass
-        include ModuleSpecs::PrependSuperInSingletonModule
-      end
-    end.should_not raise_error
+    klass = Class.new(ModuleSpecs::RecordIncludedModules) do
+      include module_with_singleton_class_prepend
+    end
+
+    ScratchPad.recorded.should == klass
   end
 
   it "supports super when the module is prepended into a singleton class with a class super" do
-    lambda do
-      Class.new(ModuleSpecs::SuperInClassMethodWithPrepend)
-    end.should_not raise_error
+    ScratchPad.record []
+
+    base_class = Class.new(ModuleSpecs::RecordIncludedModules) do
+      def self.inherited(base)
+        super
+      end
+    end
+
+    prepended_module = Module.new
+    base_class.singleton_class.prepend(prepended_module)
+
+    child_class = Class.new(base_class)
+    ScratchPad.recorded.should == child_class
   end
 end

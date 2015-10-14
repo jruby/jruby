@@ -188,13 +188,31 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
      */
 
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
-        if (!(name instanceof RubyString)) return newSymbol(runtime, name.asJavaString());
+        if (name instanceof RubySymbol) {
+            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
+        } else if (name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), false);
+        } else {
+            return newSymbol(runtime, name.asJavaString());
+        }
+    }
 
-        return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList());
+    public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
+        if (name instanceof RubySymbol) {
+            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
+        } else if (name instanceof RubyString) {
+            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), true);
+        } else {
+            return newSymbol(runtime, name.asJavaString());
+        }
     }
 
     public static RubySymbol newSymbol(Ruby runtime, String name) {
-        return runtime.getSymbolTable().getSymbol(name);
+        return runtime.getSymbolTable().getSymbol(name, false);
+    }
+
+    public static RubySymbol newHardSymbol(Ruby runtime, String name) {
+        return runtime.getSymbolTable().getSymbol(name, true);
     }
 
     // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
@@ -202,6 +220,17 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
     // be pretty rare.
     public static RubySymbol newSymbol(Ruby runtime, String name, Encoding encoding) {
         RubySymbol newSymbol = newSymbol(runtime, name);
+
+        newSymbol.associateEncoding(encoding);
+
+        return newSymbol;
+    }
+
+    // FIXME: same bytesequences will fight over encoding of the symbol once cached.  I think largely
+    // this will only happen in some ISO_8859_?? encodings making symbols at the same time so it should
+    // be pretty rare.
+    public static RubySymbol newHardSymbol(Ruby runtime, String name, Encoding encoding) {
+        RubySymbol newSymbol = newHardSymbol(runtime, name);
 
         newSymbol.associateEncoding(encoding);
 
@@ -689,39 +718,60 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             final String name;
             final ByteList bytes;
             final WeakReference<RubySymbol> symbol;
+            RubySymbol hardReference; // only read in this
             SymbolEntry next;
 
-            SymbolEntry(int hash, String name, ByteList bytes, WeakReference<RubySymbol> symbol, SymbolEntry next) {
+            SymbolEntry(int hash, String name, ByteList bytes, RubySymbol symbol, SymbolEntry next, boolean hard) {
                 this.hash = hash;
                 this.name = name;
                 this.bytes = bytes;
-                this.symbol = symbol;
+                this.symbol = new WeakReference<RubySymbol>(symbol);
                 this.next = next;
+                if (hard) hardReference = symbol;
+            }
+
+            /**
+             * Force an existing weak symbol to become a hard symbol, so it never goes away.
+             */
+            public void setHardReference() {
+                if (hardReference == null) {
+                    hardReference = symbol.get();
+                }
             }
         }
 
         public RubySymbol getSymbol(String name) {
+            return getSymbol(name, false);
+        }
+
+        public RubySymbol getSymbol(String name, boolean hard) {
             int hash = javaStringHashCode(name);
             RubySymbol symbol = null;
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
             }
 
-            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash);
+            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
 
             return symbol;
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
+            return getSymbol(bytes, false);
+        }
+
+        public RubySymbol getSymbol(ByteList bytes, boolean hard) {
             RubySymbol symbol = null;
             int hash = javaStringHashCode(bytes);
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
                 if (isSymbolMatch(bytes, hash, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
@@ -729,24 +779,29 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(bytes.toString(), bytes, hash);
+                symbol = createSymbol(bytes.toString(), bytes, hash, hard);
             }
 
             return symbol;
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
+            return fastGetSymbol(internedName, false);
+        }
+
+        public RubySymbol fastGetSymbol(String internedName, boolean hard) {
             RubySymbol symbol = null;
 
             for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
                 if (isSymbolMatch(internedName, e)) {
+                    if (hard) e.setHardReference();
                     symbol = e.symbol.get();
                     break;
                 }
             }
 
             if (symbol == null) {
-                symbol = fastCreateSymbol(internedName);
+                symbol = fastCreateSymbol(internedName, hard);
             }
 
             return symbol;
@@ -768,7 +823,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             return internedName == entry.name;
         }
 
-        private RubySymbol createSymbol(final String name, final ByteList value, final int hash) {
+        private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -800,7 +855,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                 if (symbol == null) {
                     String internedName = name.intern();
                     symbol = new RubySymbol(runtime, internedName, value);
-                    table[index] = new SymbolEntry(hash, internedName, value, new WeakReference(symbol), table[index]);
+                    table[index] = new SymbolEntry(hash, internedName, value, symbol, table[index], hard);
                     size++;
                     // write-volatile
                     symbolTable = table;
@@ -821,7 +876,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             size--; // reduce current size because we lost one somewhere
         }
 
-        private RubySymbol fastCreateSymbol(final String internedName) {
+        private RubySymbol fastCreateSymbol(final String internedName, boolean hard) {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
@@ -853,7 +908,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
 
                 if (symbol == null) {
                     symbol = new RubySymbol(runtime, internedName);
-                    table[index] = new SymbolEntry(hash, internedName, symbol.getBytes(), new WeakReference(symbol), table[index]);
+                    table[index] = new SymbolEntry(hash, internedName, symbol.getBytes(), symbol, table[index], hard);
                     size++;
                     // write-volatile
                     symbolTable = table;
@@ -934,7 +989,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
                     for (SymbolEntry p = e; p != lastRun; p = p.next) {
                         int k = p.hash & sizeMask;
                         SymbolEntry n = newTable[k];
-                        newTable[k] = new SymbolEntry(p.hash, p.name, p.bytes, p.symbol, n);
+                        newTable[k] = new SymbolEntry(p.hash, p.name, p.bytes, p.symbol.get(), n, p.hardReference != null);
                     }
                 }
             }

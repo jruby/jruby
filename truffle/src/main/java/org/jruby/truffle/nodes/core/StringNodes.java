@@ -428,7 +428,8 @@ public abstract class StringNodes {
 
         @Specialization(guards = "wasNotProvided(length) || isRubiniusUndefined(length)")
         public Object getIndex(VirtualFrame frame, DynamicObject string, int index, Object length) {
-            int normalizedIndex = StringOperations.normalizeIndex(string, index);
+            final int stringLength = getSizeNode().executeInteger(frame, string);
+            int normalizedIndex = StringOperations.normalizeIndex(stringLength, index);
             final ByteList bytes = StringOperations.getByteList(string);
 
             if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
@@ -467,12 +468,7 @@ public abstract class StringNodes {
         private Object sliceRange(VirtualFrame frame, DynamicObject string, int begin, int end, boolean doesExcludeEnd) {
             assert RubyGuards.isRubyString(string);
 
-            if (sizeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
-            }
-
-            final int stringLength = sizeNode.executeInteger(frame, string);
+            final int stringLength = getSizeNode().executeInteger(frame, string);
             begin = StringOperations.normalizeIndex(stringLength, begin);
 
             if (begin < 0 || begin > stringLength) {
@@ -572,6 +568,15 @@ public abstract class StringNodes {
 
         protected boolean isRubiniusUndefined(Object object) {
             return object == getContext().getCoreLibrary().getRubiniusUndefined();
+        }
+
+        private SizeNode getSizeNode() {
+            if (sizeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+
+            return sizeNode;
         }
 
     }
@@ -1275,11 +1280,13 @@ public abstract class StringNodes {
     public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode concatNode;
+        @Child private SizeNode sizeNode;
         @Child private TaintResultNode taintResultNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
             taintResultNode = new TaintResultNode(context, sourceSection);
         }
 
@@ -1302,7 +1309,8 @@ public abstract class StringNodes {
                 index++;
             }
 
-            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 0, otherString);
+            final int stringLength = sizeNode.executeInteger(frame, string);
+            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(stringLength, index, this), 0, otherString);
 
             return taintResultNode.maybeTaint(otherString, string);
         }
@@ -1800,7 +1808,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject succ(DynamicObject string) {
-            if (StringOperations.length(string) > 0) {
+            if (Layouts.STRING.getByteList(string).realSize() > 0) {
                 return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), StringSupport.succCommon(getContext().getRuntime(), StringOperations.getByteList(string)), StringSupport.CR_UNKNOWN, null);
             } else {
                 return Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.BASIC_OBJECT.getLogicalClass(string)), new ByteList(), StringSupport.CR_UNKNOWN, null);
@@ -2323,10 +2331,8 @@ public abstract class StringNodes {
 
     public static class StringNodesHelper {
 
-        public static int checkIndex(DynamicObject string, int index, RubyNode node) {
-            assert RubyGuards.isRubyString(string);
-
-            if (index > StringOperations.length(string)) {
+        public static int checkIndex(int length, int index, RubyNode node) {
+            if (index > length) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -2334,14 +2340,14 @@ public abstract class StringNodes {
             }
 
             if (index < 0) {
-                if (-index > StringOperations.length(string)) {
+                if (-index > length) {
                     CompilerDirectives.transferToInterpreter();
 
                     throw new RaiseException(
                             node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
                 }
 
-                index += StringOperations.length(string);
+                index += length;
             }
 
             return index;

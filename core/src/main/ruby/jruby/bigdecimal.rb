@@ -1,4 +1,3 @@
-require 'bigdecimal'
 require 'bigdecimal/util'
 
 module BigMath
