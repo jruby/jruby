@@ -302,6 +302,7 @@ public abstract class StringNodes {
             @NodeChild(type = RubyNode.class, value = "string"),
             @NodeChild(type = RubyNode.class, value = "other")
     })
+    @ImportStatic(StringGuards.class)
     public abstract static class ConcatNode extends CoreMethodNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
@@ -342,8 +343,18 @@ public abstract class StringNodes {
             return concatNumeric(string, Layouts.BIGNUM.getValue(other).intValue());
         }
 
+        @Specialization(guards = { "isRubyString(other)", "is7Bit(string)", "is7Bit(other)" })
+        public DynamicObject concatStringSingleByte(DynamicObject string, DynamicObject other) {
+            final ByteList stringByteList = StringOperations.getByteList(string);
+            final ByteList otherByteList = StringOperations.getByteList(other);
+
+            stringByteList.append(otherByteList);
+
+            return string;
+        }
+
         @TruffleBoundary
-        @Specialization(guards = "isRubyString(other)")
+        @Specialization(guards =  { "isRubyString(other)", "!is7Bit(string) || !is7Bit(other)" })
         public DynamicObject concatString(DynamicObject string, DynamicObject other) {
             final int codeRange = Layouts.STRING.getCodeRange(other);
             final int[] ptr_cr_ret = { codeRange };
