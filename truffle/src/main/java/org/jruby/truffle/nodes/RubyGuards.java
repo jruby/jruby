@@ -220,7 +220,7 @@ public abstract class RubyGuards {
     }
 
     public static boolean isForeignObject(Object object) {
-        return (object instanceof TruffleObject) && !(object instanceof DynamicObject);
+        return !isRubyBasicObject(object);
     }
 
     // Sentinels
