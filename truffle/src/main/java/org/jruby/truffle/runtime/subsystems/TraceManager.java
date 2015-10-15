@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.Node;
@@ -29,7 +31,6 @@ import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -145,7 +146,7 @@ public class TraceManager {
         @Override
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
+                                final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
                 final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 final int line = sourceSection.getStartLine();
@@ -191,6 +192,8 @@ public class TraceManager {
 
         private final ConditionProfile inTraceFuncProfile = ConditionProfile.createBinaryProfile();
 
+        private final static String callTraceFuncCode = "traceFunc.call(event, file, line, id, binding, classname)";
+
         private final RubyContext context;
         private final DynamicObject traceFunc;
         private final Object event;
@@ -205,15 +208,28 @@ public class TraceManager {
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
                 // set_trace_func reports the file and line of the call site.
+                final String filename;
+                final int line;
                 final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
-                final String filename = sourceSection.getSource().getName();
+
+                if (sourceSection.getSource() != null) {
+                    // Skip over any lines that are a result of the trace function call being made.
+                    if (sourceSection.getSource().getCode().equals(callTraceFuncCode)) {
+                        return;
+                    }
+
+                    filename = sourceSection.getSource().getName();
+                    line = sourceSection.getStartLine();
+                } else {
+                    filename = "<internal>";
+                    line = -1;
+                }
+
                 final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
                 if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                     return;
                 }
-
-                final int line = sourceSection.getStartLine();
 
                 final Object self = RubyArguments.getSelf(frame.getArguments());
                 final Object classname = context.getCoreLibrary().getLogicalClass(self);
@@ -226,7 +242,7 @@ public class TraceManager {
                 isInTraceFunc = true;
 
                 try {
-                    context.inlineRubyHelper(node, frame, "traceFunc.call(event, file, line, id, binding, classname)",
+                    context.inlineRubyHelper(node, frame, callTraceFuncCode,
                             "traceFunc", traceFunc,
                             "event", event,
                             "file", file,
