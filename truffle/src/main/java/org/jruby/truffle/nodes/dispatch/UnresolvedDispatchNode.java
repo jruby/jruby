@@ -82,10 +82,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
-                    if (receiverObject instanceof DynamicObject) {
-                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
-                    } else if (RubyGuards.isForeignObject(receiverObject)) {
+                    if (RubyGuards.isForeignObject(receiverObject)) {
                         newDispathNode = createForeign(argumentsObjects, first, methodName);
+                    } else if (RubyGuards.isRubyBasicObject(receiverObject)) {
+                        newDispathNode = doDynamicObject(frame, first, receiverObject, methodName, argumentsObjects);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
                     }
