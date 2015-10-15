@@ -5251,6 +5251,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject force_encoding(Encoding encoding) {
+        modifyCheck();
         modify19();
         associateEncoding(encoding);
         clearCodeRange();

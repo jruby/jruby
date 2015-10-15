@@ -1140,7 +1140,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "force_encoding", required = 1)
+    @CoreMethod(names = "force_encoding", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ForceEncodingNode extends CoreMethodArrayArgumentsNode {
 
         @Child private ToStrNode toStrNode;
