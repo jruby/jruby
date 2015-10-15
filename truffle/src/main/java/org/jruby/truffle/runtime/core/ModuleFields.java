@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
@@ -64,10 +65,9 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
     public final DynamicObject lexicalParent;
     public final String givenBaseName;
-    /**
-     * Full name, including named parent
-     */
-    public String name;
+
+    private boolean hasFullName = false;
+    private String name = null;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
     private final Map<String, RubyConstant> constants = new ConcurrentHashMap<>();
@@ -100,16 +100,16 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         Layouts.MODULE.getFields(lexicalParent).setConstantInternal(context, currentNode, name, rubyModuleObject, false);
         Layouts.MODULE.getFields(lexicalParent).addLexicalDependent(rubyModuleObject);
 
-        if (this.name == null) {
+        if (!hasFullName()) {
             // Tricky, we need to compare with the Object class, but we only have a Class at hand.
             final DynamicObject classClass = Layouts.BASIC_OBJECT.getLogicalClass(getLogicalClass());
             final DynamicObject objectClass = ClassNodes.getSuperClass(ClassNodes.getSuperClass(classClass));
 
             if (lexicalParent == objectClass) {
-                this.name = name;
+                this.setFullName(name);
                 updateAnonymousChildrenModules(context);
-            } else if (Layouts.MODULE.getFields(lexicalParent).hasName()) {
-                this.name = Layouts.MODULE.getFields(lexicalParent).getName() + "::" + name;
+            } else if (Layouts.MODULE.getFields(lexicalParent).hasFullName()) {
+                this.setFullName(Layouts.MODULE.getFields(lexicalParent).getName() + "::" + name);
                 updateAnonymousChildrenModules(context);
             }
             // else: Our lexicalParent is also an anonymous module
@@ -122,7 +122,7 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
             RubyConstant constant = entry.getValue();
             if (RubyGuards.isRubyModule(constant.getValue())) {
                 DynamicObject module = (DynamicObject) constant.getValue();
-                if (!Layouts.MODULE.getFields(module).hasName()) {
+                if (!Layouts.MODULE.getFields(module).hasFullName()) {
                     Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, rubyModuleObject, entry.getKey(), null);
                 }
             }
@@ -422,15 +422,25 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
     }
 
     public String getName() {
-        if (name != null) {
-            return name;
-        } else {
-            return getTemporaryName();
+        final String name = this.name;
+        if (name == null) {
+            // Lazily compute the anonymous name because it is expensive
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            final String anonymousName = createAnonymousName();
+            this.name = anonymousName;
+            return anonymousName;
         }
+        return name;
+    }
+
+    public void setFullName(String name) {
+        assert name != null;
+        hasFullName = true;
+        this.name = name;
     }
 
     @TruffleBoundary
-    private String getTemporaryName() {
+    private String createAnonymousName() {
         if (givenBaseName != null) {
             return Layouts.MODULE.getFields(lexicalParent).getName() + "::" + givenBaseName;
         } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
@@ -440,12 +450,12 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         }
     }
 
-    public boolean hasName() {
-        return name != null;
+    public boolean hasFullName() {
+        return hasFullName;
     }
 
     public boolean hasPartialName() {
-        return hasName() || givenBaseName != null;
+        return hasFullName() || givenBaseName != null;
     }
 
     @Override
@@ -624,4 +634,5 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
 
         return adjacent;
     }
+
 }

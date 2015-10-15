@@ -75,10 +75,11 @@ public abstract class ModuleNodes {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
         final DynamicObject module = Layouts.MODULE.createModule(Layouts.CLASS.getInstanceFactory(selfClass), model);
         model.rubyModuleObject = module;
-        if (lexicalParent == null) { // bootstrap or anonymous module
-            Layouts.MODULE.getFields(module).name = Layouts.MODULE.getFields(module).givenBaseName;
-        } else {
+
+        if (lexicalParent != null) {
             Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, lexicalParent, name, currentNode);
+        } else if (Layouts.MODULE.getFields(module).givenBaseName != null) { // bootstrap module
+            Layouts.MODULE.getFields(module).setFullName(Layouts.MODULE.getFields(module).givenBaseName);
         }
         return module;
     }
