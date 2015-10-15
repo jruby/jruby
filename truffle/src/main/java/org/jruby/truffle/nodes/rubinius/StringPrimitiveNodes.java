@@ -1017,13 +1017,10 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyString(other)")
+        @Specialization(guards = { "isRubyString(other)", "size >= 0", "!offsetTooLarge(start, other)", "!offsetTooLargeRaw(dest, string)" })
         public DynamicObject stringCopyFrom(DynamicObject string, DynamicObject other, int start, int size, int dest,
-                                            @Cached("createBinaryProfile()") ConditionProfile startOffsetTooLargeProfile,
-                                            @Cached("createBinaryProfile()") ConditionProfile negativeSizeProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile negativeStartOffsetProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile sizeTooLargeInReplacementProfile,
-                                            @Cached("createBinaryProfile()") ConditionProfile destinationOffsetTooLargeProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile negativeDestinationOffsetProfile,
                                             @Cached("createBinaryProfile()") ConditionProfile sizeTooLargeInStringProfile) {
             // Taken from Rubinius's String::copy_from.
@@ -1034,23 +1031,38 @@ public abstract class StringPrimitiveNodes {
 
             final ByteList otherBytes = StringOperations.getByteList(other);
             int osz = otherBytes.length();
-            if(startOffsetTooLargeProfile.profile(src >= osz)) return string;
-            if(negativeSizeProfile.profile(cnt < 0)) return string;
             if(negativeStartOffsetProfile.profile(src < 0)) src = 0;
             if(sizeTooLargeInReplacementProfile.profile(cnt > osz - src)) cnt = osz - src;
 
-            // This bounds checks on the total capacity rather than the virtual
-            // size() of the String. This allows for string adjustment within
-            // the capacity without having to change the virtual size first.
             final ByteList stringBytes = StringOperations.getByteList(string);
             int sz = stringBytes.unsafeBytes().length - stringBytes.begin();
-            if(destinationOffsetTooLargeProfile.profile(dst >= sz)) return string;
             if(negativeDestinationOffsetProfile.profile(dst < 0)) dst = 0;
             if(sizeTooLargeInStringProfile.profile(cnt > sz - dst)) cnt = sz - dst;
 
             System.arraycopy(otherBytes.unsafeBytes(), otherBytes.begin() + src, stringBytes.getUnsafeBytes(), stringBytes.begin() + dest, cnt);
 
             return string;
+        }
+
+        @Specialization(guards = { "isRubyString(other)", "size < 0 || (offsetTooLarge(start, other) || offsetTooLargeRaw(dest, string))" })
+        public DynamicObject stringCopyFromWithNegativeSize(DynamicObject string, DynamicObject other, int start, int size, int dest) {
+            return string;
+        }
+
+        protected boolean offsetTooLarge(int offset, DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            return offset >= StringOperations.getByteList(string).realSize();
+        }
+
+        protected boolean offsetTooLargeRaw(int offset, DynamicObject string) {
+            assert RubyGuards.isRubyString(string);
+
+            // This bounds checks on the total capacity rather than the virtual
+            // size() of the String. This allows for string adjustment within
+            // the capacity without having to change the virtual size first.
+            final ByteList byteList = StringOperations.getByteList(string);
+            return offset >= (byteList.unsafeBytes().length - byteList.begin());
         }
 
     }
