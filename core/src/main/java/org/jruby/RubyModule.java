@@ -1613,7 +1613,6 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
-        ByteList idBytes = identifier.getBytes();
         String internedIdentifier = identifier.toString();
 
         final Ruby runtime = context.runtime;
