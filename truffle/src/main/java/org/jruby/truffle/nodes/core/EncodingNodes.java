@@ -11,11 +11,13 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
@@ -111,10 +113,25 @@ public abstract class EncodingNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
-        @Specialization(guards = {"isRubyString(first)", "isRubyString(second)"})
-        public Object isCompatibleStringString(DynamicObject first, DynamicObject second) {
-            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(first), StringOperations.getCodeRangeable(second));
+        @Specialization(guards = {
+                "isRubyString(first)",
+                "isRubyString(second)",
+                "firstEncoding == secondEncoding",
+                "extractEncoding(first) == firstEncoding",
+                "extractEncoding(second) == secondEncoding"
+        }, limit = "getCacheLimit()")
+        public DynamicObject isCompatibleStringStringCached(DynamicObject first, DynamicObject second,
+                                                     @Cached("extractEncoding(first)") Encoding firstEncoding,
+                                                     @Cached("extractEncoding(second)") Encoding secondEncoding,
+                                                     @Cached("isCompatibleStringStringUncached(first, second)") DynamicObject rubyEncoding) {
+            return rubyEncoding;
+        }
+
+        @Specialization(guards = {
+                "isRubyString(first)", "isRubyString(second)"
+        }, contains =  "isCompatibleStringStringCached")
+        public DynamicObject isCompatibleStringStringUncached(DynamicObject first, DynamicObject second) {
+            final Encoding compatibleEncoding = areCompatible(first, second);
 
             if (compatibleEncoding != null) {
                 return getEncoding(compatibleEncoding);
@@ -231,6 +248,35 @@ public abstract class EncodingNodes {
             } else {
                 return nil();
             }
+        }
+
+        private Encoding areCompatible(DynamicObject first, DynamicObject second) {
+            assert RubyGuards.isRubyString(first);
+            assert RubyGuards.isRubyString(second);
+
+            final ByteList firstByteList = StringOperations.getByteList(first);
+            final ByteList secondByteList = StringOperations.getByteList(second);
+
+            final Encoding firstEncoding = firstByteList.getEncoding();
+            final Encoding secondEncoding = secondByteList.getEncoding();
+
+            if (firstEncoding == secondEncoding) {
+                return firstEncoding;
+            }
+
+            return org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(first), StringOperations.getCodeRangeable(second));
+        }
+
+        protected Encoding extractEncoding(DynamicObject string) {
+            if (RubyGuards.isRubyString(string)) {
+                return StringOperations.getByteList(string).getEncoding();
+            }
+
+            return null;
+        }
+
+        protected int getCacheLimit() {
+            return getContext().getOptions().ENCODING_COMPATIBILE_QUERY_CACHE;
         }
 
     }

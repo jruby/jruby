@@ -41,6 +41,7 @@ public class Options {
     public final int ALLOCATE_CLASS_CACHE = org.jruby.util.cli.Options.TRUFFLE_ALLOCATE_CLASS_CACHE.load();
     public final int PACK_CACHE = org.jruby.util.cli.Options.TRUFFLE_PACK_CACHE.load();
     public final int EVAL_CACHE = org.jruby.util.cli.Options.TRUFFLE_EVAL_CACHE.load();
+    public final int ENCODING_COMPATIBILE_QUERY_CACHE = org.jruby.util.cli.Options.ENCODING_COMPATIBILE_QUERY_CACHE.load();
 
     // Cloning and inlining
 
