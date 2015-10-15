@@ -21,6 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -1308,14 +1309,16 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public Object name(DynamicObject module) {
-            if (!Layouts.MODULE.getFields(module).hasPartialName()) {
+        public Object name(DynamicObject module,
+                @Cached("createIdentityProfile()") ValueProfile fieldsProfile) {
+            final ModuleFields fields = fieldsProfile.profile(Layouts.MODULE.getFields(module));
+
+            if (!fields.hasPartialName()) {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeByteList(fields.getName(), UTF8Encoding.INSTANCE));
         }
     }
 
