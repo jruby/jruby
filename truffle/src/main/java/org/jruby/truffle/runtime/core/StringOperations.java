@@ -25,6 +25,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 
@@ -166,6 +167,7 @@ public abstract class StringOperations {
         return StringSupport.isSingleByteOptimizable(getCodeRangeable(string), EncodingUtils.STR_ENC_GET(getCodeRangeable(string)));
     }
 
+    @TruffleBoundary
     public static ByteList encodeByteList(CharSequence value, Encoding encoding) {
         return RubyString.encodeBytelist(value, encoding);
     }
