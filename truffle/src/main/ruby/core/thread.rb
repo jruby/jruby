@@ -9,22 +9,32 @@
 class Thread
 
   def [](symbol)
-    __thread_local_variables[symbol]
+    __thread_local_variables[symbol.to_sym]
   end
 
   def []=(symbol, value)
-    __thread_local_variables[symbol] = value
+    __thread_local_variables[symbol.to_sym] = value
   end
 
   def thread_variable?(symbol)
-    __thread_local_variables.has_key? symbol
+    __thread_local_variables.has_key? symbol.to_sym
   end
 
   alias_method :thread_variable_get, :[]
   alias_method :thread_variable_set, :[]=
 
+  LOCK = Mutex.new
+
   def __thread_local_variables
-    @__thread_local_variables ||= {}
+    if defined?(@__thread_local_variables)
+      @__thread_local_variables
+    else
+      LOCK.synchronize { @__thread_local_variables ||= {} }
+    end
+  end
+
+  def thread_variables
+    __thread_local_variables.keys
   end
 
   def self.start(&block)
@@ -47,6 +57,11 @@ class Thread
     Rubinius.privately do
       current.handle_interrupt(exception, timing, &block)
     end
+  end
+
+  def freeze
+    __thread_local_variables.freeze
+    super
   end
 
 end
