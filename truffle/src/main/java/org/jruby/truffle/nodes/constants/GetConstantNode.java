@@ -69,30 +69,29 @@ public abstract class GetConstantNode extends RubyNode {
     @Specialization(guards = {
             "constant == null",
             "guardName(name, cachedName, sameNameProfile)" })
-    protected Object missingConstant(VirtualFrame frame, DynamicObject module, String name, Object constant,
+    protected Object missingConstantCached(VirtualFrame frame, DynamicObject module, String name, Object constant,
                                      @Cached("name") String cachedName,
                                      @Cached("isValidConstantName(name)") boolean isValidConstantName,
-                                     @Cached("createConstMissingNode()") CallDispatchHeadNode constMissingNode,
                                      @Cached("getSymbol(name)") DynamicObject symbolName,
                                      @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
-        return missingConstantBody(frame, module, name, isValidConstantName, constMissingNode, symbolName);
+        return doMissingConstant(frame, module, name, isValidConstantName, symbolName);
     }
 
     @Specialization(guards = "constant == null")
     protected Object missingConstantUncached(VirtualFrame frame, DynamicObject module, String name, Object constant) {
         final boolean isValidConstantName = isValidConstantName(name);
-        if (constMissingNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            constMissingNode = insert(createConstMissingNode());
-        }
-
-        return missingConstantBody(frame, module, name, isValidConstantName, constMissingNode, getSymbol(name));
+        return doMissingConstant(frame, module, name, isValidConstantName, getSymbol(name));
     }
 
-    private Object missingConstantBody(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, CallDispatchHeadNode constMissingNode, DynamicObject symbolName) {
+    private Object doMissingConstant(VirtualFrame frame, DynamicObject module, String name, boolean isValidConstantName, DynamicObject symbolName) {
         if (!isValidConstantName) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), name, this));
+        }
+
+        if (constMissingNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            constMissingNode = insert(createConstMissingNode());
         }
 
         return constMissingNode.call(frame, module, "const_missing", null, symbolName);
