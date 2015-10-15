@@ -11,9 +11,13 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.AssumedValue;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -421,14 +425,18 @@ public class ModuleFields implements ModuleChain, ObjectGraphNode {
         if (name != null) {
             return name;
         } else {
-            CompilerDirectives.transferToInterpreter();
-            if (givenBaseName != null) {
-                return Layouts.MODULE.getFields(lexicalParent).getName() + "::" + givenBaseName;
-            } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
-                return "#<cyclic>";
-            } else {
-                return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(context, rubyModuleObject)) + ">";
-            }
+            return getTemporaryName();
+        }
+    }
+
+    @TruffleBoundary
+    private String getTemporaryName() {
+        if (givenBaseName != null) {
+            return Layouts.MODULE.getFields(lexicalParent).getName() + "::" + givenBaseName;
+        } else if (getLogicalClass() == rubyModuleObject) { // For the case of class Class during initialization
+            return "#<cyclic>";
+        } else {
+            return "#<" + Layouts.MODULE.getFields(getLogicalClass()).getName() + ":0x" + Long.toHexString(ObjectIDOperations.verySlowGetObjectID(context, rubyModuleObject)) + ">";
         }
     }
 
