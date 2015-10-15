@@ -1240,21 +1240,15 @@ public abstract class StringPrimitiveNodes {
 
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
-        @Specialization(guards = "isSingleByteOptimizable(string)")
+        @Specialization(guards = { "isSingleByteOptimizable(string)", "len >= 0" })
         public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len,
-                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
                                                            @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
-                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeLengthProfile) {
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile) {
             // Taken from org.jruby.RubyString#substr19.
-
-            if (negativeLengthProfile.profile(len < 0)) {
-                return nil();
-            }
-
             final int length = StringOperations.getByteList(string).getRealSize();
             if (emptyStringProfile.profile(length == 0)) {
                 len = 0;
@@ -1276,7 +1270,7 @@ public abstract class StringPrimitiveNodes {
                 len = length - beg;
             }
 
-            if (stillNegativeLengthProfile.profile(len <= 0)) {
+            if (negativeLengthProfile.profile(len <= 0)) {
                 len = 0;
                 beg = 0;
             }
@@ -1285,13 +1279,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        @Specialization(guards = { "!isSingleByteOptimizable(string)", "len >= 0" })
         public Object stringSubstring(DynamicObject string, int beg, int len) {
             // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
-
-            if (len < 0) {
-                return nil();
-            }
 
             final int length = StringOperations.getByteList(string).getRealSize();
             if (length == 0) {
@@ -1355,6 +1345,11 @@ public abstract class StringPrimitiveNodes {
                 len = StringSupport.offset(enc, bytes, p, end, len);
             }
             return makeSubstring(string, p - s, len);
+        }
+
+        @Specialization(guards = "len < 0")
+        public Object stringSubstringNegativeLength(DynamicObject string, int beg, int len) {
+            return nil();
         }
 
         private DynamicObject makeSubstring(DynamicObject string, int beg, int len) {
