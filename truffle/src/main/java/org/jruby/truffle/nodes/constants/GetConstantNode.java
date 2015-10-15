@@ -68,12 +68,13 @@ public abstract class GetConstantNode extends RubyNode {
 
     @Specialization(guards = {
             "constant == null",
-            "guardName(name, cachedName, sameNameProfile)" })
+            "guardName(name, cachedName, sameNameProfile)"
+    }, limit = "getCacheLimit()")
     protected Object missingConstantCached(VirtualFrame frame, DynamicObject module, String name, Object constant,
-                                     @Cached("name") String cachedName,
-                                     @Cached("isValidConstantName(name)") boolean isValidConstantName,
-                                     @Cached("getSymbol(name)") DynamicObject symbolName,
-                                     @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
+            @Cached("name") String cachedName,
+            @Cached("isValidConstantName(name)") boolean isValidConstantName,
+            @Cached("getSymbol(name)") DynamicObject symbolName,
+            @Cached("createBinaryProfile()") ConditionProfile sameNameProfile) {
         return doMissingConstant(frame, module, name, isValidConstantName, symbolName);
     }
 
@@ -120,6 +121,10 @@ public abstract class GetConstantNode extends RubyNode {
         } else {
             return name.equals(cachedName);
         }
+    }
+
+    protected int getCacheLimit() {
+        return getContext().getOptions().CONSTANT_LOOKUP_CACHE;
     }
 
 }
