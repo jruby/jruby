@@ -191,7 +191,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "isRubyString(b)")
         public boolean equal(DynamicObject a, DynamicObject b) {
-            return stringEqualNode.stringEqual(a, b);
+            return stringEqualNode.executeStringEqual(a, b);
         }
 
         @Specialization(guards = "!isRubyString(b)")
@@ -1185,15 +1185,14 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1, lowerFixnumParameters = 0)
     public abstract static class GetByteNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile negativeIndexProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile indexOutOfBoundsProfile = ConditionProfile.createBinaryProfile();
-
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization
-        public Object getByte(DynamicObject string, int index) {
+        public Object getByte(DynamicObject string, int index,
+                              @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                              @Cached("createBinaryProfile()") ConditionProfile indexOutOfBoundsProfile) {
             final ByteList bytes = StringOperations.getByteList(string);
 
             if (negativeIndexProfile.profile(index < 0)) {
@@ -1562,15 +1561,14 @@ public abstract class StringNodes {
     @ImportStatic(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
-
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @TruffleBoundary
         @Specialization
-        public DynamicObject swapcaseSingleByte(DynamicObject string) {
+        public DynamicObject swapcaseSingleByte(DynamicObject string,
+                                                @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#swapcase_bang19.
 
             final ByteList value = StringOperations.getByteList(string);
@@ -1720,8 +1718,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "squeeze!", rest = true, raiseIfFrozenSelf = true)
     public abstract static class SqueezeBangNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
-
         @Child private ToStrNode toStrNode;
 
         public SqueezeBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1729,7 +1725,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "zeroArgs(args)")
-        public Object squeezeBangZeroArgs(DynamicObject string, Object... args) {
+        public Object squeezeBangZeroArgs(DynamicObject string, Object[] args,
+                                          @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             if (StringOperations.getByteList(string).length() == 0) {
@@ -1755,7 +1752,8 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!zeroArgs(args)")
-        public Object squeezeBang(VirtualFrame frame, DynamicObject string, Object... args) {
+        public Object squeezeBang(VirtualFrame frame, DynamicObject string, Object[] args,
+                                  @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
             // Taken from org.jruby.RubyString#squeeze_bang19.
 
             if (StringOperations.getByteList(string).length() == 0) {
@@ -1772,11 +1770,12 @@ public abstract class StringNodes {
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStrNode.executeToStr(frame, args[i]);
             }
-            return performSqueezeBang(string, otherStrings);
+            return performSqueezeBang(string, otherStrings, singleByteOptimizableProfile);
         }
 
         @TruffleBoundary
-        private Object performSqueezeBang(DynamicObject string, DynamicObject[] otherStrings) {
+        private Object performSqueezeBang(DynamicObject string, DynamicObject[] otherStrings,
+                                          @Cached("createBinaryProfile()") ConditionProfile singleByteOptimizableProfile) {
 
             DynamicObject otherStr = otherStrings[0];
             Encoding enc = StringOperations.checkEncoding(getContext(), string, StringOperations.getCodeRangeable(otherStr), this);
@@ -1812,7 +1811,7 @@ public abstract class StringNodes {
             return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, tables, enc, isArg);
         }
 
-        public static boolean zeroArgs(Object... args) {
+        public static boolean zeroArgs(Object[] args) {
             return args.length == 0;
         }
     }

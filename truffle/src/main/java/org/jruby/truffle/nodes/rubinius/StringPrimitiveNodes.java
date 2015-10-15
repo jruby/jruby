@@ -55,6 +55,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -486,14 +487,15 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_equal", needsSelf = true)
     public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile incompatibleEncodingProfile = ConditionProfile.createBinaryProfile();
-
         public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
+        public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
+
         @Specialization(guards = "isRubyString(other)")
-        public boolean stringEqual(DynamicObject string, DynamicObject other) {
+        public boolean stringEqual(DynamicObject string, DynamicObject other,
+                                   @Cached("createBinaryProfile()") ConditionProfile incompatibleEncodingProfile) {
             final ByteList a = StringOperations.getByteList(string);
             final ByteList b = StringOperations.getByteList(other);
 
@@ -867,15 +869,13 @@ public abstract class StringPrimitiveNodes {
     @ImportStatic(StringGuards.class)
     public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
-        private final ConditionProfile indexTooLargeProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile invalidByteProfile = ConditionProfile.createBinaryProfile();
-
         public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start) {
+        public Object stringByteIndexSingleByte(DynamicObject string, int index, int start,
+                                                @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile) {
             final ByteList byteList = StringOperations.getByteList(string);
 
             if (indexTooLargeProfile.profile(byteList.realSize() < index)) {
@@ -886,7 +886,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization(guards = "!isSingleByteOptimizable(string)")
-        public Object stringByteIndex(DynamicObject string, int index, int start) {
+        public Object stringByteIndex(DynamicObject string, int index, int start,
+                                      @Cached("createBinaryProfile()") ConditionProfile indexTooLargeProfile,
+                                      @Cached("createBinaryProfile()") ConditionProfile invalidByteProfile) {
             // Taken from Rubinius's String::byte_index.
 
             final ByteList bytes = StringOperations.getByteList(string);
@@ -1212,13 +1214,6 @@ public abstract class StringPrimitiveNodes {
 
         @Child private AllocateObjectNode allocateNode;
         @Child private TaintResultNode taintResultNode;
-        private final ConditionProfile negativeLengthProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile emptyStringProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile tooLargeBeginProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile negativeBeginProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile stillNegativeBeginProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile tooLargeTotalProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile stillNegativeLengthProfile = ConditionProfile.createBinaryProfile();
 
         public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1227,7 +1222,14 @@ public abstract class StringPrimitiveNodes {
         public abstract Object execute(VirtualFrame frame, DynamicObject string, int beg, int len);
 
         @Specialization(guards = "isSingleByteOptimizable(string)")
-        public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len) {
+        public Object stringSubstringSingleByteOptimizable(DynamicObject string, int beg, int len,
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeLengthProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile emptyStringProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeBeginProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile tooLargeTotalProfile,
+                                                           @Cached("createBinaryProfile()") ConditionProfile stillNegativeLengthProfile) {
             // Taken from org.jruby.RubyString#substr19.
 
             if (negativeLengthProfile.profile(len < 0)) {
