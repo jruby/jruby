@@ -143,7 +143,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject newName = translateNameNodeToSymbol(node.getNewName());
 
         final RubyNode ret = AliasMethodNodeFactory.create(context, sourceSection,
-                new GetDefaultDefineeNode(context, sourceSection),
+                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
                 new LiteralNode(context, sourceSection, newName),
                 new LiteralNode(context, sourceSection, oldName));
         return addNewlineIfNeeded(node, ret);
@@ -1081,7 +1081,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
+        final RubyNode classNode = new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
 
@@ -2698,7 +2698,7 @@ public class BodyTranslator extends Translator {
         final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
 
         final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[] {
-                new GetDefaultDefineeNode(context, sourceSection),
+                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
                 new LiteralNode(context, sourceSection, new Object[] { nameSymbol })
         });
         return addNewlineIfNeeded(node, ret);
