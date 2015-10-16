@@ -62,7 +62,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.IdUtil;
-import org.jruby.util.StringSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -624,7 +623,7 @@ public abstract class ModuleNodes {
 
         @Specialization(guards = {"isRubyString(code)", "isRubyString(file)"})
         public Object classEval(DynamicObject module, DynamicObject code, DynamicObject file, int line, NotProvided block) {
-            return classEvalSource(module, code, file.toString());
+            return classEvalSource(module, code, file.toString(), line);
         }
 
         @Specialization(guards = "wasProvided(code)")
@@ -637,8 +636,12 @@ public abstract class ModuleNodes {
             return classEvalSource(module, code, toStr(frame, file).toString());
         }
 
-        @TruffleBoundary
         private Object classEvalSource(DynamicObject module, DynamicObject code, String file) {
+            return classEvalSource(module, code, file, 1);
+        }
+
+        @TruffleBoundary
+        private Object classEvalSource(DynamicObject module, DynamicObject code, String file, int line) {
             assert RubyGuards.isRubyString(code);
 
             final MaterializedFrame callerFrame = RubyCallStack.getCallerFrame(getContext())
@@ -646,7 +649,9 @@ public abstract class ModuleNodes {
             Encoding encoding = StringOperations.getByteList(code).getEncoding();
 
             CompilerDirectives.transferToInterpreter();
-            Source source = Source.fromText(code.toString(), file);
+            // TODO (pitr 15-Oct-2015): fix this ugly hack, required for AS
+            final String space = new String(new char[line-1]).replace("\0", "\n");
+            Source source = Source.fromText(space + code.toString(), file);
 
             return getContext().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
         }
