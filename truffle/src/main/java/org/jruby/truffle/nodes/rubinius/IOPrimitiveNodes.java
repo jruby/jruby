@@ -585,28 +585,33 @@ public abstract class IOPrimitiveNodes {
         public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
             final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
+            final int nfds = max(readableFds) + 1;
 
             final FDSet readableSet = fdSetFactory.create();
-
-            for (int fd : readableFds) {
-                readableSet.set(fd);
-            }
 
             final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
                 public Integer block(Timeval timeoutToUse) throws InterruptedException {
-                    final int result = nativeSockets().select(
-                            max(readableFds) + 1,
-                            readableSet.getPointer(),
-                            PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER,
-                            timeoutToUse);
+                    // Set each fd each time since they are removed if the fd was not available
+                    for (int fd : readableFds) {
+                        readableSet.set(fd);
+                    }
+                    final int result = callSelect(nfds, readableSet, timeoutToUse);
 
                     if (result == 0) {
                         return null;
                     }
 
                     return result;
+                }
+
+                private int callSelect(int nfds, FDSet readableSet, Timeval timeoutToUse) {
+                    return nativeSockets().select(
+                            nfds,
+                            readableSet.getPointer(),
+                            PointerNodes.NULL_POINTER,
+                            PointerNodes.NULL_POINTER,
+                            timeoutToUse);
                 }
             });
 
@@ -616,7 +621,10 @@ public abstract class IOPrimitiveNodes {
 
             final int resultCode = ((ThreadManager.ResultWithinTime<Integer>) result).getValue();
 
-            if (resultCode == -1 || resultCode == 0) {
+            if (resultCode == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            } else if (resultCode == 0) {
                 return nil();
             }
 
@@ -632,18 +640,24 @@ public abstract class IOPrimitiveNodes {
         public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
             final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
+            final int nfds = max(writableFds) + 1;
 
             final FDSet writableSet = fdSetFactory.create();
 
-            for (int fd : writableFds) {
-                writableSet.set(fd);
-            }
 
             final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
+                    // Set each fd each time since they are removed if the fd was not available
+                    for (int fd : writableFds) {
+                        writableSet.set(fd);
+                    }
+                    return callSelect(nfds, writableSet);
+                }
+
+                private int callSelect(int nfds, FDSet writableSet) {
                     return nativeSockets().select(
-                            max(writableFds) + 1,
+                            nfds,
                             PointerNodes.NULL_POINTER,
                             writableSet.getPointer(),
                             PointerNodes.NULL_POINTER,
@@ -652,8 +666,11 @@ public abstract class IOPrimitiveNodes {
             });
 
             if (result == -1) {
-                return nil();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
+
+            assert result != 0;
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                             Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
