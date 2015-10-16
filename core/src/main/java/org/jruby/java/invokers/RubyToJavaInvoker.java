@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -28,7 +29,7 @@ import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
 
-    static final IntHashMap<JavaCallable> NULL_CACHE = IntHashMap.nullMap();
+    static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
 
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
@@ -37,7 +38,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
-    final IntHashMap<JavaCallable> cache;
+    final NonBlockingHashMapLong<JavaCallable> cache;
 
     private final Ruby runtime;
     private final Member[] members;
@@ -107,7 +108,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
 
-            cache = newCallableCache();
+            cache = new NonBlockingHashMapLong<JavaCallable>(8);
         }
 
         this.javaCallable = callable;
@@ -148,6 +149,14 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     protected AccessibleObject[] getAccessibleObjects() {
         return (AccessibleObject[]) getMembers();
+    }
+
+    public T getSignature(int signatureCode) {
+        return cache.get(signatureCode);
+    }
+
+    public void putSignature(int signatureCode, T callable) {
+        cache.put(signatureCode, callable);
     }
 
     protected abstract JavaCallable createCallable(Ruby runtime, Member member);
