@@ -82,6 +82,10 @@
     <Class name="org.jruby.truffle.nodes.constants.LookupConstantNode" />
     <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.constants.GetConstantNode" />
+    <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ" />
+  </Match>
 
   <!-- Stuff where we're genuinely doing something complicated and we do know what we're doing -->
 

@@ -115,10 +115,10 @@ public class ThreadManager {
     public static class TimedOut<T> implements ResultOrTimeout<T> {
     }
 
-    public <T> ResultOrTimeout<T> runUntilTimeout(Node currentNode, int timeout, final BlockingTimeoutAction<T> action) {
+    public <T> ResultOrTimeout<T> runUntilTimeout(Node currentNode, int timeoutMicros, final BlockingTimeoutAction<T> action) {
         final Timeval timeoutToUse = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
 
-        if (timeout == 0) {
+        if (timeoutMicros == 0) {
             timeoutToUse.setTime(new long[]{0, 0});
 
             return new ResultWithinTime<>(runUntilResult(currentNode, new BlockingAction<T>() {
@@ -131,7 +131,7 @@ public class ThreadManager {
             }));
         } else {
             final int pollTime = 500_000_000;
-            final long requestedTimeoutAt = System.nanoTime() + timeout * 1_000;
+            final long requestedTimeoutAt = System.nanoTime() + timeoutMicros * 1_000L;
 
             return runUntilResult(currentNode, new BlockingAction<ResultOrTimeout<T>>() {
 
@@ -143,28 +143,22 @@ public class ThreadManager {
                         return new TimedOut<>();
                     }
 
-                    final boolean timeoutForPoll;
-                    final long effectiveTimeout;
-
-                    if (timeUntilRequestedTimeout < pollTime) {
-                        timeoutForPoll = false;
-                        effectiveTimeout = timeUntilRequestedTimeout;
-                    } else {
-                        timeoutForPoll = true;
-                        effectiveTimeout = pollTime;
-                    }
-
+                    final boolean timeoutForPoll = pollTime <= timeUntilRequestedTimeout;
+                    final long effectiveTimeout = Math.min(pollTime, timeUntilRequestedTimeout);
                     final long effectiveTimeoutMicros = effectiveTimeout / 1_000;
-                    timeoutToUse.setTime(new long[]{effectiveTimeoutMicros / 1_000_000, effectiveTimeoutMicros % 1_000_000});
+                    timeoutToUse.setTime(new long[] {
+                            effectiveTimeoutMicros / 1_000_000,
+                            effectiveTimeoutMicros % 1_000_000
+                    });
 
                     final T result = action.block(timeoutToUse);
 
-                    if (result == null && timeoutForPoll && requestedTimeoutAt - System.nanoTime() > 0) {
-                        throw new InterruptedException();
-                    }
-
                     if (result == null) {
-                        return new TimedOut<>();
+                        if (timeoutForPoll && (requestedTimeoutAt - System.nanoTime()) > 0) {
+                            throw new InterruptedException();
+                        } else {
+                            return new TimedOut<>();
+                        }
                     }
 
                     return new ResultWithinTime<>(result);

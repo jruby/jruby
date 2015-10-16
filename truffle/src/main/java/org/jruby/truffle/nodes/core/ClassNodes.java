@@ -47,7 +47,7 @@ public abstract class ClassNodes {
         model.rubyModuleObject = rubyClass;
         Layouts.CLASS.setInstanceFactoryUnsafe(rubyClass, factory);
         Layouts.MODULE.setFields(rubyClass, model);
-        model.name = model.givenBaseName;
+        model.setFullName(model.givenBaseName);
 
         assert RubyGuards.isRubyModule(rubyClass);
         assert RubyGuards.isRubyClass(rubyClass);
@@ -73,7 +73,7 @@ public abstract class ClassNodes {
         model.rubyModuleObject = rubyClass;
 
         if (model.lexicalParent == null) { // bootstrap or anonymous module
-            Layouts.MODULE.getFields(rubyClass).name = Layouts.MODULE.getFields(rubyClass).givenBaseName;
+            Layouts.MODULE.getFields(rubyClass).setFullName(Layouts.MODULE.getFields(rubyClass).givenBaseName);
         } else {
             Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
         }
@@ -115,10 +115,10 @@ public abstract class ClassNodes {
 
         model.rubyModuleObject = rubyClass;
 
-        if (model.lexicalParent == null) { // bootstrap or anonymous module
-            Layouts.MODULE.getFields(rubyClass).name = Layouts.MODULE.getFields(rubyClass).givenBaseName;
-        } else {
+        if (model.lexicalParent != null) {
             Layouts.MODULE.getFields(rubyClass).getAdoptedByLexicalParent(context, model.lexicalParent, model.givenBaseName, null);
+        } else if (Layouts.MODULE.getFields(rubyClass).givenBaseName != null) { // bootstrap module
+            Layouts.MODULE.getFields(rubyClass).setFullName(Layouts.MODULE.getFields(rubyClass).givenBaseName);
         }
 
         if (superclass != null) {

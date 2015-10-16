@@ -25,6 +25,11 @@ public class StringGuards {
         return Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT || StringOperations.getByteList(string).getEncoding().maxLength() == 1;
     }
 
+    public static boolean is7Bit(DynamicObject string) {
+        assert RubyGuards.isRubyString(string);
+        return Layouts.STRING.getCodeRange(string) == StringSupport.CR_7BIT;
+    }
+
     public static boolean isAsciiCompatible(DynamicObject string) {
         assert RubyGuards.isRubyString(string);
         return StringOperations.getByteList(string).getEncoding().isAsciiCompatible();

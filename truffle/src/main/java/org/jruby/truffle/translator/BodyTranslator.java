@@ -45,6 +45,9 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.ModuleNodes.UndefMethodNode;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.AliasMethodNodeFactory;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.UndefMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.core.array.*;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLiteralNode;
@@ -65,8 +68,6 @@ import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
-import org.jruby.truffle.nodes.methods.AliasNode;
-import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
@@ -130,14 +131,21 @@ public class BodyTranslator extends Translator {
         initReadOnlyGlobalVariables();
     }
 
+    private DynamicObject translateNameNodeToSymbol(org.jruby.ast.Node node) {
+        return context.getSymbol(((org.jruby.ast.LiteralNode) node).getName());
+    }
+
     @Override
     public RubyNode visitAliasNode(org.jruby.ast.AliasNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
-        final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
+        final DynamicObject oldName = translateNameNodeToSymbol(node.getOldName());
+        final DynamicObject newName = translateNameNodeToSymbol(node.getNewName());
 
-        final RubyNode ret = new AliasNode(context, sourceSection, new GetDefaultDefineeNode(context, sourceSection), newName.getName(), oldName.getName());
+        final RubyNode ret = AliasMethodNodeFactory.create(context, sourceSection,
+                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
+                new LiteralNode(context, sourceSection, newName),
+                new LiteralNode(context, sourceSection, oldName));
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1073,7 +1081,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition(), node.getName());
-        final RubyNode classNode = new GetDefaultDefineeNode(context, sourceSection);
+        final RubyNode classNode = new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection));
 
         String methodName = node.getName();
 
@@ -2687,8 +2695,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitUndefNode(org.jruby.ast.UndefNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
-        final RubyNode ret = new UndefNode(context, sourceSection, classNode, ((org.jruby.ast.LiteralNode) node.getName()).getName());
+        final DynamicObject nameSymbol = translateNameNodeToSymbol(node.getName());
+
+        final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[] {
+                new RaiseIfFrozenNode(new GetDefaultDefineeNode(context, sourceSection)),
+                new LiteralNode(context, sourceSection, new Object[] { nameSymbol })
+        });
         return addNewlineIfNeeded(node, ret);
     }
 

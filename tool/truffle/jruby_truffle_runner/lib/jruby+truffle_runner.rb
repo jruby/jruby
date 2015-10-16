@@ -25,6 +25,13 @@ class JRubyTruffleRunner
     assign_new_value   = -> (new, old) { new }
     add_to_array       = -> (new, old) { old << new }
     merge_hash         = -> ((k, v), old) { old.merge k => v }
+    apply_pattern      = -> (pattern, old) do
+      Dir.glob(pattern) do |file|
+        next if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
+        @options[:run][:require] << File.expand_path(file)
+      end
+      old
+    end
 
     # Format:
     #   subcommand_name: {
@@ -60,8 +67,8 @@ class JRubyTruffleRunner
             rebuild:         ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
             debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
-            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', add_to_array, []],
-            exclude_pattern: ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern', add_to_array, []],
+            require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, nil],
+            exclude_pattern: ['--exclude-pattern REGEXP', 'Files matching the regexp will not be required by --require-pattern (applies to subsequent --require-pattern options)', add_to_array, []],
             load_path:       ['-I', '--load-path LOAD_PATH', 'Paths to add to load path, same as Ruby\'s -I', add_to_array, []],
             executable:      ['-S', '--executable NAME', 'finds and runs an executable of a gem', assign_new_value, nil],
             jexception:      ['--jexception', 'print Java exceptions', assign_new_value, false]
@@ -129,7 +136,7 @@ class JRubyTruffleRunner
     build_option_parsers
 
     vm_options, argv_after_vm_options = collect_vm_options argv
-    subcommand, *argv_after_global = @option_parsers[:global].order argv_after_vm_options
+    subcommand, *argv_after_global    = @option_parsers[:global].order argv_after_vm_options
 
     if subcommand.nil?
       print_options
@@ -169,7 +176,7 @@ class JRubyTruffleRunner
 
           option_parser.on(*args, description + " (default: #{default.inspect})") do |new_value|
             old_value               = @options[group][option]
-            @options[group][option] = block.call new_value, old_value
+            @options[group][option] = instance_exec new_value, old_value, &block
           end
         end
       end
@@ -179,7 +186,7 @@ class JRubyTruffleRunner
   end
 
   def collect_vm_options(argv)
-    vm_options = []
+    vm_options    = []
     other_options = argv.reject do |arg|
       vm = arg.start_with? '-J'
       vm_options.push arg if vm
@@ -315,12 +322,6 @@ class JRubyTruffleRunner
                  end
 
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
-    @options[:run][:require_pattern].each do |pattern|
-      Dir.glob(pattern) do |file|
-        next if @options[:run][:exclude_pattern].any? { |p| /#{p}/ =~ file }
-        @options[:run][:require] << File.expand_path(file)
-      end
-    end
 
     cmd_options = [
         *(['-X+T', *vm_options, "-Xtruffle.core.load_path=#{core_load_path}"] unless @options[:run][:test]),

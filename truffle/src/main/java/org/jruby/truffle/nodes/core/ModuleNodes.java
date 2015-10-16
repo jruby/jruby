@@ -21,6 +21,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -75,10 +76,11 @@ public abstract class ModuleNodes {
         final ModuleFields model = new ModuleFields(context, lexicalParent, name);
         final DynamicObject module = Layouts.MODULE.createModule(Layouts.CLASS.getInstanceFactory(selfClass), model);
         model.rubyModuleObject = module;
-        if (lexicalParent == null) { // bootstrap or anonymous module
-            Layouts.MODULE.getFields(module).name = Layouts.MODULE.getFields(module).givenBaseName;
-        } else {
+
+        if (lexicalParent != null) {
             Layouts.MODULE.getFields(module).getAdoptedByLexicalParent(context, lexicalParent, name, currentNode);
+        } else if (Layouts.MODULE.getFields(module).givenBaseName != null) { // bootstrap module
+            Layouts.MODULE.getFields(module).setFullName(Layouts.MODULE.getFields(module).givenBaseName);
         }
         return module;
     }
@@ -298,7 +300,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "alias_method", required = 2, visibility = Visibility.PRIVATE)
+    @CoreMethod(names = "alias_method", required = 2, raiseIfFrozenSelf = true, visibility = Visibility.PRIVATE)
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "module"),
             @NodeChild(type = RubyNode.class, value = "newName"),
@@ -1307,14 +1309,16 @@ public abstract class ModuleNodes {
             super(context, sourceSection);
         }
 
-        @TruffleBoundary
         @Specialization
-        public Object name(DynamicObject module) {
-            if (!Layouts.MODULE.getFields(module).hasPartialName()) {
+        public Object name(DynamicObject module,
+                @Cached("createIdentityProfile()") ValueProfile fieldsProfile) {
+            final ModuleFields fields = fieldsProfile.profile(Layouts.MODULE.getFields(module));
+
+            if (!fields.hasPartialName()) {
                 return nil();
             }
 
-            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
+            return createString(StringOperations.encodeByteList(fields.getName(), UTF8Encoding.INSTANCE));
         }
     }
 

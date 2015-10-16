@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -27,7 +28,7 @@ import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
 
-    static final IntHashMap NULL_CACHE = IntHashMap.nullMap();
+    static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
 
     protected final T javaCallable; /* null if multiple callable members */
     protected final T[][] javaCallables; /* != null if javaCallable == null */
@@ -35,8 +36,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
-    final IntHashMap<T> writeCache;
-    volatile IntHashMap<T> readCache;
+    final NonBlockingHashMapLong<T> cache;
 
     private final Ruby runtime;
 
@@ -55,8 +55,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             minVarArgsArity = getMemberArity(member) - 1;
         }
 
-        writeCache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
-        readCache = writeCache;
+        cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
 
         this.javaCallable = callable;
         this.javaCallables = null;
@@ -86,8 +85,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             }
             callables = null;
 
-            writeCache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
-            readCache = writeCache;
+            cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
         }
         else {
             callable = null; maxArity = -1; minArity = Integer.MAX_VALUE;
@@ -142,8 +140,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
 
-            writeCache = newCallableCache();
-            readCache = (IntHashMap<T>)writeCache.clone();
+            cache = new NonBlockingHashMapLong<>(8);
         }
 
         this.javaCallable = callable;
@@ -196,14 +193,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     public T getSignature(int signatureCode) {
-        return readCache.get(signatureCode);
+        return cache.get(signatureCode);
     }
 
     public void putSignature(int signatureCode, T callable) {
-        synchronized (writeCache) {
-            writeCache.put(signatureCode, callable);
-            readCache = (IntHashMap<T>)writeCache.clone();
-        }
+        cache.put(signatureCode, callable);
     }
 
     protected abstract T createCallable(Ruby runtime, Member member);
