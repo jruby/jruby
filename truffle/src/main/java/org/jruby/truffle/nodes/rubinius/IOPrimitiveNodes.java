@@ -237,10 +237,10 @@ public abstract class IOPrimitiveNodes {
         public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
             // TODO BJF 13-May-2015 Handle nil case
             final int fd = Layouts.IO.getDescriptor(file);
-            if(fd == -1){
+            if (fd == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
-            } else if (fd == -2){
+            } else if (fd == -2) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
             }
@@ -272,7 +272,7 @@ public abstract class IOPrimitiveNodes {
             fdSet.set(fd);
 
             final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
-            timeoutObject.setTime(new long[]{0, 0});
+            timeoutObject.setTime(new long[] { 0, 0 });
 
             final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
                     PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeoutObject);
@@ -280,9 +280,7 @@ public abstract class IOPrimitiveNodes {
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
                 ruby(frame, "raise IO::EAGAINWaitReadable");
-            }
-
-            if (res < 0) {
+            } else if (res < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
@@ -290,16 +288,14 @@ public abstract class IOPrimitiveNodes {
             final byte[] bytes = new byte[numberOfBytes];
             final int bytesRead = posix().read(fd, bytes, numberOfBytes);
 
-            if (bytesRead == -1) {
+            if (bytesRead < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            } else if (bytesRead == 0) { // EOF
+                return nil();
             }
 
-            if (bytesRead == 0) {
-                return createString(new ByteList());
-            }
-
-            return createString(new ByteList(bytes));
+            return createString(new ByteList(bytes, 0, bytesRead, false));
         }
 
     }
@@ -432,7 +428,7 @@ public abstract class IOPrimitiveNodes {
 
                 int written = posix().write(fd, buffer, buffer.remaining());
 
-                if (written == -1) {
+                if (written < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
                 }
@@ -553,22 +549,24 @@ public abstract class IOPrimitiveNodes {
             while (toRead > 0) {
                 getContext().getSafepointManager().poll(this);
 
-                final int readIteration = posix().read(fd, buffer, toRead);
+                final int bytesRead = posix().read(fd, buffer, toRead);
 
-                if (readIteration == -1) {
+                if (bytesRead < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                } else if (bytesRead == 0) { // EOF
+                    if (toRead == length) { // if EOF at first iteration
+                        return nil();
+                    } else {
+                        break;
+                    }
                 }
 
-                if (readIteration == 0) {
-                    return nil();
-                }
-
-                buffer.position(readIteration);
-                toRead -= readIteration;
+                buffer.position(bytesRead);
+                toRead -= bytesRead;
             }
 
-            return createString(new ByteList(buffer.array()));
+            return createString(new ByteList(buffer.array(), buffer.arrayOffset(), buffer.position(), false));
         }
 
     }
@@ -622,10 +620,10 @@ public abstract class IOPrimitiveNodes {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] {
                     getSetObjects(readableObjects, readableFds, readableSet),
                     Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
