@@ -45,6 +45,8 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.core.ModuleNodes.UndefMethodNode;
+import org.jruby.truffle.nodes.core.ModuleNodesFactory.UndefMethodNodeFactory;
 import org.jruby.truffle.nodes.core.ProcNodes.Type;
 import org.jruby.truffle.nodes.core.array.*;
 import org.jruby.truffle.nodes.core.fixnum.FixnumLiteralNode;
@@ -66,7 +68,6 @@ import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.locals.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.AliasNode;
-import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusLastStringReadNode;
@@ -2687,8 +2688,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitUndefNode(org.jruby.ast.UndefNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final SelfNode classNode = new SelfNode(context, sourceSection);
-        final RubyNode ret = new UndefNode(context, sourceSection, classNode, ((org.jruby.ast.LiteralNode) node.getName()).getName());
+        final DynamicObject nameSymbol = context.getSymbol(((org.jruby.ast.LiteralNode) node.getName()).getName());
+
+        final RubyNode ret = UndefMethodNodeFactory.create(context, sourceSection, new RubyNode[] {
+                new GetDefaultDefineeNode(context, sourceSection),
+                new LiteralNode(context, sourceSection, new Object[] { nameSymbol })
+        });
         return addNewlineIfNeeded(node, ret);
     }
 
