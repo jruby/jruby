@@ -1176,7 +1176,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
         public Object eachNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return nil();
+            return array;
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
