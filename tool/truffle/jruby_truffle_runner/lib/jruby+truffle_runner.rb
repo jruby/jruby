@@ -18,7 +18,8 @@ require 'pathname'
 class JRubyTruffleRunner
   attr_reader :options
 
-  EXECUTABLE        = 'jruby+truffle'
+  EXECUTABLE        = File.basename($PROGRAM_NAME)
+  BRANDING          = EXECUTABLE.include?('jruby') ? 'JRuby+Truffle' : 'RubyTruffle'
   LOCAL_CONFIG_FILE = '.jruby+truffle.yaml'
 
   begin
@@ -47,7 +48,7 @@ class JRubyTruffleRunner
             debug_option:        ['--debug-option OPTION', 'Debug JVM option', assign_new_value,
                                   '-J-agentlib:jdwp=transport=dt_socket,server=y,address=%d,suspend=y'],
             truffle_bundle_path: ['--truffle-bundle-path NAME', 'Bundle path', assign_new_value, '.jruby+truffle_bundle'],
-            jruby_truffle_path:  ['--jruby-truffle-path PATH', 'Path to JRuby+Truffle bin/jruby', assign_new_value,
+            interpreter_path:    ['--interpreter-path PATH', "Path to #{BRANDING} interpreter executable", assign_new_value,
                                   '../jruby/bin/jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
             mock_load_path:      ['--mock-load-path PATH', 'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
@@ -61,10 +62,10 @@ class JRubyTruffleRunner
         },
         run:    {
             help:            ['-h', '--help', 'Show this message', assign_new_value, false],
-            test:            ['-t', '--test', 'Do not use Truffle use plain JRuby', assign_new_value, false],
+            test:            ['-t', '--test', "Use conventional JRuby instead of #{BRANDING}", assign_new_value, false],
             graal:           ['-g', '--graal', 'Run on graal', assign_new_value, false],
-            build:           ['-b', '--build', 'Run `jt build` in JRuby', assign_new_value, false],
-            rebuild:         ['--rebuild', 'Run `jt rebuild` in JRuby', assign_new_value, false],
+            build:           ['-b', '--build', 'Run `jt build` using conventional JRuby', assign_new_value, false],
+            rebuild:         ['--rebuild', 'Run `jt rebuild` using conventional JRuby', assign_new_value, false],
             debug:           ['-d', '--debug', 'JVM remote debugging', assign_new_value, false],
             require:         ['-r', '--require FILE', 'Files to require, same as Ruby\'s -r', add_to_array, []],
             require_pattern: ['--require-pattern DIR_GLOB_PATTERN', 'Files matching the pattern will be required', apply_pattern, nil],
@@ -87,7 +88,7 @@ class JRubyTruffleRunner
       Usage: #{EXECUTABLE} [options] [subcommand [subcommand-options]]
       Subcommands are: #{(OPTION_DEFINITIONS.keys - [:global]).map(&:to_s).join(', ')}
 
-      Allows to execute gem/app on JRuby+Truffle until it's more complete. Environment
+      Allows to execute gem/app on #{BRANDING} until it's more complete. Environment
       has to be set up first with setup subcommand then run subcommand can be used.
 
       Run #{EXECUTABLE} readme to see README.
@@ -99,7 +100,7 @@ class JRubyTruffleRunner
 
       Usage: #{EXECUTABLE} [options] setup [subcommand-options]
 
-      Creates environment for running gem/app on JRuby+Truflle.
+      Creates environment for running gem/app on #{BRANDING}.
 
     TXT
 
@@ -107,7 +108,7 @@ class JRubyTruffleRunner
 
       Usage: #{EXECUTABLE} [options] run [subcommand-options] -- [ruby-options]
 
-      Runs file, -e expr, etc in setup environment on JRuby+Truffle
+      Runs file, -e expr, etc in setup environment on #{BRANDING}
       (options after -- are interpreted by ruby not by this tool)
       Examples: #{EXECUTABLE} run -- a_file.rb
                 #{EXECUTABLE} run -- -S irb
@@ -301,7 +302,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_run(vm_options, rest)
-    jruby_path = Pathname("#{@options[:global][:jruby_truffle_path]}/../..")
+    jruby_path = Pathname("#{@options[:global][:interpreter_path]}/../..")
 
     unless jruby_path.absolute?
       jruby_path = jruby_path.relative_path_from(Pathname('.'))
@@ -336,7 +337,7 @@ class JRubyTruffleRunner
     env['JAVACMD'] = @options[:global][:graal_path] if @options[:run][:graal]
 
     cmd = [(env unless env.empty?),
-           @options[:global][:jruby_truffle_path],
+           @options[:global][:interpreter_path],
            *cmd_options,
            executable,
            *rest
