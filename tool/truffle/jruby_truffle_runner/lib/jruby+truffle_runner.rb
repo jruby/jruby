@@ -52,7 +52,9 @@ class JRubyTruffleRunner
                                   '../jruby/bin/jruby'],
             graal_path:          ['--graal-path PATH', 'Path to Graal', assign_new_value, '../graalvm-jdk1.8.0/bin/java'],
             mock_load_path:      ['--mock-load-path PATH', 'Path of mocks & monkey-patches (prepended in $:, relative to --truffle_bundle_path)',
-                                  assign_new_value, 'mocks']
+                                  assign_new_value, 'mocks'],
+            use_fs_core:         ['--[no-]use-fs-core', 'use core from the filesystem rather than the JAR', assign_new_value, true],
+            bundle_cmd:          ['--bundle-cmd CMD', 'command to run for bundle', assign_new_value, 'bundle']
         },
         setup:  {
             help:    ['-h', '--help', 'Show this message', assign_new_value, false],
@@ -269,12 +271,15 @@ class JRubyTruffleRunner
   end
 
   def subcommand_setup(vm_options, rest)
-    bundle_path      = File.expand_path @options[:global][:truffle_bundle_path]
-    bundle_installed = execute_cmd 'command -v bundle 2>/dev/null 1>&2', fail: false
+    bundle_cmd       = File.expand_path(@options[:global][:bundle_cmd]).split(' ')
+    bundle_path      = File.expand_path(@options[:global][:truffle_bundle_path])
 
-    execute_cmd 'gem install bundler' unless bundle_installed
+    if bundle_cmd == ['bundle']
+      bundle_installed = execute_cmd 'command -v bundle 2>/dev/null 1>&2', fail: false
+      execute_cmd 'gem install bundler' unless bundle_installed
+    end
 
-    execute_cmd ['bundle',
+    execute_cmd [*bundle_cmd,
                  'install',
                  '--standalone',
                  '--path', bundle_path,
@@ -325,7 +330,8 @@ class JRubyTruffleRunner
     core_load_path = "#{jruby_path}/truffle/src/main/ruby"
 
     cmd_options = [
-        *(['-X+T', *vm_options, "-Xtruffle.core.load_path=#{core_load_path}"] unless @options[:run][:test]),
+        *(['-X+T', *vm_options] unless @options[:run][:test]),
+        *(["-Xtruffle.core.load_path=#{core_load_path}"] if @options[:global][:use_fs_core]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
