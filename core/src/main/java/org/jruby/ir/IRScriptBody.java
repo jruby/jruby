@@ -73,6 +73,11 @@ public class IRScriptBody extends IRScope {
     }
 
     @Override
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    @Override
     public String getFileName() {
         return fileName;
     }

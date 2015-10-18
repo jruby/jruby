@@ -544,6 +544,7 @@ public final class Ruby implements Constantizable {
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
+            script.setFileName(filename);
             runInterpreter(script);
             return;
         }

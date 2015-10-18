@@ -341,12 +341,12 @@ public abstract class IRScope implements ParseResult {
         this.name = name;
     }
 
+    public void setFileName(String filename) {
+        getTopLevelScope().setFileName(filename);
+    }
+
     public String getFileName() {
-        IRScope current = this;
-
-        for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
-
-        return current.getFileName();
+        return getTopLevelScope().getFileName();
     }
 
     public int getLineNumber() {

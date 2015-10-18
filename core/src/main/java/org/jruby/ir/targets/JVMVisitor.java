@@ -2027,6 +2027,17 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Filename(Filename filename) {
+        // Fixme: Not very efficient to do all this every time
+        jvmMethod().loadRuntime();
+        jvmMethod().loadStaticScope();
+        jvmAdapter().invokevirtual(p(StaticScope.class), "getIRScope", sig(IRScope.class));
+        jvmAdapter().invokevirtual(p(IRScope.class), "getFileName", sig(String.class));
+        jvmAdapter().invokevirtual(p(Ruby.class), "newString", sig(String.class));
+    }
+
+
+    @Override
     public void Fixnum(Fixnum fixnum) {
         jvmMethod().pushFixnum(fixnum.getValue());
     }
