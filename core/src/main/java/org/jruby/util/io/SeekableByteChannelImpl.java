@@ -19,7 +19,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 
 /**
- *
+ * Seekable byte channel impl over a byte array stream.
  * @author kares
  */
 final class SeekableByteChannelImpl extends AbstractInterruptibleChannel  // Not really interruptible
@@ -29,7 +29,6 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel  // Not
 
     private final ByteArrayInputStream in;
     private byte buf[] = EMPTY_BUF;
-    private final Object readLock = new Object();
 
     private final int mark;
     private final int count;
@@ -42,33 +41,28 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel  // Not
         this.count = ByteArrayInputStreamHelper.count(in);
     }
 
-    @Override // based on java.nio.channels.Channels.ReadableByteChannelImpl
-    public int read(ByteBuffer dst) throws IOException {
-        final int len = dst.remaining();
-        int totalRead = 0; int bytesRead = 0;
-        synchronized (readLock) {
-            while (totalRead < len) {
-                int bytesToRead = Math.min((len - totalRead), 4096);
-                if (buf.length < bytesToRead) buf = new byte[bytesToRead];
-                final int avail = in.available() - truncatedBy;
-                if ( totalRead > 0 && avail <= 0 ) break; // block at most once
-                try {
-                    begin();
-                    // make sure we account for truncated bytes :
-                    if (bytesToRead > avail) bytesToRead = avail;
+    @Override
+    public synchronized int read(ByteBuffer target) throws IOException {
+        //if ( ! isOpen() ) throw new ClosedChannelException();
 
-                    bytesRead = in.read(buf, 0, bytesToRead);
-                } finally {
-                    end(bytesRead > 0);
-                }
-                if (bytesRead < 0) break;
-                else totalRead += bytesRead;
-                dst.put(buf, 0, bytesRead);
-            }
-            if ((bytesRead < 0) && (totalRead == 0)) return -1;
+        final int available = in.available() - truncatedBy;
+        if ( available <= 0 ) return 0;
 
-            return totalRead;
+        int maxToRead = target.remaining(); int readCount = 0;
+        // make sure we account for truncated bytes :
+        if (maxToRead > available) maxToRead = available;
+        byte[] readBytes = new byte[maxToRead];
+        try {
+            begin();
+            readCount = in.read(readBytes);
         }
+        finally {
+            end(readCount >= 0);
+        }
+        if (readCount > 0) {
+            target.put(readBytes, 0, readCount);
+        }
+        return readCount;
     }
 
     @Override
@@ -80,18 +74,16 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel  // Not
         return ByteArrayInputStreamHelper.pos(in) - mark;
     }
 
-    public SeekableByteChannel position(long newPosition) throws IOException {
+    public synchronized SeekableByteChannel position(long newPosition) throws IOException {
         if ( newPosition < 0 ) {
             throw new IllegalArgumentException("negative new position: " + newPosition);
         }
         if ( newPosition > Integer.MAX_VALUE ) {
             throw new IllegalArgumentException("can not set new position: " + newPosition + " too big!");
         }
-        synchronized (readLock) {
-            this.in.reset(); // to initial mark (0 or offset)
-            if ( newPosition > 0 ) this.in.skip(newPosition);
-            //this.position = (int) newPosition;
-        }
+        this.in.reset(); // to initial mark (0 or offset)
+        if ( newPosition > 0 ) this.in.skip(newPosition);
+        //this.position = (int) newPosition;
         return this;
     }
 
