@@ -118,7 +118,9 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
 
     @Override
     protected String toString(RubyContext context, Object value) {
-        if (RubyGuards.isForeignObject(value)) {
+        if (value == null) {
+            return "<null>";
+        } if (RubyGuards.isForeignObject(value)) {
             return "<foreign>";
         } else {
             return context.send(value, "inspect", null).toString();
