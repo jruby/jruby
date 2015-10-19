@@ -564,7 +564,7 @@ class Socket < BasicSocket
     end
 
     def accept
-      return if closed?
+      raise IOError, "closed stream" if closed? # Truffle: comply with MRI
 
       fd = super
 
@@ -578,7 +578,7 @@ class Socket < BasicSocket
     # Set nonblocking and accept.
     #
     def accept_nonblock
-      return if closed?
+      raise IOError, "closed stream" if closed? # Truffle: comply with MRI
 
       fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK)
 
