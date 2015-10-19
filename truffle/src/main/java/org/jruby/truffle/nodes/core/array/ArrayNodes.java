@@ -281,7 +281,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-            final int storeLength = store.length;
+            final int storeLength = Layouts.ARRAY.getSize(array);
             final int newStoreLength = storeLength * count;
             final Object[] newStore = new Object[newStoreLength];
 
