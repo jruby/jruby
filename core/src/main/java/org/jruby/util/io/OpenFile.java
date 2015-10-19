@@ -2029,7 +2029,8 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
-        if (Platform.IS_WINDOWS && isStdio()) {
+        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
+        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
             return rbW32WriteConsole((RubyString)str);
         }
 
