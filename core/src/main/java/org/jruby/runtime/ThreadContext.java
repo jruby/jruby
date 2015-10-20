@@ -807,9 +807,9 @@ public final class ThreadContext {
             RubyString str = RubyString.newString(runtime, trace[i - level].mriStyleString());
             newTrace.append(str);
         }
-        
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(newTrace);
-        
+
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(newTrace);
+
         return newTrace;
     }
 
@@ -842,9 +842,9 @@ public final class ThreadContext {
         if (traceLength < 0) return null;
         
         trace = Arrays.copyOfRange(trace, level, level + traceLength);
-        
-        if (RubyInstanceConfig.LOG_CALLERS) TraceType.dumpCaller(trace);
-        
+
+        if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(trace);
+
         return trace;
     }
     
@@ -863,7 +863,7 @@ public final class ThreadContext {
 
         RubyStackTraceElement[] trace = gatherCallerBacktrace();
 
-        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.dumpWarning(trace);
+        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
         return trace;
     }
