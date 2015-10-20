@@ -56,9 +56,9 @@ public abstract class AllocateObjectNode extends RubyNode {
         return executeAllocateX(classToAllocate, values);
     }
 
-    public DynamicObject allocateHash(DynamicObject classToAllocate, DynamicObject defaultBlock, Object defaultValue, Object store, int size, Entry firstInSequence, Entry lastInSequence,
+    public DynamicObject allocateHash(DynamicObject classToAllocate, Object store, int size, Entry firstInSequence, Entry lastInSequence, DynamicObject defaultBlock, Object defaultValue,
             boolean compareByIdentity) {
-        return allocate(classToAllocate, defaultBlock, defaultValue, store, size, firstInSequence, lastInSequence, compareByIdentity);
+        return allocate(classToAllocate, store, size, firstInSequence, lastInSequence, defaultBlock, defaultValue, compareByIdentity);
     }
 
     public abstract DynamicObject executeAllocateX(DynamicObject classToAllocate, Object[] values);

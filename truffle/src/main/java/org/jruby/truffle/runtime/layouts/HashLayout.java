@@ -24,12 +24,12 @@ public interface HashLayout extends BasicObjectLayout {
 
     DynamicObject createHash(
             DynamicObjectFactory factory,
-            @Nullable DynamicObject defaultBlock,
-            @Nullable Object defaultValue,
             @Nullable Object store,
             int size,
             @Nullable Entry firstInSequence,
             @Nullable Entry lastInSequence,
+            @Nullable DynamicObject defaultBlock,
+            @Nullable Object defaultValue,
             boolean compareByIdentity);
 
     boolean isHash(ObjectType objectType);
