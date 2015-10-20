@@ -27,10 +27,10 @@ public interface HashLayout extends BasicObjectLayout {
             @Nullable DynamicObject defaultBlock,
             @Nullable Object defaultValue,
             @Nullable Object store,
-            @Nullable int size,
+            int size,
             @Nullable Entry firstInSequence,
             @Nullable Entry lastInSequence,
-            @Nullable boolean compareByIdentity);
+            boolean compareByIdentity);
 
     boolean isHash(ObjectType objectType);
     boolean isHash(DynamicObject object);
