@@ -50,7 +50,7 @@ public interface ThreadLayout extends BasicObjectLayout {
     void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
 
     String getName(DynamicObject object);
-    void setName(DynamicObject object, String name);
+    void setNameUnsafe(DynamicObject object, String name);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 

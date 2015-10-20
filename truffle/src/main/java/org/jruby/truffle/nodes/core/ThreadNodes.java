@@ -84,7 +84,7 @@ public abstract class ThreadNodes {
         assert RubyGuards.isRubyThread(thread);
 
         final String name = "Ruby Thread@" + info;
-        Layouts.THREAD.setName(thread, name);
+        Layouts.THREAD.setNameUnsafe(thread, name);
         Thread.currentThread().setName(name);
 
         start(context, thread);

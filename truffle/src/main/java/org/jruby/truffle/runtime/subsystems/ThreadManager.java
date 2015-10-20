@@ -42,7 +42,7 @@ public class ThreadManager {
     public ThreadManager(RubyContext context) {
         this.context = context;
         this.rootThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
-        Layouts.THREAD.setName(rootThread, "main");
+        Layouts.THREAD.setNameUnsafe(rootThread, "main");
     }
 
     public void initialize() {
