@@ -43,7 +43,8 @@ public abstract class ThreadNodes {
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass));
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), threadLocals, new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new AtomicBoolean(false), 0);
+        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
+                null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
         return object;
     }
