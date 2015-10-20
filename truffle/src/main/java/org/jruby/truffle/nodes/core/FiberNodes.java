@@ -53,7 +53,6 @@ public abstract class FiberNodes {
                 new CountDownLatch(1),
                 new LinkedBlockingQueue<FiberMessage>(2),
                 thread,
-                name,
                 null,
                 true,
                 null);
@@ -63,7 +62,6 @@ public abstract class FiberNodes {
         assert RubyGuards.isRubyFiber(fiber);
         assert RubyGuards.isRubyProc(block);
         final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
-        Layouts.FIBER.setName(fiber, name);
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
