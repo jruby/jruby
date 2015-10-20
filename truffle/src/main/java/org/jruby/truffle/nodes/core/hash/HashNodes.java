@@ -57,7 +57,7 @@ public abstract class HashNodes {
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return allocateObjectNode.allocate(rubyClass, null, null, null, 0, null, null, false);
+            return allocateObjectNode.allocateHash(rubyClass, null, null, null, 0, null, null, false);
         }
 
     }
@@ -114,7 +114,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return allocateObjectNode.allocate(hashClass, null, null, newStore, size, null, null, false);
+            return allocateObjectNode.allocateHash(hashClass, null, null, newStore, size, null, null, false);
         }
 
         @Specialization(guards = "!isSmallArrayOfPairs(args)")
@@ -804,7 +804,7 @@ public abstract class HashNodes {
                 "isNullHash(other)"
         })
         public DynamicObject mergeEmptyEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
+            return allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
         }
 
         @Specialization(guards = {
@@ -815,7 +815,7 @@ public abstract class HashNodes {
         public DynamicObject mergeEmptyPacked(DynamicObject hash, DynamicObject other, NotProvided block) {
             final Object[] store = (Object[]) Layouts.HASH.getStore(other);
             final Object[] copy = PackedArrayStrategy.copyStore(getContext(), store);
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(other), null, null, false);
+            return allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(other), null, null, false);
         }
 
         @Specialization(guards = {
@@ -826,7 +826,7 @@ public abstract class HashNodes {
         public DynamicObject mergePackedEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
             final Object[] copy = PackedArrayStrategy.copyStore(getContext(), store);
-            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(hash), null, null, false);
+            return allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), copy, Layouts.HASH.getSize(hash), null, null, false);
         }
 
         @Specialization(guards = {
@@ -835,7 +835,7 @@ public abstract class HashNodes {
                 "isBucketHash(other)"
         })
         public DynamicObject mergeEmptyBuckets(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
             BucketsStrategy.copyInto(getContext(), other, merged);
             return merged;
         }
@@ -846,7 +846,7 @@ public abstract class HashNodes {
                 "isEmptyHash(other)"
         })
         public DynamicObject mergeBucketsEmpty(DynamicObject hash, DynamicObject other, NotProvided block) {
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), null, 0, null, null, false);
             BucketsStrategy.copyInto(getContext(), hash, merged);
             return merged;
         }
@@ -901,7 +901,7 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), PackedArrayStrategy.copyStore(getContext(), storeB), storeBSize, null, null, false);
+                return allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), PackedArrayStrategy.copyStore(getContext(), storeB), storeBSize, null, null, false);
             }
 
             // Cut off here
@@ -937,14 +937,14 @@ public abstract class HashNodes {
                     index++;
                 }
 
-                return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), merged, mergedSize, null, null, false);
+                return allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), Layouts.HASH.getDefaultBlock(hash), Layouts.HASH.getDefaultValue(hash), merged, mergedSize, null, null, false);
             }
 
             // Most complicated cases where things from both hashes, and it also needs to be promoted to buckets
 
             promoteProfile.enter();
 
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(mergedSize)], 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(mergedSize)], 0, null, null, false);
 
             for (int n = 0; n < storeASize; n++) {
                 if (mergeFromA[n]) {
@@ -973,7 +973,7 @@ public abstract class HashNodes {
         public DynamicObject mergeBucketsBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
@@ -1000,7 +1000,7 @@ public abstract class HashNodes {
         public DynamicObject mergePackedBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
 
             final Object[] hashStore = (Object[]) Layouts.HASH.getStore(hash);
             final int hashSize = Layouts.HASH.getSize(hash);
@@ -1030,7 +1030,7 @@ public abstract class HashNodes {
         public DynamicObject mergeBucketsPacked(VirtualFrame frame, DynamicObject hash, DynamicObject other, NotProvided block) {
             final boolean isCompareByIdentity = Layouts.HASH.getCompareByIdentity(hash);
 
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
 
             for (Map.Entry<Object, Object> keyValue : BucketsStrategy.iterableKeyValues(Layouts.HASH.getFirstInSequence(hash))) {
                 setNode.executeSet(frame, merged, keyValue.getKey(), keyValue.getValue(), isCompareByIdentity);
@@ -1056,7 +1056,7 @@ public abstract class HashNodes {
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
             CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
 
-            final DynamicObject merged = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false);
+            final DynamicObject merged = allocateObjectNode.allocateHash(Layouts.BASIC_OBJECT.getLogicalClass(hash), null, null, new Entry[BucketsStrategy.capacityGreaterThan(Layouts.HASH.getSize(hash) + Layouts.HASH.getSize(other))], 0, null, null, false); 
 
             int size = 0;
 
