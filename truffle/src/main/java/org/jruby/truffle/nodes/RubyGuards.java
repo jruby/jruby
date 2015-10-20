@@ -223,6 +223,16 @@ public abstract class RubyGuards {
         return object instanceof TruffleObject && !isRubyBasicObject(object);
     }
 
+    public static boolean isBoxedPrimitive(Object object) {
+        return object instanceof Boolean
+                || object instanceof Byte
+                || object instanceof Short
+                || object instanceof Integer
+                || object instanceof Long
+                || object instanceof Float
+                || object instanceof Double;
+    }
+
     // Sentinels
 
     public static boolean wasProvided(Object value) {

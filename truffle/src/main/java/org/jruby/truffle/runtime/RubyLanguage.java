@@ -120,10 +120,12 @@ public class RubyLanguage extends TruffleLanguage<RubyContext> {
     protected String toString(RubyContext context, Object value) {
         if (value == null) {
             return "<null>";
-        } else if (RubyGuards.isForeignObject(value)) {
-            return "<foreign>";
-        } else {
+        } else if (RubyGuards.isBoxedPrimitive(value) ||  RubyGuards.isRubyBasicObject(value)) {
             return context.send(value, "inspect", null).toString();
+        } else if (value instanceof String) {
+            return (String) value;
+        } else {
+            return "<foreign>";
         }
     }
 
