@@ -36,7 +36,6 @@ import org.jruby.truffle.runtime.core.ArrayOperations;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
@@ -52,41 +51,39 @@ public abstract class MatchDataNodes {
     }
 
     public static Object begin(RubyContext context, DynamicObject matchData, int index) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        final int b = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getBegin(matchData) : Layouts.MATCH_DATA.getRegion(matchData).beg[index];
+        int b = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getBegin(matchData) : Layouts.MATCH_DATA.getRegion(matchData).beg[index];
 
         if (b < 0) {
             return context.getCoreLibrary().getNilObject();
         }
 
-        updateCharOffset(matchData);
+        if (!StringGuards.isSingleByteOptimizable(Layouts.MATCH_DATA.getSource(matchData))) {
+            b = getCharOffsets(matchData).beg[index];
+        }
 
-        return Layouts.MATCH_DATA.getCharOffsets(matchData).beg[index];
+        return b;
     }
 
     public static Object end(RubyContext context, DynamicObject matchData, int index) {
-        assert RubyGuards.isRubyMatchData(matchData);
         int e = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getEnd(matchData) : Layouts.MATCH_DATA.getRegion(matchData).end[index];
 
         if (e < 0) {
             return context.getCoreLibrary().getNilObject();
         }
 
-        final CodeRangeable sourceWrapped = StringOperations.getCodeRangeable(Layouts.MATCH_DATA.getSource(matchData));
-        if (!StringSupport.isSingleByteOptimizable(sourceWrapped, sourceWrapped.getByteList().getEncoding())) {
-            updateCharOffset(matchData);
-            e = Layouts.MATCH_DATA.getCharOffsets(matchData).end[index];
+        if (!StringGuards.isSingleByteOptimizable(Layouts.MATCH_DATA.getSource(matchData))) {
+            e = getCharOffsets(matchData).end[index];
         }
 
         return e;
     }
 
-    public static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
+    public static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
         int length = pairs.length;
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
+        byte[]bytes = source.getUnsafeBytes();
+        int p = source.getBegin();
         int s = p;
         int c = 0;
 
@@ -98,103 +95,103 @@ public abstract class MatchDataNodes {
         }
     }
 
-    public static void updateCharOffsetOnlyOneReg(DynamicObject matchData, ByteList value, Encoding encoding) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
+    public static Region getCharOffsetsOnlyOneReg(DynamicObject matchData, ByteList source, Encoding encoding) {
+        final Region charOffsets = new Region(1);
 
-        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < 1)
-            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(1));
+        final int begin = Layouts.MATCH_DATA.getBegin(matchData);
+        final int end = Layouts.MATCH_DATA.getEnd(matchData);
 
         if (encoding.maxLength() == 1) {
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getBegin(matchData);
-            Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = Layouts.MATCH_DATA.getEnd(matchData);
-            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
-            return;
+            charOffsets.beg[0] = begin;
+            charOffsets.end[0] = end;
+            return charOffsets;
         }
 
         Pair[] pairs = new Pair[2];
-        if (Layouts.MATCH_DATA.getBegin(matchData) >= 0) {
+        if (begin >= 0) {
             pairs[0] = new Pair();
-            pairs[0].bytePos = Layouts.MATCH_DATA.getBegin(matchData);
+            pairs[0].bytePos = begin;
             pairs[1] = new Pair();
-            pairs[1].bytePos = Layouts.MATCH_DATA.getEnd(matchData);
+            pairs[1].bytePos = end;
         }
 
-        updatePairs(value, encoding, pairs);
+        updatePairs(source, encoding, pairs);
 
-        if (Layouts.MATCH_DATA.getBegin(matchData) < 0) {
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = -1;
-            return;
+        if (begin < 0) {
+            charOffsets.beg[0] = charOffsets.end[0] = -1;
+            return charOffsets;
         }
         Pair key = new Pair();
-        key.bytePos = Layouts.MATCH_DATA.getBegin(matchData);
-        Layouts.MATCH_DATA.getCharOffsets(matchData).beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        key.bytePos = Layouts.MATCH_DATA.getEnd(matchData);
-        Layouts.MATCH_DATA.getCharOffsets(matchData).end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        key.bytePos = begin;
+        charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        key.bytePos = end;
+        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
 
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
+        return charOffsets;
     }
 
-    public static void updateCharOffsetManyRegs(DynamicObject matchData, ByteList value, Encoding encoding) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
-
+    public static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
 
-        if (Layouts.MATCH_DATA.getCharOffsets(matchData) == null || Layouts.MATCH_DATA.getCharOffsets(matchData).numRegs < numRegs)
-            Layouts.MATCH_DATA.setCharOffsets(matchData, new Region(numRegs));
+        final Region charOffsets = new Region(numRegs);
 
         if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
-                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = regs.beg[i];
-                Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = regs.end[i];
+                charOffsets.beg[i] = regs.beg[i];
+                charOffsets.end[i] = regs.end[i];
             }
-            Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
-            return;
+            return charOffsets;
         }
 
         Pair[] pairs = new Pair[numRegs * 2];
-        for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
+        for (int i = 0; i < pairs.length; i++) {
+            pairs[i] = new Pair();
+        }
 
         int numPos = 0;
         for (int i = 0; i < numRegs; i++) {
-            if (regs.beg[i] < 0) continue;
+            if (regs.beg[i] < 0) {
+                continue;
+            }
             pairs[numPos++].bytePos = regs.beg[i];
             pairs[numPos++].bytePos = regs.end[i];
         }
 
-        updatePairs(value, encoding, pairs);
+        updatePairs(source, encoding, pairs);
 
         Pair key = new Pair();
         for (int i = 0; i < regs.numRegs; i++) {
             if (regs.beg[i] < 0) {
-                Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = -1;
+                charOffsets.beg[i] = charOffsets.end[i] = -1;
                 continue;
             }
             key.bytePos = regs.beg[i];
-            Layouts.MATCH_DATA.getCharOffsets(matchData).beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
             key.bytePos = regs.end[i];
-            Layouts.MATCH_DATA.getCharOffsets(matchData).end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
         }
 
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
+        return charOffsets;
     }
 
-    public static void updateCharOffset(DynamicObject matchData) {
-        assert RubyGuards.isRubyMatchData(matchData);
-        if (Layouts.MATCH_DATA.getCharOffsetUpdated(matchData)) return;
-
-        ByteList value = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
-        Encoding enc = value.getEncoding();
-
-        if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
-            updateCharOffsetOnlyOneReg(matchData, value, enc);
-        } else {
-            updateCharOffsetManyRegs(matchData, value, enc);
+    public static Region getCharOffsets(DynamicObject matchData) {
+        Region charOffsets = Layouts.MATCH_DATA.getCharOffsets(matchData);
+        if (charOffsets != null) {
+            return charOffsets;
         }
 
-        Layouts.MATCH_DATA.setCharOffsetUpdated(matchData, true);
+        final ByteList source = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
+        final Encoding enc = source.getEncoding();
+
+        if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
+            charOffsets = getCharOffsetsOnlyOneReg(matchData, source, enc);
+        } else {
+            charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
+        }
+
+        Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
+        return charOffsets;
     }
 
     @CoreMethod(names = "[]", required = 1, optional = 1, lowerFixnumParameters = 0, taintFromSelf = true)
