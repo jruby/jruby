@@ -43,6 +43,34 @@ describe :process_exit, shared: true do
     lambda { @object.exit([0]) }.should raise_error(TypeError)
     lambda { @object.exit(nil) }.should raise_error(TypeError)
   end
+
+  it "raises the SystemExit in the main thread if it reaches the top-level handler of another thread" do
+    ScratchPad.record []
+
+    ready = false
+    t = Thread.new {
+      Thread.pass until ready
+
+      begin
+        @object.exit 42
+      rescue SystemExit => e
+        ScratchPad << :in_thread
+        raise e
+      end
+    }
+
+    begin
+      ready = true
+      sleep
+    rescue SystemExit => e
+      ScratchPad << :in_main
+    end
+
+    ScratchPad.recorded.should == [:in_thread, :in_main]
+
+    # the thread also keeps the exception as its value
+    lambda { t.value }.should raise_error(SystemExit)
+  end
 end
 
 describe :process_exit!, shared: true do

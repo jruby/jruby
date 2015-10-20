@@ -57,7 +57,7 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {

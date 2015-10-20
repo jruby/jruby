@@ -10,12 +10,19 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.CoreClass;
 import org.jruby.truffle.nodes.core.CoreMethod;
 import org.jruby.truffle.nodes.core.CoreMethodArrayArgumentsNode;
+import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.core.UnaryCoreMethodNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
@@ -52,11 +59,11 @@ public abstract class ByteArrayNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject prepend(DynamicObject bytes, DynamicObject string) {
-            final int prependLength = Layouts.STRING.getByteList(string).getUnsafeBytes().length;
+            final int prependLength = StringOperations.getByteList(string).getUnsafeBytes().length;
             final int originalLength = Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes().length;
             final int newLength = prependLength + originalLength;
             final byte[] prependedBytes = new byte[newLength];
-            System.arraycopy(Layouts.STRING.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
+            System.arraycopy(StringOperations.getByteList(string).getUnsafeBytes(), 0, prependedBytes, 0, prependLength);
             System.arraycopy(Layouts.BYTE_ARRAY.getBytes(bytes).getUnsafeBytes(), 0, prependedBytes, prependLength, originalLength);
             return ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(prependedBytes));
         }
@@ -100,19 +107,37 @@ public abstract class ByteArrayNodes {
     @CoreMethod(names = "locate", required = 3, lowerFixnumParameters = {1, 2})
     public abstract static class LocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private StringNodes.SizeNode sizeNode;
+
         public LocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] {});
         }
 
         @Specialization(guards = "isRubyString(pattern)")
-        public Object getByte(DynamicObject bytes, DynamicObject pattern, int start, int length) {
-            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(Layouts.STRING.getByteList(pattern));
+        public Object getByte(VirtualFrame frame, DynamicObject bytes, DynamicObject pattern, int start, int length) {
+            final int index = new ByteList(Layouts.BYTE_ARRAY.getBytes(bytes), start, length).indexOf(StringOperations.getByteList(pattern));
 
             if (index == -1) {
                 return nil();
             } else {
-                return start + index + StringOperations.length(pattern);
+                return start + index + sizeNode.executeInteger(frame, pattern);
             }
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

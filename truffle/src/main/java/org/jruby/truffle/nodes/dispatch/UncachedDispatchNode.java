@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeGen;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
 import org.jruby.truffle.nodes.conversion.ToSymbolNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -117,8 +118,10 @@ public class UncachedDispatchNode extends DispatchNode {
                 RubyArguments.pack(
                         method,
                         method.getDeclarationFrame(),
+                        null,
                         receiverObject,
                         blockObject,
+                        DeclarationContext.METHOD,
                         argumentsObjects));
     }
 

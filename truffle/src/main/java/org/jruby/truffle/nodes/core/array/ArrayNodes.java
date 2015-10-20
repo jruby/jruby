@@ -24,9 +24,9 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -42,11 +42,12 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.locals.ReadDeclarationVariableNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.pack.parser.PackParser;
-import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.pack.runtime.exceptions.*;
+import org.jruby.truffle.format.parser.PackParser;
+import org.jruby.truffle.format.runtime.PackResult;
+import org.jruby.truffle.format.runtime.exceptions.*;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -63,7 +64,6 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
-import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
 
@@ -281,7 +281,7 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
             }
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-            final int storeLength = store.length;
+            final int storeLength = Layouts.ARRAY.getSize(array);
             final int newStoreLength = storeLength * count;
             final Object[] newStore = new Object[newStoreLength];
 
@@ -305,7 +305,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToStrNode.doesRespondToString(frame, object, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("to_str", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), false)) {
+            if (respondToToStrNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_str", UTF8Encoding.INSTANCE)), false)) {
                 return ruby(frame, "join(sep.to_str)", "sep", object);
             } else {
                 if (toIntNode == null) {
@@ -418,7 +418,7 @@ public abstract class ArrayNodes {
 
             InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(method.getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), args);
+                    createString(StringOperations.encodeByteList(method.getName(), UTF8Encoding.INSTANCE)), args);
         }
 
     }
@@ -1176,7 +1176,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNullArray(array)", "isRubyProc(block)"})
         public Object eachNull(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            return nil();
+            return array;
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyProc(block)"})
@@ -1484,7 +1484,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-            if (respondToToAryNode.doesRespondToString(frame, object, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("to_ary", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null), true)) {
+            if (respondToToAryNode.doesRespondToString(frame, object, create7BitString(StringOperations.encodeByteList("to_ary", UTF8Encoding.INSTANCE)), true)) {
                 if (toAryNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
@@ -2252,7 +2252,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
+                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2281,6 +2281,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject max(VirtualFrame frame, Object maximumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> maximum = (Memo<Object>) maximumObject;
 
             // TODO(CS): cast
@@ -2309,7 +2310,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "max", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2356,7 +2357,7 @@ public abstract class ArrayNodes {
 
             final InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(
-                    RubyArguments.pack(method, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
+                    RubyArguments.pack(method, null, null, array, null, DeclarationContext.BLOCK, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final DynamicObject block = ProcNodes.createRubyProc(getContext().getCoreLibrary().getProcFactory(), ProcNodes.Type.PROC,
@@ -2385,6 +2386,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public DynamicObject min(VirtualFrame frame, Object minimumObject, Object value) {
+            @SuppressWarnings("unchecked")
             final Memo<Object> minimum = (Memo<Object>) minimumObject;
 
             // TODO(CS): cast
@@ -2413,7 +2415,7 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor(context.getCoreLibrary().getNilObject());
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, "min", false, null, false, false, false);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(
                     context, sourceSection, null, sharedMethodInfo,
@@ -2484,7 +2486,7 @@ public abstract class ArrayNodes {
                 throw handleException(e);
             }
 
-            return finishPack(Layouts.STRING.getByteList(format), result);
+            return finishPack(StringOperations.getByteList(format), result);
         }
 
         private RuntimeException handleException(PackException exception) {
@@ -2506,7 +2508,7 @@ public abstract class ArrayNodes {
         }
 
         private DynamicObject finishPack(ByteList format, PackResult result) {
-            final DynamicObject string = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(result.getOutput(), 0, result.getOutputLength()), StringSupport.CR_UNKNOWN, null);
+            final DynamicObject string = createString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
             if (format.length() == 0) {
                 StringOperations.forceEncoding(string, USASCIIEncoding.INSTANCE);
@@ -4316,7 +4318,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", rest = true, required = 1)
+    @CoreMethod(names = "zip", rest = true, required = 1, needsBlock = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode zipInternalCall;
@@ -4326,7 +4328,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isIntArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectIntegerFixnum(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final int[] b = (int[]) Layouts.ARRAY.getStore(other);
@@ -4355,7 +4357,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isObjectArray(array)", "isRubyArray(other)", "isObjectArray(other)", "others.length == 0" })
-        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others) {
+        public DynamicObject zipObjectObject(DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
             final Object[] a = (Object[]) Layouts.ARRAY.getStore(array);
 
             final Object[] b = (Object[]) Layouts.ARRAY.getStore(other);
@@ -4385,25 +4387,29 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "isRubyArray(other)", "fallback(array, other, others)" })
-        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
         @Specialization(guards = { "!isRubyArray(other)" })
-        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others) {
-            return zipRuby(frame, array);
+        public Object zipObjectObjectNotArray(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, NotProvided block) {
+            return zipRuby(frame, array, null);
         }
 
-        private Object zipRuby(VirtualFrame frame, DynamicObject array) {
+        @Specialization
+        public Object zipBlock(VirtualFrame frame, DynamicObject array, DynamicObject other, Object[] others, DynamicObject block) {
+            return zipRuby(frame, array, block);
+        }
+
+        private Object zipRuby(VirtualFrame frame, DynamicObject array, DynamicObject block) {
             if (zipInternalCall == null) {
                 CompilerDirectives.transferToInterpreter();
                 zipInternalCall = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final DynamicObject proc = RubyArguments.getBlock(frame.getArguments());
             final Object[] others = RubyArguments.extractUserArguments(frame.getArguments());
 
-            return zipInternalCall.call(frame, array, "zip_internal", proc, others);
+            return zipInternalCall.call(frame, array, "zip_internal", block, others);
         }
 
         protected static boolean fallback(DynamicObject array, DynamicObject other, Object[] others) {

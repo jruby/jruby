@@ -30,33 +30,37 @@ describe "File#flock" do
   it "returns false if trying to lock an exclusively locked file" do
     @file.flock File::LOCK_EX
 
-    File.open(@name, "w") do |f2|
-      f2.flock(File::LOCK_EX | File::LOCK_NB).should == false
-    end
+    ruby_exe(<<-END_OF_CODE, escape: true).should == "false"
+      File.open('#{@name}', "w") do |f2|
+        print f2.flock(File::LOCK_EX | File::LOCK_NB).to_s
+      end
+    END_OF_CODE
   end
 
   it "blocks if trying to lock an exclusively locked file" do
     @file.flock File::LOCK_EX
 
-    running = false
-    t = Thread.new do
-      ScratchPad << :before
+    out = ruby_exe(<<-END_OF_CODE, escape: true)
+      running = false
 
-      running = true
-      File.open(@name, "w") do |f2|
-        f2.flock(File::LOCK_EX)
+      t = Thread.new do
+        File.open('#{@name}', "w") do |f2|
+          puts "before"
+          running = true
+          f2.flock(File::LOCK_EX)
+          puts "after"
+        end
       end
 
-      ScratchPad << :after
-    end
+      Thread.pass until running
+      Thread.pass while t.status and t.status != "sleep"
+      sleep 0.1
 
-    Thread.pass until running
-    sleep 0.5
+      t.kill
+      t.join
+    END_OF_CODE
 
-    t.kill
-    t.join
-
-    ScratchPad.recorded.should == [:before]
+    out.should == "before\n"
   end
 
   it "returns 0 if trying to lock a non-exclusively locked file" do

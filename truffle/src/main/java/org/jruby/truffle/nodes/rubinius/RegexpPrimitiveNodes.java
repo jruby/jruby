@@ -69,7 +69,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization(guards = {"!isRegexpLiteral(regexp)", "!isInitialized(regexp)", "isRubyString(pattern)"})
         public DynamicObject initialize(DynamicObject regexp, DynamicObject pattern, int options) {
-            RegexpNodes.initialize(regexp, this, Layouts.STRING.getByteList(pattern), options);
+            RegexpNodes.initialize(getContext(), regexp, this, StringOperations.getByteList(pattern), options);
             return regexp;
         }
 
@@ -129,13 +129,13 @@ public abstract class RegexpPrimitiveNodes {
         public Object searchRegionInvalidEncoding(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(
-                    String.format("invalid byte sequence in %s", Layouts.STRING.getByteList(string).getEncoding()), this));
+                    String.format("invalid byte sequence in %s", StringOperations.getByteList(string).getEncoding()), this));
         }
 
         @TruffleBoundary
         @Specialization(guards = {"isInitialized(regexp)", "isRubyString(string)", "isValidEncoding(string)"})
         public Object searchRegion(DynamicObject regexp, DynamicObject string, int start, int end, boolean forward) {
-            final ByteList stringBl = Layouts.STRING.getByteList(string);
+            final ByteList stringBl = StringOperations.getByteList(string);
             final ByteList bl = Layouts.REGEXP.getSource(regexp);
             final Encoding enc = RegexpNodes.checkEncoding(regexp, StringOperations.getCodeRangeable(string), true);
             final ByteList preprocessed = RegexpSupport.preprocess(getContext().getRuntime(), bl, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
@@ -145,10 +145,10 @@ public abstract class RegexpPrimitiveNodes {
 
             if (forward) {
                 // Search forward through the string.
-                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
+                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, start + stringBl.begin(), end + stringBl.begin());
             } else {
                 // Search backward through the string.
-                return RegexpNodes.matchCommon(regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
+                return RegexpNodes.matchCommon(getContext(), regexp, string, false, false, matcher, end + stringBl.begin(), start + stringBl.begin());
             }
         }
 

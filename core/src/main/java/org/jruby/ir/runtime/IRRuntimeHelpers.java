@@ -481,10 +481,14 @@ public class IRRuntimeHelpers {
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
                     IRubyObject val0 = Helpers.aryToAry(value);
-                    if (!(val0 instanceof RubyArray)) {
+                    // FIXME: This logic exists in RubyProc and IRRubyBlockBody. consolidate when we do block call protocol work
+                    if (val0.isNil()) {
+                        return new IRubyObject[] { value };
+                    } else if (!(val0 instanceof RubyArray)) {
                         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+                    } else {
+                        return ((RubyArray) val0).toJavaArray();
                     }
-                    return ((RubyArray)val0).toJavaArray();
                 }
         }
     }
@@ -908,7 +912,7 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static IRubyObject classSuper(ThreadContext context, IRubyObject self, String methodName, RubyModule definingModule, IRubyObject[] args, Block block) {
-        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        RubyClass superClass = definingModule.getMetaClass().getMethodLocation().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
@@ -1225,6 +1229,7 @@ public class IRRuntimeHelpers {
         } else {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
+        // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(method.getName(), newMethod);
         if (!rubyClass.isRefinement()) {
             obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
@@ -1235,8 +1240,10 @@ public class IRRuntimeHelpers {
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
+        // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
         if (!rubyClass.isRefinement()) {
+            // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
         }
     }
@@ -1245,8 +1252,10 @@ public class IRRuntimeHelpers {
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
+        // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
         if (!rubyClass.isRefinement()) {
+            // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
         }
     }
@@ -1276,6 +1285,7 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
         }
 
+        // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(rubyClass, method.getName(), newMethod, currVisibility, context, runtime);
     }
 
@@ -1289,6 +1299,7 @@ public class IRRuntimeHelpers {
 
         DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
 
+        // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
 
@@ -1302,6 +1313,7 @@ public class IRRuntimeHelpers {
 
         DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
 
+        // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
     }
 
@@ -1441,5 +1453,15 @@ public class IRRuntimeHelpers {
     @JIT
     public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
         accessor.set(self, value);
+    }
+
+    @JIT
+    public static RubyFixnum getArgScopeDepth(ThreadContext context, StaticScope currScope) {
+        int i = 0;
+        while (!currScope.isArgumentScope()) {
+            currScope = currScope.getEnclosingScope();
+            i++;
+        }
+        return context.runtime.newFixnum(i);
     }
 }

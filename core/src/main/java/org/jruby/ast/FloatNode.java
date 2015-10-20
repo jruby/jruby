@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents a float literal.
  */
-public class FloatNode extends NumericNode implements ILiteralNode {
+public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFree {
     private double value;
 
     public FloatNode(ISourcePosition position, double value) {

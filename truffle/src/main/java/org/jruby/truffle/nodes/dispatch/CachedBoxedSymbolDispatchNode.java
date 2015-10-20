@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -39,11 +38,7 @@ public class CachedBoxedSymbolDispatchNode extends CachedDispatchNode {
         this.unmodifiedAssumption = Layouts.MODULE.getFields(context.getCoreLibrary().getSymbolClass()).getUnmodifiedAssumption();
         this.method = method;
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
-            insert(callNode);
-            callNode.cloneCallTarget();
-        }
+        applySplittingInliningStrategy(callNode, method);
     }
 
     @Override

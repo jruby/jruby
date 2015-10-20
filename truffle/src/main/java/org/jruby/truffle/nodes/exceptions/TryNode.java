@@ -70,7 +70,10 @@ public class TryNode extends RubyNode {
             }
 
             elseProfile.enter();
-            elsePart.executeVoid(frame);
+
+            if (elsePart != null) {
+                result = elsePart.execute(frame);
+            }
             return result;
         }
     }

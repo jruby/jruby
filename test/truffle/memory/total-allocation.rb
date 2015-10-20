@@ -10,12 +10,14 @@
 # Calculates the total memory allocated to run a program.
 
 # For example:
-# $ bin/jruby -X+T -Xtruffle.metrics.memory_used_on_exit=true -J-verbose:gc -e 'puts 14' 2>&1 | ruby test/truffle/memory/total-allocation.rb
+# $ bin/jruby -X+T -Xtruffle.metrics.memory_used_on_exit=true -J-verbose:gc -e 'puts 14' 2>&1 | ruby test/truffle/memory/total-allocation.rb foo
+
+NAME = ARGV[0]
 
 on_exit = nil
 allocated = 0
 
-ARGF.each do |line|
+$stdin.each_line do |line|
   if line =~ /(\d+)K->(\d+)K/
     before = $1.to_i * 1024
     after = $2.to_i * 1024
@@ -30,4 +32,4 @@ end
 
 allocated += on_exit
 
-puts "total-allocation: #{allocated/1024.0} KB"
+puts "#{NAME}: #{allocated/1024} KB"

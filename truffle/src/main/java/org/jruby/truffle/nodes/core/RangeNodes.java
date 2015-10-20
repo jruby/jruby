@@ -9,6 +9,21 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
+import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
+import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
+import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.CoreLibrary;
+import org.jruby.truffle.runtime.layouts.Layouts;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -17,14 +32,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.core.array.ArrayBuilderNode;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.layouts.Layouts;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
@@ -209,24 +216,42 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "initialize_internal", required = 2, optional = 1)
-    public abstract static class InitializeNode extends CoreMethodArrayArgumentsNode {
+    @CoreMethod(names = { "dup", "clone" })
+    public abstract static class DupNode extends UnaryCoreMethodNode {
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+        @Child private AllocateObjectNode allocateObjectNode;
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
+        }
+
+        @Specialization(guards = "isIntegerFixnumRange(range)")
+        public DynamicObject dupIntRange(DynamicObject range) {
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(
+                    getContext().getCoreLibrary().getIntegerFixnumRangeFactory(),
+                    Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range),
+                    Layouts.INTEGER_FIXNUM_RANGE.getBegin(range),
+                    Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
+        }
+
+        @Specialization(guards = "isLongFixnumRange(range)")
+        public DynamicObject dupLongRange(DynamicObject range) {
+            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(
+                    getContext().getCoreLibrary().getIntegerFixnumRangeFactory(),
+                    Layouts.LONG_FIXNUM_RANGE.getExcludedEnd(range),
+                    Layouts.LONG_FIXNUM_RANGE.getBegin(range),
+                    Layouts.LONG_FIXNUM_RANGE.getEnd(range));
         }
 
         @Specialization(guards = "isObjectRange(range)")
-        public DynamicObject initialize(DynamicObject range, Object begin, Object end, NotProvided excludeEnd) {
-            return initialize(range, begin, end, false);
-        }
-
-        @Specialization(guards = "isObjectRange(range)")
-        public DynamicObject initialize(DynamicObject range, Object begin, Object end, boolean excludeEnd) {
-            Layouts.OBJECT_RANGE.setExcludedEnd(range, excludeEnd);
-            Layouts.OBJECT_RANGE.setBegin(range, begin);
-            Layouts.OBJECT_RANGE.setEnd(range, end);
-            return range;
+        public DynamicObject dup(DynamicObject range) {
+            DynamicObject copy = allocateObjectNode.allocate(
+                    Layouts.BASIC_OBJECT.getLogicalClass(range),
+                    Layouts.OBJECT_RANGE.getExcludedEnd(range),
+                    Layouts.OBJECT_RANGE.getBegin(range),
+                    Layouts.OBJECT_RANGE.getEnd(range));
+            return copy;
         }
 
     }
@@ -438,6 +463,7 @@ public abstract class RangeNodes {
 
     }
 
+    // These 3 nodes replace ivar assignment in the common/range.rb Range#initialize
     @RubiniusOnly
     @NodeChildren({
             @NodeChild(type = RubyNode.class, value = "self"),
@@ -498,17 +524,95 @@ public abstract class RangeNodes {
 
     }
 
+    @CoreMethod(names = "new", constructor = true, required = 2, optional = 1)
+    @NodeChildren({
+            @NodeChild(type = RubyNode.class, value = "rubyClass"),
+            @NodeChild(type = RubyNode.class, value = "begin"),
+            @NodeChild(type = RubyNode.class, value = "end"),
+            @NodeChild(type = RubyNode.class, value = "excludeEnd")
+    })
+    public abstract static class NewNode extends CoreMethodNode {
+
+        protected final DynamicObject rangeClass;
+
+        @Child private CallDispatchHeadNode cmpNode;
+        @Child private AllocateObjectNode allocateNode;
+
+        public NewNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            rangeClass = context.getCoreLibrary().getRangeClass();
+        }
+
+        @CreateCast("excludeEnd")
+        public RubyNode coerceToBoolean(RubyNode excludeEnd) {
+            return BooleanCastWithDefaultNodeGen.create(getContext(), getSourceSection(), false, excludeEnd);
+        }
+
+        @Specialization(guards = "rubyClass == rangeClass")
+        public DynamicObject intRange(DynamicObject rubyClass, int begin, int end, boolean excludeEnd) {
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, begin, end);
+        }
+
+        @Specialization(guards = { "rubyClass == rangeClass", "fitsIntoInteger(begin)", "fitsIntoInteger(end)" })
+        public DynamicObject longFittingIntRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
+            return Layouts.INTEGER_FIXNUM_RANGE.createIntegerFixnumRange(getContext().getCoreLibrary().getIntegerFixnumRangeFactory(), excludeEnd, (int) begin, (int) end);
+        }
+
+        @Specialization(guards = { "rubyClass == rangeClass", "!fitsIntoInteger(begin) || !fitsIntoInteger(end)" })
+        public DynamicObject longRange(DynamicObject rubyClass, long begin, long end, boolean excludeEnd) {
+            return Layouts.LONG_FIXNUM_RANGE.createLongFixnumRange(getContext().getCoreLibrary().getLongFixnumRangeFactory(), excludeEnd, begin, end);
+        }
+
+        @Specialization(guards = { "rubyClass != rangeClass || (!isIntOrLong(begin) || !isIntOrLong(end))" })
+        public Object objectRange(VirtualFrame frame, DynamicObject rubyClass, Object begin, Object end, boolean excludeEnd) {
+            if (cmpNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+            if (allocateNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                allocateNode = insert(AllocateObjectNodeGen.create(getContext(), getSourceSection(), null, null));
+            }
+
+            final Object cmpResult;
+            try {
+                cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
+            } catch (RaiseException e) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+            }
+
+            if (cmpResult == nil()) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+            }
+
+            return allocateNode.allocate(rubyClass, excludeEnd, begin, end);
+        }
+
+        protected boolean fitsIntoInteger(long value) {
+            return CoreLibrary.fitsIntoInteger(value);
+        }
+
+        protected boolean isIntOrLong(Object value) {
+            return RubyGuards.isInteger(value) || RubyGuards.isLong(value);
+        }
+
+    }
+
     @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        @Child private AllocateObjectNode allocateNode;
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return Layouts.OBJECT_RANGE.createObjectRange(Layouts.CLASS.getInstanceFactory(rubyClass), false, nil(), nil());
+            return allocateNode.allocate(rubyClass, false, nil(), nil());
         }
 
     }
+
 }

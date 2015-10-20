@@ -2030,7 +2030,8 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
-        if (Platform.IS_WINDOWS && isStdio()) {
+        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
+        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
             return rbW32WriteConsole((RubyString)str);
         }
 
@@ -2621,28 +2622,20 @@ public class OpenFile implements Finalizable {
     }
 
     public int remainSize() {
-        FileStat st;
         int siz = READ_DATA_PENDING_COUNT();
+        long size;
         long pos;
 
-        // MRI does all this presumably to read more of the file right away, but
-        // I believe the logic that uses this is ok with just pending read plus buf size.
-
-//        if (fstat(fptr -> fd, & st)==0 && S_ISREG(st.st_mode))
-//        {
-//            if (io_fflush(fptr) < 0)
-//                rb_sys_fail(0);
-//            pos = lseek(fptr -> fd, 0, SEEK_CUR);
-//            if (st.st_size >= pos && pos >= 0) {
-//                siz += st.st_size - pos;
-//                if (siz > LONG_MAX) {
-//                    rb_raise(rb_eIOError, "file too big for single read");
-//                }
-//            }
-//        }
-//        else {
+        if ((size = posix.size(fd)) >= 0 &&
+                (pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR)) >= 0 &&
+                size > pos) {
+            if (siz + (size - pos) > Integer.MAX_VALUE) {
+                throw runtime.newIOError("file too big for single read");
+            }
+            siz += size - pos;
+        } else {
             siz += BUFSIZ;
-//        }
+        }
         return siz;
     }
 

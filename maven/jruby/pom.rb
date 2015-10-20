@@ -9,10 +9,6 @@ project 'JRuby Main Maven Artifact' do
   # keep it a jar even without sources - easier to add to a project
   packaging 'jar'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'main.basedir' => '${project.parent.parent.basedir}' )
-
   jar 'org.jruby:jruby-core:${project.version}'
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
@@ -23,16 +19,68 @@ project 'JRuby Main Maven Artifact' do
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
-  plugin( :invoker )
+  plugin( :invoker, :properties => { 'localRepository' => '${settings.localRepository}' } )
 
-  execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
-    source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
-     [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
-      target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
-      FileUtils.rm_rf( target )
-      FileUtils.cp_r( source, target )
-      File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
-        f.puts 'invoker.profiles = ' + m
+  profile :apps do
+    activation do
+      property :name => 'invoker.test'
+    end
+
+    properties 'invoker.skip' => false, 'invoker.test' => 'hellowarld_*'
+
+    execute 'setup web applications', :phase => 'pre-integration-test' do |ctx|
+      def setup(ctx, framework, package, type, server)
+        puts [framework, package, server].join "\t"
+
+        source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'hellowarld' )
+        target = File.join( ctx.basedir.to_pathname, "src/it/hellowarld_#{server}_#{package}_#{framework}" )
+
+        FileUtils.rm_rf( target )
+        FileUtils.cp_r( source, target )
+        FileUtils.mv( "#{target}/config-#{framework}.ru", "#{target}/config.ru" )
+        FileUtils.mv( "#{target}/app-#{framework}", "#{target}/app" )
+        file = "#{target}/Gemfile-#{framework}"
+        FileUtils.mv( file, "#{target}/Gemfile" ) if File.exists?( file )
+        file = "#{target}/Gemfile-#{framework}.lock"
+        FileUtils.mv( file, "#{target}/Gemfile.lock" ) if File.exists?( file )
+        file = File.join( target, 'Mavenfile')
+        File.write(file, File.read(file).sub(/pom/, type))
+        File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
+          f.puts "invoker.profiles = #{package},#{server},#{framework}"
+        end
+      end
+
+      [ 'cuba', 'sinatra', 'rails4' ].each do |framework|
+        [ ['filesystem', 'pom'], ['runnable','jrubyJar'] ].each do |package|
+          [ 'webrick', 'puma', 'torquebox' ].each do |server|
+            setup(ctx, framework, *package, server)
+          end
+        end
+        [ ['warfile', 'jrubyWar'] ].each do  |package|
+          [ 'jetty', 'tomcat', 'wildfly_unpacked', 'wildfly_packed' ].each do |server|
+            #', 'websphere' ].each do |server|
+            # rails4 on wildfly complains about missing com.sun.org.apache.xpath.internal.VariableStack which are actually xalan classes used by nokogiri
+            setup(ctx, framework, *package, server) unless framework == 'rails4' and server =~ /wildfly/
+          end
+        end
+      end
+    end
+  end
+
+  profile :osgi do
+    activation do
+      property :name => 'invoker.test'
+    end
+
+    execute 'setup osgi integration tests', :phase => 'pre-integration-test' do |ctx|
+      source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
+      [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
+        target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
+        FileUtils.rm_rf( target )
+        FileUtils.cp_r( source, target )
+        File.open( File.join( target, 'invoker.properties' ), 'w' ) do |f|
+          f.puts 'invoker.profiles = ' + m
+        end
       end
     end
   end

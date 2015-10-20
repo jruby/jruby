@@ -11,26 +11,36 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
-import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
+import org.jruby.truffle.nodes.dispatch.MissingBehavior;
+import org.jruby.truffle.nodes.dispatch.RubyCallNode;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.NotProvided;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {
@@ -134,13 +144,13 @@ public abstract class BasicObjectNodes {
 
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            yield = new YieldDispatchHeadNode(context);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isRubyString(string)")
         public Object instanceEval(Object receiver, DynamicObject string, NotProvided block) {
-            return getContext().instanceEval(Layouts.STRING.getByteList(string), receiver, this);
+            return getContext().instanceEval(StringOperations.getByteList(string), receiver, "(eval)", this);
         }
 
         @Specialization(guards = "isRubyProc(block)")
@@ -151,17 +161,20 @@ public abstract class BasicObjectNodes {
     }
 
     @CoreMethod(names = "instance_exec", needsBlock = true, rest = true)
-    public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
+    public abstract static class InstanceExecNode extends CoreMethodArrayArgumentsNode {
+
+        @Child private YieldDispatchHeadNode yield;
 
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
         @Specialization(guards = "isRubyProc(block)")
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
-            return yieldWithModifiedSelf(frame, block, receiver, arguments);
+            return yield.dispatchWithModifiedSelf(frame, block, receiver, arguments);
         }
 
         @Specialization
@@ -188,7 +201,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissingNoBlock(Object self, DynamicObject name, Object[] args, NotProvided block) {
-            return methodMissingBlock(self, name, args, (DynamicObject) null);
+            return methodMissing(self, name, args, null);
         }
 
         @Specialization(guards = "isRubyProc(block)")
@@ -196,32 +209,31 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, args, block);
         }
 
-        private Object methodMissing(Object self, DynamicObject name, Object[] args, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
+        @TruffleBoundary
+        private Object methodMissing(Object self, DynamicObject nameObject, Object[] args, DynamicObject block) {
+            final String name = nameObject.toString();
 
-            assert block == null || RubyGuards.isRubyProc(block);
-
-            // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
-            if (lastCallWasVCall()) {
-                throw new RaiseException(
-                        getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(
-                                Layouts.SYMBOL.getString(name),
-                                Layouts.MODULE.getFields(getContext().getCoreLibrary().getLogicalClass(self)).getName(),
-                                this));
+            if (lastCallWasCallingPrivateMethod(self, name)) {
+                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, self, this));
+            } else if (lastCallWasVCall()) {
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedLocalVariableOrMethod(name, self, this));
             } else {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(Layouts.SYMBOL.getString(name), self, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnReceiver(name, self, this));
             }
+        }
+
+        /**
+         * See {@link org.jruby.truffle.nodes.dispatch.DispatchNode#lookup}.
+         * The only way to fail if method is not null and not undefined is visibility.
+         */
+        private boolean lastCallWasCallingPrivateMethod(Object self, String name) {
+            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(self), name);
+            return method != null && !method.isUndefined();
         }
 
         private boolean lastCallWasVCall() {
             final RubyCallNode callNode = NodeUtil.findParent(Truffle.getRuntime().getCallerFrame().getCallNode(), RubyCallNode.class);
-
-            if (callNode == null) {
-                return false;
-            }
-
-            return callNode.isVCall();
-
+            return callNode != null && callNode.isVCall();
         }
 
     }

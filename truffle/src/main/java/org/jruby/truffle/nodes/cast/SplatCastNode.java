@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.array.ArrayDupNode;
@@ -27,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -96,7 +96,7 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         // MRI tries to call dynamic respond_to? here.
-        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(method, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), true);
+        Object respondToResult = respondToToA.call(frame, object, "respond_to?", null, makeMethodNameString(method), true);
         if (respondToResult != DispatchNode.MISSING && respondToCast.executeBoolean(frame, respondToResult)) {
             final Object array = toA.call(frame, object, method, null);
 
@@ -113,6 +113,11 @@ public abstract class SplatCastNode extends RubyNode {
         }
 
         return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{object}, 1);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private DynamicObject makeMethodNameString(String methodName) {
+        return createString(StringOperations.encodeByteList(methodName, UTF8Encoding.INSTANCE));
     }
 
 }

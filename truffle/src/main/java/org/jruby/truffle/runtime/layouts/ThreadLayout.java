@@ -39,7 +39,7 @@ public interface ThreadLayout extends BasicObjectLayout {
                                InterruptMode interruptMode,
                                @Nullable @Volatile Thread thread,
                                @Volatile RubyThread.Status status,
-                               @Nullable @Volatile Object exception,
+                               @Nullable @Volatile DynamicObject exception,
                                @Nullable @Volatile Object value,
                                AtomicBoolean wakeUp,
                                @Volatile int priority);
@@ -70,8 +70,8 @@ public interface ThreadLayout extends BasicObjectLayout {
     RubyThread.Status getStatus(DynamicObject object);
     void setStatus(DynamicObject object, RubyThread.Status status);
 
-    Object getException(DynamicObject object);
-    void setException(DynamicObject object, Object exception);
+    DynamicObject getException(DynamicObject object);
+    void setException(DynamicObject object, DynamicObject exception);
 
     Object getValue(DynamicObject object);
     void setValue(DynamicObject object, Object value);

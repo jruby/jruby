@@ -50,6 +50,15 @@ class Thread
     Kernel.raise ThreadError, "Thread#priority= primitive failed"
   end
 
+  def inspect
+    stat = status()
+    stat = "dead" unless stat
+
+    "#<#{self.class}:0x#{object_id.to_s(16)} id=#{@thread_id} #{stat}>"
+  end
+
+  alias_method :to_s, :inspect
+
   def self.exit
     Thread.current.kill
   end

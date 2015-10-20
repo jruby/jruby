@@ -6,5 +6,5 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-example "rand < 0.5 ? 14 : 16 - 2"
+example "rand < 0.5 ? 14 : 16 - 2", 14
 counter_example "rand < 0.5 ? 14 : 16 + 2"

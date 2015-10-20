@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.regex.Pattern;
 
 /**
  * Encapsulated logic for processing JRuby's command-line arguments.
@@ -77,6 +78,8 @@ public class ArgumentProcessor {
     RubyInstanceConfig config;
     private boolean endOfArguments = false;
     private int characterIndex = 0;
+
+    private static final Pattern VERSION_FLAG = Pattern.compile("^--[12]\\.[89012]$");
 
     public ArgumentProcessor(String[] arguments, RubyInstanceConfig config) {
         this(arguments, true, false, false, config);
@@ -482,17 +485,8 @@ public class ArgumentProcessor {
                         }
                         
                         break FOR;
-                    } else if (argument.equals("--1.8")) {
+                    } else if (VERSION_FLAG.matcher(argument).matches()) {
                         config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--1.9")) {
-                        config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--2.0")) {
-                        config.getError().println("warning: " + argument + " ignored");
-                        break FOR;
-                    } else if (argument.equals("--2.1")) {
-                        // keep the switch for consistency 
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
@@ -661,7 +655,7 @@ public class ArgumentProcessor {
             String path = maybePath.toString();
             String[] paths = path.split(System.getProperty("path.separator"));
             for (int i = 0; i < paths.length; i++) {
-                result = resolve(paths[i], scriptName);
+                result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
                 if (result != null) return result;
             }
         }

@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * Access to a class variable.
  */
-public class ClassVarNode extends Node implements INameNode {
+public class ClassVarNode extends Node implements INameNode, SideEffectFree {
     private String name;
 
     public ClassVarNode(ISourcePosition position, String name) {

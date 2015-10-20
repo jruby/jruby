@@ -1,0 +1,7 @@
+fails:Float#prev_float returns a float the smallest possible step smaller than the receiver
+fails:Float#prev_float steps directly between MAX and INFINITY
+fails:Float#prev_float steps directly between 1.0 and 1.0 - EPSILON/2
+fails:Float#prev_float steps directly between -1.0 and -1.0 - EPSILON
+fails:Float#prev_float reverses the effect of next_float
+fails:Float#prev_float returns positive zero when stepping downward from just above zero
+fails:Float#prev_float returns NAN if NAN was the receiver

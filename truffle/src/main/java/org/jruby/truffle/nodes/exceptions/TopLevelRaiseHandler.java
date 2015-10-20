@@ -9,46 +9,67 @@
  */
 package org.jruby.truffle.nodes.exceptions;
 
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.IntegerCastNode;
+import org.jruby.truffle.nodes.cast.IntegerCastNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.subsystems.AtExitManager;
 
 public class TopLevelRaiseHandler extends RubyNode {
 
     @Child private RubyNode body;
+    @Child private IntegerCastNode integerCastNode;
 
     public TopLevelRaiseHandler(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
         this.body = body;
     }
 
+    @SuppressWarnings("finally")
     @Override
     public Object execute(VirtualFrame frame) {
-        try {
-            return body.execute(frame);
-        } catch (RaiseException e) {
-            handleException(e);
-        } catch (ThreadExitException e) {
-            // Ignore
-        }
+        DynamicObject lastException = null;
 
-        return nil();
+        try {
+            body.execute(frame);
+        } catch (RaiseException e) {
+            lastException = AtExitManager.handleAtExitException(getContext(), e);
+        } finally {
+            final DynamicObject atExitException = getContext().runAtExitHooks();
+            if (atExitException != null) {
+                lastException = atExitException;
+            }
+
+            getContext().shutdown();
+
+            throw new MainExitException(statusFromException(lastException));
+        }
     }
 
-    @TruffleBoundary
-    private void handleException(RaiseException e) {
-        final Object rubyException = e.getRubyException();
+    private int statusFromException(DynamicObject exception) {
+        if (exception == null) {
+            return 0;
+        } else if (Layouts.BASIC_OBJECT.getLogicalClass(exception) == getContext().getCoreLibrary().getSystemExitClass()) {
+            return castToInt(exception.get("@status", null));
+        } else {
+            return 1;
+        }
+    }
 
-        BacktraceFormatter.createDefaultFormatter(getContext()).printBacktrace((DynamicObject) rubyException, Layouts.EXCEPTION.getBacktrace((DynamicObject) rubyException));
-
-        System.exit(1);
+    private int castToInt(Object value) {
+        if (integerCastNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            integerCastNode = insert(IntegerCastNodeGen.create(getContext(), getSourceSection(), null));
+        }
+        return integerCastNode.executeCastInt(value);
     }
 
 }

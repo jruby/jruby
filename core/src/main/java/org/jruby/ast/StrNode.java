@@ -42,7 +42,7 @@ import org.jruby.util.StringSupport;
 /** 
  * Representing a simple String literal.
  */
-public class StrNode extends Node implements ILiteralNode {
+public class StrNode extends Node implements ILiteralNode, SideEffectFree {
     private final ByteList value;
     private final int codeRange;
 

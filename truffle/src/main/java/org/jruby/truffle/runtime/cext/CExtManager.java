@@ -17,6 +17,7 @@ public class CExtManager {
     public static synchronized CExtSubsystem getSubsystem() {
         if (!loaded) {
             try {
+                @SuppressWarnings("unchecked")
                 final Class<? extends CExtSubsystem> clazz = (Class<? extends CExtSubsystem>)
                         Class.forName("com.oracle.truffle.jruby.interop.cext.CExtSubsystemImpl");
                 subsystem = clazz.newInstance();

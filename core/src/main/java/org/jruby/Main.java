@@ -198,6 +198,10 @@ public class Main {
 
         try {
             Status status = main.run(args);
+
+            printTruffleTimeMetric("after-main");
+            printTruffleMemoryMetric();
+
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
@@ -211,18 +215,16 @@ public class Main {
                 t.printStackTrace(System.err);
             } else {
                 // print out as a nice Ruby backtrace
-                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
+                System.err.println("Unhandled Java exception: " + t);
+                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
                 while ((t = t.getCause()) != null) {
                     System.err.println("Caused by:");
-                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t));
+                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
                 }
             }
 
             System.exit(1);
         }
-
-        printTruffleTimeMetric("after-main");
-        printTruffleMemoryMetric();
     }
 
     public Status run(String[] args) {
@@ -351,7 +353,7 @@ public class Main {
 
         String oomeMessage = oome.getMessage();
 
-        if (oomeMessage.contains("PermGen")) { // report permgen memory error
+        if (oomeMessage != null && oomeMessage.contains("PermGen")) { // report permgen memory error
             config.getError().println("Error: Your application exhausted PermGen area of the heap.");
             config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
 
@@ -405,8 +407,6 @@ public class Main {
             doCheckSecurityManager();
 
             runtime.runFromMain(in, filename);
-
-            runtime.shutdownTruffleContextIfRunning();
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));
         }

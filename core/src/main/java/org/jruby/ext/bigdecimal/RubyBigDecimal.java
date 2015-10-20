@@ -127,7 +127,6 @@ public class RubyBigDecimal extends RubyNumeric {
     private static final double SQRT_10 = 3.162277660168379332;
 
     public static RubyClass createBigDecimal(Ruby runtime) {
-        try {
         RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ALLOCATOR);
 
         runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
@@ -146,11 +145,6 @@ public class RubyBigDecimal extends RubyNumeric {
         bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
 
         return bigDecimal;
-        } catch (Exception e) {
-            System.out.println("E:" + e);
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private boolean isNaN;

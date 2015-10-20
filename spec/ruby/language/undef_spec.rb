@@ -13,4 +13,10 @@ describe "The undef keyword" do
     end
     lambda { obj.meth 5 }.should raise_error(NoMethodError)
   end
+
+  it "raises a NameError when passed a missing name" do
+    lambda { class ::UndefSpecClass; undef not_exist; end }.should raise_error(NameError)
+    # a NameError and not a NoMethodError
+    lambda { class ::UndefSpecClass; undef not_exist; end }.should_not raise_error(NoMethodError)
+  end
 end

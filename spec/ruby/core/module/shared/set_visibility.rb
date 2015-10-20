@@ -119,5 +119,19 @@ describe :set_visibility, shared: true do
 
       mod.should send(:"have_#{@method}_instance_method", :test1, false)
     end
+
+    describe "within a closure" do
+      it "sets the visibility outside the closure" do
+        visibility = @method
+        mod = Module.new {
+              1.times {
+                send visibility
+              }
+              def test1() end
+            }
+
+        mod.should send(:"have_#{@method}_instance_method", :test1, false)
+      end
+    end
   end
 end

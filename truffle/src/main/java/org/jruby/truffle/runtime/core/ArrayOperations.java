@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.array.ArrayUtils;
@@ -20,8 +22,16 @@ import java.util.Arrays;
 
 public abstract class ArrayOperations {
 
+    public static int normalizeIndex(int length, int index, ConditionProfile negativeIndexProfile) {
+        if (negativeIndexProfile.profile(index < 0)) {
+            return length + index;
+        } else {
+            return index;
+        }
+    }
+
     public static int normalizeIndex(int length, int index) {
-        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.SLOWPATH_PROBABILITY, index < 0)) {
             return length + index;
         } else {
             return index;

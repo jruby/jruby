@@ -35,7 +35,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
-public abstract class MethodDefNode extends Node implements INameNode {
+public abstract class MethodDefNode extends Node implements INameNode, DefNode {
 	protected final String name;
 	protected final ArgsNode argsNode;
 	protected final StaticScope scope;
@@ -64,7 +64,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	/**
 	 * Get the static scoping information.
-	 * 
+	 *
 	 * @return the scoping info
 	 */
 	public StaticScope getScope() {
@@ -73,7 +73,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	/**
 	 * Gets the body of this class.
-	 * 
+	 *
 	 * @return the contents
 	 */
 	public Node getBodyNode() {

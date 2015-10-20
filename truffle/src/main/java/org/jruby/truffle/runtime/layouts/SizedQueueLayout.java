@@ -22,10 +22,10 @@ public interface SizedQueueLayout extends BasicObjectLayout {
                                                DynamicObject metaClass);
 
     DynamicObject createSizedQueue(DynamicObjectFactory factory,
-                                   @Nullable BlockingQueue queue);
+                                   @Nullable BlockingQueue<Object> queue);
 
-    BlockingQueue getQueue(DynamicObject object);
+    BlockingQueue<Object> getQueue(DynamicObject object);
 
-    void setQueue(DynamicObject object, BlockingQueue queue);
+    void setQueue(DynamicObject object, BlockingQueue<Object> queue);
 
 }

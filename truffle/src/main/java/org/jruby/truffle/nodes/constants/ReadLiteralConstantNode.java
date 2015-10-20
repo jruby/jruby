@@ -10,17 +10,17 @@
 package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
+import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.LiteralNode;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 public class ReadLiteralConstantNode extends RubyNode {
 
@@ -29,7 +29,7 @@ public class ReadLiteralConstantNode extends RubyNode {
     public ReadLiteralConstantNode(RubyContext context, SourceSection sourceSection, RubyNode moduleNode, String name) {
         super(context, sourceSection);
         RubyNode nameNode = new LiteralNode(context, sourceSection, name);
-        this.readConstantNode = new ReadConstantNode(context, sourceSection, false,  moduleNode, nameNode);
+        this.readConstantNode = new ReadConstantNode(context, sourceSection, false, false, moduleNode, nameNode);
     }
 
     @Override
@@ -51,20 +51,21 @@ public class ReadLiteralConstantNode extends RubyNode {
              *
              * We should maybe try to see if receiver.isDefined() but we also need its value if it is,
              * and we do not want to execute receiver twice. */
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
                 return nil();
             }
             throw e;
+        }
+
+        if (!RubyGuards.isRubyModule(module)) {
+            return nil();
         }
 
         final RubyConstant constant;
         try {
             constant = readConstantNode.lookupConstantNode.executeLookupConstant(frame, module, name);
         } catch (RaiseException e) {
-            if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getTypeErrorClass()) {
-                // module is not a class/module
-                return nil();
-            } else if (Layouts.BASIC_OBJECT.getLogicalClass(((DynamicObject) e.getRubyException())) == context.getCoreLibrary().getNameErrorClass()) {
+            if (Layouts.BASIC_OBJECT.getLogicalClass(e.getRubyException()) == context.getCoreLibrary().getNameErrorClass()) {
                 // private constant
                 return nil();
             }
@@ -74,7 +75,7 @@ public class ReadLiteralConstantNode extends RubyNode {
         if (constant == null) {
             return nil();
         } else {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("constant", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList("constant", UTF8Encoding.INSTANCE));
         }
     }
 

@@ -16,9 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
@@ -29,8 +28,9 @@ import org.jruby.truffle.nodes.objects.MetaClassNode;
 import org.jruby.truffle.nodes.objects.MetaClassNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "UnboundMethod")
@@ -159,12 +159,9 @@ public abstract class UnboundMethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+            final ArgumentDescriptor[] argsDesc = Layouts.UNBOUND_METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
-
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, true));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, true);
         }
 
     }
@@ -184,10 +181,25 @@ public abstract class UnboundMethodNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

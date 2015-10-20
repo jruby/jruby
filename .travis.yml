@@ -8,7 +8,7 @@ sudo: false
 
 before_script:
   - export MAVEN_SKIP_RC=true
-  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=192m"
+  - export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=512m"
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
@@ -54,7 +54,7 @@ matrix:
     - env: PHASE='-Pjruby-jars'
       jdk: openjdk7
     - env: PHASE='-Pmain'
-      jdk: oraclejdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
     - env: PHASE='-Posgi'

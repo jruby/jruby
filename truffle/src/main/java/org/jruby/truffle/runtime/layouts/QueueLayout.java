@@ -22,10 +22,10 @@ public interface QueueLayout extends BasicObjectLayout {
                                           DynamicObject metaClass);
 
     DynamicObject createQueue(DynamicObjectFactory factory,
-                              LinkedBlockingQueue queue);
+                              LinkedBlockingQueue<Object> queue);
 
     boolean isQueue(DynamicObject object);
 
-    LinkedBlockingQueue getQueue(DynamicObject object);
+    LinkedBlockingQueue<Object> getQueue(DynamicObject object);
 
 }

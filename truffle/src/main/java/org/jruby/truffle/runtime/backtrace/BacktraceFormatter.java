@@ -13,9 +13,10 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
@@ -46,15 +47,28 @@ public class BacktraceFormatter {
         return new BacktraceFormatter(context, flags);
     }
 
+    // for debugging
+    public static List<String> rubyBacktrace(RubyContext context) {
+        return BacktraceFormatter.createDefaultFormatter(context).formatBacktrace(null, RubyCallStack.getBacktrace(null));
+    }
+
+    // for debugging
+    public static String printableRubyBacktrace(RubyContext context) {
+        final StringBuilder builder = new StringBuilder();
+        for (String line : rubyBacktrace(context)) {
+            builder.append("\n");
+            builder.append(line);
+        }
+        return builder.toString().substring(1);
+    }
+
     public BacktraceFormatter(RubyContext context, EnumSet<FormattingFlags> flags) {
         this.context = context;
         this.flags = flags;
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
-        try (PrintWriter writer = new PrintWriter(System.err)) {
-            printBacktrace(exception, backtrace, writer);
-        }
+        printBacktrace(exception, backtrace, new PrintWriter(System.err, true));
     }
 
     public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {

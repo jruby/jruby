@@ -17,9 +17,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.ffi.Pointer;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.core.PointerGuards;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.util.ByteList;
@@ -60,6 +60,7 @@ public abstract class PointerPrimitiveNodes {
             return malloc(pointerClass, (long) size);
         }
 
+        @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject malloc(DynamicObject pointerClass, long size) {
             return PointerNodes.createPointer(pointerClass, getMemoryManager().newPointer(UnsafeHolder.U.allocateMemory(size)));
@@ -74,6 +75,7 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @SuppressWarnings("restriction")
         @Specialization
         public DynamicObject free(DynamicObject pointer) {
             UnsafeHolder.U.freeMemory(Layouts.POINTER.getPointer(pointer).address());
@@ -150,7 +152,7 @@ public abstract class PointerPrimitiveNodes {
         public DynamicObject readString(DynamicObject pointer, int length) {
             final byte[] bytes = new byte[length];
             Layouts.POINTER.getPointer(pointer).get(0, bytes, 0, length);
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(bytes));
         }
 
     }
@@ -283,7 +285,7 @@ public abstract class PointerPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = "type == TYPE_STRING")
         public DynamicObject getAtOffsetString(DynamicObject pointer, int offset, int type) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.POINTER.getPointer(pointer).getString(offset), UTF8Encoding.INSTANCE));
         }
 
         @Specialization(guards = "type == TYPE_PTR")
@@ -308,7 +310,7 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject address(DynamicObject pointer, DynamicObject string, int maxLength) {
-            final ByteList bytes = Layouts.STRING.getByteList(string);
+            final ByteList bytes = StringOperations.getByteList(string);
             final int length = Math.min(bytes.length(), maxLength);
             Layouts.POINTER.getPointer(pointer).put(0, bytes.unsafeBytes(), bytes.begin(), length);
             return pointer;
@@ -326,13 +328,13 @@ public abstract class PointerPrimitiveNodes {
 
         @Specialization(guards = "isNullPointer(pointer)")
         public DynamicObject readNullPointer(DynamicObject pointer) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList());
         }
 
         @TruffleBoundary
         @Specialization(guards = "!isNullPointer(pointer)")
         public DynamicObject readStringToNull(DynamicObject pointer) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(MemoryIO.getInstance().getZeroTerminatedByteArray(Layouts.POINTER.getPointer(pointer).address())));
         }
 
     }

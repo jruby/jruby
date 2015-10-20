@@ -13,7 +13,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -21,6 +20,7 @@ import org.jruby.truffle.runtime.array.ArrayMirror;
 import org.jruby.truffle.runtime.array.ArrayReflector;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.ArrayOperations;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -74,9 +74,9 @@ public class FeatureLoader {
             throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(currentNode, "DATA");
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).removeConstant(context, currentNode, "DATA");
             } else {
-                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(currentNode, "DATA", dataConstantBefore.getValue());
+                Layouts.MODULE.getFields(context.getCoreLibrary().getObjectClass()).setConstant(context, currentNode, "DATA", dataConstantBefore.getValue());
             }
         }
     }
@@ -123,7 +123,7 @@ public class FeatureLoader {
         }
 
         // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-        final DynamicObject pathString = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(expandedPath, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+        final DynamicObject pathString = StringOperations.createString(context, StringOperations.encodeByteList(expandedPath, UTF8Encoding.INSTANCE));
         ArrayOperations.append(loadedFeatures, pathString);
         try {
             context.loadFile(expandedPath, currentNode);
@@ -169,7 +169,7 @@ public class FeatureLoader {
     public static String expandPath(RubyContext context, String fileName) {
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
-            final org.jruby.RubyString path = context.toJRubyString(Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getStringClass()), RubyString.encodeBytelist(fileName, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null));
+            final org.jruby.RubyString path = context.toJRubyString(StringOperations.createString(context, StringOperations.encodeByteList(fileName, UTF8Encoding.INSTANCE)));
             final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
                     context.getRuntime().getCurrentContext(),
                     null,

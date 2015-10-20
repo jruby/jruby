@@ -25,7 +25,8 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.runtime.Options;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.*;
 import org.jruby.truffle.runtime.layouts.Layouts;
@@ -48,6 +49,12 @@ public abstract class SetNode extends RubyNode {
 
     private final BranchProfile extendProfile = BranchProfile.create();
     private final ConditionProfile strategyProfile = ConditionProfile.createBinaryProfile();
+
+    @Child private IsFrozenNode isFrozenNode;
+    @Child private CallDispatchHeadNode dupNode;
+    @Child private CallDispatchHeadNode freezeNode;
+
+    private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
 
     public SetNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -73,12 +80,12 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = {"isNullHash(hash)", "byIdentity", "isRubyString(key)"})
     public Object setNullByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setNull(frame, hash, (Object) key, value, byIdentity);
+        return setNull(frame, hash, key, value, byIdentity);
     }
 
     @Specialization(guards = {"isNullHash(hash)", "!byIdentity", "isRubyString(key)"})
     public Object setNullNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setNull(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
+        return setNull(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
     }
 
     @ExplodeLoop
@@ -134,7 +141,7 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = {"isPackedHash(hash)", "!byIdentity", "isRubyString(key)"})
     public Object setPackedArrayNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setPackedArray(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
+        return setPackedArray(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
     }
 
     // Can't be @Cached yet as we call from the RubyString specialisation
@@ -198,12 +205,35 @@ public abstract class SetNode extends RubyNode {
 
     @Specialization(guards = {"isBucketHash(hash)", "byIdentity", "isRubyString(key)"})
     public Object setBucketsByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setBuckets(frame, hash, (Object) key, value, byIdentity);
+        return setBuckets(frame, hash, key, value, byIdentity);
     }
 
     @Specialization(guards = {"isBucketHash(hash)", "!byIdentity", "isRubyString(key)"})
     public Object setBucketsNotByIdentity(VirtualFrame frame, DynamicObject hash, DynamicObject key, Object value, boolean byIdentity) {
-        return setBuckets(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value, byIdentity);
+        return setBuckets(frame, hash, freezeAndDupIfNeeded(frame, key), value, byIdentity);
+    }
+
+    private Object freezeAndDupIfNeeded(VirtualFrame frame, DynamicObject key) {
+        if (isFrozenNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            isFrozenNode = insert(IsFrozenNodeGen.create(getContext(), getSourceSection(), null));
+        }
+
+        if (!frozenProfile.profile(isFrozenNode.executeIsFrozen(key))) {
+            if (dupNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            if (freezeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                freezeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
+        } else {
+            return key;
+        }
     }
 
 }

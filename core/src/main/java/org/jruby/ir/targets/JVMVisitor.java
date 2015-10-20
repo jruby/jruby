@@ -21,7 +21,6 @@ import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -108,6 +107,8 @@ public class JVMVisitor extends IRVisitor {
             codegenScriptBody((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
             emitMethodJIT((IRMethod)scope, context);
+        } else if (scope instanceof IRClosure) {
+            emitBlockJIT((IRClosure) scope, context);
         } else if (scope instanceof IRModuleBody) {
             emitModuleBodyJIT((IRModuleBody)scope);
         } else {
@@ -223,7 +224,7 @@ public class JVMVisitor extends IRVisitor {
         return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
     }
 
-    private static final Signature CLOSURE_SIGNATURE = Signature
+    public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
@@ -245,12 +246,25 @@ public class JVMVisitor extends IRVisitor {
         emitWithSignatures(method, context, name);
     }
 
-    public void  emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
+    public void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFileName());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
         emitWithSignatures(method, context, name);
+
+        jvm.cls().visitEnd();
+        jvm.popclass();
+    }
+
+    public void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
+        String clsName = jvm.scriptToClass(closure.getFileName());
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
+        jvm.pushscript(clsName, closure.getFileName());
+
+        emitScope(closure, name, CLOSURE_SIGNATURE, false);
+
+        context.setJittedName(name);
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -399,6 +413,14 @@ public class JVMVisitor extends IRVisitor {
         visit(aliasInstr.getOldName());
         jvmAdapter().invokevirtual(p(Object.class), "toString", sig(String.class));
         m.invokeIRHelper("defineAlias", sig(void.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, String.class, String.class));
+    }
+
+    @Override
+    public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        jvmMethod().invokeIRHelper("getArgScopeDepth", sig(RubyFixnum.class, ThreadContext.class, StaticScope.class));
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1088,11 +1110,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        String name = getglobalvariableinstr.getGVar().getName();
-        jvmMethod().loadRuntime();
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
-        jvmAdapter().ldc(name);
-        jvmMethod().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject get(String)"));
+        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getName());
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
@@ -1415,9 +1433,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
         // See also CompiledIRMethod.call
         jvmMethod().loadContext();
-        jvmAdapter().invokestatic(p(Visibility.class), "values", sig(Visibility[].class));
-        jvmAdapter().ldc(Visibility.PUBLIC.ordinal());
-        jvmAdapter().aaload();
+        jvmAdapter().getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
     }
 
@@ -1461,13 +1477,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
-        GlobalVariable target = (GlobalVariable)putglobalvarinstr.getTarget();
-        String name = target.getName();
-        jvmMethod().loadRuntime();
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
-        jvmAdapter().ldc(name);
         visit(putglobalvarinstr.getValue());
-        jvmMethod().invokeVirtual(Type.getType(GlobalVariables.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject set(String, org.jruby.runtime.builtin.IRubyObject)"));
+        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getName());
         // leaves copy of value on stack
         jvmAdapter().pop();
     }
@@ -1716,6 +1727,13 @@ public class JVMVisitor extends IRVisitor {
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
+    }
+
+    @Override
+    public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().pushBoolean(instr.requiresBacktrace());
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setExceptionRequiresBacktrace", sig(void.class, boolean.class));
     }
 
     @Override
@@ -2007,6 +2025,17 @@ public class JVMVisitor extends IRVisitor {
         // keeps encoding of symbol name
         jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class, Encoding.class));
     }
+
+    @Override
+    public void Filename(Filename filename) {
+        // Fixme: Not very efficient to do all this every time
+        jvmMethod().loadRuntime();
+        jvmMethod().loadStaticScope();
+        jvmAdapter().invokevirtual(p(StaticScope.class), "getIRScope", sig(IRScope.class));
+        jvmAdapter().invokevirtual(p(IRScope.class), "getFileName", sig(String.class));
+        jvmAdapter().invokevirtual(p(Ruby.class), "newString", sig(String.class));
+    }
+
 
     @Override
     public void Fixnum(Fixnum fixnum) {

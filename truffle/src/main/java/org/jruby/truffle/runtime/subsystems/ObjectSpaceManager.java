@@ -12,11 +12,9 @@ package org.jruby.truffle.runtime.subsystems;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.utilities.AssumedValue;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.RubyGC;
 import org.jruby.truffle.nodes.core.ThreadNodes;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
@@ -87,7 +85,7 @@ public class ObjectSpaceManager {
         if (finalizerThread == null) {
             // TODO(CS): should we be running this in a real Ruby thread?
 
-            finalizerThread = ThreadNodes.createRubyThread(context.getCoreLibrary().getThreadClass());
+            finalizerThread = ThreadNodes.createRubyThread(context, context.getCoreLibrary().getThreadClass());
             ThreadNodes.initialize(finalizerThread, context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {

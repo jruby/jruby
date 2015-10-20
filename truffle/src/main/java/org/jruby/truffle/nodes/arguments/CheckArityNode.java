@@ -13,8 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -33,8 +31,6 @@ public class CheckArityNode extends RubyNode {
     private final String[] keywords;
     private final boolean keywordsRest;
 
-    private final ConditionProfile optimizedKeywordArgsProfile = ConditionProfile.createBinaryProfile();
-
     public CheckArityNode(RubyContext context, SourceSection sourceSection, Arity arity) {
         this(context, sourceSection, arity, new String[]{}, false);
     }
@@ -52,7 +48,7 @@ public class CheckArityNode extends RubyNode {
         final int given;
         final DynamicObject keywordArguments;
 
-        if (optimizedKeywordArgsProfile.profile(RubyArguments.isKwOptimized(frame.getArguments()))) {
+        if (arity.acceptsKeywords() && RubyArguments.isKwOptimized(frame.getArguments())) {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getKeywordsCount() - 2;
         } else {
             given = RubyArguments.getUserArgumentsCount(frame.getArguments());

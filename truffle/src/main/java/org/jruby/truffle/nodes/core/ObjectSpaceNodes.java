@@ -9,6 +9,15 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.ImportStatic;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
@@ -20,16 +29,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.object.ObjectGraph;
 import org.jruby.truffle.runtime.object.ObjectIDOperations;
-
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.ImportStatic;
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import com.oracle.truffle.api.object.DynamicObject;
-import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "ObjectSpace")
 public abstract class ObjectSpaceNodes {
@@ -95,7 +94,7 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected ReadHeadObjectFieldNode createReadObjectIDNode() {
-            return ReadHeadObjectFieldNodeGen.create(getContext(), getSourceSection(), Layouts.OBJECT_ID_IDENTIFIER, 0L, null);
+            return ReadHeadObjectFieldNodeGen.create(Layouts.OBJECT_ID_IDENTIFIER, 0L);
         }
 
         protected boolean isLargeFixnumID(DynamicObject id) {

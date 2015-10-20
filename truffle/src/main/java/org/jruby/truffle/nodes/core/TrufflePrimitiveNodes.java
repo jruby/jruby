@@ -18,17 +18,13 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeVisitor;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import jnr.posix.SpawnFileAction;
-
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyGC;
-import org.jruby.RubyString;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -50,12 +46,6 @@ import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Collections;
-import java.util.Arrays;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -90,7 +80,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return Layouts.BINDING.createBinding(getContext().getCoreLibrary().getBindingFactory(), frame);
+            return BindingNodes.createBinding(getContext(), frame);
         }
 
     }
@@ -120,7 +110,7 @@ public abstract class TrufflePrimitiveNodes {
 
             });
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(source, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(source, UTF8Encoding.INSTANCE));
         }
 
     }
@@ -192,7 +182,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject javaClassOf(Object value) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(value.getClass().getSimpleName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -209,13 +199,13 @@ public abstract class TrufflePrimitiveNodes {
         public DynamicObject dumpString(DynamicObject string) {
             final StringBuilder builder = new StringBuilder();
 
-            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final ByteList byteList = StringOperations.getByteList(string);
 
             for (int i = 0; i < byteList.length(); i++) {
                 builder.append(String.format("\\x%02x", byteList.get(i)));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(builder.toString(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(builder.toString(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -259,7 +249,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject graalVersion() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(System.getProperty("graal.version", "unknown"), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -299,7 +289,7 @@ public abstract class TrufflePrimitiveNodes {
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());
                 final DynamicObject array = Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, store.length);
-                converted.put(Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(source.getKey().getPath(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null), array);
+                converted.put(createString(StringOperations.encodeByteList(source.getKey().getPath(), UTF8Encoding.INSTANCE)), array);
             }
 
             return BucketsStrategy.create(getContext(), converted.entrySet(), false);
@@ -458,7 +448,7 @@ public abstract class TrufflePrimitiveNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject jrubyHomeDirectory() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(getContext().getRuntime().getJRubyHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -472,7 +462,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public DynamicObject hostOS() {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(RbConfigLibrary.getOSName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -549,6 +539,28 @@ public abstract class TrufflePrimitiveNodes {
                 return yield(frame, block);
             }
         }
+    }
+
+    @CoreMethod(names = "print_backtrace", onSingleton = true)
+    public abstract static class PrintBacktraceNode extends CoreMethodNode {
+
+        public PrintBacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject printBacktrace() {
+            final List<String> rubyBacktrace = BacktraceFormatter.createDefaultFormatter(getContext())
+                    .formatBacktrace(null, RubyCallStack.getBacktrace(this));
+
+            for (String line : rubyBacktrace) {
+                System.err.println(line);
+            }
+
+            return nil();
+        }
+
     }
 
     @CoreMethod(names = "print_interleaved_backtrace", onSingleton = true)
@@ -638,9 +650,9 @@ public abstract class TrufflePrimitiveNodes {
     }
 
     @CoreMethod(names = "spawn_process", onSingleton = true, required = 3)
-    public abstract static class SpawnProcess extends CoreMethodArrayArgumentsNode {
+    public abstract static class SpawnProcessNode extends CoreMethodArrayArgumentsNode {
 
-        public SpawnProcess(RubyContext context, SourceSection sourceSection) {
+        public SpawnProcessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
@@ -653,7 +665,7 @@ public abstract class TrufflePrimitiveNodes {
                          DynamicObject environmentVariables) {
 
             final long longPid = call(
-                    StringOperations.getString(command),
+                    StringOperations.getString(getContext(), command),
                     toStringArray(arguments),
                     toStringArray(environmentVariables));
             assert longPid <= Integer.MAX_VALUE;
@@ -675,7 +687,7 @@ public abstract class TrufflePrimitiveNodes {
 
             for (int i = 0; i < size; i++) {
                 assert Layouts.STRING.isString(unconvertedStrings[i]);
-                strings[i] = StringOperations.getString((DynamicObject) unconvertedStrings[i]);
+                strings[i] = StringOperations.getString(getContext(), (DynamicObject) unconvertedStrings[i]);
             }
 
             return strings;

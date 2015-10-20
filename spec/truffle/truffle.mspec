@@ -7,73 +7,16 @@ class MSpecScript
   set :target, File.expand_path("../../../bin/jruby#{windows? ? '.bat' : ''}", __FILE__)
 
   if ARGV[-2..-1] != %w[-t ruby] # No flags for MRI
-    set :flags, %w[-X+T -J-ea -J-Xmx2G]
+    set :flags, %w[-X+T -J-ea -J-esa -J-Xmx2G]
   end
 
   set :language, [
     "spec/ruby/language"
   ]
 
-  core = [
-    "spec/ruby/core",
-
-    # Can't load these - so tags aren't enough to exclude them. The problem is
-    # either fixtures or syntax. Some of them are probably easy fixes.
-
-    # This seems to hang sometimes on Travis
-    "^spec/ruby/core/signal",
-
-    # require 'fcntl'
-    "^spec/ruby/core/io/reopen_spec.rb",
-
-    # seem side-effecting when not run in isolation
-    "^spec/ruby/core/marshal/dump_spec.rb",
-    "^spec/ruby/core/marshal/float_spec.rb",
-    "^spec/ruby/core/marshal/load_spec.rb",
-    "^spec/ruby/core/marshal/restore_spec.rb",
-
-    # require 'timeout'
-    "^spec/ruby/core/process/detach_spec.rb",
-
-    # fail tag not excluding
-    "^spec/ruby/core/string/modulo_spec.rb",
-
-    # require etc, linux only spec
-    "^spec/ruby/core/io/advise_spec.rb",
-
-    # Pollutes other tests
-    "^spec/ruby/core/argf/binmode_spec.rb"
+  set :core, [
+    "spec/ruby/core"
   ]
-
-  core += [
-    # Windows
-    "^spec/ruby/core/method/source_location_spec.rb",
-    "^spec/ruby/core/struct/each_spec.rb",
-    "^spec/ruby/core/struct/element_reference_spec.rb",
-    "^spec/ruby/core/struct/element_set_spec.rb",
-    "^spec/ruby/core/struct/eql_spec.rb",
-    "^spec/ruby/core/struct/equal_value_spec.rb",
-    "^spec/ruby/core/struct/hash_spec.rb",
-    "^spec/ruby/core/struct/initialize_copy_spec.rb",
-    "^spec/ruby/core/struct/initialize_spec.rb",
-    "^spec/ruby/core/struct/inspect_spec.rb",
-    "^spec/ruby/core/struct/instance_variables_spec.rb",
-    "^spec/ruby/core/struct/length_spec.rb",
-    "^spec/ruby/core/struct/members_spec.rb",
-    "^spec/ruby/core/struct/new_spec.rb",
-    "^spec/ruby/core/struct/select_spec.rb",
-    "^spec/ruby/core/struct/size_spec.rb",
-    "^spec/ruby/core/struct/struct_spec.rb",
-    "^spec/ruby/core/struct/to_a_spec.rb",
-    "^spec/ruby/core/struct/to_h_spec.rb",
-    "^spec/ruby/core/struct/to_s_spec.rb",
-    "^spec/ruby/core/struct/values_at_spec.rb",
-    "^spec/ruby/core/struct/values_spec.rb",
-    "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
-    "^spec/ruby/core/unboundmethod/source_location_spec.rb",
-  ] if windows?
-  
-  set :core, core
 
   set :library, [
     "spec/ruby/library",
@@ -98,15 +41,6 @@ class MSpecScript
     # Load issues with 'delegate'.
     "^spec/ruby/library/delegate/delegate_class/instance_method_spec.rb",
     "^spec/ruby/library/delegate/delegator/protected_methods_spec.rb",
-
-    # LoadError for `load "prime.rb"`
-    "^spec/ruby/library/prime/each_spec.rb",
-
-    # Loads 'timeout', which doesn't work yet and results in a message printed to console about Rubinius::Channel#receive
-    # not being implemented.
-    "^spec/ruby/library/net",
-    "^spec/ruby/library/resolv",
-    "^spec/ruby/library/timeout"
   ]
 
   set :truffle, [

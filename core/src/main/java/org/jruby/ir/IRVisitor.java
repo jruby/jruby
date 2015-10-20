@@ -116,6 +116,7 @@ public abstract class IRVisitor {
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) { error(threadpollinstr); }
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }
+    public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) { error(instr); }
     public void ToAryInstr(ToAryInstr toaryinstr) { error(toaryinstr); }
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) { error(undefmethodinstr); }
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
@@ -152,6 +153,7 @@ public abstract class IRVisitor {
     public void Complex(Complex complex) { error(complex); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }
+    public void Filename(Filename filename) { error(filename); }
     public void Fixnum(Fixnum fixnum) { error(fixnum); }
     public void FrozenString(FrozenString frozen) { error(frozen); }
     public void UnboxedFixnum(UnboxedFixnum fixnum) { error(fixnum); }

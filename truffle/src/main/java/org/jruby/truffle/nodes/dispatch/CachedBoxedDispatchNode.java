@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.Shape;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
@@ -44,11 +43,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         this.next = next;
         this.method = method;
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-        if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysClone()) {
-            insert(callNode);
-            callNode.cloneCallTarget();
-        }
+        applySplittingInliningStrategy(callNode, method);
     }
 
     @Override

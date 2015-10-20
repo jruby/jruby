@@ -1,2 +1,0 @@
-fails:Kernel#raise re-raises the rescued exception
-fails:Kernel#raise allows Exception, message, and backtrace parameters

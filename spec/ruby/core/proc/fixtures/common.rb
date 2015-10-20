@@ -1,4 +1,9 @@
 module ProcSpecs
+  class ToAryAsNil
+    def to_ary
+      nil
+    end
+  end
   def self.new_proc_in_method
     Proc.new
   end

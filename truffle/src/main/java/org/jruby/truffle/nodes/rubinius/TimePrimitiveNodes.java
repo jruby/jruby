@@ -19,12 +19,14 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.core.TimeNodes;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.StringSupport;
@@ -37,17 +39,19 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
         @Child private ReadTimeZoneNode readTimeZoneNode;
         
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         @Specialization
         public DynamicObject timeSNow(VirtualFrame frame, DynamicObject timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return TimeNodes.createRubyTime(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), nil());
+            return allocateObjectNode.allocate(timeClass, now((DynamicObject) readTimeZoneNode.execute(frame)), nil());
         }
         
         @TruffleBoundary
@@ -61,14 +65,16 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_dup", needsSelf = false)
     public static abstract class TimeSDupPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public TimeSDupPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject timeSDup(DynamicObject other) {
-            final DynamicObject time = TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), TimeNodes.getDateTime(other), Layouts.TIME.getOffset(other));
-            return time;
+            return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(other), TimeNodes.getDateTime(other), Layouts.TIME.getOffset(other));
         }
 
     }
@@ -87,14 +93,14 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), time(milliseconds), nil());
         }
 
         @Specialization(guards = { "!isUTC", "isNil(offset)" })
         public DynamicObject timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, Object offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = getMillis(seconds, nanoseconds);
-            return TimeNodes.createRubyTime(getContext().getCoreLibrary().getTimeClass(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset);
+            return Layouts.TIME.createTime(getContext().getCoreLibrary().getTimeFactory(), localtime(milliseconds, (DynamicObject) readTimeZoneNode.execute(frame)), offset);
         }
 
         private long getMillis(long seconds, int nanoseconds) {
@@ -184,7 +190,7 @@ public abstract class TimePrimitiveNodes {
             if (zoneString.matches(".*-\\d+")) {
                 zone = nil();
             } else {
-                zone = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(zoneString, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                zone = createString(StringOperations.encodeByteList(zoneString, UTF8Encoding.INSTANCE));
             }
 
             final Object[] decomposed = new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
@@ -205,7 +211,7 @@ public abstract class TimePrimitiveNodes {
         public DynamicObject timeStrftime(DynamicObject time, DynamicObject format) {
             final RubyDateFormatter rdf = getContext().getRuntime().getCurrentContext().getRubyDateFormatter();
             // TODO CS 15-Feb-15 ok to just pass nanoseconds as 0?
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), rdf.formatToByteList(rdf.compilePattern(Layouts.STRING.getByteList(format), false), TimeNodes.getDateTime(time), 0, null), StringSupport.CR_UNKNOWN, null);
+            return createString(rdf.formatToByteList(rdf.compilePattern(StringOperations.getByteList(format), false), TimeNodes.getDateTime(time), 0, null));
         }
 
     }
@@ -214,10 +220,12 @@ public abstract class TimePrimitiveNodes {
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child ReadTimeZoneNode readTimeZoneNode;
+        @Child AllocateObjectNode allocateObjectNode;
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
@@ -263,7 +271,7 @@ public abstract class TimePrimitiveNodes {
 
             if (isdst == -1) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return TimeNodes.createRubyTime(timeClass, dateTime, utcoffset);
+                return allocateObjectNode.allocate(timeClass, dateTime, utcoffset);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
@@ -295,7 +303,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_set_nseconds")
+    @RubiniusPrimitive(name = "time_set_nseconds", lowerFixnumParameters = 0)
     public static abstract class TimeSetNSecondsPrimitiveNode extends RubiniusPrimitiveNode {
 
         public TimeSetNSecondsPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -324,7 +332,7 @@ public abstract class TimePrimitiveNodes {
 
             final String timezone = dt.getZone().getShortName(dt.getMillis());
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(timezone, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(timezone, UTF8Encoding.INSTANCE));
         }
 
     }

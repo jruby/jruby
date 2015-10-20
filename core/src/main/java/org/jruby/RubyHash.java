@@ -1180,7 +1180,7 @@ public class RubyHash extends RubyObject implements Map {
         if (value == null) {
             if (block.isGiven()) return block.yield(context, key);
 
-            throw runtime.newKeyError("key not found: " + key);
+            throw runtime.newKeyError("key not found: :" + key);
         }
 
         return value;
@@ -1317,7 +1317,7 @@ public class RubyHash extends RubyObject implements Map {
             iteratorVisitAll(new Visitor() {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
-                    block.yieldSpecific(context, key, value);
+                    block.yieldArray(context, context.runtime.newArray(key, value), null);
                 }
             });
         } else {
@@ -1326,7 +1326,7 @@ public class RubyHash extends RubyObject implements Map {
             iteratorVisitAll(new Visitor() {
                 @Override
                 public void visit(IRubyObject key, IRubyObject value) {
-                    block.yield(context, RubyArray.newArray(runtime, key, value));
+                    block.yieldArray(context, RubyArray.newArray(runtime, key, value), null);
                 }
             });
         }
@@ -1425,7 +1425,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(new Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
-                if (!block.yieldSpecific(context, key, value).isTrue()) {
+                if (!block.yieldArray(context, context.runtime.newArray(key, value), null).isTrue()) {
                     modified[0] = true;
                     remove(key);
                 }
@@ -1878,7 +1878,7 @@ public class RubyHash extends RubyObject implements Map {
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
-                if (block.yield(context, newAssoc).isTrue())
+                if (block.yieldArray(context, newAssoc, null).isTrue())
                     return context.getRuntime().getTrue();
             }
             return context.getRuntime().getFalse();
@@ -1891,7 +1891,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-                if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
+                if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
                     return context.getRuntime().getTrue();
             }
             return context.getRuntime().getFalse();

@@ -1674,10 +1674,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_upcase / rb_str_upcase_bang
      *
      */
+    @Deprecated
     public RubyString upcase(ThreadContext context) {
         return upcase19(context);
     }
 
+    @Deprecated
     public IRubyObject upcase_bang(ThreadContext context) {
         return upcase_bang19(context);
     }
@@ -1713,47 +1715,30 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject singleByteUpcase(Ruby runtime, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCII.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
+        boolean modify = StringSupport.singleByteUpcase(bytes, s, end);
+
         return modify ? this : runtime.getNil();
     }
 
     private IRubyObject multiByteUpcase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCII.isLower(c)) {
-                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                    modify = true;
-                }
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, end);
-                if (enc.isLower(c)) {
-                    enc.codeToMbc(toUpper(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
-            }
+        try {
+            boolean modify = StringSupport.multiByteUpcase(enc, bytes, s, end);
+
+            return modify ? this : runtime.getNil();
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
         }
-        return modify ? this : runtime.getNil();
     }
 
     /** rb_str_downcase / rb_str_downcase_bang
      *
      */
+    @Deprecated
     public RubyString downcase(ThreadContext context) {
         return downcase19(context);
     }
 
+    @Deprecated
     public IRubyObject downcase_bang(ThreadContext context) {
         return downcase_bang19(context);
     }
@@ -1789,38 +1774,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject singleByteDowncase(Ruby runtime, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCII.isUpper(c)) {
-                bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
+        boolean modify = StringSupport.singleByteDowncase(bytes, s, end);
+
         return modify ? this : runtime.getNil();
     }
 
     private IRubyObject multiByteDowncase(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCII.isUpper(c)) {
-                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                    modify = true;
-                }
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, end);
-                if (enc.isUpper(c)) {
-                    enc.codeToMbc(toLower(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
-            }
+        try {
+            boolean modify = StringSupport.multiByteDowncase(enc, bytes, s, end);
+
+            return modify ? this : runtime.getNil();
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError(e.getMessage());
         }
-        return modify ? this : runtime.getNil();
     }
 
 
@@ -3289,6 +3255,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_to_inum
      *
      */
+    @Deprecated
     public IRubyObject stringToInum(int base, boolean badcheck) {
         ByteList s = this.value;
         return ConvertBytes.byteListToInum(getRuntime(), s, base, badcheck);
@@ -3311,7 +3278,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (!value.getEncoding().isAsciiCompatible()) {
             throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
         }
-        return stringToInum(-8, false);
+        return stringToInum19(-8, false);
     }
 
     /** rb_str_hex
@@ -3606,20 +3573,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     private RubyRegexp getPattern(IRubyObject obj) {
         if (obj instanceof RubyRegexp) return (RubyRegexp)obj;
-        return RubyRegexp.newRegexp(getRuntime(), getStringForPattern(obj).value);
-    }
-
-    private Regex getStringPattern19(Ruby runtime, IRubyObject obj) {
-        RubyString str = getStringForPattern(obj);
-        if (str.scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newRegexpError("invalid multybyte character: " +
-                    RegexpSupport.regexpDescription19(runtime, str.value, new RegexpOptions(), str.value.getEncoding()).toString());
-        }
-        if (str.value.getEncoding().isDummy()) {
-            throw runtime.newArgumentError("can't make regexp with dummy encoding");
-        }
-
-        return RubyRegexp.getQuotedRegexpFromCache19(runtime, str.value, new RegexpOptions(), str.isAsciiOnly());
+        return RubyRegexp.newRegexpFromStr(getRuntime(), getStringForPattern(obj), 0);
     }
 
     // MRI: get_pat_quoted
@@ -5297,6 +5251,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject force_encoding(Encoding encoding) {
+        modifyCheck();
         modify19();
         associateEncoding(encoding);
         clearCodeRange();

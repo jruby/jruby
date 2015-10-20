@@ -18,6 +18,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNode;
+import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -28,10 +30,6 @@ public abstract class TimeNodes {
 
     public static DateTime getDateTime(DynamicObject time) {
         return Layouts.TIME.getDateTime(time);
-    }
-
-    public static DynamicObject createRubyTime(DynamicObject timeClass, DateTime dateTime, Object offset) {
-        return Layouts.TIME.createTime(Layouts.CLASS.getInstanceFactory(timeClass), dateTime, offset);
     }
 
     // We need it to copy the internal data for a call to Kernel#clone.
@@ -126,13 +124,16 @@ public abstract class TimeNodes {
     @CoreMethod(names = "allocate", constructor = true)
     public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
 
+        @Child private AllocateObjectNode allocateObjectNode;
+
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
         @Specialization
         public DynamicObject allocate(DynamicObject rubyClass) {
-            return createRubyTime(rubyClass, ZERO, getContext().getCoreLibrary().getNilObject());
+            return allocateObjectNode.allocate(rubyClass, ZERO, getContext().getCoreLibrary().getNilObject());
         }
 
     }

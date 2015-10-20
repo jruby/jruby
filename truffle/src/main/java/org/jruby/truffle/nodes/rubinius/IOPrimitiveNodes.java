@@ -45,7 +45,9 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-import jnr.ffi.Pointer;
+import jnr.ffi.*;
+import jnr.posix.DefaultNativeTimeval;
+import jnr.posix.Timeval;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -100,7 +102,7 @@ public abstract class IOPrimitiveNodes {
         }
 
         @Specialization
-        public boolean connectPipe(VirtualFrame frame, DynamicObject lhs, DynamicObject rhs) {
+        public boolean connectPipe(DynamicObject lhs, DynamicObject rhs) {
             final int[] fds = new int[2];
 
             if (posix().pipe(fds) == -1) {
@@ -151,7 +153,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int open(DynamicObject path, int mode, int permission) {
-            return posix().open(StringOperations.getString(path), mode, permission);
+            return posix().open(StringOperations.getString(getContext(), path), mode, permission);
         }
 
     }
@@ -171,7 +173,7 @@ public abstract class IOPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(path)")
         public int truncate(DynamicObject path, long length) {
-            final int result = posix().truncate(StringOperations.getString(path), length);
+            final int result = posix().truncate(StringOperations.getString(getContext(), path), length);
             if (result == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
@@ -211,8 +213,8 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         @Specialization(guards = {"isRubyString(pattern)", "isRubyString(path)"})
         public boolean fnmatch(DynamicObject pattern, DynamicObject path, int flags) {
-            final ByteList patternBytes = Layouts.STRING.getByteList(pattern);
-            final ByteList pathBytes = Layouts.STRING.getByteList(path);
+            final ByteList patternBytes = StringOperations.getByteList(pattern);
+            final ByteList pathBytes = StringOperations.getByteList(path);
             return Dir.fnmatch(patternBytes.getUnsafeBytes(),
                     patternBytes.getBegin(),
                     patternBytes.getBegin() + patternBytes.getRealSize(),
@@ -235,10 +237,10 @@ public abstract class IOPrimitiveNodes {
         public DynamicObject ensureOpen(VirtualFrame frame, DynamicObject file) {
             // TODO BJF 13-May-2015 Handle nil case
             final int fd = Layouts.IO.getDescriptor(file);
-            if(fd == -1){
+            if (fd == -1) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("closed stream",this));
-            } else if (fd == -2){
+            } else if (fd == -2) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().ioError("shutdown stream",this));
             }
@@ -261,8 +263,7 @@ public abstract class IOPrimitiveNodes {
             // Taken from Rubinius's IO::read_if_available.
 
             if (numberOfBytes == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                        new ByteList(), StringSupport.CR_UNKNOWN, null);
+                return createString(new ByteList());
             }
 
             final int fd = Layouts.IO.getDescriptor(file);
@@ -270,20 +271,16 @@ public abstract class IOPrimitiveNodes {
             final FDSet fdSet = fdSetFactory.create();
             fdSet.set(fd);
 
-            // TODO CS 2-Sep-15 why are longs 8 bytes? Is that always the case?
-            final Pointer timeout = getContext().getMemoryManager().allocateDirect(8 * 2); // Needs to be two longs.
-            timeout.putLong(0, 0);
-            timeout.putLong(8, 0);
+            final Timeval timeoutObject = new DefaultNativeTimeval(jnr.ffi.Runtime.getSystemRuntime());
+            timeoutObject.setTime(new long[] { 0, 0 });
 
             final int res = nativeSockets().select(fd + 1, fdSet.getPointer(),
-                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeout);
+                    PointerNodes.NULL_POINTER, PointerNodes.NULL_POINTER, timeoutObject);
 
             if (res == 0) {
                 CompilerDirectives.transferToInterpreter();
                 ruby(frame, "raise IO::EAGAINWaitReadable");
-            }
-
-            if (res < 0) {
+            } else if (res < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
@@ -291,18 +288,14 @@ public abstract class IOPrimitiveNodes {
             final byte[] bytes = new byte[numberOfBytes];
             final int bytesRead = posix().read(fd, bytes, numberOfBytes);
 
-            if (bytesRead == -1) {
+            if (bytesRead < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            } else if (bytesRead == 0) { // EOF
+                return nil();
             }
 
-            if (bytesRead == 0) {
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                        new ByteList(), StringSupport.CR_UNKNOWN, null);
-            }
-
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(),
-                    new ByteList(bytes), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(bytes, 0, bytesRead, false));
         }
 
     }
@@ -360,7 +353,7 @@ public abstract class IOPrimitiveNodes {
         @TruffleBoundary
         public void performReopenPath(DynamicObject file, DynamicObject path, int mode) {
             int fd = Layouts.IO.getDescriptor(file);
-            final String pathString = StringOperations.getString(path);
+            final String pathString = StringOperations.getString(getContext(), path);
 
             int otherFd = posix().open(pathString, mode, 666);
             if (otherFd < 0) {
@@ -418,7 +411,7 @@ public abstract class IOPrimitiveNodes {
         public int write(DynamicObject file, DynamicObject string) {
             final int fd = Layouts.IO.getDescriptor(file);
 
-            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final ByteList byteList = StringOperations.getByteList(string);
 
             if (getContext().getDebugStandardOut() != null && fd == STDOUT) {
                 getContext().getDebugStandardOut().write(byteList.unsafeBytes(), byteList.begin(), byteList.length());
@@ -435,7 +428,7 @@ public abstract class IOPrimitiveNodes {
 
                 int written = posix().write(fd, buffer, buffer.remaining());
 
-                if (written == -1) {
+                if (written < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
                 }
@@ -511,6 +504,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @SuppressWarnings("restriction")
         @TruffleBoundary
         @Specialization
         public int accept(DynamicObject io) {
@@ -555,22 +549,24 @@ public abstract class IOPrimitiveNodes {
             while (toRead > 0) {
                 getContext().getSafepointManager().poll(this);
 
-                final int readIteration = posix().read(fd, buffer, toRead);
+                final int bytesRead = posix().read(fd, buffer, toRead);
 
-                if (readIteration == -1) {
+                if (bytesRead < 0) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+                } else if (bytesRead == 0) { // EOF
+                    if (toRead == length) { // if EOF at first iteration
+                        return nil();
+                    } else {
+                        break;
+                    }
                 }
 
-                if (readIteration == 0) {
-                    return nil();
-                }
-
-                buffer.position(readIteration);
-                toRead -= readIteration;
+                buffer.position(bytesRead);
+                toRead -= bytesRead;
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), new ByteList(buffer.array()), StringSupport.CR_UNKNOWN, null);
+            return createString(new ByteList(buffer.array(), buffer.arrayOffset(), buffer.position(), false));
         }
 
     }
@@ -586,36 +582,56 @@ public abstract class IOPrimitiveNodes {
 
         @TruffleBoundary
         @Specialization(guards = {"isRubyArray(readables)", "isNil(writables)", "isNil(errorables)"})
-        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
+        public Object select(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeoutMicros) {
             final Object[] readableObjects = ArrayOperations.toObjectArray(readables);
             final int[] readableFds = getFileDescriptors(readables);
+            final int nfds = max(readableFds) + 1;
 
             final FDSet readableSet = fdSetFactory.create();
 
-            for (int fd : readableFds) {
-                readableSet.set(fd);
-            }
-
-            final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
+            final ThreadManager.ResultOrTimeout<Integer> result = getContext().getThreadManager().runUntilTimeout(this, timeoutMicros, new ThreadManager.BlockingTimeoutAction<Integer>() {
                 @Override
-                public Integer block() throws InterruptedException {
+                public Integer block(Timeval timeoutToUse) throws InterruptedException {
+                    // Set each fd each time since they are removed if the fd was not available
+                    for (int fd : readableFds) {
+                        readableSet.set(fd);
+                    }
+                    final int result = callSelect(nfds, readableSet, timeoutToUse);
+
+                    if (result == 0) {
+                        return null;
+                    }
+
+                    return result;
+                }
+
+                private int callSelect(int nfds, FDSet readableSet, Timeval timeoutToUse) {
                     return nativeSockets().select(
-                            max(readableFds) + 1,
+                            nfds,
                             readableSet.getPointer(),
                             PointerNodes.NULL_POINTER,
                             PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER);
+                            timeoutToUse);
                 }
             });
 
-            if (result == -1) {
+            if (result instanceof ThreadManager.TimedOut) {
                 return nil();
             }
 
-            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
+            final int resultCode = ((ThreadManager.ResultWithinTime<Integer>) result).getValue();
+
+            if (resultCode == -1) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
+            } else if (resultCode == 0) {
+                return nil();
+            }
+
+            return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[] {
                     getSetObjects(readableObjects, readableFds, readableSet),
                     Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),
-                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0)},
+                    Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0) },
                     3);
         }
 
@@ -624,28 +640,37 @@ public abstract class IOPrimitiveNodes {
         public Object selectNilReadables(DynamicObject readables, DynamicObject writables, DynamicObject errorables, int timeout) {
             final Object[] writableObjects = ArrayOperations.toObjectArray(writables);
             final int[] writableFds = getFileDescriptors(writables);
+            final int nfds = max(writableFds) + 1;
 
             final FDSet writableSet = fdSetFactory.create();
 
-            for (int fd : writableFds) {
-                writableSet.set(fd);
-            }
 
             final int result = getContext().getThreadManager().runUntilResult(this, new ThreadManager.BlockingAction<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
+                    // Set each fd each time since they are removed if the fd was not available
+                    for (int fd : writableFds) {
+                        writableSet.set(fd);
+                    }
+                    return callSelect(nfds, writableSet);
+                }
+
+                private int callSelect(int nfds, FDSet writableSet) {
                     return nativeSockets().select(
-                            max(writableFds) + 1,
+                            nfds,
                             PointerNodes.NULL_POINTER,
                             writableSet.getPointer(),
                             PointerNodes.NULL_POINTER,
-                            PointerNodes.NULL_POINTER);
+                            null);
                 }
             });
 
             if (result == -1) {
-                return nil();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix().errno(), this));
             }
+
+            assert result != 0;
 
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), new Object[]{
                             Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), null, 0),

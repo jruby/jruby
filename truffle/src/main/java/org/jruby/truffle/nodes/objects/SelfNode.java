@@ -13,10 +13,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ValueProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -35,7 +35,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("self", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+        return create7BitString(StringOperations.encodeByteList("self", UTF8Encoding.INSTANCE));
     }
 
 }

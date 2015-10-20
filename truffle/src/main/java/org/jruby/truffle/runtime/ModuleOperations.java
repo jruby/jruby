@@ -79,25 +79,6 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final DynamicObject module = lexicalScope.getLiveModule();
-
-        // Look in lexical scope
-        while (lexicalScope != context.getRootLexicalScope()) {
-            RubyConstant constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
-            if (constant != null) {
-                return constant;
-            }
-
-            lexicalScope = lexicalScope.getParent();
-        }
-
-        return lookupConstant(context, module, name);
-    }
-
-    @TruffleBoundary
     public static RubyConstant lookupConstant(RubyContext context, DynamicObject module, String name) {
         CompilerAsserts.neverPartOfCompilation();
         assert RubyGuards.isRubyModule(module);
@@ -116,11 +97,16 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Look in Object and its included modules
-        if (RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject)) {
+        // Nothing found
+        return null;
+    }
+
+    private static RubyConstant lookupConstantInObject(RubyContext context, DynamicObject module, String name) {
+        // Look in Object and its included modules for modules (not for classes)
+        if (!RubyGuards.isRubyClass(module)) {
             final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
 
-            constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
+            RubyConstant constant = Layouts.MODULE.getFields(objectClass).getConstants().get(name);
             if (constant != null) {
                 return constant;
             }
@@ -133,8 +119,37 @@ public abstract class ModuleOperations {
             }
         }
 
-        // Nothing found
         return null;
+    }
+
+    public static RubyConstant lookupConstantAndObject(RubyContext context, DynamicObject module, String name) {
+        final RubyConstant constant = lookupConstant(context, module, name);
+        if (constant != null) {
+            return constant;
+        }
+
+        return lookupConstantInObject(context, module, name);
+    }
+
+    @TruffleBoundary
+    public static RubyConstant lookupConstantWithLexicalScope(RubyContext context, LexicalScope lexicalScope, String name) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final DynamicObject module = lexicalScope.getLiveModule();
+
+        RubyConstant constant = null;
+
+        // Look in lexical scope
+        while (lexicalScope != context.getRootLexicalScope()) {
+            constant = Layouts.MODULE.getFields(lexicalScope.getLiveModule()).getConstants().get(name);
+            if (constant != null) {
+                return constant;
+            }
+
+            lexicalScope = lexicalScope.getParent();
+        }
+
+        return lookupConstantAndObject(context, module, name);
     }
 
     public static RubyConstant lookupScopedConstant(RubyContext context, DynamicObject module, String fullName, boolean inherit, Node currentNode) {
@@ -147,8 +162,8 @@ public abstract class ModuleOperations {
         }
 
         while ((next = fullName.indexOf("::", start)) != -1) {
-            String segment = fullName.substring(start, next);
-            RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
+            final String segment = fullName.substring(start, next);
+            final RubyConstant constant = lookupConstantWithInherit(context, module, segment, inherit, currentNode);
             if (constant == null) {
                 return null;
             } else if (RubyGuards.isRubyModule(constant.getValue())) {
@@ -160,7 +175,12 @@ public abstract class ModuleOperations {
             start = next + 2;
         }
 
-        String lastSegment = fullName.substring(start);
+        final String lastSegment = fullName.substring(start);
+        if (!IdUtil.isValidConstantName19(lastSegment)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(context.getCoreLibrary().nameError(String.format("wrong constant name %s", fullName), fullName, currentNode));
+        }
+
         return lookupConstantWithInherit(context, module, lastSegment, inherit, currentNode);
     }
 
@@ -173,7 +193,7 @@ public abstract class ModuleOperations {
         }
 
         if (inherit) {
-            return ModuleOperations.lookupConstant(context, module, name);
+            return ModuleOperations.lookupConstantAndObject(context, module, name);
         } else {
             return Layouts.MODULE.getFields(module).getConstants().get(name);
         }
@@ -330,14 +350,14 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static void setClassVariable(DynamicObject module, final String name, final Object value, final Node currentNode) {
+    public static void setClassVariable(final RubyContext context, DynamicObject module, final String name, final Object value, final Node currentNode) {
         assert RubyGuards.isRubyModule(module);
 
         DynamicObject found = classVariableLookup(module, new Function<DynamicObject, DynamicObject>() {
             @Override
             public DynamicObject apply(DynamicObject module) {
                 if (Layouts.MODULE.getFields(module).getClassVariables().containsKey(name)) {
-                    Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
+                    Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
                     return module;
                 } else {
                     return null;
@@ -347,7 +367,7 @@ public abstract class ModuleOperations {
 
         if (found == null) {
             // Not existing class variable - set in the current module
-            Layouts.MODULE.getFields(module).setClassVariable(currentNode, name, value);
+            Layouts.MODULE.getFields(module).setClassVariable(context, currentNode, name, value);
         }
     }
 

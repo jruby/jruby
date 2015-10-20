@@ -14,6 +14,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.core.EncodingNodes;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 /**
@@ -30,7 +31,7 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization(guards = "isRubyString(string)")
         public DynamicObject encodingGetObjectEncodingString(DynamicObject string) {
-            return EncodingNodes.getEncoding(Layouts.STRING.getByteList(string).getEncoding());
+            return EncodingNodes.getEncoding(StringOperations.getByteList(string).getEncoding());
         }
 
         @Specialization(guards = "isRubySymbol(symbol)")

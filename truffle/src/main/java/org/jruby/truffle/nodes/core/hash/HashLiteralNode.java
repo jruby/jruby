@@ -21,7 +21,6 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeGen;
-import org.jruby.truffle.runtime.Options;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.hash.BucketsStrategy;
 import org.jruby.truffle.runtime.hash.Entry;
@@ -64,6 +63,7 @@ public abstract class HashLiteralNode extends RubyNode {
         }
     }
 
+    @ExplodeLoop
     @Override
     public void executeVoid(VirtualFrame frame) {
         for (RubyNode child : keyValues) {
@@ -151,6 +151,7 @@ public abstract class HashLiteralNode extends RubyNode {
             super(context, sourceSection, keyValues);
         }
 
+        @ExplodeLoop
         @Override
         public Object execute(VirtualFrame frame) {
             if (setNode == null) {

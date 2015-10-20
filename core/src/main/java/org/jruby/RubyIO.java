@@ -2983,7 +2983,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             boolean locked = fptr.lock();
             try {
                 fptr.checkCharReadable(context);
-                return fptr.readAll(context, 0, str);
+                return fptr.readAll(context, fptr.remainSize(), str);
             } finally {
                 if (locked) fptr.unlock();
             }

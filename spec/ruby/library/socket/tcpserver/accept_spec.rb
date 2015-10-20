@@ -58,4 +58,9 @@ describe "TCPServer#accept" do
     t.raise ex
     lambda { t.join }.should raise_error(Exception)
   end
+
+  it "raises an IOError if the socket is closed" do
+    @server.close
+    lambda { @server.accept }.should raise_error(IOError)
+  end
 end

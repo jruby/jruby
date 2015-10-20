@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
@@ -41,12 +42,11 @@ import java.util.List;
 
 public class CoreMethodNodeManager {
 
-    private final DynamicObject objectClass;
+    private final RubyContext context;
     private final SingletonClassNode singletonClassNode;
 
-    public CoreMethodNodeManager(DynamicObject objectClass, SingletonClassNode singletonClassNode) {
-        assert RubyGuards.isRubyClass(objectClass);
-        this.objectClass = objectClass;
+    public CoreMethodNodeManager(RubyContext context, SingletonClassNode singletonClassNode) {
+        this.context = context;
         this.singletonClassNode = singletonClassNode;
     }
 
@@ -64,19 +64,17 @@ public class CoreMethodNodeManager {
     }
 
     private DynamicObject getSingletonClass(Object object) {
-        return singletonClassNode.executeSingletonClass(null, object);
+        return singletonClassNode.executeSingletonClass(object);
     }
 
     private void addCoreMethod(MethodDetails methodDetails) {
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(objectClass)).getContext();
-
         DynamicObject module;
         String fullName = methodDetails.getClassAnnotation().name();
 
         if (fullName.equals("main")) {
             module = getSingletonClass(context.getCoreLibrary().getMainObject());
         } else {
-            module = objectClass;
+            module = context.getCoreLibrary().getObjectClass();
 
             for (String moduleName : fullName.split("::")) {
                 final RubyConstant constant = ModuleOperations.lookupConstant(context, module, moduleName);
@@ -89,7 +87,7 @@ public class CoreMethodNodeManager {
             }
         }
 
-        assert module != null : fullName;
+        assert RubyGuards.isRubyModule(module) : fullName;
 
         final CoreMethod method = methodDetails.getMethodAnnotation();
 
@@ -108,7 +106,7 @@ public class CoreMethodNodeManager {
             if (method.constructor()) {
                 System.err.println("WARNING: Either constructor or isModuleFunction for " + methodDetails.getIndicativeName());
             }
-            if (!(RubyGuards.isRubyModule(Layouts.MODULE.getFields(module).rubyModuleObject) && !RubyGuards.isRubyClass(Layouts.MODULE.getFields(module).rubyModuleObject))) {
+            if (RubyGuards.isRubyClass(module)) {
                 System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
             }
         }
@@ -119,16 +117,16 @@ public class CoreMethodNodeManager {
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
         if (method.isModuleFunction()) {
-            addMethod(module, rootNode, names, Visibility.PRIVATE);
-            addMethod(getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
+            addMethod(context, module, rootNode, names, Visibility.PRIVATE);
+            addMethod(context, getSingletonClass(module), rootNode, names, Visibility.PUBLIC);
         } else if (method.onSingleton() || method.constructor()) {
-            addMethod(getSingletonClass(module), rootNode, names, visibility);
+            addMethod(context, getSingletonClass(module), rootNode, names, visibility);
         } else {
-            addMethod(module, rootNode, names, visibility);
+            addMethod(context, module, rootNode, names, visibility);
         }
     }
 
-    private static void addMethod(DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
+    private static void addMethod(RubyContext context, DynamicObject module, RubyRootNode rootNode, List<String> names, final Visibility originalVisibility) {
         assert RubyGuards.isRubyModule(module);
 
         for (String name : names) {
@@ -142,7 +140,7 @@ public class CoreMethodNodeManager {
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
-            Layouts.MODULE.getFields(module).addMethod(null, method.withVisibility(visibility).withName(name));
+            Layouts.MODULE.getFields(module).addMethod(context, null, method.withVisibility(visibility).withName(name));
         }
     }
 
@@ -153,12 +151,18 @@ public class CoreMethodNodeManager {
 
         final int required = method.required();
         final int optional = method.optional();
+        final boolean needsCallerFrame = method.needsCallerFrame();
+        final boolean alwaysInline = needsCallerFrame;
 
         final Arity arity = new Arity(required, optional, method.rest());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, method.names()[0], false, null, context.getOptions().CORE_ALWAYS_CLONE);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, LexicalScope.NONE, arity, method.names()[0], false, null, context.getOptions().CORE_ALWAYS_CLONE, alwaysInline, needsCallerFrame);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
+
+        if (needsCallerFrame) {
+            argumentsNodes.add(new ReadCallerFrameNode(context, sourceSection));
+        }
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
         // Usage of needsSelf is quite rare for singleton methods (except constructors).

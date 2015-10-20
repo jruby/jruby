@@ -74,7 +74,6 @@ public class Main {
                 runtime.getTruffleContext().execute(scriptNode);
             } finally {
                 context.setFileAndLine(oldFile, oldLine);
-                runtime.shutdownTruffleContextIfRunning();
             }
         }
 

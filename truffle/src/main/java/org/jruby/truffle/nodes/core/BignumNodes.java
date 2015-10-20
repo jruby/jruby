@@ -16,9 +16,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -26,6 +25,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -310,35 +310,6 @@ public abstract class BignumNodes {
             final Object reversedResult = reverseCallNode.call(frame, b, "==", null, a);
 
             return booleanCastNode.executeBoolean(frame, reversedResult);
-        }
-    }
-
-    @CoreMethod(names = "<=>", required = 1)
-    public abstract static class CompareNode extends CoreMethodArrayArgumentsNode {
-
-        private final ConditionProfile negativeInfinityProfile = ConditionProfile.createBinaryProfile();
-
-        public CompareNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public int compare(DynamicObject a, long b) {
-            return Layouts.BIGNUM.getValue(a).compareTo(BigInteger.valueOf(b));
-        }
-
-        @Specialization
-        public int compare(DynamicObject a, double b) {
-            if (negativeInfinityProfile.profile(Double.isInfinite(b) && b < 0)) {
-                return 1;
-            } else {
-                return Double.compare(Layouts.BIGNUM.getValue(a).doubleValue(), b);
-            }
-        }
-
-        @Specialization(guards = "isRubyBignum(b)")
-        public int compare(DynamicObject a, DynamicObject b) {
-            return Layouts.BIGNUM.getValue(a).compareTo(Layouts.BIGNUM.getValue(b));
         }
     }
 
@@ -671,7 +642,7 @@ public abstract class BignumNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject toS(DynamicObject value, NotProvided base) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(), USASCIIEncoding.INSTANCE));
         }
 
         @TruffleBoundary
@@ -682,7 +653,22 @@ public abstract class BignumNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
             }
 
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE), StringSupport.CR_7BIT, null);
+            return create7BitString(StringOperations.encodeByteList(Layouts.BIGNUM.getValue(value).toString(base), USASCIIEncoding.INSTANCE));
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

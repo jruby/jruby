@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.SymbolCodeRangeableWrapper;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.Arity;
@@ -140,7 +141,7 @@ public abstract class SymbolNodes {
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(
                     sourceSection, null, Arity.NO_ARGUMENTS, Layouts.SYMBOL.getString(symbol),
-                    true, null, false);
+                    true, null, false, false, false);
 
             final RubyRootNode rootNode = new RubyRootNode(
                     getContext(), sourceSection,
@@ -177,7 +178,22 @@ public abstract class SymbolNodes {
 
         @Specialization
         public DynamicObject toS(DynamicObject symbol) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), Layouts.SYMBOL.getByteList(symbol).dup(), StringSupport.CR_UNKNOWN, null);
+            return createString(Layouts.SYMBOL.getByteList(symbol).dup());
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

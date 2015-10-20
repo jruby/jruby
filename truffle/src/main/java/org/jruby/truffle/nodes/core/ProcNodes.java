@@ -24,13 +24,12 @@ import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -39,9 +38,11 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Proc")
@@ -51,8 +52,9 @@ public abstract class ProcNodes {
         return RubyArguments.pack(
                 Layouts.PROC.getMethod(proc),
                 Layouts.PROC.getDeclarationFrame(proc),
-                Layouts.PROC.getSelf(proc),
+                null, Layouts.PROC.getSelf(proc),
                 Layouts.PROC.getBlock(proc),
+                DeclarationContext.BLOCK,
                 args);
     }
 
@@ -84,7 +86,7 @@ public abstract class ProcNodes {
     }
 
     @CoreMethod(names = "allocate", constructor = true)
-    public abstract static class AllocateNode extends CoreMethodArrayArgumentsNode {
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
 
         public AllocateNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -263,12 +265,9 @@ public abstract class ProcNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject proc) {
-            final ArgsNode argsNode = Layouts.PROC.getSharedMethodInfo(proc).getParseTree().findFirstChild(ArgsNode.class);
+            final ArgumentDescriptor[] argsDesc = Layouts.PROC.getSharedMethodInfo(proc).getArgumentDescriptors();
 
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
-
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, Layouts.PROC.getType(proc) == Type.LAMBDA);
         }
 
     }
@@ -288,7 +287,7 @@ public abstract class ProcNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }

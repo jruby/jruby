@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -39,10 +38,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object cachedName,
             DispatchNode next,
             Assumption falseUnmodifiedAssumption,
-            Object falseValue,
             InternalMethod falseMethod,
             Assumption trueUnmodifiedAssumption,
-            Object trueValue,
             InternalMethod trueMethod,
             DispatchAction dispatchAction) {
         super(context, cachedName, next, dispatchAction);
@@ -52,11 +49,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (falseMethod != null) {
             this.falseCallDirect = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
-
-            if (falseCallDirect.isCallTargetCloningAllowed() && falseMethod.getSharedMethodInfo().shouldAlwaysClone()) {
-                insert(falseCallDirect);
-                falseCallDirect.cloneCallTarget();
-            }
+            applySplittingInliningStrategy(falseCallDirect, falseMethod);
         }
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
@@ -64,11 +57,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
         if (trueMethod != null) {
             this.trueCallDirect = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
-
-            if (trueCallDirect.isCallTargetCloningAllowed() && trueMethod.getSharedMethodInfo().shouldAlwaysClone()) {
-                insert(trueCallDirect);
-                trueCallDirect.cloneCallTarget();
-            }
+            applySplittingInliningStrategy(trueCallDirect, trueMethod);
         }
     }
 

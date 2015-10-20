@@ -3,7 +3,7 @@ require 'benchmark'
 
 import java.lang.Math
 
-Benchmark.bm(40) {|bm|
+Benchmark.bm(45) {|bm|
   # Math.abs computation cost is negligible for these tests
   (ARGV[0] || 5).to_i.times {
     bm.report("Control") {
@@ -40,6 +40,11 @@ Benchmark.bm(40) {|bm|
       m = Math
       value = 2.0 ** 128
       10_000_000.times { m.abs(value) }
+    }
+    bm.report("Contended Math.abs with double-ranged Float") {
+      m = Math
+      value = 2.0 ** 128
+      10.times.map {|i| Thread.new { 1_000_000.times { m.abs(value) } } }.each(&:join)
     }
   }
 }

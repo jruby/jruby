@@ -39,15 +39,18 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Passwd;
 import jnr.posix.Times;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
@@ -63,6 +66,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.Signal;
@@ -141,6 +145,27 @@ public abstract class VMPrimitiveNodes {
 
     }
 
+    // The hard #exit!
+    @RubiniusPrimitive(name = "vm_exit", needsSelf = false)
+    public static abstract class VMExitPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMExitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object vmExit(int status) {
+            getContext().shutdown();
+            throw new MainExitException(status);
+        }
+
+        @Fallback
+        public Object vmExit(Object status) {
+            return null; // Primitive failure
+        }
+
+    }
+
     @RubiniusPrimitive(name = "vm_get_module_name", needsSelf = false)
     public static abstract class VMGetModuleNamePrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -150,7 +175,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public DynamicObject vmGetModuleName(DynamicObject module) {
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(Layouts.MODULE.getFields(module).getName(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -171,7 +196,7 @@ public abstract class VMPrimitiveNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("user " + username.toString() + " does not exist", this));
             }
-            return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(passwd.getHome(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            return createString(StringOperations.encodeByteList(passwd.getHome(), UTF8Encoding.INSTANCE));
         }
 
     }
@@ -255,8 +280,8 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectClass(VirtualFrame frame, Object object) {
-            return singletonClassNode.singletonClass(frame, object);
+        public Object vmObjectClass(Object object) {
+            return singletonClassNode.singletonClass(object);
         }
 
     }
@@ -460,14 +485,8 @@ public abstract class VMPrimitiveNodes {
                 }
 
                 Object[] objects = new Object[]{
-                        Layouts.STRING.createString(
-                                getContext().getCoreLibrary().getStringFactory(),
-                                RubyString.encodeBytelist(key, UTF8Encoding.INSTANCE),
-                                StringSupport.CR_UNKNOWN, null),
-                        Layouts.STRING.createString(
-                                getContext().getCoreLibrary().getStringFactory(),
-                                RubyString.encodeBytelist(stringValue, UTF8Encoding.INSTANCE),
-                                StringSupport.CR_UNKNOWN, null) };
+                        createString(StringOperations.encodeByteList(key, UTF8Encoding.INSTANCE)),
+                        createString(StringOperations.encodeByteList(stringValue, UTF8Encoding.INSTANCE)) };
                 sectionKeyValues.add(Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length));
             }
 

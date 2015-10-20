@@ -32,6 +32,10 @@ public class MainExitException extends RuntimeException implements Unrescuable {
     int status;
     private boolean aborted;
 
+    public MainExitException(int status) {
+        this(status, true);
+    }
+
     public MainExitException(int status, String message) {
         super(message);
 

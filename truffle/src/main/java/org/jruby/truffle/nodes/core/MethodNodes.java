@@ -22,9 +22,8 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
-import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
@@ -34,12 +33,16 @@ import org.jruby.truffle.nodes.cast.ProcOrNullNodeGen;
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.nodes.methods.CallMethodNode;
 import org.jruby.truffle.nodes.methods.CallMethodNodeGen;
+import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.util.ArgumentDescriptorUtils;
 import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Method")
@@ -112,8 +115,10 @@ public abstract class MethodNodes {
             return RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
+                    null,
                     Layouts.METHOD.getReceiver(method),
                     procOrNullNode.executeProcOrNull(block),
+                    DeclarationContext.METHOD,
                     arguments);
         }
 
@@ -159,12 +164,9 @@ public abstract class MethodNodes {
         @TruffleBoundary
         @Specialization
         public DynamicObject parameters(DynamicObject method) {
-            final ArgsNode argsNode = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getParseTree().findFirstChild(ArgsNode.class);
+            final ArgumentDescriptor[] argsDesc = Layouts.METHOD.getMethod(method).getSharedMethodInfo().getArgumentDescriptors();
 
-            final ArgumentDescriptor[] argsDesc = Helpers.argsNodeToArgumentDescriptors(argsNode);
-
-            return getContext().toTruffle(Helpers.argumentDescriptorsToParameters(getContext().getRuntime(),
-                    argsDesc, true));
+            return ArgumentDescriptorUtils.argumentDescriptorsToParameters(getContext(), argsDesc, true);
         }
 
     }
@@ -199,7 +201,7 @@ public abstract class MethodNodes {
             if (sourceSection instanceof NullSourceSection) {
                 return nil();
             } else {
-                DynamicObject file = Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                DynamicObject file = createString(StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
                 Object[] objects = new Object[]{file, sourceSection.getStartLine()};
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
             }
@@ -290,8 +292,23 @@ public abstract class MethodNodes {
 
         @Override
         public Object execute(VirtualFrame frame) {
-            frame.getArguments()[RubyArguments.SELF_INDEX] = receiver;
+            RubyArguments.setSelf(frame.getArguments(), receiver);
             return methodCallNode.call(frame, frame.getArguments());
+        }
+
+    }
+
+    @CoreMethod(names = "allocate", constructor = true)
+    public abstract static class AllocateNode extends UnaryCoreMethodNode {
+
+        public AllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization
+        public DynamicObject allocate(DynamicObject rubyClass) {
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorAllocatorUndefinedFor(rubyClass, this));
         }
 
     }

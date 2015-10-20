@@ -13,9 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
@@ -24,6 +22,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.StringSupport;
 
@@ -34,11 +33,9 @@ import java.util.List;
 public abstract class ExceptionNodes {
 
     @TruffleBoundary
-    public static DynamicObject asRubyStringArray(DynamicObject exception) {
+    public static DynamicObject asRubyStringArray(RubyContext context, DynamicObject exception) {
         assert RubyGuards.isRubyException(exception);
         assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-
-        final RubyContext context = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext();
 
         final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
                 .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
@@ -46,10 +43,10 @@ public abstract class ExceptionNodes {
         final Object[] array = new Object[lines.size()];
 
         for (int n = 0;n < lines.size(); n++) {
-            array[n] = Layouts.STRING.createString(Layouts.CLASS.getInstanceFactory(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getStringClass()), RubyString.encodeBytelist(lines.get(n), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+            array[n] = StringOperations.createString(context, StringOperations.encodeByteList(lines.get(n), UTF8Encoding.INSTANCE));
         }
 
-        return Layouts.ARRAY.createArray(Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getContext().getCoreLibrary().getArrayFactory(), array, array.length);
+        return Layouts.ARRAY.createArray(context.getCoreLibrary().getArrayFactory(), array, array.length);
     }
 
     public static void setMessage(DynamicObject exception, Object message) {
@@ -92,7 +89,7 @@ public abstract class ExceptionNodes {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create(context, sourceSection, "@custom_backtrace", null, null);
+            readCustomBacktrace = ReadHeadObjectFieldNodeGen.create("@custom_backtrace", null);
         }
 
         @Specialization
@@ -101,7 +98,7 @@ public abstract class ExceptionNodes {
             if (customBacktrace != null) {
                 return customBacktrace;
             } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
-                return asRubyStringArray(exception);
+                return asRubyStringArray(getContext(), exception);
             } else {
                 return nil();
             }
@@ -143,7 +140,7 @@ public abstract class ExceptionNodes {
             final Object message = Layouts.EXCEPTION.getMessage(exception);
             if (message == null) {
                 final String className = Layouts.MODULE.getFields(Layouts.BASIC_OBJECT.getLogicalClass(exception)).getName();
-                return Layouts.STRING.createString(getContext().getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(className, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                return createString(StringOperations.encodeByteList(className, UTF8Encoding.INSTANCE));
             } else {
                 return message;
             }

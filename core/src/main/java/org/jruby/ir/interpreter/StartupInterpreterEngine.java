@@ -3,11 +3,11 @@ package org.jruby.ir.interpreter;
 import java.util.Stack;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -45,7 +45,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         DynamicScope currDynScope = context.getCurrentScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<Integer> rescuePCs = new Stack<>();
+        Stack<Integer> rescuePCs = null;
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -93,14 +93,22 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     case BOOK_KEEPING_OP:
-                        if (operation == Operation.PUSH_BINDING) {
-                            // IMPORTANT: Preserve this update of currDynScope.
-                            // This affects execution of all instructions in this scope
-                            // which will now use the updated value of currDynScope.
-                            currDynScope = interpreterContext.newDynamicScope(context);
-                            context.pushScope(currDynScope);
-                        } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass, rescuePCs);
+                        switch (operation) {
+                            case PUSH_BINDING:
+                                // IMPORTANT: Preserve this update of currDynScope.
+                                // This affects execution of all instructions in this scope
+                                // which will now use the updated value of currDynScope.
+                                currDynScope = interpreterContext.newDynamicScope(context);
+                                context.pushScope(currDynScope);
+                            case EXC_REGION_START:
+                                if (rescuePCs == null) rescuePCs = new Stack<>();
+                                rescuePCs.push(((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC());
+                                break;
+                            case EXC_REGION_END:
+                                rescuePCs.pop();
+                                break;
+                            default:
+                                processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass);
                         }
                         break;
                     case OTHER_OP:
@@ -110,7 +118,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
+                if (rescuePCs == null || rescuePCs.empty() || (t instanceof IRBreakJump && instr instanceof BreakInstr) ||
                         (t instanceof IRReturnJump && instr instanceof NonlocalReturnInstr)) {
                     ipc = -1;
                 } else {

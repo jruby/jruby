@@ -22,7 +22,6 @@ import com.oracle.truffle.interop.messages.Argument;
 import com.oracle.truffle.interop.messages.Read;
 import com.oracle.truffle.interop.messages.Receiver;
 import com.oracle.truffle.interop.node.ForeignObjectAccessNode;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.RubyArguments;
@@ -40,8 +39,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
     private final MissingBehavior missingBehavior;
-
-    @Child private SingletonClassNode singletonClassNode;
 
     public UnresolvedDispatchNode(
             RubyContext context,
@@ -142,8 +139,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
             return new CachedBooleanDispatchNode(getContext(),
                     methodName, first,
-                    falseUnmodifiedAssumption, null, falseMethod,
-                    trueUnmodifiedAssumption, null, trueMethod, getDispatchAction());
+                    falseUnmodifiedAssumption, falseMethod,
+                    trueUnmodifiedAssumption, trueMethod,
+                    getDispatchAction());
         } else {
             return new CachedUnboxedDispatchNode(getContext(),
                     methodName, first, receiverObject.getClass(),

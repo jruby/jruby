@@ -1,5 +1,6 @@
 require 'mspec/utils/ruby_name'
 require 'mspec/guards/platform'
+require 'mspec/helpers/tmp'
 
 # The ruby_exe helper provides a wrapper for invoking the
 # same Ruby interpreter as the one running the specs and
@@ -124,6 +125,13 @@ class Object
         ENV[key] = value
       end
 
+      escape = opts.delete(:escape)
+      if escape
+        tmpfile = tmp("rubyexe.rb")
+        File.open(tmpfile, "w") { |f| f.write(code) }
+        code = tmpfile
+      end
+
       begin
         platform_is_not :opal do
           `#{ruby_cmd(code, opts)}`
@@ -134,6 +142,7 @@ class Object
           key = key.to_s
           ENV.delete key unless saved_env.key? key
         end
+        File.delete tmpfile if escape
       end
     end
   end
@@ -141,18 +150,12 @@ class Object
   def ruby_cmd(code, opts = {})
     body = code
 
-    if code and not File.exist?(code)
-      if opts[:escape]
-        heredoc_separator = "END_OF_RUBYCODE"
-        lines = code.lines
-        until lines.none? {|line| line.start_with? heredoc_separator }
-          heredoc_separator << heredoc_separator
-        end
+    if opts[:escape]
+      raise "escape: true is no longer supported in ruby_cmd, use ruby_exe or a fixture"
+    end
 
-        body = %Q!-e "$(cat <<'#{heredoc_separator}'\n#{code}\n#{heredoc_separator}\n)"!
-      else
-        body = "-e #{code.inspect}"
-      end
+    if code and not File.exist?(code)
+      body = "-e #{code.inspect}"
     end
 
     [RUBY_EXE, ENV['RUBY_FLAGS'], opts[:options], body, opts[:args]].compact.join(' ')

@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents an instance variable accessor.
  */
-public class InstVarNode extends Node implements INameNode {
+public class InstVarNode extends Node implements INameNode, SideEffectFree {
     private String name;
 
     public InstVarNode(ISourcePosition position, String name) {

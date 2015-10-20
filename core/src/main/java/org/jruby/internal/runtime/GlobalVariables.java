@@ -48,7 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class GlobalVariables {
     private Ruby runtime;
-    private Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
+    private final Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();
     
     public GlobalVariables(Ruby runtime) {
         this.runtime = runtime;
@@ -116,7 +116,7 @@ public class GlobalVariables {
 	    assert name != null;
 	    assert name.startsWith("$");
 	
-	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+	    GlobalVariable variable = globalVariables.get(name);
         if (variable != null) return variable;
         
         return createIfNotDefined(name);
@@ -161,7 +161,7 @@ public class GlobalVariables {
         assert name.startsWith("$");
         
         if (isDefined(name)) {
-            GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+            GlobalVariable variable = globalVariables.get(name);
             variable.removeTraces();
         }
     }
@@ -171,7 +171,7 @@ public class GlobalVariables {
     }
 
     private GlobalVariable createIfNotDefined(String name) {
-        GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+        GlobalVariable variable = globalVariables.get(name);
         if (variable == null) {
             variable = GlobalVariable.newUndefined(runtime, name);
             globalVariables.put(name, variable);

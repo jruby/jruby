@@ -47,6 +47,7 @@ import jnr.constants.platform.Errno;
 import org.jruby.truffle.nodes.core.ExceptionNodes;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
 
@@ -86,7 +87,7 @@ public abstract class IOBufferPrimitiveNodes {
         public int unshift(VirtualFrame frame, DynamicObject ioBuffer, DynamicObject string, int startPosition) {
             Layouts.IO_BUFFER.setWriteSynced(ioBuffer, false);
 
-            final ByteList byteList = Layouts.STRING.getByteList(string);
+            final ByteList byteList = StringOperations.getByteList(string);
             int stringSize = byteList.realSize() - startPosition;
             final int usedSpace = Layouts.IO_BUFFER.getUsed(ioBuffer);
             final int availableSpace = IOBUFFER_SIZE - usedSpace;

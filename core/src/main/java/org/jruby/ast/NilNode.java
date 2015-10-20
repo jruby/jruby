@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /**
  * represents 'nil'
  */
-public class NilNode extends Node implements INameNode {
+public class NilNode extends Node implements INameNode, SideEffectFree {
     public NilNode(ISourcePosition position) {
         super(position, false);
     }

@@ -2,6 +2,9 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jruby.ast.DefNode;
+import org.jruby.ast.IterNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -12,7 +15,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
-import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.objectweb.asm.Handle;
 
@@ -28,6 +31,10 @@ public class IRClosure extends IRScope {
     private boolean isBeginEndBlock;
 
     private Signature signature;
+
+    // We allow closures who happen to be assigned to calls named 'defined_method' to save the original
+    // AST so we can attempt to convert those blocks to full methods.
+    private IterNode source;
 
     // Argument description
     protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
@@ -60,12 +67,13 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.getSignature());
+            this.body = new MixedModeIRBlockBody(c, c.getSignature());
         }
 
         this.signature = c.signature;
     }
 
+    // Used by iter + lambda by IRBuilder
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
         this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_");
     }
@@ -82,7 +90,7 @@ public class IRClosure extends IRScope {
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
-            this.body = new InterpretedIRBlockBody(this, signature);
+            this.body = new MixedModeIRBlockBody(this, signature);
             if (staticScope != null && !isBeginEndBlock) {
                 staticScope.setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
@@ -158,6 +166,36 @@ public class IRClosure extends IRScope {
         return body;
     }
 
+    // FIXME: This is too strict.  We can use any closure which does not dip below the define_method closure.  This
+    // will deopt any nested block which dips out of itself.
+    public boolean isNestedClosuresSafeForMethodConversion() {
+        for (IRClosure closure: getClosures()) {
+            if (!closure.isNestedClosuresSafeForMethodConversion()) return false;
+        }
+
+        return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+    }
+
+    public IRMethod convertToMethod(String name) {
+        // We want variable scoping to be the same as a method and not see outside itself.
+        if (source == null ||
+            getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) ||  // Built methods cannot search down past method scope
+            getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG) ||            // we pass in captured block at define_method as block so explicits ones not supported
+            !isNestedClosuresSafeForMethodConversion()) {
+            source = null;
+            return null;
+        }
+
+        DefNode def = source;
+        source = null;
+
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope());
+    }
+
+    public void setSource(IterNode iter) {
+        source = iter;
+    }
+
     @Override
     protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = lookupExistingLVar(name);
@@ -165,7 +203,13 @@ public class IRClosure extends IRScope {
 
         int newDepth = scopeDepth - 1;
 
-        return newDepth >= 0 ? getLexicalParent().findExistingLocalVariable(name, newDepth) : null;
+        if (newDepth >= 0) {
+            lvar = getLexicalParent().findExistingLocalVariable(name, newDepth);
+
+            if (lvar != null) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+        }
+
+        return lvar;
     }
 
     public LocalVariable getNewLocalVariable(String name, int depth) {
@@ -174,6 +218,8 @@ public class IRClosure extends IRScope {
             localVars.put(name, lvar);
             return lvar;
         } else {
+            // IRFor does not have it's own state
+            if (!(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
             IRScope s = this;
             int     d = depth;
             do {
@@ -207,6 +253,8 @@ public class IRClosure extends IRScope {
         LocalVariable lvar;
         IRScope s = this;
         int d = depth;
+        if (depth > 0 && !(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
+
         do {
             // account for for-loops
             while (s instanceof IRFor) {

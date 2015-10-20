@@ -544,13 +544,12 @@ public final class Ruby implements Constantizable {
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
+            script.setFileName(filename);
             runInterpreter(script);
             return;
         }
 
-        Main.printTruffleTimeMetric("before-parse-initial");
         ParseResult parseResult = parseFromMain(filename, inputStream);
-        Main.printTruffleTimeMetric("after-parse-initial");
 
         // if no DATA, we're done with the stream, shut it down
         if (fetchGlobalConstant("DATA") == null) {
@@ -844,8 +843,9 @@ public final class Ruby implements Constantizable {
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
             assert self == getTopSelf();
+            final TruffleContextInterface truffleContext = getTruffleContext();
             Main.printTruffleTimeMetric("before-run");
-            getTruffleContext().execute((RootNode) rootNode);
+            truffleContext.execute((RootNode) rootNode);
             Main.printTruffleTimeMetric("after-run");
             return getNil();
         } else {
@@ -918,14 +918,6 @@ public final class Ruby implements Constantizable {
         Main.printTruffleTimeMetric("after-load-truffle-context");
 
         return truffleContext;
-    }
-
-    public void shutdownTruffleContextIfRunning() {
-        synchronized (truffleContextMonitor) {
-            if (truffleContext != null) {
-                truffleContext.shutdown();
-            }
-        }
     }
 
     /**

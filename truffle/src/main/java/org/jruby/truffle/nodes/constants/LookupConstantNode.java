@@ -39,10 +39,12 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 public abstract class LookupConstantNode extends RubyNode {
 
     private final boolean ignoreVisibility;
+    private final boolean lookInObject;
 
-    public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility) {
+    public LookupConstantNode(RubyContext context, SourceSection sourceSection, boolean ignoreVisibility, boolean lookInObject) {
         super(context, sourceSection);
         this.ignoreVisibility = ignoreVisibility;
+        this.lookInObject = lookInObject;
     }
 
     public abstract RubyConstant executeLookupConstant(VirtualFrame frame, Object module, String name);
@@ -98,7 +100,11 @@ public abstract class LookupConstantNode extends RubyNode {
     }
 
     protected RubyConstant doLookup(DynamicObject module, String name) {
-        return ModuleOperations.lookupConstant(getContext(), module, name);
+        if (lookInObject) {
+            return ModuleOperations.lookupConstantAndObject(getContext(), module, name);
+        } else {
+            return ModuleOperations.lookupConstant(getContext(), module, name);
+        }
     }
 
     protected boolean isVisible(DynamicObject module, RubyConstant constant) {

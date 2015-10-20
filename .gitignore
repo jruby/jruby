@@ -53,6 +53,7 @@ lib/ruby/stdlib/org/
 lib/ruby/stdlib/readline/*readline*.jar
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/rubygems/defaults/jruby_native.rb
+lib/ruby/stdlib/racc*
 lib/ruby/stdlib/rake*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/test*
@@ -87,6 +88,7 @@ install/updates.xml
 
 # generated ITs
 maven/jruby/src/it/osgi_*
+maven/jruby/src/it/hellowarld_*
 maven/jruby/src/it/j2ee_wlp
 maven/jruby-complete/src/it/osgi*
 maven/jruby-complete/pom.xml

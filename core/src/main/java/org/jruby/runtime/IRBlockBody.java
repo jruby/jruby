@@ -44,7 +44,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
-        return call(context, new IRubyObject[] {arg0, arg1, arg2}, binding, type, Block.NULL_BLOCK);
+        return call(context, new IRubyObject[]{arg0, arg1, arg2}, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
@@ -82,7 +82,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
+    IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, IRubyObject[] args, Binding binding, Type type) {
         int blockArity = getSignature().arityValue();
         if (blockArity == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
@@ -97,16 +97,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Type type) {
-        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1 }, binding, type);
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[]{arg0, arg1}, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Type type) {
-        return yieldSpecificMultiArgsCommon(context, new IRubyObject[] { arg0, arg1, arg2 }, binding, type);
+        return yieldSpecificMultiArgsCommon(context, new IRubyObject[]{arg0, arg1, arg2}, binding, type);
     }
 
     private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
         IRubyObject val0 = Helpers.aryToAry(value);
+
+        if (val0.isNil()) return new IRubyObject[] { value };
 
         if (!(val0 instanceof RubyArray)) {
             throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
@@ -117,7 +119,15 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     protected IRubyObject doYieldLambda(ThreadContext context, IRubyObject value, Binding binding, Type type) {
         // Lambda does not splat arrays even if a rest arg is present when it wants a single parameter filled.
-        IRubyObject[] args = signature.required() == 1 ? new IRubyObject[] { value } : toAry(context, value);
+        IRubyObject[] args;
+
+        if (value == null) { // no args case from BlockBody.yieldSpecific
+            args = IRubyObject.NULL_ARRAY;
+        } else if (signature.required() == 1 || signature.arityValue() == -1) {
+            args = new IRubyObject[] { value };
+        } else {
+            args = toAry(context, value);
+        }
 
         signature.checkArity(context.runtime, args);
 
@@ -131,7 +141,9 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         int blockArity = getSignature().arityValue();
 
         IRubyObject[] args;
-        if (blockArity >= -1 && blockArity <= 1) {
+        if (value == null) { // no args case from BlockBody.yieldSpecific
+            args = IRubyObject.NULL_ARRAY;
+        } else if (blockArity >= -1 && blockArity <= 1) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);
@@ -155,6 +167,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
+
+    public IRClosure getScope() {
+        return closure;
+    }
 
     @Override
     public String getFile() {

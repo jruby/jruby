@@ -504,6 +504,12 @@ module ModuleSpecs
       send(method, "Lookup")
     end
   end
+
+  class RecordIncludedModules
+    def self.inherited(base)
+      ScratchPad.record base
+    end
+  end
 end
 
 class Object

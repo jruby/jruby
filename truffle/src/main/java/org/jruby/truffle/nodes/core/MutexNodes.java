@@ -210,7 +210,7 @@ public abstract class MutexNodes {
             // Here we do it before unlocking for providing nice semantics for
             // thread1: mutex.sleep
             // thread2: mutex.synchronize { <ensured that thread1 is sleeping and thread1.wakeup will wake it up> }
-            Layouts.THREAD.getWakeUp(thread).getAndSet(false);
+            Layouts.THREAD.getWakeUp(thread).set(false);
 
             UnlockNode.unlock(lock, thread, this);
             try {

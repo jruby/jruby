@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.control;
 
+import com.oracle.truffle.api.object.DynamicObject;
+
 /**
  * Ruby exceptions are just Ruby objects, so they cannot also be exceptions unless we made all Ruby
  * objects exceptions. A simpler approach is to wrap Ruby exceptions in Java exceptions when we want
@@ -19,9 +21,9 @@ public class RaiseException extends RuntimeException {
 
     // TODO CS 1-Mar-15 shouldn't this be a ControlFlowException?
 
-    private final Object rubyException;
+    private final DynamicObject rubyException;
 
-    public RaiseException(Object rubyException) {
+    public RaiseException(DynamicObject rubyException) {
         this.rubyException = rubyException;
     }
 
@@ -35,7 +37,7 @@ public class RaiseException extends RuntimeException {
         return rubyException.toString();
     }
 
-    public Object getRubyException() {
+    public DynamicObject getRubyException() {
         return rubyException;
     }
 

@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
-
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -55,34 +54,23 @@ public abstract class DispatchNode extends RubyNode {
             Object receiver,
             String name,
             boolean ignoreVisibility) {
-        assert callerClass == null || RubyGuards.isRubyClass(callerClass);
+        assert ignoreVisibility || RubyGuards.isRubyClass(callerClass);
 
-        InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
+        final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(receiver), name);
 
         // If no method was found, use #method_missing
-
         if (method == null) {
             return null;
         }
 
         // Check for methods that are explicitly undefined
-
         if (method.isUndefined()) {
             return null;
         }
 
         // Check visibility
-
         if (!ignoreVisibility && !method.isVisibleTo(this, callerClass)) {
-            final DispatchAction dispatchAction = getHeadNode().getDispatchAction();
-
-            if (dispatchAction == DispatchAction.CALL_METHOD) {
-                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
-            } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
-                return null;
-            } else {
-                throw new UnsupportedOperationException();
-            }
+            return null;
         }
 
         return method;
