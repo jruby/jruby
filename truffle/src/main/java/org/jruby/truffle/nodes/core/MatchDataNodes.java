@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.Encoding;
 import org.joni.Region;
@@ -80,7 +79,7 @@ public abstract class MatchDataNodes {
         return e;
     }
 
-    public static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
+    private static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
         // Taken from org.jruby.RubyMatchData
         Arrays.sort(pairs);
 
@@ -98,7 +97,7 @@ public abstract class MatchDataNodes {
         }
     }
 
-    public static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
+    private static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
         // Taken from org.jruby.RubyMatchData
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
@@ -149,11 +148,16 @@ public abstract class MatchDataNodes {
         Region charOffsets = Layouts.MATCH_DATA.getCharOffsets(matchData);
         if (charOffsets != null) {
             return charOffsets;
+        } else {
+            return createCharOffsets(matchData);
         }
+    }
 
+    @TruffleBoundary
+    private static Region createCharOffsets(DynamicObject matchData) {
         final ByteList source = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
         final Encoding enc = source.getEncoding();
-        charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
+        final Region charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
         Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
         return charOffsets;
     }
@@ -253,22 +257,23 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "begin", required = 1, lowerFixnumParameters = 1)
     public abstract static class BeginNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
-
         public BeginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
+        @Specialization(guards = "inBounds(matchData, index)")
         public Object begin(DynamicObject matchData, int index) {
-            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+            return MatchDataNodes.begin(getContext(), matchData, index);
+        }
 
-            } else {
-                return MatchDataNodes.begin(getContext(), matchData, index);
-            }
+        @TruffleBoundary
+        @Specialization(guards = "!inBounds(matchData, index)")
+        public Object beginError(DynamicObject matchData, int index) {
+            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+        }
+
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
         }
     }
 
@@ -291,22 +296,23 @@ public abstract class MatchDataNodes {
     @CoreMethod(names = "end", required = 1, lowerFixnumParameters = 1)
     public abstract static class EndNode extends CoreMethodArrayArgumentsNode {
 
-        private final ConditionProfile badIndexProfile = ConditionProfile.createBinaryProfile();
-
         public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
+        @Specialization(guards = "inBounds(matchData, index)")
         public Object end(DynamicObject matchData, int index) {
-            if (badIndexProfile.profile((index < 0) || (index >= Layouts.MATCH_DATA.getRegion(matchData).numRegs))) {
-                throw new RaiseException(
-                        getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+            return MatchDataNodes.end(getContext(), matchData, index);
+        }
 
-            } else {
-                return MatchDataNodes.end(getContext(), matchData, index);
-            }
+        @TruffleBoundary
+        @Specialization(guards = "!inBounds(matchData, index)")
+        public Object endError(DynamicObject matchData, int index) {
+            throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of matches", index), this));
+        }
+
+        protected boolean inBounds(DynamicObject matchData, int index) {
+            return index >= 0 && index < Layouts.MATCH_DATA.getRegion(matchData).numRegs;
         }
     }
 
