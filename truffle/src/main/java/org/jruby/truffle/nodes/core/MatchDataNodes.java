@@ -51,7 +51,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Object begin(RubyContext context, DynamicObject matchData, int index) {
-        int b = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getBegin(matchData) : Layouts.MATCH_DATA.getRegion(matchData).beg[index];
+        int b = Layouts.MATCH_DATA.getRegion(matchData).beg[index];
 
         if (b < 0) {
             return context.getCoreLibrary().getNilObject();
@@ -65,7 +65,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Object end(RubyContext context, DynamicObject matchData, int index) {
-        int e = (Layouts.MATCH_DATA.getRegion(matchData) == null) ? Layouts.MATCH_DATA.getEnd(matchData) : Layouts.MATCH_DATA.getRegion(matchData).end[index];
+        int e = Layouts.MATCH_DATA.getRegion(matchData).end[index];
 
         if (e < 0) {
             return context.getCoreLibrary().getNilObject();
@@ -93,41 +93,6 @@ public abstract class MatchDataNodes {
             pairs[i].charPos = c;
             p = q;
         }
-    }
-
-    public static Region getCharOffsetsOnlyOneReg(DynamicObject matchData, ByteList source, Encoding encoding) {
-        final Region charOffsets = new Region(1);
-
-        final int begin = Layouts.MATCH_DATA.getBegin(matchData);
-        final int end = Layouts.MATCH_DATA.getEnd(matchData);
-
-        if (encoding.maxLength() == 1) {
-            charOffsets.beg[0] = begin;
-            charOffsets.end[0] = end;
-            return charOffsets;
-        }
-
-        Pair[] pairs = new Pair[2];
-        if (begin >= 0) {
-            pairs[0] = new Pair();
-            pairs[0].bytePos = begin;
-            pairs[1] = new Pair();
-            pairs[1].bytePos = end;
-        }
-
-        updatePairs(source, encoding, pairs);
-
-        if (begin < 0) {
-            charOffsets.beg[0] = charOffsets.end[0] = -1;
-            return charOffsets;
-        }
-        Pair key = new Pair();
-        key.bytePos = begin;
-        charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        key.bytePos = end;
-        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-
-        return charOffsets;
     }
 
     public static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
@@ -183,13 +148,7 @@ public abstract class MatchDataNodes {
 
         final ByteList source = StringOperations.getByteList(Layouts.MATCH_DATA.getSource(matchData));
         final Encoding enc = source.getEncoding();
-
-        if (Layouts.MATCH_DATA.getRegion(matchData) == null) {
-            charOffsets = getCharOffsetsOnlyOneReg(matchData, source, enc);
-        } else {
-            charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
-        }
-
+        charOffsets = getCharOffsetsManyRegs(matchData, source, enc);
         Layouts.MATCH_DATA.setCharOffsets(matchData, charOffsets);
         return charOffsets;
     }
