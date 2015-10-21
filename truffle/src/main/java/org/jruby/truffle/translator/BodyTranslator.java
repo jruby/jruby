@@ -1622,61 +1622,51 @@ public class BodyTranslator extends Translator {
         // Also note the check for frozen.
         final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
 
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/time.rb")) {
+        final String path = sourceSection.getSource().getPath();
+        final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
+        final RubyNode ret;
+        if (path.equals(corePath + "rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
-                final RubyNode ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
+                ret = TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@offset")) {
-                final RubyNode ret = TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
+                ret = TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/hash.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
-                final RubyNode ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
+                ret = HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@default_proc")) {
-                final RubyNode ret = HashNodesFactory.SetDefaultProcNodeFactory.create(context, sourceSection, self, rhs);
+                ret = HashNodesFactory.SetDefaultProcNodeFactory.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/bootstrap/string.rb") ||
-                sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/string.rb")) {
-
+        } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
             if (name.equals("@hash")) {
-                final RubyNode ret = StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[]{});
+                ret = StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[] {});
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/range.rb")) {
             if (name.equals("@begin")) {
-                final RubyNode ret = RangeNodesFactory.InternalSetBeginNodeGen.create(context, sourceSection, self, rhs);
+                ret = RangeNodesFactory.InternalSetBeginNodeGen.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@end")) {
-                final RubyNode ret = RangeNodesFactory.InternalSetEndNodeGen.create(context, sourceSection, self, rhs);
+                ret = RangeNodesFactory.InternalSetEndNodeGen.create(context, sourceSection, self, rhs);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@excl")) {
-                final RubyNode ret = RangeNodesFactory.InternalSetExcludeEndNodeGen.create(context, sourceSection, self, rhs);
+                ret = RangeNodesFactory.InternalSetExcludeEndNodeGen.create(context, sourceSection, self, rhs);
+                return addNewlineIfNeeded(node, ret);
+            }
+        } else if (path.equals(corePath + "rubinius/common/io.rb")) {
+            // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
+            if (name.equals("@start") || name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
+                // Cast int-fitting longs back to int
+                ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs), false);
                 return addNewlineIfNeeded(node, ret);
             }
         }
 
-        // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/io.rb")) {
-            if (name.equals("@start") || name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
-                // Cast int-fitting longs back to int
-                return addNewlineIfNeeded(
-                        node,
-                        new WriteInstanceVariableNode(context, sourceSection, name, self,
-                                IntegerCastNodeGen.create(context, sourceSection, rhs),
-                                false));
-            }
-        }
-
-        final RubyNode ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
+        ret = new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
         return addNewlineIfNeeded(node, ret);
     }
 
@@ -1693,93 +1683,79 @@ public class BodyTranslator extends Translator {
          * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
          * self, and @start to be 0.
          */
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/array.rb") ||
-                sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/api/shims/array.rb")) {
-
+        final String path = sourceSection.getSource().getPath();
+        final String corePath = context.getCoreLibrary().getCoreLoadPath() + "/core/";
+        final RubyNode ret;
+        if (path.equals(corePath + "rubinius/common/array.rb") || path.equals(corePath + "rubinius/api/shims/array.rb")) {
             if (name.equals("@total")) {
-                final RubyNode ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
+                ret = new RubyCallNode(context, sourceSection, "size", self, null, false);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@tuple")) {
-                final RubyNode ret = self;
+                ret = self;
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@start")) {
-                final RubyNode ret = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
+                ret = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/regexp.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/regexp.rb")) {
             if (name.equals("@source")) {
-                final RubyNode ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(context, sourceSection, self);
+                ret = MatchDataNodesFactory.RubiniusSourceNodeGen.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@full")) {
-                // Delegate to MatchDatat#full, in shims.
-                final RubyNode ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
+                // Delegate to MatchData#full.
+                ret = new RubyCallNode(context, sourceSection, "full", self, null, false);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@regexp")) {
-                final RubyNode ret = MatchDataNodesFactory.RegexpNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = MatchDataNodesFactory.RegexpNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@names")) {
-                final RubyNode ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(context, sourceSection, self);
+                ret = RegexpNodesFactory.RubiniusNamesNodeGen.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/bootstrap/string.rb") ||
-                sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/string.rb")) {
-
+        } else if (path.equals(corePath + "rubinius/bootstrap/string.rb") || path.equals(corePath + "rubinius/common/string.rb")) {
             if (name.equals("@num_bytes")) {
-                final RubyNode ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@data")) {
                 final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 // Wrap in a StringData instance, see shims.
                 LiteralNode stringDataClass = new LiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass());
-                final RubyNode ret = new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
+                ret = new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/time.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
-                final RubyNode ret = TimeNodesFactory.InternalGMTNodeFactory.create(context, sourceSection, self);
+                ret = TimeNodesFactory.InternalGMTNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@offset")) {
-                final RubyNode ret = TimeNodesFactory.InternalOffsetNodeFactory.create(context, sourceSection, self);
+                ret = TimeNodesFactory.InternalOffsetNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/hash.rb")) {
+        } else if (path.equals(corePath + "rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
-                final RubyNode ret = HashNodesFactory.DefaultValueNodeFactory.create(context, sourceSection, self);
+                ret = HashNodesFactory.DefaultValueNodeFactory.create(context, sourceSection, self);
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@default_proc")) {
-                final RubyNode ret = HashNodesFactory.DefaultProcNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = HashNodesFactory.DefaultProcNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@size")) {
-                final RubyNode ret = HashNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = HashNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             }
-        }
-
-        if (sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/common/range.rb") ||
-                sourceSection.getSource().getPath().equals(context.getCoreLibrary().getCoreLoadPath() + "/core/rubinius/api/shims/range.rb")) {
-
+        } else if (path.equals(corePath + "rubinius/common/range.rb") || path.equals(corePath + "rubinius/api/shims/range.rb")) {
             if (name.equals("@begin")) {
-                final RubyNode ret = RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@end")) {
-                final RubyNode ret = RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             } else if (name.equals("@excl")) {
-                final RubyNode ret = RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                ret = RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
                 return addNewlineIfNeeded(node, ret);
             }
         }
 
-        final RubyNode ret = new ReadInstanceVariableNode(context, sourceSection, name, self, false);
+        ret = new ReadInstanceVariableNode(context, sourceSection, name, self, false);
         return addNewlineIfNeeded(node, ret);
     }
 
