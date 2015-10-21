@@ -22,13 +22,10 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * Seekable byte channel impl over a byte array stream.
  * @author kares
  */
-final class SeekableByteChannelImpl extends AbstractInterruptibleChannel  // Not really interruptible
+final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
     implements ReadableByteChannel, SeekableByteChannel {
 
-    private static final byte[] EMPTY_BUF = new byte[0];
-
     private final ByteArrayInputStream in;
-    private byte buf[] = EMPTY_BUF;
 
     private final int mark;
     private final int count;
