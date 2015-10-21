@@ -1659,7 +1659,7 @@ public class BodyTranslator extends Translator {
             }
         } else if (path.equals(corePath + "rubinius/common/io.rb")) {
             // TODO (pitr 08-Aug-2015): values of predefined OM properties should be casted to defined types automatically
-            if (name.equals("@start") || name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
+            if (name.equals("@used") || name.equals("@total") || name.equals("@lineno")) {
                 // Cast int-fitting longs back to int
                 ret = new WriteInstanceVariableNode(context, sourceSection, name, self, IntegerCastNodeGen.create(context, sourceSection, rhs), false);
                 return addNewlineIfNeeded(node, ret);

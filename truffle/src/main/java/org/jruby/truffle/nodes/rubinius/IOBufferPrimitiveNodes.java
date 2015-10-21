@@ -70,7 +70,6 @@ public abstract class IOBufferPrimitiveNodes {
                         true,
                         ByteArrayNodes.createByteArray(getContext().getCoreLibrary().getByteArrayClass(), new ByteList(IOBUFFER_SIZE)),
                         0,
-                        0,
                         IOBUFFER_SIZE);
         }
 

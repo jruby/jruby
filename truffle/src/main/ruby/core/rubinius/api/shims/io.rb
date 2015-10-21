@@ -26,6 +26,12 @@
 
 class IO
 
+  class InternalBuffer
+    def initialize
+      @start = 0
+    end
+  end
+
   # Truffle: redefine setter to lower
   def mode=(value)
     @mode = Truffle::Primitive.fixnum_lower(value)
