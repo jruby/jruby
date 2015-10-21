@@ -34,9 +34,9 @@ public final class RubyArguments {
     public static final int RUNTIME_ARGUMENT_COUNT = 6;
 
     public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, MaterializedFrame callerFrame, Object self, DynamicObject block, DeclarationContext declarationContext, Object[] arguments) {
+        assert method != null;
         assert self != null;
         assert block == null || RubyGuards.isRubyProc(block);
-        assert declarationContext != DeclarationContext.METHOD || method != null;
         assert declarationContext != null;
         assert arguments != null;
 

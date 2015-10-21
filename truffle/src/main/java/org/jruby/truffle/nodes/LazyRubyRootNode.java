@@ -14,10 +14,12 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
@@ -27,6 +29,7 @@ public class LazyRubyRootNode extends RootNode {
 
     @CompilationFinal private RubyContext cachedContext;
     @CompilationFinal private DynamicObject mainObject;
+    @CompilationFinal private InternalMethod method;
 
     @Child private Node findContextNode;
     @Child private DirectCallNode callNode;
@@ -39,22 +42,21 @@ public class LazyRubyRootNode extends RootNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (findContextNode == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
         }
 
         final RubyContext context = RubyLanguage.INSTANCE.unprotectedFindContext(findContextNode);
 
         if (cachedContext == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
             cachedContext = context;
         }
 
         if (callNode == null || context != cachedContext) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final TranslatorDriver translator = new TranslatorDriver(context);
-
             final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
@@ -63,10 +65,12 @@ public class LazyRubyRootNode extends RootNode {
             callNode.forceInlining();
 
             mainObject = context.getCoreLibrary().getMainObject();
+            method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, null);
         }
 
         return callNode.call(frame,
-                RubyArguments.pack(null, null, null, mainObject, null, DeclarationContext.INSTANCE_EVAL, frame.getArguments()));
+                RubyArguments.pack(method, null, null, mainObject, null, DeclarationContext.TOP_LEVEL, frame.getArguments()));
     }
 
 }
