@@ -12,13 +12,14 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 
 public class LazyRubyRootNode extends RootNode {
 
@@ -36,10 +37,9 @@ public class LazyRubyRootNode extends RootNode {
     }
 
     @Override
-    public Object execute(VirtualFrame virtualFrame) {
+    public Object execute(VirtualFrame frame) {
         if (findContextNode == null) {
             CompilerDirectives.transferToInterpreter();
-
             findContextNode = insert(RubyLanguage.INSTANCE.unprotectedCreateFindContextNode());
         }
 
@@ -47,7 +47,6 @@ public class LazyRubyRootNode extends RootNode {
 
         if (cachedContext == null) {
             CompilerDirectives.transferToInterpreter();
-
             cachedContext = context;
         }
 
@@ -56,7 +55,7 @@ public class LazyRubyRootNode extends RootNode {
 
             final TranslatorDriver translator = new TranslatorDriver(context);
 
-            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, null, true, null);
+            final RubyRootNode rootNode = translator.parse(context, source, UTF8Encoding.INSTANCE, ParserContext.TOP_LEVEL, null, true, null);
 
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
@@ -66,7 +65,8 @@ public class LazyRubyRootNode extends RootNode {
             mainObject = context.getCoreLibrary().getMainObject();
         }
 
-        return callNode.call(virtualFrame, RubyArguments.pack(null, null, null, mainObject, null, DeclarationContext.INSTANCE_EVAL, virtualFrame.getArguments()));
+        return callNode.call(frame,
+                RubyArguments.pack(null, null, null, mainObject, null, DeclarationContext.INSTANCE_EVAL, frame.getArguments()));
     }
 
 }
