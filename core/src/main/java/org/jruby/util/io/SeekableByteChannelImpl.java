@@ -34,8 +34,8 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
 
     SeekableByteChannelImpl(ByteArrayInputStream in) {
         this.in = in;
-        this.mark = ByteArrayInputStreamHelper.mark(in);
-        this.count = ByteArrayInputStreamHelper.count(in);
+        this.mark = mark(in);
+        this.count = count(in);
     }
 
     @Override
@@ -68,7 +68,7 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
     // SeekableByteChannel interface :
 
     public long position() {
-        return ByteArrayInputStreamHelper.pos(in) - mark;
+        return pos(in) - mark;
     }
 
     public synchronized SeekableByteChannel position(long newPosition) throws IOException {
@@ -101,32 +101,61 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
         throw new UnsupportedOperationException("write not supported");
     }
 
-    private static class ByteArrayInputStreamHelper {
+    // static helpers
 
-        static int pos(ByteArrayInputStream in) {
-            return readField(in, "pos"); // current pos
+    private static int pos(ByteArrayInputStream in) {
+        return readIntField(in, posField); // current pos
+    }
+
+    private static int count(ByteArrayInputStream in) {
+        return readIntField(in, countField); // buf.length or offset + length
+    }
+
+    private static int mark(ByteArrayInputStream in) {
+        return readIntField(in, markField); // 0 or offset or if marked previously
+    }
+
+    private static int readIntField(ByteArrayInputStream self, Field field) {
+        try {
+            return field.getInt(self);
         }
-
-        static int count(ByteArrayInputStream in) {
-            return readField(in, "count"); // buf.length or offset + length
+        catch (IllegalAccessException ex) {
+            // fields are set-accessible thus should not happen
+            throw new IllegalStateException(ex);
         }
+    }
 
-        static int mark(ByteArrayInputStream in) {
-            return readField(in, "mark"); // 0 oir offset or if marked previously
+    static final boolean USABLE;
+
+    private static final Field posField;
+    private static final Field countField;
+    private static final Field markField;
+
+    static {
+        posField = accessibleField("pos");
+        if (posField != null) {
+            countField = accessibleField("count");
+            markField = accessibleField("mark");
+            USABLE = true;
         }
-
-        private static int readField(ByteArrayInputStream self, String name) {
-            try {
-                Field field = ByteArrayInputStream.class.getDeclaredField(name);
-                field.setAccessible(true);
-                return field.getInt(self);
-            }
-            catch (NoSuchFieldException ex) { throw new RuntimeException(ex); } // should never happen
-            catch (IllegalAccessException ex) {
-                throw new IllegalStateException(ex); // TODO
-            }
+        else {
+            countField = markField = null;
+            USABLE = false;
         }
+    }
 
+    private static Field accessibleField(final String name) {
+        try {
+            Field field = ByteArrayInputStream.class.getDeclaredField(name);
+            field.setAccessible(true);
+            return field;
+        }
+        catch (NoSuchFieldException ex) {
+            return null; // should never happen
+        }
+        catch (SecurityException ex) {
+            return null;
+        }
     }
 
 }
