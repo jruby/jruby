@@ -51,6 +51,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Object begin(RubyContext context, DynamicObject matchData, int index) {
+        // Taken from org.jruby.RubyMatchData
         int b = Layouts.MATCH_DATA.getRegion(matchData).beg[index];
 
         if (b < 0) {
@@ -65,6 +66,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Object end(RubyContext context, DynamicObject matchData, int index) {
+        // Taken from org.jruby.RubyMatchData
         int e = Layouts.MATCH_DATA.getRegion(matchData).end[index];
 
         if (e < 0) {
@@ -79,6 +81,7 @@ public abstract class MatchDataNodes {
     }
 
     public static void updatePairs(ByteList source, Encoding encoding, Pair[] pairs) {
+        // Taken from org.jruby.RubyMatchData
         Arrays.sort(pairs);
 
         int length = pairs.length;
@@ -96,6 +99,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Region getCharOffsetsManyRegs(DynamicObject matchData, ByteList source, Encoding encoding) {
+        // Taken from org.jruby.RubyMatchData
         final Region regs = Layouts.MATCH_DATA.getRegion(matchData);
         int numRegs = regs.numRegs;
 
@@ -141,6 +145,7 @@ public abstract class MatchDataNodes {
     }
 
     public static Region getCharOffsets(DynamicObject matchData) {
+        // Taken from org.jruby.RubyMatchData
         Region charOffsets = Layouts.MATCH_DATA.getCharOffsets(matchData);
         if (charOffsets != null) {
             return charOffsets;
