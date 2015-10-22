@@ -27,6 +27,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyGC;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
@@ -45,6 +46,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
 
+import java.io.IOException;
 import java.util.*;
 
 @CoreClass(name = "Truffle::Primitive")
@@ -704,5 +706,35 @@ public abstract class TrufflePrimitiveNodes {
 
         }
     }
+
+    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
+    public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
+
+        public LoadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @TruffleBoundary
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(DynamicObject file, boolean wrap) {
+            if (wrap) {
+                throw new UnsupportedOperationException();
+            }
+
+            try {
+                getContext().loadFile(file.toString(), this);
+            } catch (IOException e) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            }
+
+            return true;
+        }
+
+        @Specialization(guards = "isRubyString(file)")
+        public boolean load(DynamicObject file, NotProvided wrap) {
+            return load(file, false);
+        }
+    }
+
 
 }
