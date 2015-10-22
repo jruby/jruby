@@ -53,7 +53,6 @@ public abstract class NameToSymbolOrStringNode extends RubyNode {
     @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
     public DynamicObject coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
-
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {

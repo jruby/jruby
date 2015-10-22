@@ -97,7 +97,6 @@ public abstract class ToIntNode extends RubyNode {
         }
 
         final Object coerced;
-
         try {
             coerced = toIntNode.call(frame, object, "to_int", null);
         } catch (RaiseException e) {
