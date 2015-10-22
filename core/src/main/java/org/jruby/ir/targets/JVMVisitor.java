@@ -2033,7 +2033,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadStaticScope();
         jvmAdapter().invokevirtual(p(StaticScope.class), "getIRScope", sig(IRScope.class));
         jvmAdapter().invokevirtual(p(IRScope.class), "getFileName", sig(String.class));
-        jvmAdapter().invokevirtual(p(Ruby.class), "newString", sig(String.class));
+        jvmAdapter().invokevirtual(p(Ruby.class), "newString", sig(RubyString.class, String.class));
     }
 
 
