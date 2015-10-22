@@ -31,6 +31,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.arguments.IsRubiniusUndefinedNode;
 import org.jruby.truffle.nodes.cast.*;
+import org.jruby.truffle.nodes.coerce.ToProcNodeGen;
 import org.jruby.truffle.nodes.constants.ReadConstantWithLexicalScopeNode;
 import org.jruby.truffle.nodes.constants.ReadLiteralConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
@@ -652,7 +653,7 @@ public class BodyTranslator extends Translator {
         RubyNode blockTranslated;
 
         if (blockPassNode != null) {
-            blockTranslated = ProcCastNodeGen.create(context, sourceSection, blockPassNode.accept(this));
+            blockTranslated = ToProcNodeGen.create(context, sourceSection, blockPassNode.accept(this));
         } else if (iterNode != null) {
             blockTranslated = iterNode.accept(this);
 
