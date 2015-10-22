@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require File.join(JRuby.runtime.instance_config.jruby_home, 'lib/ruby/truffle/jruby+truffle/runner')
+
+JRubyTruffleRunner.new
