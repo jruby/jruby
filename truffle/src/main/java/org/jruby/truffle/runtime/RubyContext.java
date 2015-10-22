@@ -70,7 +70,6 @@ import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-import org.jruby.util.StringSupport;
 
 import java.io.File;
 import java.io.IOException;
