@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core.hash;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -22,6 +23,7 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.*;
@@ -159,10 +161,6 @@ public abstract class HashNodes {
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         @Child private CallDispatchHeadNode callDefaultNode;
         @Child private LookupEntryNode lookupEntryNode;
-
-        private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
-        private final BranchProfile notInHashProfile = BranchProfile.create();
-        private final BranchProfile useDefaultProfile = BranchProfile.create();
         
         @CompilationFinal private Object undefinedValue;
 
@@ -190,7 +188,10 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)")
-        public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key) {
+        public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile,
+                @Cached("create()") BranchProfile notInHashProfile,
+                @Cached("create()") BranchProfile useDefaultProfile) {
             final int hashed = hashNode.hash(frame, key);
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
@@ -226,7 +227,9 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isBucketHash(hash)")
-        public Object getBuckets(VirtualFrame frame, DynamicObject hash, Object key) {
+        public Object getBuckets(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("create()") BranchProfile notInHashProfile,
+                @Cached("create()") BranchProfile useDefaultProfile) {
             final HashLookupResult hashLookupResult = lookupEntryNode.lookup(frame, hash, key);
 
             if (hashLookupResult.getEntry() != null) {
