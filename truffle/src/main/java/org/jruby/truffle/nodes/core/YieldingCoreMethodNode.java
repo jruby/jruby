@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeGen;
 import org.jruby.truffle.nodes.methods.DeclarationContext;
@@ -40,12 +39,10 @@ public abstract class YieldingCoreMethodNode extends CoreMethodArrayArgumentsNod
     }
 
     public Object yield(VirtualFrame frame, DynamicObject block, Object... arguments) {
-        assert block == null || RubyGuards.isRubyProc(block);
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
     public boolean yieldIsTruthy(VirtualFrame frame, DynamicObject block, Object... arguments) {
-        assert block == null || RubyGuards.isRubyProc(block);
         return booleanCast(frame, yield(frame, block, arguments));
     }
 

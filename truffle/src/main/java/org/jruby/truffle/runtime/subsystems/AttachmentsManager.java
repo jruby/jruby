@@ -48,8 +48,6 @@ public class AttachmentsManager {
     }
 
     public synchronized void attach(String file, int line, final DynamicObject block) {
-        assert RubyGuards.isRubyProc(block);
-
         final Instrument instrument = Instrument.create(new StandardInstrumentListener() {
 
             @Override

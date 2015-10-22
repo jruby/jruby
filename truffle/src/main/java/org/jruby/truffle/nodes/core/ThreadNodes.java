@@ -50,8 +50,6 @@ public abstract class ThreadNodes {
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        assert RubyGuards.isRubyThread(thread);
-        assert RubyGuards.isRubyProc(block);
         String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         initialize(thread, context, currentNode, info, new Runnable() {
             @Override
@@ -205,7 +203,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubySymbol(timing)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyClass(exceptionClass)", "isRubySymbol(timing)" })
         public Object handle_interrupt(VirtualFrame frame, DynamicObject self, DynamicObject exceptionClass, DynamicObject timing, DynamicObject block) {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
@@ -242,7 +240,7 @@ public abstract class ThreadNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(DynamicObject thread, Object[] arguments, DynamicObject block) {
             ThreadNodes.initialize(thread, getContext(), this, arguments, block);
             return nil();

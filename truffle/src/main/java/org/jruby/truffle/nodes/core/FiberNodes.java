@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
@@ -59,8 +60,6 @@ public abstract class FiberNodes {
     }
 
     public static void initialize(final RubyContext context, final DynamicObject fiber, final DynamicObject block, final Node currentNode) {
-        assert RubyGuards.isRubyFiber(fiber);
-        assert RubyGuards.isRubyProc(block);
         final String name = "Ruby Fiber@" + Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         final Thread thread = new Thread(new Runnable() {
             @Override
@@ -82,9 +81,6 @@ public abstract class FiberNodes {
     }
 
     private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block, Node currentNode) {
-        assert RubyGuards.isRubyFiber(fiber);
-        assert RubyGuards.isRubyProc(block);
-
         run(context, fiber, currentNode, new Runnable() {
             @Override
             public void run() {
@@ -259,10 +255,9 @@ public abstract class FiberNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @TruffleBoundary
+        @Specialization
         public DynamicObject initialize(DynamicObject fiber, DynamicObject block) {
-            CompilerDirectives.transferToInterpreter();
-
             FiberNodes.initialize(getContext(), fiber, block, this);
             return nil();
         }

@@ -1019,7 +1019,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject eachByte(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             final ByteList bytes = StringOperations.getByteList(string);
 
@@ -1042,7 +1042,7 @@ public abstract class StringNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isValidOr7BitEncoding(string)", "isRubyProc(block)"})
+        @Specialization(guards = "isValidOr7BitEncoding(string)")
         public DynamicObject eachChar(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             ByteList strByteList = StringOperations.getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();
@@ -1061,7 +1061,7 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = {"!isValidOr7BitEncoding(string)", "isRubyProc(block)"})
+        @Specialization(guards = "!isValidOr7BitEncoding(string)")
         public DynamicObject eachCharMultiByteEncoding(VirtualFrame frame, DynamicObject string, DynamicObject block) {
             ByteList strByteList = StringOperations.getByteList(string);
             byte[] ptrBytes = strByteList.unsafeBytes();

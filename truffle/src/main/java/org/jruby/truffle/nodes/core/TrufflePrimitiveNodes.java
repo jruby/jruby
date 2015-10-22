@@ -340,7 +340,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = { "isRubyString(file)", "isRubyProc(block)" })
+        @Specialization(guards = "isRubyString(file)")
         public DynamicObject attach(DynamicObject file, int line, DynamicObject block) {
             getContext().getAttachmentsManager().attach(file.toString(), line, block);
             return getContext().getCoreLibrary().getNilObject();
@@ -477,7 +477,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object atExit(boolean always, DynamicObject block) {
             getContext().getAtExitManager().add(block, always);
             return nil();
@@ -535,7 +535,7 @@ public abstract class TrufflePrimitiveNodes {
         }
 
         // We must not allow to synchronize on boxed primitives.
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object synchronize(VirtualFrame frame, DynamicObject self, DynamicObject block) {
             synchronized (self) {
                 return yield(frame, block);

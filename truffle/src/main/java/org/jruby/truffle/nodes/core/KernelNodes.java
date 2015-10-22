@@ -1153,7 +1153,7 @@ public abstract class KernelNodes {
             return lambda(parentBlock);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcFactory(),
@@ -1413,7 +1413,7 @@ public abstract class KernelNodes {
             return send(frame, self, name, args, (DynamicObject) null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
             return dispatchNode.call(frame, self, name, block, args);
         }
@@ -1671,16 +1671,12 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject setTraceFunc(Object nil) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(null);
             return nil();
         }
 
         @Specialization(guards = "isRubyProc(traceFunc)")
         public DynamicObject setTraceFunc(DynamicObject traceFunc) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(traceFunc);
             return traceFunc;
         }

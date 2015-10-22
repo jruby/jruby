@@ -114,7 +114,7 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public int eachObject(VirtualFrame frame, NotProvided ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
@@ -130,7 +130,7 @@ public abstract class ObjectSpaceNodes {
             return count;
         }
 
-        @Specialization(guards = { "isRubyModule(ofClass)", "isRubyProc(block)" })
+        @Specialization(guards = "isRubyModule(ofClass)")
         public int eachObject(VirtualFrame frame, DynamicObject ofClass, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 

@@ -393,7 +393,7 @@ public abstract class HashNodes {
             return nil();
         }
 
-        @Specialization(guards = { "isNullHash(hash)", "isRubyProc(block)" })
+        @Specialization(guards = "isNullHash(hash)")
         public Object deleteNull(VirtualFrame frame, DynamicObject hash, Object key, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -491,13 +491,13 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullHash(hash)")
         public DynamicObject eachNull(DynamicObject hash, DynamicObject block) {
             return hash;
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isPackedHash(hash)")
         public DynamicObject eachPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -524,7 +524,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isBucketHash(hash)")
         public DynamicObject eachBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -589,7 +589,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(DynamicObject hash, NotProvided defaultValue, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), null, 0, null, null);
             Layouts.HASH.setStore(hash, null);
@@ -615,7 +615,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = {"wasProvided(defaultValue)", "isRubyProc(block)"})
+        @Specialization(guards = "wasProvided(defaultValue)")
         public Object initialize(DynamicObject hash, Object defaultValue, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
@@ -708,7 +708,7 @@ public abstract class HashNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isNullHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isNullHash(hash)")
         public DynamicObject mapNull(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -716,7 +716,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization(guards = {"isPackedHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isPackedHash(hash)")
         public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -747,7 +747,7 @@ public abstract class HashNodes {
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), arrayBuilderNode.finish(resultStore, length), length);
         }
 
-        @Specialization(guards = {"isBucketHash(hash)", "isRubyProc(block)"})
+        @Specialization(guards = "isBucketHash(hash)")
         public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
             assert HashOperations.verifyStore(getContext(), hash);
 
@@ -1055,7 +1055,7 @@ public abstract class HashNodes {
 
         // Merge using a block
 
-        @Specialization(guards = {"isRubyHash(other)", "!isCompareByIdentity(hash)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyHash(other)", "!isCompareByIdentity(hash)" })
         public DynamicObject merge(VirtualFrame frame, DynamicObject hash, DynamicObject other, DynamicObject block) {
             CompilerDirectives.bailout("Hash#merge with a block cannot be compiled at the moment");
 

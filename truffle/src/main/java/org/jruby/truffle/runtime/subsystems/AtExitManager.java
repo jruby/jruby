@@ -36,8 +36,6 @@ public class AtExitManager {
     }
 
     public void add(DynamicObject block, boolean always) {
-        assert RubyGuards.isRubyProc(block);
-
         if (always) {
             systemExitHooks.push(block);
         } else {

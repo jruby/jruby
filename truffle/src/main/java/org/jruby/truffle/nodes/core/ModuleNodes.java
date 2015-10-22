@@ -656,7 +656,7 @@ public abstract class ModuleNodes {
             return getContext().parseAndExecute(source, encoding, ParserContext.MODULE, module, callerFrame, true, DeclarationContext.CLASS_EVAL, this);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object classEval(VirtualFrame frame, DynamicObject self, NotProvided code, NotProvided file, NotProvided line, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
@@ -667,7 +667,7 @@ public abstract class ModuleNodes {
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
 
-        @Specialization(guards = {"wasProvided(code)", "isRubyProc(block)"})
+        @Specialization(guards = "wasProvided(code)")
         public Object classEval(DynamicObject self, Object code, NotProvided file, NotProvided line, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(1, 0, this));
@@ -687,7 +687,7 @@ public abstract class ModuleNodes {
 
         public abstract Object executeClassExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block);
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object classExec(VirtualFrame frame, DynamicObject self, Object[] args, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, self, args);
         }
@@ -1046,7 +1046,7 @@ public abstract class ModuleNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject defineMethodBlock(DynamicObject module, String name, NotProvided proc, DynamicObject block) {
             return defineMethodProc(module, name, block, NotProvided.INSTANCE);
         }
@@ -1094,11 +1094,8 @@ public abstract class ModuleNodes {
             return addMethod(module, name, Layouts.UNBOUND_METHOD.getMethod(method));
         }
 
+        @TruffleBoundary
         private DynamicObject defineMethod(DynamicObject module, String name, DynamicObject proc) {
-            CompilerDirectives.transferToInterpreter();
-
-            assert RubyGuards.isRubyProc(proc);
-
             final CallTarget modifiedCallTarget = Layouts.PROC.getCallTargetForLambdas(proc);
             final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
             final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, Layouts.PROC.getDeclarationFrame(proc));
@@ -1158,9 +1155,6 @@ public abstract class ModuleNodes {
         public abstract DynamicObject executeInitialize(VirtualFrame frame, DynamicObject module, DynamicObject block);
 
         void classEval(VirtualFrame frame, DynamicObject module, DynamicObject block) {
-            assert RubyGuards.isRubyModule(module);
-            assert RubyGuards.isRubyProc(block);
-
             if (classExecNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
@@ -1173,7 +1167,7 @@ public abstract class ModuleNodes {
             return module;
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(VirtualFrame frame, DynamicObject module, DynamicObject block) {
             classEval(frame, module, block);
             return module;
