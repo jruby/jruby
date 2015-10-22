@@ -70,11 +70,11 @@ public abstract class StringOperations {
         return wrapper;
     }
 
-    @CompilerDirectives.TruffleBoundary
     public static int scanForCodeRange(DynamicObject string) {
         int cr = Layouts.STRING.getCodeRange(string);
 
         if (cr == StringSupport.CR_UNKNOWN) {
+            CompilerDirectives.transferToInterpreter();
             cr = slowCodeRangeScan(string);
             Layouts.STRING.setCodeRange(string, cr);
         }
