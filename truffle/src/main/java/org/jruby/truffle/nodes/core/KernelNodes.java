@@ -1485,6 +1485,7 @@ public abstract class KernelNodes {
             return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(DynamicObject featureString) {
             final String feature = featureString.toString();

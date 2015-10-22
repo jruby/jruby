@@ -258,6 +258,7 @@ public abstract class IOPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object readIfAvailable(VirtualFrame frame, DynamicObject file, int numberOfBytes) {
             // Taken from Rubinius's IO::read_if_available.
