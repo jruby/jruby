@@ -1664,7 +1664,7 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Create module Errno's Variables.  We have this method since Errno does not have it's
+     * Create module Errno's Variables.  We have this method since Errno does not have its
      * own java class.
      */
     private void initErrno() {
