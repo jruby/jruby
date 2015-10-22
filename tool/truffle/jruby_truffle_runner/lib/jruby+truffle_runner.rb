@@ -271,7 +271,7 @@ class JRubyTruffleRunner
   end
 
   def subcommand_setup(vm_options, rest)
-    bundle_cmd       = File.expand_path(@options[:global][:bundle_cmd]).split(' ')
+    bundle_cmd       = @options[:global][:bundle_cmd].split(' ')
     bundle_path      = File.expand_path(@options[:global][:truffle_bundle_path])
 
     if bundle_cmd == ['bundle']
