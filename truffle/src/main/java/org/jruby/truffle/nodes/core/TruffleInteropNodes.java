@@ -328,8 +328,9 @@ public abstract class TruffleInteropNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(name)")
-        public Object importObject(VirtualFrame frame, DynamicObject name) {
+        public Object importObject(DynamicObject name) {
             return getContext().importObject(name);
         }
 
