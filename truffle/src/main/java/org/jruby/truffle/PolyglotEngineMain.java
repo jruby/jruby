@@ -11,7 +11,6 @@ package org.jruby.truffle;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.api.vm.TruffleVM;
 import org.jruby.truffle.runtime.RubyLanguage;
 
 import java.io.*;
