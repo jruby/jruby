@@ -227,6 +227,7 @@ public class RubyContext extends ExecutionContext {
         return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.MATERIALIZE, true), expression, arguments);
     }
 
+    @TruffleBoundary
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = BindingNodes.createBinding(this, evalFrame);

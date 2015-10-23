@@ -171,6 +171,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject kill(final DynamicObject rubyThread) {
             final Thread toKill = Layouts.THREAD.getThread(rubyThread);
@@ -412,6 +413,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public DynamicObject wakeup(final DynamicObject thread) {
             if (Layouts.THREAD.getStatus(thread) == Status.DEAD) {

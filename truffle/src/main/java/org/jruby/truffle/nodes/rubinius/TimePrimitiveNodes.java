@@ -345,6 +345,7 @@ public abstract class TimePrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object timeUTCOffset(DynamicObject time) {
             Object offset = Layouts.TIME.getOffset(time);

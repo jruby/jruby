@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyGuards;
@@ -66,10 +67,12 @@ public class BacktraceFormatter {
         this.flags = flags;
     }
 
+    @TruffleBoundary
     public void printBacktrace(DynamicObject exception, Backtrace backtrace) {
         printBacktrace(exception, backtrace, new PrintWriter(System.err, true));
     }
 
+    @TruffleBoundary
     public void printBacktrace(DynamicObject exception, Backtrace backtrace, PrintWriter writer) {
         for (String line : formatBacktrace(exception, backtrace)) {
             writer.println(line);

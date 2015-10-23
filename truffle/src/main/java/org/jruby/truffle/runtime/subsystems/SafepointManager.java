@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
@@ -71,6 +72,7 @@ public class SafepointManager {
         poll(currentNode, true);
     }
 
+    @TruffleBoundary
     private void poll(Node currentNode, boolean fromBlockingCall) {
         try {
             assumption.check();
@@ -100,6 +102,7 @@ public class SafepointManager {
         return deferredAction;
     }
 
+    @TruffleBoundary
     private void step(Node currentNode, boolean isDrivingThread) {
         final DynamicObject thread = context.getThreadManager().getCurrentThread();
 
@@ -123,6 +126,7 @@ public class SafepointManager {
         }
     }
 
+    @TruffleBoundary
     public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
@@ -180,6 +184,7 @@ public class SafepointManager {
         assumptionInvalidated(currentNode, true);
     }
 
+    @TruffleBoundary
     public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread
@@ -197,6 +202,7 @@ public class SafepointManager {
         }
     }
 
+    @TruffleBoundary
     public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
             @Override
@@ -208,6 +214,7 @@ public class SafepointManager {
         });
     }
 
+    @TruffleBoundary
     private void interruptOtherThreads() {
         Thread current = Thread.currentThread();
         for (Thread thread : runningThreads) {

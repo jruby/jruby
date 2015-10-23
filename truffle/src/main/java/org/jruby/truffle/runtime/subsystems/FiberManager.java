@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 
 import org.jruby.truffle.nodes.RubyGuards;
@@ -57,6 +58,7 @@ public class FiberManager {
         runningFibers.remove(fiber);
     }
 
+    @TruffleBoundary
     public void shutdown() {
         for (DynamicObject fiber : runningFibers) {
             if (!Layouts.FIBER.getRootFiber(fiber)) {
