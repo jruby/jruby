@@ -84,6 +84,12 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rspec</artifactId>
+      <version>${rspec.version}</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>jruby-launcher</artifactId>
       <version>${jruby-launcher.version}</version>
       <type>gem</type>
