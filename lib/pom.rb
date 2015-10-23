@@ -1,54 +1,23 @@
 class ImportedGem
-  attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
+  attr_reader :name,  :version
 
-  def initialize( name, pom_version_key, default_gem, ruby_version = nil, only_spec = false )
+  def initialize( name, version )
     @name = name
-    @default_gem = default_gem
-    @pom_version_key = pom_version_key
-    if ( ruby_version == false )
-      @only_specs = true
-    else
-      @ruby_version = ruby_version
-    end
-    @only_spec = only_spec
+    @version = version
   end
 
-  def version
-    if pom_version_key =~ /.version/
-      "${#{pom_version_key}}"
-    else
-      pom_version_key
-    end
-  end
 end
 
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.11', true ),
-   ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true ),
-   ImportedGem.new( 'json', 'json.version', true, false ),
-   ImportedGem.new( 'jar-dependencies', '0.1.15', true )
+   ImportedGem.new( 'jruby-openssl', '0.9.11' ),
+   ImportedGem.new( 'rake', '10.1.0' ),
+   ImportedGem.new( 'rdoc', '4.1.2' ),
+   ImportedGem.new( 'json', '1.8.0' ),
+   ImportedGem.new( 'jar-dependencies', '0.2.3' )
   ]
 
 project 'JRuby Lib Setup' do
-
-  # TODO move those to method to ruby-maven
-  class ::Java::JavaIo::File
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::Java::JavaLang::String
-    def to_pathname
-      to_s.gsub( /\\/, '/' )
-    end
-  end
-  class ::String
-    def to_pathname
-      self.gsub( /\\/, '/' )
-    end
-  end
 
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
@@ -57,26 +26,22 @@ project 'JRuby Lib Setup' do
   inherit "org.jruby:jruby-parent", version
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom.xml',
-              'tesla.dump.readonly' => true,
-              'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5',
-              'jruby.home' => '${basedir}/..' )
+  properties( 'polyglot.dump.pom' => 'pom.xml',
+              'polyglot.dump.readonly' => true,
+              'jruby.plugins.version' => '1.1.2' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}"
 
-  repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-              :id => 'rubygems-releases' )
   # for testing out jruby-ossl before final release :
-  #repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
-  #            :id => 'gem-staging' )
+  repository( :url => 'http://oss.sonatype.org/content/repositories/staging',
+              :id => 'gem-staging' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
                            :includes => [ '*' ] },
                          { :directory => '${basedir}/ruby/shared',
-                           :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
+                           :includes => [ 'org/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
@@ -85,8 +50,6 @@ project 'JRuby Lib Setup' do
 
   # this is not an artifact for maven central
   plugin :deploy, :skip => true
-
-  gem 'ruby-maven', '3.3.3', :scope => :provided
 
   execute :install_gems, :package do |ctx|
     require 'fileutils'
@@ -141,8 +104,7 @@ project 'JRuby Lib Setup' do
     end
 
     default_gems.each do |g|
-      pom_version = ctx.project.properties.get( g.pom_version_key ) || g.pom_version_key
-      version = pom_version.sub( /-SNAPSHOT/, '' )
+      version = g.version.sub( /-SNAPSHOT/, '' )
 
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
@@ -150,14 +112,11 @@ project 'JRuby Lib Setup' do
         puts
         puts "--- gem #{g.name}-#{version} ---"
 
-        unless g.only_spec
-          # copy the gem content to shared or to respective
-          dir = g.ruby_version || 'shared'
-          puts "copy gem content to ruby/#{dir}"
-          # assume default require_path
-          Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
-            FileUtils.cp_r( f, File.join( ruby_dir, dir ) )
-          end
+        # copy the gem content to shared or to respective
+        puts "copy gem content to ruby/shared"
+        # assume default require_path
+        Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
+          FileUtils.cp_r( f, File.join( ruby_dir, "shared" ) )
         end
 
         # copy bin files if the gem has any
@@ -171,14 +130,12 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        if g.default_gem
-          specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
-          puts "copy to specifications/default: #{specname}"
+        specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
+        puts "copy to specifications/default: #{specname}"
 
-          spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
-          File.open( File.join( default_specs, specname ), 'w' ) do |f|
-            f.print( spec.to_ruby )
-          end
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
+        File.open( File.join( default_specs, specname ), 'w' ) do |f|
+          f.print( spec.to_ruby )
         end
       end
     end

@@ -58,7 +58,6 @@
     <invoker.skip>true</invoker.skip>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby.plugins.version>1.0.7</jruby.plugins.version>
-    <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
     <rspec-expectations.version>2.14.0</rspec-expectations.version>
@@ -67,9 +66,6 @@
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <minitest.version>5.0.7</minitest.version>
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <rdoc.version>4.1.2</rdoc.version>
-    <json.version>1.8.0</json.version>
-    <krypt.version>0.0.2.rc1</krypt.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.8.2</joda.time.version>
     <jffi.version>1.2.9</jffi.version>

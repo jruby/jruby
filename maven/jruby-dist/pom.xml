@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+
+DO NOT MODIFIY - GENERATED CODE
+
+
+-->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
@@ -11,38 +18,11 @@
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
-    <ruby.maven.libs.version>3.3.3</ruby.maven.libs.version>
-    <jruby.home>${basedir}/../..</jruby.home>
-    <tesla.dump.readOnly>true</tesla.dump.readOnly>
-    <jruby.plugins.version>1.0.8</jruby.plugins.version>
-    <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <ruby.maven.version>3.3.3</ruby.maven.version>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.1.1</tesla.version>
+    <polyglot.dump.readOnly>true</polyglot.dump.readOnly>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
-  <dependencies>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>ruby-maven</artifactId>
-      <version>${ruby.maven.version}</version>
-      <type>gem</type>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-maven-plugin</artifactId>
-        <version>${jruby.plugins.version}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>initialize</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
@@ -80,7 +60,7 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>jruby-dist-1.7.23-SNAPSHOT</finalName>
+          <finalName>jruby-dist-1.7.23</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
@@ -91,9 +71,9 @@
         <artifactId>maven-invoker-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>io.tesla.polyglot</groupId>
-        <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>${tesla.version}</version>
+        <groupId>io.takari.polyglot</groupId>
+        <artifactId>polyglot-maven-plugin</artifactId>
+        <version>0.1.11</version>
         <executions>
           <execution>
             <id>fix_executable_bits</id>
@@ -106,54 +86,18 @@
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
-          <execution>
-            <id>fix_permissions</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>fix_permissions</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>dump_full_specs_of_ruby_maven</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>dump_full_specs_of_ruby_maven</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
         </executions>
         <dependencies>
           <dependency>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>${tesla.version}</version>
+            <groupId>io.takari.polyglot</groupId>
+            <artifactId>polyglot-ruby</artifactId>
+            <version>0.1.11</version>
           </dependency>
         </dependencies>
       </plugin>
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>gem proxy</id>
-      <activation>
-        <file>
-          <exists>../jruby</exists>
-        </file>
-      </activation>
-      <repositories>
-        <repository>
-          <id>rubygems-releases</id>
-          <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
-        </repository>
-      </repositories>
-    </profile>
     <profile>
       <id>source dist</id>
       <activation>
@@ -164,9 +108,9 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>${tesla.version}</version>
+            <groupId>io.takari.polyglot</groupId>
+            <artifactId>polyglot-maven-plugin</artifactId>
+            <version>0.1.11</version>
             <executions>
               <execution>
                 <id>pack_sources</id>
@@ -182,9 +126,9 @@
             </executions>
             <dependencies>
               <dependency>
-                <groupId>io.tesla.polyglot</groupId>
-                <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>${tesla.version}</version>
+                <groupId>io.takari.polyglot</groupId>
+                <artifactId>polyglot-ruby</artifactId>
+                <version>0.1.11</version>
               </dependency>
             </dependencies>
           </plugin>
