@@ -90,18 +90,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>${rake.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rspec</artifactId>
-      <version>${rspec.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
       <version>${minitest.version}</version>
       <type>gem</type>
@@ -110,18 +98,6 @@
       <groupId>rubygems</groupId>
       <artifactId>minitest-excludes</artifactId>
       <version>${minitest-excludes.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>json</artifactId>
-      <version>${json.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
