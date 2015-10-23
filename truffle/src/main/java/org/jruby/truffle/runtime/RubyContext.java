@@ -223,11 +223,10 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         return inlineRubyHelper(currentNode, Truffle.getRuntime().getCurrentFrame().getFrame(FrameAccess.MATERIALIZE, true), expression, arguments);
     }
 
-    @TruffleBoundary
     public Object inlineRubyHelper(Node currentNode, Frame frame, String expression, Object... arguments) {
         final MaterializedFrame evalFrame = setupInlineRubyFrame(frame, arguments);
         final DynamicObject binding = BindingNodes.createBinding(this, evalFrame);
-        return eval(ParserContext.INLINE, ByteList.create(expression), binding, true, "inline-ruby", currentNode);
+        return eval(ParserContext.INLINE, StringOperations.createByteList(expression), binding, true, "inline-ruby", currentNode);
     }
 
     private MaterializedFrame setupInlineRubyFrame(Frame frame, Object... arguments) {

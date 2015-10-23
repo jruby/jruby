@@ -192,4 +192,9 @@ public abstract class StringOperations {
         // If we get this far, one must be CR_7BIT and the other must be CR_VALID, so promote to the more general code range.
         return StringSupport.CR_VALID;
     }
+
+    @TruffleBoundary
+    public static ByteList createByteList(CharSequence s) {
+        return ByteList.create(s);
+    }
 }
