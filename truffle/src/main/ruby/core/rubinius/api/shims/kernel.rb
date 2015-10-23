@@ -49,10 +49,10 @@ module Kernel
     filename = Rubinius::Type.coerce_to_path filename
 
     # load absolute path
-    return Truffle::Primitive.load File.expand_path(filename), wrap if filename =~ /\A#{Regexp.quote File::SEPARATOR}/
+    return Truffle::Primitive.load File.expand_path(filename), wrap if filename.start_with? File::SEPARATOR
 
     # try relative
-    if filename =~ /\A\./
+    if filename.start_with? '.'
       return Truffle::Primitive.load File.expand_path(File.join(Dir.pwd, filename)), wrap
     end
 
