@@ -2655,7 +2655,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        final ByteList byteList = ByteList.create(node.getName());
+        final ByteList byteList = StringOperations.createByteList(node.getName());
         byteList.setEncoding(node.getEncoding());
         final RubyNode ret = new LiteralNode(context, translate(node.getPosition()), context.getSymbol(byteList));
         return addNewlineIfNeeded(node, ret);
