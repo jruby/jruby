@@ -190,7 +190,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
                 public void write(byte[] bytes, int off, int len) throws IOException {
                     byte[] bytesCopy = new byte[len];
                     System.arraycopy(bytes, off, bytesCopy, 0, len);
-                    super.write(bytesCopy, off, len);
+                    super.write(bytesCopy, 0, len);
                 }
             };
 
