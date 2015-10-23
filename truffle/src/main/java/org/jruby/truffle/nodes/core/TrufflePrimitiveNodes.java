@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
@@ -724,6 +725,7 @@ public abstract class TrufflePrimitiveNodes {
             try {
                 getContext().loadFile(file.toString(), this);
             } catch (IOException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
             }
 
