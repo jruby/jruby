@@ -36,7 +36,7 @@ public class SymbolTable {
 
     @CompilerDirectives.TruffleBoundary
     public DynamicObject getSymbol(String string) {
-        return getSymbol(ByteList.create(string));
+        return getSymbol(StringOperations.createByteList(string));
     }
 
     @CompilerDirectives.TruffleBoundary

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
@@ -56,9 +57,9 @@ public abstract class FormatFloatNode extends PackNode {
 
             // If the value is a long value stuffed in a double, cast it so we don't print a trailing ".0".
             if ((value - Math.rint(value)) == 0) {
-                return ByteList.create(String.valueOf((long) value));
+                return StringOperations.createByteList(String.valueOf((long) value));
             } else {
-                return ByteList.create(String.valueOf(value));
+                return StringOperations.createByteList(String.valueOf(value));
             }
         } else {
             final StringBuilder builder = new StringBuilder();
