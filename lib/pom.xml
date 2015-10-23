@@ -18,9 +18,10 @@ DO NOT MODIFIY - GENERATED CODE
   <packaging>pom</packaging>
   <name>JRuby Lib Setup</name>
   <properties>
-    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.1.1</tesla.version>
     <jruby.plugins.version>1.1.2</jruby.plugins.version>
-    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
   <dependencies>
     <dependency>
@@ -93,9 +94,9 @@ DO NOT MODIFIY - GENERATED CODE
         </configuration>
       </plugin>
       <plugin>
-        <groupId>io.takari.polyglot</groupId>
-        <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.1.11</version>
+        <groupId>io.tesla.polyglot</groupId>
+        <artifactId>tesla-polyglot-maven-plugin</artifactId>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -111,9 +112,9 @@ DO NOT MODIFIY - GENERATED CODE
         </executions>
         <dependencies>
           <dependency>
-            <groupId>io.takari.polyglot</groupId>
-            <artifactId>polyglot-ruby</artifactId>
-            <version>0.1.11</version>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-ruby</artifactId>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>

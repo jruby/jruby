@@ -26,8 +26,9 @@ project 'JRuby Lib Setup' do
   inherit "org.jruby:jruby-parent", version
   packaging 'pom'
 
-  properties( 'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readonly' => true,
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
+              'tesla.version' => '0.1.1',
               'jruby.plugins.version' => '1.1.2' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
