@@ -215,14 +215,12 @@ public abstract class ClassNodes {
             return doNewInstance(frame, rubyClass, args, null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object newInstance(VirtualFrame frame, DynamicObject rubyClass, Object[] args, DynamicObject block) {
             return doNewInstance(frame, rubyClass, args, block);
         }
 
         private Object doNewInstance(VirtualFrame frame, DynamicObject rubyClass, Object[] args, DynamicObject block) {
-            assert block == null || RubyGuards.isRubyProc(block);
-
             final Object instance = allocateNode.call(frame, rubyClass, "allocate", null);
             initialize.call(frame, instance, "initialize", block, args);
             return instance;
@@ -240,9 +238,6 @@ public abstract class ClassNodes {
         }
 
         void triggerInheritedHook(VirtualFrame frame, DynamicObject subClass, DynamicObject superClass) {
-            assert RubyGuards.isRubyClass(subClass);
-            assert RubyGuards.isRubyClass(superClass);
-
             if (inheritedNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 inheritedNode = insert(DispatchHeadNodeFactory.createMethodCallOnSelf(getContext()));
@@ -251,9 +246,6 @@ public abstract class ClassNodes {
         }
 
         void moduleInitialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject block) {
-            assert RubyGuards.isRubyClass(rubyClass);
-            assert RubyGuards.isRubyProc(block);
-
             if (moduleInitializeNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 moduleInitializeNode = insert(ModuleNodesFactory.InitializeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
@@ -271,12 +263,12 @@ public abstract class ClassNodes {
             return initializeGeneralWithoutBlock(frame, rubyClass, superclass);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(VirtualFrame frame, DynamicObject rubyClass, NotProvided superclass, DynamicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, getContext().getCoreLibrary().getObjectClass(), block);
         }
 
-        @Specialization(guards = {"isRubyClass(superclass)", "isRubyProc(block)"})
+        @Specialization(guards = "isRubyClass(superclass)")
         public DynamicObject initialize(VirtualFrame frame, DynamicObject rubyClass, DynamicObject superclass, DynamicObject block) {
             return initializeGeneralWithBlock(frame, rubyClass, superclass, block);
         }
@@ -292,9 +284,7 @@ public abstract class ClassNodes {
         }
 
         private DynamicObject initializeGeneralWithBlock(VirtualFrame frame, DynamicObject rubyClass, DynamicObject superclass, DynamicObject block) {
-            assert RubyGuards.isRubyClass(rubyClass);
             assert RubyGuards.isRubyClass(superclass);
-            assert RubyGuards.isRubyProc(block);
 
             ClassNodes.initialize(getContext(), rubyClass, superclass);
             triggerInheritedHook(frame, rubyClass, superclass);

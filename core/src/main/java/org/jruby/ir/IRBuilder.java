@@ -3308,7 +3308,7 @@ public class IRBuilder {
 
     public Operand buildStr(StrNode strNode) {
         if (strNode instanceof FileNode) {
-            return new Filename(strNode.getValue());
+            return new Filename();
         }
         return copyAndReturnValue(new StringLiteral(strNode.getValue(), strNode.getCodeRange()));
     }

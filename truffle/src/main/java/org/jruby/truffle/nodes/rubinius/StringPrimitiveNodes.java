@@ -78,6 +78,7 @@ import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.EncodingOperations;
+import org.jruby.truffle.runtime.core.StringCodeRangeableWrapper;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.util.ByteList;
@@ -493,20 +494,119 @@ public abstract class StringPrimitiveNodes {
 
         public abstract boolean executeStringEqual(DynamicObject string, DynamicObject other);
 
-        @Specialization(guards = "isRubyString(other)")
+        @Specialization(guards = "string == other")
+        public boolean stringEqualsSameObject(DynamicObject string, DynamicObject other) {
+            return true;
+        }
+
+        @Specialization(guards = {
+                "string != other",
+                "isRubyString(other)",
+                "!areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
+        })
+        public boolean stringEqualNotComparable(DynamicObject string, DynamicObject other,
+                                                @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
+                                                @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
+                                                @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
+                                                @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
+                                                @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
+                                                @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
+                                                @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible) {
+            return false;
+        }
+
+        @Specialization(guards = {
+                "string != other",
+                "isRubyString(other)",
+                "areComparable(string, other, sameEncodingProfile, firstStringEmptyProfile, secondStringEmptyProfile, firstStringCR7BitProfile, secondStringCR7BitProfile, firstStringAsciiCompatible, secondStringAsciiCompatible)"
+        })
         public boolean stringEqual(DynamicObject string, DynamicObject other,
-                                   @Cached("createBinaryProfile()") ConditionProfile incompatibleEncodingProfile) {
+                                   @Cached("createBinaryProfile()") ConditionProfile sameEncodingProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile firstStringEmptyProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile secondStringEmptyProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile firstStringCR7BitProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile secondStringCR7BitProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile firstStringAsciiCompatible,
+                                   @Cached("createBinaryProfile()") ConditionProfile secondStringAsciiCompatible,
+                                   @Cached("createBinaryProfile()") ConditionProfile sameByteListProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile differentHashCodeProfile,
+                                   @Cached("createBinaryProfile()") ConditionProfile differentSizeProfile) {
             final ByteList a = StringOperations.getByteList(string);
             final ByteList b = StringOperations.getByteList(other);
 
-            if (incompatibleEncodingProfile.profile((a.getEncoding() != b.getEncoding()) &&
-                    (org.jruby.RubyEncoding.areCompatible(StringOperations.getCodeRangeable(string), StringOperations.getCodeRangeable(other)) == null))) {
+            if (sameByteListProfile.profile(a == b)) {
+                return true;
+            }
+
+            if (differentHashCodeProfile.profile(a.hashCode() != 0 && b.hashCode() != 0 && a.hashCode() != b.hashCode())) {
                 return false;
             }
 
-            return a.equal(b);
+            if (differentSizeProfile.profile(a.realSize() != b.realSize())) {
+                return false;
+            }
+
+            final byte[] stringBytes = a.unsafeBytes();
+            final byte[] otherBytes = b.unsafeBytes();
+            final int stringBegin = a.begin();
+            final int otherBegin = b.begin();
+
+            for (int i = 0; i < a.realSize(); i++) {
+                if (stringBytes[i + stringBegin] != otherBytes[i + otherBegin]) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
+        protected boolean areComparable(DynamicObject first, DynamicObject second,
+                                      ConditionProfile sameEncodingProfile,
+                                      ConditionProfile firstStringEmptyProfile,
+                                      ConditionProfile secondStringEmptyProfile,
+                                      ConditionProfile firstStringCR7BitProfile,
+                                      ConditionProfile secondStringCR7BitProfile,
+                                      ConditionProfile firstStringAsciiCompatible,
+                                      ConditionProfile secondStringAsciiCompatible) {
+            assert RubyGuards.isRubyString(first);
+            assert RubyGuards.isRubyString(second);
+
+            final ByteList firstByteList = StringOperations.getByteList(first);
+            final ByteList secondByteList = StringOperations.getByteList(second);
+
+            if (sameEncodingProfile.profile(firstByteList.getEncoding() == secondByteList.getEncoding())) {
+                return true;
+            }
+
+            if (firstStringEmptyProfile.profile(firstByteList.realSize() == 0)) {
+                return true;
+            }
+
+            if (secondStringEmptyProfile.profile(secondByteList.realSize() == 0)) {
+                return true;
+            }
+
+            final int firstCodeRange = StringOperations.scanForCodeRange(first);
+            final int secondCodeRange = StringOperations.scanForCodeRange(second);
+
+            if (firstStringCR7BitProfile.profile(firstCodeRange == StringSupport.CR_7BIT)) {
+                if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
+                    return true;
+                }
+
+                if (secondStringAsciiCompatible.profile(secondByteList.getEncoding().isAsciiCompatible())) {
+                    return true;
+                }
+            }
+
+            if (secondStringCR7BitProfile.profile(secondCodeRange == StringSupport.CR_7BIT)) {
+                if (firstStringAsciiCompatible.profile(firstByteList.getEncoding().isAsciiCompatible())) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     @RubiniusPrimitive(name = "string_find_character")

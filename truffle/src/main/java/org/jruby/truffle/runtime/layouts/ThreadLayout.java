@@ -30,15 +30,15 @@ public interface ThreadLayout extends BasicObjectLayout {
                                            DynamicObject metaClass);
 
     DynamicObject createThread(DynamicObjectFactory factory,
+                               DynamicObject threadLocals,
+                               InterruptMode interruptMode,
+                               @Volatile RubyThread.Status status,
+                               List<Lock> ownedLocks,
                                @Nullable FiberManager fiberManager,
                                @Nullable String name,
                                CountDownLatch finishedLatch,
-                               DynamicObject threadLocals,
-                               List<Lock> ownedLocks,
                                boolean abortOnException,
-                               InterruptMode interruptMode,
                                @Nullable @Volatile Thread thread,
-                               @Volatile RubyThread.Status status,
                                @Nullable @Volatile DynamicObject exception,
                                @Nullable @Volatile Object value,
                                AtomicBoolean wakeUp,
@@ -50,7 +50,7 @@ public interface ThreadLayout extends BasicObjectLayout {
     void setFiberManagerUnsafe(DynamicObject object, FiberManager fiberManager);
 
     String getName(DynamicObject object);
-    void setName(DynamicObject object, String name);
+    void setNameUnsafe(DynamicObject object, String name);
 
     CountDownLatch getFinishedLatch(DynamicObject object);
 

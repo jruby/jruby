@@ -36,7 +36,7 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object downto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
@@ -57,12 +57,12 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object downto(VirtualFrame frame, int from, double to, DynamicObject block) {
             return downto(frame, from, (int) Math.ceil(to), block);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object downto(VirtualFrame frame, long from, long to, DynamicObject block) {
             // TODO BJF 22-Apr-2015 how to handle reportLoopCount(long)
             int count = 0;
@@ -84,7 +84,7 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object downto(VirtualFrame frame, long from, double to, DynamicObject block) {
             return downto(frame, from, (long) Math.ceil(to), block);
         }
@@ -210,7 +210,7 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, int from, int to, DynamicObject block) {
             int count = 0;
 
@@ -231,12 +231,12 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, int from, double to, DynamicObject block) {
             return upto(frame, from, (int) Math.floor(to), block);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, long from, long to, DynamicObject block) {
             int count = 0;
 
@@ -257,7 +257,7 @@ public abstract class IntegerNodes {
             return nil();
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object upto(VirtualFrame frame, long from, double to, DynamicObject block) {
             return upto(frame, from, (long) Math.ceil(to), block);
         }

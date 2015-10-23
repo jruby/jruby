@@ -45,13 +45,13 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-enxio:0.9', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.8', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.18', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.19', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.0', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.0.4'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.6'
+  jar 'org.jruby.joni:joni:2.1.8'
   jar 'org.jruby.extras:bytelist:1.0.13'
   jar 'org.jruby.jcodings:jcodings:1.0.13'
   jar 'org.jruby:dirgra:0.3'

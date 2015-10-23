@@ -1153,7 +1153,7 @@ public abstract class KernelNodes {
             return lambda(parentBlock);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject lambda(DynamicObject block) {
             return ProcNodes.createRubyProc(
                     getContext().getCoreLibrary().getProcFactory(),
@@ -1165,35 +1165,6 @@ public abstract class KernelNodes {
                     Layouts.PROC.getMethod(block),
                     Layouts.PROC.getSelf(block),
                     Layouts.PROC.getBlock(block));
-        }
-    }
-
-    @CoreMethod(names = "load", isModuleFunction = true, required = 1, optional = 1)
-    public abstract static class LoadNode extends CoreMethodArrayArgumentsNode {
-
-        public LoadNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @TruffleBoundary
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, boolean wrap) {
-            if (wrap) {
-                throw new UnsupportedOperationException();
-            }
-
-            try {
-                getContext().loadFile(file.toString(), this);
-            } catch (IOException e) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "isRubyString(file)")
-        public boolean load(DynamicObject file, NotProvided wrap) {
-            return load(file, false);
         }
     }
 
@@ -1442,7 +1413,7 @@ public abstract class KernelNodes {
             return send(frame, self, name, args, (DynamicObject) null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
             return dispatchNode.call(frame, self, name, block, args);
         }
@@ -1514,6 +1485,7 @@ public abstract class KernelNodes {
             return ToPathNodeGen.create(getContext(), getSourceSection(), feature);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyString(featureString)")
         public boolean require(DynamicObject featureString) {
             final String feature = featureString.toString();
@@ -1700,16 +1672,12 @@ public abstract class KernelNodes {
 
         @Specialization(guards = "isNil(nil)")
         public DynamicObject setTraceFunc(Object nil) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(null);
             return nil();
         }
 
         @Specialization(guards = "isRubyProc(traceFunc)")
         public DynamicObject setTraceFunc(DynamicObject traceFunc) {
-            CompilerDirectives.transferToInterpreter();
-
             getContext().getTraceManager().setTraceFunc(traceFunc);
             return traceFunc;
         }

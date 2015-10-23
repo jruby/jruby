@@ -153,6 +153,7 @@ public abstract class IRVisitor {
     public void Complex(Complex complex) { error(complex); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }
+    public void Filename(Filename filename) { error(filename); }
     public void Fixnum(Fixnum fixnum) { error(fixnum); }
     public void FrozenString(FrozenString frozen) { error(frozen); }
     public void UnboxedFixnum(UnboxedFixnum fixnum) { error(fixnum); }

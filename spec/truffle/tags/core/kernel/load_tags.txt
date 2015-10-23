@@ -1,26 +1,6 @@
-fails:Kernel#load (path resolution) loads a non-canonical absolute path
-fails:Kernel#load (path resolution) calls #to_str on non-String objects
-fails:Kernel#load (path resolution) raises a TypeError if #to_str does not return a String
-fails:Kernel#load (path resolution) calls #to_path on non-String objects
-fails:Kernel#load (path resolution) calls #to_path on a String
-fails:Kernel#load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails:Kernel#load (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel#load (path resolution) does not require file twice after $LOAD_PATH change
-fails:Kernel#load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
-fails:Kernel#load (path resolution) with an unreadable file raises a LoadError
-fails:Kernel#load loads file even after $LOAD_PATH change
 fails:Kernel#load (shell expansion) expands a tilde to the HOME environment variable as the path to load
-fails:Kernel.load (path resolution) loads a non-canonical absolute path
-fails:Kernel.load (path resolution) calls #to_str on non-String objects
-fails:Kernel.load (path resolution) raises a TypeError if #to_str does not return a String
-fails:Kernel.load (path resolution) calls #to_path on non-String objects
-fails:Kernel.load (path resolution) calls #to_path on a String
-fails:Kernel.load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails:Kernel.load (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel.load (path resolution) does not require file twice after $LOAD_PATH change
-fails:Kernel.load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
-fails:Kernel.load (path resolution) with an unreadable file raises a LoadError
-fails:Kernel.load loads file even after $LOAD_PATH change
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
 windows:Kernel#load loads a file that recursively requires itself
 windows:Kernel.load loads a file that recursively requires itself

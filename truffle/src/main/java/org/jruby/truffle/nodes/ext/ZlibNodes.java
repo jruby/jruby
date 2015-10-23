@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.util.MethodHandleUtils;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 import java.lang.invoke.MethodHandle;
 import java.util.zip.CRC32;

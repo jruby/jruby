@@ -109,7 +109,7 @@ public abstract class VMPrimitiveNodes {
             return referenceEqualNode.executeReferenceEqual(frame, left, right);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 

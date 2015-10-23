@@ -4,7 +4,7 @@ describe "A bunch of hash methods" do
   let(:hash) { {a: :b} }
 
   it "can handle standard arities for any?" do
-    hash.any? { |k| expect(k).to eq(:a) }
+    hash.any? { |k| expect(k).to eq([:a, :b]) }
     hash.any? { |k,v| expect(k).to eq(:a); expect(v).to eq(:b) }
   end
 
@@ -14,7 +14,6 @@ describe "A bunch of hash methods" do
   end
 
   it "can handle standard arities for each" do
-    hash.each { |k| expect(k).to eq(:a) }
     hash.each { |k,v| expect(k).to eq(:a); expect(v).to eq(:b) }
   end
 

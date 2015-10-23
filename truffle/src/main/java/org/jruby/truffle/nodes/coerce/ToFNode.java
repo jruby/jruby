@@ -77,7 +77,6 @@ public abstract class ToFNode extends RubyNode {
         }
 
         final Object coerced;
-
         try {
             coerced = toFNode.call(frame, object, "to_f", null);
         } catch (RaiseException e) {

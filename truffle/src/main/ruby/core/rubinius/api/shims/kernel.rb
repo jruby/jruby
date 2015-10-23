@@ -45,4 +45,28 @@ module Kernel
     self
   end
 
+  def load(filename, wrap = false)
+    filename = Rubinius::Type.coerce_to_path filename
+
+    # load absolute path
+    return Truffle::Primitive.load File.expand_path(filename), wrap if filename =~ /\A#{Regexp.quote File::SEPARATOR}/
+
+    # try relative
+    if filename =~ /\A\./
+      return Truffle::Primitive.load File.expand_path(File.join(Dir.pwd, filename)), wrap
+    end
+
+    # try to find relative path in $LOAD_PATH
+    [Dir.pwd, *$LOAD_PATH].each do |dir|
+      path = File.expand_path(File.join(dir, filename))
+      if File.exist? path
+        return Truffle::Primitive.load path, wrap
+      end
+    end
+
+    # file not found trigger an error
+    Truffle::Primitive.load filename, wrap
+  end
+  module_function :load
+
 end

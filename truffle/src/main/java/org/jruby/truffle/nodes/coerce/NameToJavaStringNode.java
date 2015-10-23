@@ -53,7 +53,6 @@ public abstract class NameToJavaStringNode extends RubyNode {
     @Specialization(guards = { "!isRubySymbol(object)", "!isRubyString(object)" })
     public String coerceObject(VirtualFrame frame, Object object) {
         final Object coerced;
-
         try {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {

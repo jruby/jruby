@@ -31,7 +31,6 @@ public interface MatchDataLayout extends BasicObjectLayout {
                                   DynamicObject global,
                                   int begin,
                                   int end,
-                                  boolean charOffsetUpdated,
                                   @Nullable Region charOffsets,
                                   @Nullable Object fullTuple);
 
@@ -47,9 +46,6 @@ public interface MatchDataLayout extends BasicObjectLayout {
     DynamicObject getGlobal(DynamicObject object);
     int getBegin(DynamicObject object);
     int getEnd(DynamicObject object);
-
-    boolean getCharOffsetUpdated(DynamicObject object);
-    void setCharOffsetUpdated(DynamicObject object, boolean charOffsetUpdated);
 
     Region getCharOffsets(DynamicObject object);
     void setCharOffsets(DynamicObject object, Region charOffsets);

@@ -14,6 +14,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
@@ -130,7 +131,7 @@ public class ChannelFD implements Closeable {
         else chRead = null;
         if (ch instanceof WritableByteChannel) chWrite = (WritableByteChannel)ch;
         else chWrite = null;
-        if (ch instanceof FileChannel) chSeek = (FileChannel)ch;
+        if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
         else chSelect = null;
@@ -154,7 +155,7 @@ public class ChannelFD implements Closeable {
     public Channel ch;
     public ReadableByteChannel chRead;
     public WritableByteChannel chWrite;
-    public FileChannel chSeek;
+    public SeekableByteChannel chSeek;
     public SelectableChannel chSelect;
     public FileChannel chFile;
     public SocketChannel chSock;
@@ -163,7 +164,7 @@ public class ChannelFD implements Closeable {
     public int fakeFileno;
     private AtomicInteger refs;
     public FileLock currentLock;
-    private POSIX posix;
+    private final POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;
 }

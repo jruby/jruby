@@ -233,7 +233,7 @@ public abstract class ProcNodes {
             return yieldNode.dispatch(frame, proc, args);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object call(VirtualFrame frame, DynamicObject proc, Object[] args, DynamicObject block) {
             return yieldNode.dispatchWithModifiedBlock(frame, proc, block, args);
         }

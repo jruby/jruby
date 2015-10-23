@@ -47,6 +47,7 @@ public class JavaCompiledScript implements Library {
                 // I don't like it, but until we restructure the code a bit more, we'll need to quietly let it by here.
                 return;
             }
+            script.setFileName(resource.getName());
             runtime.loadScope(script, wrap);
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);

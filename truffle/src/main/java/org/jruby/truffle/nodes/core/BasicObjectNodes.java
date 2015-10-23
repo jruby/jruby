@@ -153,7 +153,7 @@ public abstract class BasicObjectNodes {
             return getContext().instanceEval(StringOperations.getByteList(string), receiver, "(eval)", this);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object instanceEval(VirtualFrame frame, Object receiver, NotProvided string, DynamicObject block) {
             return yield.dispatchWithModifiedSelf(frame, block, receiver, receiver);
         }
@@ -170,7 +170,7 @@ public abstract class BasicObjectNodes {
             yield = new YieldDispatchHeadNode(context, DeclarationContext.INSTANCE_EVAL);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, DynamicObject block) {
             CompilerDirectives.transferToInterpreter();
 
@@ -204,7 +204,7 @@ public abstract class BasicObjectNodes {
             return methodMissing(self, name, args, null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object methodMissingBlock(Object self, DynamicObject name, Object[] args, DynamicObject block) {
             return methodMissing(self, name, args, block);
         }
@@ -255,7 +255,7 @@ public abstract class BasicObjectNodes {
             return send(frame, self, name, args, (DynamicObject) null);
         }
 
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public Object send(VirtualFrame frame, Object self, Object name, Object[] args, DynamicObject block) {
             return dispatchNode.call(frame, self, name, block, args);
         }

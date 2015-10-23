@@ -43,14 +43,13 @@ public abstract class ThreadNodes {
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass));
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), null, null, new CountDownLatch(1), threadLocals, new ArrayList<Lock>(), false,InterruptMode.IMMEDIATE, null, Status.RUN, null, null, new AtomicBoolean(false), 0);
+        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
+                null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
         return object;
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
-        assert RubyGuards.isRubyThread(thread);
-        assert RubyGuards.isRubyProc(block);
         String info = Layouts.PROC.getSharedMethodInfo(block).getSourceSection().getShortDescription();
         initialize(thread, context, currentNode, info, new Runnable() {
             @Override
@@ -84,7 +83,7 @@ public abstract class ThreadNodes {
         assert RubyGuards.isRubyThread(thread);
 
         final String name = "Ruby Thread@" + info;
-        Layouts.THREAD.setName(thread, name);
+        Layouts.THREAD.setNameUnsafe(thread, name);
         Thread.currentThread().setName(name);
 
         start(context, thread);
@@ -204,7 +203,7 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"isRubyClass(exceptionClass)", "isRubySymbol(timing)", "isRubyProc(block)"})
+        @Specialization(guards = { "isRubyClass(exceptionClass)", "isRubySymbol(timing)" })
         public Object handle_interrupt(VirtualFrame frame, DynamicObject self, DynamicObject exceptionClass, DynamicObject timing, DynamicObject block) {
             // TODO (eregon, 12 July 2015): should we consider exceptionClass?
             final InterruptMode newInterruptMode = symbolToInterruptMode(timing);
@@ -241,7 +240,7 @@ public abstract class ThreadNodes {
         }
 
         @TruffleBoundary
-        @Specialization(guards = "isRubyProc(block)")
+        @Specialization
         public DynamicObject initialize(DynamicObject thread, Object[] arguments, DynamicObject block) {
             ThreadNodes.initialize(thread, getContext(), this, arguments, block);
             return nil();

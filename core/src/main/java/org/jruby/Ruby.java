@@ -544,6 +544,7 @@ public final class Ruby implements Constantizable {
             if (script == null) {
                 throw new MainExitException(1, "error: .class file specified is not a compiled JRuby script");
             }
+            script.setFileName(filename);
             runInterpreter(script);
             return;
         }
@@ -1669,7 +1670,7 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Create module Errno's Variables.  We have this method since Errno does not have it's
+     * Create module Errno's Variables.  We have this method since Errno does not have its
      * own java class.
      */
     private void initErrno() {

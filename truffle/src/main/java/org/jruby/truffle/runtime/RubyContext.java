@@ -68,7 +68,6 @@ import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-import org.jruby.util.StringSupport;
 
 import java.io.File;
 import java.io.IOException;
@@ -350,11 +349,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public void loadFile(String fileName, Node currentNode) throws IOException {
-        if (new File(fileName).isAbsolute() || fileName.startsWith(SourceLoader.JRUBY_SCHEME) || fileName.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
-            loadFileAbsolute(fileName, currentNode);
-        } else {
-            loadFileAbsolute(new File(this.getRuntime().getCurrentDirectory() + File.separator + fileName).getCanonicalPath(), currentNode);
-        }
+        loadFileAbsolute(fileName, currentNode);
     }
 
     private void loadFileAbsolute(String fileName, Node currentNode) throws IOException {
