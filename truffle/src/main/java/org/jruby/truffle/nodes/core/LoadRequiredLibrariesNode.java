@@ -34,17 +34,20 @@ public class LoadRequiredLibrariesNode extends RubyNode {
         requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
     }
 
-    @TruffleBoundary
     @Override
     public Object execute(VirtualFrame frame) {
         Object self = RubyArguments.getSelf(frame.getArguments());
-        Collection<String> requiredLibraries = getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
 
-        for (String requiredLibrary : requiredLibraries) {
+        for (String requiredLibrary : getRequiredLibraries()) {
             requireNode.call(frame, self, "require", null, createString(StringOperations.encodeByteList(requiredLibrary, UTF8Encoding.INSTANCE)));
         }
 
         return nil();
+    }
+
+    @TruffleBoundary
+    private Collection<String> getRequiredLibraries() {
+        return getContext().getRuntime().getInstanceConfig().getRequiredLibraries();
     }
 
 }
