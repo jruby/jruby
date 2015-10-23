@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
@@ -29,6 +30,7 @@ public abstract class UndefinedPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object undefined(Object args) {
             throw new UnsupportedOperationException(

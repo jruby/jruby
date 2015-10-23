@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
@@ -33,6 +34,7 @@ public class LoadRequiredLibrariesNode extends RubyNode {
         requireNode = DispatchHeadNodeFactory.createMethodCallOnSelf(context);
     }
 
+    @TruffleBoundary
     @Override
     public Object execute(VirtualFrame frame) {
         Object self = RubyArguments.getSelf(frame.getArguments());

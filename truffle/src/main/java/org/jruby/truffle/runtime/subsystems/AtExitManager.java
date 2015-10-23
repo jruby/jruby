@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.object.DynamicObject;
 
 import org.jruby.truffle.nodes.RubyGuards;
@@ -51,6 +52,7 @@ public class AtExitManager {
         runExitHooks(systemExitHooks);
     }
 
+    @TruffleBoundary
     private DynamicObject runExitHooks(Deque<DynamicObject> stack) {
         DynamicObject lastException = null;
 

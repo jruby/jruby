@@ -123,6 +123,7 @@ public abstract class StringPrimitiveNodes {
             super(context, sourceSection);
         }
 
+        @TruffleBoundary
         @Specialization
         public boolean isCharacterPrintable(DynamicObject character) {
             final ByteList bytes = StringOperations.getByteList(character);

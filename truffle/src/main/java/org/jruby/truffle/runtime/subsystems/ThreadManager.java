@@ -190,6 +190,7 @@ public class ThreadManager {
         currentThread.set(null);
     }
 
+    @TruffleBoundary
     public void shutdown() {
         try {
             if (runningRubyThreads.size() > 1) {
@@ -202,10 +203,12 @@ public class ThreadManager {
         }
     }
 
+    @TruffleBoundary
     public DynamicObject[] getThreads() {
         return runningRubyThreads.toArray(new DynamicObject[runningRubyThreads.size()]);
     }
 
+    @TruffleBoundary
     private void killOtherThreads() {
         while (true) {
             try {
