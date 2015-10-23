@@ -9,9 +9,8 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.Node;
@@ -20,11 +19,11 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyString;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubySyntaxTag;
+import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.loader.SourceLoader;
 import org.jruby.util.StringSupport;
@@ -63,7 +62,7 @@ public class TraceManager {
         final TraceFuncEventFactory lineEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("line", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
                 return new BaseEventInstrumentListener(context, traceFunc, event);
             }
@@ -72,7 +71,7 @@ public class TraceManager {
         final TraceFuncEventFactory callEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("call", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("call", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
                 return new CallEventInstrumentListener(context, traceFunc, event);
             }
@@ -81,7 +80,7 @@ public class TraceManager {
         final TraceFuncEventFactory classEventFactory = new TraceFuncEventFactory() {
             @Override
             public StandardInstrumentListener createInstrumentListener(RubyContext context, DynamicObject traceFunc) {
-                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist("class", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
+                final DynamicObject event = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList("class", UTF8Encoding.INSTANCE), StringSupport.CR_7BIT, null);
 
                 return new BaseEventInstrumentListener(context, traceFunc, event);
             }
@@ -143,12 +142,13 @@ public class TraceManager {
             this.event = event;
         }
 
+        @TruffleBoundary
         @Override
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
                                 final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
-                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
                 final int line = sourceSection.getStartLine();
 
                 final Object classname = context.getCoreLibrary().getNilObject();
@@ -204,6 +204,7 @@ public class TraceManager {
             this.event = event;
         }
 
+        @TruffleBoundary
         @Override
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
@@ -225,7 +226,7 @@ public class TraceManager {
                     line = -1;
                 }
 
-                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), RubyString.encodeBytelist(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
+                final DynamicObject file = Layouts.STRING.createString(context.getCoreLibrary().getStringFactory(), StringOperations.encodeByteList(filename, UTF8Encoding.INSTANCE), StringSupport.CR_UNKNOWN, null);
 
                 if (!context.getOptions().INCLUDE_CORE_FILE_CALLERS_IN_SET_TRACE_FUNC && filename.startsWith(SourceLoader.TRUFFLE_SCHEME)) {
                     return;
@@ -267,5 +268,6 @@ public class TraceManager {
         @Override
         public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
         }
+
     }
 }
