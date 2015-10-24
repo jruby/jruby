@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+
+DO NOT MODIFIY - GENERATED CODE
+
+
+-->
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-parent</artifactId>
+    <version>9.0.2.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>jruby-truffle-om-dsl-processor</artifactId>
+  <name>JRuby Truffle OM DSL Processor</name>
+  <properties>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-truffle-om-dsl-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle.truffle</groupId>
+      <artifactId>truffle-api</artifactId>
+      <version>7a6719b66a744b822d9761cf8f2cd34904e22b2d-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+  <repositories>
+    <repository>
+      <id>truffle</id>
+      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/snapshots/</url>
+    </repository>
+  </repositories>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>anno</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <compilerArgs>
+                <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                <compilerArg>-J-ea</compilerArg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <encoding>utf-8</encoding>
+          <debug>true</debug>
+          <verbose>false</verbose>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+          <source>${base.java.version}</source>
+          <source>1.7</source>
+          <target>${base.javac.version}</target>
+          <target>1.7</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
