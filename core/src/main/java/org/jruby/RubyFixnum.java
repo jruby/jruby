@@ -581,7 +581,7 @@ public class RubyFixnum extends RubyInteger {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject pred(ThreadContext context) {
-        return context.runtime.newFixnum(value-1);
+        return op_minus_one(context);
     }
 
     public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
