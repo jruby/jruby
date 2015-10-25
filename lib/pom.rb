@@ -11,10 +11,10 @@ end
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.11' ),
-   ImportedGem.new( 'rake', '10.1.0' ),
-   ImportedGem.new( 'rdoc', '4.1.2' ),
+   ImportedGem.new( 'rake', '${rake.version}' ),
+   ImportedGem.new( 'rdoc', '${rdoc.version}' ),
    ImportedGem.new( 'json', '1.8.0' ),
-   ImportedGem.new( 'jar-dependencies', '0.2.3' )
+   ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' )
   ]
 
 project 'JRuby Lib Setup' do
@@ -105,8 +105,9 @@ project 'JRuby Lib Setup' do
     end
 
     default_gems.each do |g|
-      version = g.version.sub( /-SNAPSHOT/, '' )
-
+      pom_version = ctx.project.properties.get( g.version[2..-2] ) || g.version
+      version = pom_version.sub( /-SNAPSHOT/, '' )
+      
       # install the gem unless already installed
       if Dir[ File.join( default_specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
 

@@ -9,8 +9,9 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'polyglot.dump.pom' => 'pom.xml',
-              'polyglot.dump.readOnly' => true )
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
+              'tesla.version' => '0.1.1' )
 
   phase 'prepare-package' do
     plugin :dependency do

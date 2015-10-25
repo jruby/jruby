@@ -78,7 +78,7 @@ project 'JRuby Stdlib' do
     # both resources are includes for the $jruby.home/lib directory
     resource do
       directory '${gem.home}'
-      includes 'gems/rake-${rake.version}/bin/r*', 'gems/rdoc-${rdoc.version}/bin/r*', 'specifications/default/*.gemspec'
+      includes 'gems/jar-dependencies-${jar-dependencies.version}/bin/r*', 'gems/rake-${rake.version}/bin/r*', 'gems/rdoc-${rdoc.version}/bin/r*', 'specifications/default/*.gemspec'
       target_path '${jruby.complete.gems}'
     end
 
