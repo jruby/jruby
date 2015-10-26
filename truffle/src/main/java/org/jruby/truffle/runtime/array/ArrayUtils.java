@@ -382,4 +382,10 @@ public abstract class ArrayUtils {
         return copy;
     }
 
+    public static Object[] copy(Object[] array) {
+        final Object[] copy = new Object[array.length];
+        System.arraycopy(array, 0, copy, 0, array.length);
+        return copy;
+    }
+
 }

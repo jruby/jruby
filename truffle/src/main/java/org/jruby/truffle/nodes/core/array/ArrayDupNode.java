@@ -11,15 +11,16 @@ package org.jruby.truffle.nodes.core.array;
 
 import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNode;
 import org.jruby.truffle.nodes.objects.AllocateObjectNodeGen;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import java.util.Arrays;
@@ -27,7 +28,7 @@ import java.util.Arrays;
 /**
  * Dup an array, without using any method lookup. This isn't a call - it's an operation on a core class.
  */
-@NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
+@NodeChild(value = "array", type = RubyNode.class)
 @ImportStatic(ArrayGuards.class)
 public abstract class ArrayDupNode extends RubyNode {
 
@@ -47,33 +48,37 @@ public abstract class ArrayDupNode extends RubyNode {
 
     @Specialization(guards = {"isRubyArray(from)", "isIntArray(from)"})
     public DynamicObject dupIntegerFixnum(DynamicObject from) {
+        final int[] store = (int[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((int[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)),
+                store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isLongArray(from)"})
     public DynamicObject dupLongFixnum(DynamicObject from) {
+        final long[] store = (long[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((long[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)),
+                store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isDoubleArray(from)"})
     public DynamicObject dupFloat(DynamicObject from) {
+        final double[] store = (double[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((double[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)),
+                store.clone(),
                 Layouts.ARRAY.getSize(from));
     }
 
     @Specialization(guards = {"isRubyArray(from)", "isObjectArray(from)"})
     public DynamicObject dupObject(DynamicObject from) {
+        final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
         return allocateNode.allocate(
                 getContext().getCoreLibrary().getArrayClass(),
-                Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)),
+                ArrayUtils.copy(store),
                 Layouts.ARRAY.getSize(from));
     }
 
