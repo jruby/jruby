@@ -127,6 +127,31 @@ public class SafepointManager {
         return deferredAction;
     }
 
+    private void interruptOtherThreads() {
+        Thread current = Thread.currentThread();
+        for (Thread thread : runningThreads) {
+            if (thread != current) {
+                thread.interrupt();
+            }
+        }
+    }
+
+    private void pauseAllThreadsAndExecute(Node currentNode, boolean isRubyThread, SafepointAction action, boolean deferred) {
+        this.action = action;
+        this.deferred = deferred;
+
+        /* this is a potential cause for race conditions,
+         * but we need to invalidate first so the interrupted threads
+         * see the invalidation in poll() in their catch(InterruptedException) clause
+         * and wait on the barrier instead of retrying their blocking action. */
+        assumption.invalidate();
+        interruptOtherThreads();
+
+        step(currentNode, true);
+    }
+
+    // Variants for all threads
+
     @TruffleBoundary
     public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
@@ -172,19 +197,7 @@ public class SafepointManager {
         }
     }
 
-    private void pauseAllThreadsAndExecute(Node currentNode, boolean isRubyThread, SafepointAction action, boolean deferred) {
-        this.action = action;
-        this.deferred = deferred;
-
-        /* this is a potential cause for race conditions,
-         * but we need to invalidate first so the interrupted threads
-         * see the invalidation in poll() in their catch(InterruptedException) clause
-         * and wait on the barrier instead of retrying their blocking action. */
-        assumption.invalidate();
-        interruptOtherThreads();
-
-        step(currentNode, true);
-    }
+    // Variants for a single thread
 
     @TruffleBoundary
     public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
@@ -205,7 +218,7 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
+    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
             @Override
             public void run(DynamicObject rubyThread, Node currentNode) {
@@ -214,15 +227,6 @@ public class SafepointManager {
                 }
             }
         });
-    }
-
-    private void interruptOtherThreads() {
-        Thread current = Thread.currentThread();
-        for (Thread thread : runningThreads) {
-            if (thread != current) {
-                thread.interrupt();
-            }
-        }
     }
 
 }
