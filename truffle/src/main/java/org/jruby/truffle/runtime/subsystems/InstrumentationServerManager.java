@@ -111,7 +111,7 @@ public class InstrumentationServerManager {
             public void handle(HttpExchange httpExchange) {
                 try {
                     Thread mainThread = Layouts.FIBER.getThread((Layouts.THREAD.getFiberManager(context.getThreadManager().getRootThread()).getCurrentFiber()));
-                    context.getSafepointManager().pauseMainThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
+                    context.getSafepointManager().pauseThreadAndExecuteLaterFromNonRubyThread(mainThread, new SafepointAction() {
                         @Override
                         public void run(DynamicObject thread, final Node currentNode) {
                             new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()

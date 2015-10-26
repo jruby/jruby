@@ -186,8 +186,63 @@ public abstract class HashNodes {
             }
         }
 
+        @Specialization(guards = {
+                "isPackedHash(hash)",
+                "!isCompareByIdentity(hash)",
+                "cachedIndex >= 0",
+                "cachedIndex < getSize(hash)",
+                "hash(frame, key) == getHashedAt(hash, cachedIndex)",
+                "eql(frame, key, getKeyAt(hash, cachedIndex))"
+        }, limit = "1")
+        public Object getConstantIndexPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
+                @Cached("index(frame, hash, key)") int cachedIndex) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            return PackedArrayStrategy.getValue(store, cachedIndex);
+        }
+
+        protected int hash(VirtualFrame frame, Object key) {
+            return hashNode.hash(frame, key);
+        }
+
+        protected int getHashedAt(DynamicObject hash, int index) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            return PackedArrayStrategy.getHashed(store, index);
+        }
+
+        protected Object getKeyAt(DynamicObject hash, int index) {
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            return PackedArrayStrategy.getKey(store, index);
+        }
+
+        protected int index(VirtualFrame frame, DynamicObject hash, Object key) {
+            if (!HashGuards.isPackedHash(hash)) {
+                return -1;
+            }
+
+            final int hashed = hashNode.hash(frame, key);
+
+            final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
+            final int size = Layouts.HASH.getSize(hash);
+
+            for (int n = 0; n < size; n++) {
+                if (hashed == PackedArrayStrategy.getHashed(store, n) && eql(frame, key, PackedArrayStrategy.getKey(store, n))) {
+                    return n;
+                }
+            }
+
+            return -1;
+        }
+
+        protected int getSize(DynamicObject hash) {
+            return Layouts.HASH.getSize(hash);
+        }
+
+        protected boolean eql(VirtualFrame frame, Object key1, Object key2) {
+            return eqlNode.callBoolean(frame, key1, "eql?", null, key2);
+        }
+
         @ExplodeLoop
-        @Specialization(guards = "isPackedHash(hash)")
+        @Specialization(guards = "isPackedHash(hash)", contains = "getConstantIndexPackedArray")
         public Object getPackedArray(VirtualFrame frame, DynamicObject hash, Object key,
                 @Cached("createBinaryProfile()") ConditionProfile byIdentityProfile,
                 @Cached("create()") BranchProfile notInHashProfile,

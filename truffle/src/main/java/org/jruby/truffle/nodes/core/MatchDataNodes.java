@@ -174,7 +174,7 @@ public abstract class MatchDataNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, NotProvided length) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
@@ -188,7 +188,7 @@ public abstract class MatchDataNodes {
         @Specialization
         public Object getIndex(DynamicObject matchData, int index, int length) {
             // TODO BJF 15-May-2015 Need to handle negative indexes and lengths and out of bounds
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, index);
             final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), store, length);
@@ -242,7 +242,7 @@ public abstract class MatchDataNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization(guards = "isIntegerFixnumRange(range)")
         public Object getIndex(DynamicObject matchData, DynamicObject range, NotProvided len) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
             final int normalizedIndex = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range));
             final int end = ArrayOperations.normalizeIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range));
             final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(values.length, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
@@ -348,17 +348,16 @@ public abstract class MatchDataNodes {
         }
     }
 
-    @CoreMethod(names = {"length", "size"})
+    @CoreMethod(names = { "length", "size" })
     public abstract static class LengthNode extends CoreMethodArrayArgumentsNode {
 
         public LengthNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int length(DynamicObject matchData) {
-            return Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length).length;
+            return Layouts.MATCH_DATA.getValues(matchData).length;
         }
 
     }
@@ -406,10 +405,9 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public DynamicObject toA(DynamicObject matchData) {
-            Object[] objects = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            Object[] objects = ArrayUtils.copy(Layouts.MATCH_DATA.getValues(matchData));
             return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
         }
     }

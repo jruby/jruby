@@ -72,38 +72,34 @@ public class SafepointManager {
         poll(currentNode, true);
     }
 
-    @TruffleBoundary
     private void poll(Node currentNode, boolean fromBlockingCall) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            final DynamicObject thread = context.getThreadManager().getCurrentThread();
-            final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
-                    (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
-            if (!interruptible) {
-                return; // interrupt me later
-            }
-
-            SafepointAction deferredAction = assumptionInvalidated(currentNode, false);
-
-            // We're now running again normally and can run deferred actions
-            if (deferredAction != null) {
-                deferredAction.run(thread, currentNode);
-            }
+            assumptionInvalidated(currentNode, fromBlockingCall);
         }
     }
 
-    private SafepointAction assumptionInvalidated(Node currentNode, boolean isDrivingThread) {
-        // Read these while in the safepoint.
-        SafepointAction deferredAction = deferred ? action : null;
+    @TruffleBoundary
+    private void assumptionInvalidated(Node currentNode, boolean fromBlockingCall) {
+        final DynamicObject thread = context.getThreadManager().getCurrentThread();
+        final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
+                (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
 
-        step(currentNode, isDrivingThread);
+        if (!interruptible) {
+            return; // interrupt me later
+        }
 
-        return deferredAction;
+        SafepointAction deferredAction = step(currentNode, false);
+
+        // We're now running again normally and can run deferred actions
+        if (deferredAction != null) {
+            deferredAction.run(thread, currentNode);
+        }
     }
 
     @TruffleBoundary
-    private void step(Node currentNode, boolean isDrivingThread) {
+    private SafepointAction step(Node currentNode, boolean isDrivingThread) {
         final DynamicObject thread = context.getThreadManager().getCurrentThread();
 
         // wait other threads to reach their safepoint
@@ -116,6 +112,9 @@ public class SafepointManager {
         // wait the assumption to be renewed
         phaser.arriveAndAwaitAdvance();
 
+        // Read these while in the safepoint.
+        SafepointAction deferredAction = deferred ? action : null;
+
         try {
             if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
                 action.run(thread, currentNode);
@@ -124,7 +123,34 @@ public class SafepointManager {
             // wait other threads to finish their action
             phaser.arriveAndAwaitAdvance();
         }
+
+        return deferredAction;
     }
+
+    private void interruptOtherThreads() {
+        Thread current = Thread.currentThread();
+        for (Thread thread : runningThreads) {
+            if (thread != current) {
+                thread.interrupt();
+            }
+        }
+    }
+
+    private void pauseAllThreadsAndExecute(Node currentNode, boolean isRubyThread, SafepointAction action, boolean deferred) {
+        this.action = action;
+        this.deferred = deferred;
+
+        /* this is a potential cause for race conditions,
+         * but we need to invalidate first so the interrupted threads
+         * see the invalidation in poll() in their catch(InterruptedException) clause
+         * and wait on the barrier instead of retrying their blocking action. */
+        assumption.invalidate();
+        interruptOtherThreads();
+
+        step(currentNode, true);
+    }
+
+    // Variants for all threads
 
     @TruffleBoundary
     public void pauseAllThreadsAndExecute(Node currentNode, boolean deferred, SafepointAction action) {
@@ -149,6 +175,7 @@ public class SafepointManager {
         }
     }
 
+    @TruffleBoundary
     public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
@@ -170,19 +197,7 @@ public class SafepointManager {
         }
     }
 
-    private void pauseAllThreadsAndExecute(Node currentNode, boolean isRubyThread, SafepointAction action, boolean deferred) {
-        this.action = action;
-        this.deferred = deferred;
-
-        /* this is a potential cause for race conditions,
-         * but we need to invalidate first so the interrupted threads
-         * see the invalidation in poll() in their catch(InterruptedException) clause
-         * and wait on the barrier instead of retrying their blocking action. */
-        assumption.invalidate();
-        interruptOtherThreads();
-
-        assumptionInvalidated(currentNode, true);
-    }
+    // Variants for a single thread
 
     @TruffleBoundary
     public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
@@ -203,7 +218,7 @@ public class SafepointManager {
     }
 
     @TruffleBoundary
-    public void pauseMainThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
+    public void pauseThreadAndExecuteLaterFromNonRubyThread(final Thread thread, final SafepointAction action) {
         pauseAllThreadsAndExecuteFromNonRubyThread(true, new SafepointAction() {
             @Override
             public void run(DynamicObject rubyThread, Node currentNode) {
@@ -212,16 +227,6 @@ public class SafepointManager {
                 }
             }
         });
-    }
-
-    @TruffleBoundary
-    private void interruptOtherThreads() {
-        Thread current = Thread.currentThread();
-        for (Thread thread : runningThreads) {
-            if (thread != current) {
-                thread.interrupt();
-            }
-        }
     }
 
 }
