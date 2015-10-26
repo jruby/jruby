@@ -376,7 +376,8 @@ public abstract class ArrayUtils {
 
     public static Object[] copyOf(Object[] array, int newLength) {
         // Arrays.copyOf(Object, int) uses reflection
-        final Object[] copy = new Object[Math.max(array.length, newLength)];
+        assert newLength >= array.length; // This version also assumes newLength >= oldLength
+        final Object[] copy = new Object[newLength];
         System.arraycopy(array, 0, copy, 0, array.length);
         return copy;
     }
