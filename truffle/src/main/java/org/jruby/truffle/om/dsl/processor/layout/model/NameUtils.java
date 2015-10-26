@@ -43,14 +43,22 @@ public abstract class NameUtils {
     }
 
     public static String asGetter(String name) {
-        return asGetterSetter(name, "get");
+        return withPrefix("get", name);
     }
 
     public static String asSetter(String name) {
-        return asGetterSetter(name, "set");
+        return withPrefix("set", name);
     }
 
-    private static String asGetterSetter(String name, String getSet) {
+    public static String asCompareAndSet(String name) {
+        return withPrefix("compareAndSet", name);
+    }
+
+    public static Object asGetAndSet(String name) {
+        return withPrefix("getAndSet", name);
+    }
+
+    private static String withPrefix(String getSet, String name) {
         return getSet + name.substring(0, 1).toUpperCase(Locale.ENGLISH) + name.substring(1);
     }
 
