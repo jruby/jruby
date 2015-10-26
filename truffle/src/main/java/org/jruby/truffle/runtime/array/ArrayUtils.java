@@ -213,7 +213,7 @@ public abstract class ArrayUtils {
             return boxExtra((double[]) array, extra);
         } else if (array instanceof Object[]) {
             final Object[] objectArray = (Object[]) array;
-            return ArrayUtils.copyOf(objectArray, objectArray.length + extra);
+            return ArrayUtils.grow(objectArray, objectArray.length + extra);
         } else {
             throw new UnsupportedOperationException();
         }
@@ -374,9 +374,8 @@ public abstract class ArrayUtils {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }
 
-    public static Object[] copyOf(Object[] array, int newLength) {
-        // Arrays.copyOf(Object, int) uses reflection
-        assert newLength >= array.length; // This version also assumes newLength >= oldLength
+    public static Object[] grow(Object[] array, int newLength) {
+        assert newLength >= array.length;
         final Object[] copy = new Object[newLength];
         System.arraycopy(array, 0, copy, 0, array.length);
         return copy;

@@ -3104,7 +3104,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = ArrayUtils.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
             }
             ;
             for (int n = 0; n < values.length; n++) {
@@ -3185,7 +3185,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                Object store1 = store = ArrayUtils.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Object store1 = store = ArrayUtils.grow(store, ArrayUtils.capacity(store.length, newSize));
                 Layouts.ARRAY.setStore(array, store1);
                 Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             }

@@ -153,7 +153,7 @@ public abstract class AppendManyNode extends RubyNode {
         final Object[] newStore;
 
         if (extendProfile.profile(newSize > oldStore.length)) {
-            newStore = ArrayUtils.copyOf(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
+            newStore = ArrayUtils.grow(oldStore, ArrayUtils.capacity(oldStore.length, newSize));
         } else {
             newStore = oldStore;
         }
