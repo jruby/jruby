@@ -100,7 +100,7 @@ public abstract class ArrayBuilderNode extends Node {
             Object[] storeArray = (Object[]) store;
 
             if (index >= storeArray.length) {
-                storeArray = Arrays.copyOf(storeArray, ArrayUtils.capacity(storeArray.length, index + 1));
+                storeArray = ArrayUtils.copyOf(storeArray, ArrayUtils.capacity(storeArray.length, index + 1));
             }
 
             storeArray[index] = value;

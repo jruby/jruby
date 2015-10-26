@@ -213,7 +213,7 @@ public abstract class ArrayUtils {
             return boxExtra((double[]) array, extra);
         } else if (array instanceof Object[]) {
             final Object[] objectArray = (Object[]) array;
-            return Arrays.copyOf(objectArray, objectArray.length + extra);
+            return ArrayUtils.copyOf(objectArray, objectArray.length + extra);
         } else {
             throw new UnsupportedOperationException();
         }

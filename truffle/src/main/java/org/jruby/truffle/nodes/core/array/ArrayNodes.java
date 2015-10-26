@@ -3104,7 +3104,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                store = ArrayUtils.copyOf(store, ArrayUtils.capacity(store.length, newSize));
             }
             ;
             for (int n = 0; n < values.length; n++) {
@@ -3185,7 +3185,7 @@ public abstract class ArrayNodes {
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                Object store1 = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                Object store1 = store = ArrayUtils.copyOf(store, ArrayUtils.capacity(store.length, newSize));
                 Layouts.ARRAY.setStore(array, store1);
                 Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             }
@@ -4238,7 +4238,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isObjectArray(array)", "isSmall(array)"})
         public DynamicObject sortVeryShortObject(VirtualFrame frame, DynamicObject array, NotProvided block) {
             final Object[] oldStore = (Object[]) Layouts.ARRAY.getStore(array);
-            final Object[] store = Arrays.copyOf(oldStore, oldStore.length);
+            final Object[] store = ArrayUtils.copy(oldStore);
 
             // Insertion sort
 

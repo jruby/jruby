@@ -91,7 +91,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
         final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
         if (allocateProfile.profile(store.length < requiredCapacity)) {
-            Layouts.ARRAY.setStore(array, Arrays.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
+            Layouts.ARRAY.setStore(array, ArrayUtils.copyOf(store, ArrayUtils.capacity(store.length, requiredCapacity)));
             Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array));
             return true;
         } else {
