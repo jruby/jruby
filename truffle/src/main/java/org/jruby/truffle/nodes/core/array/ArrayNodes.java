@@ -1710,7 +1710,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final int[] store = (int[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1720,7 +1721,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((long[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final long[] store = (long[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1730,7 +1732,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((double[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final double[] store = (double[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, store.clone());
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
@@ -1740,7 +1743,8 @@ public abstract class ArrayNodes {
             if (self == from) {
                 return self;
             }
-            Layouts.ARRAY.setStore(self, Arrays.copyOf((Object[]) Layouts.ARRAY.getStore(from), Layouts.ARRAY.getSize(from)));
+            final Object[] store = (Object[]) Layouts.ARRAY.getStore(from);
+            Layouts.ARRAY.setStore(self, ArrayUtils.copy(store));
             Layouts.ARRAY.setSize(self, Layouts.ARRAY.getSize(from));
             return self;
         }
