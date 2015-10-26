@@ -41,6 +41,7 @@ require_relative 'core/rubinius/alpha'
 
 # Load bootstrap (ordered according to Rubinius' load_order.txt)
 
+require_relative 'core/rubinius/bootstrap/atomic'
 require_relative 'core/rubinius/bootstrap/basic_object'
 #require_relative 'core/rubinius/bootstrap/logger'
 #require_relative 'core/rubinius/bootstrap/alias'
