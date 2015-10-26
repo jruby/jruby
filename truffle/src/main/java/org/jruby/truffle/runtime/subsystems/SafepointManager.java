@@ -150,6 +150,7 @@ public class SafepointManager {
         }
     }
 
+    @TruffleBoundary
     public void pauseAllThreadsAndExecuteFromNonRubyThread(boolean deferred, SafepointAction action) {
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
@@ -215,7 +216,6 @@ public class SafepointManager {
         });
     }
 
-    @TruffleBoundary
     private void interruptOtherThreads() {
         Thread current = Thread.currentThread();
         for (Thread thread : runningThreads) {
