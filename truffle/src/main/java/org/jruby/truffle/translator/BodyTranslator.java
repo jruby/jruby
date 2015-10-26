@@ -595,7 +595,7 @@ public class BodyTranslator extends Translator {
         }
 
         public RubyNode[] getArguments() {
-            return Arrays.copyOf(arguments, arguments.length);
+            return arguments;
         }
 
         public boolean isSplatted() {
