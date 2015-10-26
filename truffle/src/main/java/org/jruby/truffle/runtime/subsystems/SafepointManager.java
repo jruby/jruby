@@ -72,38 +72,34 @@ public class SafepointManager {
         poll(currentNode, true);
     }
 
-    @TruffleBoundary
     private void poll(Node currentNode, boolean fromBlockingCall) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            final DynamicObject thread = context.getThreadManager().getCurrentThread();
-            final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
-                    (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
-            if (!interruptible) {
-                return; // interrupt me later
-            }
-
-            SafepointAction deferredAction = assumptionInvalidated(currentNode, false);
-
-            // We're now running again normally and can run deferred actions
-            if (deferredAction != null) {
-                deferredAction.run(thread, currentNode);
-            }
+            assumptionInvalidated(currentNode, fromBlockingCall);
         }
     }
 
-    private SafepointAction assumptionInvalidated(Node currentNode, boolean isDrivingThread) {
-        // Read these while in the safepoint.
-        SafepointAction deferredAction = deferred ? action : null;
+    @TruffleBoundary
+    private void assumptionInvalidated(Node currentNode, boolean fromBlockingCall) {
+        final DynamicObject thread = context.getThreadManager().getCurrentThread();
+        final boolean interruptible = (Layouts.THREAD.getInterruptMode(thread) == InterruptMode.IMMEDIATE) ||
+                (fromBlockingCall && Layouts.THREAD.getInterruptMode(thread) == InterruptMode.ON_BLOCKING);
 
-        step(currentNode, isDrivingThread);
+        if (!interruptible) {
+            return; // interrupt me later
+        }
 
-        return deferredAction;
+        SafepointAction deferredAction = step(currentNode, false);
+
+        // We're now running again normally and can run deferred actions
+        if (deferredAction != null) {
+            deferredAction.run(thread, currentNode);
+        }
     }
 
     @TruffleBoundary
-    private void step(Node currentNode, boolean isDrivingThread) {
+    private SafepointAction step(Node currentNode, boolean isDrivingThread) {
         final DynamicObject thread = context.getThreadManager().getCurrentThread();
 
         // wait other threads to reach their safepoint
@@ -116,6 +112,9 @@ public class SafepointManager {
         // wait the assumption to be renewed
         phaser.arriveAndAwaitAdvance();
 
+        // Read these while in the safepoint.
+        SafepointAction deferredAction = deferred ? action : null;
+
         try {
             if (!deferred && thread != null && Layouts.THREAD.getStatus(thread) != Status.ABORTING) {
                 action.run(thread, currentNode);
@@ -124,6 +123,8 @@ public class SafepointManager {
             // wait other threads to finish their action
             phaser.arriveAndAwaitAdvance();
         }
+
+        return deferredAction;
     }
 
     @TruffleBoundary
@@ -181,7 +182,7 @@ public class SafepointManager {
         assumption.invalidate();
         interruptOtherThreads();
 
-        assumptionInvalidated(currentNode, true);
+        step(currentNode, true);
     }
 
     @TruffleBoundary
