@@ -53,7 +53,7 @@ public class ReadMatchReferenceNode extends RubyNode {
         final DynamicObject matchData = (DynamicObject) match;
 
         if (index > 0) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
 
             if (index >= values.length) {
                 return nil();
@@ -67,7 +67,7 @@ public class ReadMatchReferenceNode extends RubyNode {
         } else if (index == GLOBAL) {
             return Layouts.MATCH_DATA.getGlobal(matchData);
         } else if (index == HIGHEST) {
-            final Object[] values = Arrays.copyOf(Layouts.MATCH_DATA.getValues(matchData), Layouts.MATCH_DATA.getValues(matchData).length);
+            final Object[] values = Layouts.MATCH_DATA.getValues(matchData);
 
             for (int n = values.length - 1; n >= 0; n--)
                 if (values[n] != nil()) {
