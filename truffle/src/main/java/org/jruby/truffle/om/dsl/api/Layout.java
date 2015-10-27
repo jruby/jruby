@@ -92,6 +92,17 @@ import java.lang.annotation.Target;
  * DynamicObject createWidget({@literal@}Volatile Object foo);
  * </pre>
  *
+ * <p><strong>Compare-and-set and get-and-set operations</strong></p>
+ *
+ * If a property is marked with {@link Volatile}, methods providing
+ * compare-and-set and get-and-set can be added by declaring the method
+ * headers.
+ *
+ * <pre>
+ * boolean compareAndSetFoo(DynamicObject widget, Object expected_foo, Object foo);
+ * Object getAndSet(DynamicObject widget, Object foo);
+ * </pre>
+ *
  * <p><strong>Semi-Final Properties</strong></p>
  *
  * Properties without setters are final, and can be optimized more effectively

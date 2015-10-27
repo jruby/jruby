@@ -23,13 +23,16 @@ public class PropertyModel {
     private final TypeMirror type;
     private final boolean nullable;
     private final boolean volatileSemantics;
+    private final boolean hasCompareAndSet;
+    private final boolean hasGetAndSet;
     private final boolean hasIdentifier;
     private final boolean isShapeProperty;
 
     public PropertyModel(String name, boolean hasObjectTypeGetter, boolean hasFactoryGetter, boolean hasFactorySetter,
                          boolean hasGetter, boolean hasSetter, boolean hasUnsafeSetter,
-                         TypeMirror type, boolean nullable, boolean volatileSemantics, boolean hasIdentifier,
-                         boolean isShapeProperty) {
+                         TypeMirror type, boolean nullable,
+                         boolean volatileSemantics, boolean hasCompareAndSet, boolean hasGetAndSet,
+                         boolean hasIdentifier, boolean isShapeProperty) {
         assert name != null;
         assert type != null;
 
@@ -50,6 +53,8 @@ public class PropertyModel {
         this.type = type;
         this.nullable = nullable;
         this.volatileSemantics = volatileSemantics;
+        this.hasCompareAndSet = hasCompareAndSet;
+        this.hasGetAndSet = hasGetAndSet;
         this.hasIdentifier = hasIdentifier;
         this.isShapeProperty = isShapeProperty;
     }
@@ -78,6 +83,10 @@ public class PropertyModel {
         return hasSetter;
     }
 
+    public boolean isFinal() {
+        return !(hasSetter || hasGetAndSet || hasCompareAndSet);
+    }
+
     public boolean hasUnsafeSetter() {
         return hasUnsafeSetter;
     }
@@ -92,6 +101,14 @@ public class PropertyModel {
 
     public boolean isVolatile() {
         return volatileSemantics;
+    }
+
+    public boolean hasCompareAndSet() {
+        return hasCompareAndSet;
+    }
+
+    public boolean hasGetAndSet() {
+        return hasGetAndSet;
     }
 
     public boolean hasIdentifier() {
