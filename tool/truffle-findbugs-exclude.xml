@@ -177,6 +177,10 @@
     <Class name="org.jruby.truffle.runtime.methods.Arity" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.translator.BodyTranslator$ArgumentsAndBlockTranslation" />
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
 
   <!-- Hacks that should go away at some point -->
 

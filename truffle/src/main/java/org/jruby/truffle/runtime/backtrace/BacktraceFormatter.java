@@ -81,6 +81,9 @@ public class BacktraceFormatter {
 
     public List<String> formatBacktrace(DynamicObject exception, Backtrace backtrace) {
         try {
+            if (backtrace == null) {
+                backtrace = RubyCallStack.getBacktrace(null);
+            }
             final List<Activation> activations = backtrace.getActivations();
             final ArrayList<String> lines = new ArrayList<>();
 
