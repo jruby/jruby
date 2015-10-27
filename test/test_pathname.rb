@@ -22,6 +22,13 @@ class TestPathname < Test::Unit::TestCase
     end
   end
 
+  # GH-3392
+  def test_dirname_ending_in_!
+    x = "joe"
+    y = "joe/pete!/bob"
+    assert Pathname.new(y).relative_path_from(Pathname.new(x)).to_s == 'pete!/bob'
+  end
+
   def test_root_and_absolute
     [:root?, :absolute?].each do |method|
       assert Pathname.new('uri:classloader:/').send method

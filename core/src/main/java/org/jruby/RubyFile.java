@@ -525,7 +525,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         String name = origString.toString();
 
         // uri-like paths without parent directory
-        if (name.endsWith("!/") || ROOT_PATTERN.matcher(name).matches()) {
+        if (name.endsWith(".jar!/") || ROOT_PATTERN.matcher(name).matches()) {
             return args[0];
         }
 
@@ -687,7 +687,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // jar like paths
-        if (name.contains("!/")) {
+        if (name.contains(".jar!/")) {
             int start = name.indexOf("!/") + 1;
             String path = dirname(context, name.substring(start));
             if (path.equals(".") || path.equals("/")) path = "";
