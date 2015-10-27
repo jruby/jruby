@@ -47,8 +47,6 @@ project 'JRuby Dist' do
     end
 
     execute :pack200 do |ctx|
-      require 'open3'
-
       jruby_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
                                    'META-INF/jruby.home/**/*.jar' ) ]
       gem_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
@@ -60,21 +58,7 @@ project 'JRuby Dist' do
         file = f.sub /.jar$/, '' 
         unless File.exists?( file + '.pack.gz' )
           puts "pack200 #{f.sub(/.*jruby.home./, '').sub(/.*rubygems-provided./, '')}"
-
-          Open3.popen3('pack200', "#{file}.pack.gz", "#{file}.jar") do |stdin, stdout, stderr, wait_thread|
-            stdio_threads = []
-
-            stdio_threads <<  Thread.new(stdout) do |stdout|
-              stdout.each { |line| $stdout.puts line }
-            end
-
-            stdio_threads <<  Thread.new(stderr) do |stderr|
-              stderr.each { |line| $stderr.puts line }
-            end
-
-            stdio_threads.each(&:join)
-            wait_thread.value
-          end
+          system('pack200', "#{file}.pack.gz", "#{file}.jar")
         end
       end
     end
