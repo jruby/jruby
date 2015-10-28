@@ -1746,7 +1746,7 @@ public final class StringSupport {
         boolean cflag = false;
         int[] l = {0};
 
-        if (self.getByteList().getRealSize() > 1 &&
+        if (srcStr.getByteList().getRealSize() > 1 &&
                 EncodingUtils.encAscget(trSrc.buf, trSrc.p, trSrc.pend, l, enc) == '^' &&
                 trSrc.p + 1 < trSrc.pend){
             cflag = true;
