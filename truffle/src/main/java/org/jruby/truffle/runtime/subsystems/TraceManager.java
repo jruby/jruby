@@ -11,6 +11,8 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.*;
@@ -243,7 +245,7 @@ public class TraceManager {
             final Object classname = context.getCoreLibrary().getLogicalClass(self);
             final Object id = context.getSymbol(RubyArguments.getMethod(frame.getArguments()).getName());
 
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame);
+            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize());
 
             isInTraceFunc = true;
             try {
