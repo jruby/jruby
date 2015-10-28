@@ -658,7 +658,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, DynamicObject self, NotProvided code, NotProvided file, NotProvided line, DynamicObject block) {
-            return yield.dispatchWithModifiedSelf(frame, block, self);
+            return yield.dispatchWithModifiedSelf(frame, block, self, self);
         }
 
         @Specialization
