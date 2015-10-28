@@ -34,6 +34,11 @@ module Kernel
     #Rubinius.check_frozen
 
     modules.reverse_each do |mod|
+      # Truffle: added check
+      if !mod.kind_of?(Module) or mod.kind_of?(Class)
+        raise TypeError, "wrong argument type #{mod.class} (expected Module)"
+      end
+
       Rubinius.privately do
         mod.extend_object self
       end
