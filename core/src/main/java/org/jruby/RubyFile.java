@@ -513,7 +513,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getRuntime().newString(val.toString());
     }
 
-    private static Pattern ROOT_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?$");
+    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:]+:([^:]+:)?)?";
+    private static Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
     /* File class methods */
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -674,7 +675,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(dirname(context, jfilename)).infectBy(filename);
     }
 
-    static Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
+    static Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
     public static String dirname(ThreadContext context, String jfilename) {
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
@@ -1629,6 +1630,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
+    private static Pattern PROTOCOL_PREFIX_PATTERN = Pattern.compile(URI_PREFIX_STRING);
     private static IRubyObject expandPathInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
         Ruby runtime = context.runtime;
 
@@ -1640,8 +1642,27 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return runtime.newString("//./" + relativePath.substring(0, 3));
         }
 
-        if (relativePath.startsWith("uri:")) {
-            return runtime.newString(relativePath);
+        // treat uri-like and jar-like path as absolute
+        String preFix = "";
+        if (relativePath.startsWith("file:")) {
+            preFix = "file:";
+            relativePath = relativePath.substring(5);
+        }
+        String postFix = "";
+        Matcher protocol = PROTOCOL_PREFIX_PATTERN.matcher(relativePath);
+        if (relativePath.contains(".jar!/")) {
+            if (protocol.find()) {
+                preFix = protocol.group();
+                relativePath = relativePath.substring(protocol.end());
+            }
+            int index = relativePath.indexOf("!/");
+            postFix = relativePath.substring(index);
+            relativePath = relativePath.substring(0, index);
+        }
+        else if (protocol.find()) {
+            preFix = protocol.group();
+            relativePath = relativePath.substring(protocol.end());
+            return runtime.newString(preFix + canonicalizePath(relativePath));
         }
 
         String[] uriParts = splitURI(relativePath);
@@ -1655,7 +1676,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (uriParts != null) {
             //If the path was an absolute classpath path, return it as-is.
             if (uriParts[0].equals("classpath:")) {
-                return runtime.newString(relativePath);
+                return runtime.newString(preFix + relativePath + postFix);
             }
 
             relativePath = uriParts[1];
@@ -1748,7 +1769,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         JRubyFile path;
-
         if (relativePath.length() == 0) {
             path = JRubyFile.create(relativePath, cwd);
         } else {
@@ -1757,6 +1777,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         String realPath = padSlashes + canonicalize(path.getAbsolutePath());
+        if (realPath.startsWith("file:") && preFix.length() > 0) realPath = realPath.substring(5);
 
         if (canonicalize) {
             try {
@@ -1765,8 +1786,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // Earlier canonicalization will have to do.
             }
         }
+        if (postFix.contains("..")) {
+            postFix = "!" + canonicalizePath(postFix.substring(1));
+        }
+        return runtime.newString(preFix + realPath + postFix);
+    }
 
-        return runtime.newString(realPath);
+    private static String canonicalizePath(String path) {
+        try {
+            return new File(path).getCanonicalPath();
+        } catch (IOException ignore) {
+            return path;
+        }
     }
 
     public static String[] splitURI(String path) {
