@@ -8,6 +8,7 @@ class AliasObject
   def prep; @foo = 3; @bar = 4; end
   def value; 5; end
   def false_value; 6; end
+  def self.klass_method; 7; end
 end
 
 describe "The alias keyword" do
@@ -66,6 +67,24 @@ describe "The alias keyword" do
 
     @obj.__value.should == 5
     lambda { AliasObject.new.__value }.should raise_error(NoMethodError)
+  end
+  
+  it "operates on the class/module metaclass when used in instance_eval" do
+    AliasObject.instance_eval do
+      alias __klass_method klass_method
+    end
+
+    AliasObject.__klass_method.should == 7
+    lambda { Object.__klass_method }.should raise_error(NoMethodError)
+  end
+  
+  it "operates on the class/module metaclass when used in instance_exec" do
+    AliasObject.instance_exec do
+      alias __klass_method2 klass_method
+    end
+
+    AliasObject.__klass_method2.should == 7
+    lambda { Object.__klass_method2 }.should raise_error(NoMethodError)
   end
 
   it "operates on methods defined via attr, attr_reader, and attr_accessor" do

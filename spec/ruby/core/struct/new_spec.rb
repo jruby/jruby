@@ -71,26 +71,50 @@ describe "Struct.new" do
     klass.instance_variables.should include(:@something_else)
   end
 
-  it "creates a constant in subclass' namespace" do
-    struct = StructClasses::Apple.new('Computer', :size)
-    struct.should == StructClasses::Apple::Computer
+  context "with a block" do
+    it "allows class to be modified via the block" do
+      klass = Struct.new(:version) do
+        def platform
+          :ruby
+        end
+      end
+      instance = klass.new('2.2')
+
+      instance.version.should == '2.2'
+      instance.platform.should == :ruby
+    end
+
+    it "passes same struct class to the block" do
+      given = nil
+      klass = Struct.new(:attr) do |block_parameter|
+        given = block_parameter
+      end
+      klass.should equal(given)
+    end
   end
 
-  it "creates an instance" do
-    StructClasses::Ruby.new.kind_of?(StructClasses::Ruby).should == true
-  end
+  context "on subclasses" do
+    it "creates a constant in subclass' namespace" do
+      struct = StructClasses::Apple.new('Computer', :size)
+      struct.should == StructClasses::Apple::Computer
+    end
 
-  it "creates reader methods" do
-    StructClasses::Ruby.new.should have_method(:version)
-    StructClasses::Ruby.new.should have_method(:platform)
-  end
+    it "creates an instance" do
+      StructClasses::Ruby.new.kind_of?(StructClasses::Ruby).should == true
+    end
 
-  it "creates writer methods" do
-    StructClasses::Ruby.new.should have_method(:version=)
-    StructClasses::Ruby.new.should have_method(:platform=)
-  end
+    it "creates reader methods" do
+      StructClasses::Ruby.new.should have_method(:version)
+      StructClasses::Ruby.new.should have_method(:platform)
+    end
 
-  it "fails with too many arguments" do
-    lambda { StructClasses::Ruby.new('2.0', 'i686', true) }.should raise_error(ArgumentError)
+    it "creates writer methods" do
+      StructClasses::Ruby.new.should have_method(:version=)
+      StructClasses::Ruby.new.should have_method(:platform=)
+    end
+
+    it "fails with too many arguments" do
+      lambda { StructClasses::Ruby.new('2.0', 'i686', true) }.should raise_error(ArgumentError)
+    end
   end
 end

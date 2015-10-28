@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 describe "Module#prepend" do
   ruby_version_is "2.1" do
     it "is a public method" do
-      Module.should have_public_instance_method(:prepend, true)
+      Module.should have_public_instance_method(:prepend, false)
     end
   end
 
@@ -278,7 +278,7 @@ describe "Module#prepend" do
     end
 
     module_with_singleton_class_prepend = Module.new do
-      singleton_class.prepend mod
+      singleton_class.send(:prepend, mod)
     end
 
     klass = Class.new(ModuleSpecs::RecordIncludedModules) do
@@ -298,7 +298,7 @@ describe "Module#prepend" do
     end
 
     prepended_module = Module.new
-    base_class.singleton_class.prepend(prepended_module)
+    base_class.singleton_class.send(:prepend, prepended_module)
 
     child_class = Class.new(base_class)
     ScratchPad.recorded.should == child_class

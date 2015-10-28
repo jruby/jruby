@@ -390,6 +390,12 @@ print m.map { |x| x.to_s }.join("")
       [3, 4]
     end
   end
+
+  class NotMatch
+    def !~(obj)
+      :foo
+    end
+  end
 end
 
 class EvalSpecs

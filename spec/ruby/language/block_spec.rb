@@ -77,11 +77,9 @@ describe "A block yielded a single" do
       result.should == [{"a" => 10}, {b: 2}]
     end
 
-    ruby_bug "#10685", "2.2.0.0" do
-      it "does not treat hashes with string keys as keyword arguments" do
-        result = m(["a" => 10]) { |a = nil, **b| [a, b] }
-        result.should == [{"a" => 10}, {}]
-      end
+    it "does not treat hashes with string keys as keyword arguments" do
+      result = m(["a" => 10]) { |a = nil, **b| [a, b] }
+      result.should == [{"a" => 10}, {}]
     end
 
     ruby_version_is "2.1" do

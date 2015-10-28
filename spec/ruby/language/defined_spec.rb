@@ -487,6 +487,10 @@ describe "The defined? keyword for variables" do
     DefinedSpecs::Basic.new.local_variable_defined.should == "local-variable"
   end
 
+  it "returns 'local-variable' when called with the name of a local variable assigned to nil" do
+    DefinedSpecs::Basic.new.local_variable_defined_nil.should == "local-variable"
+  end
+
   it "returns nil for an instance variable that has not been read" do
     DefinedSpecs::Basic.new.instance_variable_undefined.should be_nil
   end
@@ -497,6 +501,10 @@ describe "The defined? keyword for variables" do
 
   it "returns 'instance-variable' for an instance variable that has been assigned" do
     DefinedSpecs::Basic.new.instance_variable_defined.should == "instance-variable"
+  end
+
+  it "returns 'instance-variable' for an instance variable that has been assigned to nil" do
+    DefinedSpecs::Basic.new.instance_variable_defined_nil.should == "instance-variable"
   end
 
   it "returns nil for a global variable that has not been read" do

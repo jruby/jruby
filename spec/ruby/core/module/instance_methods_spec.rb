@@ -6,6 +6,15 @@ describe "Module#instance_methods" do
     methods = ModuleSpecs::Parent.instance_methods(false)
     methods.should_not include(:undefed_method)
   end
+  
+  it "only includes module methods on an included module" do
+    methods = ModuleSpecs::Basic.instance_methods(false)
+    methods.should include(:public_module)
+    # Child is an including class
+    methods = ModuleSpecs::Child.instance_methods(false)
+    methods.should include(:public_child)
+    methods.should_not include(:public_module)
+  end
 
   it "does not return methods undefined in a subclass" do
     methods = ModuleSpecs::Grandchild.instance_methods

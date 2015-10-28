@@ -2,6 +2,25 @@ Contributions are much appreciated.
 Please open a pull request or add an issue to discuss what you intend to work on.  
 If the pull requests passes the CI and conforms to the existing style of specs, it will be merged.
 
+### File organization
+
+Spec are grouped in 5 separate top-level groups:
+
+* `command_line`: for the ruby executable command-line flags (`-v`, `-e`, etc)
+* `language`: for the language keywords and syntax constructs (`if`, `def`, `A::B`, etc)
+* `core`: for the core methods (`Fixnum#+`, `String#upcase`, no need to require anything)
+* `library`: for the standard libraries methods (`CSV.new`, `YAML.parse`, need to require the stdlib)
+* `optional/capi`: for functions available to the Ruby C-extension API
+
+The exact file for methods is decided by the `#owner` of a method, for instance for `#group_by`:
+```ruby
+> [].method(:group_by)
+=> #<Method: Array(Enumerable)#group_by>
+> [].method(:group_by).owner
+=> Enumerable
+```
+Which should therefore be specified in `core/enumerable/group_by_spec.rb`.
+
 ### MkSpec - a tool to generate the spec structure
 
 If you want to create new specs, you should use `mkspec`, part of [MSpec](http://github.com/ruby/mspec).
