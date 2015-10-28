@@ -13,4 +13,8 @@ describe "Exception#inspect" do
   it "returns the class name when #to_s returns an empty string" do
     ExceptionSpecs::EmptyToS.new.inspect.should == "ExceptionSpecs::EmptyToS"
   end
+
+  it "returns the derived class name with a subclassed Exception" do
+    ExceptionSpecs::UnExceptional.new.inspect.should == "#<ExceptionSpecs::UnExceptional: ExceptionSpecs::UnExceptional>"
+  end
 end

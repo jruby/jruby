@@ -487,6 +487,10 @@ describe "The defined? keyword for variables" do
     DefinedSpecs::Basic.new.local_variable_defined.should == "local-variable"
   end
 
+  it "returns 'local-variable' when called with the name of a local variable assigned to nil" do
+    DefinedSpecs::Basic.new.local_variable_defined_nil.should == "local-variable"
+  end
+
   it "returns nil for an instance variable that has not been read" do
     DefinedSpecs::Basic.new.instance_variable_undefined.should be_nil
   end
@@ -497,6 +501,10 @@ describe "The defined? keyword for variables" do
 
   it "returns 'instance-variable' for an instance variable that has been assigned" do
     DefinedSpecs::Basic.new.instance_variable_defined.should == "instance-variable"
+  end
+
+  it "returns 'instance-variable' for an instance variable that has been assigned to nil" do
+    DefinedSpecs::Basic.new.instance_variable_defined_nil.should == "instance-variable"
   end
 
   it "returns nil for a global variable that has not been read" do
@@ -755,8 +763,20 @@ describe "The defined? keyword for a scoped constant" do
     defined?(DefinedSpecs::Child::B).should be_nil
   end
 
+  it "returns nil when a constant is scoped to an undefined constant" do
+    defined?(Undefined::Object).should be_nil
+  end
+
   it "returns nil when the undefined constant is scoped to an undefined constant" do
     defined?(DefinedSpecs::Undefined::Undefined).should be_nil
+  end
+
+  it "returns nil when a constant is defined on top-level but not on the module" do
+    defined?(DefinedSpecs::String).should be_nil
+  end
+
+  it "returns 'constant' when a constant is defined on top-level but not on the class" do
+    defined?(DefinedSpecs::Basic::String).should == "constant"
   end
 
   it "returns 'constant' if the scoped-scoped constant is defined" do

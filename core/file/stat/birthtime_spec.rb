@@ -11,7 +11,7 @@ ruby_version_is "2.2" do
       rm_r @file
     end
 
-    platform_is :windows, :darwin do
+    platform_is :windows, :darwin, :freebsd, :netbsd do
       it "returns the birthtime of a File::Stat object" do
         st = File.stat(@file)
         st.birthtime.should be_kind_of(Time)
@@ -19,7 +19,7 @@ ruby_version_is "2.2" do
       end
     end
 
-    platform_is :linux, :openbsd, :freebsd, :netbsd do
+    platform_is :linux, :openbsd do
       it "raises an NotImplementedError" do
         st = File.stat(@file)
         lambda { st.birthtime }.should raise_error(NotImplementedError)

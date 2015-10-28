@@ -979,58 +979,56 @@ describe "A method" do
       m(h).should == {a: 1}
     end
 
-    ruby_bug "#10685", "2.2.0.0" do
-      evaluate <<-ruby do
-          def m(a = nil, **k) [a, k] end
-        ruby
+    evaluate <<-ruby do
+        def m(a = nil, **k) [a, k] end
+      ruby
 
-        m().should == [nil, {}]
-        m("a" => 1).should == [{"a" => 1}, {}]
-        m(a: 1).should == [nil, {a: 1}]
-        m("a" => 1, a: 1).should == [{"a" => 1}, {a: 1}]
-        m({ "a" => 1 }, a: 1).should == [{"a" => 1}, {a: 1}]
-        m({a: 1}, {}).should == [{a: 1}, {}]
+      m().should == [nil, {}]
+      m("a" => 1).should == [{"a" => 1}, {}]
+      m(a: 1).should == [nil, {a: 1}]
+      m("a" => 1, a: 1).should == [{"a" => 1}, {a: 1}]
+      m({ "a" => 1 }, a: 1).should == [{"a" => 1}, {a: 1}]
+      m({a: 1}, {}).should == [{a: 1}, {}]
 
-        h = {"a" => 1, b: 2}
-        m(h).should == [{"a" => 1}, {b: 2}]
-        h.should == {"a" => 1, b: 2}
+      h = {"a" => 1, b: 2}
+      m(h).should == [{"a" => 1}, {b: 2}]
+      h.should == {"a" => 1, b: 2}
 
-        h = {"a" => 1}
-        m(h).first.should == h
+      h = {"a" => 1}
+      m(h).first.should == h
 
-        h = {}
-        r = m(h)
-        r.first.should be_nil
-        r.last.should == {}
+      h = {}
+      r = m(h)
+      r.first.should be_nil
+      r.last.should == {}
 
-        hh = {}
-        h = mock("keyword splat empty hash")
-        h.should_receive(:to_hash).and_return(hh)
-        r = m(h)
-        r.first.should be_nil
-        r.last.should == {}
+      hh = {}
+      h = mock("keyword splat empty hash")
+      h.should_receive(:to_hash).and_return(hh)
+      r = m(h)
+      r.first.should be_nil
+      r.last.should == {}
 
-        h = mock("keyword splat")
-        h.should_receive(:to_hash).and_return({"a" => 1, a: 2})
-        m(h).should == [{"a" => 1}, {a: 2}]
-      end
+      h = mock("keyword splat")
+      h.should_receive(:to_hash).and_return({"a" => 1, a: 2})
+      m(h).should == [{"a" => 1}, {a: 2}]
+    end
 
-      evaluate <<-ruby do
-          def m(*a, **k) [a, k] end
-        ruby
+    evaluate <<-ruby do
+        def m(*a, **k) [a, k] end
+      ruby
 
-        m().should == [[], {}]
-        m(1).should == [[1], {}]
-        m(a: 1, b: 2).should == [[], {a: 1, b: 2}]
-        m(1, 2, 3, a: 2).should == [[1, 2, 3], {a: 2}]
+      m().should == [[], {}]
+      m(1).should == [[1], {}]
+      m(a: 1, b: 2).should == [[], {a: 1, b: 2}]
+      m(1, 2, 3, a: 2).should == [[1, 2, 3], {a: 2}]
 
-        m("a" => 1).should == [[{"a" => 1}], {}]
-        m(a: 1).should == [[], {a: 1}]
-        m("a" => 1, a: 1).should == [[{"a" => 1}], {a: 1}]
-        m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
-        m({a: 1}, {}).should == [[{a: 1}], {}]
-        m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
-      end
+      m("a" => 1).should == [[{"a" => 1}], {}]
+      m(a: 1).should == [[], {a: 1}]
+      m("a" => 1, a: 1).should == [[{"a" => 1}], {a: 1}]
+      m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
+      m({a: 1}, {}).should == [[{a: 1}], {}]
+      m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
     end
 
     evaluate <<-ruby do
@@ -1125,7 +1123,7 @@ describe "A method" do
       m(b: 3, a: 4).should == [4, 3]
     end
 
-    ruby_bug "#10894", "2.0" do
+    ruby_version_is "2.1" do
       evaluate <<-ruby do
           def m(a: 1, **) a end
         ruby

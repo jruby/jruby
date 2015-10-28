@@ -16,4 +16,10 @@ describe "Regexp#===" do
   it "returns false if it does not match a Symbol" do
     (/a/ === :b).should be_false
   end
+
+  # mirroring https://github.com/ruby/ruby/blob/trunk/test/ruby/test_regexp.rb
+  it "returns false if the other value cannot be coerced to a string" do
+    (/abc/ === nil).should be_false
+    (/abc/ === /abc/).should be_false
+  end
 end

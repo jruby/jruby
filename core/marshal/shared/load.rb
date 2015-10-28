@@ -214,7 +214,7 @@ describe :marshal_load, shared: true do
       y.first.tainted?.should be_false
     end
 
-    ruby_bug "#8945", "2.1" do
+    ruby_version_is "2.2" do
       it "does not taint Bignums" do
         x = [bignum_value]
         y = Marshal.send(@method, Marshal.dump(x).taint)

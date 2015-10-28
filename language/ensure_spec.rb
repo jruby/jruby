@@ -74,6 +74,28 @@ describe "An ensure block inside a begin block" do
   end
 end
 
+describe "The value of an ensure expression," do
+  it "in no-exception scenarios, is the value of the last stmt of the protected body" do
+    begin
+      v = 1
+      eval('x=1') # to prevent opts from triggering
+      v
+    ensure
+      v = 2
+    end.should == 1
+  end
+
+  it "when an exception is rescued, is the value of the rescuing block" do
+    begin
+      raise 'foo'
+    rescue
+      v = 3
+    ensure
+      v = 2
+    end.should == 3
+  end
+end
+
 describe "An ensure block inside a method" do
   before :each do
     @obj = EnsureSpec::Container.new

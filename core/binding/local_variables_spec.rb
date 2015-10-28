@@ -25,7 +25,7 @@ ruby_version_is "2.2" do
 
     it "includes shadowed local variables only once" do
       a = 1
-      proc { a = 2; binding.local_variables }.call.should == [:a]
+      proc { |a| binding.local_variables }.call(2).should == [:a]
     end
 
     it "includes new variables defined in the binding" do

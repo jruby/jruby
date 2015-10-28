@@ -12,15 +12,17 @@ describe "UnboundMethod#super_method" do
     end
 
     it "returns nil when there's no super method in the parent" do
-      method = Object.instance_method(:method)
+      method = Kernel.instance_method(:method)
       method.super_method.should == nil
     end
 
     it "returns nil when the parent's method is removed" do
-      object = UnboundMethodSpecs::B
-      method = object.instance_method(:overridden)
+      parent = Class.new { def foo; end }
+      child = Class.new(parent) { def foo; end }
 
-      UnboundMethodSpecs::A.class_eval { undef :overridden }
+      method = child.instance_method(:foo)
+
+      parent.send(:undef_method, :foo)
 
       method.super_method.should == nil
     end

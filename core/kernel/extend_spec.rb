@@ -56,6 +56,12 @@ describe "Kernel#extend" do
     lambda { Object.new.extend }.should raise_error(ArgumentError)
   end
 
+  it "raises a TypeError when the argument is not a Module" do
+    o = mock('o')
+    klass = Class.new
+    lambda { o.extend(klass) }.should raise_error(TypeError)
+  end
+
   describe "on frozen instance" do
     before :each do
       @frozen = Object.new.freeze

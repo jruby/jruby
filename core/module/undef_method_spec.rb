@@ -6,6 +6,11 @@ module ModuleSpecs
     def method_to_undef() 1 end
     def another_method_to_undef() 1 end
   end
+  
+  class MultipleAtOnce
+    def method_to_undef() 1 end
+    def another_method_to_undef() 1 end
+  end
 
   class Parent
     def method_to_undef() 1 end
@@ -36,6 +41,14 @@ describe "Module#undef_method" do
   it "requires multiple arguments" do
     Module.instance_method(:undef_method).arity.should < 0
   end
+  
+  it "allows multiple methods to be removed at once" do
+    x = ModuleSpecs::MultipleAtOnce.new
+    ModuleSpecs::MultipleAtOnce.send :undef_method, :method_to_undef, :another_method_to_undef
+    
+    lambda { x.method_to_undef }.should raise_error(NoMethodError)
+    lambda { x.another_method_to_undef }.should raise_error(NoMethodError)
+  end
 
   it "does not undef any instance methods when argument not given" do
     before = @module.instance_methods(true) + @module.private_instance_methods(true)
@@ -50,6 +63,8 @@ describe "Module#undef_method" do
 
   it "raises a NameError when passed a missing name" do
     lambda { @module.send :undef_method, :not_exist }.should raise_error(NameError)
+    # a NameError and not a NoMethodError
+    lambda { @module.send :undef_method, :not_exist }.should_not raise_error(NoMethodError)
   end
 
   describe "on frozen instance" do
