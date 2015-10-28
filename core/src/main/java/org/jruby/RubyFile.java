@@ -513,7 +513,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getRuntime().newString(val.toString());
     }
 
-    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:]+:([^:]+:)?)?";
+    private static String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]+:([^:/]+:)?)?";
     private static Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
     /* File class methods */
