@@ -289,7 +289,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_uri_file_prefix
       jruby_specific_test
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar")
-      #assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
+      assert_equal "uri:file:/bar", File.expand_path("uri:file:/foo/../bar")
       # TODO why uri:file:// ?
       assert_equal "uri:file://foo/bar/baz", File.expand_path("baz", "uri:file:/foo/bar")
       assert_equal "uri:file:/foo/bar", File.expand_path("uri:file:/foo/bar", "uri:file:/baz/quux")
@@ -301,7 +301,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_uri_classloader_prefix
       jruby_specific_test
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar")
-      #assert_equal "uri:classloader:/bar", File.expand_path("uri:classloader:/foo/../bar")
+      assert_equal "uri:classloader:/bar", File.expand_path("uri:classloader:/foo/../bar")
       # TODO why uri:classloader:// ?
       assert_equal "uri:classloader://foo/bar/baz", File.expand_path("baz", "uri:classloader:/foo/bar")
       assert_equal "uri:classloader:/foo/bar", File.expand_path("uri:classloader:/foo/bar", "uri:classloader:/baz/quux")
@@ -313,7 +313,7 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_classpath_prefix
       jruby_specific_test
       assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar")
-      #assert_equal "classpath:/bar", File.expand_path("classpath:/foo/../bar")
+      assert_equal "classpath:/bar", File.expand_path("classpath:/foo/../bar")
       assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
       assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
       assert_equal "classpath:/foo/bar", File.expand_path("../../foo/bar", "classpath:/baz/quux")
@@ -344,14 +344,14 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_looks_like_url
       jruby_specific_test
       assert_equal "classpath:/META-INF/jruby.home", File.expand_path("classpath:/META-INF/jruby.home")
-      assert_equal "uri:file://META-INF/jruby.home", File.expand_path("uri:file://META-INF/jruby.home")
+      assert_equal "uri:file:/META-INF/jruby.home", File.expand_path("uri:file://META-INF/jruby.home")
       assert_equal "http://example.com/a.jar", File.expand_path("http://example.com/a.jar")
       assert_equal "http://example.com/", File.expand_path("..", "http://example.com/a.jar")
       assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
       assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
       assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
       assert_equal "uri:jar://foo/bar/baz", File.expand_path("baz", "uri:jar://foo/bar")
-      assert_equal "uri:file://foo/bar", File.expand_path("uri:file://foo/bar", "uri:file://baz/quux")
+      assert_equal "uri:file:/foo/bar", File.expand_path("uri:file://foo/bar", "uri:file://baz/quux")
       assert_equal "uri:jar://foo", File.expand_path("..", "uri:jar://foo/bar")
     end
 
@@ -1334,5 +1334,16 @@ class TestFile < Test::Unit::TestCase
   # jruby/jruby#2331
   def test_classpath_realpath
     assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
+  end
+
+  # GH-3401
+  def test_realpath_with_uri_paths
+    postfix = '!/jruby/jruby.rb'
+    ['', 'uri:jar:file:', 'jar:file:', 'file:'].each do |prefix|
+      result = File.realpath("#{prefix}lib/jruby.jar#{postfix}")
+      #assert_equal(File.expand_path(result), result)
+      assert_equal(result.start_with?(prefix), true, result + " starts with "  + prefix)
+      assert_equal(result.end_with?(postfix), true, result + " ends with "  + postfix)
+    end
   end
 end
