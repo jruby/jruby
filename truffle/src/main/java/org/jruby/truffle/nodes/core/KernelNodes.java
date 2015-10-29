@@ -1517,12 +1517,10 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureLoader().require(feature, this);
+                return getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-            return true;
         }
     }
 
