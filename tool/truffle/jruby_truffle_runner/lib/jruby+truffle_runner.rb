@@ -331,7 +331,7 @@ class JRubyTruffleRunner
 
     cmd_options = [
         *(['-X+T', *vm_options] unless @options[:run][:test]),
-        *(["-Xtruffle.core.load_path=#{core_load_path}"] if @options[:global][:use_fs_core]),
+        *(["-Xtruffle.core.load_path=#{core_load_path}"] if !@options[:run][:test] && @options[:global][:use_fs_core]),
         (format(@options[:global][:debug_option], @options[:global][:debug_port]) if @options[:run][:debug]),
         ('-Xtruffle.exceptions.print_java=true' if @options[:run][:jexception]),
         '-r', "./#{@options[:global][:truffle_bundle_path]}/bundler/setup.rb",
