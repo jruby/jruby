@@ -137,8 +137,8 @@ public class CoreMethodNodeManager {
                 visibility = Visibility.PRIVATE;
             }
 
-            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
-                    Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
+            final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, Truffle.getRuntime().createCallTarget(rootNodeCopy),
+                    null);
 
             Layouts.MODULE.getFields(module).addMethod(context, null, method.withVisibility(visibility).withName(name));
         }

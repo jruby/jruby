@@ -414,7 +414,7 @@ public abstract class ModuleNodes {
             final RubyNode sequence = SequenceNode.sequence(getContext(), sourceSection, checkArity, accessInstanceVariable);
             final RubyRootNode rootNode = new RubyRootNode(getContext(), sourceSection, null, sharedMethodInfo, sequence);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, false, callTarget, null);
+            final InternalMethod method = new InternalMethod(sharedMethodInfo, accessorName, module, visibility, callTarget, null);
 
             Layouts.MODULE.getFields(module).addMethod(getContext(), this, method);
             return nil();
@@ -1105,7 +1105,7 @@ public abstract class ModuleNodes {
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
-            final InternalMethod method = new InternalMethod(info, name, module, Visibility.PUBLIC, false, newCallTarget, null);
+            final InternalMethod method = new InternalMethod(info, name, module, Visibility.PUBLIC, newCallTarget, null);
             return addMethod(module, name, method);
         }
 
