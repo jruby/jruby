@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -70,14 +71,20 @@ public abstract class FiberNodes {
         thread.setName(name);
         thread.start();
 
-        // Wait for full initialization of the new fiber
+        waitForInitialization(context, fiber, currentNode);
+    }
+
+    /** Wait for full initialization of the new fiber */
+    public static void waitForInitialization(RubyContext context, DynamicObject fiber, Node currentNode) {
         final CountDownLatch initializedLatch = Layouts.FIBER.getInitializedLatch(fiber);
-        try {
-            initializedLatch.await();
-        } catch (InterruptedException e) {
-            // Nobody is allowed to have a reference to this Thread yet so this should not happen
-            throw new UnsupportedOperationException(e);
-        }
+
+        context.getThreadManager().runUntilSuccessKeepRunStatus(currentNode, new BlockingAction<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                initializedLatch.await();
+                return SUCCESS;
+            }
+        });
     }
 
     private static void handleFiberExceptions(final RubyContext context, final DynamicObject fiber, final DynamicObject block, Node currentNode) {

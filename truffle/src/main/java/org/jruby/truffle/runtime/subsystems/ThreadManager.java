@@ -95,6 +95,22 @@ public class ThreadManager {
         return result;
     }
 
+    @TruffleBoundary
+    public <T> T runUntilSuccessKeepRunStatus(Node currentNode, BlockingAction<T> action) {
+        T result = null;
+
+        do {
+            try {
+                result = action.block();
+            } catch (InterruptedException e) {
+                // We were interrupted, possibly by the SafepointManager.
+                context.getSafepointManager().poll(currentNode);
+            }
+        } while (result == null);
+
+        return result;
+    }
+
     public interface ResultOrTimeout<T> {
     }
 
