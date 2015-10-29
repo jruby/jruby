@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -1096,11 +1097,35 @@ public abstract class ModuleNodes {
 
         @TruffleBoundary
         private DynamicObject defineMethod(DynamicObject module, String name, DynamicObject proc) {
-            final CallTarget modifiedCallTarget = Layouts.PROC.getCallTargetForLambdas(proc);
+            final RootCallTarget callTarget = (RootCallTarget) Layouts.PROC.getCallTargetForLambdas(proc);
+            final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
             final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
-            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, Layouts.PROC.getDeclarationFrame(proc));
 
-            return addMethod(module, name, modifiedMethod);
+            final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), rootNode.getBody());
+            final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
+            final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
+
+            final InternalMethod method = new InternalMethod(info, name, module, Visibility.PUBLIC, false, newCallTarget, null);
+            return addMethod(module, name, method);
+        }
+
+        private static class CallMethodWithProcBody extends RubyNode {
+
+            private final MaterializedFrame declarationFrame;
+            @Child private RubyNode procBody;
+
+            public CallMethodWithProcBody(RubyContext context, SourceSection sourceSection, MaterializedFrame declarationFrame, RubyNode procBody) {
+                super(context, sourceSection);
+                this.declarationFrame = declarationFrame;
+                this.procBody = procBody;
+            }
+
+            @Override
+            public Object execute(VirtualFrame frame) {
+                RubyArguments.setDeclarationFrame(frame.getArguments(), declarationFrame);
+                return procBody.execute(frame);
+            }
+
         }
 
         private DynamicObject addMethod(DynamicObject module, String name, InternalMethod method) {

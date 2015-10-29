@@ -160,6 +160,10 @@ public final class RubyArguments {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
     }
 
+    public static void setDeclarationFrame(Object[] arguments, MaterializedFrame declarationFrame) {
+        arguments[DECLARATION_FRAME_INDEX] = declarationFrame;
+    }
+
     /**
      * Get the declaration frame a certain number of levels up from the current frame, where the
      * current frame is 0.
