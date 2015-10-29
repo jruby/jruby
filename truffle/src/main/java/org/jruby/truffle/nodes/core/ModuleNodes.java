@@ -1825,7 +1825,11 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
             } else {
-                return oldConstant.getValue();
+                if (oldConstant.isAutoload()) {
+                    return nil();
+                } else {
+                    return oldConstant.getValue();
+                }
             }
         }
 
