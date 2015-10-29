@@ -540,7 +540,7 @@ public abstract class KernelNodes {
                     Visibility.PUBLIC,
                     false,
                     cachedCallTarget,
-                    parentFrame);
+                    null);
 
             return callNode.call(frame, RubyArguments.pack(
                     method,

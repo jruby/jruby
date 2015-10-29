@@ -413,7 +413,7 @@ public class RubyContext extends ExecutionContext implements TruffleContextInter
         }
 
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                declaringModule, Visibility.PUBLIC, false, callTarget, parentFrame);
+                declaringModule, Visibility.PUBLIC, false, callTarget, null);
 
         return callTarget.call(RubyArguments.pack(method, parentFrame, null, self, null, declarationContext, new Object[] {}));
     }
