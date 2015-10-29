@@ -117,7 +117,7 @@ public class UncachedDispatchNode extends DispatchNode {
                 method.getCallTarget(),
                 RubyArguments.pack(
                         method,
-                        method.getDeclarationFrame(),
+                        null,
                         null,
                         receiverObject,
                         blockObject,

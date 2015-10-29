@@ -36,15 +36,14 @@ public class InternalMethod implements ObjectGraphNode {
     private final boolean undefined;
 
     private final CallTarget callTarget;
-    private final MaterializedFrame declarationFrame;
 
     public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, CallTarget callTarget, MaterializedFrame declarationFrame) {
-        this(sharedMethodInfo, name, declaringModule, visibility, false, callTarget, declarationFrame);
+            Visibility visibility, CallTarget callTarget) {
+        this(sharedMethodInfo, name, declaringModule, visibility, false, callTarget);
     }
 
     private InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
-            Visibility visibility, boolean undefined, CallTarget callTarget, MaterializedFrame declarationFrame) {
+            Visibility visibility, boolean undefined, CallTarget callTarget) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
@@ -52,7 +51,6 @@ public class InternalMethod implements ObjectGraphNode {
         this.visibility = visibility;
         this.undefined = undefined;
         this.callTarget = callTarget;
-        this.declarationFrame = declarationFrame;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -75,10 +73,6 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
-    public MaterializedFrame getDeclarationFrame() {
-        return declarationFrame;
-    }
-
     public CallTarget getCallTarget(){
         return callTarget;
     }
@@ -89,7 +83,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget);
         }
     }
 
@@ -97,7 +91,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget);
         }
     }
 
@@ -105,12 +99,12 @@ public class InternalMethod implements ObjectGraphNode {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget);
     }
 
     public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
@@ -150,10 +144,6 @@ public class InternalMethod implements ObjectGraphNode {
 
         if (declaringModule  != null) {
             adjacent.add(declaringModule);
-        }
-
-        if (declarationFrame != null) {
-            adjacent.addAll(ObjectGraph.getObjectsInFrame(declarationFrame));
         }
 
         return adjacent;

@@ -101,7 +101,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
                 frame,
                 RubyArguments.pack(
                         method,
-                        method.getDeclarationFrame(),
+                        null,
                         method.getSharedMethodInfo().needsCallerFrame() ? frame.materialize() : null,
                         receiver,
                         block,
