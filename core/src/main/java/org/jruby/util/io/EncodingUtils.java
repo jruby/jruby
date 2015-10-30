@@ -879,7 +879,7 @@ public class EncodingUtils {
                 if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
                     IRubyObject rep = context.nil;
                     if (!ecopts.isNil()) {
-                        rep = ((RubyHash)ecopts).op_aref(context, runtime.newString("replace"));
+                        rep = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("replace"));
                     }
                     dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
