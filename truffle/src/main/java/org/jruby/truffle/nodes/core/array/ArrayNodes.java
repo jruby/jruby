@@ -24,6 +24,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -426,7 +427,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayWriteDenormalizedNode writeNode;
+        @Child private ArrayWriteNormalizedNode writeNode;
         @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private PopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
@@ -444,14 +445,15 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
             if (normalizedIndex < 0) {
                 CompilerDirectives.transferToInterpreter();
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
-            return write(frame, (DynamicObject) array, index, value);
+            return write(frame, array, normalizedIndex, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
@@ -565,7 +567,7 @@ public abstract class ArrayNodes {
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
-                    write(frame, array, start + i, replacementStore[i]);
+                    write(frame, array, normalizedIndex + i, replacementStore[i]);
                 }
             } else {
                 final int arrayLength = Layouts.ARRAY.getSize(array);
@@ -672,7 +674,7 @@ public abstract class ArrayNodes {
         private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
             return writeNode.executeWrite(frame, array, index, value);
         }
@@ -2153,7 +2155,7 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayWriteDenormalizedNode writeNode;
+        @Child private ArrayWriteNormalizedNode writeNode;
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2166,11 +2168,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntArray(array)")
         public Object mapInPlaceFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             int count = 0;
@@ -2181,7 +2178,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                    write(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2195,11 +2192,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObjectArray(array)")
         public Object mapInPlaceObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
-            if (writeNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                writeNode = insert(ArrayWriteDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
-            }
-
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             int count = 0;
@@ -2210,7 +2202,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                    write(frame, array, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -2220,6 +2212,14 @@ public abstract class ArrayNodes {
 
 
             return array;
+        }
+
+        private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+            }
+            return writeNode.executeWrite(frame, array, index, value);
         }
     }
 
