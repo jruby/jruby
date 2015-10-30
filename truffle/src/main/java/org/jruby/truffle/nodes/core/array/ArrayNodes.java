@@ -434,8 +434,6 @@ public abstract class ArrayNodes {
         @Child private PopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
 
-        private final BranchProfile tooSmallBranch = BranchProfile.create();
-
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -459,29 +457,17 @@ public abstract class ArrayNodes {
             return set(array, index, value, unused, negativeIndexProfile);
         }
 
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, Object value) {
-            int length = toInt(frame, lengthObject);
-            return setObject(array, start, length, value);
-        }
-
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, int length, Object value) {
-            int start = toInt(frame, startObject);
-            return setObject(array, start, length, value);
-        }
-
-        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)", "!isInteger(lengthObject)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value) {
+        @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject) || !isInteger(lengthObject)" })
+        public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             int length = toInt(frame, lengthObject);
             int start = toInt(frame, startObject);
-            return setObject(array, start, length, value);
+            return setObject(array, start, length, value, negativeIndexProfile);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)" })
-        public Object setObject(DynamicObject array, int start, int length, Object value) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object setObject(DynamicObject array, int start, int length, Object value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
@@ -489,7 +475,7 @@ public abstract class ArrayNodes {
             }
 
             final int size = Layouts.ARRAY.getSize(array);
-            final int begin = ArrayOperations.normalizeIndex(size, start);
+            final int begin = ArrayOperations.normalizeIndex(size, start, negativeIndexProfile);
             if (begin < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-size);
@@ -506,6 +492,8 @@ public abstract class ArrayNodes {
                     }
                     DynamicObject endValues = readSliceNode.executeReadSlice(array, (begin + length), (size - begin - length));
                     write(array, begin, value);
+
+                    CompilerDirectives.transferToInterpreter();
                     Object[] endValuesStore = ArrayUtils.box(Layouts.ARRAY.getStore(endValues));
 
                     int i = begin + 1;
@@ -516,6 +504,7 @@ public abstract class ArrayNodes {
                 } else {
                     write(array, begin, value);
                 }
+
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
@@ -528,38 +517,26 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = {"!isInteger(startObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, int length, DynamicObject value) {
-            int start = toInt(frame, startObject);
-            return setOtherArray(array, start, length, value);
-        }
-
-        @Specialization(guards = {"!isInteger(lengthObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, DynamicObject value) {
-            int length = toInt(frame, lengthObject);
-            return setOtherArray(array, start, length, value);
-        }
-
-        @Specialization(guards = {"!isInteger(startObject)", "!isInteger(lengthObject)", "isRubyArray(value)"})
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value) {
+        @Specialization(guards = { "!isInteger(startObject)", "!isInteger(lengthObject) || isRubyArray(value)" })
+        public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             int start = toInt(frame, startObject);
             int length = toInt(frame, lengthObject);
-            return setOtherArray(array, start, length, value);
+            return setOtherArray(array, start, length, value, negativeIndexProfile);
         }
 
+        @TruffleBoundary
         @Specialization(guards = "isRubyArray(replacement)")
-        public Object setOtherArray(DynamicObject array, int start, int length, DynamicObject replacement) {
-            CompilerDirectives.transferToInterpreter();
-
+        public Object setOtherArray(DynamicObject array, int start, int length, DynamicObject replacement,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
                 final String errMessage = "negative length (" + length + ")";
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start, negativeIndexProfile);
             if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, Layouts.ARRAY.getSize(array), this));
             }
@@ -593,7 +570,6 @@ public abstract class ArrayNodes {
                 final Object store = ArrayOperations.toObjectArray(array);
                 final Object newStore[] = new Object[newLength];
 
-
                 if (mustExpandArray) {
                     System.arraycopy(store, 0, newStore, 0, arrayLength);
 
@@ -621,7 +597,8 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isRubyArray(other)", "isIntegerFixnumRange(range)" })
         public Object setRange(DynamicObject array, DynamicObject range, Object other, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             final int size = Layouts.ARRAY.getSize(array);
             final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
@@ -634,13 +611,14 @@ public abstract class ArrayNodes {
                 inclusiveEnd = -1;
             }
             final int length = inclusiveEnd - normalizedStart + 1;
-            return setObject(array, normalizedStart, length, other);
+            return setObject(array, normalizedStart, length, other, negativeIndexProfile);
         }
 
         @Specialization(guards = { "isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)" })
         public Object setRangeArray(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             final int size = Layouts.ARRAY.getSize(array);
             final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
@@ -653,16 +631,17 @@ public abstract class ArrayNodes {
                 inclusiveEnd = -1;
             }
             final int length = inclusiveEnd - normalizedStart + 1;
-            return setOtherArray(array, normalizedStart, length, other);
+            return setOtherArray(array, normalizedStart, length, other, negativeIndexProfile);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
         public Object setIntegerFixnumRange(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
-                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
                 CompilerDirectives.transferToInterpreter();
-                return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile);
+                return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile, negativeIndexProfile);
             } else {
                 final int size = Layouts.ARRAY.getSize(array);
                 int normalizedBegin = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
@@ -675,7 +654,7 @@ public abstract class ArrayNodes {
                     Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile);
+                    return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile, negativeIndexProfile);
                 }
             }
 
