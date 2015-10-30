@@ -959,9 +959,6 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class DeleteAtNode extends CoreMethodNode {
 
-        private final BranchProfile tooSmallBranch = BranchProfile.create();
-        private final BranchProfile beyondEndBranch = BranchProfile.create();
-
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -970,39 +967,14 @@ public abstract class ArrayNodes {
             return ToIntNodeGen.create(getContext(), getSourceSection(), index);
         }
 
-        @Specialization(guards = "isIntArray(array)", rewriteOn = UnexpectedResultException.class)
-        public int deleteAtIntegerFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isIntArray(array)")
+        public Object deleteAtIntegerFixnum(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final int[] store = (int[]) Layouts.ARRAY.getStore(array);
-                final int value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtIntegerFixnumInBounds", guards = "isIntArray(array)")
-        public Object deleteAtIntegerFixnum(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final int[] store = (int[]) Layouts.ARRAY.getStore(array);
@@ -1014,39 +986,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isLongArray(array)", rewriteOn = UnexpectedResultException.class)
-        public long deleteAtLongFixnumInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isLongArray(array)")
+        public Object deleteAtLongFixnum(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final long[] store = (long[]) Layouts.ARRAY.getStore(array);
-                final long value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtLongFixnumInBounds", guards = "isLongArray(array)")
-        public Object deleteAtLongFixnum(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final long[] store = (long[]) Layouts.ARRAY.getStore(array);
@@ -1058,39 +1005,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isDoubleArray(array)", rewriteOn = UnexpectedResultException.class)
-        public double deleteAtFloatInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isDoubleArray(array)")
+        public Object deleteAtFloat(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final double[] store = (double[]) Layouts.ARRAY.getStore(array);
-                final double value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtFloatInBounds", guards = "isDoubleArray(array)")
-        public Object deleteAtFloat(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final double[] store = (double[]) Layouts.ARRAY.getStore(array);
@@ -1102,39 +1024,14 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObjectArray(array)", rewriteOn = UnexpectedResultException.class)
-        public Object deleteAtObjectInBounds(DynamicObject array, int index) throws UnexpectedResultException {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index);
+        @Specialization(guards = "isObjectArray(array)")
+        public Object deleteAtObject(DynamicObject array, int index,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile,
+                @Cached("create()") BranchProfile notInBoundsProfile) {
+            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-            if (normalizedIndex < 0) {
-                throw new UnexpectedResultException(nil());
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                throw new UnexpectedResultException(nil());
-            } else {
-                final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
-                final Object value = store[normalizedIndex];
-                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, Layouts.ARRAY.getSize(array) - normalizedIndex - 1);
-                Layouts.ARRAY.setStore(array, store);
-                Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(array) - 1);
-                return value;
-            }
-        }
-
-        @Specialization(contains = "deleteAtObjectInBounds", guards = "isObjectArray(array)")
-        public Object deleteAtObject(DynamicObject array, int index) {
-            CompilerDirectives.transferToInterpreter();
-
-            int normalizedIndex = index;
-
-            if (normalizedIndex < 0) {
-                normalizedIndex = Layouts.ARRAY.getSize(array) + index;
-            }
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                return nil();
-            } else if (normalizedIndex >= Layouts.ARRAY.getSize(array)) {
-                beyondEndBranch.enter();
+            if (normalizedIndex < 0 || normalizedIndex >= Layouts.ARRAY.getSize(array)) {
+                notInBoundsProfile.enter();
                 return nil();
             } else {
                 final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
