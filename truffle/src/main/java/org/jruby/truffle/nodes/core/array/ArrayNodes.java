@@ -360,7 +360,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, DynamicObject array, int start, int length) {
+        public DynamicObject slice(VirtualFrame frame, DynamicObject array, int start, int length) {
             if (length < 0) {
                 return nil();
             }
@@ -370,11 +370,11 @@ public abstract class ArrayNodes {
                 readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            return readSliceNode.executeReadSlice(frame, (DynamicObject) array, start, length);
+            return readSliceNode.executeReadSlice(array, start, length);
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public Object slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
+        public DynamicObject slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
             final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
 
             if (normalizedIndex < 0 || normalizedIndex > Layouts.ARRAY.getSize(array)) {
@@ -395,7 +395,7 @@ public abstract class ArrayNodes {
                     readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
+                return readNormalizedSliceNode.executeReadSlice(array, normalizedIndex, length);
             }
         }
 
@@ -439,13 +439,14 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
-        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused) {
+        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             final int index = toInt(frame, indexObject);
-            return set(frame, array, index, value, unused);
+            return set(array, index, value, unused, negativeIndexProfile);
         }
 
         @Specialization
-        public Object set(VirtualFrame frame, DynamicObject array, int index, Object value, NotProvided unused,
+        public Object set(DynamicObject array, int index, Object value, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
             final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
             if (normalizedIndex < 0) {
@@ -453,7 +454,7 @@ public abstract class ArrayNodes {
                 String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
-            return write(frame, array, normalizedIndex, value);
+            return write(array, normalizedIndex, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
@@ -495,24 +496,24 @@ public abstract class ArrayNodes {
             final int begin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
 
             if (begin < Layouts.ARRAY.getSize(array) && length == 1) {
-                return write(frame, array, begin, value);
+                return write(array, begin, value);
             } else {
                 if (Layouts.ARRAY.getSize(array) > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
-                    DynamicObject endValues = (DynamicObject) readSliceNode.executeReadSlice(frame, (DynamicObject) array, (begin + length), (Layouts.ARRAY.getSize(array) - begin - length));
-                    write(frame, array, begin, value);
+                    DynamicObject endValues = readSliceNode.executeReadSlice(array, (begin + length), (Layouts.ARRAY.getSize(array) - begin - length));
+                    write(array, begin, value);
                     Object[] endValuesStore = ArrayUtils.box(Layouts.ARRAY.getStore(endValues));
 
                     int i = begin + 1;
                     for (Object obj : endValuesStore) {
-                        write(frame, array, i, obj);
+                        write(array, i, obj);
                         i += 1;
                     }
                 } else {
-                    write(frame, array, begin, value);
+                    write(array, begin, value);
                 }
                 if (popOneNode == null) {
                     CompilerDirectives.transferToInterpreter();
@@ -529,24 +530,24 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"!isInteger(startObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, int length, DynamicObject value) {
             int start = toInt(frame, startObject);
-            return setOtherArray(frame, array, start, length, value);
+            return setOtherArray(array, start, length, value);
         }
 
         @Specialization(guards = {"!isInteger(lengthObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, DynamicObject value) {
             int length = toInt(frame, lengthObject);
-            return setOtherArray(frame, array, start, length, value);
+            return setOtherArray(array, start, length, value);
         }
 
         @Specialization(guards = {"!isInteger(startObject)", "!isInteger(lengthObject)", "isRubyArray(value)"})
         public Object setOtherArray(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, DynamicObject value) {
             int start = toInt(frame, startObject);
             int length = toInt(frame, lengthObject);
-            return setOtherArray(frame, array, start, length, value);
+            return setOtherArray(array, start, length, value);
         }
 
         @Specialization(guards = "isRubyArray(replacement)")
-        public Object setOtherArray(VirtualFrame frame, DynamicObject array, int start, int length, DynamicObject replacement) {
+        public Object setOtherArray(DynamicObject array, int start, int length, DynamicObject replacement) {
             CompilerDirectives.transferToInterpreter();
 
             if (length < 0) {
@@ -567,7 +568,7 @@ public abstract class ArrayNodes {
 
             if (replacementLength == length) {
                 for (int i = 0; i < length; i++) {
-                    write(frame, array, normalizedIndex + i, replacementStore[i]);
+                    write(array, normalizedIndex + i, replacementStore[i]);
                 }
             } else {
                 final int arrayLength = Layouts.ARRAY.getSize(array);
@@ -632,7 +633,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setRangeArray(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
+        public Object setRangeArray(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
             final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -645,14 +646,14 @@ public abstract class ArrayNodes {
             }
             final int length = normalizedEnd - normalizedStart + 1;
 
-            return setOtherArray(frame, array, normalizedStart, length, other);
+            return setOtherArray(array, normalizedStart, length, other);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setIntegerFixnumRange(VirtualFrame frame, DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
+        public Object setIntegerFixnumRange(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
             if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
                 CompilerDirectives.transferToInterpreter();
-                return setRangeArray(frame, array, range, other, unused);
+                return setRangeArray(array, range, other, unused);
             } else {
                 int normalizedBegin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
                 int normalizedEnd = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
@@ -664,19 +665,19 @@ public abstract class ArrayNodes {
                     Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    return setRangeArray(frame, array, range, other, unused);
+                    return setRangeArray(array, range, other, unused);
                 }
             }
 
             return other;
         }
 
-        private Object write(VirtualFrame frame, DynamicObject array, int index, Object value) {
+        private Object write(DynamicObject array, int index, Object value) {
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
-            return writeNode.executeWrite(frame, array, index, value);
+            return writeNode.executeWrite(array, index, value);
         }
 
         private int toInt(VirtualFrame frame, Object indexObject) {
@@ -2219,7 +2220,7 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
             }
-            return writeNode.executeWrite(frame, array, index, value);
+            return writeNode.executeWrite(array, index, value);
         }
     }
 

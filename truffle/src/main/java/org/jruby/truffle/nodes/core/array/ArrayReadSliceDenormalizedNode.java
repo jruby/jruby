@@ -13,7 +13,6 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -37,14 +36,14 @@ public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
         readNode = ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null);
     }
 
-    public abstract Object executeReadSlice(VirtualFrame frame, DynamicObject array, int index, int length);
+    public abstract DynamicObject executeReadSlice(DynamicObject array, int index, int length);
 
     @Specialization(guards = "isRubyArray(array)")
-    public Object read(VirtualFrame frame, DynamicObject array, int index, int length,
+    public DynamicObject read(DynamicObject array, int index, int length,
             @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
         final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), index, negativeIndexProfile);
 
-        return readNode.executeReadSlice(frame, array, normalizedIndex, length);
+        return readNode.executeReadSlice(array, normalizedIndex, length);
     }
 
 }
