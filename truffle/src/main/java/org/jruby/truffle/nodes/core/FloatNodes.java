@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -27,7 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -613,9 +611,6 @@ public abstract class FloatNodes {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
 
-        private final BranchProfile greaterZero = BranchProfile.create();
-        private final BranchProfile lessZero = BranchProfile.create();
-
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
@@ -643,7 +638,8 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public Object round(double n, NotProvided ndigits) {
+        public Object round(double n, NotProvided ndigits,
+                @Cached("createBinaryProfile()") ConditionProfile positiveProfile) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -658,17 +654,13 @@ public abstract class FloatNodes {
 
             double f = n;
 
-            if (f > 0.0) {
-                greaterZero.enter();
-
+            if (positiveProfile.profile(f >= 0.0)) {
                 f = Math.floor(f);
 
                 if (n - f >= 0.5) {
                     f += 1.0;
                 }
-            } else if (f < 0.0) {
-                lessZero.enter();
-
+            } else {
                 f = Math.ceil(f);
 
                 if (f - n >= 0.5) {
