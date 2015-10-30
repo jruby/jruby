@@ -374,15 +374,17 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public DynamicObject slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len) {
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+        public DynamicObject slice(VirtualFrame frame, DynamicObject array, DynamicObject range, NotProvided len,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedIndex = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
 
-            if (normalizedIndex < 0 || normalizedIndex > Layouts.ARRAY.getSize(array)) {
+            if (normalizedIndex < 0 || normalizedIndex > size) {
                 return nil();
             } else {
-                final int end = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-                int index = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? end : end + 1;
-                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(Layouts.ARRAY.getSize(array), index);
+                final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+                final int exclusiveEnd = ArrayOperations.clampExclusiveIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end : end + 1);
 
                 if (exclusiveEnd <= normalizedIndex) {
                     return allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(array), null, 0);
@@ -460,24 +462,24 @@ public abstract class ArrayNodes {
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, DynamicObject array, int start, Object lengthObject, Object value) {
             int length = toInt(frame, lengthObject);
-            return setObject(frame, array, start, length, value);
+            return setObject(array, start, length, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)" })
         public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, int length, Object value) {
             int start = toInt(frame, startObject);
-            return setObject(frame, array, start, length, value);
+            return setObject(array, start, length, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(startObject)", "!isInteger(lengthObject)" })
         public Object setObject(VirtualFrame frame, DynamicObject array, Object startObject, Object lengthObject, Object value) {
             int length = toInt(frame, lengthObject);
             int start = toInt(frame, startObject);
-            return setObject(frame, array, start, length, value);
+            return setObject(array, start, length, value);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)" })
-        public Object setObject(VirtualFrame frame, DynamicObject array, int start, int length, Object value) {
+        public Object setObject(DynamicObject array, int start, int length, Object value) {
             CompilerDirectives.transferToInterpreter();
 
             if (length < 0) {
@@ -486,24 +488,23 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int normalizedIndex = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
-            if (normalizedIndex < 0) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int begin = ArrayOperations.normalizeIndex(size, start);
+            if (begin < 0) {
                 CompilerDirectives.transferToInterpreter();
-                final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-Layouts.ARRAY.getSize(array));
+                final String errMessage = "index " + start + " too small for array; minimum: " + Integer.toString(-size);
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
 
-            final int begin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), start);
-
-            if (begin < Layouts.ARRAY.getSize(array) && length == 1) {
+            if (begin < size && length == 1) {
                 return write(array, begin, value);
             } else {
-                if (Layouts.ARRAY.getSize(array) > (begin + length)) { // there is a tail, else other values discarded
+                if (size > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
                         readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
-                    DynamicObject endValues = readSliceNode.executeReadSlice(array, (begin + length), (Layouts.ARRAY.getSize(array) - begin - length));
+                    DynamicObject endValues = readSliceNode.executeReadSlice(array, (begin + length), (size - begin - length));
                     write(array, begin, value);
                     Object[] endValuesStore = ArrayUtils.box(Layouts.ARRAY.getStore(endValues));
 
@@ -519,7 +520,7 @@ public abstract class ArrayNodes {
                     CompilerDirectives.transferToInterpreter();
                     popOneNode = insert(PopOneNodeGen.create(getContext(), getSourceSection(), null));
                 }
-                int popLength = length - 1 < Layouts.ARRAY.getSize(array) ? length - 1 : Layouts.ARRAY.getSize(array) - 1;
+                int popLength = length - 1 < size ? length - 1 : size - 1;
                 for (int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
                     popOneNode.executePopOne(array);
                 }
@@ -617,55 +618,64 @@ public abstract class ArrayNodes {
             return replacement;
         }
 
-        @Specialization(guards = {"!isRubyArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setRange(VirtualFrame frame, DynamicObject array, DynamicObject range, Object other, NotProvided unused) {
-            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-            if (normalizedEnd < 0) {
-                normalizedEnd = -1;
-            }
-            final int length = normalizedEnd - normalizedStart + 1;
+        @Specialization(guards = { "!isRubyArray(other)", "isIntegerFixnumRange(range)" })
+        public Object setRange(DynamicObject array, DynamicObject range, Object other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
-            return setObject(frame, array, normalizedStart, length, other);
+            final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+            int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            if (inclusiveEnd < 0) {
+                inclusiveEnd = -1;
+            }
+            final int length = inclusiveEnd - normalizedStart + 1;
+            return setObject(array, normalizedStart, length, other);
         }
 
-        @Specialization(guards = {"isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setRangeArray(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            final int normalizedStart = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
+        @Specialization(guards = { "isRubyArray(other)", "!isIntArray(array) || !isIntArray(other)", "isIntegerFixnumRange(range)" })
+        public Object setRangeArray(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+            final int size = Layouts.ARRAY.getSize(array);
+            final int normalizedStart = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
             if (normalizedStart < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
             }
-
-            int normalizedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range)) ? ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range))) - 1 : ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
-            if (normalizedEnd < 0) {
-                normalizedEnd = -1;
+            final int end = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
+            int inclusiveEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range) ? end - 1 : end;
+            if (inclusiveEnd < 0) {
+                inclusiveEnd = -1;
             }
-            final int length = normalizedEnd - normalizedStart + 1;
-
+            final int length = inclusiveEnd - normalizedStart + 1;
             return setOtherArray(array, normalizedStart, length, other);
         }
 
         @Specialization(guards = {"isIntArray(array)", "isRubyArray(other)", "isIntArray(other)", "isIntegerFixnumRange(range)"})
-        public Object setIntegerFixnumRange(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused) {
-            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(((DynamicObject) range))) {
+        public Object setIntegerFixnumRange(DynamicObject array, DynamicObject range, DynamicObject other, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeBeginProfile,
+                @Cached("createBinaryProfile()") ConditionProfile negativeEndProfile) {
+            if (Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range)) {
                 CompilerDirectives.transferToInterpreter();
-                return setRangeArray(array, range, other, unused);
+                return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile);
             } else {
-                int normalizedBegin = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getBegin(((DynamicObject) range)));
-                int normalizedEnd = ArrayOperations.normalizeIndex(Layouts.ARRAY.getSize(array), Layouts.INTEGER_FIXNUM_RANGE.getEnd(((DynamicObject) range)));
+                final int size = Layouts.ARRAY.getSize(array);
+                int normalizedBegin = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getBegin(range), negativeBeginProfile);
+                int normalizedEnd = ArrayOperations.normalizeIndex(size, Layouts.INTEGER_FIXNUM_RANGE.getEnd(range), negativeEndProfile);
                 if (normalizedEnd < 0) {
                     normalizedEnd = -1;
                 }
-                if (normalizedBegin == 0 && normalizedEnd == Layouts.ARRAY.getSize(array) - 1) {
+                if (normalizedBegin == 0 && normalizedEnd == size - 1) {
                     Layouts.ARRAY.setStore(array, Arrays.copyOf((int[]) Layouts.ARRAY.getStore(other), Layouts.ARRAY.getSize(other)));
                     Layouts.ARRAY.setSize(array, Layouts.ARRAY.getSize(other));
                 } else {
                     CompilerDirectives.transferToInterpreter();
-                    return setRangeArray(array, range, other, unused);
+                    return setRangeArray(array, range, other, unused, negativeBeginProfile, negativeEndProfile);
                 }
             }
 
