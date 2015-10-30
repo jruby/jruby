@@ -24,54 +24,44 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Kernel
+module Rubinius
+  class AtomicReference
+    def initialize(val=nil)
+      set(val) unless val.nil?
+    end
 
-  def extend(*modules)
-    raise ArgumentError, "wrong number of arguments (0 for 1+)" if modules.empty?
+    def marshal_dump
+      get
+    end
 
-    # Disabled for JRuby+Truffle. The frozen check should be done in `object_extend`.
-    # Having the check here breaks nil.extend().
-    #Rubinius.check_frozen
+    def marshal_load(val)
+      set(val)
+    end
 
-    modules.reverse_each do |mod|
-      # Truffle: added check
-      if !mod.kind_of?(Module) or mod.kind_of?(Class)
-        raise TypeError, "wrong argument type #{mod.class} (expected Module)"
-      end
+    def get
+      Rubinius.primitive :atomic_get
+      raise PrimitiveFailure, "Rubinius::AtomicReference#get primitive failed"
+    end
 
-      Rubinius.privately do
-        mod.extend_object self
-      end
+    alias_method :value, :get
 
-      Rubinius.privately do
-        mod.extended self
+    def set(val)
+      Rubinius.primitive :atomic_set
+      raise PrimitiveFailure, "Rubinius::AtomicReference#set primitive failed"
+    end
+
+    alias_method :value=, :set
+
+    def compare_and_set(old, new)
+      Rubinius.primitive :atomic_compare_and_set
+      raise PrimitiveFailure, "Rubinius::AtomicReference#compare_and_set primitive failed"
+    end
+
+    def get_and_set(new)
+      while true
+        val = get
+        return val if compare_and_set(val, new)
       end
     end
-    self
   end
-
-  def load(filename, wrap = false)
-    filename = Rubinius::Type.coerce_to_path filename
-
-    # load absolute path
-    return Truffle::Primitive.load File.expand_path(filename), wrap if filename.start_with? File::SEPARATOR
-
-    # try relative
-    if filename.start_with? '.'
-      return Truffle::Primitive.load File.expand_path(File.join(Dir.pwd, filename)), wrap
-    end
-
-    # try to find relative path in $LOAD_PATH
-    [Dir.pwd, *$LOAD_PATH].each do |dir|
-      path = File.expand_path(File.join(dir, filename))
-      if File.exist? path
-        return Truffle::Primitive.load path, wrap
-      end
-    end
-
-    # file not found trigger an error
-    Truffle::Primitive.load filename, wrap
-  end
-  module_function :load
-
 end

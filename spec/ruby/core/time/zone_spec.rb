@@ -49,13 +49,11 @@ describe "Time#zone" do
     end
 
     ruby_version_is "2.2" do
-      ruby_bug "#10887", "2.2.0.81" do
-        it "returns an ASCII string" do
-          t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+      it "returns an ASCII string" do
+        t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-          with_timezone("America/New_York") do
-            t.getlocal.zone.encoding.should == Encoding::US_ASCII
-          end
+        with_timezone("America/New_York") do
+          t.getlocal.zone.encoding.should == Encoding::US_ASCII
         end
       end
     end

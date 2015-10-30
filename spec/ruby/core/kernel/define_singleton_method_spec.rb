@@ -60,11 +60,11 @@ describe "Kernel#define_singleton_method" do
   end
 
   it "defines a new singleton method for objects" do
-    s = "hello"
-    s.define_singleton_method(:test) { "world!" }
-    s.test.should == "world!"
+    obj = Object.new
+    obj.define_singleton_method(:test) { "world!" }
+    obj.test.should == "world!"
     lambda {
-      "hello".test
+      Object.new.test
     }.should raise_error(NoMethodError)
   end
 

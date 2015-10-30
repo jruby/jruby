@@ -25,6 +25,13 @@ module ModuleSpecs
   class Second < First
     def method_to_remove; 2; end
   end
+  
+  class Multiple
+    def method_to_remove_1; 1; end
+    def method_to_remove_2; 2; end
+    
+    remove_method :method_to_remove_1, :method_to_remove_2
+  end
 end
 
 describe "Module#remove_method" do
@@ -45,6 +52,12 @@ describe "Module#remove_method" do
     x = ModuleSpecs::Child.new
     x.respond_to?(:method_to_remove).should == true
     x.method_to_remove.should == 1
+  end
+  
+  it "removes multiple methods with 1 call" do
+    x = ModuleSpecs::Multiple.new
+    x.respond_to?(:method_to_remove_1).should == false
+    x.respond_to?(:method_to_remove_2).should == false
   end
 
   it "accepts multiple arguments" do

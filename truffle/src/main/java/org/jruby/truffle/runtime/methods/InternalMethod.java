@@ -9,22 +9,24 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.object.ObjectGraph;
-import org.jruby.truffle.runtime.object.ObjectGraphNode;
-
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+
 /**
- * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
- * lambdas and native methods written in Java.
+ * A Ruby method: either a method in a module,
+ * a literal module/class body
+ * or some meta-information for eval'd code.
+ *
+ * Blocks capture the method in which they are defined.
  */
 public class InternalMethod implements ObjectGraphNode {
 
@@ -36,11 +38,14 @@ public class InternalMethod implements ObjectGraphNode {
     private final boolean undefined;
 
     private final CallTarget callTarget;
-    private final MaterializedFrame declarationFrame;
 
-    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name,
-                          DynamicObject declaringModule, Visibility visibility, boolean undefined,
-                          CallTarget callTarget, MaterializedFrame declarationFrame) {
+    public InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+            Visibility visibility, CallTarget callTarget) {
+        this(sharedMethodInfo, name, declaringModule, visibility, false, callTarget);
+    }
+
+    private InternalMethod(SharedMethodInfo sharedMethodInfo, String name, DynamicObject declaringModule,
+            Visibility visibility, boolean undefined, CallTarget callTarget) {
         assert RubyGuards.isRubyModule(declaringModule);
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
@@ -48,7 +53,6 @@ public class InternalMethod implements ObjectGraphNode {
         this.visibility = visibility;
         this.undefined = undefined;
         this.callTarget = callTarget;
-        this.declarationFrame = declarationFrame;
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
@@ -71,10 +75,6 @@ public class InternalMethod implements ObjectGraphNode {
         return undefined;
     }
 
-    public MaterializedFrame getDeclarationFrame() {
-        return declarationFrame;
-    }
-
     public CallTarget getCallTarget(){
         return callTarget;
     }
@@ -85,7 +85,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newDeclaringModule == declaringModule) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget);
         }
     }
 
@@ -93,7 +93,7 @@ public class InternalMethod implements ObjectGraphNode {
         if (newName.equals(name)) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget);
         }
     }
 
@@ -101,12 +101,12 @@ public class InternalMethod implements ObjectGraphNode {
         if (newVisibility == visibility) {
             return this;
         } else {
-            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+            return new InternalMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget);
         }
     }
 
     public InternalMethod undefined() {
-        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
+        return new InternalMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget);
     }
 
     public boolean isVisibleTo(Node currentNode, DynamicObject callerClass) {
@@ -146,10 +146,6 @@ public class InternalMethod implements ObjectGraphNode {
 
         if (declaringModule  != null) {
             adjacent.add(declaringModule);
-        }
-
-        if (declarationFrame != null) {
-            adjacent.addAll(ObjectGraph.getObjectsInFrame(declarationFrame));
         }
 
         return adjacent;

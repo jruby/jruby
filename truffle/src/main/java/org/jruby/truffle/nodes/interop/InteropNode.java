@@ -161,7 +161,7 @@ public abstract class InteropNode extends RubyNode {
             final List<Object> faArgs = ForeignAccess.getArguments(frame);
             // skip first argument; it's the receiver but a RubyMethod knows its receiver
             Object[] args = faArgs.subList(1, faArgs.size()).toArray();
-            return callNode.call(frame, RubyArguments.pack(internalMethod, internalMethod.getDeclarationFrame(), null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, args));
+            return callNode.call(frame, RubyArguments.pack(internalMethod, null, null, Layouts.METHOD.getReceiver(cachedMethod), null, DeclarationContext.METHOD, args));
         }
         
         @Specialization(guards = "isRubyMethod(method)")
@@ -172,7 +172,7 @@ public abstract class InteropNode extends RubyNode {
             Object[] args = faArgs.subList(1, faArgs.size()).toArray();
             return callNode.call(frame, internalMethod.getCallTarget(), RubyArguments.pack(
                     internalMethod,
-                    internalMethod.getDeclarationFrame(),
+                    null,
                     null,
                     Layouts.METHOD.getReceiver(method),
                     null,

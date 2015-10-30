@@ -44,13 +44,12 @@ public abstract class ToIntNode extends RubyNode {
             return (int) integerObject;
         }
 
-        if (RubyGuards.isRubyBignum(object)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
-        }
-
         CompilerDirectives.transferToInterpreter();
-        throw new UnsupportedOperationException();
+        if (RubyGuards.isRubyBignum(object)) {
+            throw new RaiseException(getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public abstract Object executeIntOrLong(VirtualFrame frame, Object object);

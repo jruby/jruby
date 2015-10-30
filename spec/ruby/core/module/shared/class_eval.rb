@@ -40,6 +40,14 @@ describe :module_class_eval, shared: true do
     ModuleSpecs.send(@method) { 1 + 1 }.should == 2
   end
 
+  it "passes the module as the first argument of the block" do
+    given = nil
+    ModuleSpecs.send(@method) do |block_parameter|
+      given = block_parameter
+    end
+    given.should equal ModuleSpecs
+  end
+
   it "uses the optional filename and lineno parameters for error messages" do
     ModuleSpecs.send(@method, "[__FILE__, __LINE__]", "test", 102).should == ["test", 102]
   end

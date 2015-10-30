@@ -96,7 +96,7 @@ public class GeneralSuperCallNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), name, this));
         }
 
-        final Object[] frameArguments = RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), null, self, blockObject, DeclarationContext.METHOD, argumentsArray);
+        final Object[] frameArguments = RubyArguments.pack(superMethod, null, null, self, blockObject, DeclarationContext.METHOD, argumentsArray);
 
         return callMethodNode.executeCallMethod(frame, superMethod, frameArguments);
     }

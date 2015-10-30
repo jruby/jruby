@@ -45,6 +45,7 @@ import org.jruby.truffle.nodes.objects.FreezeNode;
 import org.jruby.truffle.nodes.objects.FreezeNodeGen;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeGen;
+import org.jruby.truffle.nodes.rubinius.AtomicReferenceNodesFactory;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.nodes.rubinius.PosixNodesFactory;
 import org.jruby.truffle.nodes.rubinius.RubiniusTypeNodesFactory;
@@ -59,7 +60,6 @@ import org.jruby.truffle.runtime.layouts.ext.DigestLayoutImpl;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.rubinius.RubiniusTypes;
 import org.jruby.truffle.runtime.signal.SignalOperations;
-import org.jruby.util.StringSupport;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
@@ -165,6 +165,7 @@ public class CoreLibrary {
     private final DynamicObject psychParserClass;
     private final DynamicObject randomizerClass;
     private final DynamicObjectFactory randomizerFactory;
+    private final DynamicObject atomicReferenceClass;
 
     private final DynamicObject argv;
     private final DynamicObject globalVariablesObject;
@@ -471,6 +472,9 @@ public class CoreLibrary {
         transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
         randomizerClass = defineClass(rubiniusModule, objectClass, "Randomizer");
+        atomicReferenceClass = defineClass(rubiniusModule, objectClass, "AtomicReference");
+        Layouts.CLASS.setInstanceFactoryUnsafe(atomicReferenceClass,
+                Layouts.ATOMIC_REFERENCE.createAtomicReferenceShape(atomicReferenceClass, atomicReferenceClass));
         randomizerFactory = Layouts.RANDOMIZER.createRandomizerShape(randomizerClass, randomizerClass);
         Layouts.CLASS.setInstanceFactoryUnsafe(randomizerClass, randomizerFactory);
 
@@ -575,6 +579,7 @@ public class CoreLibrary {
         coreMethodNodeManager.addCoreMethodNodes(EtcNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychParserNodesFactory.getFactories());
         coreMethodNodeManager.addCoreMethodNodes(PsychEmitterNodesFactory.getFactories());
+        coreMethodNodeManager.addCoreMethodNodes(AtomicReferenceNodesFactory.getFactories());
         Main.printTruffleTimeMetric("after-load-truffle-nodes");
 
         coreMethodNodeManager.allMethodInstalled();

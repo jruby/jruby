@@ -46,6 +46,7 @@ import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 import org.jruby.util.StringSupport;
+import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.io.IOException;
 import java.util.*;
@@ -544,6 +545,24 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "memory_barrier", isModuleFunction = true)
+    public abstract static class MemoryBarrierPrimitiveNode extends CoreMethodNode {
+
+        public MemoryBarrierPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object memoryBarrier() {
+            if (UnsafeHolder.SUPPORTS_FENCES) {
+                UnsafeHolder.fullFence();
+            } else {
+                throw new UnsupportedOperationException();
+            }
+            return nil();
+        }
+    }
+
     @CoreMethod(names = "print_backtrace", onSingleton = true)
     public abstract static class PrintBacktraceNode extends CoreMethodNode {
 
@@ -750,6 +769,5 @@ public abstract class TrufflePrimitiveNodes {
             return load(file, false);
         }
     }
-
 
 }

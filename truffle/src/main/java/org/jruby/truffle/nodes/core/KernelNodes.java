@@ -538,9 +538,7 @@ public abstract class KernelNodes {
                     cachedRootNode.getRootNode().getSharedMethodInfo().getName(),
                     RubyArguments.getMethod(parentFrame.getArguments()).getDeclaringModule(),
                     Visibility.PUBLIC,
-                    false,
-                    cachedCallTarget,
-                    parentFrame);
+                    cachedCallTarget);
 
             return callNode.call(frame, RubyArguments.pack(
                     method,
@@ -1519,12 +1517,10 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureLoader().require(feature, this);
+                return getContext().getFeatureLoader().require(feature, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-            return true;
         }
     }
 

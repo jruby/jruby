@@ -113,7 +113,7 @@ public abstract class MethodNodes {
         private Object[] packArguments(DynamicObject method, InternalMethod internalMethod, Object[] arguments, Object block) {
             return RubyArguments.pack(
                     internalMethod,
-                    internalMethod.getDeclarationFrame(),
+                    null,
                     null,
                     Layouts.METHOD.getReceiver(method),
                     procOrNullNode.executeProcOrNull(block),
@@ -251,7 +251,7 @@ public abstract class MethodNodes {
                     method.getSharedMethodInfo(),
                     callTarget,
                     callTarget,
-                    method.getDeclarationFrame(),
+                    null,
                     method,
                     Layouts.METHOD.getReceiver(methodObject),
                     null);

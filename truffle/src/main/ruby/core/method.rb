@@ -9,7 +9,13 @@
 class Method
 
   def inspect
-    "#<#{self.class}: #{receiver.class}(#{owner})##{name}>"
+    file, line = source_location
+
+    if file and line
+      "#<#{self.class}: #{receiver.class}(#{owner})##{name} #{file}:#{line}>"
+    else
+      "#<#{self.class}: #{receiver.class}(#{owner})##{name}>"
+    end
   end
 
   alias_method :to_s, :inspect

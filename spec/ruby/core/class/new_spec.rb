@@ -2,6 +2,14 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Class.new with a block given" do
+  it "yields the new class as self in the block" do
+    self_in_block = nil
+    klass = Class.new do
+      self_in_block = self
+    end
+    self_in_block.should equal klass
+  end
+
   it "uses the given block as the class' body" do
     klass = Class.new do
       def self.message

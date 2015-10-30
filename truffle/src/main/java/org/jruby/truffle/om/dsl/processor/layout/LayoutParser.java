@@ -69,12 +69,16 @@ public class LayoutParser {
                     parseConstructor((ExecutableElement) element);
                 } else if (simpleName.equals("is" + name)) {
                     parseGuard((ExecutableElement) element);
+                } else if (simpleName.startsWith("getAndSet")) {
+                    parseGetAndSet((ExecutableElement) element);
+                } else if (simpleName.startsWith("compareAndSet")) {
+                    parseCompareAndSet((ExecutableElement) element);
                 } else if (simpleName.startsWith("get")) {
                     parseGetter((ExecutableElement) element);
                 } else if (simpleName.startsWith("set")) {
                     parseSetter((ExecutableElement) element);
                 } else {
-                    throw new AssertionError("Unknown method in layout interface " + interfaceFullName);
+                    throw new AssertionError("Unknown method '" + simpleName + "' in layout interface " + interfaceFullName);
                 }
             }
         }
@@ -239,7 +243,7 @@ public class LayoutParser {
             assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
         }
 
-        String name = titleToCamel(methodElement.getSimpleName().toString().substring("get".length()));
+        String name = titleToCamel(methodElement.getSimpleName().toString().substring("set".length()));
 
         if (isUnsafeSetter) {
             name = name.substring(0, name.length() - "Unsafe".length());
@@ -258,6 +262,36 @@ public class LayoutParser {
         }
 
         setPropertyType(property, methodElement.getParameters().get(1).asType());
+    }
+
+    private void parseCompareAndSet(ExecutableElement methodElement) {
+        assert methodElement.getSimpleName().toString().startsWith("compareAndSet");
+        assert methodElement.getParameters().size() == 3;
+        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+
+        String name = titleToCamel(methodElement.getSimpleName().toString().substring("compareAndSet".length()));
+        final PropertyBuilder property = getProperty(name);
+
+        property.setHasCompareAndSet(true);
+
+        setPropertyType(property, methodElement.getParameters().get(1).asType());
+        setPropertyType(property, methodElement.getParameters().get(2).asType());
+    }
+
+    private void parseGetAndSet(ExecutableElement methodElement) {
+        assert methodElement.getSimpleName().toString().startsWith("getAndSet");
+        assert methodElement.getParameters().size() == 2;
+        assert methodElement.getParameters().get(0).asType().toString().equals(DynamicObject.class.getName());
+        assert methodElement.getParameters().get(0).getSimpleName().toString().equals("object");
+
+        String name = titleToCamel(methodElement.getSimpleName().toString().substring("getAndSet".length()));
+        final PropertyBuilder property = getProperty(name);
+
+        property.setHasGetAndSet(true);
+
+        setPropertyType(property, methodElement.getParameters().get(1).asType());
+        setPropertyType(property, methodElement.getReturnType());
     }
 
     private String titleToCamel(String name) {

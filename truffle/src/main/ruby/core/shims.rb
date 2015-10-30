@@ -167,6 +167,10 @@ module Rubinius
     Truffle::Primitive.synchronized(object, &block)
   end
 
+  def self.memory_barrier
+    Truffle::Primitive.memory_barrier
+  end
+
 end
 
 module Errno

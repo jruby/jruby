@@ -10,7 +10,7 @@ ruby_version_is "2.2" do
       @file = nil
     end
 
-    platform_is :windows, :darwin do
+    platform_is :windows, :darwin, :freebsd, :netbsd do
       it "returns the birth time for the named file as a Time object" do
         File.birthtime(@file)
         File.birthtime(@file).should be_kind_of(Time)
@@ -25,7 +25,7 @@ ruby_version_is "2.2" do
       end
     end
 
-    platform_is :linux, :openbsd, :freebsd, :netbsd do
+    platform_is :linux, :openbsd do
       it "raises an NotImplementedError" do
         lambda { File.birthtime(@file) }.should raise_error(NotImplementedError)
       end
@@ -44,14 +44,14 @@ ruby_version_is "2.2" do
       @file = nil
     end
 
-    platform_is :windows, :darwin do
+    platform_is :windows, :darwin, :freebsd, :netbsd do
       it "returns the birth time for self" do
         @file.birthtime
         @file.birthtime.should be_kind_of(Time)
       end
     end
 
-    platform_is :linux, :openbsd, :freebsd, :netbsd do
+    platform_is :linux, :openbsd do
       it "raises an NotImplementedError" do
         lambda { @file.birthtime }.should raise_error(NotImplementedError)
       end

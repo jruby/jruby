@@ -66,7 +66,7 @@ public class LazyRubyRootNode extends RootNode {
 
             mainObject = context.getCoreLibrary().getMainObject();
             method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
-                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, null);
+                    context.getCoreLibrary().getObjectClass(), Visibility.PUBLIC, callTarget);
         }
 
         return callNode.call(frame,
