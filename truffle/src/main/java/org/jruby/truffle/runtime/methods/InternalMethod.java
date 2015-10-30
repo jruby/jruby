@@ -9,22 +9,24 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.object.DynamicObject;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyGuards;
-import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.truffle.runtime.object.ObjectGraph;
-import org.jruby.truffle.runtime.object.ObjectGraphNode;
-
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.runtime.layouts.Layouts;
+import org.jruby.truffle.runtime.object.ObjectGraphNode;
+
+import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObject;
+
 /**
- * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
- * lambdas and native methods written in Java.
+ * A Ruby method: either a method in a module,
+ * a literal module/class body
+ * or some meta-information for eval'd code.
+ *
+ * Blocks capture the method in which they are defined.
  */
 public class InternalMethod implements ObjectGraphNode {
 
