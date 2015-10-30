@@ -148,12 +148,12 @@ public class TraceManager {
         @Override
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(node, frame);
+                callSetTraceFunc(node, frame.materialize());
             }
         }
 
         @TruffleBoundary
-        private void callSetTraceFunc(Node node, Frame frame) {
+        private void callSetTraceFunc(Node node, MaterializedFrame frame) {
             final SourceSection sourceSection = node.getEncapsulatingSourceSection();
 
             final DynamicObject file = StringOperations.createString(context, StringOperations.encodeByteList(sourceSection.getSource().getName(), UTF8Encoding.INSTANCE));
@@ -162,7 +162,7 @@ public class TraceManager {
             final Object classname = context.getCoreLibrary().getNilObject();
             final Object id = context.getCoreLibrary().getNilObject();
 
-            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame.materialize());
+            final DynamicObject binding = Layouts.BINDING.createBinding(context.getCoreLibrary().getBindingFactory(), frame);
 
             isInTraceFunc = true;
             try {
@@ -211,12 +211,12 @@ public class TraceManager {
         @Override
         public void onEnter(Probe probe, Node node, VirtualFrame frame) {
             if (!inTraceFuncProfile.profile(isInTraceFunc)) {
-                callSetTraceFunc(node, frame);
+                callSetTraceFunc(node, frame.materialize());
             }
         }
 
         @TruffleBoundary
-        private void callSetTraceFunc(Node node, Frame frame) {
+        private void callSetTraceFunc(Node node, MaterializedFrame frame) {
             // set_trace_func reports the file and line of the call site.
             final String filename;
             final int line;
