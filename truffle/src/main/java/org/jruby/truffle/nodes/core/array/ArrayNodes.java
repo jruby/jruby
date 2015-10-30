@@ -438,13 +438,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
-        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused,
-                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
-            final int index = toInt(frame, indexObject);
-            return set(array, index, value, unused, negativeIndexProfile);
-        }
-
         @Specialization
         public Object set(DynamicObject array, int index, Object value, NotProvided unused,
                 @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
@@ -455,6 +448,13 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
             }
             return write(array, normalizedIndex, value);
+        }
+
+        @Specialization(guards = { "!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)" })
+        public Object set(VirtualFrame frame, DynamicObject array, Object indexObject, Object value, NotProvided unused,
+                @Cached("createBinaryProfile()") ConditionProfile negativeIndexProfile) {
+            final int index = toInt(frame, indexObject);
+            return set(array, index, value, unused, negativeIndexProfile);
         }
 
         @Specialization(guards = { "!isRubyArray(value)", "wasProvided(value)", "!isInteger(lengthObject)" })
