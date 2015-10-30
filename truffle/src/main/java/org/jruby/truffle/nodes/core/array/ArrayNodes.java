@@ -427,7 +427,7 @@ public abstract class ArrayNodes {
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
-        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
+        @Child protected ArrayReadSliceNormalizedNode readSliceNode;
         @Child private PopOneNode popOneNode;
         @Child private ToIntNode toIntNode;
 
@@ -498,7 +498,7 @@ public abstract class ArrayNodes {
                 if (Layouts.ARRAY.getSize(array) > (begin + length)) { // there is a tail, else other values discarded
                     if (readSliceNode == null) {
                         CompilerDirectives.transferToInterpreter();
-                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
+                        readSliceNode = insert(ArrayReadSliceNormalizedNodeGen.create(getContext(), getSourceSection(), null, null, null));
                     }
                     DynamicObject endValues = (DynamicObject) readSliceNode.executeReadSlice(frame, (DynamicObject) array, (begin + length), (Layouts.ARRAY.getSize(array) - begin - length));
                     write(frame, array, begin, value);
