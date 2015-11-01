@@ -2161,8 +2161,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         POSIX posix = context.runtime.getPosix();
-        byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
-        byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
+        byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.begin() + value.realSize());
+        byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.realSize());
         if (saltBytes[0] == 0 || saltBytes[1] == 0) {
             throw context.runtime.newArgumentError("salt too short (need >=2 bytes)");
         }
