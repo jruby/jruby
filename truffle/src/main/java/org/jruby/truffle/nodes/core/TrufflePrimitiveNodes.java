@@ -770,4 +770,17 @@ public abstract class TrufflePrimitiveNodes {
         }
     }
 
+    @CoreMethod(names = "run_jruby_root", onSingleton = true)
+    public abstract static class RunJRubyRootNode extends CoreMethodArrayArgumentsNode {
+
+        public RunJRubyRootNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public Object runJRubyRootNode() {
+            return getContext().execute(getContext().getInitialJRubyRootNode());
+        }
+    }
+
 }

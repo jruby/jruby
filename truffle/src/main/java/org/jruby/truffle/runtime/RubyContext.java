@@ -122,6 +122,8 @@ public class RubyContext extends ExecutionContext {
     private Map<String,TruffleObject> exported;
     private final TruffleLanguage.Env env;
 
+    private org.jruby.ast.RootNode initialJRubyRootNode;
+
     public RubyContext(Ruby runtime, TruffleLanguage.Env env) {
         options = new Options();
 
@@ -689,4 +691,13 @@ public class RubyContext extends ExecutionContext {
     public TruffleLanguage.Env getEnv() {
         return env;
     }
+
+    public void setInitialJRubyRootNode(org.jruby.ast.RootNode initialJRubyRootNode) {
+        this.initialJRubyRootNode = initialJRubyRootNode;
+    }
+
+    public org.jruby.ast.RootNode getInitialJRubyRootNode() {
+        return initialJRubyRootNode;
+    }
+
 }

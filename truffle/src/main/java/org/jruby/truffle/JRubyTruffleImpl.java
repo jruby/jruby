@@ -13,7 +13,6 @@ import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import org.jruby.Ruby;
 import org.jruby.JRubyTruffleInterface;
-import org.jruby.ast.RootNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyLanguage;
 
@@ -36,8 +35,18 @@ public class JRubyTruffleImpl implements JRubyTruffleInterface {
     }
 
     @Override
-    public Object execute(RootNode rootNode) {
-        return context.execute(rootNode);
+    public Object execute(org.jruby.ast.RootNode rootNode) {
+        context.setInitialJRubyRootNode(rootNode);
+
+        try {
+            return engine.eval(Source.fromText("Truffle::Primitive.run_jruby_root", "run_jruby_root").withMimeType(RubyLanguage.MIME_TYPE)).get();
+        } catch (IOException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
