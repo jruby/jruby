@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.RubyThread.Status;
@@ -46,12 +47,18 @@ import java.util.concurrent.locks.Lock;
 public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
-        final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
-        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass));
+        final DynamicObject threadLocals = createThreadLocals(context);
         final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
                 null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
         return object;
+    }
+
+    private static DynamicObject createThreadLocals(RubyContext context) {
+        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
+        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
+        threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
+        return threadLocals;
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
