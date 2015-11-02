@@ -23,10 +23,11 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
-import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
+    // implements CallableCache<T> {
 
     static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
 
@@ -489,6 +490,17 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             return ((RubyModule) object).getName();
         }
         return object.getMetaClass().getRealClass().getName();
+    }
+
+    /**
+     * NOTE: Internal interface used with {@link CallableSelector}.
+     * @param <T> java callable type
+     */
+    public static interface CallableCache<T extends ParameterTypes> {
+
+        T getSignature(int signatureCode) ;
+        void putSignature(int signatureCode, T callable) ;
+
     }
 
 }

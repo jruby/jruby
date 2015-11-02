@@ -53,6 +53,7 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 
 import org.jcodings.Encoding;
 
@@ -105,6 +106,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 
 import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+import org.jruby.java.invokers.RubyToJavaInvoker;
 import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
 import static org.jruby.runtime.Visibility.*;
 
@@ -608,23 +610,12 @@ public class Java implements Library {
         subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
-    public static class JCreateMethod extends JavaMethodN {
-        private final IntHashMap<JavaProxyConstructor> writeCache = newCallableCache();
-        private volatile IntHashMap<JavaProxyConstructor> readCache = (IntHashMap)writeCache.clone();
+    public static class JCreateMethod extends JavaMethodN implements RubyToJavaInvoker.CallableCache<JavaProxyConstructor> {
+
+        private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<JavaProxyConstructor>(8);
 
         JCreateMethod(RubyModule cls) {
             super(cls, PUBLIC);
-        }
-
-        public JavaProxyConstructor getSignature(int signatureCode) {
-            return readCache.get(signatureCode);
-        }
-
-        public void putSignature(int signatureCode, JavaProxyConstructor callable) {
-            synchronized (writeCache) {
-                writeCache.put(signatureCode, callable);
-                readCache = (IntHashMap<JavaProxyConstructor>)writeCache.clone();
-            }
         }
 
         @Override
@@ -643,13 +634,10 @@ public class Java implements Library {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
             }
 
-            final JavaProxyConstructor matching;
-            synchronized (writeCache) {
-                matching = CallableSelector.matchingCallableArityN(
-                        context.runtime, this,
-                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
-                );
-            }
+            final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
+                    context.runtime, this,
+                    forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
+            );
 
             if ( matching == null ) {
                 throw context.runtime.newArgumentError("wrong number of arguments for constructor");
@@ -659,6 +647,14 @@ public class Java implements Library {
             JavaObject newObject = matching.newInstance(self, javaArgs);
 
             return JavaUtilities.set_java_object(self, self, newObject);
+        }
+
+        public final JavaProxyConstructor getSignature(int signatureCode) {
+            return cache.get(signatureCode);
+        }
+
+        public final void putSignature(int signatureCode, JavaProxyConstructor callable) {
+            cache.put(signatureCode, callable);
         }
     }
 

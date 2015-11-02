@@ -17,12 +17,10 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.java.invokers.RubyToJavaInvoker;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
-import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import static org.jruby.util.CodegenUtils.getBoxType;
@@ -38,12 +36,12 @@ public class CallableSelector {
 
     //private static final boolean DEBUG = true;
 
-    public static JavaProxyConstructor matchingCallableArityN(Ruby runtime, Java.JCreateMethod invoker, JavaProxyConstructor[] methods, IRubyObject[] args) {
+    public static <T extends ParameterTypes> T matchingCallableArityN(Ruby runtime, RubyToJavaInvoker.CallableCache<T> cache, T[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
-        org.jruby.javasupport.proxy.JavaProxyConstructor method = invoker.getSignature(signatureCode);
+        T method = cache.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) invoker.putSignature(signatureCode, method);
+            if (method != null) cache.putSignature(signatureCode, method);
         }
         return method;
     }
