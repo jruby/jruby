@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
+
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.parser.FormatDirective;
 import org.jruby.truffle.runtime.RubyContext;
@@ -25,34 +26,32 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 @NodeChildren({
+        @NodeChild(value = "spacePadding", type = PackNode.class),
+        @NodeChild(value = "zeroPadding", type = PackNode.class),
         @NodeChild(value = "value", type = PackNode.class),
 })
 public abstract class FormatIntegerNode extends PackNode {
 
-    private final int spacePadding;
-    private final int zeroPadding;
     private final char format;
 
-    public FormatIntegerNode(RubyContext context, int spacePadding, int zeroPadding, char format) {
+    public FormatIntegerNode(RubyContext context, char format) {
         super(context);
-        this.spacePadding = spacePadding;
-        this.zeroPadding = zeroPadding;
         this.format = format;
     }
 
     @Specialization
-    public ByteList format(int value) {
-        return doFormat(value);
+    public ByteList format(int spacePadding, int zeroPadding, int value) {
+        return doFormat(value, spacePadding, zeroPadding);
     }
 
     @Specialization
-    public ByteList format(long value) {
-        return doFormat(value);
+    public ByteList format(int spacePadding, int zeroPadding, long value) {
+        return doFormat(value, spacePadding, zeroPadding);
     }
 
     @TruffleBoundary
     @Specialization(guards = "isRubyBignum(value)")
-    public ByteList format(DynamicObject value) {
+    public ByteList format(int spacePadding, int zeroPadding, DynamicObject value) {
         final BigInteger bigInteger = Layouts.BIGNUM.getValue(value);
 
         String formatted;
@@ -88,7 +87,7 @@ public abstract class FormatIntegerNode extends PackNode {
     }
 
     @TruffleBoundary
-    protected ByteList doFormat(Object value) {
+    protected ByteList doFormat(Object value, int spacePadding, int zeroPadding) {
         // TODO CS 3-May-15 write this without building a string and formatting
 
         final StringBuilder builder = new StringBuilder();

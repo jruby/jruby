@@ -16,6 +16,7 @@ package org.jruby.truffle.format.parser;
  */
 public class FormatDirective {
 
+    public static final int PADDING_FROM_ARGUMENT = -2;
     public static final int DEFAULT = -1;
 
     private final int spacePadding;
