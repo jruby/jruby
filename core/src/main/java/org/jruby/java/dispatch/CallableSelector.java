@@ -16,6 +16,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -34,6 +35,56 @@ public class CallableSelector {
     private CallableSelector() { /* no-instances */ }
 
     //private static final boolean DEBUG = true;
+
+    public static <T extends JavaCallable> T matchingCallableArityN(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject[] args) {
+        final int signatureCode = argsHashCode(args);
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends JavaCallable> T matchingCallableArityOne(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0) {
+        final int signatureCode = argsHashCode(arg0);
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends JavaCallable> T matchingCallableArityTwo(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1) {
+        final int signatureCode = argsHashCode(arg0, arg1);
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends JavaCallable> T matchingCallableArityThree(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2);
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends JavaCallable> T matchingCallableArityFour(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
+        T method = invoker.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            if (method != null) invoker.putSignature(signatureCode, method);
+        }
+        return method;
+    }
 
     @SuppressWarnings("unchecked")
     public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args) {
@@ -96,6 +147,16 @@ public class CallableSelector {
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
             if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityN(Ruby runtime, RubyToJavaInvoker.CallableCache<T> cache, T[] methods, IRubyObject[] args) {
+        final int signatureCode = argsHashCode(args);
+        T method = cache.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.putSignature(signatureCode, method);
         }
         return method;
     }

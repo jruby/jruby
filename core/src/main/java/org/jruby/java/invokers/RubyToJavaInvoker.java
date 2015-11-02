@@ -24,10 +24,11 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
-import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+
 import static org.jruby.util.CodegenUtils.prettyParams;
 
-public abstract class RubyToJavaInvoker extends JavaMethod {
+public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
+    // implements CallableCache<T> {
 
     static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
 
@@ -38,7 +39,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     // in case multiple callables (overloaded Java method - same name different args)
     // for the invoker exists  CallableSelector caches resolution based on args here
-    final NonBlockingHashMapLong<JavaCallable> cache;
+    final NonBlockingHashMapLong<T> cache;
 
     private final Ruby runtime;
     private final Member[] members;
@@ -108,7 +109,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
 
-            cache = new NonBlockingHashMapLong<JavaCallable>(8);
+            cache = new NonBlockingHashMapLong<T>(8);
         }
 
         this.javaCallable = callable;
@@ -438,6 +439,17 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             return ((RubyModule) object).getName();
         }
         return object.getMetaClass().getRealClass().getName();
+    }
+
+    /**
+     * NOTE: Internal interface used with {@link CallableSelector}.
+     * @param <T> java callable type
+     */
+    public static interface CallableCache<T extends ParameterTypes> {
+
+        T getSignature(int signatureCode) ;
+        void putSignature(int signatureCode, T callable) ;
+
     }
 
 }
