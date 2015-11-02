@@ -30,7 +30,7 @@ import static org.jruby.util.CodegenUtils.prettyParams;
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
     // implements CallableCache<T> {
 
-    static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
+    static final NonBlockingHashMapLong NULL_CACHE = new NullHashMapLong();
 
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
@@ -44,6 +44,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     private final Ruby runtime;
     private final Member[] members;
 
+    @SuppressWarnings("unchecked") // NULL_CACHE
     RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.members = members;
@@ -152,11 +153,21 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return (AccessibleObject[]) getMembers();
     }
 
-    public T getSignature(int signatureCode) {
+    /**
+     * Internal API
+     * @param signatureCode
+     * @return callable
+     */
+    public final T getSignature(int signatureCode) {
         return cache.get(signatureCode);
     }
 
-    public void putSignature(int signatureCode, T callable) {
+    /**
+     * Internal API
+     * @param signatureCode
+     * @param callable
+     */
+    public final void putSignature(int signatureCode, T callable) {
         cache.put(signatureCode, callable);
     }
 
@@ -449,6 +460,23 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
         T getSignature(int signatureCode) ;
         void putSignature(int signatureCode, T callable) ;
+
+    }
+
+    private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {
+
+        NullHashMapLong() { super(0, false); }
+
+        @Override
+        public V put( long key, V val) { return null; }
+
+        @Override
+        public V putIfAbsent( long key, V val ) { return null; }
+
+        // public final V get( long key )
+
+        @Override
+        public V get(Object key) { return null; }
 
     }
 
