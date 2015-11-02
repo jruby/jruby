@@ -200,6 +200,24 @@ public class SafepointManager {
     // Variants for a single thread
 
     @TruffleBoundary
+    public void pauseThreadAndExecute(final Thread thread, Node currentNode, final SafepointAction action) {
+        if (Thread.currentThread() == thread) {
+            // fast path if we are already the right thread
+            DynamicObject rubyThread = context.getThreadManager().getCurrentThread();
+            action.run(rubyThread, currentNode);
+        } else {
+            pauseAllThreadsAndExecute(currentNode, false, new SafepointAction() {
+                @Override
+                public void run(DynamicObject rubyThread, Node currentNode) {
+                    if (Thread.currentThread() == thread) {
+                        action.run(rubyThread, currentNode);
+                    }
+                }
+            });
+        }
+    }
+
+    @TruffleBoundary
     public void pauseThreadAndExecuteLater(final Thread thread, Node currentNode, final SafepointAction action) {
         if (Thread.currentThread() == thread) {
             // fast path if we are already the right thread

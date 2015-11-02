@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
 import org.jruby.truffle.runtime.NotProvided;
@@ -24,8 +23,6 @@ import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.core.StringOperations;
 import org.jruby.truffle.runtime.layouts.Layouts;
-import org.jruby.util.StringSupport;
-
 import java.util.EnumSet;
 import java.util.List;
 
@@ -33,12 +30,9 @@ import java.util.List;
 public abstract class ExceptionNodes {
 
     @TruffleBoundary
-    public static DynamicObject asRubyStringArray(RubyContext context, DynamicObject exception) {
-        assert RubyGuards.isRubyException(exception);
-        assert Layouts.EXCEPTION.getBacktrace(exception) != null;
-
+    public static DynamicObject backtraceAsRubyStringArray(RubyContext context, DynamicObject exception, Backtrace backtrace) {
         final List<String> lines = new BacktraceFormatter(context, EnumSet.of(BacktraceFormatter.FormattingFlags.OMIT_FROM_PREFIX))
-                .formatBacktrace(exception, Layouts.EXCEPTION.getBacktrace(exception));
+                .formatBacktrace(exception, backtrace);
 
         final Object[] array = new Object[lines.size()];
 
@@ -98,7 +92,7 @@ public abstract class ExceptionNodes {
             if (customBacktrace != null) {
                 return customBacktrace;
             } else if (Layouts.EXCEPTION.getBacktrace(exception) != null) {
-                return asRubyStringArray(getContext(), exception);
+                return backtraceAsRubyStringArray(getContext(), exception, Layouts.EXCEPTION.getBacktrace(exception));
             } else {
                 return nil();
             }
