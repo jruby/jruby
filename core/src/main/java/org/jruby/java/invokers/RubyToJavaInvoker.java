@@ -504,17 +504,6 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return object.getMetaClass().getRealClass().getName();
     }
 
-    /**
-     * NOTE: Internal interface used with {@link CallableSelector}.
-     * @param <T> java callable type
-     */
-    public static interface CallableCache<T extends ParameterTypes> {
-
-        T getSignature(int signatureCode) ;
-        void putSignature(int signatureCode, T callable) ;
-
-    }
-
     private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {
 
         NullHashMapLong() { super(0, false); }

@@ -610,7 +610,7 @@ public class Java implements Library {
         subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
-    public static class JCreateMethod extends JavaMethodN implements RubyToJavaInvoker.CallableCache<JavaProxyConstructor> {
+    public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
 
         private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<JavaProxyConstructor>(8);
 
