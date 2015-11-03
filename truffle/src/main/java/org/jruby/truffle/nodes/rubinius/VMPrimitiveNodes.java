@@ -59,7 +59,6 @@ import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory.ReferenceEqualNodeFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
-import org.jruby.truffle.nodes.exceptions.ClearExceptionVariableNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeGen;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -72,7 +71,6 @@ import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.Signal;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.PosixShim;
 
 import java.lang.management.ManagementFactory;
@@ -94,7 +92,6 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldDispatchHeadNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
-        @Child private ClearExceptionVariableNode clearExceptionVariableNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -117,11 +114,6 @@ public abstract class VMPrimitiveNodes {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
                 if (areSame(frame, e.getTag(), tag)) {
-                    if (clearExceptionVariableNode == null) {
-                        CompilerDirectives.transferToInterpreter();
-                        clearExceptionVariableNode = insert(new ClearExceptionVariableNode(getContext(), getSourceSection()));
-                    }
-                    clearExceptionVariableNode.execute(frame);
                     return e.getValue();
                 } else {
                     throw e;
