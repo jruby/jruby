@@ -161,12 +161,16 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
-        public Object setLastMatch(DynamicObject regexpClass, Object matchData) {
-            Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread()).define("$~", matchData, 0);
-
+        public Object setLastMatchData(DynamicObject regexpClass, Object matchData) {
+            setLastMatch(getContext(), matchData);
             return matchData;
+        }
+
+        @TruffleBoundary
+        public static void setLastMatch(RubyContext context, Object matchData) {
+            final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(context.getThreadManager().getCurrentThread());
+            threadLocals.set("$~", matchData);
         }
 
     }

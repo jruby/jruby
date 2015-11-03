@@ -43,10 +43,10 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @TruffleBoundary
     private Object readMatchReference() {
-        DynamicObject receiver = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
-        final Object match = receiver.get("$~", nil());
+        final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
+        final Object match = threadLocals.get("$~", nil());
 
-        if (match == null || match == nil()) {
+        if (match == nil()) {
             return nil();
         }
 

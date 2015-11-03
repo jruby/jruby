@@ -34,6 +34,8 @@ import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.rubinius.RegexpPrimitiveNodes;
+import org.jruby.truffle.nodes.rubinius.RegexpPrimitiveNodes.RegexpSetLastMatchPrimitiveNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -81,7 +83,7 @@ public abstract class RegexpNodes {
         final DynamicObject nil = context.getCoreLibrary().getNilObject();
 
         if (match == -1) {
-            setThreadLocal(context, "$~", nil);
+            RegexpSetLastMatchPrimitiveNode.setLastMatch(context, nil);
 
             if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
                 for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
@@ -137,7 +139,7 @@ public abstract class RegexpNodes {
             }
         }
 
-        setThreadLocal(context, "$~", matchObject);
+        RegexpSetLastMatchPrimitiveNode.setLastMatch(context, matchObject);
 
         if (setNamedCaptures && Layouts.REGEXP.getRegex(regexp).numberOfNames() > 0) {
             for (Iterator<NameEntry> i = Layouts.REGEXP.getRegex(regexp).namedBackrefIterator(); i.hasNext();) {
@@ -196,11 +198,6 @@ public abstract class RegexpNodes {
 
             frame = RubyArguments.getDeclarationFrame(frame.getArguments());
         }
-    }
-
-    private static void setThreadLocal(RubyContext context, String name, Object value) {
-        assert value != null;
-        Layouts.THREAD.getThreadLocals(context.getThreadManager().getCurrentThread()).define(name, value, 0);
     }
 
     @TruffleBoundary

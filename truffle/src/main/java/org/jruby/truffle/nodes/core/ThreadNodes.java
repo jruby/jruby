@@ -68,6 +68,8 @@ public abstract class ThreadNodes {
         final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
+        threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
+        threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);
         return threadLocals;
     }
 
