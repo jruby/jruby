@@ -441,7 +441,7 @@ public class OpenFile implements Finalizable {
         try {
             if (posix.errno == null) return false;
 
-            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+            checkClosed();
 
             switch (posix.errno) {
                 case EINTR:
@@ -471,7 +471,7 @@ public class OpenFile implements Finalizable {
         try {
             if (posix.errno == null) return false;
 
-            if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+            checkClosed();
 
             switch (posix.errno) {
                 case EINTR:
@@ -1391,9 +1391,7 @@ public class OpenFile implements Finalizable {
      * MRI: rb_io_wait_readable
      */
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
-        if (fd == null) {
-            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
-        }
+        checkClosed();
 
         boolean locked = lock();
         try {
@@ -2248,30 +2246,37 @@ public class OpenFile implements Finalizable {
     }
 
     public Channel channel() {
+        assert(fd != null);
         return fd.ch;
     }
 
     public ReadableByteChannel readChannel() {
+        assert(fd != null);
         return fd.chRead;
     }
 
     public WritableByteChannel writeChannel() {
+        assert(fd != null);
         return fd.chWrite;
     }
 
     public SeekableByteChannel seekChannel() {
+        assert(fd != null);
         return fd.chSeek;
     }
 
     public SelectableChannel selectChannel() {
+        assert(fd != null);
         return fd.chSelect;
     }
 
     public FileChannel fileChannel() {
+        assert(fd != null);
         return fd.chFile;
     }
 
     public SocketChannel socketChannel() {
+        assert(fd != null);
         return fd.chSock;
     }
 

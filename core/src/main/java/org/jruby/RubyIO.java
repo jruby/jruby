@@ -399,7 +399,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     public Channel getChannel() {
         // FIXME: Do we want to make a faux channel that is backed by IO's buffering? Or turn buffering off?
-        return openFile.channel();
+        return getOpenFileChecked().channel();
     }
 
     // io_reopen
