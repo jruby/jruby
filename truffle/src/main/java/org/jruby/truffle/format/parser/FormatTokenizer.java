@@ -82,6 +82,7 @@ public class FormatTokenizer {
             spacePadding = readInt();
             zeroPadding = FormatDirective.DEFAULT;
         } else if (position < format.length() && format.charAt(position) == '0') {
+            position++;
             spacePadding = FormatDirective.DEFAULT;
             zeroPadding = readInt();
         } else if (position < format.length() && Character.isDigit(format.charAt(position))) {
@@ -138,6 +139,11 @@ public class FormatTokenizer {
 
         while (Character.isDigit(format.charAt(position))) {
             position++;
+        }
+
+        if (position == start && format.charAt(position) == '*') {
+            position++;
+            return FormatDirective.PADDING_FROM_ARGUMENT;
         }
 
         return Integer.parseInt(format.subSequence(start, position).toString());

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
@@ -39,7 +40,9 @@ import org.jruby.truffle.nodes.StringCachingGuards;
 import org.jruby.truffle.nodes.cast.BooleanCastWithDefaultNodeGen;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToJavaStringNode;
 import org.jruby.truffle.nodes.coerce.NameToJavaStringNodeGen;
+import org.jruby.truffle.nodes.coerce.NameToSymbolOrStringNodeGen;
 import org.jruby.truffle.nodes.coerce.ToPathNodeGen;
 import org.jruby.truffle.nodes.coerce.ToStrNodeGen;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.CopyNodeFactory;
@@ -48,6 +51,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SingletonMethodsNodeFacto
 import org.jruby.truffle.nodes.core.ProcNodes.ProcNewNode;
 import org.jruby.truffle.nodes.core.ProcNodesFactory.ProcNewNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
@@ -75,6 +79,7 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.layouts.ThreadBacktraceLocationLayoutImpl;
 import org.jruby.truffle.runtime.loader.FeatureLoader;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingAction;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.translator.TranslatorDriver.ParserContext;
@@ -1205,29 +1210,73 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
+        @Child
+        NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
+        @Child CallDispatchHeadNode respondToMissingNode;
 
         public MethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            nameToJavaStringNode = NameToJavaStringNodeGen.create(getContext(), getSourceSection(), null);
             lookupMethodNode = LookupMethodNodeGen.create(context, sourceSection, null, null);
+            respondToMissingNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
         }
 
         @CreateCast("name")
         public RubyNode coerceToString(RubyNode name) {
-            return NameToJavaStringNodeGen.create(getContext(), getSourceSection(), name);
+            return NameToSymbolOrStringNodeGen.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public DynamicObject methodCached(VirtualFrame frame, Object self, String name) {
-            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, name);
+        public DynamicObject methodCached(VirtualFrame frame, Object self, DynamicObject name) {
+            final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
+            InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
             if (method == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
-                        name, getContext().getCoreLibrary().getLogicalClass(self), this));
+
+                if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
+                    final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
+                    final RootCallTarget callTarget = (RootCallTarget) methodMissing.getCallTarget();
+                    final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
+                    final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
+
+                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), normalizedName);
+                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
+                    final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
+
+                    final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
+                    method = new InternalMethod(info, normalizedName, module, Visibility.PUBLIC, newCallTarget);
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                            normalizedName, getContext().getCoreLibrary().getLogicalClass(self), this));
+                }
             }
 
             return Layouts.METHOD.createMethod(getContext().getCoreLibrary().getMethodFactory(), self, method);
+        }
+
+        private static class CallMethodMissingWithStaticName extends RubyNode {
+
+            private final String methodName;
+            @Child private CallDispatchHeadNode methodMissing;
+
+            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, String methodName) {
+                super(context, sourceSection);
+                this.methodName = methodName;
+                methodMissing = DispatchHeadNodeFactory.createMethodCall(context);
+            }
+
+            @Override
+            public Object execute(VirtualFrame frame) {
+                final Object[] originalUserArguments = RubyArguments.extractUserArguments(frame.getArguments());
+                final Object[] newUserArguments = new Object[originalUserArguments.length + 1];
+
+                newUserArguments[0] = methodName;
+                System.arraycopy(originalUserArguments, 0, newUserArguments, 1, originalUserArguments.length);
+
+                return methodMissing.call(frame, RubyArguments.getSelf(frame.getArguments()), "method_missing", RubyArguments.getBlock(frame.getArguments()), newUserArguments);
+            }
         }
 
     }

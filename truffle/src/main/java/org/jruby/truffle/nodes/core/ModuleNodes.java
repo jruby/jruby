@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.frame.FrameInstance.FrameAccess;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
@@ -1101,7 +1102,8 @@ public abstract class ModuleNodes {
             final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
             final SharedMethodInfo info = Layouts.PROC.getSharedMethodInfo(proc).withName(name);
 
-            final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), rootNode.getBody());
+            final RubyNode body = NodeUtil.cloneNode(rootNode.getBody());
+            final RubyNode newBody = new CallMethodWithProcBody(getContext(), info.getSourceSection(), Layouts.PROC.getDeclarationFrame(proc), body);
             final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
             final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 

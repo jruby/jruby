@@ -596,6 +596,7 @@ public class CoreLibrary {
         globals.define("$:", globals.get("$LOAD_PATH", nilObject), 0);
         globals.define("$\"", globals.get("$LOADED_FEATURES", nilObject), 0);
         globals.define("$,", nilObject, 0);
+        globals.define("$*", argv, 0);
         globals.define("$0", StringOperations.createString(context, StringOperations.encodeByteList(context.getRuntime().getInstanceConfig().displayedFileName(), UTF8Encoding.INSTANCE)), 0);
 
         globals.define("$DEBUG", context.getRuntime().isDebug(), 0);

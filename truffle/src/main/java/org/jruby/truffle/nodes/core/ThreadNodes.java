@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.RubyThread.Status;
@@ -23,7 +24,10 @@ import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.runtime.NotProvided;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
@@ -31,7 +35,9 @@ import org.jruby.truffle.runtime.layouts.Layouts;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,12 +47,18 @@ import java.util.concurrent.locks.Lock;
 public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
-        final DynamicObject objectClass = context.getCoreLibrary().getObjectClass();
-        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(Layouts.CLASS.getInstanceFactory(objectClass));
+        final DynamicObject threadLocals = createThreadLocals(context);
         final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
                 null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
         Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
         return object;
+    }
+
+    private static DynamicObject createThreadLocals(RubyContext context) {
+        final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
+        final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
+        threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
+        return threadLocals;
     }
 
     public static void initialize(final DynamicObject thread, RubyContext context, Node currentNode, final Object[] arguments, final DynamicObject block) {
@@ -139,6 +151,32 @@ public abstract class ThreadNodes {
         @Specialization
         public boolean alive(DynamicObject thread) {
             return Layouts.THREAD.getStatus(thread) != Status.ABORTING && Layouts.THREAD.getStatus(thread) != Status.DEAD;
+        }
+
+    }
+
+    @CoreMethod(names = "backtrace")
+    public abstract static class BacktraceNode extends CoreMethodArrayArgumentsNode {
+
+        public BacktraceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public DynamicObject backtrace(DynamicObject rubyThread) {
+            final Thread thread = Layouts.FIBER.getThread(Layouts.THREAD.getFiberManager(rubyThread).getCurrentFiber());
+
+            final DynamicObject[] result = new DynamicObject[1];
+
+            getContext().getSafepointManager().pauseThreadAndExecute(thread, this, new SafepointAction() {
+                @Override
+                public void run(DynamicObject thread, Node currentNode) {
+                    final Backtrace backtrace = RubyCallStack.getBacktrace(currentNode);
+                    result[0] = ExceptionNodes.backtraceAsRubyStringArray(getContext(), null, backtrace);
+                }
+            });
+
+            return result[0];
         }
 
     }

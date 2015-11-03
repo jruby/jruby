@@ -23,12 +23,13 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
-import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
+    // implements CallableCache<T> {
 
-    static final NonBlockingHashMapLong NULL_CACHE = new NonBlockingHashMapLong();
+    static final NonBlockingHashMapLong NULL_CACHE = new NullHashMapLong();
 
     protected final T javaCallable; /* null if multiple callable members */
     protected final T[][] javaCallables; /* != null if javaCallable == null */
@@ -40,6 +41,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     private final Ruby runtime;
 
+    @SuppressWarnings("unchecked") // NULL_CACHE
     RubyToJavaInvoker(RubyModule host, Member member) {
         super(host, Visibility.PUBLIC);
         this.runtime = host.getRuntime();
@@ -65,6 +67,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         setupNativeCall();
     }
 
+    @SuppressWarnings("unchecked") // NULL_CACHE
     RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC);
         this.runtime = host.getRuntime();
@@ -192,11 +195,21 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return false;
     }
 
-    public T getSignature(int signatureCode) {
+    /**
+     * Internal API
+     * @param signatureCode
+     * @return callable
+     */
+    public final T getSignature(int signatureCode) {
         return cache.get(signatureCode);
     }
 
-    public void putSignature(int signatureCode, T callable) {
+    /**
+     * Internal API
+     * @param signatureCode
+     * @param callable
+     */
+    public final void putSignature(int signatureCode, T callable) {
         cache.put(signatureCode, callable);
     }
 
@@ -489,6 +502,23 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             return ((RubyModule) object).getName();
         }
         return object.getMetaClass().getRealClass().getName();
+    }
+
+    private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {
+
+        NullHashMapLong() { super(0, false); }
+
+        @Override
+        public V put( long key, V val) { return null; }
+
+        @Override
+        public V putIfAbsent( long key, V val ) { return null; }
+
+        // public final V get( long key )
+
+        @Override
+        public V get(Object key) { return null; }
+
     }
 
 }

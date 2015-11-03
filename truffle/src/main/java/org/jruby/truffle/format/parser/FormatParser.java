@@ -11,6 +11,7 @@ package org.jruby.truffle.format.parser;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
+
 import org.jruby.truffle.format.nodes.PackNode;
 import org.jruby.truffle.format.nodes.PackRootNode;
 import org.jruby.truffle.format.nodes.SourceNode;
@@ -18,7 +19,9 @@ import org.jruby.truffle.format.nodes.control.SequenceNode;
 import org.jruby.truffle.format.nodes.format.FormatFloatNodeGen;
 import org.jruby.truffle.format.nodes.format.FormatIntegerNodeGen;
 import org.jruby.truffle.format.nodes.read.LiteralBytesNode;
+import org.jruby.truffle.format.nodes.read.LiteralIntegerNode;
 import org.jruby.truffle.format.nodes.read.ReadHashValueNodeGen;
+import org.jruby.truffle.format.nodes.read.ReadIntegerNodeGen;
 import org.jruby.truffle.format.nodes.read.ReadStringNodeGen;
 import org.jruby.truffle.format.nodes.read.ReadValueNodeGen;
 import org.jruby.truffle.format.nodes.type.ToDoubleWithCoercionNodeGen;
@@ -117,9 +120,14 @@ public class FormatParser {
                     case 'u':
                     case 'x':
                     case 'X':
-                        final int spacePadding = directive.getSpacePadding();
+                        final PackNode spacePadding;
+                        if (directive.getSpacePadding() == FormatDirective.PADDING_FROM_ARGUMENT) {
+                            spacePadding = ReadIntegerNodeGen.create(context, new SourceNode());
+                        } else {
+                            spacePadding = new LiteralIntegerNode(context, directive.getSpacePadding());
+                        }
 
-                        final int zeroPadding;
+                        final PackNode zeroPadding;
 
                         /*
                          * Precision and zero padding both set zero padding -
@@ -127,10 +135,12 @@ public class FormatParser {
                          * is actually ignored if it's set.
                          */
 
-                        if (directive.getPrecision() != FormatDirective.DEFAULT) {
-                            zeroPadding = directive.getPrecision();
+                        if (directive.getZeroPadding() == FormatDirective.PADDING_FROM_ARGUMENT) {
+                            zeroPadding = ReadIntegerNodeGen.create(context, new SourceNode());
+                        } else if (directive.getPrecision() != FormatDirective.DEFAULT) {
+                            zeroPadding = new LiteralIntegerNode(context, directive.getPrecision());
                         } else {
-                            zeroPadding = directive.getZeroPadding();
+                            zeroPadding = new LiteralIntegerNode(context, directive.getZeroPadding());
                         }
 
                         final char format;
@@ -150,9 +160,10 @@ public class FormatParser {
                         }
 
                         node = WriteBytesNodeGen.create(context,
-                                FormatIntegerNodeGen.create(context, spacePadding, zeroPadding, format,
-                                        ToIntegerNodeGen.create(context,
-                                                valueNode)));
+                                FormatIntegerNodeGen.create(context, format,
+                                        spacePadding,
+                                        zeroPadding,
+                                        ToIntegerNodeGen.create(context, valueNode)));
                         break;
                     case 'f':
                     case 'g':

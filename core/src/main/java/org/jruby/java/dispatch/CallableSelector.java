@@ -17,12 +17,10 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.java.invokers.RubyToJavaInvoker;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
-import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import static org.jruby.util.CodegenUtils.getBoxType;
@@ -38,15 +36,57 @@ public class CallableSelector {
 
     //private static final boolean DEBUG = true;
 
-    public static JavaProxyConstructor matchingCallableArityN(Ruby runtime, Java.JCreateMethod invoker, JavaProxyConstructor[] methods, IRubyObject[] args) {
+    public static <T extends ParameterTypes> T matchingCallableArityN(Ruby runtime, CallableCache<T> cache, T[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
-        org.jruby.javasupport.proxy.JavaProxyConstructor method = invoker.getSignature(signatureCode);
+        T method = cache.getSignature(signatureCode);
         if (method == null) {
             method = findMatchingCallableForArgs(runtime, methods, args);
-            if (method != null) invoker.putSignature(signatureCode, method);
+            if (method != null) cache.putSignature(signatureCode, method);
         }
         return method;
     }
+
+    public static <T extends ParameterTypes> T matchingCallableArityOne(Ruby runtime, CallableCache<T> cache, T[] methods, IRubyObject arg0) {
+        final int signatureCode = argsHashCode(arg0);
+        T method = cache.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0);
+            if (method != null) cache.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityTwo(Ruby runtime, CallableCache<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1) {
+        final int signatureCode = argsHashCode(arg0, arg1);
+        T method = cache.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            if (method != null) cache.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityThree(Ruby runtime, CallableCache<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2);
+        T method = cache.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            if (method != null) cache.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityFour(Ruby runtime, CallableCache<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
+        T method = cache.getSignature(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            if (method != null) cache.putSignature(signatureCode, method);
+        }
+        return method;
+    }
+
+    // RubyToJavaInvoker
 
     public static <T extends JavaCallable> T matchingCallableArityN(Ruby runtime, RubyToJavaInvoker<T> invoker, T[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
@@ -702,10 +742,22 @@ public class CallableSelector {
     }
 
     /**
+     * A cache of "callables" based on method signature hash.
+     * @param <T> java callable type
+     */
+    public static interface CallableCache<T extends ParameterTypes> {
+
+        T getSignature(int signatureCode) ;
+        void putSignature(int signatureCode, T callable) ;
+
+    }
+
+    /**
      * Internal helper to allocate a callable map to cache argument method matches.
      * @param <T> the callable type
      * @return cache usable with {@link CallableSelector}
      */
+    @Deprecated
     public static <T extends ParameterTypes> IntHashMap<T> newCallableCache() {
         return new IntHashMap<T>(8);
     }
@@ -780,4 +832,5 @@ public class CallableSelector {
         }
         return method;
     }
+
 }
