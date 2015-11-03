@@ -48,9 +48,22 @@ public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject threadLocals = createThreadLocals(context);
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
-                null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
-        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
+        final DynamicObject object = Layouts.THREAD.createThread(
+                Layouts.CLASS.getInstanceFactory(rubyClass),
+                threadLocals,
+                InterruptMode.IMMEDIATE,
+                Status.RUN,
+                new ArrayList<Lock>(),
+                null,
+                null,
+                new CountDownLatch(1),
+                false,
+                null,
+                null,
+                null,
+                new AtomicBoolean(false),
+                0);
+        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
         return object;
     }
 
