@@ -188,8 +188,9 @@ public class TraceManager {
         }
 
         @Override
-        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame virtualFrame, Throwable throwable) {
         }
+
     }
 
     private final class CallEventInstrumentListener implements StandardInstrumentListener {
@@ -271,7 +272,7 @@ public class TraceManager {
         }
 
         @Override
-        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame virtualFrame, Throwable throwable) {
         }
 
     }

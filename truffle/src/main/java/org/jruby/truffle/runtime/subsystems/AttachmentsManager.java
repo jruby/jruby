@@ -106,7 +106,8 @@ public class AttachmentsManager {
         }
 
         @Override
-        public void onReturnExceptional(Probe probe, Node node, VirtualFrame frame, Exception exception) {
+        public void onReturnExceptional(Probe probe, Node node, VirtualFrame virtualFrame, Throwable throwable) {
         }
+
     }
 }
