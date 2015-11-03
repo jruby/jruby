@@ -1210,8 +1210,7 @@ public abstract class KernelNodes {
     })
     public abstract static class MethodNode extends CoreMethodNode {
 
-        @Child
-        NameToJavaStringNode nameToJavaStringNode;
+        @Child NameToJavaStringNode nameToJavaStringNode;
         @Child LookupMethodNode lookupMethodNode;
         @Child CallDispatchHeadNode respondToMissingNode;
 
@@ -1228,7 +1227,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public DynamicObject methodCached(VirtualFrame frame, Object self, DynamicObject name) {
+        public DynamicObject method(VirtualFrame frame, Object self, DynamicObject name) {
             final String normalizedName = nameToJavaStringNode.executeToJavaString(frame, name);
             InternalMethod method = lookupMethodNode.executeLookupMethod(frame, self, normalizedName);
 
@@ -1242,7 +1241,7 @@ public abstract class KernelNodes {
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
                     final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), normalizedName);
-                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), rootNode.getFrameDescriptor(), info, newBody);
+                    final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody);
                     final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
                     final DynamicObject module = getContext().getCoreLibrary().getMetaClass(self);
