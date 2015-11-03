@@ -1,4 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
+
 class SpecificExampleException < StandardError
 end
 class OtherCustomException < StandardError
@@ -9,6 +10,7 @@ end
 def exception_list
   [SpecificExampleException, ArbitraryException]
 end
+
 describe "The rescue keyword" do
   before :each do
     ScratchPad.record []

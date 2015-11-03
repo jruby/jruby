@@ -22,12 +22,10 @@ import org.jruby.RubyThread.Status;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyGuards;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.rubinius.ThreadPrimitiveNodes.ThreadRaisePrimitiveNode;
 import org.jruby.truffle.runtime.NotProvided;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.backtrace.BacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
@@ -37,7 +35,6 @@ import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,9 +45,22 @@ public abstract class ThreadNodes {
 
     public static DynamicObject createRubyThread(RubyContext context, DynamicObject rubyClass) {
         final DynamicObject threadLocals = createThreadLocals(context);
-        final DynamicObject object = Layouts.THREAD.createThread(Layouts.CLASS.getInstanceFactory(rubyClass), threadLocals, InterruptMode.IMMEDIATE, Status.RUN, new ArrayList<Lock>(),
-                null, null, new CountDownLatch(1), false, null, null, null, new AtomicBoolean(false), 0);
-        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object));
+        final DynamicObject object = Layouts.THREAD.createThread(
+                Layouts.CLASS.getInstanceFactory(rubyClass),
+                threadLocals,
+                InterruptMode.IMMEDIATE,
+                Status.RUN,
+                new ArrayList<Lock>(),
+                null,
+                null,
+                new CountDownLatch(1),
+                false,
+                null,
+                null,
+                null,
+                new AtomicBoolean(false),
+                0);
+        Layouts.THREAD.setFiberManagerUnsafe(object, new FiberManager(context, object)); // Because it is cyclic
         return object;
     }
 
@@ -58,6 +68,8 @@ public abstract class ThreadNodes {
         final DynamicObjectFactory instanceFactory = Layouts.CLASS.getInstanceFactory(context.getCoreLibrary().getObjectClass());
         final DynamicObject threadLocals = Layouts.BASIC_OBJECT.createBasicObject(instanceFactory);
         threadLocals.define("$!", context.getCoreLibrary().getNilObject(), 0);
+        threadLocals.define("$~", context.getCoreLibrary().getNilObject(), 0);
+        threadLocals.define("$?", context.getCoreLibrary().getNilObject(), 0);
         return threadLocals;
     }
 

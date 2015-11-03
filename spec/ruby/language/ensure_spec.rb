@@ -75,7 +75,7 @@ describe "An ensure block inside a begin block" do
 end
 
 describe "The value of an ensure expression," do
-  it "in no-exception scenarios, is the value of the last stmt of the protected body" do
+  it "in no-exception scenarios, is the value of the last statement of the protected body" do
     begin
       v = 1
       eval('x=1') # to prevent opts from triggering
