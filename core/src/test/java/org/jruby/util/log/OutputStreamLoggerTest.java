@@ -87,26 +87,11 @@ public class OutputStreamLoggerTest {
     public void testWithException() {
         logger.error("debug-test-x", new RuntimeException("42"));
         assertStreamNotEmpty();
-        // TODO
-        //assertStreamContains("debug-test-x\njava.lang.RuntimeException: 42");
 
-        //java.util.logging.SimpleFormatter fmt = new java.util.logging.SimpleFormatter();
-        //java.util.logging.StreamHandler sh = new java.util.logging.StreamHandler(System.out, fmt);
-        //java.util.logging.LogManager.getLogManager().getLogger("SAMPLE").addHandler(sh);
-
-        //System.out.println(java.util.logging.LogManager.getLogManager().getLogger("SAMPLE"));
-        //System.out.println(java.util.logging.LogManager.getLogManager().getLogger("SAMPLE").getLevel());
-
-        LoggerFactory.getLogger("SAMPLE").error(new RuntimeException("1"));
-        LoggerFactory.getLogger("SAMPLE").warn("pre-msg", new RuntimeException("2"));
+        assertStreamContains("debug-test-x\njava.lang.RuntimeException: 42");
+        // with stack trace :
+        assertStreamContains("at org.jruby.util.log.OutputStreamLoggerTest.testWithException");
     }
-
-//    public void testWithException() {
-//        logger.setDebugEnable(true);
-//        logger.debug(new IllegalStateException());
-//        stream.flush();
-//        Assert.assertTrue(baos.toString().contains(IllegalStateException.class.getName()));
-//    }
 
     private void assertStreamEmpty() {
         stream.flush();
