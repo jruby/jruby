@@ -296,16 +296,17 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object appendValue(Object store, int index, Object value) {
             // TODO(CS): inject probability
-            if (store instanceof long[] && value instanceof Long) {
-                ((long[]) store)[index] = (long) value;
-                return store;
-            } else if (value instanceof Integer) {
-                ((long[]) store)[index] = (int) value;
-                return store;
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                return appendValueFallback(store, index, value, expectedLength);
+            if (store instanceof long[]) {
+                if (value instanceof Long) {
+                    ((long[]) store)[index] = (long) value;
+                    return store;
+                } else if (value instanceof Integer) {
+                    ((long[]) store)[index] = (int) value;
+                    return store;
+                }
             }
+            CompilerDirectives.transferToInterpreter();
+            return appendValueFallback(store, index, value, expectedLength);
         }
 
         public Object finish(Object store, int length) {
