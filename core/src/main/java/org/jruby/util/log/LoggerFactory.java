@@ -35,46 +35,52 @@ public class LoggerFactory {
     private static final String LOGGER_CLASS = Options.LOGGER_CLASS.load();
     private static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
 
-    private static final Constructor<?> CTOR;
+    static final Constructor<? extends Logger> LOGGER;
     static {
-        Constructor<?> ctor;
-        Logger log;
-        
+        Constructor<? extends Logger> loggerCtor;
         try {
-            final Class<?> cls = Class.forName(LOGGER_CLASS);
-            ctor = cls.getDeclaredConstructor(String.class);
-            log = (Logger)ctor.newInstance("LoggerFactory");
-        } catch (Exception e1) {
+            @SuppressWarnings("unchecked")
+            Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(LOGGER_CLASS);
+            loggerCtor = klass.getDeclaredConstructor(String.class);
+            loggerCtor.newInstance("LoggerFactory"); // check its working
+        }
+        catch (Exception e1) {
             try {
-                final Class<?> cls = Class.forName(BACKUP_LOGGER_CLASS);
-                ctor = cls.getDeclaredConstructor(String.class);
-                log = (Logger)ctor.newInstance("LoggerFactory");
-                
-                log.debug("failed to create logger \"" + LOGGER_CLASS + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
-            } catch (Exception e2) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(BACKUP_LOGGER_CLASS);
+                loggerCtor = klass.getDeclaredConstructor(String.class);
+                Logger log = loggerCtor.newInstance("LoggerFactory");
+                // log failure to load passeed -Djruby.logger.class :
+                log.info("failed to create logger \"" + LOGGER_CLASS + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
+            }
+            catch (Exception e2) {
                 throw new IllegalStateException("unable to instantiate any logger", e1);
             }
         }
-        CTOR = ctor;
+        LOGGER = loggerCtor;
     }
 
     public static Logger getLogger(String loggerName) {
         try {
-            Logger logger = (Logger) CTOR.newInstance(loggerName);
-            return logger;
-        } catch (Exception e) {
-          Throwable rootCause = e;
-
-          // Unwrap reflection exception wrappers
-          while (rootCause.getCause() != null) {
-            rootCause = rootCause.getCause();
-          }
-
-          if (rootCause instanceof SecurityException) {
-            return new StandardErrorLogger(loggerName);
-          }
-
-          throw new IllegalStateException("unable to instantiate logger", e);
+            return LOGGER.newInstance(loggerName);
+        }
+        catch (Exception ex) {
+            return getLoggerFallback(loggerName, ex);
         }
     }
+
+    private static Logger getLoggerFallback(final String loggerName, final Exception ex) {
+        Throwable rootCause = ex;
+        // unwrap reflection exception wrappers
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+
+        if (rootCause instanceof SecurityException) {
+            return new StandardErrorLogger(loggerName);
+        }
+
+        throw new IllegalStateException("unable to instantiate logger", ex);
+    }
+
 }
