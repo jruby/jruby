@@ -1236,8 +1236,6 @@ public abstract class KernelNodes {
 
                 if (respondToMissingNode.callBoolean(frame, self, "respond_to_missing?", null, name, true)) {
                     final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
-                    final RootCallTarget callTarget = (RootCallTarget) methodMissing.getCallTarget();
-                    final RubyRootNode rootNode = (RubyRootNode) callTarget.getRootNode();
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
                     final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), normalizedName);
