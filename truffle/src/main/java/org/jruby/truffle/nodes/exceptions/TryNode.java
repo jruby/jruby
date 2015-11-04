@@ -47,7 +47,6 @@ public class TryNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         while (true) {
-
             Object result;
 
             try {
@@ -79,19 +78,23 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerDirectives.transferToInterpreter();
 
+        for (RescueNode rescue : rescueParts) {
+            if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
+                return setLastExceptionAndRunRescue(frame, exception, rescue);
+            }
+        }
+
+        // Not handled by any of the rescue
+        throw exception;
+    }
+
+    private Object setLastExceptionAndRunRescue(VirtualFrame frame, RaiseException exception, RescueNode rescue) {
         final DynamicObject threadLocals = Layouts.THREAD.getThreadLocals(getContext().getThreadManager().getCurrentThread());
 
         final Object lastException = threadLocals.get("$!", nil());
         threadLocals.set("$!", exception.getRubyException());
         try {
-            for (RescueNode rescue : rescueParts) {
-                if (rescue.canHandle(frame, (DynamicObject) exception.getRubyException())) {
-                    return rescue.execute(frame);
-                }
-            }
-
-            // Not handled by any of the rescue
-            throw exception;
+            return rescue.execute(frame);
         } finally {
             threadLocals.set("$!", lastException);
         }
