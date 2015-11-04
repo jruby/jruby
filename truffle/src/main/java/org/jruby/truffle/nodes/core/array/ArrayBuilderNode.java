@@ -14,6 +14,8 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
+import org.jruby.truffle.nodes.constants.RestartableReadConstantNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.array.ArrayUtils;
 import org.jruby.truffle.runtime.core.ArrayOperations;
@@ -47,6 +49,12 @@ public abstract class ArrayBuilderNode extends Node {
 
     protected RubyContext getContext() {
         return context;
+    }
+
+    protected Object restart(int length) {
+        final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+        replace(newNode);
+        return newNode.start(length);
     }
 
     protected Object appendValueFallback(Object store, int index, Object value, int expectedLength) {
@@ -182,10 +190,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new int[expectedLength];
@@ -263,10 +268,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new long[expectedLength];
@@ -338,10 +340,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new double[expectedLength];
@@ -418,10 +417,7 @@ public abstract class ArrayBuilderNode extends Node {
         public Object start(int length) {
             if (length > expectedLength) {
                 CompilerDirectives.transferToInterpreter();
-
-                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
-                replace(newNode);
-                return newNode.start(length);
+                return restart(length);
             }
 
             return new Object[expectedLength];
