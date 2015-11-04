@@ -34,6 +34,10 @@ public abstract class ArrayBuilderNode extends Node {
         this.context = context;
     }
 
+    public static ArrayBuilderNode create(RubyContext context) {
+        return new UninitializedArrayBuilderNode(context);
+    }
+
     public abstract Object start();
     public abstract Object start(int length);
     public abstract Object ensure(Object store, int length);

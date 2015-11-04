@@ -1358,11 +1358,9 @@ public abstract class ArrayNodes {
         @Child private ToIntNode toIntNode;
         @Child private CallDispatchHeadNode toAryNode;
         @Child private KernelNodes.RespondToNode respondToToAryNode;
-        @Child private ArrayBuilderNode arrayBuilder;
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = { "!isInteger(object)", "!isLong(object)", "wasProvided(object)", "!isRubyArray(object)" })
@@ -1526,7 +1524,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "size >= 0")
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block) {
+        public Object initialize(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             Object store = arrayBuilder.start(size);
 
             int count = 0;
@@ -1929,11 +1928,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -1942,7 +1938,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntArray(array)")
-        public Object mapIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object mapIntegerFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -1966,7 +1963,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongArray(array)")
-        public Object mapLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object mapLongFixnum(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final long[] store = (long[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -1990,7 +1988,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isDoubleArray(array)")
-        public Object mapFloat(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object mapFloat(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final double[] store = (double[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -2014,7 +2013,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObjectArray(array)")
-        public Object mapObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object mapObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
             final int arraySize = Layouts.ARRAY.getSize(array);
             Object mappedStore = arrayBuilder.start(arraySize);
@@ -3093,11 +3093,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3106,7 +3103,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObjectArray(array)")
-        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3139,7 +3137,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntArray(array)")
-        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3487,11 +3486,8 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3500,7 +3496,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObjectArray(array)")
-        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object selectObject(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final Object[] store = (Object[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));
@@ -3531,7 +3528,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntArray(array)")
-        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block) {
+        public Object selectFixnumInteger(VirtualFrame frame, DynamicObject array, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int[] store = (int[]) Layouts.ARRAY.getStore(array);
 
             Object selectedStore = arrayBuilder.start(Layouts.ARRAY.getSize(array));

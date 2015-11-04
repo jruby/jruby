@@ -757,8 +757,6 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
-        @Child ArrayBuilderNode arrayBuilderNode;
-
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -772,13 +770,9 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = "isPackedHash(hash)")
-        public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
+        public DynamicObject mapPackedArray(VirtualFrame frame, DynamicObject hash, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
-
-            if (arrayBuilderNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
-            }
 
             final Object[] store = (Object[]) Layouts.HASH.getStore(hash);
 
@@ -803,13 +797,9 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isBucketHash(hash)")
-        public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block) {
+        public DynamicObject mapBuckets(VirtualFrame frame, DynamicObject hash, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilderNode) {
             assert HashOperations.verifyStore(getContext(), hash);
-
-            if (arrayBuilderNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                arrayBuilderNode = insert(new ArrayBuilderNode.UninitializedArrayBuilderNode(getContext()));
-            }
 
             final int length = Layouts.HASH.getSize(hash);
             Object store = arrayBuilderNode.start(length);

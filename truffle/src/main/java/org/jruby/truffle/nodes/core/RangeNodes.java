@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.core.CoreLibrary;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -39,15 +40,13 @@ public abstract class RangeNodes {
     @CoreMethod(names = { "collect", "map" }, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
-
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         @Specialization(guards = "isIntegerFixnumRange(range)")
-        public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block) {
+        public DynamicObject collect(VirtualFrame frame, DynamicObject range, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             final int begin = Layouts.INTEGER_FIXNUM_RANGE.getBegin(range);
             final int end = Layouts.INTEGER_FIXNUM_RANGE.getEnd(range);
             final boolean excludedEnd = Layouts.INTEGER_FIXNUM_RANGE.getExcludedEnd(range);
