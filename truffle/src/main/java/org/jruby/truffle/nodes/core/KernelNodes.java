@@ -1238,7 +1238,7 @@ public abstract class KernelNodes {
                     final InternalMethod methodMissing = lookupMethodNode.executeLookupMethod(frame, self, "method_missing").withName(normalizedName);
                     final SharedMethodInfo info = methodMissing.getSharedMethodInfo().withName(normalizedName);
 
-                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), normalizedName);
+                    final RubyNode newBody = new CallMethodMissingWithStaticName(getContext(), info.getSourceSection(), name);
                     final RubyRootNode newRootNode = new RubyRootNode(getContext(), info.getSourceSection(), new FrameDescriptor(nil()), info, newBody);
                     final CallTarget newCallTarget = Truffle.getRuntime().createCallTarget(newRootNode);
 
@@ -1255,10 +1255,10 @@ public abstract class KernelNodes {
 
         private static class CallMethodMissingWithStaticName extends RubyNode {
 
-            private final String methodName;
+            private final DynamicObject methodName;
             @Child private CallDispatchHeadNode methodMissing;
 
-            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, String methodName) {
+            public CallMethodMissingWithStaticName(RubyContext context, SourceSection sourceSection, DynamicObject methodName) {
                 super(context, sourceSection);
                 this.methodName = methodName;
                 methodMissing = DispatchHeadNodeFactory.createMethodCall(context);
