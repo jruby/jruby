@@ -65,7 +65,7 @@ public abstract class ArrayBuilderNode extends Node {
         return newStore;
     }
 
-    public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
+    private static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
         private boolean couldUseInteger = true;
         private boolean couldUseLong = true;
@@ -162,7 +162,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class IntegerArrayBuilderNode extends ArrayBuilderNode {
+    private static class IntegerArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
 
@@ -244,7 +244,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class LongArrayBuilderNode extends ArrayBuilderNode {
+    private static class LongArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
         private final ConditionProfile otherLongStoreProfile = ConditionProfile.createBinaryProfile();
@@ -319,7 +319,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
+    private static class DoubleArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
         private final ConditionProfile otherDoubleStoreProfile = ConditionProfile.createBinaryProfile();
@@ -397,7 +397,7 @@ public abstract class ArrayBuilderNode extends Node {
 
     }
 
-    public static class ObjectArrayBuilderNode extends ArrayBuilderNode {
+    private static class ObjectArrayBuilderNode extends ArrayBuilderNode {
 
         private final int expectedLength;
 
