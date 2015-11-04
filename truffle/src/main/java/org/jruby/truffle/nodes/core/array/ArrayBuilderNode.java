@@ -45,6 +45,22 @@ public abstract class ArrayBuilderNode extends Node {
         return context;
     }
 
+    protected Object appendValueFallback(Object store, int index, Object value, int expectedLength) {
+        replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
+
+        // The store type cannot be assumed if multiple threads use the same builder,
+        // so just use the generic box() since anyway this is slow path.
+        final Object[] newStore;
+        if (store instanceof Object[]) {
+            newStore = (Object[]) store;
+        } else {
+            newStore = ArrayUtils.box(store);
+        }
+
+        newStore[index] = value;
+        return newStore;
+    }
+
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
         private boolean couldUseInteger = true;
@@ -214,23 +230,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                // TODO(CS): not sure why this happens - need to investigate
-
-                final Object[] newStore;
-
-                if (store instanceof int[]) {
-                    newStore = ArrayUtils.box((int[]) store);
-                } else if (store instanceof Object[]) {
-                    newStore = (Object[]) store;
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-
-                newStore[index] = value;
-                return newStore;
+                return appendValueFallback(store, index, value, expectedLength);
             }
         }
 
@@ -304,12 +304,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                final Object[] newStore = ArrayUtils.box((long[]) store);
-                newStore[index] = value;
-                return newStore;
+                return appendValueFallback(store, index, value, expectedLength);
             }
         }
 
@@ -387,12 +382,7 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
-
-                final Object[] newStore = ArrayUtils.box((double[]) store);
-                newStore[index] = value;
-                return newStore;
+                return appendValueFallback(store, index, value, expectedLength);
             }
         }
 
