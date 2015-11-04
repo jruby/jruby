@@ -50,7 +50,7 @@ public class StandardErrorLogger extends OutputStreamLogger {
         if ( stream == null ) stream = System.err;
 
         CharSequence suble = substitute(message, args);
-        stream.println(formatMessage(suble.toString()));
+        stream.println(formatMessage(suble, level));
     }
 
     @Override
@@ -61,7 +61,7 @@ public class StandardErrorLogger extends OutputStreamLogger {
         if ( stream == null ) stream = System.err;
 
         synchronized (stream) {
-            stream.println(formatMessage(message));
+            stream.println(formatMessage(message, level));
             writeStackTrace(stream, throwable);
         }
     }

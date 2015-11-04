@@ -120,12 +120,12 @@ public class OutputStreamLogger implements Logger {
 
     protected void write(String message, String level, Object[] args) {
         CharSequence suble = substitute(message, args);
-        stream.println(formatMessage(suble.toString()));
+        stream.println(formatMessage(suble, level));
     }
 
     protected void write(String message, String level, Throwable throwable) {
         synchronized (stream) {
-            stream.println(formatMessage(message));
+            stream.println(formatMessage(message, level));
             //if ( message == null || message.length() > 0 ) stream.print(' ');
             writeStackTrace(stream, throwable);
         }
@@ -139,12 +139,17 @@ public class OutputStreamLogger implements Logger {
         throwable.printStackTrace(stream);
     }
 
-    protected String formatMessage(CharSequence message) {
-        return new StringBuilder()
+    protected String formatMessage(CharSequence message, String level) {
+        // 2015-11-04T11:29:41.759+01:00 [main] INFO SampleLogger : hello world
+        return new StringBuilder(64)
             .append(new DateTime(System.currentTimeMillis()))
-            .append(": ")
+            .append(' ')
+            .append('[').append(Thread.currentThread().getName()).append(']')
+            .append(' ')
+            .append(level)
+            .append(' ')
             .append(loggerName)
-            .append(": ")
+            .append(" : ")
             .append(message)
             .toString();
     }

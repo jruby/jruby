@@ -84,6 +84,28 @@ public class OutputStreamLoggerTest {
     }
 
     @Test
+    public void testIncludesLevel() {
+        final boolean debug = logger.isDebugEnabled();
+        try {
+            logger.setDebugEnable(true);
+            logger.debug("{} message", "a debug");
+            assertStreamNotEmpty();
+            assertStreamEndsWith("DEBUG OutputStreamLoggerTest : a debug message");
+
+            logger.info("hello!");
+            assertStreamNotEmpty();
+            assertStreamEndsWith("INFO OutputStreamLoggerTest : hello!");
+
+            logger.warn("red-{}", "alert");
+            assertStreamNotEmpty();
+            assertStreamEndsWith("WARN OutputStreamLoggerTest : red-alert");
+        }
+        finally {
+            logger.setDebugEnable(debug);
+        }
+    }
+
+    @Test
     public void testWithException() {
         logger.error("debug-test-x", new RuntimeException("42"));
         assertStreamNotEmpty();
