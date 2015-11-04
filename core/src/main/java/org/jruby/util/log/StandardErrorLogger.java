@@ -35,7 +35,7 @@ import java.io.PrintStream;
 public class StandardErrorLogger extends OutputStreamLogger {
 
     public StandardErrorLogger(String loggerName) {
-        super(loggerName, System.err);
+        super(loggerName);
     }
 
     public StandardErrorLogger(String loggerName, PrintStream stream) {
@@ -44,12 +44,22 @@ public class StandardErrorLogger extends OutputStreamLogger {
 
     @Override
     protected void write(String message, String level, Object[] args) {
+        // NOTE: stream is intentionally not set to System.err
+        // thus when its programatically redirected it works !
+        PrintStream stream = this.stream;
+        if ( stream == null ) stream = System.err;
+
         CharSequence suble = substitute(message, args);
         stream.println(formatMessage(suble.toString()));
     }
 
     @Override
     protected void write(String message, String level, Throwable throwable) {
+        // NOTE: stream is intentionally not set to System.err
+        // thus when its programatically redirected it works !
+        PrintStream stream = this.stream;
+        if ( stream == null ) stream = System.err;
+
         synchronized (stream) {
             stream.println(formatMessage(message));
             writeStackTrace(stream, throwable);
