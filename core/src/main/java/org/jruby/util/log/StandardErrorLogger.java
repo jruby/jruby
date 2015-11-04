@@ -11,7 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2011 The JRuby Community (and contribs)
+ * Copyright (C) 2001-2015 The JRuby Community (and contribs)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,112 +29,31 @@ package org.jruby.util.log;
 
 import java.io.PrintStream;
 
-import org.joda.time.DateTime;
-
-public class StandardErrorLogger implements Logger {
-
-    private final String loggerName;
-    private boolean debug = false;
-    private ParameterizedWriter writer;
+/**
+ * Default JRuby logger implementation, using {@link System.err}.
+ */
+public class StandardErrorLogger extends OutputStreamLogger {
 
     public StandardErrorLogger(String loggerName) {
-        this.loggerName = loggerName;
-        this.writer = new ParameterizedWriter(System.err);
+        super(loggerName, System.err);
     }
 
     public StandardErrorLogger(String loggerName, PrintStream stream) {
-        this.loggerName = loggerName;
-        this.writer = new ParameterizedWriter(stream);
+        super(loggerName, stream);
     }
 
-    public String getName() {
-        return loggerName;
+    @Override
+    protected void write(String message, String level, Object[] args) {
+        CharSequence suble = substitute(message, args);
+        stream.println(formatMessage(suble.toString()));
     }
 
-    public void warn(String message, Object... args) {
-        write(message, args);
-    }
-
-    public void warn(Throwable throwable) {
-        writeStackTrace(throwable);
-    }
-
-    public void warn(String message, Throwable throwable) {
-        write(message, throwable);
-    }
-
-    public void error(String message, Object... args) {
-        write(message, args);
-    }
-
-    public void error(Throwable throwable) {
-        writeStackTrace(throwable);
-    }
-
-    public void error(String message, Throwable throwable) {
-        write(message, throwable);
-    }
-
-    public void info(String message, Object... args) {
-        write(message, args);
-    }
-
-    public void info(Throwable throwable) {
-        writeStackTrace(throwable);
-    }
-
-    public void info(String message, Throwable throwable) {
-        write(message, throwable);
-    }
-
-    public void debug(String message, Object... args) {
-        if (debug) {
-            write(message, args);
+    @Override
+    protected void write(String message, String level, Throwable throwable) {
+        synchronized (stream) {
+            stream.println(formatMessage(message));
+            writeStackTrace(stream, throwable);
         }
-    }
-
-    public void debug(Throwable throwable) {
-        if (debug) {
-            writeStackTrace(throwable);
-        }
-    }
-
-    public void debug(String message, Throwable throwable) {
-        if (debug) {
-            write(message, throwable);
-        }
-    }
-
-    public boolean isDebugEnabled() {
-        return debug;
-    }
-
-    public void setDebugEnable(boolean debug) {
-        this.debug = debug;
-    }
-
-    private void write(String message, Object[] args) {
-        writer.write(format(message), args);
-    }
-
-    private void write(String message, Throwable throwable) {
-        writer.write(format(message));
-        writeStackTrace(throwable);
-    }
-
-    private void writeStackTrace(Throwable throwable) {
-        throwable.printStackTrace(writer.getStream());
-    }
-    
-    private String format(String message){
-        StringBuilder sb = new StringBuilder();
-        sb
-            .append(new DateTime(System.currentTimeMillis()).toString())
-            .append(": ")
-            .append(loggerName)
-            .append(": ")
-            .append(message);
-        return sb.toString();
     }
 
 }
