@@ -16,9 +16,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.core.BignumNodes;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
-import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -32,13 +29,8 @@ public abstract class FixnumPrimitiveNodes {
     @RubiniusPrimitive(name = "fixnum_coerce")
     public static abstract class FixnumCoercePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private DoesRespondDispatchHeadNode toFRespond;
-        @Child private CallDispatchHeadNode toF;
-
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toFRespond = new DoesRespondDispatchHeadNode(context, false);
-            toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         @Specialization
