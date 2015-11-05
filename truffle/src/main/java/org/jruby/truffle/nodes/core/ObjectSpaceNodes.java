@@ -18,7 +18,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyGuards;
+import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.RespondToNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNodeGen;
@@ -156,16 +158,18 @@ public abstract class ObjectSpaceNodes {
     @CoreMethod(names = "define_finalizer", isModuleFunction = true, required = 2)
     public abstract static class DefineFinalizerNode extends CoreMethodArrayArgumentsNode {
 
-        @Child private RespondToNode respondToNode;
+        // MRI would do a dynamic call to #respond_to? but it seems better to warn the user earlier.
+        // Wanting #method_missing(:call) to be called for a finalizer seems highly unlikely.
+        @Child private DoesRespondDispatchHeadNode respondToCallNode;
 
         public DefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            respondToNode = new RespondToNode(getContext(), getSourceSection(), null, "call");
+            respondToCallNode = new DoesRespondDispatchHeadNode(getContext(), true);
         }
 
         @Specialization
         public DynamicObject defineFinalizer(VirtualFrame frame, DynamicObject object, Object finalizer) {
-            if (respondToNode.executeBoolean(frame, finalizer)) {
+            if (respondToCallNode.doesRespondTo(frame, "call", finalizer)) {
                 getContext().getObjectSpaceManager().defineFinalizer(object, finalizer);
                 Object[] objects = new Object[]{ 0, finalizer };
                 return Layouts.ARRAY.createArray(getContext().getCoreLibrary().getArrayFactory(), objects, objects.length);
