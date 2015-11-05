@@ -30,7 +30,7 @@ public class CFG {
         EXIT           // Edge to dummy exit BB
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger("CFG");
+    private static final Logger LOG = LoggerFactory.getLogger(CFG.class);
 
     private IRScope scope;
     private Map<Label, BasicBlock> bbMap;

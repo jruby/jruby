@@ -110,7 +110,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
  */
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyBasicObject");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyBasicObject.class);
 
     private static final boolean DEBUG = false;
 

@@ -18,7 +18,7 @@ import org.jruby.util.log.LoggerFactory;
 
 public class TraceType {
 
-    private static final Logger LOG = LoggerFactory.getLogger("TraceType");
+    private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
 
     private final Gather gather;
     private final Format format;

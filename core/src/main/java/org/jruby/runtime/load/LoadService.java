@@ -139,7 +139,7 @@ import org.jruby.util.cli.Options;
  * @author jpetersen
  */
 public class LoadService {
-    private static final Logger LOG = LoggerFactory.getLogger("LoadService");
+    static final Logger LOG = LoggerFactory.getLogger(LoadService.class);
 
     private final LoadTimer loadTimer;
     private boolean canGetAbsolutePath = true;

@@ -73,7 +73,7 @@ import org.jruby.util.log.LoggerFactory;
  */
 @Deprecated
 public class ChannelDescriptor {
-    private static final Logger LOG = LoggerFactory.getLogger("ChannelDescriptor");
+    private static final Logger LOG = LoggerFactory.getLogger(ChannelDescriptor.class);
 
     /** Whether to log debugging information */
     private static final boolean DEBUG = false;

@@ -1,11 +1,8 @@
 package org.jruby.runtime.load;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 class DebugLog {
-    private static final Logger LOG = LoggerFactory.getLogger("LoadService");
 
     private final String typeMessage;
 
@@ -15,13 +12,13 @@ class DebugLog {
 
     public void logTry(String path) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info("trying " + typeMessage + ": " + path);
+            LoadService.LOG.info("trying " + typeMessage + ": " + path);
         }
     }
 
     public void logFound(String path) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info("found " + typeMessage + ": " + path);
+            LoadService.LOG.info("found " + typeMessage + ": " + path);
         }
     }
 

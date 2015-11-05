@@ -224,7 +224,7 @@ public final class Ruby implements Constantizable {
     /**
      * The logger used to log relevant bits.
      */
-    private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+    private static final Logger LOG = LoggerFactory.getLogger(Ruby.class);
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the

@@ -100,7 +100,7 @@ import org.objectweb.asm.FieldVisitor;
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyClass");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.setClassIndex(ClassIndex.CLASS);

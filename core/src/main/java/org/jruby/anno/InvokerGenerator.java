@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008-2012 Charles Oliver Nutter <headius@headius.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,10 +44,10 @@ import org.jruby.util.log.LoggerFactory;
 
 public class InvokerGenerator {
 
-    private static final Logger LOG = LoggerFactory.getLogger("InvokerGenerator");
+    private static final Logger LOG = LoggerFactory.getLogger(InvokerGenerator.class);
 
     public static final boolean DEBUG = false;
-    
+
     public static void main(String[] args) throws Exception {
         FileReader fr = null;
         try {
@@ -57,7 +57,7 @@ public class InvokerGenerator {
             return;
         }
         BufferedReader br = new BufferedReader(fr);
-        
+
         List<String> classNames = new ArrayList<String>();
         try {
             String line;
@@ -72,7 +72,7 @@ public class InvokerGenerator {
 
         for (String name : classNames) {
             MethodClumper clumper = new MethodClumper();
-            
+
             try {
                 if (DEBUG) LOG.debug("generating for class {}", name);
                 Class cls = Class.forName(name, false, InvokerGenerator.class.getClassLoader());

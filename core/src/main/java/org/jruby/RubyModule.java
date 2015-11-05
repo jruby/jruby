@@ -128,7 +128,7 @@ import static org.jruby.runtime.Visibility.*;
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
 
-    private static final Logger LOG = LoggerFactory.getLogger("RubyModule");
+    private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
 
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";

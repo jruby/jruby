@@ -49,7 +49,7 @@ import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
 
 public class IRRuntimeHelpers {
-    private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
+    private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
 
     public static boolean inProfileMode() {
         return RubyInstanceConfig.IR_PROFILE;

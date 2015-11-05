@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2002-2011 JRuby Community
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -46,17 +46,17 @@ import org.osgi.framework.FrameworkUtil;
 /**
  * Closest thing to JRubyClassLoader's addURL but for OSGi bundles.
  * Used as the parent classloader the usual jruby's bundle's classloader.
- * 
+ *
  * @author hmalphettes
  *
  */
 public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleReference {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JRubyOSGiBundleClassLoader.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(JRubyOSGiBundleClassLoader.class);
     private static final IOSGiClassLoaderAdapter ADAPTER;
 
     static {
-        IOSGiClassLoaderAdapter chosenAdapter = null;
+        IOSGiClassLoaderAdapter chosenAdapter;
         try {
             Bundle b = FrameworkUtil.getBundle(JRubyOSGiBundleClassLoader.class);
             // I don't want to actually reference this class, in case it's unavailable
@@ -76,11 +76,11 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
      * we could look in jruby first if that makes more sense.
      */
     private boolean _lookInOsgiFirst = true;
-    
+
     private LinkedHashMap<Bundle,ClassLoader> _libraries;
 
     /**
-     * @param 
+     * @param
      * @throws IOException
      */
     public JRubyOSGiBundleClassLoader()
@@ -89,7 +89,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
         _libraries = new LinkedHashMap<Bundle, ClassLoader>();
     }
     /**
-     * @param 
+     * @param
      * @throws IOException
      */
     public JRubyOSGiBundleClassLoader(Bundle creator)
@@ -98,7 +98,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
         addBundle(creator);
     }
     /**
-     * @param 
+     * @param
      * @throws IOException
      */
     public void addBundle(Class<?> classInOsgiBundle)
@@ -122,7 +122,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
     {
         return _libraries.put(bundle, ADAPTER.getClassLoader(bundle)) != null;
     }
-    
+
     /**
      * @param parent The parent classloader. In this case jrubyLoader
      * @param context The WebAppContext
@@ -134,10 +134,10 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
     {
         return _libraries.remove(bundle) != null;
     }
-    
+
     /**
      * Returns the <code>Bundle</code> that defined this web-application.
-     * 
+     *
      * @return The <code>Bundle</code> object associated with this
      *         <code>BundleReference</code>.
      */
@@ -168,14 +168,14 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
         }
         return Collections.enumeration(toList(enums));
     }
-    
+
     @Override
     public URL getResource(String name)
     {
         if (_lookInOsgiFirst)
         {
             URL url = null;
-            for (ClassLoader cl : _libraries.values()) { 
+            for (ClassLoader cl : _libraries.values()) {
                 url = cl.getResource(name);
                 if (url != null) {
                     return url;
@@ -183,22 +183,22 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
             }
             return super.getResource(name);
         }
-        else 
+        else
         {
             URL url = super.getResource(name);
             if (url != null) {
                 return url;
             }
-            for (ClassLoader cl : _libraries.values()) { 
+            for (ClassLoader cl : _libraries.values()) {
                 url = cl.getResource(name);
                 if (url != null) {
                     return url;
                 }
             }
             return null;
-        }       
+        }
     }
-    
+
     private List<URL> toList(List<Enumeration<URL>> l)
     {
         List<URL> list = new LinkedList<URL>();
@@ -211,7 +211,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
     }
 
     /**
-     * 
+     *
      */
     protected Class<?> findClass(String name) throws ClassNotFoundException
     {
@@ -235,7 +235,7 @@ public class JRubyOSGiBundleClassLoader extends ClassLoader implements BundleRef
                 }
                 throw cne;
             }
-            
+
         }
     }
 

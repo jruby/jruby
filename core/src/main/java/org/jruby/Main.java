@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author  jpetersen
  */
 public class Main {
-    private static final Logger LOG = LoggerFactory.getLogger("Main");
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public Main(RubyInstanceConfig config) {
         this(config, false);
