@@ -1513,8 +1513,9 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = { "wasProvided(defaultValue)", "size >= 0" })
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block) {
-            return initialize(frame, array, size, NotProvided.INSTANCE, block);
+        public Object initialize(VirtualFrame frame, DynamicObject array, int size, Object defaultValue, DynamicObject block,
+                @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
+            return initializeBlock(frame, array, size, NotProvided.INSTANCE, block, arrayBuilder);
         }
 
         @Specialization(guards = { "wasProvided(defaultValue)", "size < 0" })
@@ -1524,7 +1525,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "size >= 0")
-        public Object initialize(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block,
+        public Object initializeBlock(VirtualFrame frame, DynamicObject array, int size, NotProvided defaultValue, DynamicObject block,
                 @Cached("create(getContext())") ArrayBuilderNode arrayBuilder) {
             Object store = arrayBuilder.start(size);
 
