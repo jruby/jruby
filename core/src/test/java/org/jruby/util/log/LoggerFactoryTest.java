@@ -11,6 +11,7 @@
 package org.jruby.util.log;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
@@ -118,6 +119,53 @@ public class LoggerFactoryTest {
         logger.error("bad news", new RuntimeException("exception happened"));
         handler.flush();
         assertStartsWith(log += "JULLogger SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
+    }
+
+    @Test
+    public void usingSLF4JLogger() throws Exception {
+        final PrintStream defaultErr = System.err;
+        try {
+            System.setProperty("org.slf4j.simpleLogger.logFile", "System.err");
+            System.setProperty("org.slf4j.simpleLogger.dateTimeFormat", "yyyy");
+            System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
+
+            final ByteArrayOutputStream out = new ByteArrayOutputStream();
+            final PrintStream printOut = new PrintStream(out);
+            System.setErr(printOut);
+
+            //org.slf4j.Logger slf4jLogger = org.sqlf4j.LoggerFactory.getLogger("SLF4JLogger");
+
+            changeLoggerImpl(SLF4JLogger.class);
+
+            Logger logger = LoggerFactory.getLogger("SLF4JLogger");
+            assertFalse( logger.isDebugEnabled() );
+
+            logger.debug("ignored debug stuff");
+            logger.debug("more ignored debug stuff {}", 10);
+            printOut.flush();
+            assertEquals("", out.toString());
+
+            String log = "";
+
+            logger.info("logged at info level");
+            printOut.flush();
+            assertEquals(log += "INFO SLF4JLogger - logged at info level\n", out.toString());
+
+            logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
+            printOut.flush();
+            assertEquals(log += "WARN SLF4JLogger - logged at warn level\n", out.toString());
+
+            logger.debug("more debug", new RuntimeException("ex"));
+            printOut.flush(); assertEquals(log, out.toString());
+
+            logger.error("bad news", new RuntimeException("exception happened"));
+            printOut.flush();
+            assertStartsWith(log += "ERROR SLF4JLogger - bad news\njava.lang.RuntimeException: exception happened", out.toString());
+
+        }
+        finally {
+            System.setErr(defaultErr);
+        }
     }
 
     final static Constructor DEFAULT_LOGGER = LoggerFactory.LOGGER;
