@@ -14,11 +14,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.core.BignumNodes;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DoesRespondDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.layouts.Layouts;
 
@@ -37,7 +37,7 @@ public abstract class FixnumPrimitiveNodes {
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toFRespond = new DoesRespondDispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING, null);
+            toFRespond = new DoesRespondDispatchHeadNode(context, false);
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 

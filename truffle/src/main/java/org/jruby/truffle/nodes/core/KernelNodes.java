@@ -1631,8 +1631,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DoesRespondDispatchHeadNode(context, false, MissingBehavior.RETURN_MISSING, null);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, MissingBehavior.RETURN_MISSING, null);
+            dispatch = new DoesRespondDispatchHeadNode(context, false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true);
         }
 
         public abstract boolean executeDoesRespondTo(VirtualFrame frame, Object object, Object name, boolean includeProtectedAndPrivate);
