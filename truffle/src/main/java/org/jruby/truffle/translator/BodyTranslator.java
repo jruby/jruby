@@ -113,15 +113,6 @@ public class BodyTranslator extends Translator {
 
     protected boolean usesRubiniusPrimitive = false;
 
-    private static final Set<String> debugIgnoredCalls = new HashSet<>();
-
-    static {
-        debugIgnoredCalls.add("downto");
-        debugIgnoredCalls.add("each");
-        debugIgnoredCalls.add("times");
-        debugIgnoredCalls.add("upto");
-    }
-
     private static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
             Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!", "$?")); // "$_"
 
