@@ -39,6 +39,10 @@ public class SLF4JLogger implements Logger {
         this( org.slf4j.LoggerFactory.getLogger(loggerName) );
     }
 
+    public SLF4JLogger(final Class<?> loggerClass) {
+        this( org.slf4j.LoggerFactory.getLogger(loggerClass) );
+    }
+
     protected SLF4JLogger(final org.slf4j.Logger logger) {
         this.logger = logger;
     }

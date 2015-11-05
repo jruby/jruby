@@ -42,6 +42,10 @@ public class JULLogger implements Logger {
         this( java.util.logging.Logger.getLogger(loggerName) );
     }
 
+    public JULLogger(final Class<?> loggerClass) {
+        this( java.util.logging.Logger.getLogger(loggerClass.getName()) );
+    }
+
     protected JULLogger(final java.util.logging.Logger logger) {
         this.logger = logger;
     }

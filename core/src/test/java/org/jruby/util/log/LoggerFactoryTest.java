@@ -33,15 +33,19 @@ public class LoggerFactoryTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void usesStandardErrorLoggerByDefault() {
         if ( LoggerFactory.LOGGER_CLASS != null ) return; // skip test
 
-        Logger logger = LoggerFactory.getLogger("LoggerFactoryTest");
+        Logger logger = LoggerFactory.getLogger(LoggerFactoryTest.class);
         assertTrue( logger instanceof StandardErrorLogger );
         assertFalse( logger.isDebugEnabled() );
         logger.debug("not-logged", new IllegalStateException("if you're reading this - smt is BAD"));
         // try if it works without throwing :
         logger.info("hello {}", "world");
+
+        logger = LoggerFactory.getLogger("LoggerFactoryTest");
+        assertTrue( logger instanceof StandardErrorLogger );
     }
 
     @Test
@@ -137,7 +141,7 @@ public class LoggerFactoryTest {
 
             changeLoggerImpl(SLF4JLogger.class);
 
-            Logger logger = LoggerFactory.getLogger("SLF4JLogger");
+            Logger logger = LoggerFactory.getLogger(SLF4JLogger.class);
             assertFalse( logger.isDebugEnabled() );
 
             logger.debug("ignored debug stuff");
@@ -149,18 +153,18 @@ public class LoggerFactoryTest {
 
             logger.info("logged at info level");
             printOut.flush();
-            assertEquals(log += "INFO SLF4JLogger - logged at info level\n", out.toString());
+            assertEquals(log += "INFO org.jruby.util.log.SLF4JLogger - logged at info level\n", out.toString());
 
             logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
             printOut.flush();
-            assertEquals(log += "WARN SLF4JLogger - logged at warn level\n", out.toString());
+            assertEquals(log += "WARN org.jruby.util.log.SLF4JLogger - logged at warn level\n", out.toString());
 
             logger.debug("more debug", new RuntimeException("ex"));
             printOut.flush(); assertEquals(log, out.toString());
 
             logger.error("bad news", new RuntimeException("exception happened"));
             printOut.flush();
-            assertStartsWith(log += "ERROR SLF4JLogger - bad news\njava.lang.RuntimeException: exception happened", out.toString());
+            assertStartsWith(log += "ERROR org.jruby.util.log.SLF4JLogger - bad news\njava.lang.RuntimeException: exception happened", out.toString());
 
         }
         finally {
@@ -169,25 +173,41 @@ public class LoggerFactoryTest {
     }
 
     final static Constructor DEFAULT_LOGGER = LoggerFactory.LOGGER;
+    final static Constructor DEFAULT_LOGGER_OLD = LoggerFactory.LOGGER_OLD;
 
     @After
     public void restoreLoggerImpl() throws Exception {
         if ( LoggerFactory.LOGGER != DEFAULT_LOGGER ) {
-            setLoggerImpl(DEFAULT_LOGGER);
+            setLoggerImpl(DEFAULT_LOGGER, DEFAULT_LOGGER_OLD);
         }
     }
 
     static void changeLoggerImpl(final Class<? extends Logger> type) throws NoSuchFieldException, IllegalAccessException {
-        setLoggerImpl( LoggerFactory.resolveLoggerConstructor(type.getName()) );
+        final String klass = type.getName();
+        Constructor LOGGER = LoggerFactory.resolveLoggerConstructor(klass, Class.class, true);
+        Constructor LOGGER_OLD;
+        if ( LOGGER == null ) {
+            LOGGER_OLD = LoggerFactory.resolveLoggerConstructor(klass, String.class, false);
+        }
+        else {
+            LOGGER_OLD = LoggerFactory.resolveLoggerConstructor(klass, String.class, true);
+        }
+        setLoggerImpl( LOGGER, LOGGER_OLD );
     }
 
-    static void setLoggerImpl(final Constructor logger) throws NoSuchFieldException, IllegalAccessException {
+    static void setLoggerImpl(final Constructor logger, final Constructor loggerOld)
+        throws NoSuchFieldException, IllegalAccessException {
         final Field LOGGER = LoggerFactory.class.getDeclaredField("LOGGER");
         LOGGER.setAccessible(true);
-        final int mod = LOGGER.getModifiers();
-        changeModifiers(LOGGER, mod & (~Modifier.FINAL));
+        changeModifiers(LOGGER, LOGGER.getModifiers() & (~Modifier.FINAL));
 
         LOGGER.set(null, logger);
+
+        final Field LOGGER_OLD = LoggerFactory.class.getDeclaredField("LOGGER_OLD");
+        LOGGER_OLD.setAccessible(true);
+        changeModifiers(LOGGER_OLD, LOGGER_OLD.getModifiers() & (~Modifier.FINAL));
+
+        LOGGER_OLD.set(null, loggerOld);
     }
 
     private static void changeModifiers(final Field field, final int mod)

@@ -38,6 +38,10 @@ public class StandardErrorLogger extends OutputStreamLogger {
         super(loggerName);
     }
 
+    public StandardErrorLogger(Class<?> loggerClass) {
+        super(loggerClass.getSimpleName());
+    }
+
     public StandardErrorLogger(String loggerName, PrintStream stream) {
         super(loggerName, stream);
     }
