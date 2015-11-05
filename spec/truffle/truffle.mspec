@@ -62,10 +62,12 @@ class MSpecScript
     set :xtags, (get(:xtags) || []) + ['windows']
   end
 
-  MSpec.enable_feature :encoding
+  # Enable features
   MSpec.enable_feature :fiber
+  MSpec.enable_feature :fiber_library
+  MSpec.disable_feature :continuation_library
   MSpec.disable_feature :fork
-  MSpec.enable_feature :generator
+  MSpec.enable_feature :encoding
 
   set :files, get(:language) + get(:core) + get(:library) + get(:truffle)
 end
