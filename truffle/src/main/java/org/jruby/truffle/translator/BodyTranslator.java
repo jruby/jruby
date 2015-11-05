@@ -122,14 +122,31 @@ public class BodyTranslator extends Translator {
         debugIgnoredCalls.add("upto");
     }
 
-    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!", "$?")); // "$_"
+    private static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(
+            Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!", "$?")); // "$_"
+
+    private static final Set<String> READ_ONLY_GLOBAL_VARIABLES = new HashSet<String>(
+            Arrays.asList("$:", "$LOAD_PATH", "$-I", "$\"", "$LOADED_FEATURES", "$<", "$FILENAME", "$?", "$-a", "$-l", "$-p", "$!"));
+
+    private static final Map<String, String> GLOBAL_VARIABLE_ALIASES = new HashMap<String, String>();
+    static {
+        Map<String, String> m = GLOBAL_VARIABLE_ALIASES;
+        m.put("$-I", "$LOAD_PATH");
+        m.put("$:", "$LOAD_PATH");
+        m.put("$-d", "$DEBUG");
+        m.put("$-v", "$VERBOSE");
+        m.put("$-w", "$VERBOSE");
+        m.put("$-0", "$/");
+        m.put("$RS", "$/");
+        m.put("$INPUT_RECORD_SEPARATOR", "$/");
+        m.put("$>", "$stdout");
+        m.put("$PROGRAM_NAME", "$0");
+    }
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
-        initGlobalVariableAliases();
-        initReadOnlyGlobalVariables();
     }
 
     private DynamicObject translateNameNodeToSymbol(org.jruby.ast.Node node) {
@@ -1391,39 +1408,6 @@ public class BodyTranslator extends Translator {
         }
     }
 
-    private final Set<String> readOnlyGlobalVariables = new HashSet<String>();
-    private final Map<String, String> globalVariableAliases = new HashMap<String, String>();
-
-    private void initReadOnlyGlobalVariables() {
-        Set<String> s = readOnlyGlobalVariables;
-        s.add("$:");
-        s.add("$LOAD_PATH");
-        s.add("$-I");
-        s.add("$\"");
-        s.add("$LOADED_FEATURES");
-        s.add("$<");
-        s.add("$FILENAME");
-        s.add("$?");
-        s.add("$-a");
-        s.add("$-l");
-        s.add("$-p");
-        s.add("$!");
-    }
-
-    private void initGlobalVariableAliases() {
-        Map<String, String> m = globalVariableAliases;
-        m.put("$-I", "$LOAD_PATH");
-        m.put("$:", "$LOAD_PATH");
-        m.put("$-d", "$DEBUG");
-        m.put("$-v", "$VERBOSE");
-        m.put("$-w", "$VERBOSE");
-        m.put("$-0", "$/");
-        m.put("$RS", "$/");
-        m.put("$INPUT_RECORD_SEPARATOR", "$/");
-        m.put("$>", "$stdout");
-        m.put("$PROGRAM_NAME", "$0");
-    }
-
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
@@ -1431,8 +1415,8 @@ public class BodyTranslator extends Translator {
 
         String name = node.getName();
 
-        if (globalVariableAliases.containsKey(name)) {
-            name = globalVariableAliases.get(name);
+        if (GLOBAL_VARIABLE_ALIASES.containsKey(name)) {
+            name = GLOBAL_VARIABLE_ALIASES.get(name);
         }
 
         if (name.equals("$~")) {
@@ -1456,7 +1440,7 @@ public class BodyTranslator extends Translator {
         }
 
         final boolean inCore = rhs.getSourceSection().getSource().getPath().startsWith(context.getCoreLibrary().getCoreLoadPath() + "/core/");
-        if (!inCore && readOnlyGlobalVariables.contains(name)) {
+        if (!inCore && READ_ONLY_GLOBAL_VARIABLES.contains(name)) {
             return new WriteReadOnlyGlobalNode(context, sourceSection, name, rhs);
         }
 
@@ -1507,8 +1491,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitGlobalVarNode(org.jruby.ast.GlobalVarNode node) {
         String name = node.getName();
 
-        if (globalVariableAliases.containsKey(name)) {
-            name = globalVariableAliases.get(name);
+        if (GLOBAL_VARIABLE_ALIASES.containsKey(name)) {
+            name = GLOBAL_VARIABLE_ALIASES.get(name);
         }
 
         final SourceSection sourceSection = translate(node.getPosition());
