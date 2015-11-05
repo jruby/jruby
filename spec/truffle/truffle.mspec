@@ -23,7 +23,6 @@ class MSpecScript
 
     # Not yet explored
     "^spec/ruby/library/continuation",
-    "^spec/ruby/library/fiber",
     "^spec/ruby/library/mathn",
     "^spec/ruby/library/readline",
     "^spec/ruby/library/syslog",
