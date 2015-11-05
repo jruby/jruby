@@ -84,7 +84,7 @@ public class MethodTranslator extends BodyTranslator {
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode preludeProc;
-        if (shouldConsiderDestructuringArrayArg()) {
+        if (shouldConsiderDestructuringArrayArg(arity)) {
             final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final RubyNode castArrayNode = ArrayCastNodeGen.create(context, sourceSection, readArrayNode);
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -95,8 +95,7 @@ public class MethodTranslator extends BodyTranslator {
             final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
             preludeProc = new IfNode(context, sourceSection,
-                                    new ShouldDestructureNode(context, sourceSection, arity,
-                                            new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
+                                    new ShouldDestructureNode(context, sourceSection, new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
                     SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments), loadArguments);
         } else {
             preludeProc = loadArguments;
@@ -132,12 +131,12 @@ public class MethodTranslator extends BodyTranslator {
                 callTargetAsProc, callTargetAsLambda, environment.getBreakID());
     }
 
-    private boolean shouldConsiderDestructuringArrayArg() {
-        if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
+    private boolean shouldConsiderDestructuringArrayArg(Arity arity) {
+        // If we do not accept any arguments or only one required, there's never any need to destructure
+        if (!arity.hasRest() && arity.getOptional() == 0 && arity.getRequired() <= 1) {
             return false;
-        } else if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
-            return false;
-        } else if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
+        // If there are only a rest argument and optional arguments, there is no need to destructure
+        } else if (arity.hasRest() && arity.getPreRequired() == 0) {
             return false;
         } else {
             return true;
