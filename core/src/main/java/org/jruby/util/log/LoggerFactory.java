@@ -32,15 +32,16 @@ import org.jruby.util.cli.Options;
 
 public class LoggerFactory {
 
-    private static final String LOGGER_CLASS = Options.LOGGER_CLASS.load();
-    private static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
+    static final String LOGGER_CLASS = Options.LOGGER_CLASS.load();
+    static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
 
-    static final Constructor<? extends Logger> LOGGER;
-    static {
+    static final Constructor<? extends Logger> LOGGER = resolveLoggerConstructor( LOGGER_CLASS );
+
+    static Constructor<? extends Logger> resolveLoggerConstructor(final String className) {
         Constructor<? extends Logger> loggerCtor;
         try {
             @SuppressWarnings("unchecked")
-            Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(LOGGER_CLASS);
+            Class<? extends Logger> klass = (Class<? extends Logger>) Class.forName(className);
             loggerCtor = klass.getDeclaredConstructor(String.class);
             loggerCtor.newInstance("LoggerFactory"); // check its working
         }
@@ -51,13 +52,13 @@ public class LoggerFactory {
                 loggerCtor = klass.getDeclaredConstructor(String.class);
                 Logger log = loggerCtor.newInstance("LoggerFactory");
                 // log failure to load passeed -Djruby.logger.class :
-                log.info("failed to create logger \"" + LOGGER_CLASS + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
+                log.info("failed to create logger \"" + className + "\", using \"" + BACKUP_LOGGER_CLASS + "\"");
             }
             catch (Exception e2) {
                 throw new IllegalStateException("unable to instantiate any logger", e1);
             }
         }
-        LOGGER = loggerCtor;
+        return loggerCtor;
     }
 
     public static Logger getLogger(String loggerName) {
