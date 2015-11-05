@@ -984,7 +984,7 @@ public class CoreLibrary {
         CompilerAsserts.neverPartOfCompilation();
         String fromClass = Layouts.MODULE.getFields(getLogicalClass(from)).getName();
         return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
-                fromClass, toClass, methodUsed, getLogicalClass(result).toString()), currentNode);
+                fromClass, toClass, fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
     public DynamicObject typeErrorCantConvertInto(Object from, String toClass, Node currentNode) {
