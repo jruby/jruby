@@ -399,10 +399,8 @@ public abstract class TrufflePrimitiveNodes {
                     strings[n] = object.toString();
                     n++;
                 } else {
-                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(object),
-                            getContext().getCoreLibrary().getStringClass(),
-                            this));
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(object, "String", this));
                 }
             }
 

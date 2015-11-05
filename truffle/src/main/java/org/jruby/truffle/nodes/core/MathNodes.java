@@ -367,9 +367,7 @@ public abstract class MathNodes {
                 return frexp(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -529,9 +527,7 @@ public abstract class MathNodes {
                         integerBNode.callLongFixnum(frame, b, "to_int", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -586,9 +582,7 @@ public abstract class MathNodes {
                 return lgamma(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -627,9 +621,7 @@ public abstract class MathNodes {
                 return doFunction(floatANode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -807,9 +799,7 @@ public abstract class MathNodes {
                 return doFunction(floatNode.callFloat(frame, a, "to_f", null));
             } else {
                 CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
@@ -923,8 +913,7 @@ public abstract class MathNodes {
             } else {
                 CompilerDirectives.transferToInterpreter();
 
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        a, getContext().getCoreLibrary().getFloatClass(), this));
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(a, "Float", this));
             }
         }
 
