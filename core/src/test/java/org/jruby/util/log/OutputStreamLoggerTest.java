@@ -21,14 +21,18 @@ import org.junit.After;
 /**
  * @author kares
  */
-public class OutputStreamLoggerTest {
+public class OutputStreamLoggerTest extends junit.framework.TestCase {
 
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    private final PrintStream stream = new PrintStream(baos);
+    protected final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    protected final PrintStream stream = new PrintStream(baos);
 
-    final Logger logger = new OutputStreamLogger(OutputStreamLoggerTest.class.getSimpleName(), stream);
+    protected final Logger logger = newLogger();
+
+    protected Logger newLogger() {
+        return new OutputStreamLogger(OutputStreamLoggerTest.class.getSimpleName(), stream);
+    }
 
     @After
     public void resetStream() throws IOException {
@@ -115,21 +119,21 @@ public class OutputStreamLoggerTest {
         assertStreamContains("at org.jruby.util.log.OutputStreamLoggerTest.testWithException");
     }
 
-    private void assertStreamEmpty() {
+    protected void assertStreamEmpty() {
         stream.flush();
         Assert.assertEquals("", baos.toString());
     }
 
-    private void assertStreamNotEmpty() {
+    protected void assertStreamNotEmpty() {
         stream.flush();
         Assert.assertNotEquals("", baos.toString());
     }
 
-    private void assertStreamEndsWith(String expected) {
+    protected void assertStreamEndsWith(String expected) {
         assertStreamEndsWith(expected, true);
     }
 
-    private void assertStreamEndsWith(String expected, final boolean newLine) {
+    protected void assertStreamEndsWith(String expected, final boolean newLine) {
         stream.flush();
         if ( newLine ) expected = expected + LINE_SEPARATOR;
 
@@ -139,7 +143,7 @@ public class OutputStreamLoggerTest {
         Assert.assertEquals("expected: \"" + actual + "\" to end with: \"" + expected + "\"", expected, endPart);
     }
 
-    private void assertStreamContains(String expected) {
+    protected void assertStreamContains(String expected) {
         stream.flush();
 
         final String actual = baos.toString();
