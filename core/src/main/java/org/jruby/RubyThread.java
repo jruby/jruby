@@ -1516,7 +1516,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private static void debug(RubyThread thread, String message) {
-        if (DEBUG) LOG.debug(Thread.currentThread() + "(" + thread.status + "): " + message);
+        if (DEBUG) LOG.debug( "{} ({}): {}", Thread.currentThread(), thread.status, message );
     }
 
     @JRubyMethod

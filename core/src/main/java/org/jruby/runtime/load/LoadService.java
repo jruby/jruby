@@ -568,14 +568,13 @@ public class LoadService {
         @Override
         public long startLoad(String file) {
             indent.incrementAndGet();
-            LOG.info(getIndentString() + "-> " + file);
+            LOG.info( "{}-> {}", getIndentString(), file );
             return System.currentTimeMillis();
         }
 
         @Override
         public void endLoad(String file, long startTime) {
-            LOG.info(getIndentString() + "<- " + file + " - "
-                    + (System.currentTimeMillis() - startTime) + "ms");
+            LOG.info( "{}<- {} - {}ms", getIndentString(), file, (System.currentTimeMillis() - startTime) );
             indent.decrementAndGet();
         }
     }
@@ -955,14 +954,14 @@ public class LoadService {
     @Deprecated
     protected final void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info( "trying " + what + ": " + msg );
+            LOG.info( "trying {}: {}", what, msg );
         }
     }
 
     @Deprecated
     protected final void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info( "found " + what + ": " + msg );
+            LOG.info( "found {}: {}", what, msg );
         }
     }
 
@@ -975,7 +974,7 @@ public class LoadService {
             } catch (IOException e) {
                 resourceUrl = e.getMessage();
             }
-            LOG.info( "found: " + resourceUrl );
+            LOG.info( "found: {}", resourceUrl );
         }
     }
 
@@ -1333,8 +1332,7 @@ public class LoadService {
                 jarFiles.put(jarFileName, jarFile);
             } catch (ZipException ignored) {
                 if (runtime.getInstanceConfig().isDebug()) {
-                    LOG.info("ZipException trying to access " + jarFileName + ", stack trace follows:");
-                    ignored.printStackTrace(runtime.getErr());
+                    LOG.info("ZipException trying to access " + jarFileName, ignored);
                 }
             } catch (FileNotFoundException ignored) {
             } catch (IOException e) {

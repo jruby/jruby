@@ -1634,9 +1634,8 @@ public class RubyClass extends RubyModule {
 
     private void logReifyException(final Throwable failure, final boolean error) {
         if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            final String msg = "failed to reify class " + getName() + " due to: ";
-            if ( error ) LOG.error(msg, failure);
-            else LOG.info(msg, failure);
+            if ( error ) LOG.error("failed to reify class " + getName() + " due to: ", failure);
+            else LOG.info("failed to reify class " + getName() + " due to: ", failure);
         }
     }
 
