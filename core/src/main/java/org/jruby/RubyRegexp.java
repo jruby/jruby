@@ -1473,12 +1473,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject names(ThreadContext context) {
         check();
-        if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
+        final Ruby runtime = context.runtime;
+        if (pattern.numberOfNames() == 0) return runtime.newEmptyArray();
 
-        RubyArray ary = context.runtime.newArray(pattern.numberOfNames());
+        RubyArray ary = runtime.newArray(pattern.numberOfNames());
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            ary.append(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP));
+            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            ary.append(name);
         }
         return ary;
     }
@@ -1489,16 +1491,20 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject named_captures(ThreadContext context) {
         check();
-        RubyHash hash = RubyHash.newHash(getRuntime());
+        final Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newHash(runtime);
         if (pattern.numberOfNames() == 0) return hash;
 
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            int[]backrefs = e.getBackRefs();
-            RubyArray ary = getRuntime().newArray(backrefs.length);
+            int[] backrefs = e.getBackRefs();
+            RubyArray ary = runtime.newArray(backrefs.length);
 
-            for (int backref : backrefs) ary.append(RubyFixnum.newFixnum(getRuntime(), backref));
-            hash.fastASet(RubyString.newStringShared(getRuntime(), e.name, e.nameP, e.nameEnd - e.nameP).freeze(context), ary);
+            for (int backref : backrefs) {
+                ary.append(RubyFixnum.newFixnum(runtime, backref));
+            }
+            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            hash.fastASet(name.freeze(context), ary);
         }
         return hash;
     }
