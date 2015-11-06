@@ -253,8 +253,8 @@ public class RubyMatchData extends RubyObject {
         return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
     }
 
-    private static RubyString makeShared(Ruby runtime, RubyString str, int begin, int length) {
-        return str.makeShared19(runtime, begin, length);
+    private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
+        return str.makeShared19(runtime, index, length);
     }
 
     private RubyArray match_array(Ruby runtime, int start) {
@@ -265,8 +265,7 @@ public class RubyMatchData extends RubyObject {
                 return runtime.newArray(runtime.getNil());
             } else {
                 RubyString ss = makeShared(runtime, str, begin, end - begin);
-                if (isTaint()) ss.setTaint(true);
-                return runtime.newArray(ss);
+                return runtime.newArray( ss.infectBy(this) );
             }
         } else {
             RubyArray arr = runtime.newArray(regs.numRegs - start);
@@ -275,8 +274,7 @@ public class RubyMatchData extends RubyObject {
                     arr.append(runtime.getNil());
                 } else {
                     RubyString ss = makeShared(runtime, str, regs.beg[i], regs.end[i] - regs.beg[i]);
-                    if (isTaint()) ss.setTaint(true);
-                    arr.append(ss);
+                    arr.append( ss.infectBy(this) );
                 }
             }
             return arr;
@@ -575,9 +573,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject pre_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
+        if (begin == -1) return context.nil;
+
         return makeShared(context.runtime, str, 0, begin).infectBy(this);
     }
 
@@ -587,10 +584,10 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject post_match(ThreadContext context) {
         check();
-        if (begin == -1) {
-            return context.runtime.getNil();
-        }
-        return makeShared(context.runtime, str, end, str.getByteList().length() - end).infectBy(this);
+        if (begin == -1) return context.nil;
+
+        final int strLen = str.getByteList().length();
+        return makeShared(context.runtime, str, end, strLen - end).infectBy(this);
     }
 
     /** match_to_s
