@@ -182,13 +182,108 @@ public abstract class StringNodes {
 
         @Child private ToIntNode toIntNode;
         @Child private AllocateObjectNode allocateObjectNode;
+        @Child private ReadHeadObjectFieldNode readRopeNode;
+        @Child private WriteHeadObjectFieldNode writeRopeNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             allocateObjectNode = AllocateObjectNodeGen.create(context, sourceSection, null, null);
         }
 
-        @Specialization
+        @Specialization(guards = "isRope(string)")
+        public DynamicObject multiplyRope(DynamicObject string, int times) {
+            if (times < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
+
+            if (readRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readRopeNode = insert(ReadHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER, null));
+            }
+
+            if (writeRopeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeRopeNode = insert(WriteHeadObjectFieldNodeGen.create(Layouts.ROPE_IDENTIFIER));
+            }
+
+            final DynamicObject ret = allocateObjectNode.allocate(Layouts.BASIC_OBJECT.getLogicalClass(string), null, Layouts.STRING.getCodeRange(string), null);
+
+            if (times == 0) {
+                writeRopeNode.execute(ret, StringOperations.EMPTY_UTF8_ROPE);
+            } else if (times == 1) {
+                writeRopeNode.execute(ret, readRopeNode.execute(string));
+            } else {
+                final Rope baseRope = (Rope) readRopeNode.execute(string);
+                final Rope concatLeafRope = new ConcatRope(baseRope, baseRope, baseRope.getEncoding());
+
+                final boolean timesIsPowerOf2 = (times & (times - 1)) == 0;
+                final double log2_times = Math.log(times) / Math.log(2);
+
+                final int lowestLevelWidth = timesIsPowerOf2 ? times / 2 : (int) (Math.pow(2, Math.floor(log2_times)));
+                final int populateNode = times - lowestLevelWidth;
+
+                Rope[] nextLevel = new Rope[lowestLevelWidth];
+                for (int i = 0; i < nextLevel.length; i++) {
+                    if (i < populateNode) {
+                        nextLevel[i] = concatLeafRope;
+                    } else {
+                        nextLevel[i] = null;
+                    }
+                }
+
+                final int levels = (int) Math.ceil(log2_times);
+                boolean canCacheLeftTree = true;
+                boolean canCacheRightTree = true;
+
+                for (int level = levels - 1; level > 0; level--) {
+                    final int levelWidth = (int) Math.pow(2, level - 1);
+                    final Rope[] currentLevel = new Rope[levelWidth];
+                    Rope cachedRope = null;
+
+                    for (int i = 0; i < levelWidth; i++) {
+                        final Rope left = nextLevel[i * 2];
+                        final Rope right = nextLevel[i * 2 + 1];
+
+                        if (left == null) {
+                            currentLevel[i] = concatLeafRope;
+
+                            if (i < levelWidth / 2) {
+                                canCacheLeftTree = false;
+                            } else {
+                                canCacheRightTree = false;
+                            }
+                        } else if (right == null) {
+                            currentLevel[i] = new ConcatRope(left, baseRope, baseRope.getEncoding());
+
+                            if (i < levelWidth / 2) {
+                                canCacheLeftTree = false;
+                            } else {
+                                canCacheRightTree = false;
+                            }
+                        } else {
+                            if ((canCacheLeftTree && i < levelWidth / 2) || (canCacheRightTree && i >= levelWidth / 2)) {
+                                if (cachedRope == null) {
+                                    cachedRope = new ConcatRope(left, right, baseRope.getEncoding());
+                                }
+
+                                currentLevel[i] = cachedRope;
+                            } else {
+                                currentLevel[i] = new ConcatRope(left, right, baseRope.getEncoding());
+                            }
+                        }
+                    }
+
+                    nextLevel = currentLevel;
+                }
+
+                writeRopeNode.execute(ret, nextLevel[0]);
+            }
+
+            return ret;
+        }
+
+        @Specialization(guards = "!isRope(string)")
         public DynamicObject multiply(DynamicObject string, int times) {
             if (times < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -225,6 +320,7 @@ public abstract class StringNodes {
 
             return multiply(string, toIntNode.doInt(frame, times));
         }
+
     }
 
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)

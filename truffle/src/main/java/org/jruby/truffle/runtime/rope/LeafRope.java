@@ -19,6 +19,7 @@ public class LeafRope extends Rope {
     private final byte[] bytes;
     private ByteList byteList;
     private final Encoding encoding;
+    private int hashCode = -1;
 
     public LeafRope(byte[] bytes, Encoding encoding) {
         this.bytes = bytes;
@@ -50,15 +51,24 @@ public class LeafRope extends Rope {
     }
 
     @Override
+    public int hashCode() {
+        if (hashCode == -1) {
+            hashCode = Arrays.hashCode(bytes) + encoding.hashCode();
+        }
+
+        return hashCode;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
 
-        if (this instanceof Rope) {
-            final Rope other = (Rope) o;
+        if (o instanceof LeafRope) {
+            final LeafRope other = (LeafRope) o;
 
-            return Arrays.equals(this.bytes, other.getBytes());
+            return encoding == other.getEncoding() && Arrays.equals(bytes, other.getBytes());
         }
 
         return false;
